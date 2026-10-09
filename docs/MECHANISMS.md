@@ -860,6 +860,16 @@ katalogu; klient nie może wskazać dowolnego adresu przekierowania.
 
 ## 16. Pulpity i gadżety
 
+`Dashboard.is_default` oznacza osobisty pulpit domyślny. Warunkowy indeks unikalny
+`(created_by, workplace)` i transakcyjny `default_dashboard(request)` tworzą jeden
+rekord z początkowym „Postępem pracy”, także przy równoległych pierwszych wejściach.
+Kolejne odczyty nie uzupełniają usuniętych gadżetów. Strona główna oraz zwykły/scoped
+`default/` używają wspólnego `detail_context` i edytora; własny link pulpitu kieruje
+na scoped `default/`. Domyślny rekord można konfigurować i udostępniać jak pozostałe
+pulpity, ale endpoint usuwania odrzuca go, a menu nie pokazuje tej akcji.
+Osobisty domyślny pulpit nie jest powielany w gwiazdkach ani historii menu twórcy;
+udostępniony domyślny pulpit innej osoby zachowuje zwykły link po PK.
+
 `Dashboard.owner` jest właścicielem Workspace z `workspace_owner(request)`,
 a `created_by` faktycznym twórcą. Katalog i każdy bezpośredni endpoint najpierw
 ograniczają właściciela i aktywny Workspace, następnie widoczność pulpitu.

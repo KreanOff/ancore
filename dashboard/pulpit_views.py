@@ -19,7 +19,7 @@ from tasks.models import Task
 from .models import Dashboard, DashboardGadget
 from .pulpit_forms import DashboardAccessForm, DashboardForm, DashboardSettingsForm, GadgetForm
 from .pulpits import (GADGET_CATALOG, MAX_GADGETS, app_url, decorate_dashboard, decorate_gadget,
-                      detail_context, gadget_data, visible_dashboards)
+                      dashboard_url, default_dashboard, detail_context, gadget_data, visible_dashboards)
 from .recent import remember_view
 
 
@@ -71,7 +71,7 @@ def search(request):
     has_more = len(results) > 20
     results = results[:20]
     for dashboard in results:
-        dashboard.url = app_url(request, f'{dashboard.pk}/')
+        dashboard.url = dashboard_url(request, dashboard)
     response = JsonResponse({
         'html': render_to_string('dashboard/pulpits/search_results.html', {'results': results, 'has_more': has_more}),
         'count': len(results),
@@ -127,6 +127,17 @@ def detail(request, pk):
     dashboard = get_dashboard(request, pk)
     remember_view(request, dashboard)
     return render(request, 'dashboard/pulpits/detail.html', detail_context(request, dashboard))
+
+
+@login_required
+@require_GET
+def default(request):
+    if getattr(request, 'workplace', None) is None:
+        return redirect('workplaces:workplaces')
+    dashboard = default_dashboard(request)
+    response = render(request, 'dashboard/home.html', detail_context(request, dashboard))
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 def editor_navigation_context(request, dashboard, section, management=False):
@@ -218,7 +229,7 @@ def edit(request, pk=None, management=False):
         form.save_m2m()
         if not editing_settings:
             dashboard.favorited_by.add(request.user)
-        return saved_response(request, management_url(request) if management else app_url(request, f'{dashboard.pk}/'))
+        return saved_response(request, management_url(request) if management else dashboard_url(request, dashboard))
     if source:
         return render(request, 'dashboard/pulpits/edit.html', {
             **editor_navigation_context(request, source, 'settings', management),
@@ -240,7 +251,7 @@ def access(request, pk, management=False):
         dashboard.revision += 1
         dashboard.save()
         form.save_m2m()
-        return saved_response(request, management_url(request) if management else app_url(request, f'{dashboard.pk}/'))
+        return saved_response(request, management_url(request) if management else dashboard_url(request, dashboard))
     return render(request, 'dashboard/pulpits/edit.html', {
         **editor_navigation_context(request, dashboard, 'access', management),
         'form': form, 'action': request.get_full_path(),
@@ -251,7 +262,10 @@ def access(request, pk, management=False):
 @require_POST
 @transaction.atomic
 def delete(request, pk, management=False):
-    get_dashboard(request, pk, edit=True, lock=True).delete()
+    dashboard = get_dashboard(request, pk, edit=True, lock=True)
+    if dashboard.is_default:
+        raise PermissionDenied('Pulpitu domyślnego nie można usunąć. Możesz zmienić jego gadżety i układ.')
+    dashboard.delete()
     invalidated_paths = list(dict.fromkeys(
         f'{base}{prefix}{pk}/'
         for base in ['/dashboards/', app_url(request)] for prefix in ['', 'manage/']

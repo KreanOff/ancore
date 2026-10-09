@@ -21,7 +21,7 @@ from planner.models import CalendarEvent
 from resources.models import Resource
 from tasks.models import Task, TaskProject, TaskSection, TaskTag
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
-from .overview import dashboard_overview
+from .pulpit_views import default as default_pulpit
 from .for_you import for_you_context
 from .recent import recent_views
 from .notification_service import DASHBOARD_NOTIFICATION_LIMIT, _dashboard_notifications
@@ -451,14 +451,7 @@ def for_you(request):
 @login_required
 @require_GET
 def home(request):
-    workplace = getattr(request, 'workplace', None)
-    if workplace is None:
-        return redirect('workplaces:workplaces')
-    response = render(request, 'dashboard/home.html', dashboard_overview(
-        workspace_owner(request), workplace, request.GET.get('focus'), viewer=request.user,
-    ))
-    response['Cache-Control'] = 'no-store'
-    return response
+    return default_pulpit(request)
 
 
 @login_required

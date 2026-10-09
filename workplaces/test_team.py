@@ -85,7 +85,7 @@ class TeamAccessTests(TestCase):
         self.assertIn(self.task.title, json.dumps(response.json(), ensure_ascii=False))
         self.assertIn(self.document.title, json.dumps(response.json(), ensure_ascii=False))
         self.assertNotIn(self.other_task.title, json.dumps(response.json(), ensure_ascii=False))
-        self.assertEqual(self.client.get(reverse('home')).context['dashboard_totals']['total'], 1)
+        self.assertEqual(self.client.get(reverse('home')).context['columns'][0][0]['count'], 1)
         notifications = self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(notifications.status_code, 200)
         self.assertIn(self.task.title, notifications.json()['html'])

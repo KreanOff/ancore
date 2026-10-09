@@ -98,7 +98,9 @@ class DashboardViewTests(TestCase):
         self.assertTemplateUsed(response, 'dashboard/home.html')
         self.assertEqual(response.context['sidebar_mode'], 'workspace')
         self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
-        self.assertContains(response, 'Brak nadchodzących terminów')
+        self.assertContains(response, 'Postęp pracy')
+        self.assertContains(response, 'Edytuj pulpit')
+        self.assertTrue(response.context['dashboard'].is_default)
         self.assertEqual(response['Cache-Control'], 'no-store')
 
     def test_retired_notifications_page_redirects_home(self):

@@ -25,12 +25,17 @@ class Dashboard(models.Model):
     favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_dashboards')
     layout = models.CharField('Układ', max_length=6, choices=Layout.choices, default=Layout.EQUAL)
     revision = models.PositiveIntegerField(default=0)
+    is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['name', 'pk']
         indexes = [models.Index(fields=['owner', 'workplace'], name='dashboard_workspace_idx')]
+        constraints = [models.UniqueConstraint(
+            fields=['created_by', 'workplace'], condition=models.Q(is_default=True),
+            name='dashboard_default_per_user',
+        )]
 
     @property
     def column_count(self):

@@ -604,12 +604,15 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   w aktywnym Workspace; przypisanie, historia, odwiedziny i ulubione nie nadają uprawnień.
   Historyczne elementy Kanbana są pomijane także w ulubionych i historii,
   niezależnie od importu. Filtr konkretnej przestrzeni obejmuje kanoniczne Tasks.
-- **Dashboard:** `/` pokazuje dane właściciela w aktywnym Workspace:
-  liczbę otwartych zadań, ich wysokich/pilnych priorytetów,
-  zaległych zadań oraz pozycji zamkniętych w ostatnich 7 dniach.
-  Przełączane listy `focus=deadlines|priority|kanban` pokazują maksymalnie
-  6 pozycji. Są też rozkład statusów, 4 niezakończone/nieanulowane projekty
-  Zadań z postępem oraz do 4 trwających/nadchodzących wydarzeń.
+- **Pulpit domyślny:** `/` używa aktywnego Workspace z sesji, a
+  `/dashboards/default/` i scoped odpowiednik otwierają ten sam zapisany pulpit.
+  Każdy użytkownik ma osobną konfigurację w każdym Workspace; właścicielem danych
+  pozostaje właściciel Workspace, twórcą zalogowana osoba. Przy pierwszym wejściu
+  pulpit jest prywatny i zawiera jeden „Postęp pracy”. Używa tych samych gadżetów,
+  pięciu układów, konfiguracji źródła/przypisania, nazwy/opisu i dostępów co nowe
+  pulpity. Zmiany oraz usunięcie wszystkich gadżetów pozostają po kolejnym wejściu.
+  Nie można usunąć rekordu domyślnego pulpitu. Stałe liczniki, listy terminów,
+  projektów i kalendarza starego Dashboardu nie są już renderowane na stronie głównej.
 - **Pulpity:** osobny katalog `/dashboards/` oraz scoped odpowiednik, dostępny
   w menu, ulubionych menu i globalnym wyszukiwaniu jako skrót modułu.
   Katalog pokazuje wszystkie dostępne pulpity, bez zakładek Wszystkie,
@@ -623,8 +626,10 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   `<pk>/copy/` i `manage/<pk>/copy/` zwracają 404 w zwykłym i scoped routingu.
   Menu „Pulpity” ma przycisk tworzenia, sekcje Oznaczone gwiazdką/Ostatnie,
   oraz „Więcej pulpitów” z panelem wyszukiwania po nazwie/opisie i linkiem
-  „Wyświetl wszystkie pulpity” do katalogu. Dotychczasowy Dashboard
-  jest dostępny jako „Pulpit domyślny”. Ostatnie pochodzą z osobistej historii
+  „Wyświetl wszystkie pulpity” do katalogu. „Pulpit domyślny” ma stały link
+  do osobistej konfiguracji; nie jest powielany w gwiazdkach ani ostatnich twórcy.
+  Dostępny domyślny pulpit innej osoby można oglądać jak zwykły udostępniony pulpit,
+  bez zmiany własnego domyślnego pulpitu. Ostatnie pochodzą z osobistej historii
   sesji; gwiazdki są zapisane w bazie. Menu pokazuje do 6 ulubionych
   i 6 ostatnich bez gwiazdki. Mechanizm grup pulpitów jest usunięty wraz
   z konfiguracją grup i przypisaniami; dawne zwykłe/scoped adresy zwracają 404.
@@ -685,14 +690,11 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
   Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
-Podsumowanie z [overview.py](../dashboard/overview.py) liczy główne zadania
-bez podzadań. Filtr Kanban obejmuje zadania z Przestrzeni Kanban/Scrum. Zamknięcie oznacza status `closed`; `resolved`
-pozostaje otwarte. Terminy obejmują zaległości i czas do północy za 7 dni
-w aktywnej strefie czasu. Licznik ostatnich zamknięć obejmuje dziś i 6 poprzednich
-dni według `completion_date`. Projekty są sortowane po terminie, potem od
-najnowszych; postęp liczy zamknięte zadania tego samego właściciela i Workspace.
-Linki do modułów mają scoped URL, szczegóły zadań/kart używają `task_id`,
-a projekty i wydarzenia PK. `/` nadal używa aktywnego kontekstu z sesji.
+Historyczny serwis [overview.py](../dashboard/overview.py) i jego testy pozostają
+w repozytorium, ale routing strony głównej korzysta z `pulpit_views.default` oraz
+[pulpits.py](../dashboard/pulpits.py). Dane każdego gadżetu są ponownie filtrowane
+według właściciela/Workspace i prywatności oglądającego; udostępnienie konfiguracji
+pulpitu nie nadaje dostępu do jego źródeł. `/` nadal używa aktywnego kontekstu z sesji.
 
 Centrum jest dostępne wyłącznie jako panel w powłoce aplikacji, otwierany
 dzwonkiem w górnym pasku aplikacji. Pełna strona została wycofana;

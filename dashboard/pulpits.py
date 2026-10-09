@@ -1,4 +1,5 @@
 """Saved dashboards; sharing their configuration never grants data access."""
+from django.db import transaction
 from django.db.models import Count, Q
 
 from spaces.services import visible_spaces
@@ -30,8 +31,25 @@ def visible_dashboards(request):
     ).distinct()
 
 
+@transaction.atomic
+def default_dashboard(request):
+    dashboard, created = Dashboard.objects.get_or_create(
+        owner=workspace_owner(request), workplace=request.workplace,
+        created_by=request.user, is_default=True,
+        defaults={'name': 'Pulpit domyślny'},
+    )
+    if created:
+        DashboardGadget.objects.create(dashboard=dashboard, kind=DashboardGadget.Kind.PROGRESS)
+    return dashboard
+
+
+def dashboard_url(request, dashboard):
+    personal_default = dashboard.is_default and dashboard.created_by_id == request.user.pk
+    return app_url(request, 'default/' if personal_default else f'{dashboard.pk}/')
+
+
 def decorate_dashboard(request, dashboard):
-    dashboard.url = app_url(request, f'{dashboard.pk}/')
+    dashboard.url = dashboard_url(request, dashboard)
     dashboard.edit_url = app_url(request, f'{dashboard.pk}/edit/')
     dashboard.access_url = app_url(request, f'{dashboard.pk}/access/')
     dashboard.gadgets_url = app_url(request, f'{dashboard.pk}/gadgets/')

@@ -56,10 +56,10 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
         return view_name in {'for_you', 'workplace_for_you'}
 
     if item_key == 'dashboard':
-        return view_name == 'home'
+        return view_name == 'home' or getattr(request, 'sidebar_default_pulpit', False)
 
     if item_key == 'pulpits':
-        return app_name in {'pulpits', 'workplace_pulpits'}
+        return app_name in {'pulpits', 'workplace_pulpits'} and not getattr(request, 'sidebar_default_pulpit', False)
 
     if item_key == 'documents':
         return app_name in {'documents', 'workplace_documents'}

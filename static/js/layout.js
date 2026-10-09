@@ -73,6 +73,7 @@
         const appShellPaths = [
             /^\/(spaces|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
+            /^\/dashboards\/default\/$/,
             /^\/dashboards\/(?:\d+\/)?(?:create\/|edit\/|access\/|copy\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
             /^\/dashboards\/manage\/(?:create\/|\d+\/(?:(?:edit|access|copy)\/|gadgets\/(?:add\/|\d+\/edit\/)?))?$/,
             /^\/$/,
@@ -1615,7 +1616,8 @@
             const favoriteLink = favoriteRow.querySelector('a.nav-link');
             if (favoriteLink && favoriteRow.dataset.sidebarFavoriteItem === 'pulpits') {
                 const modulePath = window.location.pathname.replace(/^\/workplaces\/[^/]+\//, '/');
-                favoriteLink.classList.toggle('active', modulePath.startsWith('/dashboards/'));
+                const defaultPulpitActive = sidebar.querySelector('[data-sidebar-source-item="dashboard"]')?.classList.contains('active');
+                favoriteLink.classList.toggle('active', modulePath.startsWith('/dashboards/') && !defaultPulpitActive);
                 return;
             }
             if (favoriteLink && sourceLink) {

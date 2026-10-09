@@ -180,14 +180,20 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 
 ## 7. Adresy i punkt wejścia
 
-- `/` pokazuje Dashboard z podsumowaniem aktywnego Workspace.
+- `/` oraz `/dashboards/default/` (także scoped) pokazują osobisty pulpit
+  domyślny aktywnego Workspace przez wspólny przegląd i edytor Pulpitów.
+  Pierwsze wejście tworzy `Dashboard.is_default` i jeden gadżet „Postęp pracy”;
+  unikalność `(created_by, workplace)` dla domyślnych rekordów chroni inicjalizację.
+  Kolejne wejścia zachowują konfigurację, również pusty pulpit.
 - `/dashboards/` i `/workplaces/<slug>/dashboards/` udostępniają system
   „Pulpity”. `Dashboard` przechowuje konfigurację i udostępnienie,
   `DashboardGadget` układ oraz filtry; `pulpit_views.py`, `pulpit_forms.py`
   i `pulpits.py` obsługują katalog, zapis i odczyt danych. Właściciel danych
   Workspace (`owner`) jest oddzielony od twórcy (`created_by`).
   `pulpit_navigation.py` buduje menu gwiazdek i ostatnich z aktualnie
-  dostępnych pulpitów. Dotychczasowy Dashboard jest „Pulpitem domyślnym”.
+  dostępnych pulpitów. „Pulpit domyślny” ma stałą pozycję w menu bez duplikowania
+  go w osobistych gwiazdkach i ostatnich. Jest widoczny w katalogu i zarządzaniu;
+  ma te same ustawienia i dostępy, ale nie można usunąć jego rekordu.
   `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
   własnymi pulpitami, ze wspólną listą katalogu Pulpitów i trybem bocznego menu
   `pulpits-management`. Nazwa pulpitu otwiera jego edytor z odrębnym menu

@@ -156,11 +156,12 @@ class DashboardOverviewTests(TestCase):
     def test_empty_workspace_and_partial_navigation_response(self):
         response = self.client.get(reverse('home'), {'focus': 'kanban'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['dashboard_totals']['total'], 0)
-        self.assertEqual(response.context['dashboard_completed_percent'], 0)
-        self.assertContains(response, 'Brak otwartych kart')
-        self.assertContains(response, 'Miejsce na kolejną przestrzeń')
-        self.assertContains(response, 'Spokojny kalendarz')
+        data = response.context['columns'][0][0]
+        self.assertEqual(data['count'], 0)
+        self.assertEqual(data['percent'], 0)
+        self.assertContains(response, 'Postęp pracy')
+        self.assertContains(response, 'Edytuj pulpit')
+        self.assertTrue(response.context['dashboard'].is_default)
         self.assertEqual(response['Cache-Control'], 'no-store')
 
     def test_scoped_module_visit_switches_dashboard_context(self):
@@ -168,5 +169,5 @@ class DashboardOverviewTests(TestCase):
         self.client.get(scoped_workplace_app_path(self.other_workplace, 'tasks'))
         response = self.client.get(reverse('home'), {'focus': 'priority'})
         self.assertEqual(response.context['current_workplace'], self.other_workplace)
-        self.assertEqual(response.context['dashboard_totals']['total'], 0)
+        self.assertEqual(response.context['columns'][0][0]['count'], 0)
         self.assertNotContains(response, 'Zadanie pierwszej przestrzeni')

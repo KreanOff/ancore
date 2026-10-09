@@ -779,6 +779,19 @@ modułów, 404 starego adresu, desktop/telefon, zwinięte menu i ponowne wejści
 
 ## Pulpity i gadżety
 
+Migracja `dashboard.0011_default_dashboard` dodaje znacznik `is_default` oraz
+warunkową unikalność użytkownika/Workspace. Zachowuje istniejące pulpity i gadżety;
+osobista konfiguracja domyślna powstaje dopiero przy pierwszym wejściu na `/`
+lub `/dashboards/default/` (zwykłe/scoped), z jednym „Postępem pracy”.
+Przed uruchomieniem tej wersji zastosuj migrację i odśwież `layout.js`.
+`dashboard.test_default_pulpit` sprawdza idempotencję inicjalizacji, zapamiętywanie
+pustego pulpitu, wspólny edytor, pięć układów, dodawanie/konfigurację/usuwanie
+gadżetów, nazwę/opis/dostępy, granice Workspace i użytkownika, prywatność źródeł,
+blokadę usunięcia rekordu, unikalność, CSRF i cofnięte członkostwo.
+Browser QA: strona główna → Edytuj pulpit → Dodaj gadżet → Zmień układ → Gotowe,
+ponowne wejście i reload, konfiguracja, usunięcie wszystkich gadżetów, błąd zapisu,
+aktywny link domyślnego pulpitu, częściowa nawigacja i desktop/telefon.
+
 Migracja `dashboard.0007_dashboard_dashboardgadget_and_more` dodaje wyłącznie
 konfigurację pulpitów, gadżety i osobiste relacje gwiazdek/udostępnienia.
 Nie konwertuje starego Dashboardu ani danych zadań. Wymaga istniejącej migracji

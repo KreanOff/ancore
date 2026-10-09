@@ -1506,20 +1506,16 @@ akcje oraz wspólna obsługa menu i modali pozostają bez zmian.
 
 ### Dashboard bieżącego Workspace
 
-`dashboard/home.html` rozszerza `core/base.html` i używa `tasks-topbar`,
-istniejących `dashboard-stat`, `dashboard-panel`, ikon statusów oraz include'a
-priorytetu. Wariant `.dashboard-overview` w `components/dashboard.css` ogranicza
-lokalne zmiany do układu pulpitu: cztery liczniki, dwie kolumny paneli,
-natywne paski `progress` i zwarte wiersze linków. Używa tokenów Ancore;
-fiolet wyróżnia aktywną listę i postęp. Na węższych ekranach panele tworzą
-jedną kolumnę, liczniki dwie. Treść przewija się w `.dashboard-main`.
-Nagłówek i `.dashboard-main` mają po 22px odstępu z obu stron na wszystkich
-szerokościach (`--dashboard-inline-padding`), tak samo jak „Dla ciebie”.
-Tytuł „Dashboard” na górnym pasku ma rozmiar 17px i grubość 700.
-
-Zakładki są linkami GET z `aria-current`, obsługiwanymi również przez wspólną
-częściową nawigację. Dashboard nie wymaga osobnego JavaScriptu. Puste stany
-prowadzą do odpowiedniego modułu; pełne nazwy pozostają w tekście i `title`.
+`dashboard/home.html` rozszerza `dashboard/pulpits/detail.html`, a przez niego
+wspólną powłokę `core/base.html`. Strona główna i `/dashboards/default/` używają
+tych samych nagłówków, siatki, pustych stanów, CSS i `pulpits.js` co nowe pulpity.
+„Edytuj pulpit” prowadzi do wspólnego edytora z menu „Gadżety i układ”, „Dostępy”
+i „Ustawienia”. Pierwsze wejście pokazuje jeden „Postęp pracy”; kolejne odczytują
+zapisany układ i gadżety. Przegląd nie pokazuje kontrolek zmiany gadżetów.
+Nazwa i opis są edytowalne, a osobista pozycja „Pulpit domyślny” pozostaje w menu.
+Nie ma akcji „Usuń pulpit” dla rekordów domyślnych; gadżety można usuwać wszystkie.
+Wspólne odstępy, tokeny, responsywność, modale i częściowa nawigacja pozostają
+takie jak w systemie Pulpitów opisanym w rozdziale 15.
 
 ## 6. Modale
 
@@ -2346,7 +2342,7 @@ kontenera na telefonie. Przyciski zachowują `tasks-filter-button` bez
 podkreślenia tekstu. Wiersze niepustej tabeli używają dotychczasowych ikon.
 
 Jedyny gadżet „Postęp pracy” rozszerza `dashboard-panel` i współdzieli
-`dashboard/includes/work_progress.html` z kartą Dashboardu. Pokazuje procent,
+`dashboard/includes/work_progress.html` z pulpitem domyślnym. Pokazuje procent,
 „Zamknięte: X z Y”, wspólny `progress`, opis zakresu i pięć liczników
 z istniejącymi kolorowymi `status-indicator`. Pusty zakres nadal pokazuje wszystkie
 statusy z zerami, bez ilustracji zastępującej dane. Ikona wykresu jest po prawej
@@ -2450,7 +2446,9 @@ Otwiera ten sam niemodalny panel z tytułem „Pulpity”, zamknięciem, polem
 Wyszukiwanie po nazwie/opisie obejmuje dostępne pulpity aktywnego Workspace
 i pokazuje do 20 wyników. Link zachowuje zapytanie i otwiera katalog pulpitów.
 Przycisk podświetla się na szaro po otwarciu, bez zaznaczenia aktywnej strony.
-„Pulpit domyślny” prowadzi do starego Dashboardu.
+„Pulpit domyślny” prowadzi do scoped `/dashboards/default/` osobistego pulpitu
+aktywnego Workspace, bez duplikowania go w gwiazdkach i ostatnich twórcy.
+Jest aktywny także na `/` oraz w przeglądzie własnego domyślnego rekordu po PK.
 Grupy pulpitów i akcje przypisania są usunięte z katalogu, przeglądu, menu
 bocznego oraz zarządzania.
 

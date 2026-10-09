@@ -41,6 +41,7 @@ def current_workplace(request):
         from dashboard.pulpit_navigation import sidebar_dashboards
         space_navigation = sidebar_spaces(request)
         dashboard_navigation = sidebar_dashboards(request)
+        request.sidebar_default_pulpit = dashboard_navigation['default_dashboard_is_current']
         spaces_management_available = can_manage_spaces(request)
         workplace_app_urls = {
             'dashboards': scoped_workplace_app_path(active_workplace, 'dashboards'),

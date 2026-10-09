@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 36 | 63 | 41 | 319 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 32 | 10 | 29 | 197 |
+| [dashboard](../dashboard) | 33 | 11 | 29 | 204 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -566,7 +566,7 @@ Metody/properties: `save`, `deactivate`, `__str__`.
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `description` (TextField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `layout` (CharField), `revision` (PositiveIntegerField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `description` (TextField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `layout` (CharField), `revision` (PositiveIntegerField), `is_default` (BooleanField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -1335,8 +1335,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/pulpit_forms.py](../dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [dashboard/pulpit_navigation.py](../dashboard/pulpit_navigation.py) — `sidebar_dashboards`
 - [dashboard/pulpit_urls.py](../dashboard/pulpit_urls.py)
-- [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
-- [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `decorate_dashboard`, `decorate_gadget`, `gadget_data`, `detail_context`
+- [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
+- [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `gadget_data`, `detail_context`
 - [dashboard/recent.py](../dashboard/recent.py) — `remember_view`, `recent_views`
 - [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
 - [dashboard/urls.py](../dashboard/urls.py)
@@ -1985,6 +1985,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `CollaborationTests`: 20 metod testowych.
 
+### dashboard/test_default_pulpit.py
+
+Źródło: [dashboard/test_default_pulpit.py](../dashboard/test_default_pulpit.py).
+
+- `DefaultPulpitTests`: 7 metod testowych.
+
 ### dashboard/test_for_you.py
 
 Źródło: [dashboard/test_for_you.py](../dashboard/test_for_you.py).
@@ -2385,6 +2391,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0008_dashboardgroup.py](../dashboard/migrations/0008_dashboardgroup.py)
 - [dashboard/migrations/0009_remove_dashboard_groups.py](../dashboard/migrations/0009_remove_dashboard_groups.py)
 - [dashboard/migrations/0010_work_progress_gadget.py](../dashboard/migrations/0010_work_progress_gadget.py)
+- [dashboard/migrations/0011_default_dashboard.py](../dashboard/migrations/0011_default_dashboard.py)
 
 ### planner
 
