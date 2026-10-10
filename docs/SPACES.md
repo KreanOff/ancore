@@ -1,5 +1,27 @@
 # Przestrzenie i zespoły
 
+## Adresy przestrzeni
+
+Przestrzeń używa adresu `/space/<slug>/` oraz
+`/workplaces/<kod-workspace>/space/<slug>/`, np. `space/scrum-szablon/`.
+`Space.slug` powstaje z nazwy projektu: małe litery, myślniki zamiast spacji
+i transliteracja polskich znaków, również `ł`. Duplikaty w tym samym Workspace
+otrzymują `-2`, `-3`; nazwy numeryczne prefiks `przestrzen-`, a nazwy bez znaków
+URL zastępczy segment `przestrzen`. Zapis blokuje Workspace podczas przydziału,
+a baza wymusza unikalność `(workplace, slug)`. Zmiana nazwy zachowuje adres.
+Migracja `spaces.0005_space_slugs` nadaje adresy istniejącym przestrzeniom,
+nie zmieniając ich pozostałych danych ani relacji.
+
+Menu, katalog, wyszukiwanie, podsumowanie, zespoły, zakładki i powroty po zapisie
+używają nazwy w adresie. Akcje przestrzeni mają ten sam prefiks `space/<slug>/`.
+Katalog, zarządzanie i endpointy samych zadań pozostają pod `/spaces/`.
+Edycja z zarządzania używa `/spaces/manage/<slug>/edit/`.
+Nazwy routingu `spaces` i `workplace_spaces` pozostają wspólne dla obu prefiksów.
+Dawne `/spaces/<pk>/` przekierowuje GET/HEAD po kontroli dostępu, zachowując
+parametry zapytania; numeryczne endpointy zapisu nadal działają dla zgodności.
+Slug rozwiązywany jest wyłącznie w aktywnym Workspace przez `visible_spaces`.
+Częściowa nawigacja obsługuje oba prefiksy także w scoped adresach.
+
 ## Katalog i zarządzanie przestrzeniami
 
 „Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej

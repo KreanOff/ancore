@@ -131,7 +131,7 @@ class BacklogDragTests(TestCase):
     def test_observer_cannot_drag_or_submit_move(self):
         TaskProjectMembership.objects.filter(project=self.project, user=self.member).update(role='observer')
         self.assertEqual(self.move(self.first, sprint=self.active).status_code, 403)
-        response = self.client.get(scoped_workplace_app_path(self.workspace, 'spaces', f'{self.space.pk}/?view=backlog'))
+        response = self.client.get(scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/?view=backlog'))
         rows = re.findall(r'<article\b[^>]*data-work-backlog-row[^>]*>', response.content.decode())
         self.assertEqual(len(rows), 3)
         self.assertFalse(any('draggable="true"' in row for row in rows))

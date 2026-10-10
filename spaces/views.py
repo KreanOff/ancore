@@ -33,12 +33,13 @@ from .backlog import move_backlog_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, can_manage_spaces, decorate_directory_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, decorate_directory_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 
 
 def space_object(request, pk):
-    return get_object_or_404(visible_spaces(request), pk=pk)
+    lookup = {'pk': pk} if isinstance(pk, int) else {'slug': pk}
+    return get_object_or_404(visible_spaces(request), **lookup)
 
 
 def base_context(request):
@@ -106,8 +107,8 @@ def index_context(request, management=False):
     activity = {row['space_id']: row['last_activity'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(last_activity=Max('task__activities__created_at'))} if management else {}
     for space in page:
         if management:
-            space.edit_url = app_url(request, f'manage/{space.pk}/edit/')
-            space.configuration_url = app_url(request, f'{space.pk}/configuration/') if manage_configuration(request, space) else ''
+            space.edit_url = app_url(request, f'manage/{space.slug}/edit/')
+            space.configuration_url = space_url(request, space, 'configuration/') if manage_configuration(request, space) else ''
             space.leader = space.project.responsible_user or space.project.private_owner or space.project.user
             space.leader_avatar = account_avatar(space.leader)
             space.last_activity = activity.get(space.pk)
@@ -138,7 +139,7 @@ def search(request):
     has_more = len(results) > 20
     results = results[:20]
     for space in results:
-        space.url = app_url(request, f'{space.pk}/')
+        space.url = space_url(request, space)
     response = JsonResponse({
         'html': render_to_string('spaces/search_results.html', {'results': results, 'has_more': has_more}),
         'count': len(results),
@@ -180,7 +181,7 @@ def detail_context(request, space, view):
         allowed_views.add('backlog')
     if view not in allowed_views:
         view = 'overview'
-    base = app_url(request, f'{space.pk}/')
+    base = space_url(request, space)
     navigation = [
         ('overview', 'Podsumowanie', 'layout-dashboard'),
         ('list', 'Lista zadań', 'list-checks'),
@@ -250,9 +251,12 @@ def detail_context(request, space, view):
 
 
 @login_required
-@require_http_methods(['GET', 'POST'])
+@require_http_methods(['GET', 'HEAD', 'POST'])
 def detail(request, pk):
     space = space_object(request, pk)
+    if isinstance(pk, int) and request.method in {'GET', 'HEAD'}:
+        query = request.META.get('QUERY_STRING', '')
+        return redirect(space_url(request, space) + (f'?{query}' if query else ''))
     remember_view(request, space.project)
     if request.GET.get('view') == 'tags':
         from tasks.forms import TaskTagForm
@@ -325,7 +329,7 @@ def edit(request, pk=None, management=False):
     if space and not manage_space(request, space):
         raise PermissionDenied
     form = SpaceForm(request.POST if request.method == 'POST' else None, request=request, space=space)
-    url = app_url(request, 'manage/') if management else app_url(request, f'{pk}/?view=settings') if pk else app_url(request)
+    url = app_url(request, 'manage/') if management else space_url(request, space, '?view=settings') if pk else app_url(request)
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
         try:
@@ -351,7 +355,7 @@ def edit(request, pk=None, management=False):
                     project.save()
                     if visibility_changed:
                         project.memberships.all().delete()
-                url = app_url(request, 'manage/' if management else f'{space.pk}/')
+                url = app_url(request, 'manage/') if management else space_url(request, space)
         except IntegrityError:
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
         else:
@@ -366,14 +370,14 @@ def avatar_edit(request, pk):
     if not manage_space(request, space):
         raise PermissionDenied
     form = SpaceAvatarForm(request.POST if request.method == 'POST' else None, request.FILES or None, space=space)
-    url = app_url(request, f'{pk}/')
+    url = space_url(request, space)
     if request.method == 'POST' and form.is_valid():
         saved_file = None
         try:
             with transaction.atomic():
                 Workplace.objects.select_for_update().get(pk=request.workplace.pk)
                 TaskProject.objects.select_for_update().get(pk=space.project_id)
-                space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=pk)
+                space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=space.pk)
                 if not manage_space(request, space):
                     raise PermissionDenied
                 old_photo, storage = space.avatar_photo.name, space.avatar_photo.storage
@@ -447,7 +451,7 @@ def item_edit(request, pk=None, space_pk=None):
     elif not editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists():
         raise PermissionDenied
     form = ItemForm(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
-    url = app_url(request, f'{space.pk}/?view=list')
+    url = space_url(request, space, '?view=list')
     if request.method == 'POST':
         with lock_task_numbers(space.project.user_id):
             if request.workplace:
@@ -540,7 +544,7 @@ def item_action(request, pk):
         messages.error(request, ' '.join(error.messages))
     params = request.GET.copy()
     params['view'] = 'backlog' if request.POST.get('return_view') == 'backlog' else 'board'
-    url = app_url(request, f'{item.space_id}/?') + params.urlencode()
+    url = space_url(request, item.space, '?') + params.urlencode()
     if request.headers.get('X-Work-Action') == 'true':
         return JsonResponse({'saved': True, 'url': url})
     return redirect(url)
@@ -553,7 +557,7 @@ def sprint_create(request, pk):
     if space.template != 'scrum' or not manage_space(request, space):
         raise PermissionDenied
     form = SprintForm(request.POST if request.method == 'POST' else None)
-    url = app_url(request, f'{pk}/?view=backlog')
+    url = space_url(request, space, '?view=backlog')
     if request.method == 'POST' and form.is_valid():
         Sprint.objects.create(space=space, **form.cleaned_data)
         return dialog_response(request, form, '', url, saved=True)
@@ -569,7 +573,7 @@ def sprint_action(request, pk, sprint_pk):
         update_sprint(request, sprint, request.POST.get('action'))
     except ValidationError as error:
         messages.error(request, ' '.join(error.messages))
-    return redirect(app_url(request, f'{pk}/?view=backlog'))
+    return redirect(space_url(request, space, '?view=backlog'))
 
 
 @login_required
@@ -582,7 +586,7 @@ def members(request, pk):
     owner = space.project.private_owner_id == request.user.pk
     if not owner:
         form.fields['role'].choices = [('member', 'Członek'), ('observer', 'Obserwator')]
-    url = app_url(request, f'{pk}/?view=settings')
+    url = space_url(request, space, '?view=settings')
     if request.method == 'POST' and form.is_valid():
         from workplaces.models import Workplace
         with transaction.atomic():
@@ -617,7 +621,7 @@ def remove_member(request, pk, member_pk):
         if member.user_id == space.project.private_owner_id or (member.role == 'admin' and space.project.private_owner_id != request.user.pk):
             raise PermissionDenied
         member.delete()
-    return redirect(app_url(request, f'{pk}/?view=settings'))
+    return redirect(space_url(request, space, '?view=settings'))
 
 
 @login_required
@@ -665,5 +669,5 @@ def configuration(request, pk):
                 config.settings = settings
                 config.save(update_fields=['settings'])
                 messages.success(request, 'Konfiguracja została zapisana.')
-                return redirect(app_url(request, f'{pk}/?view=settings'))
-    return render(request, 'spaces/configuration.html', {**base_context(request), 'space': space, 'space_url': app_url(request, f'{pk}/'), 'config': config, 'revision': revision, 'sets': [{'title': title, 'formset': formset} for title, formset in zip(('Statusy i przejścia', 'Typy zgłoszeń', 'Pola dodatkowe'), sets)], 'errors': errors}, status=400 if data else 200)
+                return redirect(space_url(request, space, '?view=settings'))
+    return render(request, 'spaces/configuration.html', {**base_context(request), 'space': space, 'space_url': space_url(request, space), 'config': config, 'revision': revision, 'sets': [{'title': title, 'formset': formset} for title, formset in zip(('Statusy i przejścia', 'Typy zgłoszeń', 'Pola dodatkowe'), sets)], 'errors': errors}, status=400 if data else 200)

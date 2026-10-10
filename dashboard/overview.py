@@ -100,7 +100,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         project_rows.append({
             'object': project,
             'percent': round(project.closed_count * 100 / project.item_count) if project.item_count else 0,
-            'url': scoped_workplace_app_path(workplace, 'spaces', f'{project.space.pk}/') if hasattr(project, 'space') else f'{tasks_url}?{urlencode({"project": project.pk})}',
+            'url': scoped_workplace_app_path(workplace, 'space', f'{project.space.slug}/') if hasattr(project, 'space') else f'{tasks_url}?{urlencode({"project": project.pk})}',
         })
 
     return {

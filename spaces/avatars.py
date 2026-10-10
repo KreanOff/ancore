@@ -15,7 +15,7 @@ def avatar_upload_path(instance, filename):
 def space_avatar(space):
     avatar = preset_avatar(space.avatar, space.pk or 0)
     if space.avatar_photo:
-        avatar['photo_url'] = scoped_workplace_app_path(space.workplace, 'spaces', f'{space.pk}/avatar/photo/')
+        avatar['photo_url'] = scoped_workplace_app_path(space.workplace, 'space', f'{space.slug}/avatar/photo/')
     return avatar
 
 

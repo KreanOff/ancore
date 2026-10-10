@@ -7,7 +7,7 @@ from tasks.access import visible_to
 from tasks.models import Task, TaskAttachment, TaskCommentImage
 from workplaces.services import workspace_owner
 from .models import LegacyKanbanLink
-from .services import app_url, task_url, visible_spaces
+from .services import app_url, space_url, task_url, visible_spaces
 
 
 class LegacyKanbanMiddleware:
@@ -66,12 +66,13 @@ class LegacyKanbanMiddleware:
             if not source_id.isdecimal() or len(source_id) > 18:
                 raise Http404
             link = scope.filter(kind='section' if section_id else 'project', source_id=source_id).first()
-            if not link or not visible_spaces(request).filter(pk=link.space_id).exists():
+            space = visible_spaces(request).filter(pk=link.space_id).first() if link else None
+            if not space:
                 raise Http404
             if section_id:
                 from tasks.models import TaskSection
                 if not visible_to(TaskSection.objects.filter(pk=link.target_id), request.user).exists():
                     raise Http404
-            suffix = f'{link.space_id}/' + (f'?view=board&group={link.target_id}' if section_id else '')
-            return redirect(app_url(request, suffix))
+            suffix = f'?view=board&group={link.target_id}' if section_id else ''
+            return redirect(space_url(request, space, suffix))
         return redirect(app_url(request))

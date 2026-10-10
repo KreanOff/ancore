@@ -344,7 +344,7 @@ class ForYouTests(TestCase):
         self.task('Właściciela', assignee=self.owner)
         self.task('Ukryte', visibility='private', private_owner=self.owner)
         self.assertEqual(self.page().context['for_you_projects'], [])
-        space_url = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.project.space.pk}/')
+        space_url = scoped_workplace_app_path(self.workspace, 'space', f'{self.project.space.slug}/')
         self.assertEqual(self.client.get(space_url).status_code, 200)
         shortcuts = self.page().context['for_you_projects']
         self.assertEqual([item['object'] for item in shortcuts], [self.project])
@@ -506,7 +506,7 @@ class ForYouTests(TestCase):
         self.project.save()
         self.project.favorited_by.add(self.member)
         self.hidden_project.favorited_by.add(self.member)
-        space_url = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.project.space.pk}/')
+        space_url = scoped_workplace_app_path(self.workspace, 'space', f'{self.project.space.slug}/')
         self.assertEqual(self.client.get(space_url).status_code, 200)
         for tab in ('starred', 'viewed'):
             with self.subTest(tab=tab):

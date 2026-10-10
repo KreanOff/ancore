@@ -1,10 +1,11 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, router, transaction
 from django.db.models import Q
 from core.comment_images import comment_image_storage
 
 from .defaults import KINDS, MANAGEMENT, TEMPLATES, issue_type_icon, template_settings
 from .avatars import avatar_upload_path
+from .identifiers import SLUG_MAX_LENGTH, unique_space_slug
 
 
 class SpaceConfiguration(models.Model):
@@ -22,6 +23,7 @@ class Space(models.Model):
     project = models.OneToOneField('tasks.TaskProject', on_delete=models.CASCADE, related_name='space')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE)
     key = models.CharField(max_length=12)
+    slug = models.SlugField(max_length=SLUG_MAX_LENGTH, editable=False)
     kind = models.CharField(max_length=12, choices=KINDS, default='business')
     template = models.CharField(max_length=20, choices=[(k, v['label']) for k, v in TEMPLATES.items()], default='tasks')
     management = models.CharField(max_length=8, choices=MANAGEMENT, default='team')
@@ -32,7 +34,24 @@ class Space(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['workplace', 'key'], name='space_key_unique')]
+        constraints = [
+            models.UniqueConstraint(fields=['workplace', 'key'], name='space_key_unique'),
+            models.UniqueConstraint(fields=['workplace', 'slug'], name='space_workspace_slug'),
+        ]
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if self.slug or (update_fields is not None and not update_fields):
+            return super().save(*args, **kwargs)
+        database = kwargs.get('using') or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=database):
+            from workplaces.models import Workplace
+            Workplace.objects.using(database).select_for_update().get(pk=self.workplace_id)
+            siblings = type(self).objects.using(database).filter(workplace_id=self.workplace_id).exclude(pk=self.pk)
+            self.slug = unique_space_slug(siblings, self.project.name)
+            if update_fields is not None:
+                kwargs['update_fields'] = set(update_fields) | {'slug'}
+            return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.project.name

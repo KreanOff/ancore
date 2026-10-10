@@ -69,6 +69,35 @@ przepełnienia strony na telefonie. Kontrola Django, składni JS, indeksu i
 
 ## Uruchomienie przestrzeni i zespołów
 
+Adresy Przestrzeni sprawdza `spaces.test_urls`: nazwa i polskie znaki w URL,
+duplikaty w jednym/dwóch Workspace, nazwy numeryczne i bez liter, długa nazwa,
+niezmienny adres po edycji, zwykłe/scoped trasy, stare GET/HEAD/POST,
+parametry zapytania, menu/katalog/szukaj/zespoły/Dla ciebie, zakładki,
+konfiguracja, formularze i powroty, prywatność, role, cofnięcie dostępu,
+unikalność w bazie, równoczesny przydział oraz migracja zachowująca dane.
+Migracja `spaces.0005_space_slugs` wymaga backupu i `manage.py migrate`.
+
+Weryfikacja adresów Przestrzeni (10.10.2026): 194 testy `spaces`,
+`dashboard.tests.DashboardViewTests`, `dashboard.test_for_you`,
+`dashboard.test_overview` i `dashboard.test_search_regressions` przeszły.
+W dodatkowym zestawie `kanban.test_retirement` przeszło 5 z 6 testów;
+błąd `dashboard_totals` w historycznym teście odtworzono na niezmienionym HEAD.
+Playwright/Chrome (plugin Browser niedostępny) na izolowanej bazie QA przy
+1440×1000, 1920×1000, 1024×1000 i 390×844 potwierdził przekierowanie i filtry,
+katalog/menu → podsumowanie → zakładki → edycja/zapis → powrót, walidację
+pustej nazwy, zachowanie URL po zmianie nazwy i reload, utworzenie rzeczywistego
+zadania i powrót do listy, duplikat, Wstecz/Dalej i częściową nawigację bez
+przeładowania dokumentu. Sprawdzono pusty wynik katalogu i referencyjny pulpit
+domyślny; zrzuty desktop/telefon potwierdziły dotychczasowy wygląd. Nie było
+błędów/warningów konsoli, pustego ekranu, nakładek błędów ani przepełnienia strony.
+Sprawdzono też podany adres na działającym `127.0.0.1:8000`: liczbowy adres
+przekierowuje do nazwy, a lista i podsumowanie działają.
+Kontrole Django, migracji, składni JS, linków dokumentacji, indeksu oraz
+`git diff --check` przeszły. Migrację zastosowano lokalnie po pełnym backupie;
+porównanie przestrzeni, projektów, planowania, gwiazdek i dostępów potwierdziło
+zachowanie dotychczasowych danych. Nie uruchamiano całego repozytorium ani
+Safari/Firefox.
+
 Przed nowym kodem wykonaj backup i `manage.py migrate`. Migracje `spaces/0001`
 i `spaces/0002` dodają model przestrzeni i importują Kanban; oryginały oraz
 pliki zostają zachowane. Cofnięcie wdrożenia wymaga backupu, nie tylko migracji

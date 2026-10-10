@@ -49,6 +49,9 @@ class SpaceTests(TestCase):
     def url(self, suffix='', app='spaces'):
         return scoped_workplace_app_path(self.workspace, app, suffix)
 
+    def space_url(self, suffix=''):
+        return scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/{suffix}')
+
     def test_directory_plain_and_scoped_and_privacy(self):
         self.client.force_login(self.member)
         for url in ['/spaces/', self.url()]:
@@ -62,9 +65,9 @@ class SpaceTests(TestCase):
     def test_all_space_views_render(self):
         for view in ('overview', 'list', 'board', 'backlog', 'timeline', 'reports', 'settings'):
             with self.subTest(view=view):
-                response = self.client.get(self.url(f'{self.space.pk}/?view={view}'))
+                response = self.client.get(self.space_url(f'?view={view}'))
                 self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.client.get(self.url(f'{self.space.pk}/configuration/')).status_code, 200)
+        self.assertEqual(self.client.get(self.space_url('configuration/')).status_code, 200)
 
     def test_space_search_respects_workspace_and_project_access(self):
         self.client.force_login(self.member)
@@ -73,7 +76,7 @@ class SpaceTests(TestCase):
                 response = self.client.get(url, {'q': query})
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.json()['count'], 1)
-                self.assertIn(self.url(f'{self.space.pk}/'), response.json()['html'])
+                self.assertIn(self.space_url(''), response.json()['html'])
                 self.assertIn('data-space-avatar=', response.json()['html'])
                 self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
             for query in ('Poufna', 'Obca'):
@@ -152,7 +155,7 @@ class SpaceTests(TestCase):
                 self.assertIn(template['description'], html)
             self.assertIn('data-space-fields disabled', html)
             self.assertIn('data-space-create hidden', html)
-        response = self.client.get(self.url(f'{self.space.pk}/edit/'), HTTP_X_WORK_MODAL='true')
+        response = self.client.get(self.space_url('edit/'), HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('data-space-wizard', response.json()['html'])
         self.assertIn('<select name="template"', response.json()['html'])
@@ -191,15 +194,15 @@ class SpaceTests(TestCase):
 
     def test_item_create_uses_actual_actor_and_same_task(self):
         self.client.force_login(self.member)
-        response = self.client.post(self.url(f'{self.space.pk}/items/create/'), {'title': 'Nowe wspólne zadanie', 'work_type': 'story', 'priority': 'high', 'points': 5}, HTTP_X_WORK_MODAL='true')
+        response = self.client.post(self.space_url('items/create/'), {'title': 'Nowe wspólne zadanie', 'work_type': 'story', 'priority': 'high', 'points': 5}, HTTP_X_WORK_MODAL='true')
         self.assertTrue(response.json()['saved'])
         task = Task.objects.get(title='Nowe wspólne zadanie')
         self.assertEqual(task.user, self.owner)
         self.assertEqual(task.activities.get(action='created').actor, self.member)
         self.assertEqual(task.work_item.points, 5)
         self.assertEqual(task.work_item.space, self.space)
-        self.assertContains(self.client.get(self.url(f'{self.space.pk}/?view=list')), task.title)
-        self.assertContains(self.client.get(self.url(f'{self.space.pk}/?view=backlog')), task.title)
+        self.assertContains(self.client.get(self.space_url('?view=list')), task.title)
+        self.assertContains(self.client.get(self.space_url(f'?view=backlog')), task.title)
 
     def test_closed_status_and_history_are_synchronized(self):
         self.client.force_login(self.member)
@@ -229,7 +232,7 @@ class SpaceTests(TestCase):
         self.client.force_login(self.observer)
         self.assertEqual(self.client.get(self.url(f'items/{self.item.pk}/edit/')).status_code, 403)
         self.assertEqual(self.client.post(self.url(f'items/{self.item.pk}/action/'), {'action': 'status', 'status': 'closed'}).status_code, 403)
-        self.assertEqual(self.client.get(self.url(f'{self.space.pk}/configuration/')).status_code, 403)
+        self.assertEqual(self.client.get(self.space_url('configuration/')).status_code, 403)
 
     def test_hidden_groups_and_teams_never_grant_access(self):
         section = TaskSection.objects.create(project=self.project, title='Prywatna grupa', visibility='private', private_owner=self.owner)
@@ -246,7 +249,7 @@ class SpaceTests(TestCase):
 
     def test_foreign_relations_are_rejected(self):
         team = Team.objects.create(workplace=self.foreign, owner=self.other, name='Obcy zespół')
-        response = self.client.post(self.url(f'{self.space.pk}/items/create/'), {'title': 'Nie', 'work_type': 'task', 'priority': 'medium', 'team': team.pk, 'assignee': self.other.pk}, HTTP_X_WORK_MODAL='true')
+        response = self.client.post(self.space_url('items/create/'), {'title': 'Nie', 'work_type': 'task', 'priority': 'medium', 'team': team.pk, 'assignee': self.other.pk}, HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.status_code, 400)
         self.assertFalse(Task.objects.filter(title='Nie').exists())
 
@@ -262,11 +265,11 @@ class SpaceTests(TestCase):
     def test_sprint_completion_returns_unfinished_to_backlog(self):
         sprint = Sprint.objects.create(space=self.space, name='Sprint 1', start_on=date(2026, 10, 1), end_on=date(2026, 10, 14))
         WorkItem.objects.filter(pk=self.item.pk).update(sprint=sprint)
-        self.client.post(self.url(f'{self.space.pk}/sprints/{sprint.pk}/action/'), {'action': 'start'})
+        self.client.post(self.space_url(f'sprints/{sprint.pk}/action/'), {'action': 'start'})
         sprint.refresh_from_db()
         self.assertEqual(sprint.state, 'active')
-        self.assertContains(self.client.get(self.url(f'{self.space.pk}/?view=board')), self.task.title)
-        self.client.post(self.url(f'{self.space.pk}/sprints/{sprint.pk}/action/'), {'action': 'close'})
+        self.assertContains(self.client.get(self.space_url('?view=board')), self.task.title)
+        self.client.post(self.space_url(f'sprints/{sprint.pk}/action/'), {'action': 'close'})
         self.item.refresh_from_db()
         sprint.refresh_from_db()
         self.assertEqual(sprint.state, 'closed')
@@ -290,7 +293,7 @@ class SpaceTests(TestCase):
     def test_membership_revocation_removes_all_access(self):
         self.client.force_login(self.member)
         WorkplaceMembership.objects.filter(workplace=self.workspace, user=self.member).update(is_active=False)
-        response = self.client.get(self.url(f'{self.space.pk}/'))
+        response = self.client.get(self.space_url())
         self.assertEqual(response.status_code, 302)
         self.assertNotIn(f'/spaces/{self.space.pk}/', response['Location'])
 
@@ -306,7 +309,7 @@ class SpaceTests(TestCase):
         self.section.private_owner = self.owner
         self.section.save()
         TaskSectionMembership.objects.create(section=self.section, user=self.member, role='member')
-        response = self.client.post(self.url(f'{self.space.pk}/edit/'), {'name': 'Produkt', 'visibility': 'public'}, HTTP_X_WORK_MODAL='true')
+        response = self.client.post(self.space_url('edit/'), {'name': 'Produkt', 'visibility': 'public'}, HTTP_X_WORK_MODAL='true')
         self.assertTrue(response.json()['saved'])
         self.assertTrue(self.section.memberships.filter(user=self.member).exists())
 
@@ -324,7 +327,7 @@ class SpaceTests(TestCase):
         self.assertIsNone(task.work_item.space_id)
 
     def test_configuration_updates_workflow_and_rejects_stale_or_used_removal(self):
-        url = self.url(f'{self.space.pk}/configuration/')
+        url = self.space_url('configuration/')
         response = self.client.get(url)
         payload = {'revision': response.context['revision']}
         for group in response.context['sets']:

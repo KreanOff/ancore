@@ -47,8 +47,8 @@ class SpaceTagTests(TestCase):
         session.save()
 
     def url(self, space=None, plain=False):
-        suffix = f'{(space or self.space).pk}/?view=tags'
-        return '/spaces/' + suffix if plain else scoped_workplace_app_path(self.workspace, 'spaces', suffix)
+        suffix = f'{(space or self.space).slug}/?view=tags'
+        return '/space/' + suffix if plain else scoped_workplace_app_path(self.workspace, 'space', suffix)
 
     def test_directory_plain_scoped_excludes_legacy_tags(self):
         self.client.force_login(self.member)
@@ -249,7 +249,7 @@ class SpaceTagMigrationTests(TransactionTestCase):
             task_ids, space_ids = [], []
             for number in (1, 2):
                 project = Project.objects.create(user=user, workplace=workplace, name=f'Projekt {number}', code=f'M{number}')
-                space = Space.objects.create(project=project, workplace=workplace, configuration=config, key=f'M{number}')
+                space = Space.objects.create(project=project, workplace=workplace, configuration=config, key=f'M{number}', slug=f'projekt-{number}')
                 task = OldTask.objects.create(user=user, workplace=workplace, section=Section.objects.create(project=project, title='Praca'), title='Migracja', task_id=number)
                 task.tags.add(tag)
                 task_ids.append(task.pk)

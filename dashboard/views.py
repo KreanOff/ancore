@@ -54,6 +54,8 @@ def _workspace_app_url(workplace, app_label, suffix=''):
         'office': reverse('office:index'),
         'resources': reverse('resources:index'),
         'dashboards': reverse('pulpits:index'),
+        'spaces': reverse('spaces:index'),
+        'space': '/space/',
     }
     base_url = fallback_urls[app_label]
     return f'{base_url}{suffix.lstrip("/")}' if suffix else base_url
@@ -163,7 +165,7 @@ def _recent_search_results(request):
                         and obj.section.project.workplace_id == workplace.pk):
                     meta += f' · {obj.section.project.name} · {obj.section.title}'
             elif is_project:
-                url = (_workspace_app_url(workplace, 'spaces', f'{obj.space.pk}/')
+                url = (_workspace_app_url(workplace, 'space', f'{obj.space.slug}/')
                        if model is TaskProject and hasattr(obj, 'space') else _search_url(base, project=obj.pk))
                 meta = obj.code
             else:
@@ -303,7 +305,7 @@ def global_search(request):
             lambda project: _global_search_result(
                 project.name,
                 'Przestrzeń',
-                _workspace_app_url(workplace, 'spaces') + f'{project.space.pk}/' if hasattr(project, 'space') else _search_url(tasks_url, project=project.id),
+                _workspace_app_url(workplace, 'space', f'{project.space.slug}/') if hasattr(project, 'space') else _search_url(tasks_url, project=project.id),
                 '',
                 ' · '.join(part for part in (project.code, project.company.name if project.company_id else '') if part),
             ),
@@ -333,7 +335,7 @@ def global_search(request):
             lambda tag: _global_search_result(
                 tag.name,
                 'Tag',
-                _search_url(_workspace_app_url(workplace, 'spaces', f'{tag.space_id}/'), view='tags', q=tag.name),
+                _search_url(_workspace_app_url(workplace, 'space', f'{tag.space.slug}/'), view='tags', q=tag.name),
                 tag.icon or 'tag',
                 ' · '.join(part for part in (tag.code, tag.get_category_display()) if part),
             ),

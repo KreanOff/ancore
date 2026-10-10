@@ -151,7 +151,7 @@ class DashboardOverviewTests(TestCase):
         row = context['dashboard_projects'][0]
         self.assertEqual(row['object'].item_count, 2)
         self.assertEqual(row['percent'], 50)
-        self.assertEqual(row['url'], scoped_workplace_app_path(self.workplace, 'spaces', f'{project.space.pk}/'))
+        self.assertEqual(row['url'], scoped_workplace_app_path(self.workplace, 'space', f'{project.space.slug}/'))
 
     def test_empty_workspace_and_partial_navigation_response(self):
         response = self.client.get(reverse('home'), {'focus': 'kanban'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')

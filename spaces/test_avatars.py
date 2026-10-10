@@ -39,7 +39,7 @@ class SpaceAvatarTests(TestCase):
         session.save()
 
     def url(self, suffix='avatar/', space=None):
-        return f'/workplaces/{self.workspace.slug}/spaces/{(space or self.space).pk}/{suffix}'
+        return f'/workplaces/{self.workspace.slug}/space/{(space or self.space).slug}/{suffix}'
 
     def upload(self, name='avatar.png', content=PNG):
         return self.client.post(self.url(), {'avatar': 'upload', 'avatar_photo': SimpleUploadedFile(name, content, 'image/png')}, HTTP_X_WORK_MODAL='true')

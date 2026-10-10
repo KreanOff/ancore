@@ -4,7 +4,7 @@ from django.db.models import Case, Exists, OuterRef, When
 
 from dashboard.recent import recent_views
 from tasks.models import TaskProject
-from .services import app_url, manageable_spaces, visible_spaces
+from .services import app_url, space_url, manageable_spaces, visible_spaces
 
 
 def sidebar_spaces(request, limit=6):
@@ -29,7 +29,7 @@ def sidebar_spaces(request, limit=6):
     navigation = [*starred, *recent]
     managed_ids = set(manageable_spaces(request).filter(pk__in=[s.pk for s in navigation]).values_list('pk', flat=True))
     for space in navigation:
-        space.url = app_url(request, f'{space.pk}/')
+        space.url = space_url(request, space)
         space.favorite_url = space.url + 'favorite/'
         space.settings_url = space.url + '?view=settings'
         space.can_manage = space.pk in managed_ids

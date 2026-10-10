@@ -134,7 +134,7 @@ class RetiredKanbanTests(TestCase):
         section = TaskSection.objects.create(project=project, title='Current group')
         self.current.section = section
         self.current.save()
-        response = self.client.get(self.url(f'{project.space.pk}/?view=board', 'spaces'))
+        response = self.client.get(self.url(f'{project.space.slug}/?view=board', 'space'))
         self.assertContains(response, self.current.title)
         self.assertContains(response, 'data-work-board')
         self.assertEqual(self.client.get(self.url(f'view-task/{self.current.task_id}/?task_pk={self.current.pk}', 'tasks')).status_code, 200)

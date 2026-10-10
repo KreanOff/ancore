@@ -29,13 +29,13 @@ class SpaceNavigationTests(TestCase):
         session.save()
 
     def url(self, project=None, suffix=''):
-        return scoped_workplace_app_path(self.workspace, 'spaces', f'{project.space.pk}/{suffix}' if project else suffix)
+        return scoped_workplace_app_path(self.workspace, 'space', f'{project.space.slug}/{suffix}') if project else scoped_workplace_app_path(self.workspace, 'spaces', suffix)
 
     def project_ids(self, response, group):
         return [space.project_id for space in response.context[f'navigation_{group}_spaces']]
 
     def test_visits_move_space_to_top_immediately_in_plain_and_scoped_routes(self):
-        for url in [f'/spaces/{self.first.space.pk}/', self.url(self.second), self.url(self.first, '?view=list')]:
+        for url in [f'/space/{self.first.space.slug}/', self.url(self.second), self.url(self.first, '?view=list')]:
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(self.project_ids(response, 'recent')[0], response.context['space'].project_id)

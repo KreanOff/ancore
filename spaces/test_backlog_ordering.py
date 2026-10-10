@@ -72,7 +72,7 @@ class BacklogOrderingTests(TestCase):
         self.assertEqual(self.first.rank, 10)
 
     def test_rendered_action_preserves_the_displayed_filter_scope(self):
-        url = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.space.pk}/')
+        url = scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/')
         response = self.client.get(url, {'view': 'backlog', 'q': 'Visible', 'priority': 'medium'})
         self.assertEqual(response.status_code, 200)
         rows = response.context['items']
@@ -89,7 +89,7 @@ class BacklogOrderingTests(TestCase):
         self.project.save(update_fields=['visibility', 'private_owner'])
         TaskProjectMembership.objects.create(project=self.project, user=observer, role='observer')
         self.client.force_login(observer)
-        url = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.space.pk}/?view=backlog')
+        url = scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/?view=backlog')
         response = self.client.get(url)
         self.assertContains(response, 'Visible first')
         self.assertNotContains(response, 'Przesuń niżej')

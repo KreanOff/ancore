@@ -241,6 +241,9 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   zarządzania widocznymi przestrzeniami zgodnie z rolami. Oba mają scoped
   odpowiedniki i korzystają z tych samych modeli. Ekran zarządzania przełącza
   główny pasek boczny na nawigację administracyjną; [szczegóły](SPACES.md).
+  Poszczególne przestrzenie używają `/space/<slug>/` i scoped odpowiednika.
+  Segment z nazwy przydzielany jest raz w obrębie Workspace; późniejsza edycja
+  nazwy zachowuje adres. Stare `/spaces/<pk>/` przekierowuje po kontroli dostępu.
 - System „Wartości pól projektu” jest usunięty. Dawny `/settings/project-fields/`
   zwraca 404; projekty zachowują swoje pola i dotychczasowe wartości.
 - `/settings/` jest centrum ustawień konta i Workspace oraz zarządzania sesją.

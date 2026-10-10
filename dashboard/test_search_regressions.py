@@ -187,12 +187,12 @@ class GlobalSearchRegressionTests(TestCase):
 
     def test_recent_records_current_space_views_and_rechecks_revoked_access(self):
         project = TaskProject.objects.create(user=self.owner, workplace=self.team, name='Opened space')
-        for url in (f'/spaces/{project.space.pk}/', f'/workplaces/{self.team.slug}/spaces/{project.space.pk}/'):
+        for url in (f'/space/{project.space.slug}/', f'/workplaces/{self.team.slug}/space/{project.space.slug}/'):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
                 rows = self.recent()['groups'][0]['results']
                 self.assertEqual(rows[0]['title'], project.name)
-                self.assertEqual(rows[0]['url'], f'/workplaces/{self.team.slug}/spaces/{project.space.pk}/')
+                self.assertEqual(rows[0]['url'], f'/workplaces/{self.team.slug}/space/{project.space.slug}/')
         self.assertEqual(self.recent()['total'], 1)
         project.visibility, project.private_owner = 'private', self.owner
         project.save()

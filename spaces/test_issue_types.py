@@ -143,13 +143,13 @@ class IssueTypeTests(TestCase):
                                     title='Poufny błąd', visibility='private', private_owner=self.owner)
         WorkItem.objects.filter(task=hidden).update(work_type='bug')
         for scoped in (False, True):
-            for suffix in (f'{self.space.pk}/?view=list', f'{self.space.pk}/?view=board', 'items/?'):
-                response = self.client.get(self.url(suffix, scoped=scoped) + '&work_type=bug&q=zespołu')
+            for suffix, app in ((f'{self.space.slug}/?view=list', 'space'), (f'{self.space.slug}/?view=board', 'space'), ('items/?', 'spaces')):
+                response = self.client.get(self.url(suffix, app=app, scoped=scoped) + '&work_type=bug&q=zespołu')
                 self.assertContains(response, self.task.title)
                 self.assertNotContains(response, 'Zwykłe zadanie')
                 self.assertNotContains(response, 'Poufny błąd')
                 self.assertContains(response, 'Typ zgłoszenia: Błąd')
-            response = self.client.get(self.url(f'{self.space.pk}/?view=list&work_type=unknown', scoped=scoped))
+            response = self.client.get(self.url(f'{self.space.slug}/?view=list&work_type=unknown', app='space', scoped=scoped))
             self.assertEqual(response.context['page'].paginator.count, 0)
 
     def test_epic_relations_are_validated_in_detail_form(self):

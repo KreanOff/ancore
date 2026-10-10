@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 29 | 4 | 31 | 125 |
+| [spaces](../spaces) | 31 | 5 | 31 | 135 |
 
 ## 2. Modele i relacje
 
@@ -802,7 +802,7 @@ Metody/properties: `__str__`.
 
 Źródło: [spaces/models.py](../spaces/models.py).
 
-Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `key` (CharField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `key` (CharField), `slug` (SlugField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -810,7 +810,7 @@ Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE |
 | `configuration` | `SpaceConfiguration` | on_delete=models.RESTRICT; related_name='spaces' |
 
-Metody/properties: `__str__`, `statuses`.
+Metody/properties: `save`, `__str__`, `statuses`.
 
 ### `Team`
 
@@ -1003,9 +1003,9 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | --- | --- | --- |
 | `'^workplaces/[-a-zA-Z0-9_]+/dashboards/'` | `include((pulpit_urls.urlpatterns, 'workplace_pulpits'), namespace='workplace_pulpits')` | — |
 | `'dashboards/'` | `include('dashboard.pulpit_urls')` | — |
-| `'^workplaces/[-a-zA-Z0-9_]+/spaces/'` | `include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')` | — |
+| `'^workplaces/[-a-zA-Z0-9_]+/'` | `include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/teams/'` | `include((team_urls.urlpatterns, 'workplace_teams'), namespace='workplace_teams')` | — |
-| `'spaces/'` | `include('spaces.urls')` | — |
+| `''` | `include('spaces.urls')` | — |
 | `'teams/'` | `include('spaces.team_urls')` | — |
 | `'drive-office-service/<uuid:pk>/source/'` | `suite_views.source` | 'drive-office-service-source' |
 | `'drive-office-service/<uuid:pk>/callback/'` | `suite_views.callback` | 'drive-office-service-callback' |
@@ -1186,26 +1186,38 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
-| `''` | `views.index` | 'index' |
-| `'manage/'` | `views.manage` | 'manage' |
-| `'manage/create/'` | `views.edit` | 'manage_create' |
-| `'manage/<int:pk>/edit/'` | `views.edit` | 'manage_edit' |
-| `'search/'` | `views.search` | 'search' |
-| `'create/'` | `views.edit` | 'create' |
-| `'items/'` | `views.all_items` | 'items' |
-| `'items/<int:pk>/edit/'` | `views.item_edit` | 'item_edit' |
-| `'items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
-| `'<int:pk>/'` | `views.detail` | 'detail' |
-| `'<int:pk>/edit/'` | `views.edit` | 'edit' |
-| `'<int:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
-| `'<int:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
-| `'<int:pk>/favorite/'` | `views.favorite` | 'favorite' |
-| `'<int:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
-| `'<int:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
-| `'<int:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
-| `'<int:pk>/members/'` | `views.members` | 'members' |
-| `'<int:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
-| `'<int:pk>/configuration/'` | `views.configuration` | 'configuration' |
+| `'spaces/'` | `views.index` | 'index' |
+| `'spaces/manage/'` | `views.manage` | 'manage' |
+| `'spaces/manage/create/'` | `views.edit` | 'manage_create' |
+| `'spaces/manage/<int:pk>/edit/'` | `views.edit` | 'manage_edit' |
+| `'spaces/search/'` | `views.search` | 'search' |
+| `'spaces/create/'` | `views.edit` | 'create' |
+| `'spaces/items/'` | `views.all_items` | 'items' |
+| `'spaces/items/<int:pk>/edit/'` | `views.item_edit` | 'item_edit' |
+| `'spaces/items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
+| `'spaces/manage/<slug:pk>/edit/'` | `views.edit` | 'manage_edit' |
+| `'space/<slug:pk>/'` | `views.detail` | 'detail' |
+| `'space/<slug:pk>/edit/'` | `views.edit` | 'edit' |
+| `'space/<slug:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
+| `'space/<slug:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
+| `'space/<slug:pk>/favorite/'` | `views.favorite` | 'favorite' |
+| `'space/<slug:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
+| `'space/<slug:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
+| `'space/<slug:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
+| `'space/<slug:pk>/members/'` | `views.members` | 'members' |
+| `'space/<slug:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
+| `'space/<slug:pk>/configuration/'` | `views.configuration` | 'configuration' |
+| `'spaces/<int:pk>/'` | `views.detail` | 'detail' |
+| `'spaces/<int:pk>/edit/'` | `views.edit` | 'edit' |
+| `'spaces/<int:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
+| `'spaces/<int:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
+| `'spaces/<int:pk>/favorite/'` | `views.favorite` | 'favorite' |
+| `'spaces/<int:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
+| `'spaces/<int:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
+| `'spaces/<int:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
+| `'spaces/<int:pk>/members/'` | `views.members` | 'members' |
+| `'spaces/<int:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
+| `'spaces/<int:pk>/configuration/'` | `views.configuration` | 'configuration' |
 
 ## 5. Pliki backendu i punkty wejścia
 
@@ -1399,10 +1411,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/backlog.py](../spaces/backlog.py) — `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
 - [spaces/defaults.py](../spaces/defaults.py) — `issue_type_icon`, `template_settings`
 - [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
+- [spaces/identifiers.py](../spaces/identifiers.py) — `unique_space_slug`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
 - [spaces/navigation.py](../spaces/navigation.py) — `sidebar_spaces`
-- [spaces/services.py](../spaces/services.py) — `app_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
+- [spaces/services.py](../spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
 - [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`
 - [spaces/summary.py](../spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
 - [spaces/team_urls.py](../spaces/team_urls.py)
@@ -2302,6 +2315,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `SpaceTagTests`: 14 metod testowych.
 - `SpaceTagMigrationTests`: 1 metod testowych.
 
+### spaces/test_urls.py
+
+Źródło: [spaces/test_urls.py](../spaces/test_urls.py).
+
+- `SpaceUrlTests`: 8 metod testowych.
+- `ConcurrentSpaceSlugTests`: 1 metod testowych.
+- `SpaceSlugMigrationTests`: 1 metod testowych.
+
 ### spaces/test_write_access.py
 
 Źródło: [spaces/test_write_access.py](../spaces/test_write_access.py).
@@ -2507,3 +2528,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [spaces/migrations/0002_unify_work.py](../spaces/migrations/0002_unify_work.py)
 - [spaces/migrations/0003_space_avatar_space_avatar_photo.py](../spaces/migrations/0003_space_avatar_space_avatar_photo.py)
 - [spaces/migrations/0004_issue_types.py](../spaces/migrations/0004_issue_types.py)
+- [spaces/migrations/0005_space_slugs.py](../spaces/migrations/0005_space_slugs.py)

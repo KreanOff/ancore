@@ -69,9 +69,9 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|teams|dashboards)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|space|teams|dashboards)(\/|$))/, '/');
         const appShellPaths = [
-            /^\/(spaces|teams)(\/.*)?$/,
+            /^\/(spaces|space|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
             /^\/dashboards\/default\/$/,
             /^\/dashboards\/(?:[-a-zA-Z0-9_]+\/)?(?:create\/|edit\/|access\/|copy\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
@@ -244,7 +244,7 @@
         const url = getUrl(source.url);
         const label = source.mode === 'settings' ? 'Wróć do ustawień'
             : /\/dashboards(\/|$)/.test(url.pathname) ? 'Wróć do pulpitów'
-            : /\/spaces(\/|$)/.test(url.pathname) ? 'Wróć do przestrzeni'
+            : /\/spaces?(\/|$)/.test(url.pathname) ? 'Wróć do przestrzeni'
             : url.pathname === '/' ? 'Wróć do Workspace' : 'Wróć do poprzedniego widoku';
         return validManagementReturn({
             mode, url: url.href, label, position: source.position,

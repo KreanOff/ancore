@@ -88,7 +88,7 @@ def _row(obj, workplace, now):
         }
     elif is_project:
         space = getattr(obj, 'space', None) if isinstance(obj, TaskProject) else None
-        url = scoped_workplace_app_path(workplace, 'spaces', f'{space.pk}/') if space else f'{base}?project={obj.pk}'
+        url = scoped_workplace_app_path(workplace, 'space', f'{space.slug}/') if space else f'{base}?project={obj.pk}'
         key = space.key if space else obj.code
     else:
         url = f'{base}groups/{obj.pk}/'

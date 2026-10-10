@@ -13,7 +13,7 @@ from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .forms import MemberForm, TeamForm
 from .models import Team, TeamMembership
-from .services import app_url, manage_team, teams_for, visible_items, visible_spaces
+from .services import app_url, space_url, manage_team, teams_for, visible_items, visible_spaces
 from .views import base_context, decorate_items, dialog_response
 
 
@@ -42,7 +42,7 @@ def detail(request, pk):
     team = get_object_or_404(teams_for(request), pk=pk)
     spaces = visible_spaces(request).filter(teams=team)
     for space in spaces:
-        space.url = app_url(request, f'{space.pk}/')
+        space.url = space_url(request, space)
     page = Paginator(visible_items(request).filter(team=team), 50).get_page(request.GET.get('page'))
     base = app_url(request, f'{pk}/', 'teams')
     return render(request, 'spaces/team.html', {**base_context(request), 'team': team, 'team_url': base, 'edit_url': base + 'edit/', 'member_url': base + 'members/', 'photo_url': base + 'photo/' if team.photo else '', 'can_manage': manage_team(request, team), 'members': team.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'spaces': spaces, 'items': decorate_items(request, page.object_list), 'page': page})

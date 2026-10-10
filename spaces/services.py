@@ -17,6 +17,10 @@ def app_url(request, suffix='', app='spaces'):
     return f'/{app}/{suffix}'
 
 
+def space_url(request, space, suffix=''):
+    return app_url(request, f'{space.slug}/{suffix}', 'space')
+
+
 def visible_spaces(request):
     projects = visible_to(TaskProject.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
     return Space.objects.filter(project__in=projects).select_related('project', 'configuration', 'workplace')
@@ -57,13 +61,13 @@ def decorate_directory_spaces(request, spaces):
     ).values('space_id').annotate(count=Count('pk'))}
     managed_ids = set(manageable_spaces(request).filter(pk__in=space_ids).values_list('pk', flat=True))
     for space in spaces:
-        space.url = app_url(request, f'{space.pk}/')
-        space.favorite_url = app_url(request, f'{space.pk}/favorite/')
+        space.url = space_url(request, space)
+        space.favorite_url = space_url(request, space, 'favorite/')
         space.favorite = space.project_id in favorites
         space.item_count = counts.get(space.pk, 0)
         space.settings_url = space.url + '?view=settings'
         space.can_manage = space.pk in managed_ids
-        space.edit_url = app_url(request, f'{space.pk}/edit/')
+        space.edit_url = space_url(request, space, 'edit/')
     return spaces
 
 

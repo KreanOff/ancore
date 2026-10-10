@@ -10,7 +10,7 @@ from django.utils import timezone
 from accounts.avatar import account_avatar
 from tasks.models import Task, TaskActivity
 from .defaults import issue_type_icon
-from .services import app_url, task_url
+from .services import app_url, space_url, task_url
 
 
 SUMMARY_SCOPES = {
@@ -70,7 +70,7 @@ def filter_summary_items(request, space, items, now):
 
 def space_summary(request, space, items, now=None):
     now = now or timezone.now()
-    base = app_url(request, f'{space.pk}/')
+    base = space_url(request, space)
     # Preserve the existing space filters when following a chart or counter.
     params = {key: request.GET[key] for key in ('q', 'work_type', 'group', 'team', 'assignee', 'status', 'priority') if request.GET.get(key)}
 
