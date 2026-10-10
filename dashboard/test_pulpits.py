@@ -40,7 +40,7 @@ class PulpitTests(TestCase):
         return Task.objects.create(**{'user': self.owner, 'workplace': self.workplace, 'title': 'Jawne zadanie', **kwargs})
 
     def url(self, dashboard, suffix=''):
-        return f'/dashboards/{dashboard.pk}/{suffix}'
+        return f'/dashboards/{dashboard.slug}/{suffix}'
 
     def form_data(self, **kwargs):
         return {'name': 'Mój pulpit', 'description': 'Opis pulpitu', 'visibility': 'private', 'layout': 'equal', **kwargs}
@@ -65,7 +65,7 @@ class PulpitTests(TestCase):
                     response = self.client.post(prefix + 'create/', self.form_data(), **headers)
                     self.assertEqual(response.status_code, 200 if modal else 302)
                     detail_url = response.json()['url'] if modal else response['Location']
-                    dashboard = Dashboard.objects.get(pk=int(detail_url.rstrip('/').rsplit('/', 1)[-1]))
+                    dashboard = Dashboard.objects.get(slug=detail_url.rstrip('/').rsplit('/', 1)[-1])
                     self.assertFalse(dashboard.gadgets.exists())
                     for _ in range(2):
                         response = self.client.get(detail_url)
@@ -103,12 +103,12 @@ class PulpitTests(TestCase):
         dashboard = self.dashboard()
         DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
-            response = self.client.get(f'{prefix}{dashboard.pk}/')
+            response = self.client.get(f'{prefix}{dashboard.slug}/')
             self.assertFalse(response.context['pulpits_management_mode'])
-            self.assertContains(response, f'href="{scoped_workplace_app_path(self.workplace, "dashboards", f"{dashboard.pk}/gadgets/")}"')
+            self.assertContains(response, f'href="{scoped_workplace_app_path(self.workplace, "dashboards", f"{dashboard.slug}/gadgets/")}"')
             for control in ['data-editable="true"', 'data-pulpit-drag', 'data-pulpit-move', 'data-pulpit-layout', 'Dodaj gadżet']:
                 self.assertNotContains(response, control)
-            editor = self.client.get(f'{prefix}{dashboard.pk}/gadgets/')
+            editor = self.client.get(f'{prefix}{dashboard.slug}/gadgets/')
             self.assertTemplateUsed(editor, 'dashboard/pulpits/gadgets.html')
             self.assertTrue(editor.context['pulpits_management_mode'])
             for control in ['data-editable="true"', 'data-pulpit-drag', 'data-pulpit-move', 'data-pulpit-layout', 'Dodaj gadżet', 'Wróć do pulpitu']:
@@ -119,7 +119,7 @@ class PulpitTests(TestCase):
         dashboard = self.dashboard(visibility='workspace')
         self.login(self.member)
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
-            for suffix in [f'{dashboard.pk}/gadgets/', f'manage/{dashboard.pk}/gadgets/']:
+            for suffix in [f'{dashboard.slug}/gadgets/', f'manage/{dashboard.slug}/gadgets/']:
                 self.assertEqual(self.client.get(prefix + suffix).status_code, 403)
         self.login(self.owner)
         foreign = Dashboard.objects.create(owner=self.owner, workplace=self.other, created_by=self.owner, name='Obcy pulpit')
@@ -132,8 +132,8 @@ class PulpitTests(TestCase):
         values = {'kind': 'progress', 'title': 'Statystyki', 'assignee': 'all'}
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             with self.subTest(prefix=prefix):
-                editor_url = f'{prefix}{dashboard.pk}/gadgets/'
-                target = scoped_workplace_app_path(self.workplace, 'dashboards', f'{dashboard.pk}/gadgets/')
+                editor_url = f'{prefix}{dashboard.slug}/gadgets/'
+                target = scoped_workplace_app_path(self.workplace, 'dashboards', f'{dashboard.slug}/gadgets/')
                 response = self.client.get(editor_url + 'add/')
                 self.assertTemplateUsed(response, 'dashboard/pulpits/gadgets.html')
                 self.assertTrue(response.context['pulpits_management_mode'])
@@ -236,7 +236,7 @@ class PulpitTests(TestCase):
         for viewer in [self.owner, self.member]:
             self.login(viewer)
             for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
-                for suffix in [f'{dashboard.pk}/copy/', f'manage/{dashboard.pk}/copy/']:
+                for suffix in [f'{dashboard.slug}/copy/', f'manage/{dashboard.slug}/copy/']:
                     for method in ['get', 'post']:
                         with self.subTest(viewer=viewer.pk, prefix=prefix, suffix=suffix, method=method):
                             response = getattr(self.client, method)(prefix + suffix, self.form_data(), HTTP_X_PULPIT_MODAL='true')
@@ -251,13 +251,13 @@ class PulpitTests(TestCase):
         for viewer in [self.owner, self.member]:
             self.login(viewer)
             for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
-                for suffix in ['?tab=all', f'{dashboard.pk}/', 'manage/']:
+                for suffix in ['?tab=all', f'{dashboard.slug}/', 'manage/']:
                     with self.subTest(viewer=viewer.pk, prefix=prefix, suffix=suffix):
                         response = self.client.get(prefix + suffix)
                         self.assertEqual(response.status_code, 200)
                         self.assertNotContains(response, 'Kopiuj pulpit')
                         self.assertNotContains(response, '/copy/')
-                        if suffix == f'{dashboard.pk}/':
+                        if suffix == f'{dashboard.slug}/':
                             self.assertContains(response, 'data-pulpit-refresh')
                             if viewer == self.owner:
                                 for action in ['Gadżety i układ', 'Dostępy', 'Ustawienia', 'Usuń pulpit']:
@@ -318,7 +318,7 @@ class PulpitTests(TestCase):
         self.assertContains(self.client.get('/dashboards/'), dashboard.name)
         self.assertFalse(dashboard.favorited_by.filter(pk=self.member.pk).exists())
         response = self.client.get(f'/workplaces/{self.workplace.slug}/dashboards/?q=Przegląd')
-        self.assertContains(response, f'/workplaces/{self.workplace.slug}/dashboards/{dashboard.pk}/')
+        self.assertContains(response, f'/workplaces/{self.workplace.slug}/dashboards/{dashboard.slug}/')
         self.assertEqual(self.client.post(self.url(dashboard, 'favorite/')).status_code, 302)
         self.assertEqual(dashboard.favorited_by.count(), 2)
 
@@ -368,7 +368,7 @@ class PulpitTests(TestCase):
         closed = Task.objects.filter(status='closed').first()
         self.task(parent=closed, status='closed')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
-            response = self.client.get(f'{prefix}{dashboard.pk}/')
+            response = self.client.get(f'{prefix}{dashboard.slug}/')
             data = response.context['columns'][0][0]
             self.assertEqual((data['count'], data['closed_count'], data['percent']), (30, 6, 20))
             self.assertEqual(data['statuses'], [
@@ -378,7 +378,7 @@ class PulpitTests(TestCase):
             self.assertContains(response, 'value="20"')
         closed.status = 'reopened'
         closed.save()
-        data = self.client.get(scoped_workplace_app_path(self.workplace, 'dashboards', f'{dashboard.pk}/')).context['columns'][0][0]
+        data = self.client.get(scoped_workplace_app_path(self.workplace, 'dashboards', f'{dashboard.slug}/')).context['columns'][0][0]
         self.assertEqual((data['count'], data['closed_count'], data['percent']), (30, 5, 17))
         self.assertEqual(next(row['count'] for row in data['statuses'] if row['key'] == 'reopened'), 7)
 
@@ -443,7 +443,7 @@ class PulpitTests(TestCase):
                 for modal in [False, True]:
                     with self.subTest(prefix=prefix, suffix=suffix, modal=modal):
                         headers = {'HTTP_X_PULPIT_MODAL': 'true'} if modal else {}
-                        response = self.client.get(f'{prefix}{dashboard.pk}/{suffix}', **headers)
+                        response = self.client.get(f'{prefix}{dashboard.slug}/{suffix}', **headers)
                         self.assertEqual(response.status_code, 200)
                         html = response.json()['html'] if modal else response.content.decode()
                         for kind in DashboardGadget.Kind.values:
@@ -461,7 +461,7 @@ class PulpitTests(TestCase):
             for suffix in ['gadgets/add/', f'gadgets/{gadget.pk}/edit/']:
                 for kind in ['unknown', '<script>', 'assigned', 'results', 'summary', 'statistics', 'activity']:
                     with self.subTest(prefix=prefix, suffix=suffix, kind=kind):
-                        response = self.client.post(f'{prefix}{dashboard.pk}/{suffix}', {**values, 'kind': kind}, HTTP_X_PULPIT_MODAL='true')
+                        response = self.client.post(f'{prefix}{dashboard.slug}/{suffix}', {**values, 'kind': kind}, HTTP_X_PULPIT_MODAL='true')
                         self.assertEqual(response.status_code, 400)
                         self.assertIn('Nowy tytuł', response.json()['html'])
                         self.assertEqual(dashboard.gadgets.count(), 1)

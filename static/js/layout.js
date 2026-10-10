@@ -74,8 +74,8 @@
             /^\/(spaces|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
             /^\/dashboards\/default\/$/,
-            /^\/dashboards\/(?:\d+\/)?(?:create\/|edit\/|access\/|copy\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
-            /^\/dashboards\/manage\/(?:create\/|\d+\/(?:(?:edit|access|copy)\/|gadgets\/(?:add\/|\d+\/edit\/)?))?$/,
+            /^\/dashboards\/(?:[-a-zA-Z0-9_]+\/)?(?:create\/|edit\/|access\/|copy\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
+            /^\/dashboards\/manage\/(?:create\/|[-a-zA-Z0-9_]+\/(?:(?:edit|access|copy)\/|gadgets\/(?:add\/|\d+\/edit\/)?))?$/,
             /^\/$/,
             /^\/settings\/?$/,
             /^\/workplaces\/?$/,
@@ -135,7 +135,7 @@
         if (!url || url.origin !== window.location.origin) return '';
         if (/^\/workplaces\/?$/.test(url.pathname)) return 'workplaces';
         const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards)\/)/, '/');
-        if (/^\/dashboards\/(manage\/)?\d+\/(edit|access|gadgets)(\/|$)/.test(path)) return 'pulpit-editor';
+        if (/^\/dashboards\/(manage\/)?[-a-zA-Z0-9_]+\/(edit|access|gadgets)(\/|$)/.test(path)) return 'pulpit-editor';
         if (/^\/dashboards\/manage(\/|$)/.test(path)) return 'pulpits-management';
         return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
     }

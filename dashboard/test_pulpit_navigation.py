@@ -53,7 +53,7 @@ class PulpitNavigationTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.json()['count'], 3)
                 self.assertEqual(response.headers['Cache-Control'], 'private, no-store')
-                self.assertIn(self.url(f'{self.first.pk}/'), response.json()['html'])
+                self.assertIn(self.url(f'{self.first.slug}/'), response.json()['html'])
                 self.assertNotIn('Obcy pulpit', response.json()['html'])
         self.private.shared_with.remove(self.member)
         self.assertEqual(self.client.get(self.url('search/'), {'q': 'Prywatny'}).json()['count'], 0)
@@ -88,7 +88,7 @@ class PulpitNavigationTests(TestCase):
         self.assertEqual(self.client.get(self.url('search/')).status_code, 302)
 
     def test_recent_visits_are_immediate_personal_and_workplace_scoped(self):
-        for url, dashboard in [(f'/dashboards/{self.first.pk}/', self.first), (self.url(f'{self.second.pk}/'), self.second), (self.url(f'{self.first.pk}/'), self.first)]:
+        for url, dashboard in [(f'/dashboards/{self.first.slug}/', self.first), (self.url(f'{self.second.slug}/'), self.second), (self.url(f'{self.first.slug}/'), self.first)]:
             self.assertEqual(self.ids(self.client.get(url), 'recent')[0], dashboard.pk)
         response = self.client.get(self.url())
         self.assertEqual(self.ids(response, 'recent'), [self.first.pk, self.second.pk])
@@ -99,8 +99,8 @@ class PulpitNavigationTests(TestCase):
         self.login(self.member)
         self.first.favorited_by.add(self.member)
         self.foreign.favorited_by.add(self.member)
-        self.client.get(self.url(f'{self.first.pk}/'))
-        self.client.get(self.url(f'{self.second.pk}/'))
+        self.client.get(self.url(f'{self.first.slug}/'))
+        self.client.get(self.url(f'{self.second.slug}/'))
         response = self.client.get(self.url())
         self.assertEqual(self.ids(response, 'starred'), [self.first.pk])
         self.assertEqual(self.ids(response, 'recent'), [self.second.pk])
@@ -111,11 +111,11 @@ class PulpitNavigationTests(TestCase):
         self.assertEqual(self.ids(response, 'starred'), [])
         self.assertEqual(self.ids(response, 'recent'), [])
         self.assertNotContains(response, 'Pierwszy pulpit')
-        self.assertEqual(self.client.post(self.url(f'{self.first.pk}/favorite/'), HTTP_X_PULPIT_NAVIGATION='true').status_code, 404)
+        self.assertEqual(self.client.post(self.url(f'{self.first.slug}/favorite/'), HTTP_X_PULPIT_NAVIGATION='true').status_code, 404)
 
     def test_favorite_ajax_is_personal_post_csrf_and_safe_return(self):
         self.login(self.member)
-        url = self.url(f'{self.first.pk}/favorite/')
+        url = self.url(f'{self.first.slug}/favorite/')
         self.assertEqual(self.client.post(url, HTTP_X_PULPIT_NAVIGATION='true').json(), {'saved': True})
         self.assertTrue(self.first.favorited_by.filter(pk=self.member.pk).exists())
         self.assertFalse(self.first.favorited_by.filter(pk=self.owner.pk).exists())
@@ -134,7 +134,7 @@ class PulpitNavigationTests(TestCase):
         for number in range(8):
             item = Dashboard.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.owner, name=f'Pulpit {number}')
             items.append(item)
-            self.client.get(self.url(f'{item.pk}/'))
+            self.client.get(self.url(f'{item.slug}/'))
         items[0].favorited_by.add(self.owner)
         response = self.client.get(self.url())
         self.assertEqual(self.ids(response, 'starred'), [items[0].pk])

@@ -20,16 +20,17 @@ def sidebar_dashboards(request, limit=6):
         *(When(pk=pk, then=position) for position, pk in enumerate(recent_ids)), default=len(recent_ids),
     ))[:limit]) if recent_ids else []
     resolver = getattr(request, 'resolver_match', None)
-    current_pk = resolver.kwargs.get('pk') if resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'} and resolver.url_name == 'detail' else None
+    current_identifier = resolver.kwargs.get('pk') if resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'} and resolver.url_name == 'detail' else None
+    current_lookup = {'pk': current_identifier} if isinstance(current_identifier, int) else {'slug': current_identifier}
     for dashboard in [*starred, *recent]:
         decorate_dashboard(request, dashboard)
-        dashboard.is_current = dashboard.pk == current_pk
+        dashboard.is_current = (dashboard.pk if isinstance(current_identifier, int) else dashboard.slug) == current_identifier
     default_is_current = bool(resolver and (
         resolver.url_name == 'home'
         or (resolver.app_name in {'pulpits', 'workplace_pulpits'} and (
             resolver.url_name == 'default'
-            or (current_pk and Dashboard.objects.filter(
-                pk=current_pk, owner=workspace_owner(request), workplace=request.workplace,
+            or (current_identifier and Dashboard.objects.filter(
+                **current_lookup, owner=workspace_owner(request), workplace=request.workplace,
                 created_by=request.user, is_default=True,
             ).exists())
         ))

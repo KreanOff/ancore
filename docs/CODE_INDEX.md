@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 41 | 65 | 46 | 324 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 33 | 11 | 29 | 204 |
+| [dashboard](../dashboard) | 35 | 12 | 29 | 212 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -567,7 +567,7 @@ Metody/properties: `save`, `deactivate`, `__str__`.
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `description` (TextField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `layout` (CharField), `revision` (PositiveIntegerField), `is_default` (BooleanField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `slug` (SlugField), `description` (TextField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `layout` (CharField), `revision` (PositiveIntegerField), `is_default` (BooleanField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -577,7 +577,7 @@ Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `creat
 | `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_dashboards' |
 | `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_dashboards' |
 
-Metody/properties: `column_count`, `__str__`.
+Metody/properties: `save`, `column_count`, `__str__`.
 
 ### `DashboardGadget`
 
@@ -1334,6 +1334,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
 - [dashboard/collaboration.py](../dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`, `follow_context`, `follow_object`, `deliver_activity_interest`
 - [dashboard/for_you.py](../dashboard/for_you.py) — `for_you_context`
+- [dashboard/identifiers.py](../dashboard/identifiers.py) — `DashboardSlugConverter`, `unique_dashboard_slug`
 - [dashboard/models.py](../dashboard/models.py) — `Dashboard`, `DashboardGadget`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
 - [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
@@ -2087,6 +2088,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `PulpitNavigationTests`: 8 metod testowych.
 
+### dashboard/test_pulpit_urls.py
+
+Źródło: [dashboard/test_pulpit_urls.py](../dashboard/test_pulpit_urls.py).
+
+- `PulpitUrlTests`: 6 metod testowych.
+- `PulpitSlugConcurrencyTests`: 1 metod testowych.
+- `PulpitSlugMigrationTests`: 1 metod testowych.
+
 ### dashboard/test_pulpits.py
 
 Źródło: [dashboard/test_pulpits.py](../dashboard/test_pulpits.py).
@@ -2467,6 +2476,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0009_remove_dashboard_groups.py](../dashboard/migrations/0009_remove_dashboard_groups.py)
 - [dashboard/migrations/0010_work_progress_gadget.py](../dashboard/migrations/0010_work_progress_gadget.py)
 - [dashboard/migrations/0011_default_dashboard.py](../dashboard/migrations/0011_default_dashboard.py)
+- [dashboard/migrations/0012_dashboard_slugs.py](../dashboard/migrations/0012_dashboard_slugs.py)
 
 ### planner
 

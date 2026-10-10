@@ -643,6 +643,13 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   tabeli co Przestrzenie, z lokalnym zaznaczeniem i menu akcji po lewej.
   Każdy członek Workspace może utworzyć pulpit,
   edytować własny i oznaczać dostępny osobistą gwiazdką.
+  Przegląd i edytor używają nazwy w URL, np. `/dashboards/plan-zespolu/`
+  i `/dashboards/plan-zespolu/gadgets/`, także w zarządzaniu i scoped adresach.
+  Segment powstaje z nazwy przy tworzeniu (dla istniejących rekordów przy migracji),
+  ze spacjami jako myślnikami i polskimi znakami bez akcentów. Powtarzające się
+  nazwy w jednym Workspace otrzymują `-2`, `-3`; zmiana tytułu nie zmienia
+  zapisanego adresu. Stare adresy liczbowe przeglądu przekierowują po sprawdzeniu
+  dostępu, a dotychczasowe endpointy liczbowe nadal obsługują formularze.
   Kopiowanie pulpitów jest usunięte z menu i backendu; dawne adresy
   `<pk>/copy/` i `manage/<pk>/copy/` zwracają 404 w zwykłym i scoped routingu.
   Menu „Pulpity” ma przycisk tworzenia, sekcje Oznaczone gwiazdką/Ostatnie,
@@ -682,7 +689,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Przegląd pulpitu pozostaje widokiem do oglądania także dla twórcy; „Edytuj pulpit”
   przełącza do edytora z menu wybranego pulpitu i wyborem pięciu układów w nagłówku.
   Dodawanie, konfiguracja i usuwanie wracają
-  do edytora. Wariant `/manage/<pk>/gadgets/` zachowuje filtry zarządzania.
+  do edytora. Wariant `/manage/<slug>/gadgets/` zachowuje filtry zarządzania.
   Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności
   zapisuje się automatycznie, także dla pustego pulpitu; błąd lub konflikt rewizji
   przywraca poprzedni układ i pokazuje komunikat. Dostęp do edytora ma wyłącznie twórca.

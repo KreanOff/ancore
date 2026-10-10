@@ -45,16 +45,16 @@ def default_dashboard(request):
 
 def dashboard_url(request, dashboard):
     personal_default = dashboard.is_default and dashboard.created_by_id == request.user.pk
-    return app_url(request, 'default/' if personal_default else f'{dashboard.pk}/')
+    return app_url(request, 'default/' if personal_default else f'{dashboard.slug}/')
 
 
 def decorate_dashboard(request, dashboard):
     dashboard.url = dashboard_url(request, dashboard)
-    dashboard.edit_url = app_url(request, f'{dashboard.pk}/edit/')
-    dashboard.access_url = app_url(request, f'{dashboard.pk}/access/')
-    dashboard.gadgets_url = app_url(request, f'{dashboard.pk}/gadgets/')
-    dashboard.delete_url = app_url(request, f'{dashboard.pk}/delete/')
-    dashboard.favorite_url = app_url(request, f'{dashboard.pk}/favorite/')
+    dashboard.edit_url = app_url(request, f'{dashboard.slug}/edit/')
+    dashboard.access_url = app_url(request, f'{dashboard.slug}/access/')
+    dashboard.gadgets_url = app_url(request, f'{dashboard.slug}/gadgets/')
+    dashboard.delete_url = app_url(request, f'{dashboard.slug}/delete/')
+    dashboard.favorite_url = app_url(request, f'{dashboard.slug}/favorite/')
     dashboard.can_edit = dashboard.created_by_id == request.user.pk
     if not hasattr(dashboard, 'is_favorite'):
         dashboard.is_favorite = dashboard.favorited_by.filter(pk=request.user.pk).exists()
@@ -63,8 +63,8 @@ def decorate_dashboard(request, dashboard):
 
 def decorate_gadget(request, gadget):
     gadget.icon = GADGET_ICONS.get(gadget.kind, 'layout-dashboard')
-    gadget.edit_url = app_url(request, f'{gadget.dashboard_id}/gadgets/{gadget.pk}/edit/')
-    gadget.delete_url = app_url(request, f'{gadget.dashboard_id}/gadgets/{gadget.pk}/delete/')
+    gadget.edit_url = app_url(request, f'{gadget.dashboard.slug}/gadgets/{gadget.pk}/edit/')
+    gadget.delete_url = app_url(request, f'{gadget.dashboard.slug}/gadgets/{gadget.pk}/delete/')
     return gadget
 
 
@@ -106,5 +106,5 @@ def detail_context(request, dashboard):
         columns[min(gadget.column, dashboard.column_count - 1)].append(gadget_data(request, gadget, tasks, spaces))
     return {'dashboard': dashboard, 'columns': columns, 'dashboards_url': app_url(request),
             'layout_choices': Dashboard.Layout.choices,
-            'add_gadget_url': app_url(request, f'{dashboard.pk}/gadgets/add/'),
-            'arrange_url': app_url(request, f'{dashboard.pk}/arrange/')}
+            'add_gadget_url': app_url(request, f'{dashboard.slug}/gadgets/add/'),
+            'arrange_url': app_url(request, f'{dashboard.slug}/arrange/')}

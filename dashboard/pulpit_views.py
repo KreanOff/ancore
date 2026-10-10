@@ -28,7 +28,8 @@ def get_dashboard(request, pk, edit=False, lock=False):
     if lock:
         # Lock the base table, avoiding DISTINCT / M2M joins in FOR UPDATE.
         queryset = Dashboard.objects.filter(pk__in=queryset.values('pk')).select_for_update()
-    dashboard = get_object_or_404(queryset, pk=pk)
+    lookup = {'pk': pk} if isinstance(pk, int) else {'slug': pk}
+    dashboard = get_object_or_404(queryset, **lookup)
     if edit and dashboard.created_by_id != request.user.pk:
         raise PermissionDenied('Tylko twórca może zmieniać pulpit.')
     return dashboard
@@ -106,10 +107,10 @@ def management_context(request):
     page = Paginator(queryset.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     for dashboard in page:
         decorate_dashboard(request, dashboard)
-        dashboard.edit_url = management_url(request, f'{dashboard.pk}/edit/')
-        dashboard.access_url = management_url(request, f'{dashboard.pk}/access/')
-        dashboard.gadgets_url = management_url(request, f'{dashboard.pk}/gadgets/')
-        dashboard.delete_url = management_url(request, f'{dashboard.pk}/delete/')
+        dashboard.edit_url = management_url(request, f'{dashboard.slug}/edit/')
+        dashboard.access_url = management_url(request, f'{dashboard.slug}/access/')
+        dashboard.gadgets_url = management_url(request, f'{dashboard.slug}/gadgets/')
+        dashboard.delete_url = management_url(request, f'{dashboard.slug}/delete/')
     return {'page': page, 'query': query, 'visibility_filter': visibility, 'favorite_filter': favorite_filter,
             'visibility_choices': Dashboard.Visibility.choices, 'management_url': app_url(request, 'manage/'),
             'return_url': management_url(request), 'create_url': management_url(request, 'create/')}
@@ -125,6 +126,9 @@ def manage(request):
 @require_GET
 def detail(request, pk):
     dashboard = get_dashboard(request, pk)
+    if isinstance(pk, int):
+        query = request.META.get('QUERY_STRING', '')
+        return redirect(dashboard_url(request, dashboard) + ('?' + query if query else ''))
     remember_view(request, dashboard)
     return render(request, 'dashboard/pulpits/detail.html', detail_context(request, dashboard))
 
@@ -148,7 +152,7 @@ def editor_navigation_context(request, dashboard, section, management=False):
         {'key': 'settings', 'suffix': 'edit/', 'label': 'Ustawienia', 'icon': 'settings'},
     ]
     for entry in sections:
-        suffix = f'{dashboard.pk}/' + entry.pop('suffix')
+        suffix = f'{dashboard.slug}/' + entry.pop('suffix')
         entry['url'] = management_url(request, suffix) if management else app_url(request, suffix)
         entry['active'] = entry['key'] == section
     return {
@@ -164,17 +168,17 @@ def editor_context(request, dashboard, management=False):
     context.update(editor_navigation_context(request, dashboard, 'gadgets', management))
     context.update({
         'editing_gadgets': True,
-        'add_gadget_url': management_url(request, f'{dashboard.pk}/gadgets/add/') if management else context['add_gadget_url'],
+        'add_gadget_url': management_url(request, f'{dashboard.slug}/gadgets/add/') if management else context['add_gadget_url'],
         'gadget_count': dashboard.gadgets.count(), 'max_gadgets': MAX_GADGETS,
         'gadget_catalog': GADGET_CATALOG,
-        'quick_add_url': management_url(request, f'{dashboard.pk}/gadgets/quick-add/') if management else app_url(request, f'{dashboard.pk}/gadgets/quick-add/'),
+        'quick_add_url': management_url(request, f'{dashboard.slug}/gadgets/quick-add/') if management else app_url(request, f'{dashboard.slug}/gadgets/quick-add/'),
     })
     if management:
         for column in context['columns']:
             for data in column:
                 gadget = data['gadget']
-                gadget.edit_url = management_url(request, f'{dashboard.pk}/gadgets/{gadget.pk}/edit/')
-                gadget.delete_url = management_url(request, f'{dashboard.pk}/gadgets/{gadget.pk}/delete/')
+                gadget.edit_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/edit/')
+                gadget.delete_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/delete/')
     return context
 
 
@@ -265,10 +269,12 @@ def delete(request, pk, management=False):
     dashboard = get_dashboard(request, pk, edit=True, lock=True)
     if dashboard.is_default:
         raise PermissionDenied('Pulpitu domyślnego nie można usunąć. Możesz zmienić jego gadżety i układ.')
+    dashboard_pk = dashboard.pk
     dashboard.delete()
     invalidated_paths = list(dict.fromkeys(
-        f'{base}{prefix}{pk}/'
+        f'{base}{prefix}{identifier}/'
         for base in ['/dashboards/', app_url(request)] for prefix in ['', 'manage/']
+        for identifier in [dashboard_pk, dashboard.slug]
     ))
     return saved_response(request, management_url(request) if management else app_url(request),
                           invalidated_return_paths=invalidated_paths)
@@ -288,7 +294,7 @@ def favorite(request, pk):
     return_url = request.POST.get('next', '')
     if return_url and url_has_allowed_host_and_scheme(return_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
         return saved_response(request, return_url)
-    target = app_url(request, f'{pk}/') if request.POST.get('detail') else app_url(request)
+    target = dashboard_url(request, dashboard) if request.POST.get('detail') else app_url(request)
     if not request.POST.get('detail'):
         target += '?' + urlencode({'q': request.POST.get('q', '').strip()[:120]})
     return saved_response(request, target)
@@ -311,9 +317,9 @@ def gadget_edit(request, pk, gadget_pk=None, management=False):
             gadget.save()
             dashboard.revision += 1
             dashboard.save(update_fields=['revision', 'updated_at'])
-            return saved_response(request, management_url(request, f'{pk}/gadgets/') if management else app_url(request, f'{pk}/gadgets/'))
+            return saved_response(request, management_url(request, f'{dashboard.slug}/gadgets/') if management else app_url(request, f'{dashboard.slug}/gadgets/'))
     return form_response(request, form, 'Edytuj gadżet' if gadget_pk else 'Dodaj gadżet',
-                         management_url(request, f'{pk}/gadgets/') if management else app_url(request, f'{pk}/gadgets/'), dashboard, True,
+                         management_url(request, f'{dashboard.slug}/gadgets/') if management else app_url(request, f'{dashboard.slug}/gadgets/'), dashboard, True,
                          status=400 if request.method == 'POST' else 200, management=management)
 
 
@@ -325,7 +331,7 @@ def gadget_delete(request, pk, gadget_pk, management=False):
     get_object_or_404(dashboard.gadgets, pk=gadget_pk).delete()
     dashboard.revision += 1
     dashboard.save(update_fields=['revision', 'updated_at'])
-    return saved_response(request, management_url(request, f'{pk}/gadgets/') if management else app_url(request, f'{pk}/gadgets/'))
+    return saved_response(request, management_url(request, f'{dashboard.slug}/gadgets/') if management else app_url(request, f'{dashboard.slug}/gadgets/'))
 
 
 @login_required
@@ -360,8 +366,8 @@ def gadget_quick_add(request, pk, management=False):
     dashboard.save(update_fields=['revision', 'updated_at'])
     decorate_gadget(request, gadget)
     if management:
-        gadget.edit_url = management_url(request, f'{pk}/gadgets/{gadget.pk}/edit/')
-        gadget.delete_url = management_url(request, f'{pk}/gadgets/{gadget.pk}/delete/')
+        gadget.edit_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/edit/')
+        gadget.delete_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/delete/')
     tasks = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
     data = gadget_data(request, gadget, tasks, set(visible_spaces(request).values_list('pk', flat=True)))
     html = render_to_string('dashboard/pulpits/gadget.html', {'data': data, 'editing_gadgets': True}, request=request)

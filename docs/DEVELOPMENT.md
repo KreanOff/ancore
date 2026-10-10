@@ -910,6 +910,35 @@ modułów, 404 starego adresu, desktop/telefon, zwinięte menu i ponowne wejści
 
 ## Pulpity i gadżety
 
+Migracja `dashboard.0012_dashboard_slugs` dopisuje nazwy URL wszystkim istniejącym
+pulpitom i unikalność `(workplace, slug)`, zachowując pozostałe dane, PK, gadżety,
+gwiazdki i udostępnienia. Duplikaty w jednym Workspace otrzymują kolejne końcówki;
+nazwa po edycji nie zmienia już zapisanego adresu. Przed zastosowaniem wykonaj
+backup, sprawdź plan, zastosuj migrację i odśwież `layout.js` (wersja zasobu w powłoce).
+`dashboard.test_pulpit_urls` sprawdza zwykłe/scoped adresy, stare przekierowania,
+query string, aktywne menu, duplikaty/zastrzeżone nazwy/polskie znaki, zachowanie
+adresu po edycji, uprawnienia i cofnięcie dostępu, dwa Workspace, dawne POST,
+unikalność, dwa równoczesne zapisy oraz migrację z zachowaniem danych.
+Uruchamiaj także Dashboard, `core.test_task_integrity.TaskIdentityTests`
+i `planner.test_task_calendar`. Browser QA: stary adres → nazwa w URL,
+menu/katalog/wyszukiwanie → podgląd → edytor → ustawienia/dostępy → zapis/powrót,
+częściowa nawigacja i Wstecz/Dalej, reload, pusty pulpit/wynik, błąd formularza,
+duplikaty i desktop/telefon. Osobisty pulpit domyślny zachowuje `default/`.
+
+Weryfikacja adresów (10.10.2026): 228 testów Dashboardu,
+`core.test_task_integrity.TaskIdentityTests` i `planner.test_task_calendar` przeszło,
+w tym migracja i równoczesny przydział slugów. Playwright/Chrome na osobnej bazie
+QA (plugin Browser niedostępny) przy 1440×1000, 1920×1000, 1024×1000 i 390×844
+potwierdził przekierowanie z parametrami, aktywne menu, podgląd → edytor →
+ustawienia/dostępy → zapis/powrót, zachowanie adresu po zmianie tytułu i reload,
+Wstecz/Dalej, częściową nawigację bez przeładowania dokumentu, wyszukiwanie
+duplikatu, pusty pulpit/katalog, błąd formularza, filtry zarządzania i widok
+domyślny jako referencję. Nie było nieoczekiwanych błędów konsoli ani
+przepełnienia strony. Kontrole Django, planu/migracji, składni JS i indeksu
+przeszły. Migrację zastosowano lokalnie po backupie; porównanie danych pulpitów,
+gadżetów, gwiazdek i dostępów potwierdziło zachowanie wszystkich dotychczasowych
+pól. Nie sprawdzano Safari/Firefox ani całego zestawu repozytorium.
+
 Migracja `dashboard.0011_default_dashboard` dodaje znacznik `is_default` oraz
 warunkową unikalność użytkownika/Workspace. Zachowuje istniejące pulpity i gadżety;
 osobista konfiguracja domyślna powstaje dopiero przy pierwszym wejściu na `/`

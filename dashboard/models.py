@@ -1,5 +1,7 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, router, transaction
+
+from .identifiers import SLUG_MAX_LENGTH, unique_dashboard_slug
 
 
 class Dashboard(models.Model):
@@ -19,6 +21,7 @@ class Dashboard(models.Model):
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='dashboards')
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_dashboards')
     name = models.CharField('Nazwa', max_length=150)
+    slug = models.SlugField(max_length=SLUG_MAX_LENGTH, editable=False)
     description = models.TextField('Opis', blank=True, max_length=2000)
     visibility = models.CharField('Widoczność', max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
     shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='shared_dashboards')
@@ -32,10 +35,28 @@ class Dashboard(models.Model):
     class Meta:
         ordering = ['name', 'pk']
         indexes = [models.Index(fields=['owner', 'workplace'], name='dashboard_workspace_idx')]
-        constraints = [models.UniqueConstraint(
-            fields=['created_by', 'workplace'], condition=models.Q(is_default=True),
-            name='dashboard_default_per_user',
-        )]
+        constraints = [
+            models.UniqueConstraint(fields=['workplace', 'slug'], name='dashboard_workspace_slug'),
+            models.UniqueConstraint(
+                fields=['created_by', 'workplace'], condition=models.Q(is_default=True),
+                name='dashboard_default_per_user',
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields')
+        if self.slug or (update_fields is not None and not update_fields):
+            return super().save(*args, **kwargs)
+        database = kwargs.get('using') or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=database):
+            from workplaces.models import Workplace
+            # Serialize allocation across creators, including duplicate names.
+            Workplace.objects.using(database).select_for_update().get(pk=self.workplace_id)
+            siblings = type(self).objects.using(database).filter(workplace_id=self.workplace_id).exclude(pk=self.pk)
+            self.slug = unique_dashboard_slug(siblings, self.name)
+            if update_fields is not None:
+                kwargs['update_fields'] = set(update_fields) | {'slug'}
+            return super().save(*args, **kwargs)
 
     @property
     def column_count(self):

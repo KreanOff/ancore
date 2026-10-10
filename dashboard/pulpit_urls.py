@@ -1,6 +1,8 @@
-from django.urls import path
+from django.urls import path, register_converter
 from . import pulpit_views as views
+from .identifiers import DashboardSlugConverter
 
+register_converter(DashboardSlugConverter, 'dashboard_slug')
 app_name = 'pulpits'
 urlpatterns = [
     path('manage/<int:pk>/gadgets/quick-add/', views.gadget_quick_add, {'management': True}, name='manage_gadget_quick_add'),
@@ -28,4 +30,24 @@ urlpatterns = [
     path('<int:pk>/gadgets/add/', views.gadget_edit, name='gadget_add'),
     path('<int:pk>/gadgets/<int:gadget_pk>/edit/', views.gadget_edit, name='gadget_edit'),
     path('<int:pk>/gadgets/<int:gadget_pk>/delete/', views.gadget_delete, name='gadget_delete'),
+    # Name-based URLs; numeric routes above remain compatible with saved links.
+    path('manage/<dashboard_slug:pk>/gadgets/quick-add/', views.gadget_quick_add, {'management': True}, name='manage_gadget_quick_add'),
+    path('manage/<dashboard_slug:pk>/gadgets/', views.gadgets, {'management': True}, name='manage_gadgets'),
+    path('manage/<dashboard_slug:pk>/gadgets/add/', views.gadget_edit, {'management': True}, name='manage_gadget_add'),
+    path('manage/<dashboard_slug:pk>/gadgets/<int:gadget_pk>/edit/', views.gadget_edit, {'management': True}, name='manage_gadget_edit'),
+    path('manage/<dashboard_slug:pk>/gadgets/<int:gadget_pk>/delete/', views.gadget_delete, {'management': True}, name='manage_gadget_delete'),
+    path('manage/<dashboard_slug:pk>/edit/', views.edit, {'management': True}, name='manage_edit'),
+    path('manage/<dashboard_slug:pk>/access/', views.access, {'management': True}, name='manage_access'),
+    path('manage/<dashboard_slug:pk>/delete/', views.delete, {'management': True}, name='manage_delete'),
+    path('<dashboard_slug:pk>/', views.detail, name='detail'),
+    path('<dashboard_slug:pk>/edit/', views.edit, name='edit'),
+    path('<dashboard_slug:pk>/access/', views.access, name='access'),
+    path('<dashboard_slug:pk>/delete/', views.delete, name='delete'),
+    path('<dashboard_slug:pk>/favorite/', views.favorite, name='favorite'),
+    path('<dashboard_slug:pk>/arrange/', views.arrange, name='arrange'),
+    path('<dashboard_slug:pk>/gadgets/', views.gadgets, name='gadgets'),
+    path('<dashboard_slug:pk>/gadgets/quick-add/', views.gadget_quick_add, name='gadget_quick_add'),
+    path('<dashboard_slug:pk>/gadgets/add/', views.gadget_edit, name='gadget_add'),
+    path('<dashboard_slug:pk>/gadgets/<int:gadget_pk>/edit/', views.gadget_edit, name='gadget_edit'),
+    path('<dashboard_slug:pk>/gadgets/<int:gadget_pk>/delete/', views.gadget_delete, name='gadget_delete'),
 ]

@@ -30,7 +30,7 @@ class GadgetCatalogTests(TestCase):
         session.save()
 
     def add(self, kind='progress', revision=0, path=None, client=None):
-        return (client or self.client).post(path or f'/dashboards/{self.dashboard.pk}/gadgets/quick-add/',
+        return (client or self.client).post(path or f'/dashboards/{self.dashboard.slug}/gadgets/quick-add/',
                                            json.dumps({'kind': kind, 'revision': revision}), content_type='application/json')
 
     def test_quick_add_progress_balances_columns_and_returns_real_gadgets(self):
@@ -49,7 +49,7 @@ class GadgetCatalogTests(TestCase):
             self.assertEqual(gadget.assignee, 'all')
             self.assertIn('Zamknięte: 0 z 0', result['html'])
             self.assertIn('dashboard-overview-statuses', result['html'])
-        editor = self.client.get(f'/dashboards/{self.dashboard.pk}/gadgets/')
+        editor = self.client.get(f'/dashboards/{self.dashboard.slug}/gadgets/')
         self.assertContains(editor, 'data-pulpit-catalog-item', count=1)
         self.assertContains(editor, 'data-pulpit-quick-add="progress"', count=1)
         for kind in ['assigned', 'results', 'summary', 'statistics', 'activity']:
@@ -65,7 +65,7 @@ class GadgetCatalogTests(TestCase):
         self.assertEqual(self.dashboard.revision, 1)
 
     def test_invalid_payloads_and_limit_leave_configuration_unchanged(self):
-        path = f'/dashboards/{self.dashboard.pk}/gadgets/quick-add/'
+        path = f'/dashboards/{self.dashboard.slug}/gadgets/quick-add/'
         for body in ['broken', '[]', 'null', '{}', '{"revision":true}', '{"revision":"0"}']:
             self.assertEqual(self.client.post(path, body, content_type='application/json').status_code, 400)
         self.assertEqual(self.add(kind='foreign').status_code, 400)
@@ -79,7 +79,7 @@ class GadgetCatalogTests(TestCase):
         self.assertEqual(self.dashboard.revision, 0)
 
     def test_creator_workspace_csrf_and_method_guards(self):
-        path = f'/dashboards/{self.dashboard.pk}/gadgets/quick-add/'
+        path = f'/dashboards/{self.dashboard.slug}/gadgets/quick-add/'
         self.assertEqual(self.client.get(path).status_code, 405)
         guarded = Client(enforce_csrf_checks=True)
         self.login(self.owner, guarded)
@@ -87,7 +87,7 @@ class GadgetCatalogTests(TestCase):
         self.login(self.member)
         self.assertEqual(self.add().status_code, 403)
         self.login(self.owner)
-        foreign_path = scoped_workplace_app_path(self.other, 'dashboards', f'{self.dashboard.pk}/gadgets/quick-add/')
+        foreign_path = scoped_workplace_app_path(self.other, 'dashboards', f'{self.dashboard.slug}/gadgets/quick-add/')
         self.assertEqual(self.add(path=foreign_path).status_code, 404)
         self.client.logout()
         self.assertEqual(self.add().status_code, 302)
@@ -95,9 +95,9 @@ class GadgetCatalogTests(TestCase):
 
     def test_scoped_and_management_urls_keep_configuration_links(self):
         prefix = scoped_workplace_app_path(self.workplace, 'dashboards')
-        path = f'{prefix}manage/{self.dashboard.pk}/gadgets/quick-add/?q=Plan&favorite=starred'
+        path = f'{prefix}manage/{self.dashboard.slug}/gadgets/quick-add/?q=Plan&favorite=starred'
         response = self.add(path=path)
         self.assertEqual(response.status_code, 200)
         gadget = self.dashboard.gadgets.get()
-        self.assertIn(f'{prefix}manage/{self.dashboard.pk}/gadgets/{gadget.pk}/edit/?q=Plan&amp;favorite=starred', response.json()['html'])
+        self.assertIn(f'{prefix}manage/{self.dashboard.slug}/gadgets/{gadget.pk}/edit/?q=Plan&amp;favorite=starred', response.json()['html'])
         self.assertNotIn('/dashboards/None/', response.json()['html'])

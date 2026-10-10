@@ -912,7 +912,24 @@ Kolejne odczyty nie uzupełniają usuniętych gadżetów. Strona główna oraz z
 na scoped `default/`. Domyślny rekord można konfigurować i udostępniać jak pozostałe
 pulpity, ale endpoint usuwania odrzuca go, a menu nie pokazuje tej akcji.
 Osobisty domyślny pulpit nie jest powielany w gwiazdkach ani historii menu twórcy;
-udostępniony domyślny pulpit innej osoby zachowuje zwykły link po PK.
+udostępniony domyślny pulpit innej osoby używa zwykłego linku ze slugiem.
+
+`Dashboard.slug` to zapisany segment URL pochodzący z nazwy, unikalny w obrębie
+Workspace. `dashboard/identifiers.py` normalizuje nazwę przez `slugify` i transliterację
+`ł/Ł`, a dla kolizji dopisuje `-2`, `-3`. Nazwy `default`, `manage`, `create`,
+`search`, `groups` oraz same cyfry otrzymują prefiks `pulpit-`; nazwa bez znaków
+możliwych do użycia w URL daje `pulpit`. Przy tworzeniu `Dashboard.save()` blokuje
+wiersz Workspace i przydziela wolny slug, także dla równoczesnych zapisów różnych
+twórców; ograniczenie bazy chroni `(workplace, slug)`. Edycja nazwy zachowuje slug,
+więc zapisane odnośniki i źródła powrotu nie wygasają. PK nadal identyfikuje relacje,
+gwiazdki i historię. `get_dashboard` rozpoznaje int z historycznej trasy lub tekst
+ze współczesnej, zawsze w aktualnym zakresie `visible_dashboards`.
+Linki przeglądu, edytora, gadżetów, menu i wyszukiwania używają slugu.
+GET na dawny `/<pk>/` przekierowuje na aktualny link, zachowując query string;
+przekierowanie następuje dopiero po sprawdzeniu dostępu. Numeryczne endpointy
+edycji i POST zachowują zgodność. Konwerter wyklucza zastrzeżone segmenty,
+więc wycofane `groups/` nadal zwraca 404 dla GET i POST. Usunięcie unieważnia
+źródła powrotu zarówno po slugu, jak i PK, w zwykłym/scoped i zarządzaniu.
 
 `Dashboard.owner` jest właścicielem Workspace z `workspace_owner(request)`,
 a `created_by` faktycznym twórcą. Katalog i każdy bezpośredni endpoint najpierw
@@ -947,7 +964,7 @@ Fallback formularza sprawdza lokalny adres `next` przed przekierowaniem.
 
 `management_context` zawęża `visible_dashboards` do `created_by=request.user`.
 Nowy katalog nie rozszerza prawa edycji; bezpośrednie endpointy nadal wymagają
-widoczności i twórcy. Trasy `manage/create/` i `manage/<pk>/edit|access|delete/`
+widoczności i twórcy. Trasy `manage/create/` i `manage/<slug>/edit|access|delete/`
 korzystają z tych samych operacji, z jawnym parametrem `management=True`.
 `management_url` zachowuje wyłącznie parametry q, visibility, favorite i page,
 budując docelowy adres w aktywnym Workspace. Bezpośrednie wejście oraz błędy

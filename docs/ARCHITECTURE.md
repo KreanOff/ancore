@@ -201,15 +201,20 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   własnymi pulpitami, ze wspólną listą katalogu Pulpitów i trybem bocznego menu
   `pulpits-management`. Nazwa pulpitu otwiera jego edytor z odrębnym menu
   `pulpit-editor`: „Gadżety i układ”, „Dostępy” i „Ustawienia”.
-  `/<pk>/access/` zmienia widoczność/osoby, `/<pk>/edit/` nazwę/opis;
-  oba mają warianty `/manage/<pk>/` i scoped. Zapis i anulowanie zachowują
+  `Dashboard.slug` jest nazwą w formie URL, przydzielaną w obrębie Workspace
+  przy tworzeniu (istniejącym rekordom przez `dashboard.0012_dashboard_slugs`).
+  Duplikaty dostają końcówkę `-2`, `-3`; późniejsza zmiana nazwy nie zmienia adresu.
+  `/<slug>/access/` zmienia widoczność/osoby, `/<slug>/edit/` nazwę/opis;
+  oba mają warianty `/manage/<slug>/` i scoped. Zapis i anulowanie zachowują
   kontekst wejścia oraz filtry katalogu. Tworzenie pozostaje modalem.
   Mechanizm grup pulpitów jest usunięty; dawne adresy `groups/` i przypisania
   `<pk>/groups/` zwracają 404 w zwykłym i scoped routingu.
   Kopiowanie pulpitów jest usunięte; dawne `<pk>/copy/` i
   `manage/<pk>/copy/` zwracają 404 również w scoped routingu.
-  Przegląd `/<pk>/` wyświetla gadżety bez kontrolek ich zmiany, także twórcy.
-  Osobny edytor `/<pk>/gadgets/` i `/manage/<pk>/gadgets/` używa menu wybranego pulpitu;
+  Przegląd `/<slug>/` wyświetla gadżety bez kontrolek ich zmiany, także twórcy.
+  Dawne `/<pk>/` przekierowuje po kontroli dostępu, zachowując parametry URL.
+  Numeryczne endpointy edycji i POST nadal działają dla zgodności.
+  Osobny edytor `/<slug>/gadgets/` i `/manage/<slug>/gadgets/` używa menu wybranego pulpitu;
   tylko twórca dodaje, konfiguruje, usuwa i układa gadżety. Bezpośrednie formularze
   gadżetów otwierają modal nad edytorem, a zapis wraca do edytora.
   Panel katalogu w edytorze dodaje wyłącznie „Postęp pracy” przez POST `gadgets/quick-add/`

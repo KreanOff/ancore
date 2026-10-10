@@ -36,7 +36,7 @@ class PulpitGroupRetirementTests(TestCase):
             self.login(viewer)
             for prefix in self.prefixes():
                 for suffix in ['groups/', 'groups/create/', 'groups/1/edit/', 'groups/1/delete/',
-                               f'{self.dashboard.pk}/groups/', f'manage/{self.dashboard.pk}/groups/']:
+                               f'{self.dashboard.slug}/groups/', f'manage/{self.dashboard.slug}/groups/']:
                     for method in ['get', 'post']:
                         with self.subTest(viewer=viewer.pk, prefix=prefix, suffix=suffix, method=method):
                             response = getattr(self.client, method)(prefix + suffix, {'name': 'Grupa', 'groups': [1], 'dashboards': [self.dashboard.pk]})
@@ -49,7 +49,7 @@ class PulpitGroupRetirementTests(TestCase):
     def test_group_actions_are_absent_from_catalog_detail_editor_and_management(self):
         self.login(self.owner)
         for prefix in self.prefixes():
-            for suffix in ['', f'{self.dashboard.pk}/', 'manage/', f'{self.dashboard.pk}/edit/', f'{self.dashboard.pk}/gadgets/']:
+            for suffix in ['', f'{self.dashboard.slug}/', 'manage/', f'{self.dashboard.slug}/edit/', f'{self.dashboard.slug}/gadgets/']:
                 with self.subTest(prefix=prefix, suffix=suffix):
                     response = self.client.get(prefix + suffix)
                     self.assertEqual(response.status_code, 200)
