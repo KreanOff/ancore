@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import redirect
 
 from .services import (
@@ -27,12 +28,20 @@ class ActiveWorkplaceMiddleware:
         workplace_slug, _app_label = _scoped_workplace_segments(request.path_info)
 
         if workplace_slug and user and getattr(user, 'is_authenticated', False):
-            workplace = workplaces_for_user(user).filter(slug=workplace_slug).first()
+            workplace = workplaces_for_user(user).filter(
+                Q(slug=workplace_slug) | Q(legacy_slug=workplace_slug),
+            ).first()
             if workplace is None:
                 request.workplace = get_active_workplace(request)
                 return redirect('workplaces:workplaces')
             set_active_workplace(request, workplace)
             enable_workspace_url_scope(request)
+            if workplace_slug != workplace.slug and request.method in {'GET', 'HEAD'}:
+                canonical_path = request.path_info.replace(
+                    f'/workplaces/{workplace_slug}/', f'/workplaces/{workplace.slug}/', 1,
+                )
+                query_string = request.META.get('QUERY_STRING', '')
+                return redirect(canonical_path + (f'?{query_string}' if query_string else ''))
         else:
             request.workplace = get_active_workplace(request)
 

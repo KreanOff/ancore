@@ -2113,6 +2113,15 @@ nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
 polu „Szukaj Workspace” w pasku katalogu. Formularz nadal wymaga POST i CSRF.
 
 Ekran `/workplaces/` rozszerza `core/base.html` i pokazuje katalog Workspace.
+Nazwa Workspace może się powtarzać. Kolumna „Kod miejsca pracy” pokazuje stały
+losowy identyfikator `w_` + 26 małych liter/cyfr. Minimalna szerokość kolumny kodu
+wynosi 250px, aby pomieścić cały identyfikator; `title` udostępnia pełną wartość.
+W tworzeniu pole jest tylko do
+odczytu i pokazuje „Generowany automatycznie”; kod jest nadawany przy zapisie.
+W edycji i podglądzie pole pozostaje tylko do odczytu dla każdej roli i pokazuje
+zapisany identyfikator. Pola kodu nie są wysyłane w formularzach, a backend
+ignoruje próby jego nadpisania. Zmiana nazwy nie zmienia kodu ani adresu.
+Powłoka, klasy pól i obsługa modali pozostają wspólne z Projektami.
 Widoczny tytuł „Workspace” na górnym pasku ma rozmiar 17px i grubość 700.
 Nie ma zakładki, tabeli ani licznika otrzymanych zaproszeń; są dostępne
 przez panel powiadomień. Dawny parametr `view=received` pokazuje katalog.

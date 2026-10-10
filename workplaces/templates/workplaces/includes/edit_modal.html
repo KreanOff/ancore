@@ -36,7 +36,7 @@
                                 </div>
                                 <section class="tasks-project-parameters workplace-modal__parameters" aria-label="Parametry miejsca pracy">
                                     <div class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields">
-                                        <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code"><span>Kod miejsca pracy</span><input id="workplace-edit-code" type="text" name="code" value="{% if edit_form %}{{ edit_form.code.value|default_if_none:'' }}{% else %}{{ workplace.code }}{% endif %}" class="tasks-inline-input" placeholder="np. STUDIO-01" maxlength="20" autocomplete="off"{% if not can_manage_team %} readonly{% endif %}></label>
+                                        <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code"><span>Kod miejsca pracy</span><input id="workplace-edit-code" type="text" value="{{ workplace.code }}" class="tasks-inline-input" readonly aria-describedby="workplace-edit-code-hint"><small id="workplace-edit-code-hint" class="u-sr-only">Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu.</small></label>
                                     </div>
                                 </section>
                             </div>

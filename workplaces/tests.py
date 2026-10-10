@@ -1,9 +1,6 @@
 import base64
 import json
 import tempfile
-from importlib import import_module
-
-from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
@@ -28,7 +25,6 @@ class WorkplaceSelectionTests(TestCase):
             self.user,
             'Pierwszy Workplace',
             description='Miejsce pracy zespołu wdrożeniowego',
-            code='first-01',
         )
         self.second_workplace = create_workplace_for_user(self.user, 'Drugi Workplace')
 
@@ -81,11 +77,11 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'workplace-row__avatar', count=3)
         self.assertContains(response, 'Kod miejsca pracy')
         self.assertContains(response, 'Opis')
-        self.assertContains(response, 'FIRST-01')
+        self.assertContains(response, self.first_workplace.code)
         self.assertContains(response, 'Miejsce pracy zespołu wdrożeniowego')
-        self.assertContains(response, 'data-workplace-code="FIRST-01"')
+        self.assertContains(response, f'data-workplace-code="{self.first_workplace.code}"')
         self.assertContains(response, 'data-workplace-description="Miejsce pracy zespołu wdrożeniowego"')
-        self.assertContains(response, 'data-workplace-code="DRUGI-WORKPLACE"')
+        self.assertContains(response, f'data-workplace-code="{self.second_workplace.code}"')
         self.assertContains(response, 'data-icon="briefcase-business"')
         self.assertContains(response, 'data-icon="hash"')
         self.assertContains(response, 'data-icon="align-left"')
@@ -187,7 +183,8 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal tasks-issue-modal workplace-edit-modal')
         self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form')
         self.assertContains(response, 'Edytuj miejsce pracy')
-        self.assertContains(response, 'name="code" value="FIRST-01"')
+        self.assertContains(response, f'value="{self.first_workplace.code}"')
+        self.assertNotContains(response, 'name="code"')
         self.assertContains(response, 'name="description"')
         self.assertContains(response, 'class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields"')
         self.assertContains(response, 'name="workplace_photo_crop"', count=2)
@@ -619,7 +616,7 @@ class WorkplaceSelectionTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_create_workplace_saves_description_and_normalized_code(self):
+    def test_create_workplace_saves_description_and_ignores_submitted_code(self):
         self.client.force_login(self.user)
 
         response = self.client.post(reverse('workplaces:workplaces'), {
@@ -630,10 +627,11 @@ class WorkplaceSelectionTests(TestCase):
 
         workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół produktowy')
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(workplace.code, 'PRODUCT-01')
+        self.assertRegex(workplace.code, r'^w_[a-z0-9]{26}$')
+        self.assertEqual(workplace.slug, workplace.code)
         self.assertEqual(workplace.description, 'Rozwój głównego produktu')
 
-    def test_create_workplace_generates_code_from_name_when_code_is_empty(self):
+    def test_create_workplace_generates_random_code_when_code_is_empty(self):
         self.client.force_login(self.user)
 
         response = self.client.post(reverse('workplaces:workplaces'), {
@@ -643,23 +641,15 @@ class WorkplaceSelectionTests(TestCase):
 
         workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół operacyjny 01')
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(workplace.code, 'ZESPOL-OPERACYJNY-01')
+        self.assertRegex(workplace.code, r'^w_[a-z0-9]{26}$')
 
-    def test_generated_workplace_code_gets_unique_numeric_suffix(self):
+    def test_generated_workplace_codes_are_independent_of_names(self):
         first = create_workplace_for_user(self.user, 'Zespół A')
         second = create_workplace_for_user(self.user, 'Zespol A')
 
-        self.assertEqual(first.code, 'ZESPOL-A')
-        self.assertEqual(second.code, 'ZESPOL-A-2')
-
-    def test_workplace_code_migration_backfills_existing_empty_code(self):
-        type(self.second_workplace).objects.filter(pk=self.second_workplace.pk).update(code='')
-        migration = import_module('workplaces.migrations.0005_backfill_workplace_codes')
-
-        migration.backfill_workplace_codes(apps, None)
-
-        self.second_workplace.refresh_from_db()
-        self.assertEqual(self.second_workplace.code, 'DRUGI-WORKPLACE')
+        self.assertRegex(first.code, r'^w_[a-z0-9]{26}$')
+        self.assertRegex(second.code, r'^w_[a-z0-9]{26}$')
+        self.assertNotEqual(first.code, second.code)
 
     def test_create_workplace_accepts_valid_logo(self):
         self.client.force_login(self.user)
@@ -717,17 +707,17 @@ class WorkplaceSelectionTests(TestCase):
             type(self.first_workplace).objects.filter(owner=self.user, name='Nie powinno powstać').exists()
         )
 
-    def test_duplicate_create_reopens_workplace_create_modal(self):
+    def test_duplicate_create_is_allowed(self):
         self.client.force_login(self.user)
 
         response = self.client.post(reverse('workplaces:workplaces'), {'name': self.first_workplace.name})
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'workplace-create-modal is-open')
-        self.assertContains(response, 'aria-hidden="false" data-workplace-create-modal')
-        self.assertContains(response, 'Masz już miejsce pracy o takiej nazwie.')
+        self.assertEqual(response.status_code, 302)
+        workplaces = type(self.first_workplace).objects.filter(owner=self.user, name=self.first_workplace.name)
+        self.assertEqual(workplaces.count(), 2)
+        self.assertEqual(len(set(workplaces.values_list('code', flat=True))), 2)
 
-    def test_duplicate_create_is_case_insensitive(self):
+    def test_duplicate_create_with_different_case_is_allowed(self):
         self.client.force_login(self.user)
 
         response = self.client.post(
@@ -735,21 +725,20 @@ class WorkplaceSelectionTests(TestCase):
             {'name': self.first_workplace.name.swapcase()},
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Masz już miejsce pracy o takiej nazwie.')
-        self.assertEqual(type(self.first_workplace).objects.filter(owner=self.user).count(), 2)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(type(self.first_workplace).objects.filter(owner=self.user).count(), 3)
 
-    def test_duplicate_workplace_code_is_case_insensitive(self):
+    def test_submitted_duplicate_workplace_code_is_ignored(self):
         self.client.force_login(self.user)
 
         response = self.client.post(reverse('workplaces:workplaces'), {
             'name': 'Nowa nazwa',
-            'code': 'first-01',
+            'code': self.first_workplace.code,
         })
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Masz już miejsce pracy o takim kodzie.')
-        self.assertEqual(type(self.first_workplace).objects.filter(owner=self.user).count(), 2)
+        self.assertEqual(response.status_code, 302)
+        workplace = type(self.first_workplace).objects.get(owner=self.user, name='Nowa nazwa')
+        self.assertNotEqual(workplace.code, self.first_workplace.code)
 
     def test_scoped_tasks_url_sets_active_workplace_from_slug(self):
         self.client.force_login(self.user)
@@ -811,8 +800,9 @@ class WorkplaceSelectionTests(TestCase):
         self.first_workplace.refresh_from_db()
         self.assertEqual(self.first_workplace.name, 'Nowa nazwa')
 
-    def test_owner_can_update_workplace_description_and_code(self):
+    def test_owner_can_update_description_but_cannot_change_code(self):
         self.client.force_login(self.user)
+        original_code = self.first_workplace.code
 
         response = self.client.post(
             reverse('workplaces:update', args=[self.first_workplace.pk]),
@@ -825,7 +815,8 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertRedirects(response, workplace_management_url(self.first_workplace))
         self.first_workplace.refresh_from_db()
-        self.assertEqual(self.first_workplace.code, 'DELIVERY-02')
+        self.assertEqual(self.first_workplace.code, original_code)
+        self.assertEqual(self.first_workplace.slug, original_code)
         self.assertEqual(self.first_workplace.description, 'Obsługa wdrożeń klientów')
 
     def test_owner_can_replace_and_remove_logo_with_profile_photo_editor_fields(self):
@@ -867,8 +858,9 @@ class WorkplaceSelectionTests(TestCase):
             self.first_workplace.refresh_from_db()
             self.assertFalse(self.first_workplace.workplace_photo)
 
-    def test_owner_can_clear_workplace_code_to_generate_it_again(self):
+    def test_owner_cannot_clear_workplace_code(self):
         self.client.force_login(self.user)
+        original_code = self.first_workplace.code
 
         response = self.client.post(
             reverse('workplaces:update', args=[self.first_workplace.pk]),
@@ -881,21 +873,21 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertRedirects(response, workplace_management_url(self.first_workplace))
         self.first_workplace.refresh_from_db()
-        self.assertEqual(self.first_workplace.code, 'PIERWSZY-WORKPLACE')
+        self.assertEqual(self.first_workplace.code, original_code)
 
-    def test_owner_cannot_rename_workplace_to_duplicate_name(self):
+    def test_owner_can_rename_workplace_to_duplicate_name_without_changing_url(self):
         self.client.force_login(self.user)
+        original_url = scoped_workplace_app_path(self.first_workplace, 'tasks')
 
         response = self.client.post(
             reverse('workplaces:update', args=[self.first_workplace.pk]),
             {'name': self.second_workplace.name},
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['edit_form'].errors)
-        self.assertTrue(response.context['workplace_edit_modal_open'])
+        self.assertEqual(response.status_code, 302)
         self.first_workplace.refresh_from_db()
-        self.assertEqual(self.first_workplace.name, 'Pierwszy Workplace')
+        self.assertEqual(self.first_workplace.name, self.second_workplace.name)
+        self.assertEqual(scoped_workplace_app_path(self.first_workplace, 'tasks'), original_url)
 
     def test_owner_can_delete_non_last_workplace(self):
         self.client.force_login(self.user)

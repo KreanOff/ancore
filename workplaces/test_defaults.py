@@ -31,8 +31,8 @@ class DefaultWorkplaceTests(TestCase):
         workplace = Workplace.objects.get(owner=self.user)
         choose.assert_called_once_with(DEFAULT_WORKPLACE_NAMES)
         self.assertEqual(workplace.name, 'Biuro Latających Pierogów')
-        self.assertEqual(workplace.slug, 'biuro-latajacych-pierogow')
-        self.assertEqual(workplace.code, 'BIURO-LATAJACYCH-PIE')
+        self.assertRegex(workplace.code, r'^w_[a-z0-9]{26}$')
+        self.assertEqual(workplace.slug, workplace.code)
         self.assertEqual(self.client.session['active_workplace_id'], workplace.pk)
         self.assertEqual(WorkplaceMembership.objects.get(
             workplace=workplace, user=self.user,

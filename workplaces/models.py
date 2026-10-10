@@ -1,23 +1,24 @@
+import secrets
+import string
+
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
-from django.db import models, transaction
+from django.db import IntegrityError, models, router, transaction
 from django.db.models import Q
-from django.utils.text import slugify
 from django.utils import timezone
 from datetime import timedelta
 
 
-POLISH_CODE_TRANSLATION = str.maketrans({
-    'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
-    'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z',
-})
+def generate_workplace_code():
+    return 'w_' + ''.join(secrets.choice(string.ascii_lowercase + string.digits) for _ in range(26))
 
 
 class Workplace(models.Model):
     name = models.CharField(max_length=140)
     description = models.TextField(blank=True)
-    code = models.CharField(max_length=20, blank=True)
-    slug = models.SlugField(max_length=160, blank=True, unique=True)
+    code = models.CharField(max_length=28, default=generate_workplace_code, editable=False)
+    slug = models.SlugField(max_length=160, blank=True, unique=True, editable=False)
+    legacy_slug = models.SlugField(max_length=160, blank=True, null=True, unique=True, editable=False)
     avatar = models.CharField(max_length=32, blank=True, default='')
     workplace_photo = models.FileField(
         blank=True,
@@ -40,63 +41,39 @@ class Workplace(models.Model):
     class Meta:
         ordering = ['name', 'id']
         constraints = [
-            models.UniqueConstraint(fields=['owner', 'name'], name='unique_workplace_name_per_owner'),
-            models.UniqueConstraint(fields=['owner', 'slug'], name='unique_workplace_slug_per_owner'),
-            models.UniqueConstraint(
-                fields=['owner', 'code'],
-                condition=~Q(code=''),
-                name='unique_workplace_code_per_owner',
-            ),
+            models.UniqueConstraint(fields=['code'], name='unique_workplace_code'),
         ]
 
-    def _base_slug(self):
-        return slugify(self.name)[:120] or 'workplace'
-
-    def _unique_slug(self):
-        base_slug = self._base_slug()
-        candidate = base_slug
-        counter = 2
-        queryset = Workplace.objects.filter(slug=candidate)
-        if self.pk:
-            queryset = queryset.exclude(pk=self.pk)
-        while queryset.exists():
-            suffix = f'-{counter}'
-            candidate = f'{base_slug[:160 - len(suffix)]}{suffix}'
-            queryset = Workplace.objects.filter(slug=candidate)
-            if self.pk:
-                queryset = queryset.exclude(pk=self.pk)
-            counter += 1
-        return candidate
-
-    def _base_code(self):
-        normalized_name = (self.name or '').translate(POLISH_CODE_TRANSLATION)
-        return (slugify(normalized_name)[:20] or 'miejsce').upper()
-
-    def _unique_code(self):
-        base_code = self._base_code()
-        candidate = base_code
-        counter = 2
-        queryset = Workplace.objects.filter(owner=self.owner, code__iexact=candidate)
-        if self.pk:
-            queryset = queryset.exclude(pk=self.pk)
-        while queryset.exists():
-            suffix = f'-{counter}'
-            candidate = f'{base_code[:20 - len(suffix)]}{suffix}'
-            queryset = Workplace.objects.filter(owner=self.owner, code__iexact=candidate)
-            if self.pk:
-                queryset = queryset.exclude(pk=self.pk)
-            counter += 1
-        return candidate
-
     def save(self, *args, **kwargs):
-        self.code = (self.code or '').strip().upper()
         if not self.code:
-            self.code = self._unique_code()
+            self.code = generate_workplace_code()
             if kwargs.get('update_fields') is not None:
                 kwargs['update_fields'] = set(kwargs['update_fields']) | {'code'}
         if not self.slug:
-            self.slug = self._unique_slug()
-        super().save(*args, **kwargs)
+            self.slug = self.code
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = set(kwargs['update_fields']) | {'slug'}
+        if not self._state.adding:
+            return super().save(*args, **kwargs)
+
+        database = kwargs.get('using') or router.db_for_write(type(self), instance=self)
+        for attempt in range(5):
+            # Old URLs remain reserved, including after a Workspace is renamed.
+            if Workplace.objects.using(database).filter(legacy_slug=self.code).exists():
+                self.code = self.slug = generate_workplace_code()
+                continue
+            try:
+                with transaction.atomic(using=database):
+                    return super().save(*args, **kwargs)
+            except IntegrityError as error:
+                constraint = getattr(getattr(error.__cause__, 'diag', None), 'constraint_name', None)
+                identifier_collision = constraint == 'unique_workplace_code' or (constraint or '').startswith(
+                    f'{self._meta.db_table}_slug_',
+                )
+                if not identifier_collision or attempt == 4:
+                    raise
+                self.code = self.slug = generate_workplace_code()
+        raise IntegrityError('Nie udało się wygenerować unikatowego kodu Workspace.')
 
     @property
     def initials(self):
@@ -191,13 +168,12 @@ class SidebarFavorite(models.Model):
         return f'{self.user} - {self.workplace} - {self.item_key}'
 
 
-def create_workplace_for_user(user, name, workplace_photo=None, description='', code='', avatar=''):
+def create_workplace_for_user(user, name, workplace_photo=None, description='', avatar=''):
     with transaction.atomic():
         workplace_data = {
             'owner': user,
             'name': name,
             'description': description,
-            'code': code,
             'avatar': avatar,
         }
         if workplace_photo:

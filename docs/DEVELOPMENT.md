@@ -293,6 +293,36 @@ Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
 
+Losowe identyfikatory Workspace wymagają migracji
+`workplaces.0010_random_workspace_identifiers`. Migracja usuwa unikalność nazwy
+u właściciela, nadaje wszystkim istniejącym Workspace globalnie unikatowy kod
+`w_` + 26 małych liter/cyfr i identyczny slug, zachowując dotychczasowy slug
+w `legacy_slug`. Nazwy, PK, dane, członkostwa, awatary i relacje pozostają zachowane.
+Stare linki zachowują kontrolę dostępu i prowadzą do właściwego Workspace.
+Migracja danych nie odtwarza dawnych kodów przy cofnięciu; do przywrócenia
+poprzedniego stanu użyj backupu bazy. Przed wdrożeniem wykonaj standardowe
+sprawdzenie planu i backup, a następnie `manage.py migrate`.
+Uruchamiaj `workplaces.test_identifiers`, `workplaces`,
+`accounts.test_login_redirects`, `dashboard.test_search_regressions`,
+`core.test_task_integrity.TaskIdentityTests` i `planner.test_task_calendar`.
+Testy obejmują powtarzające się nazwy, niezależność kodu/adresu od nazwy,
+kolizje i globalną unikalność w bazie, migrację danych, stare GET/HEAD/POST,
+scoped moduły, członków, obce Workspace i cofnięcie dostępu.
+Browser QA: katalog → tworzenie dwóch Workspace o tej samej nazwie → edycja,
+stały kod po zmianie nazwy, stare linki, wyszukiwanie, błąd/pusty wynik,
+referencyjny modal Projektów, ponowne wejście oraz desktop/telefon.
+
+Weryfikacja identyfikatorów (10.10.2026): 153 z 159 testów powyższego zestawu
+przeszło, w tym wszystkie 11 testów nowego mechanizmu. Sześć błędów
+`workplaces.tests` odtworzono na niezmienionym HEAD w osobnej bazie.
+Playwright/Chrome na izolowanej bazie QA przy 1440×1000 i 390×844 potwierdził
+powtarzające się nazwy, automatyczny kod tylko do odczytu, zapis i przeładowanie
+po zmianie nazwy, stare scoped linki z filtrami, pusty wynik, błąd formularza,
+referencyjny modal Projektów i ponowne otwarcie modali. Nie było błędów JavaScript
+ani przepełnienia strony. Plugin Browser był niedostępny. Kontrole Django,
+migracji, składni, dokumentacji i indeksu przeszły; całego repozytorium
+ani innych przeglądarek nie sprawdzano.
+
 `accounts.test_login_redirects` sprawdza wejście na „Dla ciebie” po pierwszym
 logowaniu, rejestracji i ponownym logowaniu, ignorowanie `next` z GET/POST,
 zachowanie aktywnego Workspace i scoped URL, dostęp członka, obcy Workspace,

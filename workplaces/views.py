@@ -37,7 +37,6 @@ def workplaces(request):
                     else form.cleaned_data.get('workplace_photo')
                 ),
                 description=form.cleaned_data.get('description', ''),
-                code=form.cleaned_data.get('code', ''),
                 avatar=form.cleaned_data.get('avatar', ''),
             )
             if form.avatar_mode == 'upload' and form.cleaned_data.get('workplace_photo_crop'):
@@ -274,7 +273,9 @@ def _sidebar_favorite_next_url(request, workplace):
 
 @login_required
 def workplace_home(request, workplace_slug):
-    workplace = get_object_or_404(workplaces_for_user(request.user), slug=workplace_slug)
+    workplace = get_object_or_404(
+        workplaces_for_user(request.user), Q(slug=workplace_slug) | Q(legacy_slug=workplace_slug),
+    )
     set_active_workplace(request, workplace)
     enable_workspace_url_scope(request)
     return redirect(scoped_workplace_app_path(workplace, 'tasks'))

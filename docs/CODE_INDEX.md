@@ -19,7 +19,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 19 | 0 | 18 | 58 |
 | [accounts](../accounts) | 20 | 7 | 9 | 56 |
-| [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
+| [workplaces](../workplaces) | 22 | 10 | 13 | 116 |
 | [tasks](../tasks) | 41 | 65 | 46 | 324 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
@@ -51,14 +51,14 @@ Metody/properties: `presence_status_class`, `get_full_name`, `__str__`.
 
 Źródło: [workplaces/models.py](../workplaces/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `slug` (SlugField), `avatar` (CharField), `workplace_photo` (FileField), `owner` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `slug` (SlugField), `legacy_slug` (SlugField), `avatar` (CharField), `workplace_photo` (FileField), `owner` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_workplaces' |
 | `members` | `settings.AUTH_USER_MODEL` | related_name='workplaces'; through='WorkplaceMembership' |
 
-Metody/properties: `_base_slug`, `_unique_slug`, `_base_code`, `_unique_code`, `save`, `initials`, `ensure_owner_membership`, `__str__`.
+Metody/properties: `save`, `initials`, `ensure_owner_membership`, `__str__`.
 
 ### `WorkplaceMembership`
 
@@ -897,7 +897,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 Źródło: [workplaces/forms.py](../workplaces/forms.py).
 
-- `WorkplaceForm` — Meta.fields: `['avatar', 'workplace_photo', 'name', 'code', 'description']`
+- `WorkplaceForm` — Meta.fields: `['avatar', 'workplace_photo', 'name', 'description']`
 
 ### tasks
 
@@ -1262,7 +1262,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [workplaces/context_processors.py](../workplaces/context_processors.py) — `current_workplace`
 - [workplaces/forms.py](../workplaces/forms.py) — `WorkplaceForm`
 - [workplaces/middleware.py](../workplaces/middleware.py) — `ActiveWorkplaceMiddleware`
-- [workplaces/models.py](../workplaces/models.py) — `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
+- [workplaces/models.py](../workplaces/models.py) — `generate_workplace_code`, `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
 - [workplaces/navigation.py](../workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
 - [workplaces/services.py](../workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
 - [workplaces/team_views.py](../workplaces/team_views.py) — `TeamRoleSelect`, `InvitationForm`, `invitation_candidates`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
@@ -1849,6 +1849,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `DefaultWorkplaceTests`: 6 metod testowych.
 - `ConcurrentDefaultWorkplaceTests`: 1 metod testowych.
 
+### workplaces/test_identifiers.py
+
+Źródło: [workplaces/test_identifiers.py](../workplaces/test_identifiers.py).
+
+- `WorkspaceIdentifierTests`: 10 metod testowych.
+- `WorkspaceIdentifierMigrationTests`: 1 metod testowych.
+
 ### workplaces/test_invitation_candidates.py
 
 Źródło: [workplaces/test_invitation_candidates.py](../workplaces/test_invitation_candidates.py).
@@ -1872,7 +1879,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [workplaces/tests.py](../workplaces/tests.py).
 
-- `WorkplaceSelectionTests`: 44 metod testowych.
+- `WorkplaceSelectionTests`: 43 metod testowych.
 
 ### tasks/test_direct_sharing_migration.py
 
@@ -2324,6 +2331,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [workplaces/migrations/0007_sidebarfavorite_position.py](../workplaces/migrations/0007_sidebarfavorite_position.py)
 - [workplaces/migrations/0008_team_invitations.py](../workplaces/migrations/0008_team_invitations.py)
 - [workplaces/migrations/0009_workplace_avatar.py](../workplaces/migrations/0009_workplace_avatar.py)
+- [workplaces/migrations/0010_random_workspace_identifiers.py](../workplaces/migrations/0010_random_workspace_identifiers.py)
 
 ### tasks
 

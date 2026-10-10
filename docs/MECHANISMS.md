@@ -86,12 +86,23 @@ scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
 
 `ensure_default_workplace()` tworzy Workspace tylko wtedy, gdy użytkownik nie
 ma żadnego dostępnego miejsca (własnego ani przez aktywne członkostwo).
-Losuje polską nazwę z `DEFAULT_WORKPLACE_NAMES` i zapisuje ją razem ze zwykłym
-kodem i slugiem generowanymi przez model, rolą właściciela oraz ulubionym
+Losuje polską nazwę z `DEFAULT_WORKPLACE_NAMES` i zapisuje ją razem ze stałym
+losowym identyfikatorem generowanym przez model, rolą właściciela oraz ulubionym
 Dashboardem. W transakcji blokuje wiersz użytkownika i ponownie sprawdza
 dostępne Workspace, aby równoczesne pierwsze wejścia nie tworzyły duplikatów.
 Kolejne wejścia, utrata sesji oraz edycja nazwy nie powodują ponownego losowania.
 Istniejące Workspace, również z dawną nazwą domyślną, pozostają bez zmian.
+
+Nazwa Workspace jest etykietą: może zawierać dowolny tekst do 140 znaków
+i może się powtarzać, również u tego samego właściciela. Formularz nadal wymaga
+niepustej nazwy i normalizuje odstępy. `Workplace.code` jest stałym, losowym
+identyfikatorem `w_` + 26 małych liter/cyfr generowanym przez `secrets`.
+Globalne ograniczenie `unique_workplace_code` chroni unikalność w bazie;
+przy kolizji tworzenie ponawia losowanie w osobnej transakcji/savepoincie.
+Nie ma kodu z nazwy ani numerowanych końcówek. Formularze i admin nie pozwalają
+zmieniać kodu. `slug` ma tę samą wartość, więc zmiana nazwy lub opisu nie zmienia
+adresu `/workplaces/<code>/`. `legacy_slug` zachowuje poprzedni segment URL
+istniejącego Workspace i jest zarezerwowany przed użyciem jako nowy identyfikator.
 
 Backfill obejmuje stare projekty, zadania, karty, firmy, kontakty,
 powiązania kontaktów i wydarzenia. Nie jest ogólną migracją wszystkich modeli.
@@ -121,6 +132,10 @@ Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
 odpowiedniego Workspace i zachowuje query string. POST nie jest w ten sam
 sposób przekierowywany, więc bazowy endpoint POST nadal korzysta z sesji.
+Stare scoped adresy z `legacy_slug` nadal sprawdzają dostęp bieżącego użytkownika:
+GET/HEAD przekierowuje na losowy identyfikator z zachowaniem modułu, dalszej
+ścieżki i query string, a POST obsługuje ten sam Workspace bez utraty treści.
+Stary adres główny Workspace również prowadzi do jego aktualnego modułu Zadań.
 Operacje JS zadań, kart i kalendarza używają adresów scoped wygenerowanych
 dla otwartego ekranu. Zmiana Workspace w drugiej karcie nie zmienia ich celu.
 `tasks.js` odczytuje moduł i bazowy adres z `data-task-app` oraz

@@ -97,7 +97,7 @@
                                             {% endif %}
                                         </span>
                                     </span>
-                                    <span class="workplaces-directory__cell workplace-row__code tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code" role="cell">{{ workplace.code|default:"—" }}</span>
+                                    <span class="workplaces-directory__cell workplace-row__code tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code" role="cell" title="{{ workplace.code }}">{{ workplace.code|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="cell">{{ workplace.description|default:"—" }}</span>
                                     <span class="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="members" role="cell">
                                         <i data-icon="users" aria-hidden="true"></i>
@@ -169,11 +169,10 @@
                             <section class="tasks-project-parameters workplace-modal__parameters" aria-labelledby="workplace-create-parameters-title">
                                 <h3 class="u-sr-only" id="workplace-create-parameters-title">Parametry miejsca pracy</h3>
                                 <div class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields">
-                                    <label class="workplace-create-modal__code-field{% if form.code.errors %} has-error{% endif %}" for="{{ form.code.id_for_label }}">
+                                    <label class="workplace-create-modal__code-field" for="workplace-create-code">
                                         <span>Kod miejsca pracy</span>
-                                        {{ form.code }}
-                                        <small id="workplace-create-code-hint" class="u-sr-only">Zostaw puste, aby wygenerować unikalny kod z nazwy. Możesz go później zmienić.</small>
-                                        {% for error in form.code.errors %}<span class="workplace-create-modal__field-error" role="alert">{{ error }}</span>{% endfor %}
+                                        <input id="workplace-create-code" type="text" class="tasks-inline-input workplace-create-modal__text-input" value="Generowany automatycznie" readonly aria-describedby="workplace-create-code-hint">
+                                        <small id="workplace-create-code-hint" class="u-sr-only">Unikatowy, losowy kod zostanie nadany przy tworzeniu Workspace i pozostanie stały.</small>
                                     </label>
                                 </div>
                             </section>

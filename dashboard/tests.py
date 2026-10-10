@@ -200,8 +200,8 @@ class GlobalSearchTests(TestCase):
             email='search-other@example.com',
             password='test-pass-123',
         )
-        self.workplace = create_workplace_for_user(self.user, 'Studio Apollo', code='APOLLO')
-        self.other_workplace = create_workplace_for_user(self.user, 'Archiwum', code='ARCH')
+        self.workplace = create_workplace_for_user(self.user, 'Studio Apollo')
+        self.other_workplace = create_workplace_for_user(self.user, 'Archiwum')
         self.foreign_workplace = create_workplace_for_user(self.other_user, 'Obce Apollo')
         session = self.client.session
         session['active_workplace_id'] = self.workplace.pk

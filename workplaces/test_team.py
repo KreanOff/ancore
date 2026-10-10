@@ -331,8 +331,8 @@ class TeamSlugMigrationTests(TransactionTestCase):
             executor.migrate(latest)
             state = executor.loader.project_state(latest).apps
             spaces = state.get_model('workplaces', 'Workplace')
-            self.assertEqual(spaces.objects.get(pk=first.pk).slug, 'studio')
-            self.assertNotEqual(spaces.objects.get(pk=second.pk).slug, 'studio')
+            self.assertEqual(spaces.objects.get(pk=first.pk).legacy_slug, 'studio')
+            self.assertNotEqual(spaces.objects.get(pk=second.pk).legacy_slug, 'studio')
             self.assertEqual(state.get_model('tasks', 'Task').objects.get(pk=task.pk).workplace_id, second.pk)
             self.assertTrue(state.get_model('workplaces', 'WorkplaceMembership').objects.filter(pk=membership.pk, workplace_id=second.pk, user_id=owner.pk, is_active=False).exists())
         finally:

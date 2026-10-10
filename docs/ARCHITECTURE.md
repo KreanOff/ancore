@@ -222,6 +222,10 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   nie tworzy dodatkowych modeli ani kopii danych biznesowych.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
   Katalog `/workplaces/` jest osobną stroną z własnym menu zarządzania Workspace.
+  Segment `<slug>` w adresach Workspace ma wartość stałego losowego kodu
+  `w_` + 26 małych liter/cyfr, niezależnego od dowolnej, powtarzalnej nazwy.
+  Stare segmenty zachowuje `Workplace.legacy_slug`; middleware obsługuje je
+  z dotychczasowymi kontrolami członkostwa i kieruje GET/HEAD na aktualny adres.
   „Zarządzaj przestrzeniami” ma odrębne menu dotyczące przestrzeni. Okna zarządzania i błędy
   formularzy pozostają nad tym katalogiem, bez zmiany aktywnego Workspace.
 - Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/calendar/`,

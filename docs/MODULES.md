@@ -59,7 +59,11 @@ obsługuje osobny mechanizm opisany w Mechanizmach.
 **Funkcje:** katalog Workspace oraz zakładki „Główna”, „Członkowie”
 i „Wysłane zaproszenia” w oknie edycji miejsca pracy. Otrzymane zaproszenia
 są dostępne przez powiadomienia. Utworzenie, edycja, usunięcie i przełączenie;
-nazwa, opis, kod, slug i awatar; ulubione miejsca w nawigacji oraz ich kolejność.
+nazwa, opis i awatar; stały losowy kod oraz ulubione miejsca w nawigacji i ich kolejność.
+Nazwy mogą się powtarzać. Kod `w_` + 26 małych liter/cyfr jest globalnie unikatowy,
+nadawany automatycznie i tylko do odczytu. Jest także segmentem adresu Workspace;
+zmiana nazwy nie zmienia kodu ani adresu. Dawne adresy pozostają aliasami
+z tymi samymi kontrolami dostępu.
 `Workplace.avatar` zapisuje identyfikator jednej z 30 ilustracji współdzielonych
 z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID z pierwotnej
 puli 24 motywów, zachowujący wcześniejsze przypisania.
