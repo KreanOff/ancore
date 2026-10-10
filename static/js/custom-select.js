@@ -69,7 +69,7 @@
         const selected = Array.from(select.selectedOptions || []);
 
         if (select.multiple) {
-            if (!selected.length) return 'Wybierz opcje';
+            if (!selected.length) return select.getAttribute('data-ancore-custom-select-empty-label') || 'Wybierz opcje';
             if (selected.length === 1) return selected[0].textContent.trim();
             return `${selected.length} wybrane`;
         }
@@ -236,7 +236,9 @@
 
         label.textContent = selectedLabel(select);
         button.querySelector('.ancore-custom-select__icon, .ancore-custom-select__preview')?.remove();
-        const visual = select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0]) : null;
+        const icon = select.getAttribute('data-ancore-custom-select-icon');
+        const visual = (select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0]) : null)
+            || (icon ? window.AncoreIcons?.create(icon, { className: 'ancore-custom-select__icon' }) : null);
         if (visual) {
             button.prepend(visual);
             renderIcon(button);

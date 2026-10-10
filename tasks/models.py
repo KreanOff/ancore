@@ -62,6 +62,7 @@ def _add_update_field(kwargs, field_name):
 
 
 class TaskProject(models.Model):
+    space_archived = models.BooleanField(default=False, editable=False)
     class Visibility(models.TextChoices):
         PUBLIC = 'public', 'Publiczny'
         PRIVATE = 'private', 'Prywatny'
@@ -553,6 +554,7 @@ class TaskTagNote(models.Model):
 
 
 class Task(models.Model):
+    space_archived = models.BooleanField(default=False, editable=False)
     PRIORITY_CHOICES = [
         ('none', 'Brak priorytetu'),
         ('low', 'Niski'),

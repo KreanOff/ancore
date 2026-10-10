@@ -1,7 +1,9 @@
+from datetime import UTC
 from django.conf import settings
 from django.db import models, router, transaction
 from django.db.models import Q
-from core.comment_images import comment_image_storage
+from django.utils import timezone
+from core.comment_images import comment_image_storage, AttachmentPresentation
 
 from .defaults import KINDS, MANAGEMENT, TEMPLATES, issue_type_icon, template_settings
 from .avatars import avatar_upload_path
@@ -19,8 +21,15 @@ class SpaceConfiguration(models.Model):
 
 
 class Space(models.Model):
-    """Configuration of the existing project; its ACL remains authoritative."""
-    project = models.OneToOneField('tasks.TaskProject', on_delete=models.CASCADE, related_name='space')
+    """Independent workspace space; project is only a historical import link."""
+    project = models.OneToOneField('tasks.TaskProject', on_delete=models.SET_NULL, related_name='space', null=True, blank=True, editable=False)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_spaces')
+    responsible_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='responsible_spaces')
+    visibility = models.CharField(max_length=7, choices=[('public', 'Publiczna'), ('private', 'Prywatna')], default='public')
+    private_owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='private_spaces')
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='favorite_spaces', blank=True)
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE)
     key = models.CharField(max_length=12)
     slug = models.SlugField(max_length=SLUG_MAX_LENGTH, editable=False)
@@ -48,17 +57,149 @@ class Space(models.Model):
             from workplaces.models import Workplace
             Workplace.objects.using(database).select_for_update().get(pk=self.workplace_id)
             siblings = type(self).objects.using(database).filter(workplace_id=self.workplace_id).exclude(pk=self.pk)
-            self.slug = unique_space_slug(siblings, self.project.name)
+            self.slug = unique_space_slug(siblings, self.name)
             if update_fields is not None:
                 kwargs['update_fields'] = set(update_fields) | {'slug'}
             return super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.project.name
+        return self.name
 
     @property
     def statuses(self):
         return self.configuration.settings['statuses']
+
+
+class SpaceMembership(models.Model):
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('observer', 'Obserwator')], default='member')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['space', 'user'], name='space_member_unique')]
+
+
+class SpaceTask(models.Model):
+    """Task content owned by a space, without a legacy project or group."""
+    PRIORITY_CHOICES = [('none', 'Brak priorytetu'), ('low', 'Niski'), ('medium', 'Średni'), ('high', 'Wysoki'), ('urgent', 'Pilny')]
+    STATUS_CHOICES = [('new', 'Nowe'), ('in_progress', 'Realizowane'), ('resolved', 'Rozwiązane'), ('closed', 'Zamknięte'), ('reopened', 'Ponownie otwarte')]
+    TASK_TYPE_CHOICES = [('general', 'Ogólne'), ('call', 'Telefon'), ('email', 'E-mail'), ('meeting', 'Spotkanie'), ('offer', 'Oferta'), ('invoice', 'Faktura'), ('complaint', 'Reklamacja'), ('onboarding', 'Onboarding'), ('internal', 'Wewnętrzne')]
+    task_type = models.CharField(max_length=20, choices=TASK_TYPE_CHOICES, default='general')
+    reminder_at = models.DateTimeField(null=True, blank=True)
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    is_completed = models.BooleanField(default=False)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_space_tasks')
+    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_space_tasks')
+    due_at = models.DateTimeField(null=True, blank=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subtasks')
+    tags = models.ManyToManyField('tasks.TaskTag', related_name='space_tasks', blank=True)
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='favorite_space_tasks', blank=True)
+    visibility = models.CharField(max_length=7, choices=[('public', 'Przestrzeń'), ('private', 'Wybrane osoby')], default='public')
+    private_owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='private_space_tasks')
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        self.is_completed = self.status == 'closed'
+        self.completion_date = (self.completion_date or timezone.now()) if self.is_completed else None
+        if kwargs.get('update_fields'):
+            kwargs['update_fields'] = set(kwargs['update_fields']) | {'is_completed', 'completion_date'}
+        with transaction.atomic():
+            Space.objects.select_for_update().get(pk=self.space_id)
+            from django.core.exceptions import ValidationError
+            if self.pk and type(self).objects.filter(pk=self.pk).exclude(space_id=self.space_id).exists():
+                raise ValidationError('Zadanie musi pozostać w swojej przestrzeni.')
+            if self.parent_id and not type(self).objects.filter(pk=self.parent_id, space_id=self.space_id).exists():
+                raise ValidationError('Podzadanie musi należeć do przestrzeni rodzica.')
+            parent_id = self.parent_id
+            visited = {self.pk} if self.pk else set()
+            while parent_id:
+                if parent_id in visited:
+                    raise ValidationError('Zadania nie mogą tworzyć cyklu podzadań.')
+                visited.add(parent_id)
+                parent_id = type(self).objects.filter(pk=parent_id).values_list('parent_id', flat=True).first()
+            super().save(*args, **kwargs)
+
+    @property
+    def due_urgency(self):
+        return 'overdue' if self.due_at and self.due_at < timezone.now() and not self.is_completed else 'normal'
+
+
+class SpaceTaskMembership(models.Model):
+    created_at = models.DateTimeField(default=timezone.now)
+    task = models.ForeignKey(SpaceTask, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=SpaceMembership._meta.get_field('role').choices, default='member')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['task', 'user'], name='space_task_member_unique')]
+
+
+class SpaceTaskActivity(models.Model):
+    task = models.ForeignKey(SpaceTask, on_delete=models.CASCADE, related_name='activities')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    kind = models.CharField(max_length=12, choices=[('system', 'Historia'), ('comment', 'Komentarz')], default='system')
+    action = models.CharField(max_length=32, default='updated')
+    message = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'pk']
+
+    def get_action_display(self):
+        return {'created': 'Utworzono zadanie', 'updated': 'Zaktualizowano zadanie', 'status_changed': 'Zmieniono status', 'commented': 'Dodano komentarz'}.get(self.action, self.message)
+
+
+class SpaceTaskFile(AttachmentPresentation, models.Model):
+    task = models.ForeignKey(SpaceTask, on_delete=models.CASCADE, related_name='attachments')
+    activity = models.ForeignKey(SpaceTaskActivity, on_delete=models.CASCADE, null=True, blank=True, related_name='images')
+    file = models.FileField(upload_to='space_task_files/', storage=comment_image_storage)
+    filename = models.CharField(max_length=255)
+    file_size = models.PositiveIntegerField(default=0)
+    # Imports keep the original storage reference; new files use private storage.
+    legacy_storage = models.BooleanField(default=False, editable=False)
+
+
+    def get_url(self):
+        from workplaces.services import scoped_workplace_app_path
+        return scoped_workplace_app_path(self.task.space.workplace, 'space', f'{self.task.space.slug}/tasks/{self.task.work_item.key}/files/{self.pk}/')
+
+
+class SpaceTaskReminder(models.Model):
+    task = models.ForeignKey(SpaceTask, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    scheduled_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["task", "recipient", "scheduled_at"], name="space_reminder_delivery_unique")]
+
+
+class SpaceTaskWorkLog(models.Model):
+    task = models.ForeignKey(SpaceTask, on_delete=models.CASCADE, related_name='work_logs')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    started_at = models.DateTimeField('Data i godzina rozpoczęcia')
+    ended_at = models.DateTimeField('Data i godzina zakończenia')
+    description = models.TextField('Opis', max_length=4000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-started_at', '-pk']
+        constraints = [models.CheckConstraint(condition=Q(ended_at__gt=models.F('started_at')), name='space_worklog_positive_time')]
+
+
+    @property
+    def duration_minutes(self):
+        return int((self.ended_at.astimezone(UTC) - self.started_at.astimezone(UTC)).total_seconds() // 60)
 
 
 class Team(models.Model):
@@ -111,8 +252,9 @@ class Sprint(models.Model):
 
 
 class WorkItem(models.Model):
-    """Planning metadata, never a second copy of a task or its history/files."""
-    task = models.OneToOneField('tasks.Task', on_delete=models.CASCADE, related_name='work_item')
+    """Planning and stable space key for an independent SpaceTask."""
+    task = models.OneToOneField(SpaceTask, on_delete=models.CASCADE, related_name='work_item', null=True, blank=True)
+    legacy_task = models.OneToOneField('tasks.Task', on_delete=models.SET_NULL, related_name='work_item', null=True, blank=True, editable=False)
     space = models.ForeignKey(Space, on_delete=models.CASCADE, null=True, blank=True, related_name='items')
     key = models.CharField(max_length=32)
     number = models.PositiveIntegerField(default=0)
@@ -126,6 +268,16 @@ class WorkItem(models.Model):
     points = models.PositiveIntegerField(null=True, blank=True)
     start_on = models.DateField(null=True, blank=True)
     custom_values = models.JSONField(default=dict, blank=True)
+
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        if self.task_id and not SpaceTask.objects.filter(pk=self.task_id, space_id=self.space_id).exists():
+            raise ValidationError('Planowanie musi należeć do przestrzeni zadania.')
+        if self.pk:
+            original = type(self).objects.filter(pk=self.pk).values('space_id', 'task_id', 'key', 'number').first()
+            if original and original['task_id'] and any(original[name] != getattr(self, name) for name in original):
+                raise ValidationError('Klucz i przestrzeń zadania są stałe.')
+        return super().save(*args, **kwargs)
 
     def get_work_type_display(self):
         settings = self.space.configuration.settings if self.space_id else template_settings()

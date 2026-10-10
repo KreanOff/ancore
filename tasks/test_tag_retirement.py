@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from spaces.testing import make_space
 from tasks.forms import TaskForm, TaskModalForm
 from tasks.models import Task, TaskProject, TaskSection, TaskTag, TaskTagNote
 from workplaces.models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
@@ -20,7 +21,8 @@ class LegacyTagRetirementTests(TestCase):
         cls.task = Task.objects.create(user=cls.owner, workplace=cls.workspace, title='Zadanie bez przestrzeni')
         cls.legacy = TaskTag.objects.create(user=cls.owner, workplace=cls.workspace, name='LegacyTagProbe')
         cls.note = TaskTagNote.objects.create(tag=cls.legacy, author=cls.owner, message='LegacyNoteProbe')
-        cls.local = TaskTag.objects.create(user=cls.owner, workplace=cls.workspace, space=cls.project.space, name='Tag produktu')
+        cls.space = make_space(user=cls.owner, workplace=cls.workspace, name='Produkt')
+        cls.local = TaskTag.objects.create(user=cls.owner, workplace=cls.workspace, space=cls.space, name='Tag produktu')
         cls.task.tags.add(cls.legacy)
 
     def login(self, user):
@@ -106,14 +108,14 @@ class LegacyTagRetirementTests(TestCase):
 
     def test_space_tags_remain_available_in_both_url_variants(self):
         self.login(self.owner)
-        for prefix in ['/spaces/', scoped_workplace_app_path(self.workspace, 'spaces')]:
-            url = f'{prefix}{self.project.space.pk}/?view=tags'
+        for prefix in ['/space/', scoped_workplace_app_path(self.workspace, 'space')]:
+            url = f'{prefix}{self.space.slug}/?view=tags'
             response = self.client.get(url)
             self.assertContains(response, self.local.name)
             self.assertNotContains(response, self.legacy.name)
             self.assertContains(response, 'data-open-tag')
             self.assertEqual(self.client.post(url, {'action': 'create_tag', 'name': 'Wydanie'}).status_code, 302)
-            TaskTag.objects.filter(space=self.project.space, name='Wydanie').delete()
+            TaskTag.objects.filter(space=self.space, name='Wydanie').delete()
 
     def test_old_admin_directory_is_removed_and_task_choices_exclude_legacy_tags(self):
         self.owner.is_staff = self.owner.is_superuser = True
@@ -122,4 +124,4 @@ class LegacyTagRetirementTests(TestCase):
         for suffix in ['', 'add/', f'{self.legacy.pk}/change/', f'{self.legacy.pk}/delete/']:
             self.assertEqual(self.client.get('/admin/tasks/tasktag/' + suffix).status_code, 404)
         response = self.client.get(reverse('admin:tasks_task_change', args=[self.task.pk]))
-        self.assertEqual(list(response.context['adminform'].form.fields['tags'].queryset), [self.local])
+        self.assertEqual(list(response.context['adminform'].form.fields['tags'].queryset), [])

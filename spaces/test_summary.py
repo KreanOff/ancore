@@ -1,3 +1,4 @@
+from .testing import make_space
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -5,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from tasks.models import Task, TaskActivity, TaskMembership, TaskProject, TaskProjectMembership, TaskSection
+from .models import SpaceTask, SpaceTaskActivity, SpaceTaskMembership, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -21,13 +22,13 @@ class SpaceSummaryTests(TestCase):
         cls.second = create_workplace_for_user(cls.owner, 'Drugi Workspace')
         cls.foreign = create_workplace_for_user(cls.other, 'Obcy Workspace')
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member, role='member')
-        cls.project = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Produkt', visibility='private', private_owner=cls.owner)
-        TaskProjectMembership.objects.create(project=cls.project, user=cls.member, role='observer')
-        cls.space = cls.project.space
+        cls.project = make_space(user=cls.owner, workplace=cls.workspace, name='Produkt', visibility='private', private_owner=cls.owner)
+        SpaceMembership.objects.create(space=cls.project, user=cls.member, role='observer')
+        cls.space = cls.project
         config = cls.space.configuration
         config.settings['statuses'].insert(2, {'key': 'review', 'label': 'Weryfikacja', 'category': 'in_progress', 'transitions': ['closed']})
         config.save()
-        cls.section = TaskSection.objects.create(project=cls.project, title='Zadania')
+        cls.section = cls.project
 
     def setUp(self):
         self.now = timezone.now()
@@ -37,8 +38,8 @@ class SpaceSummaryTests(TestCase):
         session.save()
 
     def task(self, **kwargs):
-        task = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Zadanie', **kwargs)
-        Task.objects.filter(pk=task.pk).update(created_at=self.now - timedelta(days=30))
+        task = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Zadanie', **kwargs)
+        SpaceTask.objects.filter(pk=task.pk).update(created_at=self.now - timedelta(days=30))
         task.activities.update(created_at=self.now - timedelta(days=30))
         return task
 
@@ -51,15 +52,15 @@ class SpaceSummaryTests(TestCase):
 
     def test_recent_counters_use_dates_and_count_each_updated_task_once(self):
         created = self.task()
-        Task.objects.filter(pk=created.pk).update(created_at=self.now - timedelta(days=1))
+        SpaceTask.objects.filter(pk=created.pk).update(created_at=self.now - timedelta(days=1))
         closed = self.task(status='closed')
-        Task.objects.filter(pk=closed.pk).update(completion_date=self.now - timedelta(days=2))
+        SpaceTask.objects.filter(pk=closed.pk).update(completion_date=self.now - timedelta(days=2))
         old = self.task(status='closed')
-        Task.objects.filter(pk=old.pk).update(completion_date=self.now - timedelta(days=20))
+        SpaceTask.objects.filter(pk=old.pk).update(completion_date=self.now - timedelta(days=20))
         updated = self.task()
         for action in ('updated', 'commented', 'status_changed'):
-            activity = TaskActivity.objects.create(task=updated, actor=self.member, action=action)
-            TaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(days=1))
+            activity = SpaceTaskActivity.objects.create(task=updated, actor=self.member, action=action)
+            SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(days=1))
         self.task(due_at=self.now + timedelta(days=1))
         self.task(due_at=self.now - timedelta(seconds=1))
         self.task(due_at=self.now + timedelta(days=8))
@@ -69,13 +70,13 @@ class SpaceSummaryTests(TestCase):
 
     def test_time_boundaries_and_reopened_tasks(self):
         reopened = self.task(status='reopened')
-        Task.objects.filter(pk=reopened.pk).update(completion_date=self.now - timedelta(days=1))
+        SpaceTask.objects.filter(pk=reopened.pk).update(completion_date=self.now - timedelta(days=1))
         boundary = self.task(status='closed')
-        Task.objects.filter(pk=boundary.pk).update(completion_date=self.now - timedelta(days=7), created_at=self.now - timedelta(days=7))
+        SpaceTask.objects.filter(pk=boundary.pk).update(completion_date=self.now - timedelta(days=7), created_at=self.now - timedelta(days=7))
         for due in (self.now, self.now + timedelta(days=7), self.now + timedelta(days=7, seconds=1)):
             self.task(due_at=due)
         future = self.task(status='closed')
-        Task.objects.filter(pk=future.pk).update(completion_date=self.now + timedelta(days=1), created_at=self.now + timedelta(days=1))
+        SpaceTask.objects.filter(pk=future.pk).update(completion_date=self.now + timedelta(days=1), created_at=self.now + timedelta(days=1))
         metrics = {row['key']: row['count'] for row in self.response().context['summary']['metrics']}
         self.assertEqual(metrics, {'completed': 1, 'updated': 0, 'created': 1, 'due': 2})
 
@@ -84,9 +85,9 @@ class SpaceSummaryTests(TestCase):
         review = self.task(status='in_progress')
         type(review.work_item).objects.filter(task=review).update(status='review')
         recent = self.task(status='closed')
-        Task.objects.filter(pk=recent.pk).update(completion_date=self.now - timedelta(days=14))
+        SpaceTask.objects.filter(pk=recent.pk).update(completion_date=self.now - timedelta(days=14))
         old = self.task(status='closed')
-        Task.objects.filter(pk=old.pk).update(completion_date=self.now - timedelta(days=14, seconds=1))
+        SpaceTask.objects.filter(pk=old.pk).update(completion_date=self.now - timedelta(days=14, seconds=1))
         summary = self.response().context['summary']
         counts = {row['key']: row['count'] for row in summary['statuses']}
         self.assertEqual(summary['status_total'], 3)
@@ -133,31 +134,31 @@ class SpaceSummaryTests(TestCase):
         visible = self.task()
         hidden = self.task(visibility='private', private_owner=self.owner, assignee=self.member)
         self.task(parent=hidden)
-        private_section = TaskSection.objects.create(project=self.project, title='Poufna grupa', visibility='private', private_owner=self.owner)
-        Task.objects.create(user=self.owner, workplace=self.workspace, section=private_section, title='Poufne zadanie')
+        private_section = make_space(user=self.owner, workplace=self.workspace, name='Poufna przestrzeń', visibility='private', private_owner=self.owner)
+        SpaceTask.objects.create(created_by=self.owner, space=private_section, title='Poufne zadanie')
         for owner, workspace in ((self.owner, self.second), (self.other, self.foreign)):
-            project = TaskProject.objects.create(user=owner, workplace=workspace, name='Inny zakres')
-            section = TaskSection.objects.create(project=project, title='Zadania')
-            Task.objects.create(user=owner, workplace=workspace, section=section, title='Obce zadanie', assignee=self.member)
-        activity = TaskActivity.objects.create(task=visible, actor=self.member, action='updated')
-        TaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(seconds=1))
-        TaskActivity.objects.create(task=hidden, actor=self.owner, action='updated')
+            project = make_space(user=owner, workplace=workspace, name='Inny zakres')
+            section = project
+            SpaceTask.objects.create(created_by=owner, space=section, title='Obce zadanie', assignee=self.member)
+        activity = SpaceTaskActivity.objects.create(task=visible, actor=self.member, action='updated')
+        SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(seconds=1))
+        SpaceTaskActivity.objects.create(task=hidden, actor=self.owner, action='updated')
         response = self.response()
         summary = response.context['summary']
         self.assertEqual(summary['total'], 1)
         self.assertEqual([row['key'] for row in summary['activities']], [visible.work_item.key, visible.work_item.key])
         self.assertEqual(summary['activities'][0]['actor'], 'Jan')
-        self.assertIn(f'task_pk={visible.pk}', summary['activities'][0]['url'])
-        TaskMembership.objects.create(task=hidden, user=self.member, role='observer')
+        self.assertIn(f'/tasks/{visible.work_item.key}/', summary['activities'][0]['url'])
+        SpaceTaskMembership.objects.create(task=hidden, user=self.member, role='observer')
         self.assertEqual(self.response().context['summary']['total'], 3)
-        TaskMembership.objects.filter(task=hidden, user=self.member).delete()
+        SpaceTaskMembership.objects.filter(task=hidden, user=self.member).delete()
         self.assertEqual(self.response().context['summary']['total'], 1)
-        TaskProjectMembership.objects.filter(project=self.project, user=self.member).delete()
+        SpaceMembership.objects.filter(space=self.project, user=self.member).delete()
         self.assertEqual(self.response().status_code, 404)
 
     def test_drill_downs_match_counts_and_preserve_filters(self):
         task = self.task(priority='urgent', assignee=self.member, due_at=self.now + timedelta(days=1))
-        Task.objects.filter(pk=task.pk).update(created_at=self.now - timedelta(days=1))
+        SpaceTask.objects.filter(pk=task.pk).update(created_at=self.now - timedelta(days=1))
         summary = self.response().context['summary']
         links = [*summary['metrics'], *summary['statuses'], *summary['priorities'], *summary['types'], *summary['workload']]
         for row in links:
@@ -188,8 +189,8 @@ class SpaceSummaryTests(TestCase):
         task.title = '<script>alert("task")</script>'
         task.save()
         for number in range(10):
-            activity = TaskActivity.objects.create(task=task, actor=None, action='commented', message='<script>secret</script>')
-            TaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(minutes=number))
+            activity = SpaceTaskActivity.objects.create(task=task, actor=None, action='commented', message='<script>secret</script>')
+            SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(minutes=number))
         response = self.response()
         rows = response.context['summary']['activities']
         self.assertEqual(len(rows), 8)
@@ -210,8 +211,8 @@ class SpaceSummaryTests(TestCase):
         rows = self.response().context['summary']['epics']
         self.assertEqual(len(rows), 1)
         self.assertEqual((rows[0]['total'], rows[0]['closed'], rows[0]['percent']), (2, 1, 50))
-        self.assertIn(f'task_pk={epic.pk}', rows[0]['url'])
-        TaskMembership.objects.create(task=hidden, user=self.member, role='observer')
+        self.assertIn(f'/tasks/{epic.work_item.key}/', rows[0]['url'])
+        SpaceTaskMembership.objects.create(task=hidden, user=self.member, role='observer')
         self.assertEqual(self.response().context['summary']['epics'][0]['total'], 3)
         self.space.kind = 'business'
         self.space.save()

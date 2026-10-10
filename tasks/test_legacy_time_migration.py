@@ -64,6 +64,10 @@ class LegacyTaskTimeMigrationTests(TransactionTestCase):
                 section_id=self.section.pk, task_id=2, code_number=2, title='Before repair')
 
         self.migrate_forward()
+        imported_parent = self.parent
+        project = TaskProject.objects.create(user=self.owner, workplace=self.team, name='Legacy project after migration')
+        self.section = TaskSection.objects.create(project=project, title='Legacy group after migration')
+        self.parent = Task.objects.create(user=self.owner, section=self.section, title='Legacy parent after migration')
         task = Task.objects.create(user=self.owner, section=self.section, title='After repair')
         member = get_user_model().objects.create_user(
             username='legacy-time-member', email='legacy-time-member@example.test',
@@ -100,7 +104,8 @@ class LegacyTaskTimeMigrationTests(TransactionTestCase):
         with connection.cursor() as cursor:
             cursor.execute('SELECT id, logged_seconds FROM tasks_task ORDER BY id')
             values = dict(cursor.fetchall())
-        self.assertEqual(values[self.parent.pk], 3600)
+        self.assertEqual(values[imported_parent.pk], 3600)
+        self.assertEqual(values[self.parent.pk], 0)
         self.assertEqual(values[task.pk], 0)
         for child in self.parent.subtasks.all():
             self.assertEqual(values[child.pk], 0)

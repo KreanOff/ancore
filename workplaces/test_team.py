@@ -15,6 +15,8 @@ from documents.models import Document, DocumentLibrary, WorkspaceDocument
 from documents import office_service
 from kanban.models import Kanban, KanbanProject, KanbanSection, KanbanAttachment
 from planner.models import CalendarEvent
+from spaces.models import SpaceTask
+from spaces.testing import make_space
 from tasks.forms import TaskForm, TaskModalForm, TaskProjectForm, TaskSectionForm
 from tasks.models import Task, TaskProject, TaskSection, TaskAttachment
 from .models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
@@ -38,6 +40,8 @@ class TeamAccessTests(TestCase):
         cls.section = TaskSection.objects.create(project=cls.project, title='Realizacja')
         cls.task = Task.objects.create(user=cls.owner, workplace=cls.team, section=cls.section, title='Zespołowe wdrożenie', assignee=cls.member)
         cls.other_task = Task.objects.create(user=cls.owner, workplace=cls.private, title='Tajne prywatne zadanie')
+        cls.task_space = make_space(user=cls.owner, workplace=cls.team, name='Przestrzeń zespołu')
+        cls.space_task = SpaceTask.objects.create(space=cls.task_space, created_by=cls.owner, title='Zespołowe zadanie przestrzeni', assignee=cls.member)
         cls.space = KanbanProject.objects.create(user=cls.owner, workplace=cls.team, name='Zespołowa tablica')
         cls.board = KanbanSection.objects.create(project=cls.space, title='Realizacja')
         cls.card = Kanban.objects.create(user=cls.owner, workplace=cls.team, section=cls.board, title='Zespołowa karta')

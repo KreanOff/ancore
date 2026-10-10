@@ -25,7 +25,7 @@
         controller?.abort();
         controller = new AbortController();
         const { signal } = controller;
-        const page = document.querySelector('.tasks-issue-page[data-task-app="tasks"]');
+        const page = document.querySelector('.tasks-issue-page[data-task-app="tasks"], .work-task-page');
         if (!page) return;
         const panel = page.querySelector('#task-work-log');
         if (!panel) return;
@@ -234,7 +234,8 @@
                 syncSelection();
                 window.AncoreIcons?.render(panel);
                 document.dispatchEvent(new CustomEvent('ancore:modals-loaded'));
-                window.prependTaskDetailActivityItems?.(payload.activity_html);
+                if (page.classList.contains('work-task-page')) page.dispatchEvent(new CustomEvent('ancore:task-history-added', { detail: payload.activity_html }));
+                else window.prependTaskDetailActivityItems?.(payload.activity_html);
                 pending = false;
                 window.AncoreTaskModals.close(modal);
                 const returnTarget = returnEntryId && panel.querySelector(`[data-work-log-id="${returnEntryId}"] [data-row-actions-toggle]`);

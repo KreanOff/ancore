@@ -1,7 +1,8 @@
+from .testing import make_space
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from tasks.models import TaskProject, TaskProjectMembership
+from .models import SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -13,11 +14,11 @@ class SpaceNavigationTests(TestCase):
         cls.member = get_user_model().objects.create_user(username='space-nav-member', email='space-nav-member@example.test')
         cls.workspace = create_workplace_for_user(cls.owner, 'Nawigacja')
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
-        cls.first = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Pierwsza')
-        cls.second = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Druga')
-        cls.private = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Prywatna', visibility='private', private_owner=cls.owner)
+        cls.first = make_space(user=cls.owner, workplace=cls.workspace, name='Pierwsza')
+        cls.second = make_space(user=cls.owner, workplace=cls.workspace, name='Druga')
+        cls.private = make_space(user=cls.owner, workplace=cls.workspace, name='Prywatna', visibility='private', private_owner=cls.owner)
         cls.other_workspace = create_workplace_for_user(cls.owner, 'Inny Workspace')
-        cls.foreign = TaskProject.objects.create(user=cls.owner, workplace=cls.other_workspace, name='Obca')
+        cls.foreign = make_space(user=cls.owner, workplace=cls.other_workspace, name='Obca')
 
     def setUp(self):
         self.login(self.owner)
@@ -29,23 +30,23 @@ class SpaceNavigationTests(TestCase):
         session.save()
 
     def url(self, project=None, suffix=''):
-        return scoped_workplace_app_path(self.workspace, 'space', f'{project.space.slug}/{suffix}') if project else scoped_workplace_app_path(self.workspace, 'spaces', suffix)
+        return scoped_workplace_app_path(self.workspace, 'space', f'{project.slug}/{suffix}') if project else scoped_workplace_app_path(self.workspace, 'spaces', suffix)
 
     def project_ids(self, response, group):
-        return [space.project_id for space in response.context[f'navigation_{group}_spaces']]
+        return [space.pk for space in response.context[f'navigation_{group}_spaces']]
 
     def test_visits_move_space_to_top_immediately_in_plain_and_scoped_routes(self):
-        for url in [f'/space/{self.first.space.slug}/', self.url(self.second), self.url(self.first, '?view=list')]:
+        for url in [f'/space/{self.first.slug}/', self.url(self.second), self.url(self.first, '?view=list')]:
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(self.project_ids(response, 'recent')[0], response.context['space'].project_id)
+            self.assertEqual(self.project_ids(response, 'recent')[0], response.context['space'].pk)
         response = self.client.get(self.url())
         self.assertEqual(self.project_ids(response, 'recent')[:2], [self.first.pk, self.second.pk])
 
     def test_personal_starred_group_and_limit_have_no_duplicates(self):
         self.first.favorited_by.add(self.owner)
         for number in range(8):
-            TaskProject.objects.create(user=self.owner, workplace=self.workspace, name=f'Dodatkowa {number}')
+            make_space(user=self.owner, workplace=self.workspace, name=f'Dodatkowa {number}')
         self.client.get(self.url(self.first))
         response = self.client.get(self.url())
         self.assertEqual(self.project_ids(response, 'starred'), [self.first.pk])
@@ -71,17 +72,17 @@ class SpaceNavigationTests(TestCase):
         self.assertEqual(self.client.post(self.url(self.first, 'favorite/'), HTTP_X_SPACE_NAVIGATION='true').status_code, 404)
 
     def test_menu_actions_follow_project_management_roles(self):
-        TaskProjectMembership.objects.create(project=self.private, user=self.member, role='observer')
+        SpaceMembership.objects.create(space=self.private, user=self.member, role='observer')
         self.login(self.member)
         response = self.client.get(self.url())
         self.assertNotContains(response, '>Dodaj osoby</span>')
         self.assertContains(response, 'Ustawienia przestrzeni</span>')
         self.assertEqual(self.client.get(self.url(self.private, 'members/')).status_code, 403)
         self.assertEqual(self.client.get(self.url(self.private, '?view=settings')).status_code, 200)
-        TaskProjectMembership.objects.filter(project=self.private, user=self.member).update(role='admin')
+        SpaceMembership.objects.filter(space=self.private, user=self.member).update(role='admin')
         self.assertContains(self.client.get(self.url()), '>Dodaj osoby</span>')
         self.assertEqual(self.client.get(self.url(self.private, 'members/')).status_code, 200)
-        TaskProjectMembership.objects.filter(project=self.private, user=self.member).delete()
+        SpaceMembership.objects.filter(space=self.private, user=self.member).delete()
         self.assertNotContains(self.client.get(self.url()), 'Prywatna')
 
     def test_favorite_ajax_updates_same_personal_relation_and_groups(self):

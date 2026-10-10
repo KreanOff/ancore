@@ -17,11 +17,13 @@ from kanban.models import KanbanActivity
 from tasks.models import TaskActivity
 from workplaces.services import pending_invitations_for_user, scoped_workplace_app_path, workplaces_for_user
 from .models import ActivityInterest, NotificationState
-from .reminders import reminders_for_user
+from .reminders import reminders_for_user, space_reminders_for_user
+from spaces.models import SpaceTaskActivity
+from spaces.access import visible_to as space_visible_to
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
 INVITATION_SOURCES = {'workplace'}
-SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder'}
+SOURCES = {'workplace': 'invitation', 'tasks': 'task_activity', 'kanban': 'kanban_activity', 'reminders': 'reminder', 'spaces': 'space_activity', 'space-reminders': 'space_reminder'}
 VIEWS = {'all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'
 
@@ -160,6 +162,8 @@ def notification_sources(user, workspace='', *, include_deleted=False):
         'tasks': visible_to(TaskActivity.objects.filter(kind='comment'), user).filter(access),
         'kanban': KanbanActivity.objects.none(),  # Historical IDs stay valid but never expose retired records.
         'reminders': reminders_for_user(user),
+        'space-reminders': space_reminders_for_user(user),
+        'spaces': space_visible_to(SpaceTaskActivity.objects.filter(kind='comment'), user),
     }
     for source, queryset in sources.items():
         if source in {'tasks', 'kanban'}:
@@ -168,11 +172,15 @@ def notification_sources(user, workspace='', *, include_deleted=False):
                 inbox_mentioned=Exists(interest.filter(mentioned=True)),
                 inbox_followed=Exists(interest.filter(followed=True)),
             )
+        if source == 'spaces':
+            queryset = queryset.annotate(inbox_mentioned=Case(When(Q(metadata__mentions__contains=[{'user_id': user.pk}]) & ~Q(actor_id=user.pk), then=Value(True)), default=Value(False), output_field=BooleanField()), inbox_followed=Value(False, output_field=BooleanField()))
         if workspace:
             field = 'workplace_id' if source == 'workplace' else 'task__workplace_id'
+            if source in {'spaces', 'space-reminders'}:
+                field = 'task__space__workplace_id'
             queryset = queryset.filter(**{field: workspace})
         state = NotificationState.objects.filter(user=user, **{SOURCES[source]: OuterRef('pk')})
-        default_read = Value(False) if source in INVITATION_SOURCES | {'reminders'} else Case(
+        default_read = Value(False) if source in INVITATION_SOURCES | {'reminders', 'space-reminders'} else Case(
             When(actor_id=user.pk, then=Value(True)), default=Value(False), output_field=BooleanField(),
         )
         sources[source] = queryset.annotate(
@@ -191,12 +199,12 @@ def filtered_sources(user, filters, asof=None, sources=None):
         sources = notification_sources(user, filters['workspace'])
     for source, queryset in sources.items():
         if view in {'mentions', 'following'}:
-            if source not in {'tasks', 'kanban'}:
+            if source not in {'tasks', 'kanban', 'spaces'}:
                 continue
             queryset = queryset.filter(**{'inbox_mentioned' if view == 'mentions' else 'inbox_followed': True})
         if view == 'invitations' and source not in INVITATION_SOURCES:
             continue
-        if view == 'reminders' and source != 'reminders':
+        if view == 'reminders' and source not in {'reminders', 'space-reminders'}:
             continue
         if view == 'archived' and source in INVITATION_SOURCES:
             continue
@@ -254,6 +262,22 @@ def _serialize(source, row):
         }
         item['group_label'] = 'Wymagają Twojej decyzji'
         item['event_label'] = 'Zaproszenie'
+    elif source in {'spaces', 'space-reminders'}:
+        from spaces.services import space_url
+        task = row.task
+        workplace = task.space.workplace
+        key = task.work_item.key
+        reminder = source == 'space-reminders'
+        item = {'source': source, 'source_label': 'Zadania przestrzeni', 'object_label': 'Zadanie', 'object_id': key,
+                'title': task.title, 'actor_label': 'Ancore' if reminder else _actor_label(row.actor),
+                'actor_avatar': account_avatar(None if reminder else row.actor), 'action_message': 'przypomina o zadaniu' if reminder else 'dodał komentarz',
+                'detail_lines': ([_detail_line('Termin', value=date_format(timezone.localtime(task.due_at), 'd.m.Y H:i'))] if task.due_at else []) if reminder else _activity_detail_lines(row, 'Podzadanie'),
+                'location_label': f'{task.space.name} · {key} · {task.title}', 'created_at': row.created_at,
+                'url': scoped_workplace_app_path(workplace, 'space', f'{task.space.slug}/tasks/{key}/?view=list'),
+                'group_label': 'Przypomnienia' if reminder else ('Dzisiaj' if timezone.localdate(row.created_at) == timezone.localdate() else date_format(timezone.localdate(row.created_at), 'd E Y')),
+                'event_label': 'Przypomnienie' if reminder else 'Komentarz'}
+        if not reminder and row.inbox_mentioned:
+            item['event_label'], item['action_message'] = 'Wzmianka', 'wspomina o Tobie w komentarzu'
     elif source == 'reminders':
         task = row.task
         workplace = task.workplace
@@ -320,6 +344,8 @@ def notification_page(user, filters, cursor=''):
             relations.append('task__column')
         if source == 'reminders':
             relations.remove('actor')
+        if source in {'spaces', 'space-reminders'}:
+            relations = ['task__space__workplace', 'task__work_item'] + (['actor'] if source == 'spaces' else [])
         rows = queryset.select_related(*relations).order_by('-created_at', '-pk')[:DASHBOARD_NOTIFICATION_LIMIT + 1]
         candidates.extend((source, row) for row in rows)
     candidates.sort(key=lambda pair: _sort_key(*pair))

@@ -6,9 +6,9 @@ from urllib.parse import urlencode
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.utils import timezone
 
-from tasks.access import visible_to
+from spaces.access import visible_to
 from planner.models import CalendarEvent
-from tasks.models import Task, TaskProject
+from spaces.models import SpaceTask, Space
 from workplaces.services import scoped_workplace_app_path
 
 
@@ -22,7 +22,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     end = timezone.make_aware(datetime.combine(today + timedelta(days=7), time.min))
     week_start = timezone.make_aware(datetime.combine(today - timedelta(days=6), time.min))
     focus = focus if focus in {'deadlines', 'priority', 'kanban'} else 'deadlines'
-    tasks = visible_to(Task.objects.all(), viewer or user).filter(user=user, workplace=workplace, parent__isnull=True)
+    tasks = visible_to(SpaceTask.objects.all(), viewer or user).filter(space__user=user, space__workplace=workplace, parent__isnull=True)
     tasks_url = scoped_workplace_app_path(workplace, 'tasks')
     calendar_url = scoped_workplace_app_path(workplace, 'calendar')
 
@@ -32,7 +32,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         priority=Count('pk', filter=~Q(status='closed') & Q(priority__in=['urgent', 'high'])),
         closed_week=Count('pk', filter=Q(status='closed', completion_date__gte=week_start, completion_date__lte=now)),
     )
-    statuses = {key: 0 for key, _label in Task.STATUS_CHOICES}
+    statuses = {key: 0 for key, _label in SpaceTask.STATUS_CHOICES}
     for row in tasks.values('status').annotate(count=Count('pk')):
         if row['status'] in statuses:
             statuses[row['status']] = row['count']
@@ -45,7 +45,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         When(priority='low', then=Value(3)),
         default=Value(4), output_field=IntegerField(),
     )
-    open_tasks = tasks.exclude(status='closed').select_related('section__project')
+    open_tasks = tasks.exclude(status='closed').select_related('space', 'work_item')
     if focus == 'kanban':
         selected = open_tasks.filter(work_item__space__template__in=['kanban', 'scrum']).order_by(priority_order, '-created_at', '-pk')
     elif focus == 'priority':
@@ -59,14 +59,10 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     for item in selected[:OVERVIEW_LIMIT]:
         app = item._meta.app_label
         due = getattr(item, 'due_at', None)
-        location = 'Zadania · Bez grupy'
-        if item.section_id:
-            project = item.section.project
-            if project.user_id == user.pk and project.workplace_id == workplace.pk:
-                location = f'{project.name} · {item.section.title}'
+        location = f'{item.space.name} · {item.work_item.key}'
         items.append({
             'object': item,
-            'url': scoped_workplace_app_path(workplace, app, f'view-task/{item.task_id}/', f'task_pk={item.pk}'),
+            'url': scoped_workplace_app_path(workplace, 'space', f'{item.space.slug}/tasks/{item.work_item.key}/?view=list'),
             'location': location,
             'due_at': due,
             'overdue': bool(due and due < now),
@@ -83,24 +79,18 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
     ]
 
     # Linked tasks must satisfy the same ownership and Workspace rules.
-    project_task_scope = Q(
-        sections__tasks__user=user, sections__tasks__workplace=workplace,
-        sections__tasks__parent__isnull=True,
-        sections__tasks__in=visible_to(Task.objects.all(), viewer or user),
-    )
-    projects = visible_to(TaskProject.objects.all(), viewer or user).filter(user=user, workplace=workplace).exclude(
-        status__in=['completed', 'cancelled'],
-    ).annotate(
-        item_count=Count('sections__tasks', filter=project_task_scope),
-        closed_count=Count('sections__tasks', filter=project_task_scope & Q(sections__tasks__status='closed')),
-    ).order_by(F('due_at').asc(nulls_last=True), '-created_at', '-pk')
+    project_task_scope = Q(tasks__in=tasks)
+    projects = visible_to(Space.objects.all(), viewer or user).filter(user=user, workplace=workplace).annotate(
+        item_count=Count('tasks', filter=project_task_scope),
+        closed_count=Count('tasks', filter=project_task_scope & Q(tasks__status='closed')),
+    ).order_by('-created_at', '-pk')
     project_count = projects.count()
     project_rows = []
     for project in projects[:4]:
         project_rows.append({
             'object': project,
             'percent': round(project.closed_count * 100 / project.item_count) if project.item_count else 0,
-            'url': scoped_workplace_app_path(workplace, 'space', f'{project.space.slug}/') if hasattr(project, 'space') else f'{tasks_url}?{urlencode({"project": project.pk})}',
+            'url': scoped_workplace_app_path(workplace, 'space', f'{project.slug}/'),
         })
 
     return {
@@ -111,7 +101,7 @@ def dashboard_overview(user, workplace, focus='deadlines', viewer=None):
         'dashboard_item_count': selected.count(),
         'dashboard_statuses': [
             {'key': key, 'label': label, 'count': statuses[key]}
-            for key, label in Task.STATUS_CHOICES
+            for key, label in SpaceTask.STATUS_CHOICES
         ],
         'dashboard_completed_percent': round(statuses['closed'] * 100 / totals['total']) if totals['total'] else 0,
         'dashboard_closed_count': statuses['closed'],

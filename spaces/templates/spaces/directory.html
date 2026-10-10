@@ -19,15 +19,15 @@
         <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
             {% for space in page %}
             <article class="tasks-issue-row tasks-directory-row work-space-row" role="row" data-space-directory-row="{{ space.pk }}">
-                {% if not hide_selection %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ space.pk }}" data-space-id="{{ space.pk }}" aria-label="Zaznacz przestrzeń {{ space.project.name }}"></span>{% endif %}
-                {% if not hide_actions %}{% include 'tasks/includes/directory_row_menu.html' with kind='space' item_id=space.pk item_name=space.project.name actions_template='spaces/directory_row_actions.html' cell_role='cell' %}{% endif %}
+                {% if not hide_selection %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ space.pk }}" data-space-id="{{ space.pk }}" aria-label="Zaznacz przestrzeń {{ space.name }}"></span>{% endif %}
+                {% if not hide_actions %}{% include 'tasks/includes/directory_row_menu.html' with kind='space' item_id=space.pk item_name=space.name actions_template='spaces/directory_row_actions.html' cell_role='cell' %}{% endif %}
                 {% if not directory_compact %}<span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>{% endif %}
-                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{% if management %}{{ space.settings_url }}{% else %}{{ space.url }}{% endif %}" title="{{ space.project.name }}">{{ space.project.name }}</a></span>
+                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{% if management %}{{ space.settings_url }}{% else %}{{ space.url }}{% endif %}" title="{{ space.name }}">{{ space.name }}</a></span>
                 {% if directory_compact %}<span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>{% else %}
                 <span class="tasks-directory-sheet__cell" data-column="kind" role="cell" title="{{ space.get_kind_display }}">{{ space.get_kind_display }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="template" role="cell" title="{{ space.get_template_display }}">{{ space.get_template_display }}</span>
                 {% endif %}
-                <span class="tasks-directory-sheet__cell tasks-project-sheet__description" data-column="description" role="cell" title="{{ space.project.description|striptags }}">{{ space.project.description|striptags|default:'Brak opisu' }}</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__description" data-column="description" role="cell" title="{{ space.description|striptags }}">{{ space.description|striptags|default:'Brak opisu' }}</span>
                 {% if not directory_compact %}<span class="tasks-directory-sheet__cell tasks-project-sheet__count" data-column="tasks_count" role="cell">{{ space.item_count }}</span>{% endif %}
             </article>
             {% endfor %}

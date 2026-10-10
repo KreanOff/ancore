@@ -38,6 +38,9 @@ def require_deletable_tasks(roots, viewer):
 
 def editable_to(queryset, viewer):
     """Visible data excluding observed resources and their entire task trees."""
+    if queryset.model._meta.app_label == 'spaces':
+        from spaces.access import editable_to as space_editable_to
+        return space_editable_to(queryset, viewer)
     if queryset.model._meta.app_label == 'kanban':
         from kanban.access import editable_to as kanban_editable_to
         return kanban_editable_to(queryset, viewer)
@@ -83,6 +86,9 @@ def require_editable(queryset, viewer):
 
 
 def visible_to(queryset, viewer):
+    if queryset.model._meta.app_label == 'spaces':
+        from spaces.access import visible_to as space_visible_to
+        return space_visible_to(queryset, viewer)
     if queryset.model._meta.app_label == 'kanban':
         from kanban.access import visible_to as kanban_visible_to
         return kanban_visible_to(queryset, viewer)
@@ -98,7 +104,9 @@ def visible_to(queryset, viewer):
     )
     privacy = Q(visibility='public') | Q(visibility='private', private_owner=viewer)
     project_privacy = privacy | Q(visibility='private', private_owner__isnull=False, shared_with=viewer)
-    projects = TaskProject.objects.filter(scope, project_privacy).order_by()
+    projects = TaskProject.objects.filter(scope, project_privacy, space_archived=False).order_by()
+    from spaces.models import Space
+    projects = projects.exclude(pk__in=Space.objects.exclude(project_id=None).values('project_id'))
     if model is TaskProject:
         return queryset.filter(pk__in=projects.values('pk'))
     if model is TaskProjectTemplate:
@@ -111,13 +119,14 @@ def visible_to(queryset, viewer):
     # task owner and Workspace remain authoritative; private links fail closed.
     task_sections = TaskSection.objects.filter(
         section_privacy, Q(project__visibility='public') | Q(project__in=projects),
+        project__space_archived=False, project__space__isnull=True,
     ).order_by()
     task_privacy = privacy | Q(visibility='private', private_owner__isnull=False, shared_with=viewer)
     allowed_tasks = Task.objects.filter(task_privacy).order_by().values('pk')
     hidden_roots = Task.objects.filter(
         (Q(section__isnull=False) & ~Q(section__in=task_sections)) | ~Q(pk__in=allowed_tasks)
     )
-    tasks = Task.objects.filter(scope).exclude(pk__in=task_tree_ids(hidden_roots)).order_by()
+    tasks = Task.objects.filter(scope, space_archived=False).exclude(work_item__task__isnull=False).exclude(pk__in=task_tree_ids(hidden_roots)).order_by()
     paths = {
         'task': 'pk', 'taskattachment': 'task_id', 'taskactivity': 'task_id',
         'taskworklog': 'task_id', 'taskcommentimage': 'activity__task_id',

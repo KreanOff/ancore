@@ -3,8 +3,8 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Max
 
-from tasks.access import editable_to
-from tasks.models import Task
+from .access import editable_to
+from .models import SpaceTask
 from .models import Sprint, WorkItem
 from .services import record
 
@@ -62,12 +62,12 @@ def redistribute_ranks(request, item, target_rows, insertion):
             row.rank = rank
             changed.append(row)
     other_rows = [row for row in changed if row.pk != item.pk]
-    allowed = set(editable_to(Task.objects.filter(pk__in=[row.task_id for row in other_rows]), request.user)
+    allowed = set(editable_to(SpaceTask.objects.filter(pk__in=[row.task_id for row in other_rows]), request.user)
                   .values_list('pk', flat=True))
     if any(row.task_id not in allowed for row in other_rows):
         raise PermissionDenied
     if other_rows:
-        # Planning metadata only: no Task status/save signals are bypassed.
+        # Planning metadata only: no SpaceTask status/save signals are bypassed.
         WorkItem.objects.bulk_update(other_rows, ['rank'])
 
 

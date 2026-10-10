@@ -2,41 +2,43 @@ from django.db.models.signals import m2m_changed, post_save, post_delete
 from django.dispatch import receiver
 
 
-@receiver(post_save, sender='tasks.TaskProject')
-def project_space(sender, instance, raw=False, **kwargs):
-    if raw or not instance.workplace_id:
+@receiver(post_save, sender='spaces.SpaceTask')
+def task_metadata(sender, instance, created=False, raw=False, **kwargs):
+    if raw or not created:
         return
-    from .services import ensure_space
-    ensure_space(instance)
-
-
-@receiver(post_save, sender='tasks.Task')
-def task_metadata(sender, instance, raw=False, **kwargs):
-    if raw:
-        return
-    from .services import ensure_work_item
-    ensure_work_item(instance)
+    from .services import create_work_item, record
+    item = create_work_item(instance)
+    record(item, getattr(instance, '_activity_actor', instance.created_by), 'created', 'utworzył zadanie', {'title': instance.title})
 
 
 @receiver(post_delete, sender='workplaces.WorkplaceMembership')
 def removed_workspace_member(sender, instance, **kwargs):
-    from .models import TeamMembership
+    from .models import TeamMembership, SpaceMembership, SpaceTaskMembership
     TeamMembership.objects.filter(team__workplace_id=instance.workplace_id, user_id=instance.user_id).delete()
+    SpaceMembership.objects.filter(space__workplace_id=instance.workplace_id, user_id=instance.user_id).delete()
+    SpaceTaskMembership.objects.filter(task__space__workplace_id=instance.workplace_id, user_id=instance.user_id).delete()
 
 
 @receiver(post_save, sender='workplaces.WorkplaceMembership')
 def disabled_workspace_member(sender, instance, raw=False, **kwargs):
-    if not raw and not instance.is_active:
+    if not raw and (not instance.is_active or instance.role not in {'owner', 'admin', 'member'}):
         removed_workspace_member(sender, instance)
 
 
-@receiver(post_save, sender='tasks.TaskSection')
-def moved_section(sender, instance, raw=False, **kwargs):
-    if raw:
-        return
-    from .services import ensure_work_item
-    for task in instance.tasks.exclude(work_item__space__project_id=instance.project_id):
-        ensure_work_item(task)
+@receiver(post_delete, sender='spaces.SpaceMembership')
+def removed_space_member(sender, instance, **kwargs):
+    from .models import Space, SpaceTaskMembership
+    if Space.objects.filter(pk=instance.space_id, visibility='private').exists():
+        SpaceTaskMembership.objects.filter(task__space_id=instance.space_id, user_id=instance.user_id).delete()
+
+
+@receiver(post_delete, sender='spaces.SpaceTaskMembership')
+def removed_task_member(sender, instance, **kwargs):
+    from .access import tree_ids
+    from .models import SpaceTask, SpaceTaskMembership
+    if SpaceTask.objects.filter(pk=instance.task_id, visibility='private').exists():
+        descendants = tree_ids(SpaceTask.objects.filter(parent_id=instance.task_id))
+        SpaceTaskMembership.objects.filter(task_id__in=descendants, user_id=instance.user_id).delete()
 
 
 @receiver(post_delete, sender='spaces.Team')
@@ -70,7 +72,7 @@ def scoped_task_tags(sender, instance, action, reverse, pk_set, **kwargs):
         ).exists():
             raise ValidationError('Tag musi należeć do przestrzeni zadania.')
     else:
-        space_id = WorkItem.objects.filter(task=instance).values_list('space_id', flat=True).first()
+        space_id = WorkItem.objects.filter(legacy_task=instance).values_list('space_id', flat=True).first()
         if TaskTag.objects.filter(pk__in=pk_set, space__isnull=False).exclude(
             user_id=instance.user_id, workplace_id=instance.workplace_id, space_id=space_id,
         ).exists():
@@ -87,3 +89,24 @@ def scoped_related_tags(sender, instance, action, pk_set, **kwargs):
         user_id=instance.user_id, workplace_id=instance.workplace_id, space_id=instance.space_id,
     ).exists():
         raise ValidationError('Powiązane tagi muszą należeć do tej samej przestrzeni.')
+
+
+@receiver(post_delete, sender='spaces.SpaceTaskFile')
+def deleted_task_file(sender, instance, using, **kwargs):
+    if instance.legacy_storage:
+        from django.core.files.storage import default_storage
+        instance.file.storage = default_storage
+    from core.task_files import delete_after_commit
+    delete_after_commit(instance, using, comment=not instance.legacy_storage)
+
+
+@receiver(m2m_changed, sender='spaces.SpaceTask_tags')
+def scoped_space_task_tags(sender, instance, action, reverse, pk_set, **kwargs):
+    if action != 'pre_add' or not pk_set:
+        return
+    from django.core.exceptions import ValidationError
+    from tasks.models import TaskTag
+    from .models import SpaceTask
+    invalid = SpaceTask.objects.filter(pk__in=pk_set).exclude(space_id=instance.space_id) if reverse else TaskTag.objects.filter(pk__in=pk_set).exclude(space_id=instance.space_id)
+    if invalid.exists():
+        raise ValidationError('Tag musi należeć do przestrzeni zadania.')

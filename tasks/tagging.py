@@ -35,47 +35,17 @@ def _posted_pk(request, name):
 
 
 def visible_tags(request):
-    projects = visible_to(TaskProject.objects.filter(
-        user=workspace_owner(request), workplace=request.workplace,
-    ), request.user)
-    return TaskTag.objects.filter(user=workspace_owner(request), workplace=request.workplace,
-                                  space__project__in=projects)
+    from spaces.services import visible_spaces
+    return TaskTag.objects.filter(user=workspace_owner(request), workplace=request.workplace, space__in=visible_spaces(request))
 
 
 def form_tags(form, user, workplace, project=None, section=None):
-    """Use the saved location for edits and validated relation choices for creation."""
-    if form.instance.pk:
-        section = form.instance.section
-        project = section.project if section else None
-    elif form.is_bound:
-        section_field = form.fields.get('section')
-        section_id = form.data.get(form.add_prefix('section'), '')
-        section = section_field.queryset.filter(pk=section_id).first() if section_field and _valid_pk(section_id) else None
-        project_field = form.fields.get('project')
-        project_id = form.data.get(form.add_prefix('project'), '')
-        if project_field:
-            project = project_field.queryset.filter(pk=project_id).first() if _valid_pk(project_id) else None
-        parent_field = form.fields.get('parent')
-        parent_id = form.data.get(form.add_prefix('parent'), '')
-        if parent_field and _valid_pk(parent_id):
-            parent = parent_field.queryset.filter(pk=parent_id).first()
-            if parent:
-                section = parent.section
-    else:
-        section = section or getattr(form.instance, 'section', None)
-    if section:
-        project = section.project
-    space = getattr(project, 'space', None) if project else None
-    # Picker changes remain local; serialize only projects visible to the viewer.
-    projects = visible_to(TaskProject.objects.filter(user=user, workplace=workplace), form.viewer)
-    options = {'': []}
-    for tag in TaskTag.objects.filter(user=user, workplace=workplace, space__project__in=projects).values('pk', 'name', 'space__project_id'):
-        options.setdefault(str(tag['space__project_id'] or ''), []).append({'id': str(tag['pk']), 'name': tag['name']})
+    """Legacy Tasks cannot select tags belonging to the independent Space domain."""
     form.fields['tags'].widget.attrs.update({
-        'data-tag-project-options': json.dumps(options),
-        'data-tag-project': str(project.pk) if space else '',
+        'data-tag-project-options': json.dumps({'': []}),
+        'data-tag-project': '',
     })
-    return tags_in_scope(user, workplace, space)
+    return TaskTag.objects.none()
 
 
 def tag_action(request, space):
@@ -84,7 +54,9 @@ def tag_action(request, space):
     action = request.POST.get('action')
     if space is None or action not in TAG_ACTIONS:
         raise Http404
-    if not editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists():
+    from spaces.access import editable_to as space_editable_to
+    from spaces.models import Space
+    if not space_editable_to(Space.objects.filter(pk=space.pk), request.user).exists():
         raise PermissionDenied
     user, workplace = workspace_owner(request), request.workplace
     tags = tags_in_scope(user, workplace, space)

@@ -2,6 +2,11 @@
 
 ## Przestrzenie i zespoły — aktualna nawigacja
 
+Przestrzenie mają własne modele `Space`, `SpaceTask`, członkostwa, historię,
+pliki i dziennik pracy. Szczegóły zadań są pod `/space/<slug>/tasks/<klucz>/`,
+bez przejścia do starszych projektów, grup lub zadań. Nowe rekordy nie tworzą
+rekordów w starszym module; import i zgodność starych linków są jednokierunkowe.
+
 Główne menu używa teraz Przestrzeni, Wszystkich zadań i Zespołów zamiast
 osobnych sekcji Zadania/Kanban/Kontakty. Dawne katalogi Zadań są dostępne
 pod Zasobami w zwijanej sekcji „Starsze widoki”, z adresami aktywnego Workspace.

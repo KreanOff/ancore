@@ -10,6 +10,7 @@ from django.utils import timezone
 from dashboard.recent import RECENT_SESSION_KEY
 from dashboard.views import GLOBAL_SEARCH_GROUP_LIMIT, GLOBAL_SEARCH_RECENT_LIMIT
 from kanban.models import Kanban
+from spaces.testing import make_space
 from tasks.models import Task, TaskProject, TaskSection
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 
@@ -186,13 +187,13 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertEqual(rows[0]['meta'], f'#{task.task_id}')
 
     def test_recent_records_current_space_views_and_rechecks_revoked_access(self):
-        project = TaskProject.objects.create(user=self.owner, workplace=self.team, name='Opened space')
-        for url in (f'/space/{project.space.slug}/', f'/workplaces/{self.team.slug}/space/{project.space.slug}/'):
+        project = make_space(user=self.owner, workplace=self.team, name='Opened space')
+        for url in (f'/space/{project.slug}/', f'/workplaces/{self.team.slug}/space/{project.slug}/'):
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
                 rows = self.recent()['groups'][0]['results']
                 self.assertEqual(rows[0]['title'], project.name)
-                self.assertEqual(rows[0]['url'], f'/workplaces/{self.team.slug}/space/{project.space.slug}/')
+                self.assertEqual(rows[0]['url'], f'/workplaces/{self.team.slug}/space/{project.slug}/')
         self.assertEqual(self.recent()['total'], 1)
         project.visibility, project.private_owner = 'private', self.owner
         project.save()

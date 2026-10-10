@@ -8,8 +8,9 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from accounts.avatar import account_avatar
-from tasks.models import Task, TaskActivity
+from .models import SpaceTask, SpaceTaskActivity
 from .defaults import issue_type_icon
+from .access import visible_to
 from .services import app_url, space_url, task_url
 
 
@@ -28,7 +29,7 @@ def summary_scope(items, scope, now):
     if scope == 'completed':
         return items.filter(task__status='closed', task__completion_date__gte=week_start, task__completion_date__lte=now)
     if scope == 'updated':
-        changed = TaskActivity.objects.filter(created_at__gte=week_start, created_at__lte=now).exclude(action='created')
+        changed = SpaceTaskActivity.objects.filter(created_at__gte=week_start, created_at__lte=now).exclude(action='created')
         return items.filter(task_id__in=changed.values('task_id'))
     if scope == 'created':
         return items.filter(task__created_at__gte=week_start, task__created_at__lte=now)
@@ -46,7 +47,7 @@ def filter_summary_items(request, space, items, now):
     status = request.GET.get('status', '')
     status = status if status in {row['key'] for row in space.statuses} else ''
     priority = request.GET.get('priority', '')
-    priority = priority if priority in dict(Task.PRIORITY_CHOICES) else ''
+    priority = priority if priority in dict(SpaceTask.PRIORITY_CHOICES) else ''
     scope = request.GET.get('summary', '')
     scope = scope if scope in SUMMARY_SCOPES else ''
     assignee = request.GET.get('assignee', '')
@@ -107,7 +108,7 @@ def space_summary(request, space, items, now=None):
     priorities = [{'key': key, 'label': label, 'count': priority_counts.get(key, 0),
                    'height': f'{priority_counts.get(key, 0) * 100 / priority_axis_max:.4f}',
                    'url': list_url(summary='open', priority=key)}
-                  for key, label in reversed(Task.PRIORITY_CHOICES)]
+                  for key, label in reversed(SpaceTask.PRIORITY_CHOICES)]
 
     total = items.count()
     type_counts = dict(items.order_by().values_list('work_type').annotate(count=Count('pk')))
@@ -126,7 +127,7 @@ def space_summary(request, space, items, now=None):
                          'percent': round(row['count'] * 100 / open_total) if open_total else 0,
                          'url': list_url(summary='open', assignee=user.pk if user else 'unassigned')})
 
-    activities = TaskActivity.objects.filter(task_id__in=items.order_by().values('task_id'), created_at__lte=now).select_related('actor', 'task__work_item').order_by('-created_at', '-pk')[:8]
+    activities = visible_to(SpaceTaskActivity.objects.all(), request.user).filter(task_id__in=items.order_by().values('task_id'), created_at__lte=now).select_related('actor', 'task__work_item').order_by('-created_at', '-pk')[:8]
     activity_rows = [{'actor': (activity.actor.get_full_name() or activity.actor.email) if activity.actor else 'System',
                       'avatar': account_avatar(activity.actor), 'action': activity.get_action_display(),
                       'created_at': activity.created_at, 'key': activity.task.work_item.key,

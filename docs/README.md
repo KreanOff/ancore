@@ -22,7 +22,7 @@ nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.
 
-Przestrzenie, wspólne zadania, sprinty i zespoły: [Przestrzenie](SPACES.md).
+Przestrzenie, niezależne zadania `SpaceTask`, sprinty i zespoły: [Przestrzenie](SPACES.md).
 
 Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 
@@ -31,7 +31,7 @@ Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 | Zadanie | Opis i punkty wejścia |
 | --- | --- |
 | Nowe pole zadania/projektu | Moduły: Zadania; Mechanizmy: numeracja, zapis, słowniki; `tasks/models.py`, `tasks/forms.py`, `tasks/views/tasks.py` |
-| Przestrzenie, zespoły, sprinty, wspólna tablica | [Przestrzenie](SPACES.md); `spaces/`, `static/js/spaces.js` |
+| Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `spaces/`, `static/js/spaces.js` |
 | Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `kanban/urls.py`, `spaces/middleware.py` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
 | Profil lub historyczne dane Kontaktów/Firm | Moduły: Accounts i wycofane katalogi Contacts; Mechanizmy: tożsamość, dostęp, obrazy |

@@ -4,7 +4,7 @@
 
 Przestrzeń używa adresu `/space/<slug>/` oraz
 `/workplaces/<kod-workspace>/space/<slug>/`, np. `space/scrum-szablon/`.
-`Space.slug` powstaje z nazwy projektu: małe litery, myślniki zamiast spacji
+`Space.slug` powstaje z nazwy przestrzeni: małe litery, myślniki zamiast spacji
 i transliteracja polskich znaków, również `ł`. Duplikaty w tym samym Workspace
 otrzymują `-2`, `-3`; nazwy numeryczne prefiks `przestrzen-`, a nazwy bez znaków
 URL zastępczy segment `przestrzen`. Zapis blokuje Workspace podczas przydziału,
@@ -14,7 +14,11 @@ nie zmieniając ich pozostałych danych ani relacji.
 
 Menu, katalog, wyszukiwanie, podsumowanie, zespoły, zakładki i powroty po zapisie
 używają nazwy w adresie. Akcje przestrzeni mają ten sam prefiks `space/<slug>/`.
-Katalog, zarządzanie i endpointy samych zadań pozostają pod `/spaces/`.
+Katalog i zarządzanie pozostają pod `/spaces/`. Szczegóły zadania i jego akcje
+są pod `/space/<slug>/tasks/<klucz>/`, również w adresie scoped.
+Parametr `view=list|backlog|board|timeline` zachowuje miejsce powrotu;
+zakładkę szczegółów wybiera `tab`. Stare numeryczne endpointy operacji
+`/spaces/items/<pk>/` pozostają dla zgodności.
 Edycja z zarządzania używa `/spaces/manage/<slug>/edit/`.
 Nazwy routingu `spaces` i `workplace_spaces` pozostają wspólne dla obu prefiksów.
 Dawne `/spaces/<pk>/` przekierowuje GET/HEAD po kontroli dostępu, zachowując
@@ -37,7 +41,7 @@ Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni w bloka
 „Oznaczone gwiazdką” i „Ostatnie”, bez linii drzewa. Osobiste ulubione są
 uporządkowane po nazwie; pozostałe miejsca zajmują ostatnio odwiedzone
 przestrzenie, a następnie najnowsze. Historia korzysta z istniejącej sesji
-`dashboard.recent` i zapamiętuje oglądany projekt przed renderowaniem menu.
+`dashboard.recent` i zapamiętuje oglądaną przestrzeń przed renderowaniem menu.
 Puste bloki nie pokazują nagłówków. `spaces/navigation.py` za każdym razem
 sprawdza aktywny Workspace i bieżący dostęp; gwiazdka nie nadaje uprawnień.
 Częściowa nawigacja odświeża linki z
@@ -52,10 +56,10 @@ zarządzających prywatną przestrzenią. Publiczne przestrzenie zachowują dost
 poprzez Workspace; obserwatorzy nie zarządzają członkami. Stopka menu pokazuje
 rodzaj i sposób zarządzania. Korzysta ze wspólnego `row-actions.js` oraz
 niemodalnego popovera. Akcja gwiazdki używa dotychczasowej relacji
-`TaskProject.favorited_by` i endpointu POST; `space-navigation.js` odświeża
+`Space.favorited_by` i endpointu POST; `space-navigation.js` odświeża
 bieżący ekran przez `AncoreApp`, pozostawiając jego adres. Bez JavaScriptu
 formularz wraca do bezpiecznego adresu `next` z tego samego hosta. Błąd zapisu
-pokazuje powiadomienie i pozwala ponowić akcję. Nie powstają nowe modele.
+pokazuje powiadomienie i pozwala ponowić akcję.
 
 „Zarządzaj przestrzeniami” (`/spaces/manage/` i scoped odpowiednik) to osobny
 ekran ustawień, dostępny z menu „…” przy Przestrzeniach oraz z Ustawień Ancore.
@@ -79,9 +83,9 @@ osobiste ulubione, edycję, ustawienia dostępu i konfigurację zadań
 
 `manageable_spaces` zawęża `visible_spaces` według istniejącego `manage_space`.
 Właściciel/administrator Workspace zarządza widocznymi przestrzeniami
-publicznymi; osoba odpowiedzialna również może zarządzać swoim publicznym
-projektem. Prywatnymi przestrzeniami zarządza ich prywatny właściciel lub
-administrator projektu. Administrator Workspace nie uzyskuje dostępu do
+publicznymi; osoba odpowiedzialna również może zarządzać swoją publiczną
+przestrzenią. Prywatnymi przestrzeniami zarządza ich prywatny właściciel lub
+administrator przestrzeni. Administrator Workspace nie uzyskuje dostępu do
 nieudostępnionych prywatnych przestrzeni. Zwykłe członkostwo, obserwowanie
 i przydział wykonawcy nie dają dostępu do katalogu zarządzania.
 Właściciel/administrator Workspace ma do niego dostęp również przed
@@ -93,7 +97,7 @@ uprawnienia niezależnie od widoczności linków.
 formularza oraz powłoki modalnej. Bezpośrednie wejście i błąd walidacji
 pozostawiają ekran zarządzania pod modalem; anulowanie i zapis wracają do
 niego. Tworzenie z codziennego katalogu zachowuje dotychczasowy przepływ.
-Nie powstają nowe modele ani kopie przestrzeni.
+Oba katalogi korzystają z tego samego modelu `Space`.
 
 ## Tworzenie przestrzeni i wybór szablonu
 
@@ -115,7 +119,7 @@ Edycja istniejącej przestrzeni nie udostępnia zmiany szablonu.
 „Więcej przestrzeni” w menu bocznym otwiera panel z wyszukiwaniem po nazwie
 lub kluczu i przejściem do pełnego katalogu. Endpoint GET `/spaces/search/`
 oraz jego scoped odpowiednik zwracają do 20 wyników przez `visible_spaces`:
-tylko aktywny Workspace, jego właściciel danych i projekty dostępne aktualnemu
+tylko aktywny Workspace, jego właściciel danych i przestrzenie dostępne aktualnemu
 użytkownikowi. Obserwatorzy również mogą wyszukiwać; przydział wykonawcy nie
 nadaje dostępu. Odpowiedź jest prywatna i nie jest buforowana. Puste zapytanie
 nie zwraca wyników; katalog zachowuje wpisaną frazę. Panel korzysta ze wspólnych
@@ -145,7 +149,7 @@ Zmiana awatara nie zmienia nazwy, konfiguracji, zadań ani uprawnień przestrzen
 
 Obrazy mają losowe nazwy w prywatnym storage; pobieranie przez
 `/spaces/<pk>/avatar/photo/` i scoped odpowiednik sprawdza aktywny Workspace
-oraz widoczność projektu. Odpowiedź ma `private, no-store` i `nosniff`.
+oraz widoczność przestrzeni. Odpowiedź ma `private, no-store` i `nosniff`.
 Wybór ikony usuwa własny obraz po zatwierdzeniu transakcji. Podmiana i usunięcie
 przestrzeni sprzątają nieużywany plik dopiero po commit; nieudany zapis usuwa
 nowo przesłany plik. Wymagana migracja: `spaces.0003_space_avatar_space_avatar_photo`.
@@ -160,13 +164,12 @@ w starszych testach nawigacji oraz Workspace.
 
 ## Typy zgłoszeń
 
-Typ zgłoszenia jest zapisywany w istniejącym `WorkItem.work_type`, osobno od
-biznesowej kategorii `Task.task_type`. Formularz tworzenia/edycji w przestrzeni
+Typ zgłoszenia jest zapisywany w `WorkItem.work_type` należącym do `SpaceTask`. Formularz tworzenia/edycji w przestrzeni
 oraz szczegóły zadania pozwalają wybrać typ z konfiguracji tej przestrzeni.
 Nowe szablony zawierają Zadanie, Błąd, Historyjkę i Epik. Marketing zachowuje
 Kampanię i Materiał; Rekrutacja Kandydaturę i Rozmowę, a Obsługa zgłoszeń
 Zgłoszenie i Incydent, również jako dotychczasowe wartości domyślne.
-Podzadania nadal korzystają z relacji `Task.parent`; sam typ nie zmienia hierarchii.
+Podzadania nadal korzystają z relacji `SpaceTask.parent`; sam typ nie zmienia hierarchii.
 
 Migracja `spaces.0004_issue_types` dopisuje brakujące cztery standardowe typy do
 istniejących konfiguracji, także współdzielonych. Zachowuje własne nazwy, typy,
@@ -177,9 +180,9 @@ zmieniać dostępne typy przez „Statusy, typy i pola”; używanego typu nie m
 Listy, backlog i karty tablicy pokazują ikonę i nazwę typu. Filtr „Typ zgłoszenia”
 na liście, tablicy, backlogu, osi czasu i we Wszystkich zadaniach działa na
 serwerze przed paginacją, razem z wyszukiwaniem, wykonawcą i zespołem.
-Zakres danych i dostęp do edycji pozostają wyznaczane przez Tasks oraz aktywny
-Workspace. Zmiana typu zapisuje w `TaskActivity` poprzednią i nową nazwę oraz
-faktycznego autora; edycja innych pól nie zeruje typu. Formularze obu modułów
+Zakres danych i dostęp do edycji wyznaczają `spaces.access` oraz aktywny
+Workspace. Zmiana typu zapisuje w `SpaceTaskActivity` faktycznego autora
+i poprzednią wartość. Formularze przestrzeni
 blokują zmianę epika z przypisanymi zadaniami oraz zagnieżdżenie epika w epiku.
 
 ## Model pracy
@@ -193,14 +196,22 @@ i Gości są wycofane z menu i routingu. Skróty używają aktywnego Workspace
 i zachowują istniejące przekierowania
 Kanbana; nie przywracają edycji przeniesionych rekordów źródłowych.
 
-`spaces.Space` rozszerza istniejący `tasks.TaskProject` przez OneToOne.
-Nazwa, opis, prywatność i role pozostają w projekcie, dzięki czemu wcześniejsze
-uprawnienia, grupy, dokumenty, komentarze i zależności zachowują działanie.
-`spaces.WorkItem` zawiera wyłącznie planowanie i wskazuje przez OneToOne
-kanoniczne `tasks.Task`. Lista, tablica, backlog, kalendarz i szczegóły używają
-tego samego zadania. Nie ma synchronizacji dwóch edytowalnych kopii.
+Od 10.10.2026 `Space` ma własną nazwę, opis, właściciela, widoczność,
+ulubione i role `SpaceMembership`. `SpaceTask` przechowuje treść, terminy,
+wykonawcę, hierarchię i stan zakończenia. `WorkItem.task` wskazuje wyłącznie
+`SpaceTask`; nadal przechowuje klucz oraz planowanie: status przestrzeni,
+typ zgłoszenia, sprint, epik, zespół, punkty i kolejność.
+Komentarze/historia, pliki, czas i dostęp do zadania mają własne modele
+`SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskWorkLog`, `SpaceTaskMembership`.
+Nowe przestrzenie i zadania nie tworzą projektów, grup ani `tasks.Task`.
+Tworzenie starszych obiektów również nie tworzy przestrzeni.
 
-Punkty wejścia: `spaces/views.py`, `services.py`, `forms.py`, `teams.py`,
+`Space.project` i `WorkItem.legacy_task` są opcjonalnymi, historycznymi
+mapowaniami importu. Nie wyznaczają bieżącej treści ani uprawnień i nie
+synchronizują zmian. Wspólne konto, Workspace, słownik tagów `TaskTag`,
+walidatory plików i komponenty UI pozostają mechanizmami całej aplikacji.
+
+Punkty wejścia: `spaces/views.py`, `task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`,
 `signals.py`, `middleware.py`, `templates/spaces/`, `static/js/spaces.js`.
 Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 `/workplaces/<slug>/spaces/` i `/workplaces/<slug>/teams/`.
@@ -226,7 +237,7 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
   dostępne również klawiaturą. Filtry i paginacja są w standardowym pasku Zadań.
 - Podsumowanie: cztery liczniki zakończonych, zaktualizowanych i utworzonych
   zadań w ostatnich 7 dniach oraz otwartych z terminem w najbliższych 7 dniach.
-  Aktualizacja wynika z historii `TaskActivity` (dowolna akcja poza utworzeniem);
+  Aktualizacja wynika z historii `SpaceTaskActivity` (dowolna akcja poza utworzeniem);
   wiele wpisów jednego zadania liczy się raz. Zakończenie opiera się na
   aktualnym statusie `closed` i `completion_date`. Przedziały są liczone od
   chwili wyświetlenia, z obiema granicami włącznie; przyszła historia i daty
@@ -239,7 +250,7 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
   Agregacje uwzględniają podzadania i pełny zbiór dostępny użytkownikowi,
   niezależnie od paginacji listy. Liczniki, statusy, priorytety, typy i wykonawcy
   otwierają listę z odpowiednimi filtrami; epiki i aktywność prowadzą do
-  szczegółów przez trwały PK. Lista zachowuje filtry przy szukaniu i paginacji,
+  szczegółów pod trwałym kluczem przestrzeni. Lista zachowuje filtry przy szukaniu i paginacji,
   a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
 - Scrum: backlog, epiki, punkty, planowanie i rozpoczęcie sprintu, jeden aktywny
   sprint, zakończenie z powrotem niezakończonych zadań do backlogu.
@@ -255,7 +266,7 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 - Oś czasu: paski pomiędzy początkiem i terminem; zadania bez dat są pomijane.
 - Raporty: aktualne liczby statusów, zakończone i zaległe zadania oraz sprinty.
 - Konfiguracja: typy, pola tekst/liczba/data, wymagane pola, statusy i dozwolone
-  przejścia. Każdy status ma jeden z pięciu istniejących stanów `Task`.
+  przejścia. Każdy status ma jeden z pięciu stanów `SpaceTask`.
   Stan `closed` nadal odpowiada za zakończenie i datę wykonania.
 - Zespoły: katalog, moje zespoły, wyszukiwanie, profil, prywatnie serwowane zdjęcie,
   członkowie i administratorzy, powiązane przestrzenie i przypisane zadania.
@@ -283,31 +294,38 @@ lub poza stroną zachowują swoje numery. Zapis jest atomowy i wymaga CSRF.
 
 Klucz przestrzeni jest unikalny w Workspace. Zadania otrzymują trwały klucz,
 np. `ANC-12`, z rosnącego licznika przestrzeni. Usunięcie zadania nie zmienia
-kluczy pozostałych. Przeniesienie do innej przestrzeni zachowuje pierwotny klucz,
-resetuje relacje planowania i nadaje numer w nowym zakresie. Nie należy mylić
-tego klucza z PK, renumerowanym `Task.task_id` ani dawnymi kodami grup.
-Szczegóły zadań używają istniejących adresów z parametrem `task_pk`.
+kluczy pozostałych. Zadanie pozostaje w swojej przestrzeni; zapis modelu
+odrzuca zmianę przestrzeni, obcego rodzica i cykl podzadań. Nie należy mylić
+klucza z PK ani dawnym, renumerowanym `tasks.Task.task_id`.
+Szczegóły są pod `/space/<slug>/tasks/<klucz>/?view=list`. Wspólna powłoka
+zadania pokazuje strzałkę powrotu, tytuł i zapis, zakładki i treść po lewej
+oraz właściwości po prawej, bez powtarzania nagłówka przestrzeni. Powrót
+zachowuje widok i filtry. Wszystkie pięć zakładek używa układu starszego ekranu
+Zadań i wspólnych tabel, modali oraz strumienia historii. Kategoria i
+przypomnienie są polami `SpaceTask`; planowanie pozostaje w istniejącej edycji
+przestrzeni i jest zachowane przy zapisie szczegółów.
+Załączniki wybrane przy „Dodaj załącznik” zapisują się razem z danymi zadania,
+z walidacją i wycofaniem całej operacji przy błędzie. „Główna”, „Podzadania”, „Dziennik pracy”,
+„Członkowie” i „Historia” mają własne operacje w `spaces/task_views.py`.
+Pliki są walidowane i pobierane po ponownej kontroli dostępu. Usunięcie
+zadania wymaga prawa edycji wszystkich kaskadowo usuwanych potomków.
 
 ## Tagi przestrzeni
 
 Zakładka „Tagi” pod `/<pk>/?view=tags` (także scoped) korzysta z istniejącego
 modelu `tasks.TaskTag`, tabeli, filtrów, sortowania, paginacji, modali, informacji
 i notatek starszego katalogu. Każdy tag wskazuje dokładnie jedną przestrzeń;
-nazwa może powtarzać się w innych przestrzeniach. Osoby z prawem edycji projektu
+nazwa może powtarzać się w innych przestrzeniach. Osoby z prawem edycji przestrzeni
 tworzą, edytują i usuwają tagi, także zbiorczo, oraz dodają notatki. Obserwator
 ma odczyt; edycja/usunięcie notatki dodatkowo wymaga bycia jej autorem.
 Liczba zadań zachowuje zasadę starszego katalogu: dostępne zadania główne,
 bez podzadań i bez ujawniania prywatnych zadań.
 
 Formularze nowego zadania i szczegółów oraz powiązania tagów ograniczają wybór
-do tej samej przestrzeni i Workspace. Starsze pickery zadań przełączają listę
-tagów od razu po zmianie przestrzeni; dane wyboru obejmują tylko widoczne
-projekty osoby oglądającej formularz. Bezpośredni zapis obcego identyfikatora
-jest odrzucany. Edycja zadania nie pozwala zmieniać jego przestrzeni ani grupy;
-tagi zawsze pochodzą z zapisanej przestrzeni. Techniczna zmiana przestrzeni
-zadania lub całej grupy usuwa poprzednie
-przypisania tagów spoza przestrzeni docelowej. Globalne wyszukiwanie filtruje
-tagi przez dostęp do projektu i kieruje do zakładki ich przestrzeni.
+do zapisanej przestrzeni i Workspace. Bezpośredni zapis obcego identyfikatora
+jest odrzucany, również od strony relacji odwrotnej `TaskTag.space_tasks`.
+Starsze formularze Tasks nie edytują nowych zadań i nie przypisują tagów przestrzeni. Globalne wyszukiwanie
+filtruje tagi przez dostęp do przestrzeni i kieruje do jej zakładki.
 
 Migracje Tasks `0064_space_tags` i `0065_space_tag_data` rozdzielają zmianę schematu
 i danych, aby indeks FK powstał przed kopiowaniem rekordów w PostgreSQL.
@@ -323,16 +341,25 @@ Pole „Zakres” nadal jest klasyfikacją, a tekst reguł nie uruchamia automat
 ## Uprawnienia i konfiguracje
 
 Zakres pochodzi z `workspace_owner(request)` i `request.workplace`.
-`visible_to` i `editable_to` pozostają źródłem dostępu do projektu, grupy,
-zadania oraz całego drzewa rodziców. Listy, liczniki i raporty liczą tylko
+`spaces.access.visible_to` i `editable_to` wyznaczają dostęp do przestrzeni,
+zadania oraz całego drzewa rodziców. Prywatne zadanie dodatkowo zawęża
+dostęp do wybranych osób. Obserwatorzy zachowują tylko odczyt. Listy, liczniki i raporty liczą tylko
 zadania dostępne osobie oglądającej ekran. Przydział zespołu lub wykonawcy
 ani powiązanie zespołu z przestrzenią nie nadają dodatkowego dostępu.
 
-Prywatną przestrzenią zarządza jej właściciel i administratorzy projektu;
+Prywatną przestrzenią zarządza jej właściciel i administratorzy przestrzeni;
 wyłącznie właściciel zmienia widoczność i role administratorów. Przestrzenią
 publiczną zarządza właściciel/administrator Workspace lub osoba odpowiedzialna.
-Udostępnianie przestrzeni działa od razu przez istniejące członkostwa projektu,
+Udostępnianie przestrzeni działa od razu przez `SpaceMembership`,
 bez zaproszeń. Role Workspace pozostają niezależne.
+Prywatnym zadaniem zarządza jego właściciel lub administrator zadania;
+tylko właściciel zmienia widoczność i role administratorów. Kandydaci muszą
+mieć bieżący dostęp do przestrzeni i wszystkich rodziców. Zmiana zadania
+na dziedziczące dostęp przestrzeni czyści jego członkostwa, zachowując
+niezależne prywatne podzadania. Usunięcie lub dezaktywacja członka Workspace,
+odebranie dostępu do prywatnej przestrzeni albo rodzica usuwa odpowiednie
+udostępnienia zadań. Ponowne dołączenie ich nie przywraca. Operacje przez
+`QuerySet.update()` wymagają jawnego czyszczenia, ponieważ pomijają sygnały.
 
 Zarządzanie przez zespół oznacza niezależną konfigurację przestrzeni.
 Zarządzanie przez organizację pozwala administratorowi Workspace utworzyć lub
@@ -347,7 +374,29 @@ nie edytuje profilu ani członkostw. Usunięcie/wyłączenie członkostwa Worksp
 usuwa członkostwa zespołów; ich przywrócenie wymaga ponownego dodania.
 Formularz nie pozwala odebrać ostatniej aktywnej roli administratora zespołu.
 
-## Przeniesienie danych
+## Oddzielenie od starszych Zadań (10.10.2026)
+
+Migracja `spaces.0006_independent_space_tasks` kopiuje dane i ulubione
+przestrzeni oraz zadania z ich autorami, datami, komentarzami, historią,
+tagami, plikami i dziennikiem pracy. Zachowuje PK importowanych zadań,
+klucze, liczniki, awatary, konfiguracje i planowanie `WorkItem`.
+Prywatność dawnych grup i rodziców składa w przecięcie dostępu do zadania;
+przydział wykonawcy nie rozszerza tego dostępu.
+
+`tasks.0066_task_space_archived_taskproject_space_archived` oraz
+`spaces.0007_archive_import_sources` oznaczają źródła jako archiwalne.
+Starsze listy i operacje wykluczają je również po usunięciu nowego zadania
+lub przestrzeni. GET/HEAD starego linku szczegółów przekierowuje do nowego
+adresu po bieżącej kontroli dostępu; POST tego linku zwraca 409. Pobieranie
+importowanego pliku przekierowuje do chronionego endpointu przestrzeni.
+Usunięcie starego źródła nie usuwa nowego zadania (`SET_NULL`).
+Migracja jest jednokierunkowa; cofnięcie wdrożenia wymaga backupu bazy i storage.
+
+Wszystkie zadania, „Dla ciebie”, Dashboard, postęp pulpitów i wyszukiwanie
+odczytują nowe zadania przez ich ACL. Kalendarz pokazuje również ich terminy.
+Wspólne listy nie wymagają odwołania do projektu lub grupy.
+
+## Historyczny import Kanbana (3.10.2026)
 
 `spaces/0001_initial.py` tworzy tabele. `0002_unify_work.py` atomowo:
 
@@ -372,7 +421,7 @@ aby archiwalne dane nie pojawiły się ponownie.
 
 Załączniki wskazują istniejące ścieżki; migracja nie kopiuje plików na dysku.
 `core/task_files.py` usuwa plik dopiero po zatwierdzeniu transakcji i zniknięciu
-ostatniego odwołania w obu modelach. Historyczne źródło zachowuje więc plik.
+ostatniego odwołania w modelach Tasks, Kanbana i SpaceTaskFile. Historyczne źródło zachowuje więc plik.
 Zdjęcia zespołów podlegają wspólnemu walidatorowi i prywatnemu pobieraniu.
 
 Przed wdrożeniem zatrzymaj zapisy, wykonaj backup bazy i storage, zastosuj
@@ -390,8 +439,11 @@ czy obsługi poczty. Raporty pokazują aktualny postęp, bez burndown i velocity
 Automatyzacje, zależności na osi czasu oraz rozszerzone schematy uprawnień
 nie są częścią tej wersji. Klucz, szablon i sposób zarządzania istniejącej
 przestrzeni są zablokowane w formularzu — ich zmiana wymaga osobnej migracji
-czynnych zadań. Starsze szczegóły zadania nadal obsługują pliki, komentarze,
-czas i prywatność; planowanie oraz zespół edytuje się z nowego okna.
+czynnych zadań. Nowe szczegóły przestrzeni obsługują pliki, komentarze,
+podzadania, czas, prywatność oraz planowanie. Przypomnienia, wzmianki
+powiadomień i obserwowanie starszych Tasks nie są przeniesione do nowego
+systemu; sam komentarz nie wysyła powiadomienia. Historyczne wpisy tych
+mechanizmów pozostają w starszych tabelach.
 
 ## Wykonana weryfikacja (3.10.2026)
 
@@ -429,3 +481,24 @@ stan, Escape, częściową nawigację i ponowne wejście. Oba starsze pickery za
 zmieniają opcje wraz z przestrzenią; nie zarejestrowano błędów JavaScript.
 Kontrole Django, zgodności migracji, składni `tasks.js`, linków dokumentacji,
 indeksu kodu i `git diff --check` przeszły.
+
+## Pełne szczegóły niezależnego zadania
+
+`spaces/task_views.py` obsługuje właściwości, podzadania, wpisy czasu,
+pliki i komentarze, a `spaces/task_team.py` tabelę członków, kandydatów,
+udostępnianie, zmianę roli i odbieranie dostępu. Wszystkie operacje zapisują
+własne modele przestrzeni. Zakładki zachowują szkic formularza. Statusy
+pochodzą z konfiguracji przestrzeni, numer to trwały klucz `WorkItem`.
+Członkostwo zadania nadal zawęża dostęp przestrzeni oraz wszystkich rodziców;
+rola administratora nie pozwala zmieniać widoczności prywatnego zadania
+ani zarządzać innym administratorem. Usuwanie podzadań sprawdza całe drzewa.
+
+Migracja `spaces.0008` dodaje kategorię, przypomnienie, datę członkostwa
+oraz własne dostarczenia `SpaceTaskReminder`; kopiuje kategorię i przypomnienie
+z historycznego źródła bez zmiany kluczy i planowania. `dashboard.0013`
+rozszerza osobisty stan powiadomień o komentarze i przypomnienia przestrzeni.
+`spaces.0009` zachowuje daty bezpośrednich członkostw ze źródłowego zadania.
+Polling skrzynki dostarcza termin raz dla wykonawcy, a bez wykonawcy dla
+właściciela zadania lub przestrzeni. Zamknięcie, zmiana terminu i cofnięcie
+dostępu wycofują przypomnienie z wyników. Wzmianki są walidowane według
+bieżącego dostępu do zadania i pojawiają się w istniejącej skrzynce.

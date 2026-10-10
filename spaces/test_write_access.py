@@ -1,3 +1,4 @@
+from .testing import make_space
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from unittest.mock import patch
@@ -7,8 +8,8 @@ from django.core.exceptions import PermissionDenied
 from django.db import close_old_connections
 from django.test import RequestFactory, TransactionTestCase
 
-from core.task_numbering import lock_task_numbers
-from tasks.models import Task, TaskProject, TaskProjectMembership, TaskSection
+from django.db.models.query import QuerySet
+from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from . import views
 
@@ -19,10 +20,10 @@ class SpaceWriteAccessRaceTests(TransactionTestCase):
         self.member = get_user_model().objects.create_user(username='write-member', email='write-member@example.test')
         self.workspace = create_workplace_for_user(self.owner, 'Write races')
         self.membership = WorkplaceMembership.objects.create(workplace=self.workspace, user=self.member)
-        self.project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Private', visibility='private', private_owner=self.owner)
-        self.grant = TaskProjectMembership.objects.create(project=self.project, user=self.member, role='member')
-        self.section = TaskSection.objects.create(project=self.project, title='Tasks')
-        self.task = Task.objects.create(user=self.owner, section=self.section, title='Original')
+        self.project = make_space(user=self.owner, workplace=self.workspace, name='Private', visibility='private', private_owner=self.owner)
+        self.grant = SpaceMembership.objects.create(space=self.project, user=self.member, role='member')
+        self.section = self.project
+        self.task = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Original')
 
     def request(self, suffix, data):
         request = RequestFactory().post('/spaces/' + suffix, data)
@@ -37,18 +38,22 @@ class SpaceWriteAccessRaceTests(TransactionTestCase):
                 if remove_workspace:
                     self.membership.delete()
                 else:
-                    TaskProjectMembership.objects.filter(pk=self.grant.pk).update(role='observer')
+                    SpaceMembership.objects.filter(pk=self.grant.pk).update(role='observer')
             finally:
                 close_old_connections()
 
-        @contextmanager
-        def paused_lock(*args, **kwargs):
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                executor.submit(change_access).result(timeout=10)
-            with lock_task_numbers(*args, **kwargs):
-                yield
+        original = QuerySet.select_for_update
+        changed = False
 
-        with patch.object(views, 'lock_task_numbers', paused_lock):
+        def paused_lock(queryset, *args, **kwargs):
+            nonlocal changed
+            if not changed:
+                changed = True
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    executor.submit(change_access).result(timeout=10)
+            return original(queryset, *args, **kwargs)
+
+        with patch.object(QuerySet, 'select_for_update', paused_lock):
             yield
 
     def test_backlog_action_rechecks_role_after_waiting_for_lock(self):
@@ -83,10 +88,10 @@ class SpaceWriteAccessRaceTests(TransactionTestCase):
         self.assertEqual(self.task.activities.count(), 1)
 
     def test_item_create_rechecks_project_role_after_waiting_for_lock(self):
-        request = self.request(f'{self.project.space.pk}/items/create/', {'title': 'Forbidden creation', 'work_type': 'task', 'priority': 'medium', 'section': self.section.pk})
+        request = self.request(f'{self.project.pk}/items/create/', {'title': 'Forbidden creation', 'work_type': 'task', 'priority': 'medium', 'section': self.section.pk})
         with self.changed_access_before_lock(), self.assertRaises(PermissionDenied):
-            views.item_edit(request, space_pk=self.project.space.pk)
-        self.assertEqual(Task.objects.count(), 1)
+            views.item_edit(request, space_pk=self.project.pk)
+        self.assertEqual(SpaceTask.objects.count(), 1)
 
     def test_revoked_workspace_membership_blocks_started_action(self):
         item = self.task.work_item

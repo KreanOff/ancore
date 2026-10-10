@@ -2,10 +2,10 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Count, Max, Q
 from django.utils import timezone
+from django.http import QueryDict
 
-from core.task_numbering import lock_task_numbers
-from tasks.access import editable_to, visible_to
-from tasks.models import Task, TaskActivity, TaskProject, TaskSection
+from .access import editable_to, visible_to
+from .models import SpaceTask, SpaceTaskActivity
 from workplaces.services import can_manage_team, scoped_workplace_app_path, workplace_people, workspace_owner
 from .defaults import template_settings
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
@@ -22,19 +22,18 @@ def space_url(request, space, suffix=''):
 
 
 def visible_spaces(request):
-    projects = visible_to(TaskProject.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
-    return Space.objects.filter(project__in=projects).select_related('project', 'configuration', 'workplace')
+    return visible_to(Space.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user).select_related('configuration', 'workplace')
 
 
 def manageable_spaces(request):
     """The visible subset governed by the same rules as manage_space."""
-    private = Q(project__visibility='private') & (
-        Q(project__private_owner=request.user)
-        | Q(project__memberships__user=request.user, project__memberships__role='admin')
+    private = Q(visibility='private') & (
+        Q(private_owner=request.user)
+        | Q(memberships__user=request.user, memberships__role='admin')
     )
-    public = Q(project__visibility='public')
+    public = Q(visibility='public')
     if not can_manage_team(request.user, request.workplace):
-        public &= Q(project__responsible_user=request.user)
+        public &= Q(responsible_user=request.user)
     return visible_spaces(request).filter(private | public).distinct()
 
 
@@ -43,8 +42,8 @@ def can_manage_spaces(request):
 
 
 def visible_items(request):
-    tasks = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
-    return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'space__project', 'space__configuration', 'team', 'sprint')
+    tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
+    return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'space', 'space__configuration', 'team', 'sprint')
 
 
 def decorate_directory_spaces(request, spaces):
@@ -53,9 +52,7 @@ def decorate_directory_spaces(request, spaces):
     if not spaces:
         return spaces
     space_ids = [space.pk for space in spaces]
-    favorites = set(TaskProject.objects.filter(
-        pk__in=[space.project_id for space in spaces], favorited_by=request.user,
-    ).values_list('pk', flat=True))
+    favorites = set(Space.objects.filter(pk__in=space_ids, favorited_by=request.user).values_list('pk', flat=True))
     counts = {row['space_id']: row['count'] for row in visible_items(request).filter(
         space_id__in=space_ids,
     ).values('space_id').annotate(count=Count('pk'))}
@@ -63,7 +60,7 @@ def decorate_directory_spaces(request, spaces):
     for space in spaces:
         space.url = space_url(request, space)
         space.favorite_url = space_url(request, space, 'favorite/')
-        space.favorite = space.project_id in favorites
+        space.favorite = space.pk in favorites
         space.item_count = counts.get(space.pk, 0)
         space.settings_url = space.url + '?view=settings'
         space.can_manage = space.pk in managed_ids
@@ -76,7 +73,7 @@ def teams_for(request):
 
 
 def manage_space(request, space):
-    project = space.project
+    project = space
     if project.visibility == 'private':
         return project.private_owner_id == request.user.pk or project.memberships.filter(user=request.user, role='admin').exists()
     return can_manage_team(request.user, request.workplace) or project.responsible_user_id == request.user.pk
@@ -90,68 +87,34 @@ def manage_team(request, team):
     return can_manage_team(request.user, request.workplace) or team.memberships.filter(user=request.user, role='admin').exists()
 
 
-@transaction.atomic
-def ensure_space(project):
-    found = Space.objects.filter(project=project).first()
-    if found:
-        return found
-    if not project.workplace_id:
-        return None
-    # The project row serializes creation from concurrent task saves.
-    TaskProject.objects.select_for_update().get(pk=project.pk)
-    found = Space.objects.filter(project=project).first()
-    if found:
-        return found
-    config = SpaceConfiguration.objects.create(workplace=project.workplace, name=project.name, settings=template_settings())
-    key = f'P{project.pk}'
-    while Space.objects.filter(workplace=project.workplace, key=key).exists():
-        key = f'P{project.pk}X' if not key.endswith('X') else key + 'X'
-    return Space.objects.create(project=project, workplace=project.workplace, key=key, configuration=config)
-
-
-@transaction.atomic
-def ensure_work_item(task):
-    project = task.section.project if task.section_id else None
-    space = ensure_space(project) if project and (project.user_id, project.workplace_id) == (task.user_id, task.workplace_id) else None
-    item = WorkItem.objects.filter(task=task).first()
-    if item and item.space_id == getattr(space, 'pk', None):
-        if space:
-            statuses = {status['key']: status for status in space.statuses}
-            current = statuses.get(item.status)
-            if not current or current['category'] != task.status:
-                target = next((s for s in space.statuses if s['category'] == task.status and (not current or s['key'] in current['transitions'])), None)
-                if target:
-                    WorkItem.objects.filter(pk=item.pk).update(status=target['key'])
-                    item.status = target['key']
-        return item
-    if space:
-        space = Space.objects.select_for_update().get(pk=space.pk)
-        number = space.next_number
-        space.next_number += 1
-        space.save(update_fields=['next_number'])
-        status = next((s['key'] for s in space.statuses if s['category'] == task.status), 'new')
-        values = dict(space=space, number=number, key=f'{space.key}-{number}', rank=number * 100, status=status, work_type=space.configuration.settings['types'][0]['key'])
-    else:
-        values = dict(space=None, number=0, key=f'TASK-{task.pk}', rank=task.pk, status=task.status)
-    if item:
-        # Moving to another space resets only planning relations, not task content.
-        values.update(sprint=None, epic=None, team=None, work_type=space.configuration.settings['types'][0]['key'] if space else 'task')
-        values['key'] = item.key
-        WorkItem.objects.filter(pk=item.pk).update(**values)
-        item.refresh_from_db()
-        # A destination space has its own vocabulary; do not carry foreign tags.
-        task.tags.remove(*task.tags.exclude(space=space).values_list('pk', flat=True))
-        return item
-    return WorkItem.objects.create(task=task, **values)
-
-
 def task_url(request, task):
-    name = 'view-subtask' if task.parent_id else 'view-task'
-    return app_url(request, f'{name}/{task.task_id}/?task_pk={task.pk}', 'tasks')
+    if isinstance(task, SpaceTask):
+        item = task.work_item
+    else:
+        item = WorkItem.objects.filter(legacy_task=task, task__isnull=False).select_related('space').first()
+        if item is None:
+            name = 'view-subtask' if task.parent_id else 'view-task'
+            return app_url(request, f'{name}/{task.task_id}/?task_pk={task.pk}', 'tasks')
+    match = getattr(request, 'resolver_match', None)
+    params = request.GET.copy() if match and match.app_name in {'spaces', 'workplace_spaces'} else QueryDict(mutable=True)
+    params.pop('task_pk', None)
+    params.pop('tab', None)
+    params['view'] = params.get('view') if params.get('view') in {'list', 'board', 'backlog', 'timeline', 'overview', 'reports'} else 'list'
+    return space_url(request, item.space, f'tasks/{item.key}/?') + params.urlencode()
+
+
+@transaction.atomic
+def create_work_item(task):
+    space = Space.objects.select_for_update().get(pk=task.space_id)
+    number = space.next_number
+    space.next_number += 1
+    space.save(update_fields=['next_number'])
+    status = next(s['key'] for s in space.statuses if s['category'] == task.status)
+    return WorkItem.objects.create(task=task, space=space, number=number, key=f'{space.key}-{number}', rank=number * 100, status=status, work_type=space.configuration.settings['types'][0]['key'])
 
 
 def record(item, actor, action, message, metadata=None):
-    return TaskActivity.objects.create(task=item.task, actor=actor, action=action, message=message, metadata=metadata or {})
+    return SpaceTaskActivity.objects.create(task=item.task, actor=actor, action=action, message=message, metadata=metadata or {})
 
 
 def transition_allowed(item, target):
@@ -161,21 +124,12 @@ def transition_allowed(item, target):
     return bool(current and target in current['transitions'])
 
 
-def category_transition_allowed(task, target):
-    if not task.pk:
-        return True
-    item = WorkItem.objects.filter(task=task, space__isnull=False).select_related('space__configuration').first()
-    if not item:
-        return True
-    current = next((s for s in item.space.statuses if s['key'] == item.status), None)
-    if not current or current['category'] == target:
-        return True
-    return any(s['category'] == target and s['key'] in current['transitions'] for s in item.space.statuses)
-
-
 def set_status(request, item, target):
-    with lock_task_numbers(item.task.user_id):
-        task = editable_to(Task.objects.all(), request.user).select_for_update().get(pk=item.task_id)
+    with transaction.atomic():
+        from workplaces.models import Workplace
+        Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+        Space.objects.select_for_update().get(pk=item.space_id)
+        task = editable_to(SpaceTask.objects.all(), request.user).select_for_update().get(pk=item.task_id)
         item = WorkItem.objects.select_for_update(of=('self',)).select_related('space__configuration').get(pk=item.pk)
         statuses = {s['key']: s for s in item.space.statuses}
         if target not in statuses or not transition_allowed(item, target):
@@ -191,20 +145,15 @@ def set_status(request, item, target):
         item.task = task
         record(item, request.user, 'status_changed', 'zmienił status', {
             'old_status': previous, 'new_status': target,
+            'from_label': statuses.get(previous, {}).get('label', previous),
+            'to_label': statuses[target]['label'],
             'old_status_label': statuses.get(previous, {}).get('label', previous),
             'new_status_label': statuses[target]['label'],
         })
 
 
-def default_section(space):
-    section = space.project.sections.filter(visibility='public').order_by('pk').first()
-    if section is None:
-        section = TaskSection.objects.create(project=space.project, title='Zadania', visibility='public')
-    return section
-
-
 def update_sprint(request, sprint, action):
-    with lock_task_numbers(sprint.space.project.user_id):
+    with transaction.atomic():
         Space.objects.select_for_update().get(pk=sprint.space_id)
         sprint = Sprint.objects.select_for_update().get(pk=sprint.pk)
         if not manage_space(request, sprint.space):
@@ -217,7 +166,7 @@ def update_sprint(request, sprint, action):
             if sprint.state != 'active':
                 raise ValidationError('Możesz zakończyć tylko aktywny sprint.')
             items = sprint.items.select_related('task')
-            allowed = editable_to(Task.objects.all(), request.user)
+            allowed = editable_to(SpaceTask.objects.all(), request.user)
             if items.exclude(task__in=allowed).exists():
                 raise ValidationError('Sprint zawiera zadania, których nie możesz zmieniać.')
             done = list(items.filter(task__status='closed').values('task_id', 'points'))

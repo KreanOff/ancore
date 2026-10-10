@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from spaces.testing import make_space
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -258,7 +259,7 @@ class GlobalSearchTests(TestCase):
         TaskTag.objects.create(
             user=self.user,
             workplace=self.workplace,
-            space=task_project.space,
+            space=make_space(user=self.user, workplace=self.workplace, name='Apollo space'),
             name='Apollo VIP',
         )
         kanban_project = KanbanProject.objects.create(

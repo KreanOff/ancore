@@ -1,10 +1,11 @@
+from .testing import make_space
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from tasks.models import Task, TaskActivity, TaskProject, TaskProjectMembership, TaskSection
+from .models import SpaceTask, SpaceTaskActivity, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.navigation import sidebar_favorite_is_active
 from workplaces.services import scoped_workplace_app_path
@@ -23,12 +24,12 @@ class SpaceManagementTests(TestCase):
         cls.foreign = create_workplace_for_user(cls.other, 'Obcy')
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.admin, role='admin')
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member, role='member')
-        cls.private = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Prywatny produkt', visibility='private', private_owner=cls.owner)
-        TaskProjectMembership.objects.create(project=cls.private, user=cls.admin, role='admin')
-        TaskProjectMembership.objects.create(project=cls.private, user=cls.member, role='member')
-        cls.hidden = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Poufny projekt', visibility='private', private_owner=cls.owner)
-        cls.public = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Publiczny produkt', visibility='public')
-        cls.foreign_project = TaskProject.objects.create(user=cls.other, workplace=cls.foreign, name='Obcy projekt')
+        cls.private = make_space(user=cls.owner, workplace=cls.workspace, name='Prywatny produkt', visibility='private', private_owner=cls.owner)
+        SpaceMembership.objects.create(space=cls.private, user=cls.admin, role='admin')
+        SpaceMembership.objects.create(space=cls.private, user=cls.member, role='member')
+        cls.hidden = make_space(user=cls.owner, workplace=cls.workspace, name='Poufny projekt', visibility='private', private_owner=cls.owner)
+        cls.public = make_space(user=cls.owner, workplace=cls.workspace, name='Publiczny produkt', visibility='public')
+        cls.foreign_project = make_space(user=cls.other, workplace=cls.foreign, name='Obcy projekt')
 
     def setUp(self):
         self.client.force_login(self.owner)
@@ -73,44 +74,44 @@ class SpaceManagementTests(TestCase):
         self.assertContains(response, 'Publiczny produkt')
         self.assertNotContains(response, 'Poufny projekt')
         self.assertNotContains(response, 'Obcy projekt')
-        TaskProjectMembership.objects.filter(project=self.private, user=self.admin).delete()
+        SpaceMembership.objects.filter(space=self.private, user=self.admin).delete()
         self.assertNotContains(self.client.get(self.url()), 'Prywatny produkt')
 
     def test_members_and_observers_keep_daily_access_without_management(self):
-        section = TaskSection.objects.create(project=self.public, title='Przypisane zadania')
-        Task.objects.create(user=self.owner, workplace=self.workspace, section=section, title='Przydział bez zarządzania', assignee=self.member)
+        section = self.public
+        SpaceTask.objects.create(created_by=self.owner, space=section, title='Przydział bez zarządzania', assignee=self.member)
         self.client.force_login(self.member)
         for role in ['member', 'observer']:
-            TaskProjectMembership.objects.filter(project=self.private, user=self.member).update(role=role)
+            SpaceMembership.objects.filter(space=self.private, user=self.member).update(role=role)
             self.assertContains(self.client.get(self.url('')), 'Prywatny produkt')
-            for suffix in ['manage/', 'manage/create/', f'manage/{self.private.space.pk}/edit/']:
+            for suffix in ['manage/', 'manage/create/', f'manage/{self.private.pk}/edit/']:
                 self.assertEqual(self.client.get(self.url(suffix)).status_code, 403)
             settings = self.client.get('/settings/')
             self.assertNotContains(settings, 'Ustawienia, konfiguracje i dostęp do przestrzeni')
 
     def test_project_admin_and_public_leader_manage_only_their_spaces(self):
         self.client.force_login(self.member)
-        TaskProjectMembership.objects.filter(project=self.private, user=self.member).update(role='admin')
+        SpaceMembership.objects.filter(space=self.private, user=self.member).update(role='admin')
         response = self.client.get(self.url())
-        self.assertEqual([space.project_id for space in response.context['page']], [self.private.pk])
+        self.assertEqual([space.pk for space in response.context['page']], [self.private.pk])
         self.public.responsible_user = self.member
         self.public.save()
         response = self.client.get(self.url())
-        self.assertEqual(set(manageable_spaces(response.wsgi_request).values_list('project_id', flat=True)), {self.private.pk, self.public.pk})
+        self.assertEqual(set(manageable_spaces(response.wsgi_request).values_list('pk', flat=True)), {self.private.pk, self.public.pk})
         self.assertTrue(all(manage_space(response.wsgi_request, space) for space in response.context['page']))
 
     def test_filters_and_pagination_apply_to_manageable_subset(self):
         self.client.force_login(self.admin)
-        space = self.public.space
+        space = self.public
         space.kind = 'software'
         space.management = 'company'
         space.save()
         response = self.client.get(self.url(), {'q': space.key.lower(), 'kind': 'software', 'management': 'company'})
-        self.assertEqual([space.project_id for space in response.context['page']], [self.public.pk])
+        self.assertEqual([space.pk for space in response.context['page']], [self.public.pk])
         response = self.client.get(self.url(), {'q': space.key, 'management': 'team'})
         self.assertContains(response, 'Brak pasujących przestrzeni')
         for number in range(31):
-            TaskProject.objects.create(user=self.owner, workplace=self.workspace, name=f'Filtrowany {number:02}')
+            make_space(user=self.owner, workplace=self.workspace, name=f'Filtrowany {number:02}')
         response = self.client.get(self.url(), {'q': 'Filtrowany', 'page': '2', 'kind': 'business'})
         self.assertEqual(response.context['page'].paginator.count, 31)
         self.assertEqual(len(response.context['page']), 1)
@@ -118,13 +119,13 @@ class SpaceManagementTests(TestCase):
         self.assertContains(response, 'kind=business')
 
     def test_last_activity_does_not_reveal_hidden_tasks(self):
-        section = TaskSection.objects.create(project=self.private, title='Zadania')
-        visible = Task.objects.create(user=self.owner, workplace=self.workspace, section=section, title='Dostępne')
-        hidden = Task.objects.create(user=self.owner, workplace=self.workspace, section=section, title='Ukryte', visibility='private', private_owner=self.member)
+        section = self.private
+        visible = SpaceTask.objects.create(created_by=self.owner, space=section, title='Dostępne')
+        hidden = SpaceTask.objects.create(created_by=self.owner, space=section, title='Ukryte', visibility='private', private_owner=self.member)
         visible_at = timezone.now() - timedelta(days=3)
-        TaskActivity.objects.filter(task=visible).update(created_at=visible_at)
-        TaskActivity.objects.filter(task=hidden).update(created_at=timezone.now())
-        response = self.client.get(self.url(), {'q': self.private.space.key})
+        SpaceTaskActivity.objects.filter(task=visible).update(created_at=visible_at)
+        SpaceTaskActivity.objects.filter(task=hidden).update(created_at=timezone.now())
+        response = self.client.get(self.url(), {'q': self.private.key})
         row = response.context['page'][0]
         self.assertEqual(row.last_activity, visible_at)
         self.assertEqual(row.item_count, 1)
@@ -142,7 +143,7 @@ class SpaceManagementTests(TestCase):
         self.assertTrue(invalid.context['spaces_management_mode'])
         response = self.client.post(create_url, payload, HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.json(), {'saved': True, 'url': self.url()})
-        space = TaskProject.objects.get(name='Nowa przestrzeń').space
+        space = Space.objects.get(name='Nowa przestrzeń')
         response = self.client.post(self.url(f'manage/{space.pk}/edit/'), {**payload, 'name': 'Zmieniona przestrzeń'}, HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.json(), {'saved': True, 'url': self.url()})
         self.assertContains(self.client.get(self.url()), 'Zmieniona przestrzeń')
@@ -150,11 +151,11 @@ class SpaceManagementTests(TestCase):
 
     def test_management_edit_still_checks_each_space(self):
         self.client.force_login(self.admin)
-        self.assertEqual(self.client.post(self.url(f'manage/{self.hidden.space.pk}/edit/'), {}).status_code, 404)
+        self.assertEqual(self.client.post(self.url(f'manage/{self.hidden.pk}/edit/'), {}).status_code, 404)
         self.client.force_login(self.member)
         self.public.responsible_user = self.member
         self.public.save()
-        self.assertEqual(self.client.post(self.url(f'manage/{self.private.space.pk}/edit/'), {}).status_code, 403)
+        self.assertEqual(self.client.post(self.url(f'manage/{self.private.pk}/edit/'), {}).status_code, 403)
 
     def test_empty_workspace_and_method_guards(self):
         empty = create_workplace_for_user(self.owner, 'Pusty')

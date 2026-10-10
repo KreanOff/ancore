@@ -89,6 +89,13 @@ def comment_mention_metadata(task, raw_comment, raw_mentions):
 
 
 def mention_people(task):
+    from spaces.models import SpaceTask
+    if isinstance(task, SpaceTask):
+        from spaces.access import task_people
+        people = task_people(task)
+        if task.visibility == 'private':
+            people = people.filter(Q(pk=task.private_owner_id) | Q(pk__in=task.memberships.values('user_id')))
+        return people.filter(Q(pk=task.space.workplace.owner_id) | Q(workplace_memberships__workplace=task.space.workplace, workplace_memberships__is_active=True, workplace_memberships__role__in=['admin', 'member'])).distinct()
     people = workplace_people(task.workplace, task.user)
     if task.workplace_id:
         people = people.filter(Q(pk=task.workplace.owner_id) | Q(

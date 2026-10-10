@@ -3,6 +3,119 @@
     window.ancoreWorkLoaded = true;
     let controller;
 
+    function initTaskDetail(page, signal) {
+        const form = page.querySelector('#space-task-form');
+        if (!form) return;
+        const save = page.querySelector('[data-space-task-save]');
+        const upload = page.querySelector('[data-space-task-upload]');
+        const list = page.querySelector('[data-space-task-upload-list]');
+        const snapshot = () => JSON.stringify([...new FormData(form)].filter(([name, value]) =>
+            name !== 'csrfmiddlewaretoken' && !(value instanceof File && !value.name)
+        ).map(([name, value]) => [name, value instanceof File ? [value.name, value.size, value.lastModified] : value]));
+        const initial = snapshot();
+        const hasErrors = Boolean(page.querySelector('.tasks-error-banner'));
+        function syncSave() {
+            if (!save) return;
+            const dirty = hasErrors || snapshot() !== initial;
+            save.disabled = !dirty;
+            save.dataset.state = dirty ? 'dirty' : 'idle';
+        }
+        function renderFiles() {
+            if (!upload || !list) return;
+            list.replaceChildren();
+            [...upload.files].forEach((file, index) => {
+                const card = document.createElement('div');
+                card.className = 'tasks-attachment-card tasks-attachment-card--pending';
+                const info = document.createElement('div'); info.className = 'tasks-attachment-info';
+                const extension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : '';
+                info.append(window.AttachmentIcons.createIconElement(window.AttachmentIcons.extensionToTypeClass(extension), 'md'));
+                const details = document.createElement('span'); details.className = 'tasks-attachment-details';
+                const name = document.createElement('span');
+                name.className = 'tasks-attachment-name';
+                name.textContent = file.name;
+                const size = document.createElement('span'); size.className = 'tasks-attachment-size';
+                const unit = file.size ? Math.min(3, Math.floor(Math.log(file.size) / Math.log(1024))) : 0;
+                size.textContent = `${parseFloat((file.size / 1024 ** unit).toFixed(1))} ${['B', 'KB', 'MB', 'GB'][unit]}`;
+                details.append(name, size); info.append(details);
+                const remove = document.createElement('button');
+                remove.type = 'button'; remove.className = 'tasks-delete-attach-btn';
+                remove.dataset.spaceTaskRemoveUpload = String(index);
+                remove.setAttribute('aria-label', `Usuń wybrany plik ${file.name}`);
+                remove.append(window.AncoreIcons.create('trash-2'));
+                card.append(info, remove); list.append(card);
+            });
+            window.AncoreIcons.render(list);
+        }
+        page.addEventListener('input', syncSave, { signal });
+        page.addEventListener('change', event => {
+            if (event.target === upload) renderFiles();
+            if (event.target.matches('.tasks-subtasks-board .tasks-row-checkbox')) event.target.closest('.tasks-issue-row').classList.toggle('checked', event.target.checked);
+            syncSave();
+        }, { signal });
+        form.addEventListener('submit', () => {
+            if (save) { save.disabled = true; save.dataset.state = 'saving'; save.textContent = 'Zapisywanie...'; }
+        }, { signal });
+        page.addEventListener('click', async event => {
+            if (event.target.closest('[data-space-task-choose-files]')) upload?.click();
+            const remove = event.target.closest('[data-space-task-remove-upload]');
+            if (remove && upload) {
+                const transfer = new DataTransfer();
+                [...upload.files].forEach((file, index) => { if (index !== Number(remove.dataset.spaceTaskRemoveUpload)) transfer.items.add(file); });
+                upload.files = transfer.files; renderFiles(); syncSave();
+            }
+            const copy = event.target.closest('[data-space-task-copy]');
+            if (copy) {
+                try {
+                    await navigator.clipboard.writeText(copy.dataset.spaceTaskCopy);
+                    window.showNotification?.('Skopiowano ID zadania.', 'success');
+                } catch (error) { window.showNotification?.('Nie udało się skopiować ID zadania.', 'error'); }
+            }
+        }, { signal });
+        page.addEventListener('ancore:task-history-added', event => {
+            const feed = page.querySelector('[data-activity-feed="history"]');
+            feed.querySelector('[data-activity-empty-initial]')?.remove();
+            feed.insertAdjacentHTML('afterbegin', event.detail || '');
+            window.AncoreIcons?.render(feed);
+        }, { signal });
+        const subtaskModal = document.getElementById('space-subtask-modal');
+        let background = [];
+        function openSubtask() {
+            for (let node = subtaskModal; node && node !== document.body; node = node.parentElement) {
+                [...node.parentElement.children].forEach(sibling => {
+                    if (sibling !== node && sibling instanceof HTMLElement && !sibling.inert) { sibling.inert = true; background.push(sibling); }
+                });
+            }
+            window.AncoreTaskModals.open(subtaskModal, subtaskModal.querySelector('[name="subtask-title"]'));
+        }
+        function restoreBackground() { background.forEach(node => { node.inert = false; }); background = []; }
+        subtaskModal?.addEventListener('ancore:task-modal-closed', restoreBackground, { signal });
+        signal.addEventListener('abort', restoreBackground, { once: true });
+        page.addEventListener('click', event => {
+            if (event.target.closest('[data-space-subtask-open]')) openSubtask();
+            const sort = event.target.closest('[data-space-subtasks-sort]');
+            if (sort) {
+                const descending = sort.dataset.direction !== 'desc';
+                sort.dataset.direction = descending ? 'desc' : 'asc';
+                page.querySelectorAll('.tasks-subtasks-board .tasks-issue-list').forEach(list => {
+                    [...list.children].sort((a, b) => (descending ? -1 : 1) * a.querySelector('.tasks-row-title').textContent.trim().localeCompare(b.querySelector('.tasks-row-title').textContent.trim(), 'pl', { numeric: true })).forEach(row => list.append(row));
+                });
+                window.showNotification?.(descending ? 'Podzadania posortowane malejąco.' : 'Podzadania posortowane rosnąco.', 'success');
+            }
+            if (event.target.closest('[data-space-subtasks-delete]')) {
+                const selected = [...page.querySelectorAll('.tasks-subtasks-board .tasks-row-checkbox:checked')].map(input => input.value);
+                if (!selected.length) { window.showNotification?.('Zaznacz podzadania do usunięcia.', 'info'); return; }
+                window.showConfirmModal({ title: 'Usuń podzadania', message: `Czy na pewno chcesz usunąć zaznaczone podzadania (${selected.length})?`, confirmText: 'Usuń', onConfirm: () => {
+                    const post = document.createElement('form'); post.method = 'post';
+                    const params = [['csrfmiddlewaretoken', form.elements.csrfmiddlewaretoken.value], ['action', 'delete_subtasks'], ...selected.map(id => ['subtask_ids', id])];
+                    params.forEach(([name, value]) => { const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = value; post.append(input); });
+                    document.body.append(post); post.submit();
+                } });
+            }
+        }, { signal });
+        if (subtaskModal?.classList.contains('is-open')) openSubtask();
+        syncSave();
+    }
+
     function init() {
         controller?.abort();
         controller = new AbortController();
@@ -10,6 +123,7 @@
         const page = document.querySelector('[data-work-page]');
         const host = document.querySelector('[data-work-modal-host]');
         if (!page || !host) return;
+        initTaskDetail(page, signal);
         let pending = false, discard = false, initial = '', previousFocus, background = [], previewUrl;
         const modal = () => host.querySelector('[data-work-modal]');
         const values = () => JSON.stringify([...new FormData(host.querySelector('form'))].map(([key, value]) => [key, value instanceof File ? (value.name ? [value.name, value.size, value.lastModified] : null) : value]));

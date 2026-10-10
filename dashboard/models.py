@@ -149,6 +149,8 @@ class TaskReminder(models.Model):
 class NotificationState(models.Model):
     """Personal inbox state; source records remain the authority for access/content."""
 
+    space_activity = models.ForeignKey('spaces.SpaceTaskActivity', null=True, blank=True, on_delete=models.CASCADE)
+    space_reminder = models.ForeignKey('spaces.SpaceTaskReminder', null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     task_activity = models.ForeignKey('tasks.TaskActivity', null=True, blank=True, on_delete=models.CASCADE)
     kanban_activity = models.ForeignKey('kanban.KanbanActivity', null=True, blank=True, on_delete=models.CASCADE)
@@ -164,12 +166,14 @@ class NotificationState(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(task_activity__isnull=False, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True)
-                    | models.Q(task_activity__isnull=True, kanban_activity__isnull=False, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True)
-                    | models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=False, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True)
-                    | models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=False, project_invitation__isnull=True, section_invitation__isnull=True)
-                    | models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=False, section_invitation__isnull=True)
-                    | models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=False)
+                    models.Q(task_activity__isnull=False, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True, space_activity__isnull=True, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=False, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True, space_activity__isnull=True, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=False, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True, space_activity__isnull=True, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=False, project_invitation__isnull=True, section_invitation__isnull=True, space_activity__isnull=True, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=False, section_invitation__isnull=True, space_activity__isnull=True, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=False, space_activity__isnull=True, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True, space_activity__isnull=False, space_reminder__isnull=True) |
+                    models.Q(task_activity__isnull=True, kanban_activity__isnull=True, invitation__isnull=True, reminder__isnull=True, project_invitation__isnull=True, section_invitation__isnull=True, space_activity__isnull=True, space_reminder__isnull=False)
                 ),
                 name='notification_exactly_one_source',
             ),
@@ -179,4 +183,6 @@ class NotificationState(models.Model):
             models.UniqueConstraint(fields=['user', 'section_invitation'], name='notification_user_section_invite_unique'),
             models.UniqueConstraint(fields=['user', 'project_invitation'], name='notification_user_project_invite_unique'),
             models.UniqueConstraint(fields=['user', 'reminder'], name='notification_user_reminder_unique'),
+            models.UniqueConstraint(fields=['user', 'space_activity'], name='notification_user_space_activity_unique'),
+            models.UniqueConstraint(fields=['user', 'space_reminder'], name='notification_user_space_reminder_unique'),
         ]

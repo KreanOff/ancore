@@ -26,22 +26,7 @@ def comment_image_path(instance, filename):
     return f'comment_images/{instance._meta.app_label}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}'
 
 
-class CommentImage(models.Model):
-    file = models.FileField(storage=comment_image_storage, upload_to=comment_image_path)
-    filename = models.CharField(max_length=255)
-    file_size = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        abstract = True
-        ordering = ['pk']
-
-    def get_url(self):
-        task = self.activity.task
-        app = self._meta.app_label
-        if task.workplace_id:
-            return scoped_workplace_app_path(task.workplace, app, f'comment-images/{self.pk}/')
-        return reverse(f'{app}:comment_image', args=[self.pk])
-
+class AttachmentPresentation:
     def is_image(self):
         return Path(self.filename).suffix.lower() in COMMENT_IMAGE_EXTENSIONS
 
@@ -65,6 +50,24 @@ class CommentImage(models.Model):
             if size < 1024 or unit == 'GB':
                 return f'{size:.1f} {unit}'
             size /= 1024
+
+
+class CommentImage(AttachmentPresentation, models.Model):
+    file = models.FileField(storage=comment_image_storage, upload_to=comment_image_path)
+    filename = models.CharField(max_length=255)
+    file_size = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        abstract = True
+        ordering = ['pk']
+
+    def get_url(self):
+        task = self.activity.task
+        app = self._meta.app_label
+        if task.workplace_id:
+            return scoped_workplace_app_path(task.workplace, app, f'comment-images/{self.pk}/')
+        return reverse(f'{app}:comment_image', args=[self.pk])
+
 
 
 def delete_comment_image_file(sender, instance, using, **kwargs):

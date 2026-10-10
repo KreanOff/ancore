@@ -14,6 +14,7 @@ from django.contrib.staticfiles import finders
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.db.models import Case, Count, IntegerField, Value, When
+from spaces.testing import make_space
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
@@ -2650,11 +2651,11 @@ class TaskProjectCreationTests(TestCase):
         self.assertNotContains(groups_response, 'id="delete-selected-tag-menu-btn"')
         self.assertNotContains(groups_response, 'id="edit-selected-tag-menu-btn"')
 
-    def test_create_task_modal_assigns_existing_tags(self):
+    def test_create_legacy_task_modal_rejects_space_tags(self):
         workplace = self.client.get(reverse('tasks:tasks')).wsgi_request.workplace
         project = TaskProject.objects.create(user=self.user, workplace=workplace, name='Projekt', code='PRJ')
         section = TaskSection.objects.create(project=project, title='Frontend')
-        tag = TaskTag.objects.create(user=self.user, workplace=project.workplace, space=project.space, name='Pilne')
+        tag = TaskTag.objects.create(user=self.user, workplace=project.workplace, space=make_space(user=self.user, workplace=project.workplace, name='Osobna przestrzeń'), name='Pilne')
 
         response = self.client.post(reverse('tasks:tasks'), {
             'action': 'create_task_modal',
@@ -2667,10 +2668,9 @@ class TaskProjectCreationTests(TestCase):
             'tags': [tag.id],
         })
 
-        task = Task.objects.get(user=self.user, title='Zadanie z tagiem')
-
-        self.assertRedirects(response, reverse('tasks:task_group', args=[section.id]))
-        self.assertEqual(list(task.tags.all()), [tag])
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['task_modal_form'].errors.get('tags'))
+        self.assertFalse(Task.objects.filter(user=self.user, title='Zadanie z tagiem').exists())
 
     def test_create_task_modal_places_tags_before_assignee(self):
         response = self.client.get(reverse('tasks:tasks'))

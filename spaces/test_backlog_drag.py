@@ -1,3 +1,4 @@
+from .testing import make_space
 from datetime import date
 import re
 from urllib.parse import parse_qs, urlsplit
@@ -5,7 +6,7 @@ from urllib.parse import parse_qs, urlsplit
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from tasks.models import Task, TaskMembership, TaskProject, TaskProjectMembership, TaskSection
+from .models import SpaceTask, SpaceTaskMembership, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .models import Sprint, WorkItem
@@ -17,13 +18,13 @@ class BacklogDragTests(TestCase):
         self.member = get_user_model().objects.create_user(username='drag-member', email='drag-member@example.test')
         self.workspace = create_workplace_for_user(self.owner, 'Drag backlog')
         WorkplaceMembership.objects.create(workplace=self.workspace, user=self.member)
-        self.project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Scrum', visibility='private', private_owner=self.owner)
-        TaskProjectMembership.objects.create(project=self.project, user=self.member, role='member')
-        self.space = self.project.space
+        self.project = make_space(user=self.owner, workplace=self.workspace, name='Scrum', visibility='private', private_owner=self.owner)
+        SpaceMembership.objects.create(space=self.project, user=self.member, role='member')
+        self.space = self.project
         self.space.template = 'scrum'
         self.space.save(update_fields=['template'])
-        self.section = TaskSection.objects.create(project=self.project, title='Tasks')
-        self.first, self.middle, self.last = [Task.objects.create(user=self.owner, section=self.section, title=title).work_item for title in ('Visible first', 'Hidden middle', 'Visible last')]
+        self.section = self.project
+        self.first, self.middle, self.last = [SpaceTask.objects.create(created_by=self.owner, space=self.section, title=title).work_item for title in ('Visible first', 'Hidden middle', 'Visible last')]
         for row, rank in zip((self.first, self.middle, self.last), (100, 200, 300)):
             row.rank, row.in_backlog = rank, True
             row.save(update_fields=['rank', 'in_backlog'])
@@ -121,15 +122,15 @@ class BacklogDragTests(TestCase):
 
     def test_foreign_sprint_space_workspace_and_anchor_are_rejected(self):
         for workplace in (self.workspace, create_workplace_for_user(self.member, 'Foreign workspace')):
-            project = TaskProject.objects.create(user=workplace.owner, workplace=workplace, name='Other project')
-            sprint = Sprint.objects.create(space=project.space, name='Foreign sprint', start_on=date(2026, 10, 3), end_on=date(2026, 10, 10))
-            section = TaskSection.objects.create(project=project, title='Other tasks')
-            other = Task.objects.create(user=workplace.owner, section=section, title='Other').work_item
+            project = make_space(user=workplace.owner, workplace=workplace, name='Other project')
+            sprint = Sprint.objects.create(space=project, name='Foreign sprint', start_on=date(2026, 10, 3), end_on=date(2026, 10, 10))
+            section = project
+            other = SpaceTask.objects.create(created_by=workplace.owner, space=section, title='Other').work_item
             self.assertEqual(self.move(self.first, sprint=sprint).status_code, 400)
             self.assertEqual(self.move(self.first, before=other).status_code, 400)
 
     def test_observer_cannot_drag_or_submit_move(self):
-        TaskProjectMembership.objects.filter(project=self.project, user=self.member).update(role='observer')
+        SpaceMembership.objects.filter(space=self.project, user=self.member).update(role='observer')
         self.assertEqual(self.move(self.first, sprint=self.active).status_code, 403)
         response = self.client.get(scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/?view=backlog'))
         rows = re.findall(r'<article\b[^>]*data-work-backlog-row[^>]*>', response.content.decode())
@@ -152,7 +153,7 @@ class BacklogDragTests(TestCase):
         for row, rank in zip((self.first, self.middle, self.last), (0, 1, 2)):
             row.rank, row.sprint, row.in_backlog = rank, self.active, False
             row.save(update_fields=['rank', 'sprint', 'in_backlog'])
-        incoming = Task.objects.create(user=self.owner, section=self.section, title='Visible incoming').work_item
+        incoming = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Visible incoming').work_item
         self.assertEqual(self.move(incoming, sprint=self.active, before=self.last, after=self.first, query='?q=Visible').status_code, 200)
         self.middle.refresh_from_db()
         self.assertEqual(self.middle.rank, 1)
@@ -163,7 +164,7 @@ class BacklogDragTests(TestCase):
     def test_readonly_neighbour_can_be_an_anchor_when_its_rank_is_unchanged(self):
         self.middle.task.visibility, self.middle.task.private_owner = 'private', self.owner
         self.middle.task.save(update_fields=['visibility', 'private_owner'])
-        TaskMembership.objects.create(task=self.middle.task, user=self.member, role='observer')
+        SpaceTaskMembership.objects.create(task=self.middle.task, user=self.member, role='observer')
         self.assertEqual(self.move(self.last, before=self.middle, after=self.first).status_code, 200)
         self.middle.refresh_from_db()
         self.assertEqual(self.middle.rank, 200)
@@ -172,7 +173,7 @@ class BacklogDragTests(TestCase):
     def test_no_gap_rollback_cannot_rewrite_a_readonly_neighbour(self):
         self.middle.task.visibility, self.middle.task.private_owner = 'private', self.owner
         self.middle.task.save(update_fields=['visibility', 'private_owner'])
-        TaskMembership.objects.create(task=self.middle.task, user=self.member, role='observer')
+        SpaceTaskMembership.objects.create(task=self.middle.task, user=self.member, role='observer')
         for row, rank in zip((self.first, self.middle, self.last), (10, 11, 12)):
             row.rank = rank
             row.save(update_fields=['rank'])
@@ -187,7 +188,7 @@ class BacklogDragTests(TestCase):
 
     def test_source_outside_the_displayed_page_is_rejected(self):
         for number in range(98):
-            Task.objects.create(user=self.owner, section=self.section, title=f'Extra {number}')
+            SpaceTask.objects.create(created_by=self.owner, space=self.section, title=f'Extra {number}')
         outside = WorkItem.objects.filter(space=self.space).order_by('rank', 'pk').last()
         self.assertEqual(self.move(outside, before=self.first, query='?page=1').status_code, 400)
         self.assertEqual(self.move(self.first, before=outside, query='?page=1').status_code, 400)

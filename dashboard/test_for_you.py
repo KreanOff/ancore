@@ -7,7 +7,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from kanban.models import Kanban, KanbanActivity, KanbanProject, KanbanSection
-from tasks.models import Task, TaskActivity, TaskAttachment, TaskProject, TaskSection, TaskTag
+from tasks.models import TaskTag
+from spaces.models import SpaceTask, SpaceTaskActivity, SpaceTaskFile, Space, WorkItem
+from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 
@@ -23,12 +25,12 @@ class ForYouTests(TestCase):
         cls.workspace = create_workplace_for_user(cls.owner, 'Dla ciebie')
         cls.other_workspace = create_workplace_for_user(cls.owner, 'Drugi Workspace')
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
-        cls.project = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Projekt zespołu')
-        cls.section = TaskSection.objects.create(project=cls.project, title='Grupa zespołu')
-        cls.hidden_project = TaskProject.objects.create(
+        cls.project = make_space(user=cls.owner, workplace=cls.workspace, name='Projekt zespołu')
+        cls.section = make_space(user=cls.project.user, workplace=cls.project.workplace, name='Grupa zespołu')
+        cls.hidden_project = make_space(
             user=cls.owner, workplace=cls.workspace, name='Ukryty projekt', visibility='private', private_owner=cls.owner,
         )
-        cls.hidden_section = TaskSection.objects.create(project=cls.hidden_project, title='Ukryta grupa')
+        cls.hidden_section = cls.hidden_project
         cls.url = scoped_workplace_app_path(cls.workspace, 'for-you')
 
     def setUp(self):
@@ -38,9 +40,15 @@ class ForYouTests(TestCase):
         session.save()
 
     def task(self, title='Moje zadanie', **kwargs):
-        values = dict(user=self.owner, workplace=self.workspace, section=self.section, assignee=self.member)
-        values.update(kwargs)
-        return Task.objects.create(title=title, **values)
+        owner = kwargs.pop('user', self.owner)
+        workplace = kwargs.pop('workplace', self.workspace)
+        selected = kwargs.pop('section', self.project)
+        if kwargs.get('parent'):
+            selected = kwargs['parent'].space
+        if selected is None or selected.user_id != owner.pk or selected.workplace_id != workplace.pk:
+            selected = make_space(user=owner, workplace=workplace, name='Inny zakres')
+        kwargs.setdefault('assignee', self.member)
+        return SpaceTask.objects.create(title=title, space=selected, created_by=owner, **kwargs)
 
     def page(self, tab='assigned', **params):
         response = self.client.get(self.url, {'tab': tab, **params})
@@ -51,7 +59,7 @@ class ForYouTests(TestCase):
         return [row['object'] for row in response.context['for_you_rows']]
 
     def visit(self, obj):
-        url = scoped_workplace_app_path(self.workspace, obj._meta.app_label, f'view-task/{obj.task_id}/', f'task_pk={obj.pk}')
+        url = scoped_workplace_app_path(self.workspace, 'space', f'{obj.space.slug}/tasks/{obj.work_item.key}/')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
@@ -77,7 +85,7 @@ class ForYouTests(TestCase):
     def test_assignment_favorites_and_activity_never_grant_access(self):
         visible = self.task()
         hidden_parent = self.task('Ukryty rodzic', visibility='private', private_owner=self.owner)
-        hidden_group = TaskSection.objects.create(project=self.project, title='Prywatna grupa', visibility='private', private_owner=self.owner)
+        hidden_group = make_space(user=self.project.user, workplace=self.project.workplace, name='Prywatna grupa', visibility='private', private_owner=self.owner)
         hidden = [self.task('Inny Workspace', workplace=self.other_workspace, section=None),
                   self.task('Obcy właściciel', user=self.outsider, section=None),
                   self.task('Prywatny projekt', section=self.hidden_section),
@@ -85,7 +93,7 @@ class ForYouTests(TestCase):
                   hidden_parent, self.task('Ukryty potomek', parent=hidden_parent)]
         for task in [visible, *hidden]:
             task.favorited_by.add(self.member)
-            TaskActivity.objects.create(task=task, actor=self.member)
+            SpaceTaskActivity.objects.create(task=task, actor=self.member)
         for tab in ('assigned', 'starred', 'worked'):
             with self.subTest(tab=tab):
                 self.assertEqual(self.objects(self.page(tab)), [visible])
@@ -106,12 +114,12 @@ class ForYouTests(TestCase):
     def test_worked_uses_personal_activity_and_omits_legacy_cards(self):
         task = self.task()
         someone_elses = self.task('Czyjaś praca')
-        TaskActivity.objects.create(task=someone_elses, actor=self.owner)
-        TaskActivity.objects.create(task=task, actor=self.member)
-        TaskActivity.objects.create(task=task, actor=self.member, kind='comment')
+        SpaceTaskActivity.objects.create(task=someone_elses, actor=self.owner)
+        SpaceTaskActivity.objects.create(task=task, actor=self.member)
+        SpaceTaskActivity.objects.create(task=task, actor=self.member, kind='comment')
         card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Moja karta')
         KanbanActivity.objects.create(task=card, actor=self.member)
-        TaskActivity.objects.create(task=task, actor=self.owner)
+        SpaceTaskActivity.objects.create(task=task, actor=self.owner)
         self.assertEqual(self.objects(self.page('worked')), [task])
 
     def test_starred_is_personal_and_includes_existing_favorite_kinds(self):
@@ -124,7 +132,7 @@ class ForYouTests(TestCase):
         for obj in favorites:
             obj.favorited_by.add(self.member)
         self.assertEqual(set(self.objects(self.page('starred'))), set([task, self.project, self.section]))
-        self.assertEqual([row['object'] for row in self.page().context['for_you_projects']], [self.project])
+        self.assertEqual({row['object'] for row in self.page().context['for_you_projects']}, {self.project, self.section})
 
     def test_viewed_records_successful_views_deduplicates_and_rechecks_access(self):
         task = self.task()
@@ -141,8 +149,8 @@ class ForYouTests(TestCase):
         self.assertEqual(self.objects(self.page('viewed')), [])
 
     def test_viewed_projects_groups_and_session_user_scope(self):
-        self.client.get(scoped_workplace_app_path(self.workspace, 'tasks', query_string=f'project={self.project.pk}'))
-        self.client.get(scoped_workplace_app_path(self.workspace, 'tasks', f'groups/{self.section.pk}/'))
+        self.client.get(scoped_workplace_app_path(self.workspace, 'space', f'{self.project.slug}/'))
+        self.client.get(scoped_workplace_app_path(self.workspace, 'space', f'{self.section.slug}/'))
         self.assertEqual(self.objects(self.page('viewed')), [self.section, self.project])
         session = self.client.session
         entries = session[RECENT_SESSION_KEY]
@@ -158,8 +166,8 @@ class ForYouTests(TestCase):
         boundary = self.task('Dokładnie tydzień temu')
         expired = self.task('Starsze niż tydzień')
         future = self.task('Przyszły wpis')
-        old_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Dawna przestrzeń')
-        old_section = TaskSection.objects.create(project=self.project, title='Dawna grupa')
+        old_project = make_space(user=self.owner, workplace=self.workspace, name='Dawna przestrzeń')
+        old_section = make_space(user=self.project.user, workplace=self.project.workplace, name='Dawna grupa')
         entries = [(current, now), (self.section, now - timedelta(days=1)),
                    (self.project, now - timedelta(days=3)), (boundary, now - timedelta(days=7)),
                    (expired, now - timedelta(days=7, microseconds=1)),
@@ -200,9 +208,9 @@ class ForYouTests(TestCase):
 
     def test_viewed_expired_entry_returns_after_opening_again(self):
         task = self.task()
-        activity = TaskActivity.objects.create(task=task, actor=self.member)
+        activity = SpaceTaskActivity.objects.create(task=task, actor=self.member)
         old = timezone.now() - timedelta(days=8)
-        TaskActivity.objects.filter(pk=activity.pk).update(created_at=old)
+        SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=old)
         session = self.client.session
         session[RECENT_SESSION_KEY] = [
             {'identity': [self.member.pk, self.workspace.pk, task._meta.label_lower, task.pk], 'at': old.isoformat()}
@@ -240,12 +248,12 @@ class ForYouTests(TestCase):
                  for i in range(29)]
         for i, task in enumerate(tasks):
             task.created_at = now - timedelta(minutes=i)
-            Task.objects.filter(pk=task.pk).update(created_at=task.created_at)
+            SpaceTask.objects.filter(pk=task.pk).update(created_at=task.created_at)
             task.favorited_by.add(self.member)
-            TaskActivity.objects.create(task=task, actor=self.member)
-            TaskActivity.objects.filter(task=task, actor=self.member).update(created_at=now - timedelta(minutes=29 - i))
-        TaskProject.objects.filter(pk=self.project.pk).update(created_at=now - timedelta(seconds=90))
-        TaskSection.objects.filter(pk=self.section.pk).update(created_at=now - timedelta(seconds=150))
+            SpaceTaskActivity.objects.create(task=task, actor=self.member)
+            SpaceTaskActivity.objects.filter(task=task, actor=self.member).update(created_at=now - timedelta(minutes=29 - i))
+        Space.objects.filter(pk=self.project.pk).update(created_at=now - timedelta(seconds=90))
+        Space.objects.filter(pk=self.section.pk).update(created_at=now - timedelta(seconds=150))
         self.project.favorited_by.add(self.member)
         self.section.favorited_by.add(self.member)
         favorites = [tasks[0], tasks[1], self.project, tasks[2], self.section, *tasks[3:18]]
@@ -264,17 +272,15 @@ class ForYouTests(TestCase):
 
     def test_personal_project_shortcuts_ignore_hidden_task_activity(self):
         hidden = self.task(visibility='private', private_owner=self.owner)
-        TaskActivity.objects.create(task=hidden, actor=self.member)
+        SpaceTaskActivity.objects.create(task=hidden, actor=self.member)
         self.assertEqual(self.page().context['for_you_projects'], [])
 
-    def test_legacy_foreign_group_metadata_is_not_exposed(self):
-        foreign = TaskProject.objects.create(user=self.outsider, workplace=self.workspace, name='Obcy projekt')
-        section = TaskSection.objects.create(project=foreign, title='Obca grupa')
-        task = self.task(section=section)
+    def test_foreign_space_metadata_is_not_exposed(self):
+        foreign = make_space(user=self.outsider, workplace=self.workspace, name='Obca przestrzeń')
+        self.task(section=foreign, user=self.outsider)
         response = self.page()
-        self.assertEqual(self.objects(response), [task])
-        self.assertNotContains(response, 'Obcy projekt')
-        self.assertNotContains(response, 'Obca grupa')
+        self.assertEqual(self.objects(response), [])
+        self.assertNotContains(response, foreign.name)
 
     def test_retired_kanban_stays_hidden_even_with_membership_and_favorites(self):
         project = KanbanProject.objects.create(user=self.owner, workplace=self.workspace, name='Prywatny Kanban', visibility='private', private_owner=self.owner)
@@ -300,13 +306,13 @@ class ForYouTests(TestCase):
         self.assertContains(self.page(), 'data-sidebar-favorite-item="for-you"')
 
     def test_search_and_space_filter_apply_before_limit_and_survive_navigation(self):
-        other_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Druga przestrzeń')
-        other_section = TaskSection.objects.create(project=other_project, title='Inna grupa')
+        other_project = make_space(user=self.owner, workplace=self.workspace, name='Druga przestrzeń')
+        other_section = make_space(user=other_project.user, workplace=other_project.workplace, name='Inna grupa')
         wanted = [self.task(f'Wdrożenie {i:02d}') for i in range(27)]
         self.task('Wdrożenie w innej przestrzeni', section=other_section)
         self.task('Inna nazwa')
         self.task('Wdrożenie prywatne', section=self.hidden_section)
-        params = {'q': 'Wdrożenie', 'space': str(self.project.space.pk)}
+        params = {'q': 'Wdrożenie', 'space': str(self.project.pk)}
         first = self.page('assigned', **params)
         self.assertEqual(self.objects(first), list(reversed(wanted[-20:])))
         self.assertEqual(self.objects(self.page('assigned', page=2, **params)), self.objects(first))
@@ -325,12 +331,12 @@ class ForYouTests(TestCase):
         other = self.task('Pozostałe zadanie', priority='high')
         for obj in (task, other):
             obj.favorited_by.add(self.member)
-            TaskActivity.objects.create(task=obj, actor=self.member)
+            SpaceTaskActivity.objects.create(task=obj, actor=self.member)
             self.visit(obj)
         for tab in ('recommended', 'assigned', 'starred', 'worked', 'viewed'):
             with self.subTest(tab=tab):
-                self.assertEqual(self.objects(self.page(tab, q='Dopasowane', space=str(self.project.space.pk))), [task])
-                for space in (str(self.hidden_project.space.pk), '999999', '9' * 40, 'bad', '²'):
+                self.assertEqual(self.objects(self.page(tab, q='Dopasowane', space=str(self.project.pk))), [task])
+                for space in (str(self.hidden_project.pk), '999999', '9' * 40, 'bad', '²'):
                     response = self.page(tab, space=space)
                     self.assertEqual(self.objects(response), [])
                     self.assertContains(response, 'Wyczyść filtry')
@@ -344,12 +350,12 @@ class ForYouTests(TestCase):
         self.task('Właściciela', assignee=self.owner)
         self.task('Ukryte', visibility='private', private_owner=self.owner)
         self.assertEqual(self.page().context['for_you_projects'], [])
-        space_url = scoped_workplace_app_path(self.workspace, 'space', f'{self.project.space.slug}/')
+        space_url = scoped_workplace_app_path(self.workspace, 'space', f'{self.project.slug}/')
         self.assertEqual(self.client.get(space_url).status_code, 200)
         shortcuts = self.page().context['for_you_projects']
         self.assertEqual([item['object'] for item in shortcuts], [self.project])
         self.assertEqual(shortcuts[0]['url'], space_url)
-        assignments = self.page(space=self.project.space.pk)
+        assignments = self.page(space=self.project.pk)
         self.assertEqual(assignments.context['for_you_assigned_count'], 1)
         self.assertEqual(len(assignments.context['for_you_rows']), 1)
         self.project.visibility, self.project.private_owner = 'private', self.owner
@@ -358,10 +364,10 @@ class ForYouTests(TestCase):
         self.assertEqual(self.objects(self.page('viewed')), [])
 
     def test_favorite_spaces_precede_recent_activity_without_duplicates(self):
-        favorite = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Ulubiona')
+        favorite = make_space(user=self.owner, workplace=self.workspace, name='Ulubiona')
         favorite.favorited_by.add(self.member)
         self.project.favorited_by.add(self.member, self.owner)
-        TaskActivity.objects.create(task=self.task(), actor=self.member)
+        SpaceTaskActivity.objects.create(task=self.task(), actor=self.member)
         shortcuts = self.page().context['for_you_projects']
         self.assertEqual([row['object'] for row in shortcuts], [self.project, favorite])
         self.assertTrue(all(row['object'].is_starred for row in shortcuts))
@@ -370,9 +376,9 @@ class ForYouTests(TestCase):
         tasks = [self.task(f'Historia {i}') for i in range(4)]
         now = timezone.localtime().replace(hour=12, minute=0, second=0, microsecond=0)
         for task, days in zip(tasks, [0, 1, 3, 10]):
-            activity = TaskActivity.objects.create(task=task, actor=self.member)
-            TaskActivity.objects.filter(pk=activity.pk).update(created_at=now - timedelta(days=days))
-        config = self.project.space.configuration
+            activity = SpaceTaskActivity.objects.create(task=task, actor=self.member)
+            SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=now - timedelta(days=days))
+        config = self.project.configuration
         config.settings['statuses'][0]['label'] = 'Do analizy'
         config.save()
         response = self.page('worked')
@@ -389,20 +395,20 @@ class ForYouTests(TestCase):
     def test_task_rows_use_custom_types_and_distinct_counts_in_every_tab(self):
         task = self.task(priority='high')
         task.tags.set([
-            TaskTag.objects.create(user=self.owner, workplace=self.workspace, name=f'Tag {i}')
+            TaskTag.objects.create(user=self.owner, workplace=self.workspace, space=self.project, name=f'Tag {i}')
             for i in range(2)
         ])
-        TaskAttachment.objects.bulk_create([
-            TaskAttachment(task=task, file=f'qa/{i}.txt', filename=f'{i}.txt') for i in range(3)
+        SpaceTaskFile.objects.bulk_create([
+            SpaceTaskFile(task=task, file=f'qa/{i}.txt', filename=f'{i}.txt') for i in range(3)
         ])
         item = task.work_item
         item.work_type = 'bug'
         item.save(update_fields=['work_type'])
-        config = self.project.space.configuration
+        config = self.project.configuration
         config.settings['types'][1]['label'] = 'Usterka'
         config.save()
         task.favorited_by.add(self.member)
-        TaskActivity.objects.create(task=task, actor=self.member)
+        SpaceTaskActivity.objects.create(task=task, actor=self.member)
         self.visit(task)
         for tab in ('recommended', 'assigned', 'starred', 'worked', 'viewed'):
             with self.subTest(tab=tab):
@@ -418,38 +424,24 @@ class ForYouTests(TestCase):
 
     def test_task_row_does_not_expose_foreign_space_metadata(self):
         task = self.task()
-        item = task.work_item
-        item.space = self.hidden_project.space
-        item.key = 'TAJNY-KLUCZ'
-        item.work_type = 'secret'
-        item.save(update_fields=['space', 'key', 'work_type'])
+        WorkItem.objects.filter(pk=task.work_item.pk).update(space=self.hidden_project, key='TAJNY-KLUCZ')
         response = self.page()
-        row = response.context['for_you_rows'][0]['task_row']
-        self.assertEqual(row['key'], f'#{task.task_id}')
-        self.assertEqual(row['get_work_type_display'], 'Zadanie')
-        self.assertIsNone(row['space'])
+        self.assertEqual(self.objects(response), [])
         self.assertNotContains(response, 'TAJNY-KLUCZ')
-        self.assertNotContains(response, 'Typ zgłoszenia: secret')
         self.assertNotContains(response, self.hidden_project.name)
 
-    def test_task_row_without_planning_metadata_keeps_subtask_link(self):
+    def test_task_without_planning_metadata_is_hidden(self):
         parent = self.task(assignee=None)
         child = self.task(parent=parent)
         child.work_item.delete()
-        response = self.page()
-        row = response.context['for_you_rows'][0]['task_row']
-        self.assertEqual(row['key'], f'#{child.task_id}')
-        self.assertEqual(row['get_work_type_display'], 'Zadanie')
-        self.assertEqual((row['tags_count'], row['attachments_count']), (0, 0))
-        self.assertIn(f'view-subtask/{child.task_id}/?task_pk={child.pk}', row['url'])
-        self.assertContains(response, f'href="{row["url"]}"')
+        self.assertEqual(self.objects(self.page()), [])
 
     def test_status_groups_cover_all_tabs_and_keep_non_task_favorites(self):
-        tasks = [self.task(status=status, priority='high') for status, _ in Task.STATUS_CHOICES]
+        tasks = [self.task(status=status, priority='high') for status, _ in SpaceTask.STATUS_CHOICES]
         hidden = self.task(section=self.hidden_section, priority='high')
         for task in [*tasks, hidden]:
             task.favorited_by.add(self.member)
-            TaskActivity.objects.create(task=task, actor=self.member)
+            SpaceTaskActivity.objects.create(task=task, actor=self.member)
         for task in tasks:
             self.visit(task)
         self.project.favorited_by.add(self.member)
@@ -465,8 +457,8 @@ class ForYouTests(TestCase):
                 self.assertEqual(sum(len(group['items']) for group in groups), len(expected))
                 self.assertNotContains(response, hidden.title + ' · ' + self.hidden_project.name)
                 if tab == 'starred':
-                    self.assertEqual({row['object'] for row in block['other_rows']}, {self.section})
-                    self.assertEqual([space.project for space in block['spaces']], [self.project])
+                    self.assertEqual(block['other_rows'], [])
+                    self.assertEqual({space.pk for space in block['spaces']}, {self.project.pk, self.section.pk})
                 else:
                     self.assertEqual(block['other_rows'], [])
                     self.assertEqual(block['spaces'], [])
@@ -475,10 +467,10 @@ class ForYouTests(TestCase):
         analysis = self.task('Do analizy')
         in_progress = self.task('Rozpoczęte', status='in_progress')
         second = self.task('Drugie do analizy')
-        other_project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Inna przestrzeń')
-        other_section = TaskSection.objects.create(project=other_project, title='Inna grupa')
+        other_project = make_space(user=self.owner, workplace=self.workspace, name='Inna przestrzeń')
+        other_section = make_space(user=other_project.user, workplace=other_project.workplace, name='Inna grupa')
         other = self.task('Domyślne nowe', section=other_section)
-        config = self.project.space.configuration
+        config = self.project.configuration
         statuses = config.settings['statuses']
         statuses[0]['label'] = 'Do analizy'
         config.settings['statuses'] = [statuses[1], statuses[0], *statuses[2:]]
@@ -506,13 +498,13 @@ class ForYouTests(TestCase):
         self.project.save()
         self.project.favorited_by.add(self.member)
         self.hidden_project.favorited_by.add(self.member)
-        space_url = scoped_workplace_app_path(self.workspace, 'space', f'{self.project.space.slug}/')
+        space_url = scoped_workplace_app_path(self.workspace, 'space', f'{self.project.slug}/')
         self.assertEqual(self.client.get(space_url).status_code, 200)
         for tab in ('starred', 'viewed'):
             with self.subTest(tab=tab):
                 response = self.page(tab)
                 spaces = [space for block in response.context['for_you_groups'] for space in block['spaces']]
-                self.assertEqual([space.project_id for space in spaces], [self.project.pk])
+                self.assertEqual([space.pk for space in spaces], [self.project.pk])
                 space, = spaces
                 self.assertEqual(space.item_count, 2)
                 self.assertFalse(space.can_manage)

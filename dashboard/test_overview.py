@@ -9,7 +9,8 @@ from django.utils import timezone
 from dashboard.overview import dashboard_overview
 from kanban.models import Kanban
 from planner.models import CalendarEvent
-from tasks.models import Task, TaskProject, TaskSection
+from spaces.models import SpaceTask, WorkItem
+from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 
@@ -35,9 +36,20 @@ class DashboardOverviewTests(TestCase):
             return dashboard_overview(self.user, self.workplace, focus)
 
     def task(self, **kwargs):
-        values = {'user': self.user, 'workplace': self.workplace, 'title': 'Zadanie'}
-        values.update(kwargs)
-        return Task.objects.create(**values)
+        owner = kwargs.pop('user', self.user)
+        workplace = kwargs.pop('workplace', self.workplace)
+        selected = kwargs.pop('section', None)
+        if kwargs.get('parent'):
+            selected = kwargs['parent'].space
+        if selected is None or selected.user_id != owner.pk or selected.workplace_id != workplace.pk:
+            if not hasattr(self, '_task_spaces'):
+                self._task_spaces = {}
+            key = (owner.pk, workplace.pk)
+            if key not in self._task_spaces:
+                self._task_spaces[key] = make_space(user=owner, workplace=workplace, name='Zadania')
+            selected = self._task_spaces[key]
+        kwargs.setdefault('title', 'Zadanie')
+        return SpaceTask.objects.create(space=selected, created_by=owner, **kwargs)
 
     def test_home_requires_login(self):
         self.client.logout()
@@ -55,10 +67,10 @@ class DashboardOverviewTests(TestCase):
         Kanban.objects.create(user=self.user, workplace=self.workplace, title='Podkarta', parent=card)
         Kanban.objects.create(user=self.user, workplace=self.workplace, title='Zamknięta karta', status='closed')
         # Explicit dates make the fixtures independent of model save's clock.
-        closed = Task.objects.filter(status='closed').order_by('pk').first()
-        Task.objects.filter(pk=closed.pk).update(completion_date=self.now-timedelta(days=1))
-        old = Task.objects.filter(status='closed').order_by('pk').last()
-        Task.objects.filter(pk=old.pk).update(completion_date=self.now-timedelta(days=8))
+        closed = SpaceTask.objects.filter(status='closed').order_by('pk').first()
+        SpaceTask.objects.filter(pk=closed.pk).update(completion_date=self.now-timedelta(days=1))
+        old = SpaceTask.objects.filter(status='closed').order_by('pk').last()
+        SpaceTask.objects.filter(pk=old.pk).update(completion_date=self.now-timedelta(days=8))
         Kanban.objects.filter(status='closed').update(completion_date=self.now-timedelta(hours=1))
         context = self.overview()
         self.assertEqual(context['dashboard_totals'], {'total': 4, 'open': 2, 'priority': 2, 'closed_week': 1, 'overdue': 1})
@@ -72,12 +84,12 @@ class DashboardOverviewTests(TestCase):
         WorkplaceMembership.objects.create(workplace=self.foreign_workplace, user=self.user)
         self.task(user=self.other_user, workplace=self.foreign_workplace, title='Samo członkostwo', due_at=self.now, assignee=self.user)
         Kanban.objects.create(user=self.other_user, workplace=self.workplace, title='Obca karta')
-        TaskProject.objects.create(user=self.other_user, workplace=self.workplace, name='Obcy projekt')
+        make_space(user=self.other_user, workplace=self.workplace, name='Obcy projekt')
         CalendarEvent.objects.create(user=self.other_user, workplace=self.workplace, title='Obce wydarzenie', start=self.now, end=self.now+timedelta(hours=1))
         context = self.overview()
         self.assertEqual(context['dashboard_totals']['total'], 1)
         self.assertEqual([row['object'] for row in context['dashboard_items']], [visible])
-        self.assertEqual(context['dashboard_project_count'], 0)
+        self.assertEqual(context['dashboard_project_count'], 1)
         self.assertEqual(context['dashboard_event_count'], 0)
 
     def test_deadlines_have_a_local_seven_day_boundary_and_limit(self):
@@ -93,16 +105,16 @@ class DashboardOverviewTests(TestCase):
         self.assertFalse(context['dashboard_items'][2]['overdue'])
         self.assertTrue(context['dashboard_items'][2]['due_today'])
 
-    def test_foreign_project_metadata_is_not_exposed_by_an_owned_item(self):
-        project = TaskProject.objects.create(user=self.other_user, workplace=self.workplace, name='Poufny projekt')
-        section = TaskSection.objects.create(project=project, title='Poufna grupa')
-        self.task(section=section, due_at=self.now)
+    def test_foreign_space_metadata_is_not_exposed_by_an_owned_item(self):
+        foreign = make_space(user=self.other_user, workplace=self.workplace, name='Poufna przestrzeń')
+        task = self.task(due_at=self.now)
+        WorkItem.objects.filter(task=task).update(space=foreign)
         context = self.overview()
-        self.assertEqual(context['dashboard_items'][0]['location'], 'Zadania · Bez grupy')
+        self.assertEqual(context['dashboard_items'], [])
+        self.assertEqual(context['dashboard_totals']['total'], 0)
         with patch('dashboard.overview.timezone.now', return_value=self.now):
             response = self.client.get(reverse('home'))
-        self.assertNotContains(response, 'Poufny projekt')
-        self.assertNotContains(response, 'Poufna grupa')
+        self.assertNotContains(response, 'Poufna przestrzeń')
 
     def test_priority_and_kanban_filters_link_by_task_number_in_current_workspace(self):
         high = self.task(title='Wysokie', priority='high')
@@ -112,18 +124,18 @@ class DashboardOverviewTests(TestCase):
         card = Kanban.objects.create(user=self.user, workplace=self.workplace, title='Karta', priority='urgent')
         context = self.overview('priority')
         self.assertEqual([row['object'] for row in context['dashboard_items']], [urgent, high])
-        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'tasks', f'view-task/{urgent.task_id}/?task_pk={urgent.pk}'))
+        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'space', f'{urgent.space.slug}/tasks/{urgent.work_item.key}/?view=list'))
         context = self.overview('kanban')
         self.assertEqual(context['dashboard_items'], [])
-        project = TaskProject.objects.create(user=self.user, workplace=self.workplace, name='Nowa tablica')
-        space = project.space
+        project = make_space(user=self.user, workplace=self.workplace, name='Nowa tablica')
+        space = project
         space.template = 'kanban'
         space.save()
-        section = TaskSection.objects.create(project=project, title='Praca')
+        section = project
         current = self.task(title='Bieżąca karta', section=section)
         context = self.overview('kanban')
         self.assertEqual([row['object'] for row in context['dashboard_items']], [current])
-        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'tasks', f'view-task/{current.task_id}/?task_pk={current.pk}'))
+        self.assertEqual(context['dashboard_items'][0]['url'], scoped_workplace_app_path(self.workplace, 'space', f'{current.space.slug}/tasks/{current.work_item.key}/?view=list'))
 
     def test_calendar_includes_ongoing_and_all_day_events_but_excludes_finished(self):
         def event(title, start, end, **kwargs):
@@ -138,20 +150,19 @@ class DashboardOverviewTests(TestCase):
         self.assertEqual(context['dashboard_events'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "calendar")}?event={ongoing.pk}')
 
     def test_project_progress_counts_only_owned_top_level_tasks(self):
-        project = TaskProject.objects.create(user=self.user, workplace=self.workplace, name='Projekt')
-        section = TaskSection.objects.create(project=project, title='Grupa')
+        project = make_space(user=self.user, workplace=self.workplace, name='Projekt')
+        section = project
         parent = self.task(section=section)
         self.task(section=section, status='closed')
         self.task(section=section, parent=parent)
         self.task(user=self.other_user, section=section)
-        TaskProject.objects.create(user=self.user, workplace=self.workplace, name='Gotowy', status='completed')
-        TaskProject.objects.create(user=self.user, workplace=self.other_workplace, name='Poza przestrzenią')
+        make_space(user=self.user, workplace=self.other_workplace, name='Poza przestrzenią')
         context = self.overview()
         self.assertEqual(context['dashboard_project_count'], 1)
         row = context['dashboard_projects'][0]
         self.assertEqual(row['object'].item_count, 2)
         self.assertEqual(row['percent'], 50)
-        self.assertEqual(row['url'], scoped_workplace_app_path(self.workplace, 'space', f'{project.space.slug}/'))
+        self.assertEqual(row['url'], scoped_workplace_app_path(self.workplace, 'space', f'{project.slug}/'))
 
     def test_empty_workspace_and_partial_navigation_response(self):
         response = self.client.get(reverse('home'), {'focus': 'kanban'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')

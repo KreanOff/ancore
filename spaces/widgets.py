@@ -11,3 +11,10 @@ class IssueTypeSelect(forms.Select):
         if value:
             option['attrs']['data-ancore-option-icon'] = issue_type_icon(value)
         return option
+
+
+class TaskVisibilitySelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        option['attrs']['data-ancore-option-icon'] = 'lock' if value == 'private' else 'users'
+        return option

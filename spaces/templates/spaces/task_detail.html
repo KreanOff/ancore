@@ -1,0 +1,125 @@
+{% extends 'spaces/base.html' %}
+{% load account_avatar static %}
+{% block extra_head %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261010-task-parity">
+<script src="{% static 'js/workplace-team.js' %}?v=20261010-task-parity" defer></script>
+<script src="{% static 'js/project-team.js' %}?v=20261010-task-parity" defer></script>
+<script src="{% static 'js/task-work-log.js' %}?v=20261010-task-parity" defer></script>
+{% endblock %}
+{% block work_title %}{{ item.key }} · {{ task.title }}{% endblock %}
+{% block content %}
+<div class="tasks-page tasks-issue-page work-task-page{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}" data-work-page>
+    <div class="tasks-issue-shell">
+        <header class="tasks-issue-header">
+            <div class="tasks-issue-breadcrumb">
+                <a class="tasks-issue-close" href="{{ back_url }}" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a>
+                <span class="tasks-issue-divider" aria-hidden="true"></span>
+                <span class="tasks-issue-crumb tasks-issue-crumb--current"><span>{{ task.title }}</span></span>
+            </div>
+            {% if can_edit_task %}<div class="tasks-issue-actions"><button type="submit" form="space-task-form" class="tasks-issue-save" data-space-task-save data-state="idle">Zapisz</button></div>{% endif %}
+        </header>
+        {% if error %}<div class="tasks-error-banner" role="alert">{{ error }}{{ form.non_field_errors }}</div>{% endif %}
+        {% if planning_has_errors %}<div class="tasks-modal__errors" role="alert">{% for field in form %}{% if field.errors and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'visibility' and field.name != 'assignee' and field.name != 'due_at' %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>{% endif %}
+        <form id="space-task-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="task_pk" value="{{ task.pk }}">
+            {% for field in form %}{% if not field.errors and field.name != 'visibility' and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'assignee' and field.name != 'due_at' %}{{ field.as_hidden }}{% endif %}{% endfor %}
+        </form>
+        <div class="tasks-issue-main" data-space-task-team data-task-team-url="{{ team_url }}">
+            <main class="tasks-issue-primary">
+                <div class="tasks-issue-tabbar">
+                    <nav class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Widok zadania">
+                        {% for nav in task_tabs %}<button type="button" role="tab" id="task-tab-{{ nav.key }}" aria-controls="task-{{ nav.key }}" aria-selected="{% if task_tab == nav.key %}true{% else %}false{% endif %}" tabindex="{% if task_tab == nav.key %}0{% else %}-1{% endif %}" data-task-tab="{{ nav.key }}"><i data-icon="{{ nav.icon }}" aria-hidden="true"></i>{{ nav.label }}</button>{% endfor %}
+                    </nav>
+                    {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-open-work-log data-task-log-action aria-haspopup="dialog" aria-controls="task-work-log-modal"{% if task_tab != 'work-log' %} hidden{% endif %}><i data-icon="plus" aria-hidden="true"></i><span>Dodaj czas</span></button>{% endif %}
+                </div>
+                <div class="tasks-issue-primary-body">
+                    <section class="tasks-issue-content tasks-issue-overview" aria-label="Temat i opis zadania" data-task-overview{% if task_tab != 'main' %} hidden{% endif %}>
+                        <div class="tasks-issue-title-field"><label class="u-sr-only" for="id_title">Tytuł</label>{{ form.title }}{{ form.title.errors }}</div>
+                        <div class="tasks-issue-description-field"><label class="u-sr-only" for="id_description">Opis zadania</label>{{ form.description }}{{ form.description.errors }}</div>
+                    </section>
+                    <section id="task-main" class="tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-main" data-task-tab-panel="main"{% if task_tab != 'main' %} hidden{% endif %}>
+                        {% if can_edit_task %}
+                        <div class="tasks-issue-tool-row" aria-label="Narzędzia zadania">
+                            <button type="button" class="tasks-issue-tool tasks-issue-tool--labelled" data-space-task-choose-files><i data-icon="paperclip" aria-hidden="true"></i><span>Dodaj załącznik</span></button>
+                        </div>
+                        <input id="space-task-files" type="file" name="files" form="space-task-form" accept="{{ comment_attachment_accept }}" multiple hidden data-space-task-upload>
+                        {% endif %}
+                        {% if files %}<section class="tasks-issue-attachments" aria-label="Załączniki"><div class="tasks-attachments-grid">
+                            {% for file in files %}<div class="tasks-attachment-card">
+                                <a class="tasks-attachment-info" href="{{ space_url }}tasks/{{ item.key }}/files/{{ file.pk }}/">{% include 'core/includes/attachment_icon.html' with type_class=file.get_type_class size='lg' %}<span class="tasks-attachment-details"><span class="tasks-attachment-name">{{ file.filename }}</span><span class="tasks-attachment-size">{{ file.get_formatted_size }}</span></span></a>
+                                {% if can_edit_task %}<form method="post" data-confirm-delete="Usunąć załącznik?">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.pk }}"><button class="tasks-delete-attach-btn" type="submit" aria-label="Usuń załącznik {{ file.filename }}" title="Usuń załącznik">{% include 'core/includes/trash_icon.html' %}</button></form>{% endif %}
+                            </div>{% endfor %}
+                        </div></section>{% endif %}
+                        {% if can_edit_task %}<div class="tasks-file-list" data-space-task-upload-list aria-live="polite"></div>{% endif %}
+                        <section class="tasks-issue-activity" aria-label="Czat zadania">
+                            <div class="tasks-issue-activity-head"><h2><i data-icon="messages-square" aria-hidden="true"></i>Czat</h2></div>
+                            {% if can_edit_task %}<form id="activity-comment-form" method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="comment"><input type="hidden" name="activity_mentions" value="[]" data-mention-values></form>{% include 'tasks/includes/comment_composer.html' %}{% endif %}
+                            <div class="tasks-issue-feed" data-activity-feed="comment" tabindex="0" aria-label="Czat zadania">{% for comment in comments %}{% include 'spaces/task_comment.html' %}{% empty %}<p class="tasks-issue-empty-feed" data-activity-empty-initial>Brak komentarzy w zadaniu.</p>{% endfor %}</div>
+                        </section>
+                    </section>
+                    <section id="task-subtasks" class="tasks-issue-content tasks-issue-subtasks" role="tabpanel" aria-labelledby="task-tab-subtasks" tabindex="0" data-task-tab-panel="subtasks"{% if task_tab != 'subtasks' %} hidden{% endif %}>
+                        <div class="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
+                            <h2 class="tasks-subtasks-title"><span>Podzadania ({{ subtask_count }})</span></h2>
+                            <div class="tasks-subtasks-actions">
+                                <button type="button" class="tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-space-subtasks-sort><i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i></button>
+                                {% if can_edit_task %}<button type="button" class="tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-space-subtasks-delete>{% include 'core/includes/trash_icon.html' %}</button><button type="button" class="tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-space-subtask-open aria-haspopup="dialog" aria-controls="space-subtask-modal"><i data-icon="plus" aria-hidden="true"></i></button>{% endif %}
+                            </div>
+                        </div>
+                        {% if subtask_count %}<div class="tasks-table-wrap tasks-board tasks-subtasks-board">
+                            {% for group in subtask_status_groups %}{% if group.tasks %}<section class="tasks-issue-group tasks-status-block">
+                                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ group.status }}"><span class="status-indicator status-{{ group.status }}">{{ group.label }}</span><span class="tasks-rail-count">{{ group.tasks|length }}</span></header>
+                                <div class="tasks-issue-list">{% for item in group.tasks %}{% include 'spaces/row.html' with view='subtasks' %}{% endfor %}</div>
+                            </section>{% endif %}{% endfor %}
+                        </div>{% else %}<p class="tasks-issue-empty-feed">Brak podzadań.</p>{% endif %}
+                    </section>
+                    <section id="task-work-log" class="tasks-work-log tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-work-log" tabindex="0" data-task-tab-panel="work-log"{% if task_tab != 'work-log' %} hidden{% endif %}>{% include 'tasks/includes/work_log_list.html' %}</section>
+                    <section id="task-members" class="tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-members" data-task-tab-panel="members"{% if task_tab != 'members' %} hidden{% endif %}>
+                        <div class="tasks-modal__errors" role="alert" data-project-team-error hidden></div><div data-project-team-members>{% include 'tasks/includes/project_members_panel.html' %}</div>
+                    </section>
+                    <section id="task-history" class="tasks-issue-content" role="tabpanel" aria-labelledby="task-tab-history" tabindex="0" data-task-tab-panel="history"{% if task_tab != 'history' %} hidden{% endif %}>
+                        <div class="tasks-issue-feed" data-activity-feed="history" tabindex="0" aria-label="Historia zadania">{% for item in history %}{% include 'tasks/includes/task_activity_item.html' with item=item only %}{% empty %}<p class="tasks-issue-empty-feed" data-activity-empty-initial>Brak historii zmian w zadaniu.</p>{% endfor %}</div>
+                    </section>
+                </div>
+            </main>
+            <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+                <section class="tasks-issue-side-section">
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.visibility.id_for_label }}">Widoczność</label></span>
+                        {{ form.visibility }}{{ form.visibility.errors }}
+                    </div>
+                </section>
+                <section class="tasks-issue-side-section">
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="space-task-status">Status</label></span>
+                        <select id="space-task-status" class="form-select" name="status" form="space-task-form"{% if not can_edit_task %} disabled{% endif %}>
+                            {% for status in space.statuses %}<option value="{{ status.key }}" data-ancore-option-preview="space-status-{{ forloop.counter }}"{% if detail_status == status.key %} selected{% endif %}>{{ status.label }}</option>{% endfor %}
+                        </select>
+                        {% for status in space.statuses %}<template id="space-status-{{ forloop.counter }}"><span class="status-indicator status-{{ status.category }} tasks-filter-status-icon" aria-hidden="true"></span></template>{% endfor %}
+                    </div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_priority">Priorytet</label></span>
+                        <select id="id_priority" class="form-select" name="priority" form="space-task-form"{% if not can_edit_task %} disabled{% endif %}>{% for value, label in form.priority.field.choices %}<option value="{{ value }}" data-ancore-option-preview="space-priority-{{ value }}"{% if form.priority.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                        {% for value, label in form.priority.field.choices %}<template id="space-priority-{{ value }}"><span class="tasks-row-priority priority-{{ value }}">{% include 'core/includes/priority_icon.html' with priority=value only %}</span></template>{% endfor %}
+                        {{ form.priority.errors }}
+                    </div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_tags">Tagi</label></span>{{ form.tags }}{{ form.tags.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_work_type">Typ zgłoszenia</label></span>{{ form.work_type }}{{ form.work_type.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_task_type">Kategoria zadania</label></span>{{ form.task_type }}{{ form.task_type.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_assignee">Przypisane do</label></span>{{ form.assignee }}{{ form.assignee.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">ID zadania</span><strong class="tasks-issue-code"><span class="tasks-issue-code__value">{{ item.key }}</span><span class="tasks-issue-code__actions"><button type="button" class="tasks-issue-code__button" data-space-task-copy="{{ item.key }}" aria-label="Kopiuj ID zadania" title="Kopiuj ID zadania"><i data-icon="copy" aria-hidden="true"></i></button></span></strong></div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">Utworzył</span><strong class="tasks-issue-person">{% if task.created_by %}{% user_avatar task.created_by as creator_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=creator_avatar avatar_class='tasks-issue-mini-avatar' only %}{{ task.created_by.get_full_name|default:task.created_by.email }}{% else %}System{% endif %}</strong></div>
+                </section>
+                <section class="tasks-issue-side-section">
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">Utworzono</span><strong>{{ task.created_at|date:'d.m.Y, H:i' }}</strong></div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">Zamknięto</span><strong class="tasks-issue-muted">{{ task.completion_date|date:'d.m.Y, H:i'|default:'Nie zamknięto' }}</strong></div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_due_at">Termin wykonania</label></span><div class="tasks-issue-due-control"><span class="tasks-row-date tasks-row-due" title="Termin wykonania"><i data-icon="flame" aria-hidden="true"></i></span>{{ form.due_at }}{{ form.due_at.errors }}</div></div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_reminder_at">Przypomnienie</label></span>{{ form.reminder_at }}{{ form.reminder_at.errors }}</div>
+                </section>
+
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_modals %}{{ block.super }}
+{% if can_edit_task %}{% include 'tasks/includes/work_log_modal.html' %}{% include 'spaces/subtask_modal.html' %}{% endif %}
+<div data-project-team-modal-host="task">{% include 'tasks/includes/project_team_modals.html' %}</div>
+{% endblock %}

@@ -29,6 +29,8 @@
         <p class="tasks-issue-feed-note tasks-issue-change-line">
             {% if item.metadata.from_label %}<strong>{{ item.metadata.from_label }}</strong> → {% endif %}<strong>{{ item.metadata.to_label }}</strong>
         </p>
+        {% elif item.metadata.old_status_label or item.metadata.new_status_label %}
+        <p class="tasks-issue-feed-note tasks-issue-change-line"><strong>{{ item.metadata.old_status_label }}</strong> → <strong>{{ item.metadata.new_status_label }}</strong></p>
         {% elif item.metadata.fields %}
         <p class="tasks-issue-feed-note">Zmienione pola: <strong>{{ item.metadata.fields|join:", " }}</strong></p>
         {% elif item.action == 'created' and item.metadata.title %}

@@ -4,7 +4,7 @@ from django.db.models import Count, Q
 
 from spaces.services import visible_spaces
 from tasks.access import visible_to
-from tasks.models import Task
+from spaces.models import SpaceTask
 from workplaces.services import scoped_workplace_app_path, workspace_owner
 from .models import Dashboard, DashboardGadget
 
@@ -78,7 +78,7 @@ def gadget_data(request, gadget, tasks, spaces):
             data['unavailable'] = True
             return data
         tasks = tasks.filter(work_item__space_id=gadget.space_id)
-        caption = f'Zadania w przestrzeni {gadget.space.project.name}'
+        caption = f'Zadania w przestrzeni {gadget.space.name}'
     if gadget.assignee == 'me':
         tasks = tasks.filter(assignee=request.user)
         caption += ' · Przypisane do oglądającego'
@@ -90,7 +90,7 @@ def gadget_data(request, gadget, tasks, spaces):
     closed = counts.get('closed', 0)
     data.update({
         'count': total, 'closed_count': closed, 'percent': round(100 * closed / total) if total else 0,
-        'statuses': [{'key': key, 'label': label, 'count': counts.get(key, 0)} for key, label in Task.STATUS_CHOICES],
+        'statuses': [{'key': key, 'label': label, 'count': counts.get(key, 0)} for key, label in SpaceTask.STATUS_CHOICES],
         'caption': caption,
     })
     return data
@@ -98,10 +98,10 @@ def gadget_data(request, gadget, tasks, spaces):
 
 def detail_context(request, dashboard):
     decorate_dashboard(request, dashboard)
-    tasks = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
+    tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
     spaces = set(visible_spaces(request).values_list('pk', flat=True))
     columns = [[] for _ in range(dashboard.column_count)]
-    for gadget in dashboard.gadgets.select_related('space__project'):
+    for gadget in dashboard.gadgets.select_related('space'):
         decorate_gadget(request, gadget)
         columns[min(gadget.column, dashboard.column_count - 1)].append(gadget_data(request, gadget, tasks, spaces))
     return {'dashboard': dashboard, 'columns': columns, 'dashboards_url': app_url(request),

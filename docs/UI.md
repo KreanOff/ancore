@@ -2,10 +2,44 @@
 
 Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
 szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
-aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
+aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces.SpaceTask`.
 [Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
 
 ## Przestrzenie i zespoły
+
+Szczegóły nowego zadania (`spaces/task_detail.html`) odwzorowują ekran
+`tasks/view_task.html`, używając jego powłoki, kontrolek i include'ów przez
+`spaces/base.html` oraz `core/base.html`. Nagłówek ma strzałkę powrotu,
+tytuł i „Zapisz”. Adres i nawigacja zachowują przestrzeń, a powrót `view`
+i filtry. Panel po prawej zawiera widoczność, status, priorytet, tagi,
+typ zgłoszenia, kategorię zadania, wykonawcę, trwały klucz z kopiowaniem,
+autora oraz daty utworzenia, zamknięcia, wykonania i przypomnienia.
+Widoczność jest polem tego samego formularza; właściciel prywatnego zadania
+zarządza jego widocznością. Planowanie jest dostępne przez dotychczasową
+edycję w przestrzeni; jego wartości są zachowane przy zapisie szczegółów.
+Na wąskim ekranie panel przechodzi pod treść, a zakładki przewijają się.
+
+Wszystkie pięć paneli jest renderowane razem. Wspólny `task-work-log.js`
+przełącza przyciski zakładek, URL `tab`, ARIA i fokus klawiatury, zachowując
+szkic tytułu, opisu i pól. Podzadania mają standardowy toolbar, grupy statusów,
+zaznaczanie, sortowanie, usuwanie i modal tworzenia. Dziennik pracy korzysta
+z `tasks/includes/work_log_list.html`, `work_log_modal.html` i wspólnego
+`core.work_logs.TimeLogForm`: suma minut, paginacja, awatary, edycja i usuwanie
+przez modal. Członkowie używają `project_members_panel.html`, wspólnej tabeli
+Workspace oraz modali udostępniania i ról; publiczne zadanie pokazuje osoby
+z dostępem odziedziczonym. Endpointy tabeli i pickera należą do przestrzeni.
+Historia i komentarze współdzielą `task_activity_item.html`, z awatarami,
+datami, zmianami pól i kartami/miniaturami załączników.
+
+Pola `DetailForm` należą do `space-task-form` przez atrybut `form`.
+`spaces.js` porównuje stan formularza: „Zapisz” jest nieaktywny do zmiany
+lub wyboru pliku. Wybrane załączniki można usunąć przed zapisem. Czat używa
+wspólnego composera, pickera wzmianek, uploadu i błędów AJAX. Pliki mają
+chronione adresy przestrzeni. Inicjalizacja działa również po
+`ancore:content-loaded`, z usuwaniem poprzednich listenerów.
+`AncoreCustomSelect` wspiera opcjonalne etykiety pustego wyboru i ikony;
+picker tagów używa „Tagi”. Nie wprowadzono osobnego systemu kontrolek.
+
 
 `spaces/base.html` rozszerza `core/base.html` i wspólny kontener katalogu.
 Katalog i zarządzanie przestrzeniami współdzielą `spaces/directory.html`

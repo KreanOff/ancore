@@ -1,16 +1,17 @@
+from .testing import make_space
 from datetime import date
 from importlib import import_module
 
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
-from django.test import Client, TestCase
+from django.test import Client, TestCase, TransactionTestCase
 
-from tasks.models import Task, TaskActivity, TaskProject, TaskProjectMembership, TaskSection, TaskSectionMembership
+from .models import SpaceTask, SpaceTaskActivity, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .defaults import TEMPLATES, template_settings
-from .models import LegacyKanbanLink, Space, Sprint, Team, TeamMembership, WorkItem
+from .models import LegacyKanbanLink, Space, SpaceTaskFile, SpaceTaskMembership, Sprint, Team, TeamMembership, WorkItem
 
 
 class SpaceTests(TestCase):
@@ -25,20 +26,20 @@ class SpaceTests(TestCase):
         cls.foreign = create_workplace_for_user(cls.other, 'Obcy Workspace')
         for person in (cls.member, cls.observer):
             WorkplaceMembership.objects.create(workplace=cls.workspace, user=person, role='member')
-        cls.project = TaskProject.objects.create(name='Produkt', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
-        TaskProjectMembership.objects.create(project=cls.project, user=cls.member, role='member')
-        TaskProjectMembership.objects.create(project=cls.project, user=cls.observer, role='observer')
-        cls.space = cls.project.space
+        cls.project = make_space(name='Produkt', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
+        SpaceMembership.objects.create(space=cls.project, user=cls.member, role='member')
+        SpaceMembership.objects.create(space=cls.project, user=cls.observer, role='observer')
+        cls.space = cls.project
         cls.space.template = 'scrum'
         cls.space.kind = 'software'
         cls.space.save()
         cls.space.configuration.settings = template_settings('scrum')
         cls.space.configuration.save()
-        cls.section = TaskSection.objects.create(project=cls.project, title='Zadania')
-        cls.task = Task.objects.create(user=cls.owner, workplace=cls.workspace, section=cls.section, title='Wspólne zadanie')
+        cls.section = cls.project
+        cls.task = SpaceTask.objects.create(created_by=cls.owner, space=cls.section, title='Wspólne zadanie')
         cls.item = cls.task.work_item
-        cls.hidden_project = TaskProject.objects.create(name='Poufna przestrzeń', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
-        cls.foreign_project = TaskProject.objects.create(name='Obca przestrzeń', user=cls.other, workplace=cls.foreign)
+        cls.hidden_project = make_space(name='Poufna przestrzeń', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
+        cls.foreign_project = make_space(name='Obca przestrzeń', user=cls.other, workplace=cls.foreign)
 
     def setUp(self):
         self.client.force_login(self.owner)
@@ -83,12 +84,12 @@ class SpaceTests(TestCase):
                 self.assertEqual(self.client.get(url, {'q': query}).json()['count'], 0)
         self.client.force_login(self.observer)
         self.assertEqual(self.client.get(self.url('search/'), {'q': 'Produkt'}).json()['count'], 1)
-        TaskProjectMembership.objects.filter(project=self.project, user=self.observer).delete()
+        SpaceMembership.objects.filter(space=self.project, user=self.observer).delete()
         self.assertEqual(self.client.get(self.url('search/'), {'q': 'Produkt'}).json()['count'], 0)
 
     def test_space_search_limits_results_and_escapes_names(self):
         for number in range(22):
-            TaskProject.objects.create(user=self.owner, workplace=self.workspace, name=f'Wyszukiwanie {number:02}')
+            make_space(user=self.owner, workplace=self.workspace, name=f'Wyszukiwanie {number:02}')
         response = self.client.get(self.url('search/'), {'q': 'Wyszukiwanie'})
         self.assertEqual(response.json()['count'], 20)
         self.assertIn('Więcej wyników', response.json()['html'])
@@ -111,8 +112,8 @@ class SpaceTests(TestCase):
         self.assertTrue(response.json()['saved'])
         space = Space.objects.get(key='NOW')
         self.assertTrue(space.configuration.shared)
-        self.assertEqual(space.project.private_owner, self.owner)
-        self.assertEqual(space.project.sections.count(), 1)
+        self.assertEqual(space.private_owner, self.owner)
+        self.assertIsNone(space.project_id)
         self.assertEqual(self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true').status_code, 400)
         payload.update(key='BAD', kind='business')
         self.assertEqual(self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true').status_code, 400)
@@ -143,7 +144,7 @@ class SpaceTests(TestCase):
                 self.assertIn('key', response.context['modal']['form'].errors)
                 self.assertContains(response, 'Szkic przestrzeni', status_code=400)
                 self.assertContains(response, 'Produkt', status_code=400)
-        self.assertFalse(TaskProject.objects.filter(name='Szkic przestrzeni').exists())
+        self.assertFalse(Space.objects.filter(name='Szkic przestrzeni').exists())
 
     def test_template_picker_is_only_used_when_creating_spaces(self):
         for suffix in ('create/', 'manage/create/'):
@@ -170,7 +171,7 @@ class SpaceTests(TestCase):
                 self.assertEqual(space.template, key)
                 self.assertEqual(space.kind, template['kind'])
                 self.assertEqual(space.configuration.settings, template_settings(key))
-                self.assertEqual(space.project.private_owner, self.owner)
+                self.assertEqual(space.private_owner, self.owner)
 
     def test_template_error_keeps_selection_and_space_details(self):
         payload = {'name': 'Szkic rekrutacji', 'key': '!', 'kind': 'business', 'template': 'recruitment', 'management': 'team', 'visibility': 'private'}
@@ -185,7 +186,7 @@ class SpaceTests(TestCase):
         response = self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.status_code, 400)
         self.assertIn('data-space-fields disabled', response.json()['html'])
-        self.assertFalse(TaskProject.objects.filter(name=payload['name']).exists())
+        self.assertFalse(Space.objects.filter(name=payload['name']).exists())
 
     def test_member_cannot_create_organization_managed_space(self):
         self.client.force_login(self.member)
@@ -196,8 +197,8 @@ class SpaceTests(TestCase):
         self.client.force_login(self.member)
         response = self.client.post(self.space_url('items/create/'), {'title': 'Nowe wspólne zadanie', 'work_type': 'story', 'priority': 'high', 'points': 5}, HTTP_X_WORK_MODAL='true')
         self.assertTrue(response.json()['saved'])
-        task = Task.objects.get(title='Nowe wspólne zadanie')
-        self.assertEqual(task.user, self.owner)
+        task = SpaceTask.objects.get(title='Nowe wspólne zadanie')
+        self.assertEqual(task.space.user, self.owner)
         self.assertEqual(task.activities.get(action='created').actor, self.member)
         self.assertEqual(task.work_item.points, 5)
         self.assertEqual(task.work_item.space, self.space)
@@ -235,8 +236,7 @@ class SpaceTests(TestCase):
         self.assertEqual(self.client.get(self.space_url('configuration/')).status_code, 403)
 
     def test_hidden_groups_and_teams_never_grant_access(self):
-        section = TaskSection.objects.create(project=self.project, title='Prywatna grupa', visibility='private', private_owner=self.owner)
-        task = Task.objects.create(user=self.owner, workplace=self.workspace, section=section, title='Ukryte zadanie')
+        task = SpaceTask.objects.create(created_by=self.owner, space=self.space, title='Ukryte zadanie', visibility='private', private_owner=self.owner)
         team = Team.objects.create(workplace=self.workspace, owner=self.owner, name='Zespół')
         TeamMembership.objects.create(team=team, user=self.member)
         team.spaces.add(self.space)
@@ -251,15 +251,15 @@ class SpaceTests(TestCase):
         team = Team.objects.create(workplace=self.foreign, owner=self.other, name='Obcy zespół')
         response = self.client.post(self.space_url('items/create/'), {'title': 'Nie', 'work_type': 'task', 'priority': 'medium', 'team': team.pk, 'assignee': self.other.pk}, HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.status_code, 400)
-        self.assertFalse(Task.objects.filter(title='Nie').exists())
+        self.assertFalse(SpaceTask.objects.filter(title='Nie').exists())
 
     def test_stable_key_survives_task_number_compaction(self):
-        second = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Drugie')
+        second = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Drugie')
         key = second.work_item.key
         self.task.delete()
         second.refresh_from_db()
         self.assertEqual(second.work_item.key, key)
-        third = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Trzecie')
+        third = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Trzecie')
         self.assertNotEqual(third.work_item.key, key)
 
     def test_sprint_completion_returns_unfinished_to_backlog(self):
@@ -304,27 +304,34 @@ class SpaceTests(TestCase):
         self.assertEqual(client.post(self.url(f'items/{self.item.pk}/action/'), {'action': 'status', 'status': 'closed'}).status_code, 403)
 
 
-    def test_publishing_space_preserves_private_group_memberships(self):
-        self.section.visibility = 'private'
-        self.section.private_owner = self.owner
-        self.section.save()
-        TaskSectionMembership.objects.create(section=self.section, user=self.member, role='member')
+    def test_publishing_space_preserves_private_task_memberships(self):
+        self.task.visibility, self.task.private_owner = 'private', self.owner
+        self.task.save()
+        SpaceTaskMembership.objects.create(task=self.task, user=self.member, role='member')
         response = self.client.post(self.space_url('edit/'), {'name': 'Produkt', 'visibility': 'public'}, HTTP_X_WORK_MODAL='true')
         self.assertTrue(response.json()['saved'])
-        self.assertTrue(self.section.memberships.filter(user=self.member).exists())
+        self.assertTrue(self.task.memberships.filter(user=self.member).exists())
 
-    def test_section_move_updates_metadata_without_changing_task_key(self):
+
+    def test_task_cannot_move_out_of_its_own_space(self):
+        from django.core.exceptions import ValidationError
+        from django.db import transaction
         original_key = self.item.key
-        self.section.project = self.hidden_project
-        self.section.save()
+        self.task.space = self.hidden_project
+        with self.assertRaises(ValidationError), transaction.atomic():
+            self.task.save()
         self.item.refresh_from_db()
-        self.assertEqual(self.item.space, self.hidden_project.space)
+        self.assertEqual(self.item.space, self.space)
         self.assertEqual(self.item.key, original_key)
 
-    def test_foreign_project_relation_does_not_expose_space(self):
-        foreign_section = TaskSection.objects.create(project=self.foreign_project, title='Secret')
-        task = Task.objects.create(user=self.owner, workplace=self.workspace, section=foreign_section, title='Broken relation')
-        self.assertIsNone(task.work_item.space_id)
+
+    def test_foreign_parent_relation_is_rejected(self):
+        from django.core.exceptions import ValidationError
+        from django.db import transaction
+        parent = SpaceTask.objects.create(space=self.foreign_project, created_by=self.other, title='Obcy rodzic')
+        with self.assertRaises(ValidationError), transaction.atomic():
+            SpaceTask.objects.create(space=self.space, created_by=self.owner, parent=parent, title='Niepoprawne powiązanie')
+
 
     def test_configuration_updates_workflow_and_rejects_stale_or_used_removal(self):
         url = self.space_url('configuration/')
@@ -359,10 +366,13 @@ class SpaceTests(TestCase):
         from kanban.access import visible_to as visible_kanban
         source_project = KanbanProject.objects.create(user=self.owner, workplace=self.workspace, name='Archiwum')
         source = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Archiwalna karta')
+        source_task = Task.objects.create(user=self.owner, workplace=self.workspace, title='Importowana karta', space_archived=True)
+        self.item.legacy_task = source_task
+        self.item.save(update_fields=['legacy_task'])
         LegacyKanbanLink.objects.create(kind='project', source_id=source_project.pk, target_id=self.project.pk, space=self.space)
-        LegacyKanbanLink.objects.create(kind='task', source_id=source.pk, target_id=self.task.pk, space=self.space)
+        LegacyKanbanLink.objects.create(kind='task', source_id=source.pk, target_id=source_task.pk, space=self.space)
         url = self.url(f'view-task/{source.task_id}/?task_pk={source.pk}', 'kanban')
-        self.assertRedirects(self.client.get(url), self.url(f'view-task/{self.task.task_id}/?task_pk={self.task.pk}', 'tasks'), fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(url), self.space_url(f'tasks/{self.item.key}/?view=list'), fetch_redirect_response=False)
         self.project.delete()
         self.assertEqual(self.client.get(url).status_code, 404)
         self.assertFalse(visible_kanban(KanbanProject.objects.all(), self.owner).filter(pk=source_project.pk).exists())
@@ -373,9 +383,10 @@ class SpaceTests(TestCase):
         from kanban.models import Kanban, KanbanAttachment
         from tasks.models import TaskAttachment
         card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Source')
-        attachment = TaskAttachment.objects.bulk_create([TaskAttachment(task=self.task, file='kanban_attachments/shared.txt', filename='shared.txt', file_size=1)])[0]
+        attachment = SpaceTaskFile.objects.bulk_create([SpaceTaskFile(task=self.task, legacy_storage=True, file='kanban_attachments/shared.txt', filename='shared.txt', file_size=1)])[0]
         legacy = KanbanAttachment.objects.bulk_create([KanbanAttachment(task=card, file=attachment.file.name, filename='shared.txt', file_size=1)])[0]
-        with patch.object(attachment.file.storage, 'delete') as delete:
+        from django.core.files.storage import default_storage
+        with patch.object(default_storage, 'delete') as delete:
             with self.captureOnCommitCallbacks(execute=True):
                 attachment.delete()
             delete.assert_not_called()
@@ -384,19 +395,20 @@ class SpaceTests(TestCase):
             delete.assert_called_once_with('kanban_attachments/shared.txt')
 
 
-    def test_legacy_status_endpoints_enforce_graph_and_bulk_is_atomic(self):
+    def test_legacy_status_endpoints_cannot_modify_independent_tasks(self):
         import json
-        config = self.space.configuration
-        config.settings['statuses'][0]['transitions'] = ['in_progress']
-        config.save()
-        other = Task.objects.create(user=self.owner, workplace=self.workspace, title='Bez przestrzeni')
-        single = self.client.post(self.url(f'update/{self.task.task_id}/', 'tasks'), json.dumps({'task_pk': self.task.pk, 'status': 'closed'}), content_type='application/json')
-        self.assertEqual(single.status_code, 400)
-        bulk = self.client.post(self.url('bulk-update-status/', 'tasks'), json.dumps({'task_pks': [self.task.pk, other.pk], 'status': 'closed'}), content_type='application/json')
-        self.assertEqual(bulk.status_code, 400)
+        source = Task.objects.create(user=self.owner, workplace=self.workspace, title='Archiwum', space_archived=True)
+        self.item.legacy_task = source
+        self.item.save(update_fields=['legacy_task'])
+        other = Task.objects.create(user=self.owner, workplace=self.workspace, title='Starsze zadanie')
+        single = self.client.post(self.url(f'update/{source.task_id}/', 'tasks'), json.dumps({'task_pk': source.pk, 'status': 'closed'}), content_type='application/json')
+        self.assertEqual(single.status_code, 404)
+        bulk = self.client.post(self.url('bulk-update-status/', 'tasks'), json.dumps({'task_pks': [source.pk, other.pk], 'status': 'closed'}), content_type='application/json')
+        self.assertEqual(bulk.status_code, 404)
         other.refresh_from_db()
         self.task.refresh_from_db()
         self.assertEqual((self.task.status, other.status), ('new', 'new'))
+
 
     def test_edit_date_and_completed_sprint_are_preserved_in_form(self):
         sprint = Sprint.objects.create(space=self.space, name='Zamknięty', start_on=date(2026, 10, 1), end_on=date(2026, 10, 14), state='closed')
@@ -438,38 +450,50 @@ class SpaceTests(TestCase):
         self.assertFalse(field.storage.exists(name))
 
 
-class ImportTests(TestCase):
+from tasks.models import Task, TaskProject, TaskActivity
+
+class ImportTests(TransactionTestCase):
     def test_import_preserves_acl_content_history_and_files(self):
-        apps = MigrationExecutor(connection).loader.project_state().apps
-        User = apps.get_model('accounts', 'User')
-        owner = User.objects.create(username='import-owner', email='import-owner@example.test')
-        viewer = User.objects.create(username='import-viewer', email='import-viewer@example.test')
-        workplace = apps.get_model('workplaces', 'Workplace').objects.create(owner=owner, name='Import', slug='import')
-        project = apps.get_model('kanban', 'KanbanProject').objects.create(user=owner, workplace=workplace, name='Dawna przestrzeń', visibility='private', private_owner=owner)
-        apps.get_model('kanban', 'KanbanProjectMembership').objects.create(project=project, user=viewer, role='observer')
-        section = apps.get_model('kanban', 'KanbanSection').objects.create(project=project, title='Tablica', visibility='private', private_owner=owner)
-        apps.get_model('kanban', 'KanbanSectionMembership').objects.create(section=section, user=viewer, role='observer')
-        column = apps.get_model('kanban', 'KanbanBoardColumn').objects.create(section=section, title='W toku')
-        card = apps.get_model('kanban', 'Kanban').objects.create(user=owner, workplace=workplace, section=section, column=column, title='Dawna karta', task_id=1, status='in_progress')
-        child = apps.get_model('kanban', 'Kanban').objects.create(user=owner, workplace=workplace, section=section, parent=card, title='Podkarta', task_id=2)
-        activity = apps.get_model('kanban', 'KanbanActivity').objects.create(task=card, actor=viewer, kind='comment', action='commented', message='Komentarz')
-        apps.get_model('kanban', 'KanbanAttachment').objects.create(task=card, file='kanban_attachments/test.pdf', filename='test.pdf', file_size=42)
-        apps.get_model('kanban', 'KanbanCommentImage').objects.create(activity=activity, file='comment_images/kanban/test.png', filename='test.png', file_size=20)
-        apps.get_model('dashboard', 'NotificationState').objects.create(user=viewer, kanban_activity=activity, is_read=True)
-        apps.get_model('dashboard', 'ObjectFollow').objects.create(user=viewer, kanban=card)
-        with connection.schema_editor() as editor:
-            import_module('spaces.migrations.0002_unify_work').forwards(apps, editor)
-        imported = Task.objects.get(title='Dawna karta')
-        self.assertEqual(imported.status, 'in_progress')
-        self.assertEqual(imported.attachments.get().file.name, 'kanban_attachments/test.pdf')
-        self.assertEqual(imported.activities.get().actor_id, viewer.pk)
-        self.assertEqual(imported.activities.get().images.get().file.name, 'comment_images/kanban/test.png')
-        self.assertEqual(Task.objects.get(title='Podkarta').parent, imported)
-        self.assertEqual(imported.section.visibility, 'private')
-        self.assertEqual(imported.section.memberships.get().role, 'observer')
-        self.assertEqual(imported.section.project.memberships.get().role, 'observer')
-        from dashboard.models import NotificationState, ObjectFollow
-        self.assertEqual(NotificationState.objects.get().task_activity.task, imported)
-        self.assertIsNone(NotificationState.objects.get().kanban_activity_id)
-        self.assertEqual(ObjectFollow.objects.get().task, imported)
-        self.assertTrue(LegacyKanbanLink.objects.filter(kind='task', source_id=card.pk, target_id=imported.pk).exists())
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        try:
+            previous = [node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('dashboard', '0006_section_sharing'), ('tasks', '0063_remove_project_field_settings'), ('spaces', '0001_initial')]
+            executor.migrate(previous)
+            apps = executor.loader.project_state(previous).apps
+            User = apps.get_model('accounts', 'User')
+            owner = User.objects.create(username='import-owner', email='import-owner@example.test')
+            viewer = User.objects.create(username='import-viewer', email='import-viewer@example.test')
+            workplace = apps.get_model('workplaces', 'Workplace').objects.create(owner=owner, name='Import', slug='import')
+            project = apps.get_model('kanban', 'KanbanProject').objects.create(user=owner, workplace=workplace, name='Dawna przestrzeń', visibility='private', private_owner=owner)
+            apps.get_model('kanban', 'KanbanProjectMembership').objects.create(project=project, user=viewer, role='observer')
+            section = apps.get_model('kanban', 'KanbanSection').objects.create(project=project, title='Tablica', visibility='private', private_owner=owner)
+            apps.get_model('kanban', 'KanbanSectionMembership').objects.create(section=section, user=viewer, role='observer')
+            column = apps.get_model('kanban', 'KanbanBoardColumn').objects.create(section=section, title='W toku')
+            card = apps.get_model('kanban', 'Kanban').objects.create(user=owner, workplace=workplace, section=section, column=column, title='Dawna karta', task_id=1, status='in_progress')
+            child = apps.get_model('kanban', 'Kanban').objects.create(user=owner, workplace=workplace, section=section, parent=card, title='Podkarta', task_id=2)
+            activity = apps.get_model('kanban', 'KanbanActivity').objects.create(task=card, actor=viewer, kind='comment', action='commented', message='Komentarz')
+            apps.get_model('kanban', 'KanbanAttachment').objects.create(task=card, file='kanban_attachments/test.pdf', filename='test.pdf', file_size=42)
+            apps.get_model('kanban', 'KanbanCommentImage').objects.create(activity=activity, file='comment_images/kanban/test.png', filename='test.png', file_size=20)
+            apps.get_model('dashboard', 'NotificationState').objects.create(user=viewer, kanban_activity=activity, is_read=True)
+            apps.get_model('dashboard', 'ObjectFollow').objects.create(user=viewer, kanban=card)
+            executor = MigrationExecutor(connection)
+            executor.migrate([node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('dashboard', '0006_section_sharing'), ('tasks', '0063_remove_project_field_settings'), ('spaces', '0002_unify_work')])
+            state = executor.loader.project_state([node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('dashboard', '0006_section_sharing'), ('tasks', '0063_remove_project_field_settings'), ('spaces', '0002_unify_work')]).apps
+            Task = state.get_model('tasks', 'Task')
+            imported = Task.objects.get(title='Dawna karta')
+            self.assertEqual(imported.status, 'in_progress')
+            self.assertEqual(imported.attachments.get().file.name, 'kanban_attachments/test.pdf')
+            self.assertEqual(imported.activities.get().actor_id, viewer.pk)
+            self.assertEqual(imported.activities.get().images.get().file.name, 'comment_images/kanban/test.png')
+            self.assertEqual(Task.objects.get(title='Podkarta').parent, imported)
+            self.assertEqual(imported.section.visibility, 'private')
+            self.assertEqual(imported.section.memberships.get().role, 'observer')
+            self.assertEqual(imported.section.project.memberships.get().role, 'observer')
+            NotificationState = state.get_model('dashboard', 'NotificationState')
+            ObjectFollow = state.get_model('dashboard', 'ObjectFollow')
+            self.assertEqual(NotificationState.objects.get().task_activity.task, imported)
+            self.assertIsNone(NotificationState.objects.get().kanban_activity_id)
+            self.assertEqual(ObjectFollow.objects.get().task, imported)
+            self.assertTrue(LegacyKanbanLink.objects.filter(kind='task', source_id=card.pk, target_id=imported.pk).exists())
+        finally:
+            MigrationExecutor(connection).migrate(latest)

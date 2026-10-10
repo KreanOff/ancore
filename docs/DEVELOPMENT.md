@@ -1,5 +1,20 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+Oddzielny system Zadań przestrzeni (10.10.2026) wymaga migracji
+`spaces.0006_independent_space_tasks`, `tasks.0066_task_space_archived_taskproject_space_archived`
+i `spaces.0007_archive_import_sources`, po backupie bazy i storage.
+Przestrzenie tworzą `SpaceTask` bez projektów/grup Tasks. Testy przestrzeni
+używają jawnych własnych fixture'ów; historyczne testy migracji korzystają
+ze stanu właściwego dla ich schematu, z cofnięciem zależnych migracji.
+Uruchamiaj `manage.py test spaces core.test_status_updates core.test_file_lifecycle`.
+`spaces.test_independent_tasks` obejmuje niezależność modeli, scoped/zwykłe
+adresy, powrót do widoku, prywatnych rodziców, obserwatorów, cofnięcie dostępu,
+obce relacje, statusy, pliki, komentarze, podzadania, czas i migrację.
+Browser QA: lista → zadanie → zapis/komentarz → powrót i ponowne wejście;
+sprawdź też stary link, pustą listę, walidację, obserwatora, Dashboard oraz
+szerokości desktop/tablet/telefon. Dane do zapisów przygotuj w odrębnej bazie QA.
+
+
 ## Regresje zapisu i numeracji
 
 `tasks.test_task_moves` sprawdza wycofanie przenoszenia zadań: ignorowanie
@@ -1142,3 +1157,112 @@ i scoped katalogu, brak modali Zadań, dodanie tagu przestrzeni, Escape, pusty
 stan, częściową nawigację, powrót i reload bez błędów JavaScript.
 Kontrole Django, zgodności migracji, składni, linków dokumentacji, indeksu
 i `git diff --check` przeszły. Nie uruchamiano całego repozytorium.
+
+## Weryfikacja niezależnych zadań przestrzeni (10.10.2026)
+
+Końcowy zestaw 329 testów `spaces`, Core (tożsamość/status/pliki),
+Dashboard (Dla ciebie, podsumowanie, pulpity, wyszukiwanie), zgodności Kanbana,
+wycofania tagów i edycji lokalizacji Tasks oraz dostępu Workspace przeszedł.
+Po ostatniej poprawce publikacji przestrzeni ponownie przeszły 22 testy
+`spaces.test_independent_tasks`, w tym import historii/pliku/uprawnień,
+trwałe cofanie udostępnień i zachowanie prywatnych zadań przy publikacji.
+
+Pełny przebieg 1163 testów miał 26 nieudanych asercji i 9 błędów.
+Porównanie z osobnym przebiegiem niezmienionego HEAD (1145 testów,
+26 asercji i 10 błędów) potwierdziło 34 wspólne problemy z identycznymi
+komunikatami: głównie historyczna nawigacja/styl, wycofany katalog tagów,
+Dysk oraz dawne testy podzadań. Dodatkowy test pulpitu Workspace używał
+starszych Tasks; jego dane dostosowano do `SpaceTask` i ponownie sprawdzono
+w końcowym zestawie 329 testów. Pełny zestaw repozytorium pozostaje czerwony.
+
+Playwright/Chrome przy 1440×1000, 1024×1000 i 390×844 potwierdził:
+lista → szczegóły w przestrzeni → zapis/reload → komentarz AJAX → powrót
+z filtrami → ponowne wejście → historia/podzadanie. Sprawdzono pusty wynik,
+walidację wymaganego tytułu w przeglądarce i błąd HTTP 400 serwera,
+brak zapisu obserwatora, pulpit referencyjny oraz brak przepełnienia telefonu.
+Zrzuty potwierdziły wspólną powłokę i zakładki przestrzeni; nie było
+nieoczekiwanych błędów konsoli. Plugin Browser był niedostępny; użyto
+istniejącego Playwright i Chrome, bez instalowania zależności. Safari/Firefox
+nie były sprawdzane. Podany stary link na `127.0.0.1:8000` przekierowuje
+po kontroli dostępu do `space/scrum-szablon/tasks/SZ-6/?view=list`.
+
+Migracje `spaces.0006`, `tasks.0066` i `spaces.0007` zastosowano lokalnie
+po pełnym backupie PostgreSQL. Porównanie potwierdziło zachowanie adresów,
+kluczy, liczników i planowania. Kontrole Django, zgodności migracji, składni JS,
+linków dokumentacji, indeksu kodu oraz `git diff --check` przeszły.
+Ten wcześniejszy etap nie obejmował przypomnień ani wzmianek. Ich aktualną
+obsługę oraz procedurę przywrócenia opisuje [SPACES.md](SPACES.md).
+
+## Układ szczegółów zadania przestrzeni (10.10.2026)
+
+`spaces/task_detail.html` korzysta z tej samej powłoki szczegółów co
+referencyjny `tasks/view_task.html`: jeden nagłówek z powrotem i zapisem,
+zakładki i edytor/czat po lewej, właściwości po prawej. Adres pozostaje
+w przestrzeni, a jej pozycja w głównej nawigacji pozostaje aktywna.
+Panel odwzorowuje pełne właściwości starszego ekranu, w tym kategorię
+i przypomnienie zapisane we własnym modelu. Planowanie pozostaje w edycji
+przestrzeni; szczegóły zachowują jego wartości.
+
+165 testów `spaces core.test_file_lifecycle` przeszło. Po końcowej poprawce
+zachowania szkicu przy błędnym pliku ponownie przeszły 24 testy
+`spaces.test_independent_tasks`. Dodane przypadki sprawdzają wspólny zapis
+załączników/danych/planowania, chronione pobieranie i brak częściowego zapisu
+przy błędnym pliku lub formularzu. Pliki tych testów są w tymczasowym storage.
+Nie ponawiano całego zestawu repozytorium; jego wcześniejsze problemy opisano powyżej.
+
+Playwright z istniejącym Chrome (plugin Browser niedostępny) na osobnej bazie
+QA i magazynie plików potwierdził przy 1440×1000, 1024×1000 i 390×844:
+lista → otwarcie → wybór/usunięcie oczekujących plików → zmiana danych,
+statusu i planowania → zapis → chronione pobranie/reload → komentarz AJAX
+→ powrót → ponowne wejście → historia/podzadanie. „Zapisz” pozostaje
+nieaktywny dla niezmienionego formularza oraz po usunięciu ostatniego wybranego
+pliku. Sprawdzono kopiowanie klucza, pusty wynik, walidację przeglądarki,
+HTTP 400 serwera i brak zapisu u obserwatora. Ekran referencyjny szczegółów
+starszego zadania oraz pulpit zachowują działanie. Przy 1920×1080 sprawdzono
+również wskazany adres na porcie 8000 i geometrię względem wzorca.
+Nie było pustej strony, nakładki błędu, nieoczekiwanych błędów konsoli
+ani przepełnienia telefonu. Celowo błędny POST zwrócił oczekiwany HTTP 400.
+Safari/Firefox nie były sprawdzane. Kontrole Django, składni JS, linków
+zmienionej dokumentacji, indeksu kodu i `git diff --check` przeszły.
+
+## Pełna zgodność ekranu zadań przestrzeni
+
+Po backupie zastosuj `spaces.0008`, `spaces.0009` i `dashboard.0013`. Sprawdź obecność nowych
+migracji w Git. `spaces.test_task_detail_parity` obejmuje pięć paneli,
+kategorię/przypomnienie, widoczność i prywatnych potomków, modal podzadania,
+zbiorcze usuwanie, modal czasu z dodawaniem/edycją/usuwaniem, paginację,
+udostępnianie/role, granice administratora, nieprawidłowe ID i powiadomienia.
+Wspólna walidacja czasu jest w `core/work_logs.py`; testuj także starsze
+`tasks.test_work_logs`, `dashboard.test_notifications`, `test_reminders`,
+`test_collaboration` i `core.test_file_lifecycle`.
+
+Browser QA musi obejmować wszystkie pięć zakładek, puste i wypełnione panele,
+modale, błędy, fokus/Escape, zachowanie szkicu przy przełączaniu, zapis,
+ponowne wejście, obserwatora i częściową nawigację. Porównaj ze starszym
+zadaniem w tej samej szerokości oraz sprawdź tablet i telefon. Używaj
+oddzielnej bazy i storage QA; sam pomiar zakładki „Główna” nie potwierdza
+zgodności całego ekranu.
+
+Weryfikacja 10.10.2026: przeszło 255 testów powiązanych modułów, następnie
+120 testów po zmianach wspólnych komponentów i migracji dat członkostwa.
+Końcowe 15 testów zgodności potwierdziło także daty/nazwy w historii oraz
+zarządzanie zwykłymi członkami przez administratora bez podnoszenia ich roli
+do administratora. Nie ponawiano pełnego zestawu repozytorium; jego wcześniejsze
+problemy są opisane powyżej.
+
+Playwright z Chrome (plugin Browser niedostępny) sprawdził wszystkie pięć
+zakładek przy 1920×1080, 1024×900 i 390×900. Porównanie położenia, szerokości,
+fontów, kolorów, obramowań i odstępów wspólnej powłoki oraz głównych elementów
+każdego panelu ze starszym zadaniem przy 1920×1080 nie wykazało różnic powyżej
+1px. Sprawdzono puste i wypełnione panele, zapis kategorii/przypomnienia,
+zachowanie szkicu, tworzenie/usuwanie podzadania, dodawanie/edycję/usuwanie
+czasu, błąd zerowego czasu, udostępnianie/zmianę roli/odebranie dostępu
+i widok obserwatora. Podany adres lokalny otwiera wszystkie pięć paneli
+przez przekierowanie do szczegółów w przestrzeni, bez błędów konsoli.
+Sprawdzono także wybór/usunięcie oczekujących plików, komentarz AJAX ze
+wzmianką i zdjęciem, prywatne pobieranie oraz obraz inline, fokus/Escape
+modali, powrót/ponowne wejście i inicjalizację po nawigacji częściowej.
+Po weryfikacji usunięto bazę i pliki QA oraz tymczasową sesję używaną
+do odczytu lokalnego ekranu. Wcześniejsze dane planowania, adresy i treści
+importowanych zadań pozostały zachowane.
+Safari i Firefox nie były sprawdzane.

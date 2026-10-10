@@ -5,7 +5,7 @@
 </form>
 {% if space.can_manage %}
 <a href="{{ space.edit_url }}" class="tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj przestrzeń</span></a>
-{% if not management and space.project.visibility == 'private' %}<a href="{{ space.url }}members/" class="tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="user-round-plus" aria-hidden="true"></i><span>Dodaj osoby</span></a>{% endif %}
+{% if not management and space.visibility == 'private' %}<a href="{{ space.url }}members/" class="tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="user-round-plus" aria-hidden="true"></i><span>Dodaj osoby</span></a>{% endif %}
 {% endif %}
 <a href="{{ space.settings_url }}" class="tasks-project-menu-button"><i data-icon="settings" aria-hidden="true"></i><span>{% if management %}Ustawienia i dostęp{% else %}Ustawienia przestrzeni{% endif %}</span></a>
 {% if management and space.configuration_url %}<a href="{{ space.configuration_url }}" class="tasks-project-menu-button"><i data-icon="sliders-horizontal" aria-hidden="true"></i><span>Konfiguracja zadań</span></a>{% endif %}

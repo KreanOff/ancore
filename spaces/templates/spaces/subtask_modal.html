@@ -1,0 +1,62 @@
+<div class="tasks-modal app-modal-panel tasks-issue-modal {% if subtask_modal_open %}is-open{% endif %}" id="space-subtask-modal" role="dialog" aria-modal="true" aria-labelledby="space-subtask-modal-title" aria-hidden="{% if subtask_modal_open %}false{% else %}true{% endif %}">
+    <div class="tasks-modal__dialog tasks-issue-modal__dialog">
+        <form method="post" class="tasks-modal__form tasks-issue-modal__form" id="space-subtask-form">
+            {% csrf_token %}
+            <input type="hidden" name="task_pk" value="{{ task.pk }}">
+            <input type="hidden" name="action" value="create_subtask_modal">
+            <header class="tasks-modal__header tasks-issue-modal__header">
+                <div class="tasks-issue-modal__crumbs">
+                    <button type="button" class="tasks-issue-close" data-close-modal aria-label="Zamknij" title="Zamknij">
+                        <i data-icon="arrow-left" aria-hidden="true"></i>
+                    </button>
+                    <span class="tasks-issue-divider" aria-hidden="true"></span>
+                    <strong id="space-subtask-modal-title">Nowe podzadanie</strong>
+                </div>
+            </header>
+
+            <div class="tasks-modal__body tasks-issue-modal__body">
+                {% if subtask_form.errors %}
+                <div class="tasks-modal__errors" role="alert">
+                    {% for field in subtask_form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in subtask_form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="tasks-project-heading-fields">
+                    <div class="tasks-form-field">
+                        <label for="{{ subtask_form.title.id_for_label }}">Tytuł podzadania</label>
+                        {{ subtask_form.title }}
+                    </div>
+                    <div class="tasks-form-field"><label for="{{ subtask_form.visibility.id_for_label }}">Widoczność</label>{{ subtask_form.visibility }}</div>
+                </div>
+                <div class="tasks-form-field">
+                    <label for="{{ subtask_form.description.id_for_label }}">Opis</label>
+                    {{ subtask_form.description }}
+                </div>
+
+                <div class="tasks-issue-fields">
+                    <label>
+                        <span>Status</span>
+                        {{ subtask_form.status }}
+                    </label>
+                    <label>
+                        <span>Termin wykonania</span>
+                        {{ subtask_form.due_at }}
+                    </label>
+                </div>
+            </div>
+
+            <footer class="tasks-modal__footer tasks-issue-modal__footer">
+                <button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button>
+                <button type="submit" class="tasks-modal__submit" id="issue-create-submit">Utwórz podzadanie</button>
+            </footer>
+        </form>
+    </div>
+</div>
+

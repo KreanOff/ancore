@@ -1,3 +1,4 @@
+from .testing import make_space
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from urllib.parse import parse_qs, urlsplit
@@ -8,7 +9,8 @@ from django.db.migrations.executor import MigrationExecutor
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
-from tasks.models import Task, TaskProject, TaskProjectMembership, TaskSection, TaskTag
+from tasks.models import TaskTag
+from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 from .models import Space, Team
@@ -22,10 +24,10 @@ class SpaceUrlTests(TestCase):
         cls.workspace = create_workplace_for_user(cls.owner, 'Adresy przestrzeni')
         cls.other = create_workplace_for_user(cls.owner, 'Inny Workspace')
         cls.membership = WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
-        cls.project = TaskProject.objects.create(user=cls.owner, workplace=cls.workspace, name='Scrum szablon / Żółć')
-        cls.space = cls.project.space
-        cls.section = TaskSection.objects.create(project=cls.project, title='Zadania')
-        cls.task = Task.objects.create(user=cls.owner, workplace=cls.workspace, section=cls.section, title='Test adresów')
+        cls.project = make_space(user=cls.owner, workplace=cls.workspace, name='Scrum szablon / Żółć')
+        cls.space = cls.project
+        cls.section = cls.project
+        cls.task = SpaceTask.objects.create(created_by=cls.owner, space=cls.section, title='Test adresów')
 
     def setUp(self):
         self.login(self.owner)
@@ -87,19 +89,19 @@ class SpaceUrlTests(TestCase):
         self.assertIn(self.url('?view=tags'), str(response.json()))
 
     def test_duplicate_names_are_unique_per_workspace_and_constraint_is_enforced(self):
-        duplicate = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name=self.project.name)
-        other = TaskProject.objects.create(user=self.owner, workplace=self.other, name=self.project.name)
-        self.assertEqual(duplicate.space.slug, self.space.slug + '-2')
-        self.assertEqual(other.space.slug, self.space.slug)
-        self.assertEqual(self.client.get(self.url().replace(self.space.slug, duplicate.space.slug)).context['space'].pk, duplicate.space.pk)
+        duplicate = make_space(user=self.owner, workplace=self.workspace, name=self.project.name)
+        other = make_space(user=self.owner, workplace=self.other, name=self.project.name)
+        self.assertEqual(duplicate.slug, self.space.slug + '-2')
+        self.assertEqual(other.slug, self.space.slug)
+        self.assertEqual(self.client.get(self.url().replace(self.space.slug, duplicate.slug)).context['space'].pk, duplicate.pk)
         with transaction.atomic(), self.assertRaises(IntegrityError):
-            Space.objects.filter(pk=duplicate.space.pk).update(slug=self.space.slug)
+            Space.objects.filter(pk=duplicate.pk).update(slug=self.space.slug)
 
     def test_numeric_empty_long_and_route_names_have_usable_urls(self):
         names = ['15', '😀', '😀', 'create', 'manage', 'items', 'A' * 120, 'A' * 120]
         expected = ['przestrzen-15', 'przestrzen', 'przestrzen-2', 'create', 'manage', 'items', 'a' * 120, 'a' * 120 + '-2']
         for name, slug in zip(names, expected):
-            space = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name=name).space
+            space = make_space(user=self.owner, workplace=self.workspace, name=name)
             self.assertEqual(space.slug, slug)
             path = scoped_workplace_app_path(self.workspace, 'space', f'{slug}/')
             self.assertEqual(self.client.get(path).context['space'].pk, space.pk)
@@ -128,12 +130,12 @@ class SpaceUrlTests(TestCase):
         self.assertRedirects(self.client.post(self.url('avatar/'), {'avatar': 'rocket'}), self.url())
         response = self.client.post(self.url('items/create/'), {'title': 'Nowe zadanie', 'priority': 'medium', 'work_type': 'task'})
         self.assertRedirects(response, self.url('?view=list'))
-        self.assertTrue(Task.objects.filter(title='Nowe zadanie', section__project=self.project).exists())
+        self.assertTrue(SpaceTask.objects.filter(title='Nowe zadanie', space=self.project).exists())
 
     def test_slug_and_numeric_urls_enforce_privacy_revocation_and_workspace_scope(self):
         self.project.visibility, self.project.private_owner = 'private', self.owner
         self.project.save()
-        membership = TaskProjectMembership.objects.create(project=self.project, user=self.member, role='observer')
+        membership = SpaceMembership.objects.create(space=self.project, user=self.member, role='observer')
         self.login(self.member)
         legacy = scoped_workplace_app_path(self.workspace, 'spaces', f'{self.space.pk}/')
         for path in [self.url(), legacy]:
@@ -145,7 +147,7 @@ class SpaceUrlTests(TestCase):
             self.assertEqual(response.status_code, 404)
             self.assertNotIn('Location', response)
         self.login(self.owner)
-        foreign = TaskProject.objects.create(user=self.owner, workplace=self.other, name='Obca przestrzeń').space
+        foreign = make_space(user=self.owner, workplace=self.other, name='Obca przestrzeń')
         self.assertEqual(self.client.get(self.url().replace(self.space.slug, foreign.slug)).status_code, 404)
         self.login(self.member)
         self.membership.delete()
@@ -162,7 +164,7 @@ class ConcurrentSpaceSlugTests(TransactionTestCase):
             close_old_connections()
             try:
                 barrier.wait(timeout=10)
-                return TaskProject.objects.create(user_id=owner.pk, workplace_id=workspace.pk, name='Wspólna nazwa').space.slug
+                return make_space(user_id=owner.pk, workplace_id=workspace.pk, name='Wspólna nazwa').slug
             finally:
                 close_old_connections()
 
@@ -175,13 +177,13 @@ class SpaceSlugMigrationTests(TransactionTestCase):
     def test_migration_preserves_space_data_and_related_work(self):
         executor = MigrationExecutor(connection)
         latest = executor.loader.graph.leaf_nodes()
-        previous = [node for node in latest if node[0] != 'spaces'] + [('spaces', '0004_issue_types')]
+        previous = [node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('tasks', '0065_space_tag_data')] + [('spaces', '0004_issue_types')]
         owner = get_user_model().objects.create_user(username='space-migration-slug', email='space-migration-slug@example.test')
         workspace = create_workplace_for_user(owner, 'Migracja adresów')
         other = create_workplace_for_user(owner, 'Drugi Workspace')
         try:
             executor.migrate(previous)
-            apps = executor.loader.project_state(previous).apps
+            apps = MigrationExecutor(connection).loader.project_state(list(MigrationExecutor(connection).loader.applied_migrations)).apps
             Project = apps.get_model('tasks', 'TaskProject')
             Configuration = apps.get_model('spaces', 'SpaceConfiguration')
             OldSpace = apps.get_model('spaces', 'Space')
@@ -192,7 +194,7 @@ class SpaceSlugMigrationTests(TransactionTestCase):
                 rows.append(OldSpace.objects.create(project=project, workplace_id=wp.pk, key=f'M{number}', configuration=config, avatar='rocket'))
             rows[0].project.favorited_by.add(owner.pk)
             before = list(OldSpace.objects.order_by('pk').values())
-            target = latest
+            target = [node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('tasks', '0065_space_tag_data')] + [('spaces', '0005_space_slugs')]
             executor = MigrationExecutor(connection)
             executor.migrate(target)
             NewSpace = executor.loader.project_state(target).apps.get_model('spaces', 'Space')

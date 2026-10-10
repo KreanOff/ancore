@@ -1,6 +1,5 @@
 <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get">
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
-    {% if group_filter %}<input type="hidden" name="group" value="{{ group_filter }}">{% endif %}
     {% if summary_filter %}<input type="hidden" name="summary" value="{{ summary_filter }}">{% endif %}
     <div class="tasks-filterbar-left">
         <select class="tasks-inline-select" name="work_type" aria-label="Typ zgłoszenia"><option value="">Wszystkie typy</option>{% for type in type_options %}<option value="{{ type.key }}" data-ancore-option-icon="{{ type.icon }}"{% if type_filter == type.key %} selected{% endif %}>{{ type.label }}</option>{% endfor %}</select>

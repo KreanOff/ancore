@@ -1,7 +1,7 @@
 <div class="tasks-issue-comment tasks-issue-comment--mentions" data-comment-composer data-image-limit="{{ comment_image_limit }}" data-image-max-size="{{ comment_image_max_size }}">
     {{ mention_people|json_script:"mention-people" }}
     <div class="tasks-mention-composer" data-mention-composer>
-        <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" aria-describedby="comment-image-hint" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="Napisz komentarz; wpisz @ i imię osoby..." form="activity-comment-form">{{ comment_draft }}</textarea>
+        <textarea aria-label="Treść komentarza" aria-autocomplete="list" aria-expanded="false" aria-controls="mention-suggestions" aria-describedby="comment-image-hint" data-mention-input class="tasks-issue-comment-input" name="activity_comment" rows="3" placeholder="{{ comment_placeholder|default:'Napisz komentarz; wpisz @ i imię osoby...' }}" form="activity-comment-form">{{ comment_draft }}</textarea>
         <div id="mention-suggestions" class="tasks-filter-menu tasks-mention-menu" role="listbox" aria-label="Osoby z Workspace" data-mention-menu hidden></div>
         <span class="u-sr-only" data-mention-status role="status"></span>
     </div>

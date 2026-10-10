@@ -1,3 +1,4 @@
+from .testing import make_space
 import base64
 import tempfile
 from unittest.mock import patch
@@ -8,7 +9,7 @@ from django.db import transaction
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from tasks.models import TaskProjectMembership
+from .models import SpaceMembership
 from workplaces.models import WorkplaceMembership
 from .avatars import AVATARS, preset_avatar, space_avatar
 from .models import Space
@@ -48,7 +49,7 @@ class SpaceAvatarTests(TestCase):
         before = space_avatar(self.space)
         self.space.refresh_from_db()
         self.assertEqual(before, space_avatar(self.space))
-        self.assertNotEqual(before, space_avatar(self.hidden_project.space))
+        self.assertNotEqual(before, space_avatar(self.hidden_project))
         self.assertEqual(preset_avatar(seed=24)['key'], 'rocket')
         self.assertEqual(preset_avatar(seed=29)['key'], 'globe')
 
@@ -75,7 +76,7 @@ class SpaceAvatarTests(TestCase):
             self.assertEqual(self.client.get(self.url()).status_code, 403)
             self.assertEqual(self.client.post(self.url(), {'avatar': 'rocket'}).status_code, 403)
             self.assertNotContains(self.client.get(self.url('')), 'Zmień awatar')
-        TaskProjectMembership.objects.filter(project=self.project, user=self.member).update(role='admin')
+        SpaceMembership.objects.filter(space=self.project, user=self.member).update(role='admin')
         self.client.force_login(self.member)
         self.assertEqual(self.client.post(self.url(), {'avatar': 'rocket'}).status_code, 302)
 
@@ -102,13 +103,13 @@ class SpaceAvatarTests(TestCase):
                 self.assertEqual(response['Cache-Control'], 'private, no-store')
                 self.assertEqual(response['X-Content-Type-Options'], 'nosniff')
                 self.assertEqual(b''.join(response.streaming_content), PNG)
-        TaskProjectMembership.objects.filter(project=self.project, user=self.member).delete()
+        SpaceMembership.objects.filter(space=self.project, user=self.member).delete()
         self.client.force_login(self.member)
         self.assertEqual(self.client.get(self.url('avatar/photo/')).status_code, 404)
         self.client.force_login(self.other)
         self.assertRedirects(self.client.get(self.url('avatar/photo/')), reverse('workplaces:workplaces'), fetch_redirect_response=False)
         self.client.force_login(self.owner)
-        self.assertEqual(self.client.get(self.url('avatar/photo/', self.foreign_project.space)).status_code, 404)
+        self.assertEqual(self.client.get(self.url('avatar/photo/', self.foreign_project)).status_code, 404)
 
     def test_workspace_membership_revocation_removes_image_access(self):
         self.upload()

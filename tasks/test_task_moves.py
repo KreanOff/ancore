@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 
-from spaces.models import WorkItem
+from spaces.models import WorkItem, SpaceTask
+from spaces.testing import make_space
 from tasks.hierarchy import save_task_edit
 from tasks.models import Task, TaskMembership, TaskProject, TaskProjectMembership, TaskSection, TaskTag
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
@@ -24,9 +25,11 @@ class TaskLocationEditTests(TestCase):
         self.root = Task.objects.create(user=self.owner, section=self.section, title='Root')
         self.child = Task.objects.create(user=self.owner, section=self.section, parent=self.root, title='Child')
         self.grandchild = Task.objects.create(user=self.owner, section=self.section, parent=self.child, title='Grandchild')
-        self.tag = TaskTag.objects.create(user=self.owner, workplace=self.workspace, space=self.source.space, name='Source tag')
-        self.target_tag = TaskTag.objects.create(user=self.owner, workplace=self.workspace, space=self.target.space, name='Target tag')
-        self.root.tags.add(self.tag)
+        self.space = make_space(user=self.owner, workplace=self.workspace, name='Osobna przestrzeń')
+        self.other_space = make_space(user=self.owner, workplace=self.workspace, name='Inna przestrzeń')
+        self.space_task = SpaceTask.objects.create(space=self.space, title='Osobne zadanie', created_by=self.owner)
+        self.tag = TaskTag.objects.create(user=self.owner, workplace=self.workspace, space=self.space, name='Source tag')
+        self.target_tag = TaskTag.objects.create(user=self.owner, workplace=self.workspace, space=self.other_space, name='Target tag')
         self.client.force_login(self.member)
 
     def task_url(self, task=None, scoped=True):
@@ -35,12 +38,12 @@ class TaskLocationEditTests(TestCase):
         return scoped_workplace_app_path(self.workspace, 'tasks', path) if scoped else '/tasks/' + path
 
     def edit_url(self, scoped=True):
-        path = f'items/{self.root.work_item.pk}/edit/'
+        path = f'items/{self.space_task.work_item.pk}/edit/'
         return scoped_workplace_app_path(self.workspace, 'spaces', path) if scoped else '/spaces/' + path
 
     def payload(self, **overrides):
         data = {'task_pk': self.root.pk, 'title': 'Edited root', 'visibility': 'public',
-                'priority': 'medium', 'status': 'new', 'task_type': 'general', 'tags': [self.tag.pk]}
+                'priority': 'medium', 'status': 'new', 'task_type': 'general', 'tags': []}
         data.update(overrides)
         return data
 
@@ -59,7 +62,7 @@ class TaskLocationEditTests(TestCase):
                     self.assertEqual(self.location_snapshot(), before)
                     self.root.refresh_from_db()
                     self.assertEqual(self.root.title, 'Edited root')
-                    self.assertEqual(list(self.root.tags.all()), [self.tag])
+                    self.assertEqual(list(self.root.tags.all()), [])
         self.assertFalse(self.child.activities.filter(action='updated').exists())
         self.assertFalse(self.grandchild.activities.filter(action='updated').exists())
         self.assertEqual(self.root.activities.get(action='updated').actor, self.member)
@@ -93,34 +96,23 @@ class TaskLocationEditTests(TestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertEqual(self.location_snapshot(), before)
 
-    def test_space_edit_ignores_location_without_defaulting_to_another_group(self):
-        another = TaskSection.objects.create(project=self.source, title='Another group')
+    def test_space_edit_ignores_legacy_location(self):
         before = self.location_snapshot()
         for scoped in (False, True):
-            for location in ({}, {'section': ''}, {'section': another.pk}, {'section': self.target_section.pk}):
-                with self.subTest(scoped=scoped, location=location):
-                    response = self.client.post(self.edit_url(scoped=scoped), self.payload(work_type='task', **location))
-                    self.assertEqual(response.status_code, 302)
-                    self.assertEqual(self.location_snapshot(), before)
-                    self.assertEqual(list(self.root.tags.all()), [self.tag])
-
-    def test_tag_and_issue_type_validation_uses_existing_space(self):
-        config = self.source.space.configuration
-        config.settings = {**config.settings, 'types': [{'key': 'source', 'label': 'Source type'}]}
-        config.save(update_fields=['settings'])
-        item = self.root.work_item
-        item.work_type = 'source'
-        item.save(update_fields=['work_type'])
-        before = self.location_snapshot()
-        response = self.client.post(self.task_url(), self.payload(project=self.target.pk, section=self.target_section.pk, work_type='source'))
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.location_snapshot(), before)
-        for overrides in ({'tags': [self.target_tag.pk]}, {'work_type': 'task'}):
-            response = self.client.post(self.task_url(), self.payload(project=self.target.pk, section=self.target_section.pk, **overrides))
-            self.assertEqual(response.status_code, 200)
-            self.assertTrue(response.context['form'].errors)
+            response = self.client.post(self.edit_url(scoped=scoped), {'title': 'Nowy tytuł', 'priority': 'medium', 'work_type': 'task', 'project': self.target.pk, 'section': self.target_section.pk})
+            self.assertEqual(response.status_code, 302)
             self.assertEqual(self.location_snapshot(), before)
-            self.assertEqual(list(self.root.tags.all()), [self.tag])
+            self.space_task.refresh_from_db()
+            self.assertEqual(self.space_task.space, self.space)
+            self.assertEqual(self.space_task.title, 'Nowy tytuł')
+
+    def test_legacy_form_cannot_assign_space_tags(self):
+        before = self.location_snapshot()
+        response = self.client.post(self.task_url(), self.payload(tags=[self.tag.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors.get('tags'))
+        self.assertEqual(self.location_snapshot(), before)
+        self.assertFalse(self.root.tags.exists())
 
     def test_parent_selection_cannot_move_subtask_to_another_group(self):
         target_parent = Task.objects.create(user=self.owner, section=self.target_section, title='Target parent')
@@ -145,16 +137,17 @@ class TaskLocationEditTests(TestCase):
             self.assertNotContains(response, f'<strong title="{self.section.title}">{self.section.title}</strong>', html=True)
             response = self.client.get(self.edit_url(scoped=scoped), HTTP_X_WORK_MODAL='true')
             self.assertNotContains(response, 'name="section"')
-            response = self.client.get(scoped_workplace_app_path(self.workspace, 'spaces', f'{self.source.space.pk}/items/create/'))
-            self.assertContains(response, 'name="section"')
+            response = self.client.get(scoped_workplace_app_path(self.workspace, 'spaces', f'{self.space.pk}/items/create/'))
+            self.assertNotContains(response, 'name="section"')
+            self.assertNotContains(response, 'name="project"')
 
     def test_observer_cannot_edit_or_transfer_a_task(self):
         membership = self.source.memberships.get(user=self.member)
         membership.role = 'observer'
         membership.save(update_fields=['role'])
         before = self.location_snapshot()
-        for url in (self.task_url(), self.edit_url()):
-            self.assertEqual(self.client.post(url, self.payload(section=self.target_section.pk)).status_code, 403)
+        self.assertEqual(self.client.post(self.task_url(), self.payload(section=self.target_section.pk)).status_code, 403)
+        self.assertEqual(self.client.post(self.edit_url(), self.payload(work_type='task', section=self.target_section.pk)).status_code, 302)
         self.assertEqual(self.location_snapshot(), before)
         self.root.refresh_from_db()
         self.assertEqual(self.root.title, 'Root')

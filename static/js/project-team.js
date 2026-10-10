@@ -4,7 +4,8 @@
     let cleanup = () => {};
     function initTeam(kind) {
         const isTask = kind === 'task';
-        const form = document.getElementById(isTask ? 'task-detail-form' : `${kind}-rename-form`);
+        const form = (isTask ? document.querySelector('[data-space-task-team], #task-detail-form') : document.getElementById(`${kind}-rename-form`));
+        const elements = form?.elements || document.getElementById('space-task-form')?.elements;
         const host = document.querySelector(`[data-project-team-modal-host="${kind}"]`);
         if (!form || !host) return () => {};
         const isKanban = form.dataset.teamApp === 'kanban';
@@ -103,13 +104,15 @@
             errors.hidden = true;
             const controls = [...(childForm || form).querySelectorAll('button')].map(node => [node, node.disabled]);
             controls.forEach(([node]) => { node.disabled = true; });
-            body.set('csrfmiddlewaretoken', form.elements.csrfmiddlewaretoken.value);
+            body.set('csrfmiddlewaretoken', elements.csrfmiddlewaretoken.value);
             try {
                 const data = await request(body);
                 pending = false;
                 const child = childForm?.closest('.tasks-modal');
                 if (child) window.AncoreTaskModals.close(child);
                 if (body.get('action') === 'share') tab = 'members';
+                // The response replaces the closing dialog before its animation event.
+                restoreBackground();
                 display(data);
                 if (isTask) selectTab('members', true);
                 else form.querySelector(`[data-project-access-tab="${tab}"]`)?.focus();
@@ -154,7 +157,8 @@
             const table = event.target.closest('[data-team-selection]'); if (!table) return;
             const all = table.querySelector('[data-team-select-all]'); const checks = [...table.querySelectorAll('[data-team-select]')];
             if (event.target === all) checks.forEach(input => { input.checked = all.checked; });
-            all.checked = checks.every(input => input.checked); all.indeterminate = checks.some(input => input.checked) && !all.checked;
+            checks.forEach(input => input.closest('.tasks-directory-row').classList.toggle('checked', input.checked));
+            all.checked = checks.length > 0 && checks.every(input => input.checked); all.indeterminate = checks.some(input => input.checked) && !all.checked;
         }, options);
         form.addEventListener('invalid', () => selectTab('main'), { ...options, capture: true });
         host.addEventListener('submit', event => { if (event.target.matches('[data-project-team-form]')) { event.preventDefault(); mutate(new FormData(event.target), event.target); } }, options);
@@ -165,10 +169,10 @@
         form.addEventListener('ancore:task-team-updated', event => {
             version++; requestController?.abort(); display(event.detail);
         }, options);
-        const id = form.elements[isTask ? 'task_pk' : `${kind}_id`].value;
+        const id = elements[isTask ? 'task_pk' : `${kind}_id`].value;
         const access = JSON.parse(document.getElementById(`${kind}-access-data`)?.textContent || '{}')[id];
         if (isTask) load(form.dataset.taskTeamUrl);
-        else if (id && access) { form.elements.visibility.disabled = !access.canManage; load(access.teamUrl); }
+        else if (id && access) { elements.visibility.disabled = !access.canManage; load(access.teamUrl); }
         return () => { version++; requestController?.abort(); controller.abort(); clearPickers(); restoreBackground(); };
     }
     function init() {

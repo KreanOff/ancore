@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.test import Client, TestCase
 
-from tasks.models import Task, TaskProject, TaskSection
+from spaces.models import SpaceTask
+from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 from workplaces.navigation import sidebar_favorite_is_active
@@ -136,11 +137,11 @@ class DefaultPulpitTests(TestCase):
         self.assertEqual(self.client.get(self.url(f'{dashboard.slug}/')).status_code, 404)
 
     def test_default_filters_data_for_viewer_without_granting_access(self):
-        Task.objects.create(user=self.owner, workplace=self.workspace, title='Wspólne zadanie')
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Prywatne',
+        public = make_space(user=self.owner, workplace=self.workspace, name='Wspólne')
+        SpaceTask.objects.create(space=public, created_by=self.owner, title='Wspólne zadanie')
+        project = make_space(user=self.owner, workplace=self.workspace, name='Prywatne',
                                              visibility='private', private_owner=self.owner)
-        section = TaskSection.objects.create(project=project, title='Grupa')
-        Task.objects.create(user=self.owner, workplace=self.workspace, title='Ukryte', section=section,
+        SpaceTask.objects.create(space=project, created_by=self.owner, title='Ukryte',
                             assignee=self.member)
         self.login(self.member)
         response = self.client.get('/')

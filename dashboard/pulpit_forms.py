@@ -100,7 +100,7 @@ class GadgetForm(forms.ModelForm):
         self.catalog = GADGET_CATALOG
         self.fields['space'].queryset = visible_spaces(request)
         self.fields['space'].empty_label = 'Wszystkie dostępne przestrzenie'
-        self.fields['space'].label_from_instance = lambda space: space.project.name
+        self.fields['space'].label_from_instance = lambda space: space.name
         self.fields['title'].help_text = 'Puste pole używa nazwy gadżetu.'
         self.fields['kind'].help_text = 'Postęp pracy pokazuje odsetek zamkniętych zadań i liczby zadań według statusu.'
         if self.instance.space_id and not self.fields['space'].queryset.filter(pk=self.instance.space_id).exists():

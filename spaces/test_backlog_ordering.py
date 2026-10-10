@@ -1,9 +1,10 @@
+from .testing import make_space
 from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from tasks.models import Task, TaskProject, TaskProjectMembership, TaskSection
+from .models import SpaceTask, Space, SpaceMembership, Team
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -12,12 +13,12 @@ class BacklogOrderingTests(TestCase):
     def setUp(self):
         self.owner = get_user_model().objects.create_user(username='order-owner', email='order-owner@example.test')
         self.workspace = create_workplace_for_user(self.owner, 'Backlog ordering')
-        self.project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Kanban')
-        self.space = self.project.space
+        self.project = make_space(user=self.owner, workplace=self.workspace, name='Kanban')
+        self.space = self.project
         self.space.template = 'kanban'
         self.space.save(update_fields=['template'])
-        self.section = TaskSection.objects.create(project=self.project, title='Group')
-        self.first, self.middle, self.last = [Task.objects.create(user=self.owner, section=self.section, title=title).work_item for title in ('Visible first', 'Hidden middle', 'Visible last')]
+        self.section = self.project
+        self.first, self.middle, self.last = [SpaceTask.objects.create(created_by=self.owner, space=self.section, title=title).work_item for title in ('Visible first', 'Hidden middle', 'Visible last')]
         self.client.force_login(self.owner)
         session = self.client.session
         session['active_workplace_id'] = self.workspace.pk
@@ -58,12 +59,15 @@ class BacklogOrderingTests(TestCase):
         params = parse_qs(urlsplit(response.json()['url']).query)
         self.assertEqual(params, {'q': ['Visible'], 'view': ['backlog']})
 
-    def test_backlog_reorder_respects_group_filter(self):
-        other_section = TaskSection.objects.create(project=self.project, title='Other group')
-        self.middle.task.section = other_section
-        self.middle.task.save(update_fields=['section'])
-        self.assertEqual(self.action(self.first, f'?group={self.section.pk}').status_code, 200)
+    def test_backlog_reorder_respects_team_filter(self):
+        team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Widoczny zespół')
+        team.spaces.add(self.space)
+        for item in (self.first, self.last):
+            item.team = team
+            item.save(update_fields=['team'])
+        self.assertEqual(self.action(self.first, f'?team={team.pk}').status_code, 200)
         self.assert_visible_swapped()
+
 
     def test_filtered_out_item_returns_error_without_changing_order(self):
         response = self.action(self.first, '?q=missing')
@@ -87,7 +91,7 @@ class BacklogOrderingTests(TestCase):
         WorkplaceMembership.objects.create(workplace=self.workspace, user=observer)
         self.project.visibility, self.project.private_owner = 'private', self.owner
         self.project.save(update_fields=['visibility', 'private_owner'])
-        TaskProjectMembership.objects.create(project=self.project, user=observer, role='observer')
+        SpaceMembership.objects.create(space=self.project, user=observer, role='observer')
         self.client.force_login(observer)
         url = scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/?view=backlog')
         response = self.client.get(url)

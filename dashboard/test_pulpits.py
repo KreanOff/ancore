@@ -7,7 +7,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from tasks.models import Task, TaskActivity, TaskProject, TaskSection
+from spaces.models import SpaceTask, SpaceTaskActivity
+from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 from .models import Dashboard, DashboardGadget
@@ -37,7 +38,20 @@ class PulpitTests(TestCase):
         return Dashboard.objects.create(owner=self.owner, workplace=self.workplace, created_by=self.owner, name='Przegląd zespołu', **kwargs)
 
     def task(self, **kwargs):
-        return Task.objects.create(**{'user': self.owner, 'workplace': self.workplace, 'title': 'Jawne zadanie', **kwargs})
+        owner = kwargs.pop('user', self.owner)
+        workplace = kwargs.pop('workplace', self.workplace)
+        selected = kwargs.pop('section', None)
+        if kwargs.get('parent'):
+            selected = kwargs['parent'].space
+        if selected is None:
+            if not hasattr(self, '_task_spaces'):
+                self._task_spaces = {}
+            key = (owner.pk, workplace.pk)
+            if key not in self._task_spaces:
+                self._task_spaces[key] = make_space(user=owner, workplace=workplace, name='Zadania')
+            selected = self._task_spaces[key]
+        kwargs.setdefault('title', 'Jawne zadanie')
+        return SpaceTask.objects.create(space=selected, created_by=owner, **kwargs)
 
     def url(self, dashboard, suffix=''):
         return f'/dashboards/{dashboard.slug}/{suffix}'
@@ -197,14 +211,14 @@ class PulpitTests(TestCase):
         for kind in DashboardGadget.Kind.values:
             DashboardGadget.objects.create(dashboard=dashboard, kind=kind)
         visible = self.task(assignee=self.member, due_at=timezone.now()-timedelta(days=1))
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Sekretna przestrzeń', visibility='private', private_owner=self.owner)
-        section = TaskSection.objects.create(project=project, title='Grupa')
+        project = make_space(user=self.owner, workplace=self.workplace, name='Sekretna przestrzeń', visibility='private', private_owner=self.owner)
+        section = project
         secret = self.task(title='Tajny tytuł', section=section, assignee=self.member)
         self.task(title='Tajne podzadanie', parent=secret)
         self.task(title='Z innego Workspace', workplace=self.other)
         self.task(title='Inny właściciel', user=self.outsider, assignee=self.member)
-        TaskActivity.objects.create(task=secret, actor=self.owner, message='Sekretna aktywność')
-        TaskActivity.objects.create(task=visible, actor=self.owner, action='updated', metadata={'subtask_pk': secret.pk})
+        SpaceTaskActivity.objects.create(task=secret, actor=self.owner, message='Sekretna aktywność')
+        SpaceTaskActivity.objects.create(task=visible, actor=self.owner, action='updated', metadata={'subtask_pk': secret.pk})
         self.login(self.member)
         response = self.client.get(self.url(dashboard))
         self.assertEqual(response.status_code, 200)
@@ -217,8 +231,8 @@ class PulpitTests(TestCase):
 
     def test_inaccessible_space_returns_no_metadata_or_fallback_data(self):
         dashboard = self.dashboard(visibility='workspace')
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Nazwa tajnej przestrzeni', visibility='private', private_owner=self.owner)
-        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project.space)
+        project = make_space(user=self.owner, workplace=self.workplace, name='Nazwa tajnej przestrzeni', visibility='private', private_owner=self.owner)
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project)
         self.task()
         self.login(self.member)
         response = self.client.get(self.url(dashboard))
@@ -296,9 +310,9 @@ class PulpitTests(TestCase):
 
     def test_gadget_config_rejects_foreign_source_and_invalid_assignment(self):
         dashboard = self.dashboard()
-        foreign = TaskProject.objects.create(user=self.owner, workplace=self.other, name='Obca przestrzeń')
+        foreign = make_space(user=self.owner, workplace=self.other, name='Obca przestrzeń')
         values = {'kind': 'progress', 'title': '', 'assignee': 'all'}
-        for extra in [{'space': foreign.space.pk}, {'assignee': 'unknown'}, {'kind': 'unknown'}]:
+        for extra in [{'space': foreign.pk}, {'assignee': 'unknown'}, {'kind': 'unknown'}]:
             response = self.client.post(self.url(dashboard, 'gadgets/add/'), {**values, **extra}, HTTP_X_PULPIT_MODAL='true')
             self.assertEqual(response.status_code, 400)
             if 'assignee' in extra:
@@ -329,7 +343,7 @@ class PulpitTests(TestCase):
         self.assertEqual(self.client.post(self.url(dashboard, 'delete/')).status_code, 302)
         self.assertFalse(Dashboard.objects.exists())
         self.assertFalse(DashboardGadget.objects.exists())
-        self.assertTrue(Task.objects.filter(pk=task.pk).exists())
+        self.assertTrue(SpaceTask.objects.filter(pk=task.pk).exists())
 
     def test_post_csrf_login_and_get_mutation_guards(self):
         dashboard = self.dashboard()
@@ -362,17 +376,17 @@ class PulpitTests(TestCase):
     def test_progress_counts_all_main_tasks_and_reopened_status(self):
         dashboard = self.dashboard()
         DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
-        for status, _label in Task.STATUS_CHOICES:
+        for status, _label in SpaceTask.STATUS_CHOICES:
             for _ in range(6):
                 self.task(status=status)
-        closed = Task.objects.filter(status='closed').first()
+        closed = SpaceTask.objects.filter(status='closed').first()
         self.task(parent=closed, status='closed')
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             response = self.client.get(f'{prefix}{dashboard.slug}/')
             data = response.context['columns'][0][0]
             self.assertEqual((data['count'], data['closed_count'], data['percent']), (30, 6, 20))
             self.assertEqual(data['statuses'], [
-                {'key': key, 'label': label, 'count': 6} for key, label in Task.STATUS_CHOICES
+                {'key': key, 'label': label, 'count': 6} for key, label in SpaceTask.STATUS_CHOICES
             ])
             self.assertContains(response, 'Zamknięte: 6 z 30')
             self.assertContains(response, 'value="20"')
@@ -396,15 +410,15 @@ class PulpitTests(TestCase):
 
     def test_progress_filters_space_and_private_tasks_without_granting_access(self):
         dashboard = self.dashboard(visibility='workspace')
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Wybrane źródło')
-        section = TaskSection.objects.create(project=project, title='Publiczna grupa')
-        hidden_section = TaskSection.objects.create(project=project, title='Prywatna grupa', visibility='private', private_owner=self.owner)
+        project = make_space(user=self.owner, workplace=self.workplace, name='Wybrane źródło')
+        section = project
+        hidden_section = make_space(user=project.user, workplace=project.workplace, name='Prywatna grupa', visibility='private', private_owner=self.owner)
         self.task(section=section, status='closed')
         self.task(section=section, status='new')
         self.task(section=section, status='closed', visibility='private', private_owner=self.owner, assignee=self.member)
         self.task(section=hidden_section, status='closed', assignee=self.member)
         self.task(status='closed')
-        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project.space)
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project)
         self.login(self.member)
         response = self.client.get(self.url(dashboard))
         data = response.context['columns'][0][0]
@@ -420,9 +434,9 @@ class PulpitTests(TestCase):
 
     def test_deleting_space_cannot_broaden_saved_filter(self):
         dashboard = self.dashboard()
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workplace, name='Źródło')
-        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project.space)
-        project.space.delete()
+        project = make_space(user=self.owner, workplace=self.workplace, name='Źródło')
+        DashboardGadget.objects.create(dashboard=dashboard, kind='progress', space=project)
+        project.delete()
         self.assertFalse(dashboard.gadgets.exists())
 
     def test_gadget_cap_and_failed_form_preserve_existing_configuration(self):

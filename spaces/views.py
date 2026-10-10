@@ -20,12 +20,10 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
-from core.task_numbering import lock_task_numbers
 from accounts.avatar import account_avatar
 from dashboard.recent import remember_view
-from tasks.access import editable_to, require_editable, visible_to
-from tasks.hierarchy import save_task_edit
-from tasks.models import Task, TaskProject, TaskProjectMembership
+from .access import editable_to, require_editable, visible_to
+from .models import SpaceTask, SpaceMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import delete_avatar_after_commit
@@ -33,7 +31,7 @@ from .backlog import move_backlog_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, can_manage_spaces, decorate_directory_spaces, default_section, ensure_space, ensure_work_item, manageable_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, decorate_directory_spaces, manageable_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 
 
@@ -48,14 +46,14 @@ def base_context(request):
 
 def decorate_items(request, items):
     result = list(items)
-    editable_ids = set(editable_to(Task.objects.filter(pk__in=[i.task_id for i in result]), request.user).values_list('pk', flat=True))
-    counts = {row['pk']: row for row in Task.objects.filter(pk__in=[i.task_id for i in result]).annotate(
+    editable_ids = set(editable_to(SpaceTask.objects.filter(pk__in=[i.task_id for i in result]), request.user).values_list('pk', flat=True))
+    counts = {row['pk']: row for row in SpaceTask.objects.filter(pk__in=[i.task_id for i in result]).annotate(
         tags_total=Count('tags', distinct=True), attachments_total=Count('attachments', distinct=True),
     ).values('pk', 'tags_total', 'attachments_total')}
     for item in result:
         item.url = task_url(request, item.task)
-        item.edit_url = app_url(request, f'items/{item.pk}/edit/')
-        item.action_url = app_url(request, f'items/{item.pk}/action/')
+        item.edit_url = space_url(request, item.space, f'tasks/{item.key}/edit/')
+        item.action_url = space_url(request, item.space, f'tasks/{item.key}/action/')
         if request.GET:
             item.action_url += '?' + request.GET.urlencode()
         item.editable = item.task_id in editable_ids and item.space_id is not None
@@ -82,18 +80,15 @@ def issue_type_filters(request, space=None):
 
 
 def index_context(request, management=False):
-    # Covers projects created by old integrations via bulk_create, too.
-    for project in visible_to(TaskProject.objects.filter(user=workspace_owner(request), workplace=request.workplace, space__isnull=True), request.user):
-        ensure_space(project)
     query = request.GET.get('q', '').strip()[:120]
     tab = request.GET.get('tab', 'all')
     spaces = manageable_spaces(request) if management else visible_spaces(request)
     if query:
-        spaces = spaces.filter(Q(project__name__icontains=query) | Q(key__icontains=query))
+        spaces = spaces.filter(Q(name__icontains=query) | Q(key__icontains=query))
     if not management and tab == 'favorites':
-        spaces = spaces.filter(project__favorited_by=request.user)
+        spaces = spaces.filter(favorited_by=request.user)
     elif not management and tab == 'private':
-        spaces = spaces.filter(project__visibility='private')
+        spaces = spaces.filter(visibility='private')
     kind = request.GET.get('kind')
     if kind in {'software', 'business', 'service'}:
         spaces = spaces.filter(kind=kind)
@@ -101,15 +96,15 @@ def index_context(request, management=False):
     if management and management_filter in {'team', 'company'}:
         spaces = spaces.filter(management=management_filter)
     if management:
-        spaces = spaces.select_related('project__responsible_user', 'project__private_owner', 'project__user')
-    page = Paginator(spaces.order_by('project__name', 'pk'), 30).get_page(request.GET.get('page'))
+        spaces = spaces.select_related('responsible_user', 'private_owner', 'user')
+    page = Paginator(spaces.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     page.object_list = decorate_directory_spaces(request, page.object_list)
     activity = {row['space_id']: row['last_activity'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(last_activity=Max('task__activities__created_at'))} if management else {}
     for space in page:
         if management:
             space.edit_url = app_url(request, f'manage/{space.slug}/edit/')
             space.configuration_url = space_url(request, space, 'configuration/') if manage_configuration(request, space) else ''
-            space.leader = space.project.responsible_user or space.project.private_owner or space.project.user
+            space.leader = space.responsible_user or space.private_owner or space.user
             space.leader_avatar = account_avatar(space.leader)
             space.last_activity = activity.get(space.pk)
     return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'management_filter': management_filter, 'create_url': app_url(request, 'manage/create/' if management else 'create/'), 'templates': TEMPLATES}
@@ -134,8 +129,8 @@ def manage(request):
 def search(request):
     query = request.GET.get('q', '').strip()[:120]
     results = list(visible_spaces(request).filter(
-        Q(project__name__icontains=query) | Q(key__icontains=query),
-    ).order_by('project__name', 'pk')[:21]) if query else []
+        Q(name__icontains=query) | Q(key__icontains=query),
+    ).order_by('name', 'pk')[:21]) if query else []
     has_more = len(results) > 20
     results = results[:20]
     for space in results:
@@ -156,7 +151,7 @@ def filtered_space_items(request, space, items, now):
     work_type = request.GET.get('work_type', '').strip()[:40]
     if work_type:
         items = items.filter(work_type=work_type)
-    for parameter, lookup in (('group', 'task__section_id'), ('team', 'team_id')):
+    for parameter, lookup in (('team', 'team_id'),):
         value = request.GET.get(parameter, '')
         if value.isdecimal() and len(value) < 19:
             items = items.filter(**{lookup: int(value)})
@@ -201,7 +196,6 @@ def detail_context(request, space, view):
     items = visible_items(request).filter(space=space)
     assignee_options = get_user_model().objects.filter(pk__in=items.order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
     type_options, type_filter = issue_type_filters(request, space)
-    group = request.GET.get('group', '')
     team = request.GET.get('team', '')
     now = timezone.now()
     items, summary_filters = filtered_space_items(request, space, items, now)
@@ -210,7 +204,7 @@ def detail_context(request, space, view):
             **base_context(request), 'space': space, 'space_url': base, 'view': view,
             'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation],
             'can_manage': manage_space(request, space),
-            'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(),
+            'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(),
             'create_item_url': base + 'items/create/',
             **({'summary': space_summary(request, space, items, now)} if view == 'overview' else {}),
         }
@@ -247,7 +241,7 @@ def detail_context(request, space, view):
         sprint.visible_count = all_items.filter(sprint=sprint).count()
         sprint.finished_count = all_items.filter(sprint=sprint, task__status='closed').count()
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), **summary_filters, 'assignee_options': assignee_options, 'priority_options': Task.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.project.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'group_filter': group if group.isdecimal() and len(group) < 19 else '', 'type_options': type_options, 'type_filter': type_filter}
+    return {**base_context(request), **summary_filters, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
 
 
 @login_required
@@ -257,7 +251,7 @@ def detail(request, pk):
     if isinstance(pk, int) and request.method in {'GET', 'HEAD'}:
         query = request.META.get('QUERY_STRING', '')
         return redirect(space_url(request, space) + (f'?{query}' if query else ''))
-    remember_view(request, space.project)
+    remember_view(request, space)
     if request.GET.get('view') == 'tags':
         from tasks.forms import TaskTagForm
         from tasks.tagging import tag_action
@@ -287,9 +281,6 @@ def detail(request, pk):
 @login_required
 @require_GET
 def all_items(request):
-    tasks_without_metadata = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace, work_item__isnull=True), request.user)
-    for task in tasks_without_metadata:
-        ensure_work_item(task)
     items = visible_items(request)
     type_options, type_filter = issue_type_filters(request)
     if type_filter:
@@ -335,26 +326,24 @@ def edit(request, pk=None, management=False):
         try:
             with transaction.atomic():
                 if space is None:
-                    project = TaskProject.objects.create(name=data['name'], description=data['description'], user=workspace_owner(request), workplace=request.workplace, visibility=data['visibility'], private_owner=request.user if data['visibility'] == 'private' else None, responsible_user=request.user)
-                    space = Space.objects.select_for_update().get(project=project)
-                    config = data.get('configuration') or space.configuration
-                    if not data.get('configuration'):
-                        config.shared = data['management'] == 'company'
-                        config.settings = template_settings(data['template'])
-                        config.save()
-                    space.key, space.kind, space.template, space.management, space.configuration = data['key'], data['kind'], data['template'], data['management'], config
+                    config = data.get('configuration') or SpaceConfiguration.objects.create(
+                        workplace=request.workplace, name=data['name'], shared=data['management'] == 'company', settings=template_settings(data['template']))
+                    space = Space(user=workspace_owner(request), workplace=request.workplace, responsible_user=request.user, configuration=config)
+                    for name in ('name', 'description', 'key', 'kind', 'template', 'management', 'visibility'):
+                        setattr(space, name, data[name])
+                    space.private_owner = request.user if space.visibility == 'private' else None
                     space.save()
-                    default_section(space)
                 else:
-                    project = TaskProject.objects.select_for_update().get(pk=space.project_id)
-                    project.name, project.description = data['name'], data['description']
-                    visibility_changed = project.visibility != data['visibility']
+                    space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=space.pk)
+                    if not manage_space(request, space):
+                        raise PermissionDenied
+                    visibility_changed = space.visibility != data['visibility']
+                    space.name, space.description, space.visibility = data['name'], data['description'], data['visibility']
                     if visibility_changed:
-                        project.visibility = data['visibility']
-                        project.private_owner = request.user if project.visibility == 'private' else None
-                    project.save()
+                        space.private_owner = request.user if space.visibility == 'private' else None
+                    space.save()
                     if visibility_changed:
-                        project.memberships.all().delete()
+                        space.memberships.all().delete()
                 url = app_url(request, 'manage/') if management else space_url(request, space)
         except IntegrityError:
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
@@ -376,7 +365,6 @@ def avatar_edit(request, pk):
         try:
             with transaction.atomic():
                 Workplace.objects.select_for_update().get(pk=request.workplace.pk)
-                TaskProject.objects.select_for_update().get(pk=space.project_id)
                 space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=space.pk)
                 if not manage_space(request, space):
                     raise PermissionDenied
@@ -428,10 +416,10 @@ def avatar_photo(request, pk):
 @require_POST
 def favorite(request, pk):
     space = space_object(request, pk)
-    if space.project.favorited_by.filter(pk=request.user.pk).exists():
-        space.project.favorited_by.remove(request.user)
+    if space.favorited_by.filter(pk=request.user.pk).exists():
+        space.favorited_by.remove(request.user)
     else:
-        space.project.favorited_by.add(request.user)
+        space.favorited_by.add(request.user)
     if request.headers.get('X-Space-Navigation') == 'true':
         return JsonResponse({'saved': True})
     return_url = request.POST.get('next', '')
@@ -442,37 +430,39 @@ def favorite(request, pk):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
-def item_edit(request, pk=None, space_pk=None):
+def item_edit(request, pk=None, space_pk=None, key=None):
+    if key:
+        space = space_object(request, space_pk)
+        pk = get_object_or_404(visible_items(request), space=space, key=key).pk
     item = get_object_or_404(visible_items(request), pk=pk) if pk else None
     space = space_object(request, item.space_id if item else space_pk)
     if item:
-        if not editable_to(Task.objects.filter(pk=item.task_id), request.user).exists():
+        if not editable_to(SpaceTask.objects.filter(pk=item.task_id), request.user).exists():
             raise PermissionDenied
-    elif not editable_to(TaskProject.objects.filter(pk=space.project_id), request.user).exists():
+    elif not editable_to(Space.objects.filter(pk=space.pk), request.user).exists():
         raise PermissionDenied
     form = ItemForm(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
-    url = space_url(request, space, '?view=list')
+    url = task_url(request, item.task) if key else space_url(request, space, '?view=list')
     if request.method == 'POST':
-        with lock_task_numbers(space.project.user_id):
+        with transaction.atomic():
             if request.workplace:
                 Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            Space.objects.select_for_update().get(pk=space.pk)
             if item:
-                require_editable(Task.objects.filter(pk=item.task_id), request.user)
+                require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
                 item = get_object_or_404(visible_items(request), pk=item.pk, space=space)
             else:
-                require_editable(TaskProject.objects.filter(pk=space.project_id), request.user)
+                require_editable(Space.objects.filter(pk=space.pk), request.user)
             space = space_object(request, space.pk)
             form = ItemForm(request.POST, request=request, space=space, item=item)
             if not form.is_valid():
                 return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url)
             data = form.cleaned_data
-            task = Task.objects.select_for_update().get(pk=item.task_id) if item else Task(user=workspace_owner(request), workplace=request.workplace, visibility='public')
-            for name in ('title', 'description', 'priority', 'assignee', 'due_at'):
-                setattr(task, name, data[name])
-            if not item:
-                task.section = data.get('section') or default_section(space)
+            task = SpaceTask.objects.select_for_update().get(pk=item.task_id) if item else SpaceTask(space=space, created_by=request.user, visibility='public')
+            for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
+                setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
             task._activity_actor = request.user
-            save_task_edit(task, request.user)
+            task.save()
             task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
             old_type, old_type_label = item.work_type, item.get_work_type_display()
@@ -493,16 +483,21 @@ def item_edit(request, pk=None, space_pk=None):
 
 @login_required
 @require_POST
-def item_action(request, pk):
+def item_action(request, pk=None, space_pk=None, key=None):
+    if key:
+        space = space_object(request, space_pk)
+        pk = get_object_or_404(visible_items(request), space=space, key=key).pk
     item = get_object_or_404(visible_items(request), pk=pk)
-    if not item.space_id or not editable_to(Task.objects.filter(pk=item.task_id), request.user).exists():
+    if not item.space_id or not editable_to(SpaceTask.objects.filter(pk=item.task_id), request.user).exists():
         raise PermissionDenied
     try:
-        with lock_task_numbers(item.task.user_id):
+        with transaction.atomic():
             if request.workplace:
                 Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            Space.objects.select_for_update().get(pk=item.space_id)
+            SpaceTask.objects.select_for_update().get(pk=item.task_id)
             item = WorkItem.objects.select_for_update().get(pk=item.pk)
-            require_editable(Task.objects.filter(pk=item.task_id), request.user)
+            require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
             action = request.POST.get('action')
             if action == 'status':
                 set_status(request, item, request.POST.get('status'))
@@ -529,7 +524,7 @@ def item_action(request, pk):
                 target = index + (-1 if action == 'up' else 1)
                 if 0 <= target < len(ordered):
                     other = ordered[target]
-                    if not editable_to(Task.objects.filter(pk=other.task_id), request.user).exists():
+                    if not editable_to(SpaceTask.objects.filter(pk=other.task_id), request.user).exists():
                         raise PermissionDenied
                     if item.rank == other.rank:
                         raise ValidationError('Zadania mają tę samą kolejność. Przenieś zadanie do innego sprintu i wróć do planowania.')
@@ -543,7 +538,7 @@ def item_action(request, pk):
             return JsonResponse({'error': ' '.join(error.messages)}, status=400)
         messages.error(request, ' '.join(error.messages))
     params = request.GET.copy()
-    params['view'] = 'backlog' if request.POST.get('return_view') == 'backlog' else 'board'
+    params['view'] = request.POST.get('return_view') if request.POST.get('return_view') in {'list', 'board', 'backlog', 'timeline'} else 'board'
     url = space_url(request, item.space, '?') + params.urlencode()
     if request.headers.get('X-Work-Action') == 'true':
         return JsonResponse({'saved': True, 'url': url})
@@ -580,10 +575,10 @@ def sprint_action(request, pk, sprint_pk):
 @require_http_methods(['GET', 'POST'])
 def members(request, pk):
     space = space_object(request, pk)
-    if not manage_space(request, space) or space.project.visibility != 'private':
+    if not manage_space(request, space) or space.visibility != 'private':
         raise PermissionDenied
     form = MemberForm(request.POST if request.method == 'POST' else None, request=request)
-    owner = space.project.private_owner_id == request.user.pk
+    owner = space.private_owner_id == request.user.pk
     if not owner:
         form.fields['role'].choices = [('member', 'Członek'), ('observer', 'Obserwator')]
     url = space_url(request, space, '?view=settings')
@@ -591,8 +586,8 @@ def members(request, pk):
         from workplaces.models import Workplace
         with transaction.atomic():
             Workplace.objects.select_for_update().get(pk=request.workplace.pk)
-            project = TaskProject.objects.select_for_update().get(pk=space.project_id)
-            space.project = project
+            space = Space.objects.select_for_update().get(pk=space.pk)
+            project = space
             if not manage_space(request, space):
                 raise PermissionDenied
             person = form.cleaned_data['person']
@@ -602,7 +597,7 @@ def members(request, pk):
             elif not workplace_people(request.workplace).filter(pk=person.pk).exists():
                 form.add_error('person', 'Ta osoba nie należy już do Workspace.')
             else:
-                TaskProjectMembership.objects.update_or_create(project=project, user=person, defaults={'role': form.cleaned_data['role']})
+                SpaceMembership.objects.update_or_create(space=space, user=person, defaults={'role': form.cleaned_data['role']})
                 return dialog_response(request, form, '', url, saved=True)
     return dialog_response(request, form, 'Udostępnij przestrzeń / zmień rolę', url)
 
@@ -614,11 +609,11 @@ def remove_member(request, pk, member_pk):
     if not manage_space(request, space):
         raise PermissionDenied
     with transaction.atomic():
-        space.project = TaskProject.objects.select_for_update().get(pk=space.project_id)
+        space = Space.objects.select_for_update().get(pk=space.pk)
         if not manage_space(request, space):
             raise PermissionDenied
-        member = get_object_or_404(space.project.memberships, pk=member_pk)
-        if member.user_id == space.project.private_owner_id or (member.role == 'admin' and space.project.private_owner_id != request.user.pk):
+        member = get_object_or_404(space.memberships, pk=member_pk)
+        if member.user_id == space.private_owner_id or (member.role == 'admin' and space.private_owner_id != request.user.pk):
             raise PermissionDenied
         member.delete()
     return redirect(space_url(request, space, '?view=settings'))
@@ -644,14 +639,14 @@ def configuration(request, pk):
             if len({row['key'] for row in rows}) != len(rows):
                 errors.append('Klucze w każdej sekcji muszą być unikalne.')
         keys = {row['key'] for row in settings['statuses']}
-        if {row['category'] for row in settings['statuses']} != set(dict(Task.STATUS_CHOICES)):
+        if {row['category'] for row in settings['statuses']} != set(dict(SpaceTask.STATUS_CHOICES)):
             errors.append('Zachowaj co najmniej jeden status dla każdego stanu zadania.')
         if not settings['types']:
             errors.append('Przestrzeń musi mieć co najmniej jeden typ zgłoszenia.')
         for row in settings['statuses']:
             if any(key not in keys for key in row['transitions']):
                 errors.append('Usuń przejścia prowadzące do usuniętego statusu.')
-        with lock_task_numbers(space.project.user_id):
+        with transaction.atomic():
             config = SpaceConfiguration.objects.select_for_update().get(pk=config.pk)
             current_revision = hashlib.sha256(json.dumps(config.settings, sort_keys=True).encode()).hexdigest()
             if request.POST.get('revision') != current_revision:

@@ -17,17 +17,17 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 19 | 0 | 18 | 58 |
+| [core](../core) | 20 | 0 | 18 | 58 |
 | [accounts](../accounts) | 20 | 7 | 9 | 56 |
 | [workplaces](../workplaces) | 22 | 10 | 13 | 116 |
-| [tasks](../tasks) | 41 | 65 | 46 | 324 |
+| [tasks](../tasks) | 41 | 66 | 46 | 324 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 35 | 12 | 29 | 212 |
+| [dashboard](../dashboard) | 35 | 13 | 29 | 212 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 31 | 5 | 31 | 135 |
+| [spaces](../spaces) | 37 | 9 | 34 | 174 |
 
 ## 2. Modele i relacje
 
@@ -104,7 +104,7 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `space_archived` (BooleanField), `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -252,7 +252,7 @@ Metody/properties: `__str__`.
 
 Źródło: [tasks/models.py](../tasks/models.py).
 
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
+Pola zadeklarowane tutaj: `space_archived` (BooleanField), `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -633,10 +633,12 @@ Pola zadeklarowane tutaj: `task` (ForeignKey), `recipient` (ForeignKey), `schedu
 
 Źródło: [dashboard/models.py](../dashboard/models.py).
 
-Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `section_invitation` (ForeignKey), `project_invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
+Pola zadeklarowane tutaj: `space_activity` (ForeignKey), `space_reminder` (ForeignKey), `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `section_invitation` (ForeignKey), `project_invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
+| `space_activity` | `'spaces.SpaceTaskActivity'` | on_delete=models.CASCADE; null=True |
+| `space_reminder` | `'spaces.SpaceTaskReminder'` | on_delete=models.CASCADE; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 | `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
 | `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
@@ -802,15 +804,109 @@ Metody/properties: `__str__`.
 
 Źródło: [spaces/models.py](../spaces/models.py).
 
-Pola zadeklarowane tutaj: `project` (OneToOneField), `workplace` (ForeignKey), `key` (CharField), `slug` (SlugField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `project` (OneToOneField), `name` (CharField), `description` (TextField), `user` (ForeignKey), `responsible_user` (ForeignKey), `visibility` (CharField), `private_owner` (ForeignKey), `favorited_by` (ManyToManyField), `workplace` (ForeignKey), `key` (CharField), `slug` (SlugField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
-| `project` | `'tasks.TaskProject'` | on_delete=models.CASCADE; related_name='space' |
+| `project` | `'tasks.TaskProject'` | on_delete=models.SET_NULL; related_name='space'; null=True |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_spaces' |
+| `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_spaces'; null=True |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_spaces'; null=True |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_spaces' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE |
 | `configuration` | `SpaceConfiguration` | on_delete=models.RESTRICT; related_name='spaces' |
 
 Metody/properties: `save`, `__str__`, `statuses`.
+
+### `SpaceMembership`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `space` (ForeignKey), `user` (ForeignKey), `role` (CharField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `space` | `Space` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
+### `SpaceTask`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `task_type` (CharField), `reminder_at` (DateTimeField), `space` (ForeignKey), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `completion_date` (DateTimeField), `created_at` (DateTimeField), `created_by` (ForeignKey), `assignee` (ForeignKey), `due_at` (DateTimeField), `parent` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `visibility` (CharField), `private_owner` (ForeignKey).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `space` | `Space` | on_delete=models.CASCADE; related_name='tasks' |
+| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='created_space_tasks'; null=True |
+| `assignee` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_space_tasks'; null=True |
+| `parent` | `'self'` | on_delete=models.CASCADE; related_name='subtasks'; null=True |
+| `tags` | `'tasks.TaskTag'` | related_name='space_tasks' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_space_tasks' |
+| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_space_tasks'; null=True |
+
+Metody/properties: `__str__`, `save`, `due_urgency`.
+
+### `SpaceTaskMembership`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `created_at` (DateTimeField), `task` (ForeignKey), `user` (ForeignKey), `role` (CharField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
+### `SpaceTaskActivity`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `actor` (ForeignKey), `kind` (CharField), `action` (CharField), `message` (TextField), `metadata` (JSONField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='activities' |
+| `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; null=True |
+
+Metody/properties: `get_action_display`.
+
+### `SpaceTaskFile`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `activity` (ForeignKey), `file` (FileField), `filename` (CharField), `file_size` (PositiveIntegerField), `legacy_storage` (BooleanField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='attachments' |
+| `activity` | `SpaceTaskActivity` | on_delete=models.CASCADE; related_name='images'; null=True |
+
+Metody/properties: `get_url`.
+
+### `SpaceTaskReminder`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `recipient` (ForeignKey), `scheduled_at` (DateTimeField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `SpaceTask` | on_delete=models.CASCADE |
+| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
+
+### `SpaceTaskWorkLog`
+
+Źródło: [spaces/models.py](../spaces/models.py).
+
+Pola zadeklarowane tutaj: `task` (ForeignKey), `author` (ForeignKey), `started_at` (DateTimeField), `ended_at` (DateTimeField), `description` (TextField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='work_logs' |
+| `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; null=True |
+
+Metody/properties: `duration_minutes`.
 
 ### `Team`
 
@@ -855,17 +951,18 @@ Metody/properties: `__str__`.
 
 Źródło: [spaces/models.py](../spaces/models.py).
 
-Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_on` (DateField), `custom_values` (JSONField).
+Pola zadeklarowane tutaj: `task` (OneToOneField), `legacy_task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_on` (DateField), `custom_values` (JSONField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
-| `task` | `'tasks.Task'` | on_delete=models.CASCADE; related_name='work_item' |
+| `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='work_item'; null=True |
+| `legacy_task` | `'tasks.Task'` | on_delete=models.SET_NULL; related_name='work_item'; null=True |
 | `space` | `Space` | on_delete=models.CASCADE; related_name='items'; null=True |
 | `team` | `Team` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `sprint` | `Sprint` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `epic` | `'self'` | on_delete=models.SET_NULL; related_name='epic_items'; null=True |
 
-Metody/properties: `get_work_type_display`, `type_icon`.
+Metody/properties: `save`, `get_work_type_display`, `type_icon`.
 
 ### `LegacyKanbanLink`
 
@@ -909,7 +1006,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `ProjectVisibilitySelect`
 - `TaskAccessForm`
 - `TaskForm` — Meta.fields: `['title', 'visibility', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
-- `TaskWorkLogForm` — Meta.fields: `['started_at', 'ended_at', 'description']`
+- `TaskWorkLogForm`
 - `TaskProjectBaseForm`
 - `TaskProjectTemplateNameForm` — Meta.fields: `('template_name',)`
 - `TaskProjectForm` — Meta.fields: `['name', 'visibility', 'template', 'code', 'section_title', 'section_code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
@@ -984,6 +1081,9 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `SpaceAvatarForm`
 - `SpaceForm`
 - `ItemForm`
+- `DetailForm`
+- `SubtaskForm`
+- `WorkLogForm`
 - `SprintForm`
 - `TeamForm`
 - `MemberForm`
@@ -1197,6 +1297,13 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'spaces/items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
 | `'spaces/manage/<slug:pk>/edit/'` | `views.edit` | 'manage_edit' |
 | `'space/<slug:pk>/'` | `views.detail` | 'detail' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/'` | `task_views.detail` | 'task_detail' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/edit/'` | `views.item_edit` | 'task_edit' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/action/'` | `views.item_action` | 'task_action' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/team/'` | `task_team.team` | 'task_team' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/team/candidates/'` | `task_team.candidates` | 'task_candidates' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/members/'` | `task_views.members` | 'task_members' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/files/<int:file_pk>/'` | `task_views.download` | 'task_file' |
 | `'space/<slug:pk>/edit/'` | `views.edit` | 'edit' |
 | `'space/<slug:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
 | `'space/<slug:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
@@ -1237,7 +1344,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/admin.py](../core/admin.py)
 - [core/apps.py](../core/apps.py) — `CoreConfig`
 - [core/avatars.py](../core/avatars.py) — `preset_avatar`
-- [core/comment_images.py](../core/comment_images.py) — `comment_image_storage`, `comment_image_path`, `CommentImage`, `delete_comment_image_file`, `save_comment`, `comment_image_response`
+- [core/comment_images.py](../core/comment_images.py) — `comment_image_storage`, `comment_image_path`, `AttachmentPresentation`, `CommentImage`, `delete_comment_image_file`, `save_comment`, `comment_image_response`
 - [core/forms.py](../core/forms.py)
 - [core/media.py](../core/media.py) — `public_media`
 - [core/models.py](../core/models.py)
@@ -1246,6 +1353,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/task_requests.py](../core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
 - [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
 - [core/views/__init__.py](../core/views/__init__.py)
+- [core/work_logs.py](../core/work_logs.py) — `DateTimeLocalInput`, `TimeLogForm`
 
 ### accounts
 
@@ -1356,7 +1464,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/pulpit_views.py](../dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
 - [dashboard/pulpits.py](../dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `gadget_data`, `detail_context`
 - [dashboard/recent.py](../dashboard/recent.py) — `remember_view`, `recent_views`
-- [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`
+- [dashboard/reminders.py](../dashboard/reminders.py) — `reminders_for_user`, `space_reminders_for_user`
 - [dashboard/urls.py](../dashboard/urls.py)
 - [dashboard/views.py](../dashboard/views.py) — `global_search`, `settings`, `for_you`, `home`, `notifications`, `notification_action`
 
@@ -1406,25 +1514,29 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### spaces
 
 - [spaces/__init__.py](../spaces/__init__.py)
+- [spaces/access.py](../spaces/access.py) — `spaces_for`, `editable_spaces`, `tree_ids`, `visible_to`, `editable_to`, `require_editable`, `task_people`
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
 - [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
 - [spaces/backlog.py](../spaces/backlog.py) — `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
 - [spaces/defaults.py](../spaces/defaults.py) — `issue_type_icon`, `template_settings`
-- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
+- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/identifiers.py](../spaces/identifiers.py) — `unique_space_slug`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
-- [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
+- [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
 - [spaces/navigation.py](../spaces/navigation.py) — `sidebar_spaces`
-- [spaces/services.py](../spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `ensure_space`, `ensure_work_item`, `task_url`, `record`, `transition_allowed`, `category_transition_allowed`, `set_status`, `default_section`, `update_sprint`
-- [spaces/signals.py](../spaces/signals.py) — `project_space`, `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `moved_section`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`
+- [spaces/services.py](../spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
+- [spaces/signals.py](../spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [spaces/summary.py](../spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
+- [spaces/task_team.py](../spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
+- [spaces/task_views.py](../spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `work_log_context`, `detail`, `members`, `download`
 - [spaces/team_urls.py](../spaces/team_urls.py)
 - [spaces/teams.py](../spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
+- [spaces/testing.py](../spaces/testing.py) — `make_space`
 - [spaces/urls.py](../spaces/urls.py)
 - [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
-- [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`
+- [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`
 
 ## 6. Szablony
 
@@ -1657,8 +1769,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
 - [spaces/templates/spaces/sidebar_row.html](../spaces/templates/spaces/sidebar_row.html)
 - [spaces/templates/spaces/sprint_header_details.html](../spaces/templates/spaces/sprint_header_details.html)
+- [spaces/templates/spaces/subtask_modal.html](../spaces/templates/spaces/subtask_modal.html)
 - [spaces/templates/spaces/summary.html](../spaces/templates/spaces/summary.html)
 - [spaces/templates/spaces/tags.html](../spaces/templates/spaces/tags.html)
+- [spaces/templates/spaces/task_comment.html](../spaces/templates/spaces/task_comment.html)
+- [spaces/templates/spaces/task_detail.html](../spaces/templates/spaces/task_detail.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
 - [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
 - [spaces/templates/spaces/template_picker.html](../spaces/templates/spaces/template_picker.html)
@@ -2284,6 +2399,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `BacklogOrderingTests`: 7 metod testowych.
 
+### spaces/test_independent_tasks.py
+
+Źródło: [spaces/test_independent_tasks.py](../spaces/test_independent_tasks.py).
+
+- `IndependentTaskTests`: 23 metod testowych.
+- `IndependentMigrationTests`: 1 metod testowych.
+
 ### spaces/test_issue_types.py
 
 Źródło: [spaces/test_issue_types.py](../spaces/test_issue_types.py).
@@ -2314,6 +2436,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceTagTests`: 14 metod testowych.
 - `SpaceTagMigrationTests`: 1 metod testowych.
+
+### spaces/test_task_detail_parity.py
+
+Źródło: [spaces/test_task_detail_parity.py](../spaces/test_task_detail_parity.py).
+
+- `DetailParityTests`: 15 metod testowych.
 
 ### spaces/test_urls.py
 
@@ -2430,6 +2558,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [tasks/migrations/0063_remove_project_field_settings.py](../tasks/migrations/0063_remove_project_field_settings.py)
 - [tasks/migrations/0064_space_tags.py](../tasks/migrations/0064_space_tags.py)
 - [tasks/migrations/0065_space_tag_data.py](../tasks/migrations/0065_space_tag_data.py)
+- [tasks/migrations/0066_task_space_archived_taskproject_space_archived.py](../tasks/migrations/0066_task_space_archived_taskproject_space_archived.py)
 
 ### kanban
 
@@ -2498,6 +2627,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0010_work_progress_gadget.py](../dashboard/migrations/0010_work_progress_gadget.py)
 - [dashboard/migrations/0011_default_dashboard.py](../dashboard/migrations/0011_default_dashboard.py)
 - [dashboard/migrations/0012_dashboard_slugs.py](../dashboard/migrations/0012_dashboard_slugs.py)
+- [dashboard/migrations/0013_remove_notificationstate_notification_exactly_one_source_and_more.py](../dashboard/migrations/0013_remove_notificationstate_notification_exactly_one_source_and_more.py)
 
 ### planner
 
@@ -2529,3 +2659,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [spaces/migrations/0003_space_avatar_space_avatar_photo.py](../spaces/migrations/0003_space_avatar_space_avatar_photo.py)
 - [spaces/migrations/0004_issue_types.py](../spaces/migrations/0004_issue_types.py)
 - [spaces/migrations/0005_space_slugs.py](../spaces/migrations/0005_space_slugs.py)
+- [spaces/migrations/0006_independent_space_tasks.py](../spaces/migrations/0006_independent_space_tasks.py)
+- [spaces/migrations/0007_archive_import_sources.py](../spaces/migrations/0007_archive_import_sources.py)
+- [spaces/migrations/0008_spacetask_reminder_at_spacetask_task_type_and_more.py](../spaces/migrations/0008_spacetask_reminder_at_spacetask_task_type_and_more.py)
+- [spaces/migrations/0009_import_task_membership_dates.py](../spaces/migrations/0009_import_task_membership_dates.py)

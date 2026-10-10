@@ -174,6 +174,14 @@ def _recent_search_results(request):
             results[(model._meta.label_lower, obj.pk)] = _global_search_result(
                 obj.name if is_project else obj.title, type_label, url, icon, meta,
             )
+    from spaces.models import Space, SpaceTask
+    from spaces.services import visible_spaces, visible_items, task_url, space_url
+    ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == Space._meta.label_lower]
+    for obj in visible_spaces(request).filter(pk__in=ids):
+        results[(Space._meta.label_lower, obj.pk)] = _global_search_result(obj.name, 'Przestrzeń', space_url(request, obj), 'layers', obj.key)
+    ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == SpaceTask._meta.label_lower]
+    for item in visible_items(request).filter(task_id__in=ids):
+        results[(SpaceTask._meta.label_lower, item.task_id)] = _global_search_result(item.task.title, 'Zadanie', task_url(request, item.task), 'list-checks', f'{item.key} · {item.space.name}')
     return [results[tuple(entry['identity'][2:])] for entry in entries
             if tuple(entry['identity'][2:]) in results][:GLOBAL_SEARCH_RECENT_LIMIT]
 
@@ -271,6 +279,16 @@ def global_search(request):
             'has_more': False,
         })
 
+    from spaces.services import visible_items, visible_spaces, task_url, space_url
+    groups.extend([
+        _global_search_group('space_tasks', 'Zadania przestrzeni', 'list-checks',
+            visible_items(request).filter(Q(task__title__icontains=query) | Q(key__icontains=query) | Q(task__description__icontains=query) | Q(task__activities__message__icontains=query)).distinct().order_by('-task__created_at', '-pk'),
+            lambda item: _global_search_result(item.task.title, 'Podzadanie' if item.task.parent_id else 'Zadanie', task_url(request, item.task), '', f'{item.key} · {item.space.name}')),
+        _global_search_group('spaces', 'Przestrzenie', 'layers',
+            visible_spaces(request).filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(key__icontains=query)).order_by('name', 'pk'),
+            lambda space: _global_search_result(space.name, 'Przestrzeń', space_url(request, space), '', space.key)),
+    ])
+
     groups.extend((
         _global_search_group(
             'tasks',
@@ -295,7 +313,7 @@ def global_search(request):
         ),
         _global_search_group(
             'projects',
-            'Przestrzenie',
+            'Starsze projekty',
             'folders',
             _ranked_search_queryset(
                 project_queryset.select_related('company', 'responsible_user').distinct(),
@@ -304,7 +322,7 @@ def global_search(request):
             ).order_by('_global_search_rank', 'name', 'id'),
             lambda project: _global_search_result(
                 project.name,
-                'Przestrzeń',
+                'Projekt',
                 _workspace_app_url(workplace, 'space', f'{project.space.slug}/') if hasattr(project, 'space') else _search_url(tasks_url, project=project.id),
                 '',
                 ' · '.join(part for part in (project.code, project.company.name if project.company_id else '') if part),

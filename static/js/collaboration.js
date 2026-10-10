@@ -37,7 +37,8 @@
         const menu = composer.querySelector('[data-mention-menu]');
         const status = composer.querySelector('[data-mention-status]');
         const people = JSON.parse(document.getElementById('mention-people').textContent);
-        const mentionValues = input.form.querySelector('[data-mention-values]');
+        const mentionValues = input.form?.querySelector('[data-mention-values]');
+        if (!mentionValues) return;
         let previousValue = input.value;
         // Keep the chosen account attached to its visible text while the user edits.
         const initialMentions = JSON.parse(mentionValues.value || '[]');

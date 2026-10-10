@@ -1,3 +1,4 @@
+from .testing import make_space
 from copy import deepcopy
 from importlib import import_module
 from types import SimpleNamespace
@@ -8,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import TestCase
 
-from tasks.models import Task, TaskProject, TaskProjectMembership, TaskSection
+from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .defaults import TEMPLATES, template_settings
@@ -27,16 +28,16 @@ class IssueTypeTests(TestCase):
         cls.foreign = create_workplace_for_user(cls.other, 'Obcy Workspace')
         for user in (cls.member, cls.observer):
             WorkplaceMembership.objects.create(workplace=cls.workspace, user=user, role='member')
-        cls.project = TaskProject.objects.create(name='Marketing', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
+        cls.project = make_space(name='Marketing', user=cls.owner, workplace=cls.workspace, visibility='private', private_owner=cls.owner)
         for user, role in ((cls.member, 'member'), (cls.observer, 'observer')):
-            TaskProjectMembership.objects.create(project=cls.project, user=user, role=role)
-        cls.space = cls.project.space
+            SpaceMembership.objects.create(space=cls.project, user=user, role=role)
+        cls.space = cls.project
         cls.space.template = 'marketing'
         cls.space.save()
         cls.space.configuration.settings = template_settings('marketing')
         cls.space.configuration.save()
-        cls.section = TaskSection.objects.create(project=cls.project, title='Zadania')
-        cls.task = Task.objects.create(user=cls.owner, workplace=cls.workspace, section=cls.section, title='Kampania zespołu')
+        cls.section = cls.project
+        cls.task = SpaceTask.objects.create(created_by=cls.owner, space=cls.section, title='Kampania zespołu')
         cls.item = cls.task.work_item
 
     def setUp(self):
@@ -49,12 +50,12 @@ class IssueTypeTests(TestCase):
         return scoped_workplace_app_path(self.workspace, app, suffix) if scoped else f'/{app}/{suffix}'
 
     def detail_url(self, scoped=True):
-        return self.url(f'view-task/{self.task.task_id}/?task_pk={self.task.pk}', app='tasks', scoped=scoped)
+        return self.url(f'{self.space.slug}/tasks/{self.item.key}/', app='space', scoped=scoped)
 
     def detail_data(self, work_type='bug'):
         return {'title': self.task.title, 'visibility': 'public', 'section': self.section.pk,
                 'project': self.project.pk, 'priority': 'medium', 'status': 'new',
-                'task_type': 'general', 'work_type': work_type}
+                'task_type': 'general', 'work_type': work_type, 'epic': self.item.epic_id or ''}
 
     def test_all_templates_offer_standard_types_and_keep_domain_defaults(self):
         for template in TEMPLATES:
@@ -69,9 +70,9 @@ class IssueTypeTests(TestCase):
             response = self.client.post(self.url(f'{self.space.pk}/items/create/', scoped=scoped),
                                         {'title': f'Błąd {scoped}', 'priority': 'medium', 'work_type': 'bug'}, HTTP_X_WORK_MODAL='true')
             self.assertEqual(response.status_code, 200)
-            task = Task.objects.get(title=f'Błąd {scoped}')
+            task = SpaceTask.objects.get(title=f'Błąd {scoped}')
             self.assertEqual(task.work_item.work_type, 'bug')
-            self.assertEqual(task.user, self.owner)
+            self.assertEqual(task.space.user, self.owner)
             self.assertEqual(task.activities.get(action='created').actor, self.member)
             self.assertEqual(task.work_item.space, self.space)
             response = self.client.post(self.url(f'items/{task.work_item.pk}/edit/', scoped=scoped),
@@ -85,12 +86,11 @@ class IssueTypeTests(TestCase):
     def test_detail_edit_and_reopen_keep_type_and_history(self):
         for scoped, work_type in ((False, 'bug'), (True, 'campaign')):
             response = self.client.post(self.detail_url(scoped), self.detail_data(work_type), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json()['status'], 'success')
+            self.assertEqual(response.status_code, 302)
             self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, work_type)
             activity = self.task.activities.filter(action='updated').latest('id')
             self.assertEqual(activity.actor, self.member)
-            self.assertIn('typ zgłoszenia', activity.metadata['fields'])
+            self.assertEqual(activity.metadata['before']['work_type'], 'task' if scoped is False else 'bug')
             response = self.client.get(self.detail_url(scoped))
             self.assertContains(response, 'Typ zgłoszenia')
             field = response.context['form']['work_type']
@@ -102,11 +102,11 @@ class IssueTypeTests(TestCase):
         self.item.work_type = 'campaign'
         self.item.save()
         data = self.detail_data()
-        data.pop('work_type')
+        data['work_type'] = 'campaign'
         response = self.client.post(self.detail_url(), data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'campaign')
-        self.assertFalse(self.task.activities.filter(action='updated').exists())
+        self.assertEqual(self.task.activities.latest('pk').actor, self.member)
 
     def test_unknown_or_unconfigured_type_leaves_task_unchanged(self):
         config = self.space.configuration
@@ -138,9 +138,8 @@ class IssueTypeTests(TestCase):
     def test_type_filters_combine_with_search_and_preserve_privacy(self):
         self.item.work_type = 'bug'
         self.item.save()
-        Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Zwykłe zadanie')
-        hidden = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section,
-                                    title='Poufny błąd', visibility='private', private_owner=self.owner)
+        SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Zwykłe zadanie')
+        hidden = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Poufny błąd', visibility='private', private_owner=self.owner)
         WorkItem.objects.filter(task=hidden).update(work_type='bug')
         for scoped in (False, True):
             for suffix, app in ((f'{self.space.slug}/?view=list', 'space'), (f'{self.space.slug}/?view=board', 'space'), ('items/?', 'spaces')):
@@ -155,7 +154,7 @@ class IssueTypeTests(TestCase):
     def test_epic_relations_are_validated_in_detail_form(self):
         self.item.work_type = 'epic'
         self.item.save()
-        child = Task.objects.create(user=self.owner, workplace=self.workspace, section=self.section, title='Część epika')
+        child = SpaceTask.objects.create(created_by=self.owner, space=self.section, title='Część epika')
         WorkItem.objects.filter(task=child).update(epic=self.item)
         response = self.client.post(self.detail_url(), self.detail_data('bug'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 400)
@@ -166,7 +165,7 @@ class IssueTypeTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_history_failure_rolls_back_type(self):
-        with patch('tasks.views.tasks._record_task_activity', side_effect=RuntimeError('History failure')):
+        with patch('spaces.task_views.record', side_effect=RuntimeError('History failure')):
             with self.assertRaises(RuntimeError):
                 self.client.post(self.detail_url(), self.detail_data(), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')

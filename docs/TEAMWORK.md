@@ -418,3 +418,25 @@ oraz jawne przełączenie kontekstu.
 `workplaces/test_invitation_candidates.py` obejmuje podpowiedzi, limit, uprawnienia,
 wykluczenia w wybranym Workspace, cofnięcie dostępu, escapowanie danych i ponowną
 walidację zapisu po zmianie członkostwa.
+
+
+## Dostęp do niezależnych zadań przestrzeni (10.10.2026)
+
+Nowy system używa `SpaceMembership` i `SpaceTaskMembership`; role starszych
+projektów, grup i zadań nie sterują jego bieżącymi uprawnieniami.
+`spaces.access` sprawdza aktywne członkostwo Workspace, prywatność przestrzeni
+i całe drzewo rodziców. Obserwator dowolnego poziomu ma wyłącznie odczyt.
+Udostępnienie zadania nie udostępnia przestrzeni ani rodziców.
+
+Właściciel prywatnego zadania zmienia widoczność i administratorów;
+administrator zadania zarządza zwykłymi członkami i obserwatorami.
+Kandydat jest aktywną osobą Workspace z dostępem do przestrzeni i rodziców.
+Endpoint po blokadzie ponownie sprawdza autora, kandydata i zakres.
+Zmiana widoczności na dziedziczoną czyści członkostwa samego zadania,
+pozostawiając niezależne prywatne podzadania.
+
+`spaces/signals.py` czyści udostępnienia po usunięciu lub dezaktywacji członka
+Workspace, usunięciu członka prywatnej przestrzeni lub prywatnego rodzica.
+Ponowne dodanie nie przywraca tych dostępów. `QuerySet.update()` pomija
+sygnały i wymaga jawnego czyszczenia. Historyczne uprawnienia zostały
+jednorazowo odwzorowane podczas migracji opisanej w [SPACES.md](SPACES.md).

@@ -2103,13 +2103,9 @@ def _tag_window_for_request(request, space):
         owner=owner,
         workplace=workplace,
         space=space,
-    ).annotate(
-        total_tasks=Count(
-            'tasks',
-            filter=_tag_task_count_filter(workspace_owner(request), workplace, viewer=request.user),
-            distinct=True,
-        )
     )
+    from spaces.services import visible_items
+    queryset = queryset.annotate(total_tasks=Count('space_tasks', filter=Q(space_tasks__pk__in=visible_items(request).filter(task__parent__isnull=True).values('task_id')), distinct=True))
     queryset = _tag_sort_queryset(queryset, sort)
     total_tags = queryset.count()
     total_pages = max(1, (total_tags + page_size - 1) // page_size)
@@ -2919,9 +2915,6 @@ def _tasks_navigation_context(user, active_section=None, active_view=None, workp
 def _set_task_status(task, status):
     valid_statuses = {choice for choice, _label in Task.STATUS_CHOICES}
     if status not in valid_statuses:
-        return False
-    from spaces.services import category_transition_allowed
-    if not category_transition_allowed(task, status):
         return False
     task.status = status
     task.save(update_fields=['status', 'is_completed', 'completion_date'])
@@ -4111,11 +4104,10 @@ def bulk_update_status(request):
         tasks_to_update = _filter_workplace(visible_to(Task.objects.all(), request.user).filter(pk__in=task_pks, user=user), workplace)
         updated_count = 0
         with lock_task_numbers(user.pk):
+            if _filter_workplace(Task.objects.filter(pk__in=task_pks, user=user, space_archived=True), workplace).exists():
+                return JsonResponse({'status': 'error', 'message': 'Zadania przestrzeni zmieniaj w ich przestrzeni.'}, status=404)
             require_editable(tasks_to_update, request.user)
             locked_tasks = list(tasks_to_update.select_for_update())
-            from spaces.services import category_transition_allowed
-            if any(not category_transition_allowed(task, status) for task in locked_tasks):
-                return JsonResponse({'status': 'error', 'message': 'Przestrzeń nie pozwala na tę zmianę statusu dla wszystkich zaznaczonych zadań.'}, status=400)
             for task in locked_tasks:
                 previous_status = task.status
                 _set_task_status(task, status)

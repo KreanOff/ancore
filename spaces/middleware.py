@@ -1,13 +1,12 @@
-"""Compatibility links for imported Kanban records, checked against live Task ACLs."""
+"""Compatibility links for imported records, checked against live Space ACLs."""
 from django.http import Http404, JsonResponse
 from django.db.models import Q
 from django.shortcuts import redirect
 
-from tasks.access import visible_to
 from tasks.models import Task, TaskAttachment, TaskCommentImage
 from workplaces.services import workspace_owner
-from .models import LegacyKanbanLink
-from .services import app_url, space_url, task_url, visible_spaces
+from .models import LegacyKanbanLink, SpaceTaskFile, WorkItem
+from .services import app_url, space_url, task_url, visible_items, visible_spaces
 
 
 class LegacyKanbanMiddleware:
@@ -19,6 +18,33 @@ class LegacyKanbanMiddleware:
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         match = request.resolver_match
+        if request.user.is_authenticated and match.app_name in {'tasks', 'workplace_tasks'} and match.url_name in {'view-task', 'view-subtask', 'download_attachment', 'comment_image'}:
+            owner = workspace_owner(request)
+            if match.url_name in {'view-task', 'view-subtask'}:
+                source = Task.objects.filter(user=owner, workplace=request.workplace)
+                task_pk = request.GET.get('task_pk', '')
+                source = source.filter(pk=task_pk) if task_pk.isdecimal() and len(task_pk) < 19 else source.none() if task_pk else source.filter(task_id=view_kwargs['task_id'])
+                imported = WorkItem.objects.filter(legacy_task__in=source, task__isnull=False).first()
+                if imported:
+                    item = visible_items(request).filter(pk=imported.pk).first()
+                    if not item:
+                        raise Http404
+                    url = task_url(request, item.task)
+                    if request.method not in {'GET', 'HEAD'}:
+                        return JsonResponse({'error': 'Otwórz zadanie w jego przestrzeni.', 'url': url}, status=409)
+                    return redirect(url)
+            else:
+                attachment = match.url_name == 'download_attachment'
+                model = TaskAttachment if attachment else TaskCommentImage
+                source = model.objects.filter(pk=view_kwargs.get('attachment_id') if attachment else view_kwargs.get('image_id')).first()
+                task = source.task if source and attachment else source.activity.task if source else None
+                if task and (task.user_id, task.workplace_id) == (owner.pk, request.workplace.pk):
+                    item = visible_items(request).filter(legacy_task=task).first()
+                    if item:
+                        file = SpaceTaskFile.objects.filter(task=item.task, file=source.file.name, legacy_storage=attachment).first()
+                        if not file:
+                            raise Http404
+                        return redirect(space_url(request, item.space, f'tasks/{item.key}/files/{file.pk}/'))
         if not request.user.is_authenticated or match.app_name not in {'kanban', 'workplace_kanban'}:
             return None
         owner = workspace_owner(request)
@@ -44,10 +70,10 @@ class LegacyKanbanMiddleware:
             link = LegacyKanbanLink.objects.filter(kind='task', source_id__in=source.values('pk')).first()
             if not link:
                 raise Http404
-            task = visible_to(Task.objects.filter(user=owner, workplace=request.workplace), request.user).filter(pk=link.target_id).first()
-            if not task:
+            item = visible_items(request).filter(legacy_task_id=link.target_id).first()
+            if not item:
                 raise Http404
-            return redirect(task_url(request, task))
+            return redirect(task_url(request, item.task))
         if name in {'download_attachment', 'comment_image'}:
             attachment = name == 'download_attachment'
             kind, model = ('attachment', TaskAttachment) if attachment else ('comment', TaskCommentImage)
@@ -55,10 +81,15 @@ class LegacyKanbanMiddleware:
             link = LegacyKanbanLink.objects.filter(kind=kind, source_id=source_id).first()
             path = 'task' if attachment else 'activity__task'
             files = model.objects.filter(**{path + '__user': owner, path + '__workplace': request.workplace})
-            if not link or not visible_to(files.filter(pk=link.target_id), request.user).exists():
+            imported = files.filter(pk=link.target_id).first() if link else None
+            task_id = imported.task_id if imported and attachment else imported.activity.task_id if imported else None
+            item = visible_items(request).filter(legacy_task_id=task_id).first() if imported else None
+            if not item:
                 raise Http404
-            suffix = f'attachments/{link.target_id}/download/' if attachment else f'comment-images/{link.target_id}/'
-            return redirect(app_url(request, suffix, 'tasks'))
+            file = SpaceTaskFile.objects.filter(task=item.task, file=imported.file.name, legacy_storage=attachment).first()
+            if not file:
+                raise Http404
+            return redirect(space_url(request, item.space, f'tasks/{item.key}/files/{file.pk}/'))
         section_id = view_kwargs.get('section_id') or request.GET.get('section')
         project_id = request.GET.get('project')
         if section_id or project_id:
@@ -69,10 +100,6 @@ class LegacyKanbanMiddleware:
             space = visible_spaces(request).filter(pk=link.space_id).first() if link else None
             if not space:
                 raise Http404
-            if section_id:
-                from tasks.models import TaskSection
-                if not visible_to(TaskSection.objects.filter(pk=link.target_id), request.user).exists():
-                    raise Http404
-            suffix = f'?view=board&group={link.target_id}' if section_id else ''
+            suffix = '?view=board' if section_id else ''
             return redirect(space_url(request, space, suffix))
         return redirect(app_url(request))

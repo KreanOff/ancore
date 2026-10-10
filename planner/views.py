@@ -127,6 +127,12 @@ def events_list(request):
         due_at__gte=start, due_at__lte=end,
     ).exclude(status='closed').select_related('workplace')
     payload.extend(_task_payload(task) for task in tasks)
+    from spaces.services import visible_items, task_url
+    for item in visible_items(request).filter(task__due_at__gte=start, task__due_at__lte=end).exclude(task__status='closed'):
+        due = timezone.localtime(item.task.due_at).isoformat()
+        payload.append({'id': f'space_tasks:{item.task_id}', 'source': 'tasks', 'title': f'{item.key} · {item.task.title}',
+                        'description': item.task.description, 'start': due, 'end': due, 'all_day': False, 'color': 'blue',
+                        'status': item.task.status, 'url': task_url(request, item.task)})
     response = JsonResponse({
         'status': 'success',
         'events': sorted(payload, key=lambda item: (item['start'], str(item['id']))),

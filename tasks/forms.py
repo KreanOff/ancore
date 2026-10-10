@@ -217,24 +217,8 @@ class TaskForm(TaskAccessForm):
         self.fields['assignee'].label = 'Przypisane do'
         self.fields['task_type'].label = 'Kategoria zadania'
         self.fields['task_type'].required = False
-        from spaces.defaults import template_settings
-        from spaces.models import WorkItem
-        from spaces.widgets import IssueTypeSelect
-        self.issue_item = WorkItem.objects.filter(task=self.instance).select_related('space__configuration').first() if self.instance.pk else None
-        type_section = current_section
-        if self.is_bound and not self.instance.pk:
-            section_value = self.data.get(self.add_prefix('section'), '')
-            type_section = sections.filter(pk=int(section_value)).first() if section_value.isdecimal() and len(section_value) < 19 and user else None
-            parent_value = self.data.get(self.add_prefix('parent'), '')
-            if parent_value.isdecimal() and len(parent_value) < 19:
-                type_parent = self.fields['parent'].queryset.filter(pk=int(parent_value)).first()
-                if type_parent:
-                    type_section = type_parent.section
-        type_space = getattr(type_section.project, 'space', None) if type_section else None
-        config = type_space.configuration.settings if type_space else template_settings()
-        self.fields['work_type'].widget = IssueTypeSelect(attrs={'class': 'form-input'})
-        self.fields['work_type'].choices = [(row['key'], row['label']) for row in config['types']]
-        self.initial['work_type'] = self.issue_item.work_type if self.issue_item else config['types'][0]['key']
+        self.issue_item = None
+        del self.fields['work_type']
         if self.instance.pk:
             del self.fields['project']
             del self.fields['section']
@@ -242,10 +226,6 @@ class TaskForm(TaskAccessForm):
     def clean(self):
         cleaned_data = super().clean()
         parent = cleaned_data.get('parent')
-        if self.instance.pk and cleaned_data.get('status'):
-            from spaces.services import category_transition_allowed
-            if not category_transition_allowed(self.instance, cleaned_data['status']):
-                self.add_error('status', 'To przejście statusu nie jest dozwolone w przestrzeni.')
         project = cleaned_data.get('project')
         section = self.instance.section if self.instance.pk else cleaned_data.get('section')
         if parent and not self.instance.pk:
@@ -261,22 +241,7 @@ class TaskForm(TaskAccessForm):
             self.add_error('section', 'Wybierz grupę z wybranego projektu.')
         if project and not section and 'section' not in self.errors:
             self.add_error('section', 'Wybierz grupę z wybranego projektu lub usuń wybór projektu.')
-        work_type = cleaned_data.get('work_type')
-        if self.issue_item and work_type:
-            if self.issue_item.epic_items.exists() and work_type != 'epic':
-                self.add_error('work_type', 'Najpierw odłącz zadania należące do tego epika.')
-            if work_type == 'epic' and self.issue_item.epic_id:
-                self.add_error('work_type', 'Najpierw odłącz zadanie od epika w „Planowanie i zespół”.')
         return cleaned_data
-
-    def _save_m2m(self):
-        super()._save_m2m()
-        if self.cleaned_data.get('work_type'):
-            from spaces.models import WorkItem
-            item = WorkItem.objects.select_for_update().get(task=self.instance)
-            item.work_type = self.cleaned_data['work_type']
-            item.save(update_fields=['work_type'])
-            self.instance._state.fields_cache.pop('work_item', None)
 
     def clean_task_type(self):
         return self.cleaned_data.get('task_type') or 'general'
@@ -335,74 +300,12 @@ class TaskForm(TaskAccessForm):
         }
 
 
-class TaskWorkLogForm(forms.ModelForm):
-    hours = forms.IntegerField(label='Godziny', min_value=0, required=False,
-                               widget=forms.NumberInput(attrs={'class': 'form-input', 'step': 1}))
-    minutes = forms.IntegerField(label='Minuty', min_value=0, max_value=59, required=False,
-                                 widget=forms.NumberInput(attrs={'class': 'form-input', 'step': 1}))
-    calculation_mode = forms.ChoiceField(choices=[('interval', 'Przedział czasu'), ('duration', 'Czas poświęcony')],
-                                        required=False, initial='interval', widget=forms.HiddenInput())
+from core.work_logs import TimeLogForm
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['started_at'].required = False
-        self.fields['ended_at'].required = False
-        if self.is_bound:
-            self.data = self.data.copy()
-            # Only the last edited side is authoritative. Ignore stale derived values.
-            if self.data.get(self.add_prefix('calculation_mode')) == 'duration':
-                self.data[self.add_prefix('started_at')] = ''
-            else:
-                self.data[self.add_prefix('hours')] = ''
-                self.data[self.add_prefix('minutes')] = ''
-        elif self.instance.pk:
-            self.initial['hours'], self.initial['minutes'] = divmod(self.instance.duration_minutes, 60)
 
-    class Meta:
+class TaskWorkLogForm(TimeLogForm):
+    class Meta(TimeLogForm.Meta):
         model = TaskWorkLog
-        fields = ['started_at', 'ended_at', 'description']
-        widgets = {
-            'started_at': DateTimeLocalInput(attrs={'class': 'form-input', 'step': 60}),
-            'ended_at': DateTimeLocalInput(attrs={'class': 'form-input', 'step': 60}),
-            'description': forms.Textarea(attrs={'class': 'form-input', 'rows': 4, 'placeholder': 'Opisz wykonaną pracę…'}),
-        }
-
-    def clean(self):
-        cleaned = super().clean()
-        start, end = cleaned.get('started_at'), cleaned.get('ended_at')
-        mode = cleaned.get('calculation_mode') or 'interval'
-        if mode == 'duration':
-            if end is None and 'ended_at' not in self.errors:
-                end = timezone.now().replace(second=0, microsecond=0)
-                cleaned['ended_at'] = end
-                self.data[self.add_prefix('ended_at')] = timezone.localtime(end).strftime('%Y-%m-%dT%H:%M')
-            if 'hours' not in self.errors and 'minutes' not in self.errors:
-                minutes = (cleaned.get('hours') or 0) * 60 + (cleaned.get('minutes') or 0)
-                if minutes <= 0:
-                    self.add_error('minutes', 'Podaj czas poświęcony większy od zera.')
-                elif end:
-                    try:
-                        start = end.astimezone(UTC) - timedelta(minutes=minutes)
-                        cleaned['started_at'] = start
-                        self.data[self.add_prefix('started_at')] = timezone.localtime(start).strftime('%Y-%m-%dT%H:%M')
-                    except (OverflowError, ValueError):
-                        self.add_error('hours', 'Podany czas poświęcony jest zbyt długi.')
-        else:
-            for name in ('started_at', 'ended_at'):
-                if cleaned.get(name) is None and name not in self.errors:
-                    self.add_error(name, 'To pole jest wymagane.')
-            if start and end and end > start:
-                total = int((end.astimezone(UTC) - start.astimezone(UTC)).total_seconds() // 60)
-                cleaned['hours'], cleaned['minutes'] = divmod(total, 60)
-                for name in ('hours', 'minutes'):
-                    self.data[self.add_prefix(name)] = cleaned[name]
-        for name in ('started_at', 'ended_at'):
-            value = cleaned.get(name)
-            if value and (value.second or value.microsecond):
-                self.add_error(name, 'Podaj czas z dokładnością do pełnej minuty.')
-        if start and end and end <= start:
-            self.add_error('ended_at', 'Zakończenie musi być późniejsze niż rozpoczęcie.')
-        return cleaned
 
 
 class TaskProjectBaseForm(forms.ModelForm):

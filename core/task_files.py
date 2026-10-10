@@ -9,6 +9,8 @@ def delete_after_commit(instance, using, *, comment=False):
     storage, name = instance.file.storage, instance.file.name
     models = [('tasks', 'TaskCommentImage'), ('kanban', 'KanbanCommentImage')] if comment else [('tasks', 'TaskAttachment'), ('kanban', 'KanbanAttachment')]
 
+    models.append(('spaces', 'SpaceTaskFile'))
+
     def cleanup():
         if not any(apps.get_model(app, model).objects.using(using).filter(file=name).exists() for app, model in models):
             storage.delete(name)

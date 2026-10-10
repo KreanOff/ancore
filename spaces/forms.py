@@ -7,14 +7,16 @@ from django.utils import timezone
 
 from accounts.widgets import UserChoiceField
 from core.upload_validation import validate_image_upload
-from tasks.access import editable_to
-from tasks.models import Task, TaskSection, TaskTag
+from .access import editable_to
+from tasks.models import TaskTag
+from core.work_logs import TimeLogForm
+from .models import SpaceTask, SpaceTaskWorkLog
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
 from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, visible_items, visible_spaces
-from .widgets import IssueTypeSelect
+from .widgets import IssueTypeSelect, TaskVisibilitySelect
 
 
 class StyledForm(forms.Form):
@@ -65,7 +67,7 @@ class SpaceForm(StyledForm):
     def __init__(self, *args, request, space=None, **kwargs):
         self.request, self.space = request, space
         if space:
-            kwargs['initial'] = {'name': space.project.name, 'description': space.project.description, 'key': space.key, 'kind': space.kind, 'template': space.template, 'management': space.management, 'configuration': space.configuration_id if space.configuration.shared else None, 'visibility': space.project.visibility}
+            kwargs['initial'] = {'name': space.name, 'description': space.description, 'key': space.key, 'kind': space.kind, 'template': space.template, 'management': space.management, 'configuration': space.configuration_id if space.configuration.shared else None, 'visibility': space.visibility}
         super().__init__(*args, **kwargs)
         if not space:
             self.template_options = [
@@ -86,7 +88,7 @@ class SpaceForm(StyledForm):
             # Changing templates/configuration requires an explicit migration of active work.
             for field in ('key', 'kind', 'template', 'management', 'configuration'):
                 self.fields[field].disabled = True
-            if space.project.visibility == 'private' and space.project.private_owner_id != request.user.pk:
+            if space.visibility == 'private' and space.private_owner_id != request.user.pk:
                 self.fields['visibility'].disabled = True
 
     def clean(self):
@@ -107,24 +109,25 @@ class ItemForm(StyledForm):
     title = forms.CharField(label='Tytuł', max_length=255)
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     work_type = forms.ChoiceField(label='Typ zgłoszenia', widget=IssueTypeSelect)
-    priority = forms.ChoiceField(label='Priorytet', choices=Task.PRIORITY_CHOICES, initial='medium')
+    priority = forms.ChoiceField(label='Priorytet', choices=SpaceTask.PRIORITY_CHOICES, initial='medium')
     tags = forms.ModelMultipleChoiceField(label='Tagi', queryset=TaskTag.objects.none(), required=False, widget=forms.SelectMultiple(attrs={
         'data-ancore-custom-select-search': 'true', 'data-ancore-custom-select-search-placeholder': 'Szukaj tagów',
     }))
     assignee = UserChoiceField(label='Wykonawca', queryset=None, required=False, empty_label='Brak osoby')
     team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False)
-    section = forms.ModelChoiceField(label='Grupa', queryset=TaskSection.objects.none(), required=False, empty_label='Domyślna grupa przestrzeni')
     in_backlog = forms.BooleanField(label='Umieść w backlogu', required=False)
     sprint = forms.ModelChoiceField(label='Sprint', queryset=Sprint.objects.none(), required=False)
     epic = forms.ModelChoiceField(label='Epik', queryset=WorkItem.objects.none(), required=False)
     points = forms.IntegerField(label='Estymacja (punkty)', min_value=0, max_value=10000, required=False)
     start_on = forms.DateField(label='Planowane rozpoczęcie', required=False, widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}))
+    task_type = forms.ChoiceField(label='Kategoria zadania', choices=SpaceTask.TASK_TYPE_CHOICES, required=False, initial='general')
+    reminder_at = forms.DateTimeField(label='Przypomnienie', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'title': 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela zadania lub przestrzeni.'}))
     due_at = forms.DateTimeField(label='Termin wykonania', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
 
     def __init__(self, *args, request, space, item=None, **kwargs):
         self.request, self.space, self.item = request, space, item
         if item:
-            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_on')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'section', 'due_at')}}
+            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_on')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at')}}
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
         from tasks.tagging import tags_in_scope
@@ -134,9 +137,6 @@ class ItemForm(StyledForm):
         self.fields['work_type'].choices = [(t['key'], t['label']) for t in config['types']]
         self.fields['assignee'].queryset = workplace_people(request.workplace)
         self.fields['team'].queryset = teams_for(request).filter(spaces=space)
-        self.fields['section'].queryset = editable_to(TaskSection.objects.filter(project=space.project), request.user)
-        if item:
-            del self.fields['section']
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
         self.fields['epic'].queryset = visible_items(request).filter(space=space, work_type='epic').exclude(pk=getattr(item, 'pk', None))
         self.fields['epic'].label_from_instance = lambda epic: f'{epic.key} · {epic.task.title}'
@@ -168,6 +168,43 @@ class ItemForm(StyledForm):
         if data.get('start_on') and data.get('due_at') and data['start_on'] > timezone.localtime(data['due_at']).date():
             self.add_error('due_at', 'Termin nie może być wcześniejszy niż rozpoczęcie.')
         return data
+
+
+class DetailForm(ItemForm):
+    """Issue properties with the existing planning values submitted unchanged."""
+    visibility = forms.ChoiceField(label='Widoczność', required=False, choices=[('private', 'Prywatne — wybrane osoby'), ('public', 'Publiczne — dostęp odziedziczony')], widget=TaskVisibilitySelect)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .services import manage_space
+        task = self.item.task
+        self.initial['visibility'] = task.visibility
+        owner = task.private_owner_id == self.request.user.pk if task.visibility == 'private' else manage_space(self.request, self.space)
+        self.fields['visibility'].disabled = not owner
+
+    def clean_visibility(self):
+        return self.cleaned_data.get('visibility') or self.item.task.visibility
+
+    def clean_task_type(self):
+        return self.cleaned_data.get('task_type') or (self.item.task.task_type if self.item else 'general')
+
+
+class SubtaskForm(StyledForm):
+    title = forms.CharField(label='Tytuł podzadania', max_length=255)
+    visibility = forms.ChoiceField(label='Widoczność', choices=[('public', 'Publiczne — dostęp odziedziczony'), ('private', 'Prywatne — wybrane osoby')], initial='private')
+    description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
+    status = forms.ChoiceField(label='Status')
+    due_at = forms.DateTimeField(label='Termin wykonania', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
+
+    def __init__(self, *args, space, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].choices = [(status['key'], status['label']) for status in space.statuses]
+        self.fields['status'].initial = space.statuses[0]['key']
+
+
+class WorkLogForm(TimeLogForm):
+    class Meta(TimeLogForm.Meta):
+        model = SpaceTaskWorkLog
 
 
 class SprintForm(StyledForm):
@@ -224,7 +261,7 @@ class MemberForm(StyledForm):
 class StatusForm(StyledForm):
     key = forms.RegexField(label='Klucz', regex=r'^[a-z][a-z0-9_]{0,39}$', max_length=40)
     label = forms.CharField(label='Nazwa statusu', max_length=80)
-    category = forms.ChoiceField(label='Stan zadania', choices=Task.STATUS_CHOICES, initial='new')
+    category = forms.ChoiceField(label='Stan zadania', choices=SpaceTask.STATUS_CHOICES, initial='new')
     transitions = forms.MultipleChoiceField(label='Dozwolone przejścia', required=False)
 
     def __init__(self, *args, statuses, **kwargs):

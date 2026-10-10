@@ -8,7 +8,8 @@ from django.utils import timezone
 
 from dashboard.notification_service import notification_sources
 from dashboard.recent import RECENT_SESSION_KEY
-from spaces.models import LegacyKanbanLink
+from spaces.models import LegacyKanbanLink, SpaceTask, SpaceTaskFile, SpaceMembership
+from spaces.testing import make_space
 from tasks.models import Task, TaskAttachment, TaskCommentImage, TaskProject, TaskSection
 from workplaces.models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
@@ -26,7 +27,12 @@ class RetiredKanbanTests(TestCase):
         cls.board = KanbanSection.objects.create(project=cls.project, title='ArchivedKanbanProbe board')
         cls.card = Kanban.objects.create(user=cls.owner, workplace=cls.workspace, section=cls.board, title='ArchivedKanbanProbe card', due_at=timezone.now())
         cls.activity = KanbanActivity.objects.create(task=cls.card, actor=cls.owner, kind='comment', action='commented', message='ArchivedKanbanProbe')
-        cls.current = Task.objects.create(user=cls.owner, workplace=cls.workspace, title='CurrentTaskProbe', due_at=timezone.now())
+        cls.space = make_space(user=cls.owner, workplace=cls.workspace, name='Current space')
+        cls.current = SpaceTask.objects.create(space=cls.space, created_by=cls.owner, title='CurrentTaskProbe', due_at=timezone.now())
+        cls.source = Task.objects.create(user=cls.owner, workplace=cls.workspace, title='Archived source', space_archived=True)
+        item = cls.current.work_item
+        item.legacy_task = cls.source
+        item.save()
 
     def setUp(self):
         self.login(self.owner)
@@ -79,26 +85,29 @@ class RetiredKanbanTests(TestCase):
             self.assertEqual(self.client.get(self.url(suffix)).status_code, 404)
 
     def test_imported_task_and_files_use_current_acl_and_workspace(self):
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Private import', visibility='private', private_owner=self.owner)
-        section = TaskSection.objects.create(project=project, title='Imported board')
-        self.current.section = section
-        self.current.save()
-        attachment = TaskAttachment.objects.bulk_create([TaskAttachment(task=self.current, file='kanban_attachments/preserved.txt', filename='preserved.txt', file_size=1)])[0]
-        activity = self.current.activities.create(actor=self.owner, kind='comment', action='commented')
+        self.space.visibility, self.space.private_owner = 'private', self.owner
+        self.space.save()
+        attachment = TaskAttachment.objects.bulk_create([TaskAttachment(task=self.source, file='kanban_attachments/preserved.txt', filename='preserved.txt', file_size=1)])[0]
+        activity = self.source.activities.create(actor=self.owner, kind='comment', action='commented')
         comment = TaskCommentImage.objects.bulk_create([TaskCommentImage(activity=activity, file='comment_images/kanban/preserved.png', filename='preserved.png', file_size=1)])[0]
-        for kind, source, target in (('project', self.project.pk, project.pk), ('section', self.board.pk, section.pk), ('task', self.card.pk, self.current.pk), ('attachment', 987, attachment.pk), ('comment', 988, comment.pk)):
-            LegacyKanbanLink.objects.create(kind=kind, source_id=source, target_id=target, space=project.space)
-        paths = [(f'view-task/{self.card.task_id}/?task_pk={self.card.pk}', f'view-task/{self.current.task_id}/?task_pk={self.current.pk}'), ('attachments/987/download/', f'attachments/{attachment.pk}/download/'), ('comment-images/988/', f'comment-images/{comment.pk}/')]
+        files = [SpaceTaskFile.objects.create(task=self.current, file=attachment.file.name, filename=attachment.filename, legacy_storage=True),
+                 SpaceTaskFile.objects.create(task=self.current, file=comment.file.name, filename=comment.filename)]
+        for kind, source, target in [('task', self.card.pk, self.source.pk), ('attachment', 987, attachment.pk), ('comment', 988, comment.pk)]:
+            LegacyKanbanLink.objects.create(kind=kind, source_id=source, target_id=target, space=self.space)
+        base = f'{self.space.slug}/tasks/{self.current.work_item.key}/'
+        paths = [(f'view-task/{self.card.task_id}/?task_pk={self.card.pk}', base+'?view=list'),
+                 ('attachments/987/download/', base+f'files/{files[0].pk}/'),
+                 ('comment-images/988/', base+f'files/{files[1].pk}/')]
         for suffix, target in paths:
-            self.assertRedirects(self.client.get(self.url(suffix)), self.url(target, 'tasks'), fetch_redirect_response=False)
+            self.assertRedirects(self.client.get(self.url(suffix)), self.url(target, 'space'), fetch_redirect_response=False)
             self.assertEqual(self.client.get(self.url(suffix, workplace=self.other)).status_code, 404)
         self.login(self.member)
         for suffix, target in paths:
             self.assertEqual(self.client.get(self.url(suffix)).status_code, 404)
-        project.shared_with.add(self.member)
+        SpaceMembership.objects.create(space=self.space, user=self.member)
         for suffix, target in paths:
-            self.assertRedirects(self.client.get(self.url(suffix)), self.url(target, 'tasks'), fetch_redirect_response=False)
-        project.shared_with.remove(self.member)
+            self.assertRedirects(self.client.get(self.url(suffix)), self.url(target, 'space'), fetch_redirect_response=False)
+        SpaceMembership.objects.filter(space=self.space, user=self.member).delete()
         for suffix, target in paths:
             self.assertEqual(self.client.get(self.url(suffix)).status_code, 404)
 
@@ -116,11 +125,12 @@ class RetiredKanbanTests(TestCase):
             response = self.client.get(self.url(f'?tab={tab}', 'for-you'))
             self.assertNotContains(response, 'ArchivedKanbanProbe')
         response = self.client.get(reverse('home'))
-        self.assertEqual(response.context['dashboard_totals']['total'], 1)
+        self.assertEqual(response.context['columns'][0][0]['count'], 1)
         self.assertFalse(notification_sources(self.owner)['kanban'].exists())
         now = timezone.now()
         response = self.client.get(self.url('events/', 'calendar'), {'start': (now-timedelta(days=1)).isoformat(), 'end': (now+timedelta(days=1)).isoformat()})
         self.assertEqual([event['source'] for event in response.json()['events']], ['tasks'])
+        self.assertTrue(all(event['id'].startswith('space_tasks:') for event in response.json()['events']))
         for key in ('kanban-spaces', 'kanban-boards', 'kanban-cards'):
             SidebarFavorite.objects.create(user=self.owner, workplace=self.workspace, item_key=key)
         response = self.client.get(self.url(app='spaces'))
@@ -130,11 +140,9 @@ class RetiredKanbanTests(TestCase):
                 self.assertEqual(item['url'], self.url(app='spaces'))
 
     def test_current_board_and_task_view_remain_available(self):
-        project = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Current space')
-        section = TaskSection.objects.create(project=project, title='Current group')
-        self.current.section = section
-        self.current.save()
-        response = self.client.get(self.url(f'{project.space.slug}/?view=board', 'space'))
+        response = self.client.get(self.url(f'{self.space.slug}/?view=board', 'space'))
         self.assertContains(response, self.current.title)
         self.assertContains(response, 'data-work-board')
-        self.assertEqual(self.client.get(self.url(f'view-task/{self.current.task_id}/?task_pk={self.current.pk}', 'tasks')).status_code, 200)
+        response = self.client.get(self.url(f'{self.space.slug}/tasks/{self.current.work_item.key}/', 'space'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.current.title)

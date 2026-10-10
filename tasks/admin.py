@@ -14,7 +14,7 @@ class TaskAdmin(admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == 'tags':
-            kwargs['queryset'] = db_field.remote_field.model.objects.filter(space__isnull=False)
+            kwargs['queryset'] = db_field.remote_field.model.objects.none()
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 

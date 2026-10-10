@@ -2,17 +2,19 @@
 
 Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
 szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
-aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
+aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `SpaceTask`.
 [Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
 
 ## Wspólne zadania przestrzeni
 
-Nowe listy, tablice i backlog korzystają z `Task` i metadanych `WorkItem`.
-Numer klucza przestrzeni jest trwały i niezależny od renumerowanego `task_id`.
-Dostęp nadal wyznaczają istniejące projekty, grupy i zadania. Przejścia statusów
-w nowych i dotychczasowych formularzach/statusowych endpointach podlegają
-konfiguracji przestrzeni. Stare pliki współdzielone po imporcie są usuwane
-dopiero po ostatnim odwołaniu i zatwierdzeniu transakcji. [Szczegóły](SPACES.md).
+Listy, tablice, backlog i szczegóły korzystają z `spaces.SpaceTask`
+i metadanych `WorkItem`. Numer klucza przestrzeni jest trwały; nie używa
+renumerowanego `tasks.Task.task_id`. Dostęp wyznaczają `SpaceMembership`,
+`SpaceTaskMembership` i `spaces.access`, w aktywnym Workspace i całym drzewie
+rodziców. Zapisy statusu blokują Workspace, przestrzeń, zadanie i WorkItem;
+zachowują zakończenie i autora historii. Starsze Tasks mają własny cykl statusu.
+Stare pliki współdzielone po imporcie są usuwane dopiero po ostatnim odwołaniu
+i zatwierdzeniu transakcji. [Modele, adresy, migracja i granice](SPACES.md).
 
 
 ## 1. Tożsamość, sesja i obecność
@@ -323,11 +325,12 @@ Wariant `task` obsługuje zadania główne; podzadania nie należą do katalogu 
 
 Historyczny Kanban jest wycofany: `tasks.access` deleguje jego modele do
 `kanban.access`, które zwraca pusty queryset także dla właściciela.
-Wyszukiwanie, Dashboard, „Dla ciebie” i kalendarz korzystają wyłącznie z Tasks.
+Dashboard, „Dla ciebie” i postęp pulpitów korzystają z `SpaceTask`.
+Wyszukiwanie i kalendarz uwzględniają nowe zadania oraz dostępne starsze dane.
 Powiadomienia zachowują pusty typ `kanban`, żeby historyczny identyfikator nie
 mógł zmienić stanu archiwalnej aktywności. Endpointy zespołu, ulubionych,
 obserwowania i operacji Kanbana nie są routowane. `LegacyKanbanMiddleware`
-obsługuje tylko adresy zgodności, z aktualną kontrolą dostępu Tasks.
+obsługuje tylko adresy zgodności, z aktualną kontrolą dostępu przestrzeni.
 
 Tasks oraz archiwalny kod Kanbana mają rozbudowane funkcje `*_window_for_request()`, które
 filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używają
@@ -593,14 +596,15 @@ w rozwijanym panelu pod polem górnego paska; przyciski typów filtrują pobrane
 wyniki bez zmiany uprawnień ani limitów serwera.
 
 GET `/global-search/?recent=1` przy pustej frazie zwraca do 8 ostatnio oglądanych
-zadań, projektów i grup Tasks (bez historycznego Kanbana). Korzysta z identyfikatorów
+zadań i przestrzeni oraz dostępnych starszych projektów/grup Tasks
+(bez historycznego Kanbana). Korzysta z identyfikatorów
 `dashboard.recent` zapisanych dla konta i Workspace w bieżącej sesji.
 Przy każdym odczycie ponownie stosuje `workspace_owner`, Workspace i `visible_to`;
 usunięte elementy oraz te, do których cofnięto dostęp, nie trafiają do odpowiedzi.
-Otwarcie bieżącej Przestrzeni również zapisuje jej projekt w tej historii,
+Otwarcie bieżącej Przestrzeni zapisuje jej własny identyfikator w tej historii,
 po sprawdzeniu uprawnień i wyrenderowaniu widoku. Tytuły i numery są pobierane
-z aktualnych rekordów, a linki zadań zawierają
-`task_pk`. Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
+z aktualnych rekordów. Nowe zadania używają adresu przestrzeni i klucza;
+`task_pk` dotyczy wyłącznie starszych Tasks. Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
 w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszukiwania.
 
 ## 11. Historia a powiadomienia
@@ -986,13 +990,13 @@ częściowej nawigacji, odświeżając nazwę, adresy, aktywną pozycję i fokus
 Źródło powrotu edytora przechowuje również wcześniejsze źródło katalogu;
 powrót oraz zwykły POST przywracają odpowiedni poziom zarządzania.
 
-Gadżet „Postęp pracy” ponownie stosuje `visible_to` do Tasks oglądającego,
+Gadżet „Postęp pracy” ponownie stosuje `spaces.access.visible_to` do `SpaceTask` oglądającego,
 w zakresie właściciela i aktywnego Workspace. Filtr przestrzeni sprawdza
 `visible_spaces`; utrata dostępu daje komunikat bez jej nazwy, liczników ani
 poszerzania zakresu. Usunięcie źródłowej przestrzeni usuwa jej filtrowane gadżety
 przez CASCADE, zamiast zmieniać filtr na wszystkie zadania. Usunięcie pulpitu
 usuwa wyłącznie jego konfigurację i gadżety. Postęp agreguje zadania główne
-po kanonicznym `Task.status`, bez limitu wyników; `closed / wszystkie × 100`
+po `SpaceTask.status`, bez limitu wyników; `closed / wszystkie × 100`
 jest zaokrąglany do całego procentu, a pusty zakres daje zero. `resolved` oraz
 `reopened` nie są zamknięte. Wybrana przestrzeń filtruje przez `work_item__space`,
 a przypisanie „me” dotyczy faktycznego oglądającego. Szablon

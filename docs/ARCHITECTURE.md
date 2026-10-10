@@ -23,8 +23,8 @@ Kod używa mechanizmów PostgreSQL, w tym indeksów GIN i rozszerzenia `pg_trgm`
 ancore/                 konfiguracja projektu, główny routing, WSGI/ASGI
 accounts/               użytkownik, logowanie, profil, wiele kont, obecność
 workplaces/             Workspace, aktywny kontekst, nawigacja, ulubione
-spaces/                 przestrzenie, konfiguracje, planowanie i zespoły
-tasks/                  kanoniczne zadania, uprawnienia, grupy, historia, pliki
+spaces/                 przestrzenie, własne zadania, historia, pliki, planowanie i zespoły
+tasks/                  starsze projekty, grupy i zadania oraz wspólny słownik tagów
 kanban/                 historyczne źródła kart i zgodność starych adresów
 contacts/               historyczne kontakty i firmy; bez aktywnego routingu
 planner/                wydarzenia i kalendarz
@@ -97,6 +97,7 @@ słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym
 ```mermaid
 flowchart LR
     A[accounts.User] --> W[workplaces.Workplace]
+    W --> S[spaces: Space i SpaceTask]
     W --> T[tasks]
     W --> K[kanban]
     W --> C[contacts]
@@ -105,6 +106,8 @@ flowchart LR
     C -->|Company| T
     C -->|Company| K
     T -->|TaskTag| K
+    T -->|wspólny słownik TaskTag| S
+    S --> H
     T --> H[dashboard: wyszukiwanie i historia]
     K --> H
     P --> H
@@ -137,7 +140,8 @@ flowchart LR
   Globalny katalog i jego akcje są wycofane, bez menu, Favorites i wyszukiwania.
   Kanban oraz Dokumenty zachowują historyczne powiązania.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
-  typu komentarz z Zadań, zaproszeń oraz osobistych przypomnień `TaskReminder`.
+  typu komentarz z Zadań i Przestrzeni, zaproszeń oraz osobistych przypomnień
+  `TaskReminder` i `spaces.SpaceTaskReminder`.
   Wycofany Kanban pozostaje tylko źródłem danych historycznych i mapowań importu.
   Wpisy historii zmian pozostają wyłącznie w historii obiektów.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
@@ -296,11 +300,19 @@ aby równoległe zmiany różnych elementów nie nadpisywały całej struktury.
 Aktualne ograniczenia i pozostałości historyczne są zebrane w
 [MODULES.md](MODULES.md) i [DEVELOPMENT.md](DEVELOPMENT.md).
 
-## Przestrzenie i zespoły (3.10.2026)
+## Przestrzenie i zespoły (10.10.2026)
 
-`spaces` jest warstwą organizacji istniejących `TaskProject` i `Task`, nie
-osobnym silnikiem zadań. Nowe karty tablicy to te same zadania co na liście.
-Po migracji karty Kanbana mają kanoniczne odpowiedniki w Tasks; źródła są
-zachowane i wykluczone z bieżących list. `LegacyKanbanMiddleware` obsługuje
-historyczne adresy po ustaleniu Workspace. Szczegóły migracji, modeli,
+`spaces` jest samodzielnym systemem: `Space` → `SpaceTask` → podzadanie,
+z własnym członkostwem, historią, plikami i dziennikiem pracy. `WorkItem`
+przechowuje planowanie oraz trwały klucz, np. `PRO-1`. Lista, tablica, backlog
+oraz szczegóły używają tego samego `SpaceTask`. Szczegóły pozostają pod
+`/space/<slug>/tasks/<klucz>/`, w zwykłym i scoped adresie.
+
+`tasks.TaskProject`, `TaskSection` i `Task` pozostają starszym, odrębnym
+systemem. Nowe obiekty nie tworzą rekordów po drugiej stronie. Opcjonalne
+mapowania `Space.project` i `WorkItem.legacy_task` obsługują wyłącznie import
+oraz stare linki, bez synchronizacji. Źródła importu są zachowane i archiwalne.
+`spaces.access` stosuje aktywny Workspace oraz prywatność przestrzeni i drzewa
+zadań. Dashboard, „Dla ciebie”, postęp pulpitów i wyszukiwanie korzystają
+z nowych danych; Planner uwzględnia ich terminy. Szczegóły migracji,
 konfiguracji i ograniczeń: [SPACES.md](SPACES.md).
