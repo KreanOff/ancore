@@ -293,6 +293,26 @@ Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
 
+`accounts.test_login_redirects` sprawdza wejście na „Dla ciebie” po pierwszym
+logowaniu, rejestracji i ponownym logowaniu, ignorowanie `next` z GET/POST,
+zachowanie aktywnego Workspace i scoped URL, dostęp członka, obcy Workspace,
+błędne hasło oraz CSRF. Uruchamiaj z `accounts.tests`,
+`accounts.test_email_identity`, `workplaces.test_defaults`, `workplaces.tests`
+i `dashboard.test_for_you`. Browser QA: rejestracja → logowanie → „Dla ciebie”,
+ponowne logowanie, wejście z `next` do katalogu Workspace, błędne hasło,
+aktywne menu, zwykły/scoped URL i desktop/telefon.
+
+Weryfikacja przekierowania (10.10.2026): z 127 testów powyższego zestawu
+121 przeszło, w tym wszystkie 9 nowych testów logowania. Sześć błędów
+`workplaces.tests` odtworzono z tymi samymi asercjami na niezmienionym HEAD
+w osobnej bazie. Playwright/Chrome na izolowanej bazie QA przy 1440×1000
+i 390×844 potwierdził rejestrację, pierwsze i ponowne logowanie, ignorowanie
+`next`, aktywny Workspace/scoped URL, członkostwo, błędne hasło, pusty stan,
+przeładowanie i powrót po częściowej nawigacji. Nie było błędów JavaScript
+ani przepełnienia strony. Plugin Browser był niedostępny. Kontrola Django,
+składni Pythona, linków dokumentacji, indeksu i `git diff --check` przeszła.
+Nie uruchamiano całego repozytorium ani innych przeglądarek.
+
 Awatary użytkowników wymagają migracji `accounts.0009_user_avatar`, dodającej
 pole wyboru bez zmiany dotychczasowych zdjęć. `accounts.0010_user_avatar_thirty`
 rozszerza wybór do 30 ilustracji bez zmiany danych. Uruchamiaj `accounts.test_avatars`,

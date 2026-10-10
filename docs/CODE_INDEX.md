@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
 | [core](../core) | 19 | 0 | 18 | 58 |
-| [accounts](../accounts) | 19 | 7 | 9 | 47 |
+| [accounts](../accounts) | 20 | 7 | 9 | 56 |
 | [workplaces](../workplaces) | 21 | 9 | 13 | 106 |
 | [tasks](../tasks) | 41 | 65 | 46 | 324 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
@@ -1034,7 +1034,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
-| `'login/'` | `auth_views.LoginView.as_view(template_name='accounts/login.html')` | 'login' |
+| `'login/'` | `views.AccountLoginView.as_view()` | 'login' |
 | `'logout/'` | `views.AccountLogoutView.as_view()` | 'logout' |
 | `'register/'` | `views.register` | 'register' |
 | `'profile/'` | `views.profile` | 'profile' |
@@ -1251,7 +1251,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [accounts/templatetags/__init__.py](../accounts/templatetags/__init__.py)
 - [accounts/templatetags/account_avatar.py](../accounts/templatetags/account_avatar.py) — `user_avatar`
 - [accounts/urls.py](../accounts/urls.py)
-- [accounts/views.py](../accounts/views.py) — `AccountLogoutView`, `register`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
+- [accounts/views.py](../accounts/views.py) — `AccountLoginView`, `AccountLogoutView`, `register`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
 - [accounts/widgets.py](../accounts/widgets.py) — `UserSelect`, `UserChoiceField`
 
 ### workplaces
@@ -1820,6 +1820,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `EmailIdentityTests`: 9 metod testowych.
 - `EmailIdentityMigrationTests`: 1 metod testowych.
+
+### accounts/test_login_redirects.py
+
+Źródło: [accounts/test_login_redirects.py](../accounts/test_login_redirects.py).
+
+- `LoginRedirectTests`: 9 metod testowych.
 
 ### accounts/tests.py
 

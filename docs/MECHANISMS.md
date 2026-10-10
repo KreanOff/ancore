@@ -21,6 +21,14 @@ Logowanie korzysta z Django Auth oraz `accounts.User`, gdzie `USERNAME_FIELD`
 to `email`. Profil i publiczny identyfikator są oddzielone od danych wpisu
 `Contact`. Aktualne konto jest w `request.user`.
 
+Każde udane logowanie przez `/accounts/login/` otwiera „Dla ciebie”
+(`LOGIN_REDIRECT_URL = 'for_you'`), także pierwsze logowanie po rejestracji.
+`AccountLoginView` ignoruje `next` z GET i POST, więc katalog Workspace ani
+wcześniej otwierany ekran nie zastępują strony startowej. Rejestracja nadal
+prowadzi najpierw do formularza logowania. Middleware wybiera lub tworzy
+aktywny Workspace według dotychczasowych reguł; gdy sesja ma włączony zakres
+URL, `/for-you/` przekierowuje do `/workplaces/<slug>/for-you/`.
+
 Rejestracja i profil sprawdzają e-mail bez względu na wielkość liter.
 Logowanie i dodanie kolejnego konta używają `accounts.backends.EmailBackend`
 z wyszukiwaniem `email__iexact`, również dla kont zapisanych wcześniej z wielkimi

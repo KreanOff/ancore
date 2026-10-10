@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model, login as auth_login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
@@ -18,6 +18,14 @@ from .presence import mark_user_inactive, mark_user_seen
 
 SWITCH_ACCOUNTS_SESSION_KEY = 'switch_account_user_ids'
 SWITCH_ACCOUNTS_HASHES_KEY = 'switch_account_auth_hashes'
+
+
+class AccountLoginView(LoginView):
+    template_name = 'accounts/login.html'
+
+    def get_redirect_url(self):
+        # Every login opens the same landing page, including requests with next.
+        return ''
 
 
 class AccountLogoutView(LogoutView):

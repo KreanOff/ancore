@@ -37,7 +37,7 @@ class WorkplaceSelectionTests(TestCase):
         session['active_workplace_id'] = workplace.pk
         session.save()
 
-    def test_workplace_list_is_login_destination_surface(self):
+    def test_workplace_list_remains_available_for_management(self):
         other_user = get_user_model().objects.create_user(
             username='@other.owner',
             email='other@example.com',

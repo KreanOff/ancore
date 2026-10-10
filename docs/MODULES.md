@@ -46,8 +46,8 @@ dodania z aktualnymi danymi logowania. „Usuń konto z przełącznika”
 usuwa wpis z przełącznika; nie usuwa użytkownika z bazy. Nie można w ten sposób
 usunąć jedynego pozostałego konta sesji.
 
-**Scenariusz:** rejestracja → logowanie → Workspace → profil/ustawienia →
-opcjonalnie dodanie drugiego konta → przełączenie. Statusy automatyczne i ręczne
+**Scenariusz:** rejestracja → logowanie → „Dla ciebie” w aktywnym Workspace →
+profil/ustawienia → opcjonalnie dodanie drugiego konta → przełączenie. Statusy automatyczne i ręczne
 obsługuje osobny mechanizm opisany w Mechanizmach.
 
 ## 2. Workspace — Workplaces
