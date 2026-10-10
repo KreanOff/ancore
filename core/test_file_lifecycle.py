@@ -11,6 +11,8 @@ from django.urls import clear_url_caches
 
 from documents.models import Document, DocumentLibrary, Folder
 from kanban.models import Kanban, KanbanAttachment
+from spaces.models import SpaceTask, SpaceTaskFile
+from spaces.testing import make_space
 from tasks.models import Task, TaskAttachment
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
@@ -91,9 +93,17 @@ class FileLifecycleTests(TestCase):
         for app, item in zip(('tasks', 'kanban'), items):
             suffix = f'attachments/{item.pk}/download/'
             response = self.client.get(scoped_workplace_app_path(self.workspace, app, suffix))
+            self.assertEqual(response.status_code, 404)
             if app == 'kanban':
-                self.assertEqual(response.status_code, 404)
                 continue
+            space = make_space(user=self.owner, workplace=self.workspace, name='Imported files')
+            task = SpaceTask.objects.create(space=space, created_by=self.owner, title='Imported task')
+            work_item = task.work_item
+            work_item.legacy_task = item.task
+            work_item.save()
+            SpaceTaskFile.objects.create(task=task, file=item.file.name, filename=item.filename, legacy_storage=True)
+            with override_settings(MEDIA_ROOT=self.storage.location):
+                response = self.client.get(scoped_workplace_app_path(self.workspace, app, suffix), follow=True)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response['Cache-Control'], 'private, no-store')
             self.assertEqual(b''.join(response.streaming_content), b'Private attachment')

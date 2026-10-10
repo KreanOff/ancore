@@ -4,14 +4,13 @@ from itertools import islice
 
 from django.core import signing
 from django.db import transaction
-from django.db.models import BooleanField, Case, Exists, F, OuterRef, Q, Subquery, Value, When
+from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 
-from tasks.access import visible_to
 from accounts.avatar import account_avatar
 from kanban.models import KanbanActivity
 from tasks.models import TaskActivity
@@ -152,14 +151,10 @@ def notification_filters(user, params):
 
 
 def notification_sources(user, workspace='', *, include_deleted=False):
-    access = (
-        Q(task__user=user, task__workplace__isnull=True)
-        | Q(task__user_id=F('task__workplace__owner_id'), task__workplace__in=workplaces_for_user(user))
-    )
     sources = {
         'workplace': pending_invitations_for_user(user),
         # System activity remains in object history, never in the inbox.
-        'tasks': visible_to(TaskActivity.objects.filter(kind='comment'), user).filter(access),
+        'tasks': TaskActivity.objects.none(),  # Historical states remain stored.
         'kanban': KanbanActivity.objects.none(),  # Historical IDs stay valid but never expose retired records.
         'reminders': reminders_for_user(user),
         'space-reminders': space_reminders_for_user(user),

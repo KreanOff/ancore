@@ -179,14 +179,10 @@ Profil nie odsyła już do usuniętych opcji. Dla zgodności
 stare fragmenty `#preferences`, `#appearance`, `#notifications` i `#region`
 otwierają widok Ogólne.
 
-Pod Zasobami znajduje się zwijana sekcja „Starsze widoki”: Projekty, Ulubione
-projekty, Grupy, Zadania i Szablony projektów. Używa istniejących
-`sidebar-nav-group` i `sidebar-subnav` oraz ikon `AncoreIcons`, bez osobnych listenerów. Wariant `sidebar-subnav--extended`
-usuwa desktopowy limit wysokości 160px dla dłuższego podmenu; przewijanie pozostaje
-we wspólnej nawigacji, a zwinięcie sidebaru nadal ukrywa podmenu. `layout.js` zachowuje
-stan zwinięcia, obsługuje klawiaturę, panel skrótów przy zwiniętym sidebarze
-i zamknięcie menu po wyborze linku na telefonie. Adresy korzystają z aktywnego
-Workspace, a aktywna pozycja odświeża się także po częściowej nawigacji.
+Sekcja „Starsze widoki” wraz z Projektami, Ulubionymi projektami, Grupami,
+Zadaniami i Szablonami projektów jest usunięta. Menu zachowuje Przestrzenie,
+Wszystkie zadania i pozostałe aktywne moduły, także po częściowej nawigacji,
+zwinięciu sidebaru i na telefonie.
 Globalny katalog „Tagi” nie ma pozycji menu, skrótów Favorites ani modali
 w katalogu Zadań; tagi są dostępne wyłącznie w zakładce przestrzeni.
 Stary Kanban nie ma pozycji menu; jego dawne adresy służą wyłącznie
@@ -288,7 +284,7 @@ jest takie samo jak górnego paska aplikacji: `--sidebar-bg` (`#FBFBFC`), także
 w codziennym menu Workspace, po zwinięciu i na telefonie.
 Wybrana pozycja (`a.nav-link.active`) ma jasne fioletowe
 tło, fioletowy tekst/ikonę i krótki znacznik przy lewej krawędzi. Ta sama reguła
-obejmuje Dashboard, pozostałe moduły, Favorites, Starsze widoki oraz kategorie
+obejmuje Dashboard, pozostałe moduły, Favorites oraz kategorie
 Ustawień i menu zarządzania. Wybrana pozycja zachowuje fioletowy stan pod
 kursorem; szary hover i fokus nieaktywnej pozycji nie oznaczają wyboru.
 Otwarcie menu lub rozwinięcie sekcji także nie wybiera punktu nawigacji.
@@ -473,84 +469,11 @@ Puste podsumowanie pokazuje zera i opisy bez pustej tabeli ani paginacji.
 Nowe funkcje mają wyglądać i zachowywać się jak część obecnego Ancore.
 Punktem odniesienia są istniejące ekrany i komponenty opisane poniżej.
 
-Akcja „Zapisz jako szablon” znajduje się w menu „Więcej opcji” listy projektów
-oraz w menu działań wiersza. W pasku listy jest aktywna po zaznaczeniu dokładnie
-jednego projektu, którym można zarządzać; menu wiersza nie wymaga zaznaczenia.
-Szablony projektów używają standardowego okna „Nowy projekt” z dodatkowym
-wyborem szablonu. Po wyborze ukryte i wyłączone są pola pierwszej grupy,
-ponieważ grupy pochodzą ze snapshotu. Katalog szablonów korzysta ze wspólnych
-dwóch pasków katalogu, zarządzania kolumnami, filtra opisu, sortowania,
-wyszukiwania oraz `directory_pagination_toolbar.html` (25/50/100 pozycji).
-Wariant tabeli `tasks-template-sheet` zachowuje wiersze 35px, separatory
-i przewijanie katalogu projektów. Kolumny obejmują osobno nazwę szablonu
-i nazwę projektu, opis, liczbę grup, liczbę zadań z podzadaniami i datę utworzenia.
-Nazwa szablonu w tabeli jest zwykłym tekstem, bez ołówka i akcji edycji.
-Pełna nazwa jest dostępna w `title` komórki. Pierwsza kolumna
-zawiera przycisk z trzema paskami, korzystający z klas menu Dokumentów
-oraz wspólnego `row-actions.js`. Menu udostępnia edycję szablonu, utworzenie
-projektu i usunięcie z potwierdzeniem `showConfirmModal`.
-Nazwa projektu otwiera standardowe okno tworzenia z wybranym szablonem.
-Delegacja w `project-templates.js` obsługuje również częściową nawigację,
-a wybór w `tasks.js` jest inicjalizowany z resztą ekranu.
-Reguła `#project-create-form .tasks-project-create-fields > label.u-hidden`
-zapewnia ukrycie pól mimo późniejszych reguł układu etykiet.
-
-Katalog szablonów jest zwykłą stroną z pełną tabelą, paskiem tytułu
-oraz strzałką powrotu do projektów. „Edytuj szablon” jest przyciskiem w menu
-wiersza. Otwiera modal nad tą tabelą, bez zmiany adresu i historii przeglądarki,
-tak jak edycja projektu. Powłoka `tasks-modal app-modal-panel`
-(`template-page-panel`) zachowuje animację od dołu, nagłówek, przewijaną białą
-treść i stałą stopkę. Krzyżyk, „Zamknij” i Escape zamykają okno lokalnie.
-Nazwa w tabeli pozostaje zwykłym tekstem, bez skrótu do edycji.
-
-`project-templates.js` pobiera formularze do `data-project-template-modal-host`
-i zapisuje je przez fetch. Endpoint `/tasks/templates/<id>/edit/` oraz scoped
-odpowiednik zwracają JSON z HTML modala dla `X-Template-Modal: true`.
-Zwykłe wejście pod dawny adres edytora przekierowuje do katalogu.
-Po zapisie okno pozostaje otwarte; zamknięcie odświeża tabelę z bieżącymi
-parametrami wyszukiwania, sortowania i paginacji, bez nowego wpisu w historii.
-Błąd pobrania pozostawia katalog, a błąd zapisu zachowuje pola i daje możliwość
-ponowienia. Nazwa szablonu, nazwa projektu i opis są polami głównego formularza.
-
-Moduł korzysta ze wspólnego `AncoreTaskModals.open/close` w `tasks.js`.
-Delegowane zamykanie działa także dla doładowanych okien. Zdarzenia
-`ancore:task-modal-opened`, anulowalne `ancore:task-modal-before-close` i
-`ancore:task-modal-closed` pozwalają modułowi obsłużyć `inert`, niezapisane dane
-i powrót fokusu. `ancore:modals-loaded` inicjalizuje wspólne menu wierszy
-po wymianie formularzy; ikony i selecty odświeżają istniejące API.
-Inicjalizacja po `ancore:content-loaded` anuluje wcześniejsze listenery i żądania.
-
-Edytor ma zakładki „Grupy” i „Zadania” bez liczników,
-korzystające z `notifications-tabs`: aktywną pozycję oznacza fioletowe podkreślenie.
-Widoczna jest jedna tabela i odpowiadający jej przycisk dodawania po prawej stronie.
-Domyślnie otwierają się „Grupy”; zapis lub błąd zachowuje wybraną zakładkę.
-Przełączenie nie usuwa niezapisanych danych głównego formularza.
-`tablist`/`tab`/`tabpanel` łączą zakładki z treścią; strzałki, Home i End
-przełączają widok oraz fokus. Obsługa działa także po częściowej nawigacji.
-Wspólny styl `notifications-tabs` obsługuje zarówno `aria-pressed` filtrów,
-jak i `aria-selected` zakładek.
-
-Wariant `project-template-editor` zawiera tabele `documents-table` zgodne z listą
-Dokumentów: wspólne nagłówki, tekst 13px/400, separatory, szare podświetlenie
-oraz odstępy 24px od obu krawędzi. Pole nazwy ma minimum 32px wysokości,
-jak pole ikony Dokumentów. Długie nazwy, opisy i powiązania pozostają w jednym
-wierszu z wielokropkiem i pełną treścią w `title`; nie zwiększają wysokości wierszy.
-Ostatnia kolumna ma 120px i wyrównanie do prawej. Tabele zachowują
-wszystkie kolumny i własne przewijanie poziome na wąskich ekranach.
-Menu grup i zadań otwierają formularze we wspólnej powłoce. Tabela katalogu i nawigacja
-są `inert` podczas edycji, a przy otwartym formularzu podrzędnym także główne
-okno edytora. Tab i Escape dotyczą ostatniego otwartego modala. Zamknięcie
-przywraca fokus do przycisku otwierającego. Każda operacja zapisuje się osobno.
-Niezapisane nazwy/opis wymagają potwierdzenia przy zamykaniu całego edytora;
-pozostają wpisane po zapisie lub usunięciu elementu struktury. Błędy walidacji
-pozostają we właściwym formularzu; nowy formularz zeruje poprzedni wpis.
-Usuwanie grupy lub zadania używa `showConfirmModal` z informacją o podzadaniach.
-Puste tabele ukrywają nagłówki; dodanie zadania wymaga wcześniejszego dodania grupy.
-
-Kalendarz ma filtr rodzaju pozycji, zachowuje dotychczasowe kolory i widoki.
-Terminy mają etykiety „Zadanie”, „Podzadanie”, „Karta” lub „Podkarta” oraz
-otwierają źródłowe szczegóły. Liczniki obejmują „pozycje”. Centrum powiadomień
-ma zakładkę „Przypomnienia”, używającą istniejących stanów odczytu i archiwum.
+Historyczne modale projektów oraz wspólne tabele pozostają źródłem komponentów
+używanych przez bieżące moduły. Katalog i edytor Szablonów projektów są wycofane;
+ich endpointy nie udostępniają formularzy. Szablony tworzenia Przestrzeni
+zachowują dotychczasowy kreator. Kalendarz pokazuje terminy zadań Przestrzeni
+z linkami do ich aktualnych szczegółów.
 Ten dokument utrwala aktualny styl; zmiana całego stylu wymaga zadania
 obejmującego redesign.
 

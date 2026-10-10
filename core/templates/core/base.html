@@ -1,5 +1,4 @@
 {% load static workplace_avatar sidebar_favorites %}
-{% url 'tasks:tasks' as sidebar_tasks_fallback_url %}
 {% url 'spaces:index' as sidebar_spaces_fallback_url %}
 {% url 'teams:index' as sidebar_teams_fallback_url %}
 {% firstof workplace_app_urls.spaces sidebar_spaces_fallback_url as sidebar_spaces_url %}
@@ -14,7 +13,6 @@
 {% url 'for_you' as sidebar_for_you_fallback_url %}
 {% firstof workplace_app_urls.for_you sidebar_for_you_fallback_url as sidebar_for_you_url %}
 {% url 'notifications' as sidebar_notifications_url %}
-{% firstof workplace_app_urls.tasks sidebar_tasks_fallback_url as sidebar_tasks_url %}
 {% firstof workplace_app_urls.calendar sidebar_calendar_fallback_url as sidebar_calendar_url %}
 {% firstof workplace_app_urls.documents sidebar_documents_fallback_url as sidebar_documents_url %}
 {% firstof workplace_app_urls.office sidebar_office_fallback_url as sidebar_office_url %}
@@ -277,22 +275,6 @@
                 <i class="nav-icon" data-icon="package" aria-hidden="true"></i><span class="nav-label">Zasoby</span>
             </a>
             {% sidebar_favorite_toggle 'resources' 'Zasoby' 'package' sidebar_resources_url %}
-            <section class="sidebar-nav-group" aria-labelledby="sidebar-legacy-title" data-sidebar-group="legacy">
-                <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Starsze widoki" title="Zwiń sekcję Starsze widoki" aria-controls="sidebar-legacy-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Starsze widoki">
-                    <i class="nav-icon" data-icon="archive" aria-hidden="true"></i>
-                    <span id="sidebar-legacy-title" class="nav-label">Starsze widoki</span>
-                    <i class="sidebar-group-chevron" data-icon="chevron-down" aria-hidden="true"></i>
-                </button>
-                <div class="sidebar-subnav sidebar-subnav--extended" id="sidebar-legacy-subnav" data-sidebar-group-label="Starsze widoki" aria-label="Starsze widoki">
-                    {% with app_name=request.resolver_match.app_name url_name=request.resolver_match.url_name %}
-                    <a href="{{ sidebar_tasks_url }}" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'project' or active_view == 'projects' and request.GET.tab != 'favorites' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="folders" aria-hidden="true"></i><span>Projekty</span></a>
-                    <a href="{{ sidebar_tasks_url }}?tab=favorites" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'projects' and request.GET.tab == 'favorites' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="star" aria-hidden="true"></i><span>Ulubione projekty</span></a>
-                    <a href="{{ sidebar_tasks_url }}?view=all-groups" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'all_groups' or active_view == 'section' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="folder-open" aria-hidden="true"></i><span>Grupy</span></a>
-                    <a href="{{ sidebar_tasks_url }}?view=all-tasks" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if active_view == 'all_tasks' or active_view == 'unassigned_tasks' or active_view == 'my_tasks' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="list-checks" aria-hidden="true"></i><span>Zadania</span></a>
-                    <a href="{{ sidebar_tasks_url }}templates/" class="nav-link sidebar-subnav-link{% if app_name == 'tasks' or app_name == 'workplace_tasks' %}{% if url_name == 'project_templates' or url_name == 'edit_project_template' %} active{% endif %}{% endif %}"><i class="sidebar-subnav-icon" data-icon="copy" aria-hidden="true"></i><span>Szablony projektów</span></a>
-                    {% endwith %}
-                </div>
-            </section>
             </section>
 
         </nav>

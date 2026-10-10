@@ -7,12 +7,9 @@ pliki i dziennik pracy. Szczegóły zadań są pod `/space/<slug>/tasks/<klucz>/
 bez przejścia do starszych projektów, grup lub zadań. Nowe rekordy nie tworzą
 rekordów w starszym module; import i zgodność starych linków są jednokierunkowe.
 
-Główne menu używa teraz Przestrzeni, Wszystkich zadań i Zespołów zamiast
-osobnych sekcji Zadania/Kanban/Kontakty. Dawne katalogi Zadań są dostępne
-pod Zasobami w zwijanej sekcji „Starsze widoki”, z adresami aktywnego Workspace.
-Opisy Tasks i Kanbana poniżej
-pozostają referencją mechanizmów oraz historycznych adresów; nowy przepływ
-pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
+Główne menu używa Przestrzeni, Wszystkich zadań i Zespołów. Starsze systemy
+projektów, grup, zadań, ulubionych projektów i szablonów są wycofane.
+Nowy przepływ pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
 
 
 Ten dokument opisuje aktywny kod lokalny. Szczegółowe modele, relacje,
@@ -104,210 +101,31 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 
 ## 3. Projekty, grupy i zadania — Tasks
 
-Źródła: [modele](../tasks/models.py), [formularze](../tasks/forms.py),
-[główna logika](../tasks/views/tasks.py).
+Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony
+projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
+w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
+pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
 
-### Ekrany
+`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
+wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
+a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
+Workspace i bieżący dostęp Przestrzeni. Obiekt bez mapowania, usunięty albo
+niedostępny zwraca 404. POST pod zachowany adres zwraca 409; usunięte endpointy
+szablonów, statusów, usuwania, zespołów, ulubionych i obserwowania zwracają 404.
 
-- Katalog projektów — domyślny widok modułu.
-- Projekt — lista jego grup.
-- Grupy oraz widok konkretnej grupy.
-- Zadania z zakładką „Nieprzydzielone”.
-- Szczegóły zadania/podzadania, komentarze z plikami, zdjęciami i `@Imię Nazwisko` oraz historia; nagłówek nie udostępnia przycisku obserwowania.
-- Obserwowanie projektu: nowe komentarze i zmiany jego zadań w filtrze „Obserwowane”.
-- Tagi przestrzeni oraz formularze tworzenia i edycji w ich zakładkach.
+`tasks.access` zwraca pusty wynik dla historycznych modeli pracy. Menedżery
+modeli nadal widzą zapisane dane dla migracji i utrzymania. `TaskTag` i
+`TaskTagNote`, wspólne szablony oraz `static/js/tasks.js` pozostają używane
+przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
+Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
+historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
+powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
+`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
+nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.
 
-Katalogi obsługują wyszukiwanie, sortowanie, filtrowanie i paginację po stronie
-serwera. UI ma wybór widocznych kolumn, zmianę szerokości/kolejności oraz akcje
-zbiorcze. Zakres funkcji różni się między typami list; nie należy automatycznie
-przenosić każdej funkcji jednego katalogu do wszystkich pozostałych.
-
-„Projekty”, „Grupy” i „Zadania” współdzielą cztery zakładki:
-„Prywatne” (domyślna, własne prywatne elementy, również udostępnione innym),
-„Udostępnione” (prywatne elementy innych osób dostępne odbiorcy), „Publiczne”
-(dostęp dla całego Workspace) i „Ulubione” (osobiste oznaczenia z dowolnej kategorii).
-Publiczna grupa dziedziczy kategorię projektu; prywatna grupa ma własnego
-właściciela i dodatkowe ograniczenia. Zakładki nie zmieniają uprawnień.
-Menu wiersza pozwala dodać lub usunąć ulubiony projekt/grupę, również obserwatorowi.
-Zadania mają w tym celu gwiazdkę po prawej stronie wiersza. Publiczne zadanie
-dziedziczy kategorię grupy i projektu; własne prywatne zadanie ma pierwszeństwo
-przed kategorią rodziców. Publiczne zadanie bez grupy trafia do „Publiczne”.
-Katalog nadal zawiera zadania główne, a podzadania są dostępne w szczegółach rodzica.
-Relacje `favorited_by` są osobne dla każdego konta i niezależne od skrótów sidebaru.
-Odebranie dostępu ukrywa również ulubiony element. „Zadania” mają dodatkowo
-zakładkę „Nieprzydzielone” po „Ulubione”, zamiast osobnej pozycji menu bocznego.
-Zadania grupy oraz grupy wewnątrz konkretnego projektu zachowują listę bez zakładek.
-
-Lista grup projektu współdzieli z „Grupy” wyszukiwanie, sortowanie,
-filtry statusu, typu, odpowiedzialnego i priorytetu oraz paginację w pasku
-narzędzi. Wyniki i opcje odpowiedzialnych pozostają ograniczone do otwartego
-projektu w bieżącym Workspace; czyszczenie filtrów nie usuwa tego kontekstu.
-
-Projekt można oznaczyć jako „Publiczny — cały Workspace” albo „Prywatny — wybrane osoby”.
-Prywatny projekt jest początkowo dostępny tylko właścicielowi. W edycji ma
-zakładki „Główna” i „Członkowie”. „Udostępnij” od razu nadaje dostęp wybranemu
-aktywnemu członkowi tego Workspace, bez zaproszenia ani akceptacji.
-Grupy mogą dodatkowo być prywatne, z własnymi rolami i członkami; są udostępniane tak samo.
-Dostęp do grupy wymaga dostępu do projektu. Zadania dziedziczą oba ograniczenia
-i mogą dodatkowo być prywatne, z polem „Widoczność” i zakładką „Członkowie”.
-Udostępnienie zadania od razu nadaje dostęp, bez akceptacji; podzadania zachowują
-ograniczenia rodziców. Nowe zadania domyślnie są prywatne faktycznego autora;
-pełną macierz dostępu opisuje
-[Praca zespołowa](TEAMWORK.md#widoczność-projektów-zadań).
-
-### Dane
-
-| Obiekt | Zawartość i powiązania |
-| --- | --- |
-| `TaskProject` | Nazwa, opis, kod, priorytet, status, etap, kondycja, początek i termin, budżet/waluta, źródło, firma, osoba odpowiedzialna, właściciel danych i Workspace, widoczność publiczna/prywatna, prywatny właściciel i wybrani członkowie Workspace z dostępem (`shared_with`) |
-| `TaskProjectMembership` | Osoba z bezpośrednio nadanym dostępem do projektu z rolą administrator/członek/obserwator i datą dołączenia; relacja `shared_with` |
-| `TaskProjectInvitation` | Historyczne zaproszenie; nie jest tworzone ani obsługiwane przez aktywny przepływ udostępniania |
-| `TaskSection` | Grupa projektu: nazwa, opis, kod, rodzaj, status, właściciel grupy, priorytet, termin, limit WIP, kolejność oraz widoczność, prywatny właściciel i udostępnienia |
-| `TaskSectionMembership` | Bezpośredni dostęp do grupy z rolą administrator/członek/obserwator; zawężony dostępem projektu |
-| `TaskSectionInvitation` | Historyczne zaproszenie, bez aktywnego przepływu akceptacji |
-| `Task` | Tytuł, opis, status, priorytet, termin i przypomnienie w aplikacji, estymata, czas poświęcony, typ, powód blokady, wykonawca, grupa, tagi, rodzic, widoczność, prywatny właściciel i udostępnienia |
-| `TaskMembership` | Bezpośredni dostęp do prywatnego zadania z rolą administrator/członek/obserwator; zawężony całą hierarchią rodziców |
-| Notatki | Osobne modele dla projektu, grupy i tagu, z autorem i czasem edycji |
-| `TaskActivity` | Historia i komentarze zadania; aktor, akcja, wiadomość i metadane zmian |
-| `TaskCommentImage` | Prywatne pliki i zdjęcia przypisane do konkretnego komentarza; nazwa i rozmiar |
-| `TaskAttachment` | Plik przypisany do zadania, nazwa i rozmiar |
-| `TaskWorkLog` | Wpis dziennika pracy: zadanie, autor, rozpoczęcie, zakończenie, opis i daty zapisu; liczba minut wynika z przedziału czasu |
-
-Zakładka „Nieprzydzielone” (`view=unassigned-tasks`) pokazuje dostępne zadania
-główne bez projektu i grupy w aktywnym Workspace, niezależnie od wykonawcy.
-Przypisanie grupy usuwa zadanie z tej listy; przypisanie osoby nie zmienia jego obecności.
-Modal nowego zadania domyślnie pozostawia projekt i grupę puste. Zapis bez nich
-działa również w Workspace bez projektów i przekierowuje do nieprzydzielonych.
-Projekt wynika z grupy, dlatego po wybraniu projektu trzeba wybrać jego grupę
-albo wyczyścić oba pola. Szczegóły pozwalają edytować zadanie bez grupy i później ją przypisać.
-Dawny adres `view=my-tasks` nadal pokazuje zadania przypisane zalogowanej osobie,
-ale nie występuje w nowym menu.
-Wykonawcy i odpowiedzialni są ograniczeni do aktywnych kont zespołu.
-
-W katalogach „Zadania” i „Zadania nieprzydzielone” limit strony dotyczy każdego
-stanu osobno: 50 oznacza do 50 nowych, realizowanych, rozwiązanych, zamkniętych
-i ponownie otwartych. Wspólne strzałki przechodzą do kolejnych pozycji w każdym
-stanie; liczba stron wynika z najliczniejszego stanu po filtrowaniu.
-Licznik w pasku sumuje zadania z pokazanych sekcji, a licznik sekcji dotyczy jej
-bieżącej strony. Wyszukiwanie i filtry obejmują cały dostępny zbiór przed podziałem
-na strony; sortowanie obowiązuje wewnątrz każdego stanu. Widok pojedynczej grupy
-zachowuje własne, niezależne kontrolki paginacji statusów.
-
-### Podstawowy scenariusz
-
-1. Utwórz projekt. Aktywna akcja tworzy razem z nim początkową grupę.
-2. Dodaj lub wybierz grupę i utwórz zadanie przez istniejący formularz/modal.
-3. Otwórz szczegóły, zmień pola i użyj przycisku zapisu.
-4. Dodaj komentarz, pliki do zadania głównego lub podzadanie.
-5. Zmień status. `closed` wiąże się z zakończeniem i datą zakończenia;
-   otwarcie ponownie czyści te dane.
-
-Szczegóły zadania mają jawny zapis. Nazwa starego parametru wersji skryptu
-zawierająca „autosave” nie oznacza aktywnego autozapisu.
-Główny formularz zadania nie udostępnia powodu blokady, dawnych pól czasu pracy ani szacowanego czasu, a panel boczny
-nie pokazuje sekcji „Historia statusu”. Dawne wartości pozostają w modelu;
-zapis zadania ich nie zmienia, także gdy stare pola zostaną przesłane w POST.
-Akcja `clear_time_spent` w Zadaniach została wycofana. Historia zmian statusu
-w zakładce „Historia” pozostaje dostępna. Kanban zachowuje własne kontrolki.
-Podzadanie dziedziczy kontekst rodzica; w obecnych widokach nie można dodawać
-do niego załączników.
-System przenoszenia istniejących zadań między przestrzeniami/grupami oraz
-do zadań nieprzypisanych jest usunięty. Szczegóły pokazują obecną przestrzeń
-i grupę tylko jako tekst; edycja w Przestrzeni nie ma wyboru grupy.
-Stare pola `project` i `section` przesłane do edycji są ignorowane, bez zmiany
-powiązań, numeracji, tagów i podzadań. Zadanie nadrzędne można wybrać wyłącznie
-z tej samej grupy. Tworzenie nadal pozwala wybrać miejsce nowego zadania.
-
-Szczegóły zadania i podzadania mają drugi pasek z zakładkami „Główna”,
-„Dziennik pracy” i „Historia”. Zadanie główne ma dodatkowo zakładkę „Podzadania”
-po „Głównej”, z listą według statusów, licznikiem i dotychczasowymi akcjami.
-Lista podzadań i jej grupy statusów pozostają rozwinięte, bez możliwości zwijania.
-Jest dostępna również bez podzadań; dodanie lub błąd formularza zachowuje tę zakładkę.
-„Główna” pokazuje temat, opis i komentarze w sekcji „Czat”.
-Komentarz może zawierać tekst, pliki i zdjęcia albo same załączniki. „Dodaj pliki”,
-wklejenie ze schowka (gdy przeglądarka udostępnia plik) i przeciągnięcie do pola
-pokazują załączniki z możliwością usunięcia przed wysłaniem. Obowiązuje wspólna
-lista formatów Ancore: obrazy, PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, TXT/CSV/RTF
-oraz ZIP/RAR/7Z/TAR/GZ. Limit to 10 plików łącznie, domyślnie do 10 MiB każdy.
-Zdjęcia mają miniatury otwierające pełny obraz w osobnej karcie; pozostałe pliki
-mają ikonę formatu, nazwę, rozmiar i pobieranie. Dotyczy też podzadań oraz czatu kart/podkart Kanbana;
-załączniki wiadomości nie trafiają do ogólnych załączników zadania.
-Zapis przez fetch zachowuje niezapisane pola zadania, a błąd zachowuje szkic i wybrane pliki.
-„Dziennik pracy” pokazuje podsumowanie i wpisy, bez tematu i opisu zadania,
-a „Historia” tylko zdarzenia, bez formularza komentarza. W dzienniku „Dodaj czas” otwiera standardowy modal:
-data i godzina rozpoczęcia, data i godzina zakończenia, wymagany opis
-(do 4000 znaków) oraz dwa edytowalne pola czasu poświęconego: „Godziny” i „Minuty”.
-Zmiana dat oblicza godziny i minuty. Wpisanie czasu poświęconego zachowuje
-zakończenie i wylicza rozpoczęcie wstecz; domyślne zakończenie to bieżąca
-chwila zaokrąglona do minuty. Liczba godzin może przekraczać 24, minuty mają
-zakres 0–59, łączny czas musi być dodatni. Przeliczanie działa także przez
-północ i zmianę czasu letniego. Godziny interpretowane są w Europe/Warsaw,
-z dokładnością do minuty. Koniec musi być późniejszy od początku.
-Autor jest ustalany z zalogowanego konta, bez pola wyboru osoby.
-
-Tabela pokazuje autora, minuty, rozpoczęcie, zakończenie i opis. Menu wiersza
-pozwala edytować lub usunąć wpis z potwierdzeniem; obowiązują zwykłe prawa
-edycji danych Workspace, również dla członków zespołu. Edycja zachowuje
-pierwotnego autora. Suma obejmuje wszystkie wpisy tego zadania, tabela pokazuje
-25 wpisów na stronę, od najpóźniejszego rozpoczęcia. Podzadania mają osobne
-dzienniki; suma zadania głównego nie obejmuje wpisów podzadań.
-Dodanie, edycja i usunięcie zapisują rzeczywistego wykonawcę operacji w Historii.
-Wycofane pola `time_spent_hours` i `time_spent_minutes` pozostają bez zmian;
-historyczne sumy nie są automatycznie zamieniane na wpisy bez dat i autora.
-
-### Pola projektu
-
-System „Wartości pól projektu” jest usunięty: nie ma słowników własnych opcji,
-reguł kolorów terminów ani ekranu `/settings/project-fields/` (GET/POST: 404).
-Status, etap i kondycja korzystają ze stałych opcji `TaskProject`; historyczne
-wartości zapisane w dostępnych projektach pozostają możliwe do edycji i filtrowania.
-Źródło jest tekstem z możliwością wybrania wcześniej zapisanej wartości.
-Daty, opisy i pozostałe dane projektów pozostają bez zmian. Podświetlenie
-terminu używa istniejącego `due_highlight`, bez własnych progów i kolorów.
-Migracja `tasks/0063` usuwa oba modele konfiguracji oraz flagę własnych progów.
-
-### Szablony projektów Zadań
-
-Po zaznaczeniu jednego projektu na liście opcja „Zapisz jako szablon” w menu
-„Więcej opcji” tworzy niezależny snapshot jego nazwy, opisu, grup, zadań
-i podzadań. Katalog `/tasks/templates/` (także scoped)
-jest dostępny z menu „Więcej opcji” katalogu projektów. Używa tabeli i pasków
-katalogu projektów: wyszukiwania po nazwie szablonu, nazwie projektu i opisie,
-filtra obecności opisu, sortowania po obu nazwach, opisie lub dacie utworzenia
-oraz paginacji 25/50/100. Nazwa szablonu jest edytowalna niezależnie od zapisanej
-nazwy projektu. Przy zapisie i migracji istniejących szablonów otrzymuje nazwę
-projektu. Wybór szablonu pokazuje jego własną nazwę, a nowy projekt nadal
-dostaje podpowiedź nazwy projektu ze snapshotu.
-Pokazuje liczniki struktury. Menu wiersza pod trzema paskami udostępnia utworzenie
-projektu, pełną edycję szablonu oraz usunięcie z potwierdzeniem.
-Szablon można też wybrać w standardowym oknie „Nowy projekt”.
-
-Katalog jest zwykłą stroną z nagłówkiem i strzałką powrotu do projektów.
-Edytor jest modalem wysuwanym od dołu nad katalogiem, jak edycja projektu.
-Otwarcie, zapis i zamknięcie nie zmieniają adresu katalogu. Endpoint
-`/tasks/templates/<id>/edit/` (także scoped) obsługuje pobranie i zapis modala;
-bezpośrednie wejście przekierowuje do katalogu. Edytor udostępnia obie nazwy i opis projektu,
-zapisywane przyciskiem „Zapisz dane”, oraz dodawanie, edycję i usuwanie grup,
-zadań i podzadań. Edytor otwiera akcja „Edytuj szablon” w menu wiersza.
-Nazwa szablonu w tabeli jest zwykłym tekstem; jej zmiana odbywa się w edytorze.
-Formularze w `tasks/project_template_forms.py` walidują pola snapshotu, nie
-zapisują modeli żywych projektów. Każdy POST blokuje wiersz szablonu i zapisuje
-jedną operację w transakcji. Powiązania wybiera się wyłącznie z tego szablonu;
-cykle i podzadania w innej grupie są odrzucane. Przeniesienie zadania do grupy
-przenosi również jego podzadania. Usunięcie grupy usuwa jej zadania, a usunięcie
-zadania — jego podzadania, zawsze po potwierdzeniu. Zmiany wpływają tylko na
-projekty tworzone później z szablonu, nie na źródło ani wcześniej utworzone kopie.
-
-Kopiowane są nazwy, opisy, priorytety, rodzaje grup i zadań, kolejność grup,
-limit WIP. Szacowany czas nie jest już dostępny w edytorze ani kopiowany do
-nowych projektów; stare wartości w zapisanych snapshotach pozostają zachowane.
-Grupy zaczynają jako otwarte, zadania jako nowe;
-kopie otrzymują własne PK i numery, a historia utworzenia wskazuje faktycznego
-autora. Terminy, przypomnienia, wykonawcy, odpowiedzialni grup, tagi, czas pracy,
-załączniki i komentarze nie są kopiowane. Parametry nowego projektu ustala
-formularz; wejście z katalogu szablonów podpowiada nazwę i opis.
-Zmiana lub usunięcie oryginału nie zmienia szablonu, a usunięcie szablonu nie
-usuwa projektów. Dane są ograniczone do właściciela i aktywnego Workspace.
+Źródła: [modele historyczne](../tasks/models.py), [routing zgodności](../tasks/urls.py),
+[przekierowania](../spaces/middleware.py), [testy wycofania](../tasks/test_retirement.py).
 
 ## 4. Wycofany moduł Tablice Kanban
 
@@ -326,7 +144,7 @@ zaimportowanych odpowiedników, po sprawdzeniu bieżącego Workspace i uprawnie�
 Zadań; brak mapowania/dostępu daje 404. POST pod zachowany adres zgodności
 zwraca 409, a usunięte endpointy operacji 404. Zapisane skróty `kanban-spaces`
 i `kanban-boards` wskazują Przestrzenie. Obecna tablica Kanban w Przestrzeniach
-nadal działa na `tasks.Task`. [Migracja i zgodność](SPACES.md#przeniesienie-danych).
+nadal działa na `tasks.Task`. [Migracja i zgodność](SPACES.md#historyczny-import-kanbana-3102026).
 
 Źródła: [adresy zgodności](../kanban/urls.py), [przekierowania](../spaces/middleware.py),
 [modele historyczne](../kanban/models.py).

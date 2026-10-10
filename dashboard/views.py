@@ -11,7 +11,6 @@ from django.utils import timezone
 from django.utils.formats import date_format
 from django.views.decorators.http import require_GET, require_POST
 
-from tasks.access import visible_to
 from workplaces.services import workspace_owner
 
 from accounts.avatar import account_avatar
@@ -19,7 +18,6 @@ from accounts.views import _switch_account_context
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
 from planner.models import CalendarEvent
 from resources.models import Resource
-from tasks.models import Task, TaskProject, TaskSection
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from .pulpit_views import default as default_pulpit
 from .for_you import for_you_context
@@ -48,7 +46,6 @@ def _workspace_app_url(workplace, app_label, suffix=''):
         return scoped_workplace_app_path(workplace, app_label, suffix=suffix)
 
     fallback_urls = {
-        'tasks': reverse('tasks:tasks'),
         'calendar': reverse('planner:index'),
         'documents': reverse('documents:library'),
         'office': reverse('office:index'),
@@ -97,14 +94,14 @@ def _ranked_search_queryset(queryset, field_name, query):
 
 
 def _navigation_search_results(query, workplace):
-    tasks_url = _workspace_app_url(workplace, 'tasks')
+    tasks_url = _workspace_app_url(workplace, 'spaces', 'items/')
     calendar_url = _workspace_app_url(workplace, 'calendar')
     entries = (
         ('Dla ciebie', 'Twoje zadania, ulubione i ostatnia praca', scoped_workplace_app_path(workplace, 'for-you') if workplace else reverse('for_you'), 'user-round-check', 'dla ciebie for you przypisane ostatnie'),
         ('Dashboard', 'Strona główna i podsumowanie', reverse('home'), 'layout-dashboard', 'dashboard start podsumowanie'),
         ('Pulpity', 'Własne pulpity i gadżety zespołu', _workspace_app_url(workplace, 'dashboards'), 'layout-dashboard', 'pulpity dashboard gadzety'),
-        ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, view='my-tasks'), 'user-round-check', 'tasks moje zadania'),
-        ('Wszystkie zadania', 'Pełna lista zadań', _search_url(tasks_url, view='all-tasks'), 'list-checks', 'tasks lista'),
+        ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, assignee='me'), 'user-round-check', 'tasks moje zadania'),
+        ('Wszystkie zadania', 'Pełna lista zadań', tasks_url, 'list-checks', 'tasks lista'),
         ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),
         ('Zespoły', 'Osoby i ich zespoły', _workspace_app_url(workplace, 'teams'), 'users', 'zespoly osoby teams'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
@@ -130,50 +127,7 @@ def _recent_search_results(request):
     if workplace is None:
         return []
     entries = recent_views(request)
-    owner = workspace_owner(request)
     results = {}
-    kinds = (
-        (Task, 'Zadanie', 'list-checks'),
-        (TaskProject, 'Przestrzeń', 'folders'),
-        (TaskSection, 'Grupa', 'layers-3'),
-    )
-    for model, label, icon in kinds:
-        ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == model._meta.label_lower]
-        if not ids:
-            continue
-        query = visible_to(model.objects.filter(pk__in=ids), request.user)
-        is_task = model is Task
-        is_project = model is TaskProject
-        if is_task or is_project:
-            query = query.filter(user=owner, workplace=workplace)
-            if is_task:
-                query = query.select_related('section__project', 'parent')
-            elif model is TaskProject:
-                query = query.select_related('space')
-        else:
-            query = query.filter(project__user=owner, project__workplace=workplace).select_related('project')
-        base = _workspace_app_url(workplace, model._meta.app_label)
-        for obj in query:
-            meta = ''
-            type_label = label
-            if is_task:
-                detail = 'view-subtask' if obj.parent_id else 'view-task'
-                url = _search_url(f'{base}{detail}/{obj.task_id}/', task_pk=obj.pk)
-                type_label = 'Podzadanie' if model is Task and obj.parent_id else label
-                meta = f'#{obj.task_id}'
-                if (obj.section_id and obj.section.project.user_id == owner.pk
-                        and obj.section.project.workplace_id == workplace.pk):
-                    meta += f' · {obj.section.project.name} · {obj.section.title}'
-            elif is_project:
-                url = (_workspace_app_url(workplace, 'space', f'{obj.space.slug}/')
-                       if model is TaskProject and hasattr(obj, 'space') else _search_url(base, project=obj.pk))
-                meta = obj.code
-            else:
-                url = f'{base}groups/{obj.pk}/'
-                meta = obj.project.name
-            results[(model._meta.label_lower, obj.pk)] = _global_search_result(
-                obj.name if is_project else obj.title, type_label, url, icon, meta,
-            )
     from spaces.models import Space, SpaceTask
     from spaces.services import visible_spaces, visible_items, task_url, space_url
     ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == Space._meta.label_lower]
@@ -209,44 +163,7 @@ def global_search(request):
 
     user = workspace_owner(request)
     workplace = getattr(request, 'workplace', None)
-    tasks_url = _workspace_app_url(workplace, 'tasks')
     calendar_url = _workspace_app_url(workplace, 'calendar')
-    numeric_query = int(query) if query.isdecimal() else None
-
-    task_filter = (
-        Q(title__icontains=query)
-        | Q(work_item__key__icontains=query)
-        | Q(description__icontains=query)
-        | Q(blocked_reason__icontains=query)
-        | Q(section__title__icontains=query)
-        | Q(section__project__name__icontains=query)
-        | Q(tags__name__icontains=query, tags__space__isnull=False)
-        | Q(activities__message__icontains=query)
-    )
-    if numeric_query is not None:
-        task_filter |= Q(task_id=numeric_query)
-
-    task_queryset = visible_to(Task.objects.all(), request.user).filter(user=user).filter(task_filter)
-    project_queryset = visible_to(TaskProject.objects.all(), request.user).filter(user=user).filter(
-        Q(name__icontains=query)
-        | Q(description__icontains=query)
-        | Q(code__icontains=query)
-        | Q(source__icontains=query)
-        | Q(company__name__icontains=query)
-        | Q(responsible_user__first_name__icontains=query)
-        | Q(responsible_user__middle_name__icontains=query)
-        | Q(responsible_user__last_name__icontains=query)
-        | Q(responsible_user__email__icontains=query)
-        | Q(project_notes__message__icontains=query)
-    )
-    section_queryset = visible_to(TaskSection.objects.all(), request.user).filter(project__user=user).filter(
-        Q(title__icontains=query)
-        | Q(description__icontains=query)
-        | Q(code__icontains=query)
-        | Q(project__name__icontains=query)
-        | Q(project__code__icontains=query)
-        | Q(section_notes__message__icontains=query)
-    )
     from tasks.tagging import visible_tags
     tag_queryset = visible_tags(request).select_related('space').filter(
         Q(name__icontains=query)
@@ -262,9 +179,6 @@ def global_search(request):
     )
 
     if workplace is not None:
-        task_queryset = task_queryset.filter(workplace=workplace)
-        project_queryset = project_queryset.filter(workplace=workplace)
-        section_queryset = section_queryset.filter(project__workplace=workplace)
         tag_queryset = tag_queryset.filter(workplace=workplace)
         event_queryset = event_queryset.filter(workplace=workplace)
 
@@ -290,61 +204,6 @@ def global_search(request):
     ])
 
     groups.extend((
-        _global_search_group(
-            'tasks',
-            'Zadania',
-            'list-todo',
-            _ranked_search_queryset(
-                task_queryset.select_related('section', 'section__project', 'parent').distinct(),
-                'title',
-                query,
-            ).order_by('_global_search_rank', '-created_at', '-id'),
-            lambda task: _global_search_result(
-                task.title,
-                'Podzadanie' if task.parent_id else 'Zadanie',
-                _search_url(f'{tasks_url}{"view-subtask" if task.parent_id else "view-task"}/{task.task_id}/', task_pk=task.pk),
-                '',
-                ' · '.join(part for part in (
-                    f'#{task.task_id}',
-                    task.section.project.name if task.section_id else '',
-                    task.section.title if task.section_id else '',
-                ) if part),
-            ),
-        ),
-        _global_search_group(
-            'projects',
-            'Starsze projekty',
-            'folders',
-            _ranked_search_queryset(
-                project_queryset.select_related('company', 'responsible_user').distinct(),
-                'name',
-                query,
-            ).order_by('_global_search_rank', 'name', 'id'),
-            lambda project: _global_search_result(
-                project.name,
-                'Projekt',
-                _workspace_app_url(workplace, 'space', f'{project.space.slug}/') if hasattr(project, 'space') else _search_url(tasks_url, project=project.id),
-                '',
-                ' · '.join(part for part in (project.code, project.company.name if project.company_id else '') if part),
-            ),
-        ),
-        _global_search_group(
-            'groups',
-            'Grupy',
-            'folder-open',
-            _ranked_search_queryset(
-                section_queryset.select_related('project').distinct(),
-                'title',
-                query,
-            ).order_by('_global_search_rank', 'project__name', 'order', 'id'),
-            lambda section: _global_search_result(
-                section.title,
-                'Grupa',
-                f'{tasks_url}groups/{section.id}/',
-                '',
-                ' · '.join(part for part in (section.project.name, section.full_code) if part),
-            ),
-        ),
         _global_search_group(
             'tags',
             'Tagi',

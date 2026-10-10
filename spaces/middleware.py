@@ -3,7 +3,7 @@ from django.http import Http404, JsonResponse
 from django.db.models import Q
 from django.shortcuts import redirect
 
-from tasks.models import Task, TaskAttachment, TaskCommentImage
+from tasks.models import Task, TaskAttachment, TaskCommentImage, TaskProject, TaskSection
 from workplaces.services import workspace_owner
 from .models import LegacyKanbanLink, SpaceTaskFile, WorkItem
 from .services import app_url, space_url, task_url, visible_items, visible_spaces
@@ -18,8 +18,30 @@ class LegacyKanbanMiddleware:
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         match = request.resolver_match
-        if request.user.is_authenticated and match.app_name in {'tasks', 'workplace_tasks'} and match.url_name in {'view-task', 'view-subtask', 'download_attachment', 'comment_image'}:
+        if request.user.is_authenticated and match.app_name in {'tasks', 'workplace_tasks'}:
             owner = workspace_owner(request)
+            from tasks.tagging import TAG_ACTIONS
+            if request.GET.get('view') == 'tags' or request.POST.get('action') in TAG_ACTIONS:
+                raise Http404
+            if request.method not in {'GET', 'HEAD'}:
+                return JsonResponse({'error': 'Starsze widoki zostały wycofane. Otwórz Przestrzenie.', 'url': app_url(request)}, status=409)
+            if match.url_name in {'tasks', 'task_group'}:
+                section_id = view_kwargs.get('section_id') or request.GET.get('section')
+                project_id = request.GET.get('project')
+                if section_id or project_id:
+                    source_id = str(section_id or project_id)
+                    if not source_id.isdecimal() or len(source_id) > 18:
+                        raise Http404
+                    projects = TaskProject.objects.filter(user=owner, workplace=request.workplace)
+                    if section_id:
+                        projects = projects.filter(pk__in=TaskSection.objects.filter(pk=source_id).values('project_id'))
+                    else:
+                        projects = projects.filter(pk=source_id)
+                    space = visible_spaces(request).filter(project__in=projects).first()
+                    if not space:
+                        raise Http404
+                    return redirect(space_url(request, space, '?view=list' if section_id else ''))
+                return None
             if match.url_name in {'view-task', 'view-subtask'}:
                 source = Task.objects.filter(user=owner, workplace=request.workplace)
                 task_pk = request.GET.get('task_pk', '')
@@ -30,8 +52,6 @@ class LegacyKanbanMiddleware:
                     if not item:
                         raise Http404
                     url = task_url(request, item.task)
-                    if request.method not in {'GET', 'HEAD'}:
-                        return JsonResponse({'error': 'Otwórz zadanie w jego przestrzeni.', 'url': url}, status=409)
                     return redirect(url)
             else:
                 attachment = match.url_name == 'download_attachment'

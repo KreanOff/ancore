@@ -12,7 +12,7 @@ i metadanych `WorkItem`. Numer klucza przestrzeni jest trwały; nie używa
 renumerowanego `tasks.Task.task_id`. Dostęp wyznaczają `SpaceMembership`,
 `SpaceTaskMembership` i `spaces.access`, w aktywnym Workspace i całym drzewie
 rodziców. Zapisy statusu blokują Workspace, przestrzeń, zadanie i WorkItem;
-zachowują zakończenie i autora historii. Starsze Tasks mają własny cykl statusu.
+zachowują zakończenie i autora historii. Cykl statusu starszych Tasks jest wyłącznie historyczny; endpointy zapisu są wycofane.
 Stare pliki współdzielone po imporcie są usuwane dopiero po ostatnim odwołaniu
 i zatwierdzeniu transakcji. [Modele, adresy, migracja i granice](SPACES.md).
 
@@ -567,19 +567,19 @@ nie wolno publicznie mapować całego `MEDIA_ROOT`. Szczegóły wdrożenia:
 [global-search.js](../static/js/global-search.js).
 
 GET `/global-search/?q=...` wymaga logowania. Minimum wynosi 2 znaki,
-tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania i ich
-historię, projekty/grupy, tagi, wydarzenia,
+tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania Przestrzeni
+i ich historię, Przestrzenie, ich tagi, wydarzenia,
 Workspace, miejsca nawigacji oraz dyski/foldery/pliki. Wycofane katalogi Kontaktów
-i Firm nie są przeszukiwane; firma pozostaje metadanymi istniejącego projektu.
+i Firm oraz historyczne projekty/grupy/zadania Tasks nie są przeszukiwane.
 Zakres konkretnych querysetów uwzględnia właściciela i tam, gdzie przewidziano,
 aktywny Workspace; lista Workspace obejmuje własne przestrzenie i aktywne
 członkostwa faktycznie zalogowanej osoby (`request.user`), niezależnie od
 właściciela danych bieżącego zespołu. Nie ujawnia nazw, kodów ani opisów
 prywatnych Workspace tego właściciela.
 
-Cyfry dziesiętne Unicode mogą oznaczać numer zadania; pozostałe znaki, np. `²²`,
-są zwykłym zapytaniem tekstowym. Linki do zadań, kart i ich podpozycji zawierają
-stabilne `task_pk`, więc renumeracja po usunięciu nie zmienia celu wyniku.
+Wyszukiwanie traktuje również znaki Unicode i długie ciągi cyfr jako tekst.
+Linki bieżących zadań zawierają stały klucz `WorkItem.key` w adresie przestrzeni.
+Historyczne wyniki Tasks i Kanbana są wycofane.
 
 Wybrane grupy porządkują dopasowanie dokładne, początek nazwy i fragment nazwy.
 Wynik zawiera grupy z `title`, `type`, `url`, `icon`, `meta`, `eyebrow`.
@@ -596,15 +596,15 @@ w rozwijanym panelu pod polem górnego paska; przyciski typów filtrują pobrane
 wyniki bez zmiany uprawnień ani limitów serwera.
 
 GET `/global-search/?recent=1` przy pustej frazie zwraca do 8 ostatnio oglądanych
-zadań i przestrzeni oraz dostępnych starszych projektów/grup Tasks
-(bez historycznego Kanbana). Korzysta z identyfikatorów
+zadań i przestrzeni z aktywnego modułu Przestrzeni, bez historycznych
+projektów, grup i zadań Tasks/Kanbana. Korzysta z identyfikatorów
 `dashboard.recent` zapisanych dla konta i Workspace w bieżącej sesji.
 Przy każdym odczycie ponownie stosuje `workspace_owner`, Workspace i `visible_to`;
 usunięte elementy oraz te, do których cofnięto dostęp, nie trafiają do odpowiedzi.
 Otwarcie bieżącej Przestrzeni zapisuje jej własny identyfikator w tej historii,
 po sprawdzeniu uprawnień i wyrenderowaniu widoku. Tytuły i numery są pobierane
 z aktualnych rekordów. Nowe zadania używają adresu przestrzeni i klucza;
-`task_pk` dotyczy wyłącznie starszych Tasks. Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
+`task_pk` pozostaje wyłącznie w linkach zgodności starszych Tasks. Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
 w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszukiwania.
 
 ## 11. Historia a powiadomienia
@@ -1016,3 +1016,28 @@ układu; klient przywraca poprzedni układ i pokazuje instrukcję odświeżenia.
 Dodanie/usunięcie/edycja gadżetu oraz edycja pulpitu zwiększają rewizję.
 Mutacje wymagają POST i CSRF. Backend i źródłowe modele zadań pozostają
 niezmienione; pulpit nie kopiuje danych biznesowych ani historii.
+
+## Wycofanie starszych systemów pracy (10.10.2026)
+
+Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony
+projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
+w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
+pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
+
+`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
+wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
+a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
+Workspace i bieżący dostęp Przestrzeni. Obiekt bez mapowania, usunięty albo
+niedostępny zwraca 404. POST pod zachowany adres zwraca 409; usunięte endpointy
+szablonów, statusów, usuwania, zespołów, ulubionych i obserwowania zwracają 404.
+
+`tasks.access` zwraca pusty wynik dla historycznych modeli pracy. Menedżery
+modeli nadal widzą zapisane dane dla migracji i utrzymania. `TaskTag` i
+`TaskTagNote`, wspólne szablony oraz `static/js/tasks.js` pozostają używane
+przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
+Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
+historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
+powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
+`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
+nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.

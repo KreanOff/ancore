@@ -17,10 +17,10 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 20 | 0 | 18 | 58 |
+| [core](../core) | 20 | 0 | 18 | 55 |
 | [accounts](../accounts) | 20 | 7 | 9 | 56 |
 | [workplaces](../workplaces) | 22 | 10 | 13 | 116 |
-| [tasks](../tasks) | 41 | 66 | 46 | 324 |
+| [tasks](../tasks) | 42 | 66 | 46 | 332 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
 | [dashboard](../dashboard) | 35 | 13 | 29 | 212 |
@@ -1169,27 +1169,12 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
-| `'favorites/<str:kind>/<int:object_id>/'` | `directory_favorite` | 'directory_favorite' |
-| `'items/<int:task_id>/team/'` | `task_team` | 'task_team' |
-| `'items/<int:task_id>/team/candidates/'` | `task_candidates` | 'task_candidates' |
-| `'groups/<int:section_id>/team/'` | `section_team` | 'section_team' |
-| `'groups/<int:section_id>/team/candidates/'` | `section_candidates` | 'section_candidates' |
-| `'projects/<int:project_id>/team/'` | `project_team` | 'project_team' |
-| `'projects/<int:project_id>/team/candidates/'` | `project_candidates` | 'project_candidates' |
-| `'comment-images/<int:image_id>/'` | `tasks.comment_image` | 'comment_image' |
-| `'follow/<str:kind>/<int:object_id>/'` | `follow_object` | 'follow_object' |
-| `''` | `tasks.tasks` | 'tasks' |
-| `'templates/'` | `project_templates` | 'project_templates' |
-| `'templates/<int:template_id>/edit/'` | `edit_project_template` | 'edit_project_template' |
-| `'groups/<int:section_id>/'` | `tasks.task_group` | 'task_group' |
-| `'view-task/<int:task_id>/'` | `tasks.view_task` | 'view-task' |
-| `'view-subtask/<int:task_id>/'` | `tasks.view_subtask` | 'view-subtask' |
-| `'update/<int:task_id>/'` | `tasks.update_task_status` | 'update_task_status' |
-| `'attachments/<int:attachment_id>/download/'` | `tasks.download_attachment` | 'download_attachment' |
-| `'delete-attachment/<int:attachment_id>/'` | `tasks.delete_attachment` | 'delete_attachment' |
-| `'delete/<int:task_id>/'` | `tasks.delete_task` | 'delete_task' |
-| `'delete/'` | `tasks.delete_tasks` | 'delete_tasks' |
-| `'bulk-update-status/'` | `tasks.bulk_update_status` | 'bulk_update_status' |
+| `''` | `retired_tasks` | 'tasks' |
+| `'groups/<int:section_id>/'` | `retired_tasks` | 'task_group' |
+| `'view-task/<int:task_id>/'` | `retired_tasks` | 'view-task' |
+| `'view-subtask/<int:task_id>/'` | `retired_tasks` | 'view-subtask' |
+| `'attachments/<int:attachment_id>/download/'` | `retired_tasks` | 'download_attachment' |
+| `'comment-images/<int:image_id>/'` | `retired_tasks` | 'comment_image' |
 
 ### kanban/urls.py
 
@@ -1396,7 +1381,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [tasks/__init__.py](../tasks/__init__.py)
 - [tasks/access.py](../tasks/access.py) — `task_tree_ids`, `require_deletable_tasks`, `editable_to`, `require_editable`, `visible_to`
-- [tasks/admin.py](../tasks/admin.py) — `TaskAttachmentInline`, `TaskAdmin`, `TaskSectionInline`, `TaskProjectAdmin`, `TaskSectionAdmin`, `TaskAttachmentAdmin`
+- [tasks/admin.py](../tasks/admin.py)
 - [tasks/apps.py](../tasks/apps.py) — `TasksConfig`
 - [tasks/directory.py](../tasks/directory.py) — `directory_tab`, `directory_queryset`, `directory_tabs`, `decorate_favorites`
 - [tasks/forms.py](../tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
@@ -1407,7 +1392,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [tasks/sharing.py](../tasks/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`, `task_candidates`, `task_role`
 - [tasks/sharing_signals.py](../tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`, `section_member_deleted`, `task_member_deleted`
 - [tasks/tagging.py](../tasks/tagging.py) — `tags_in_scope`, `visible_tags`, `form_tags`, `tag_action`
-- [tasks/urls.py](../tasks/urls.py)
+- [tasks/urls.py](../tasks/urls.py) — `retired_tasks`
 - [tasks/views/__init__.py](../tasks/views/__init__.py)
 - [tasks/views/directory.py](../tasks/views/directory.py) — `directory_favorite`
 - [tasks/views/project_team.py](../tasks/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
@@ -1935,7 +1920,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [core/tests.py](../core/tests.py).
 
 - `UploadValidationTests`: 3 metod testowych.
-- `SidebarActiveStateTests`: 14 metod testowych.
+- `SidebarActiveStateTests`: 11 metod testowych.
 
 ### accounts/test_avatars.py
 
@@ -2072,6 +2057,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ProjectVisibilityTests`: 18 metod testowych.
 - `ProjectVisibilityMigrationTests`: 1 metod testowych.
+
+### tasks/test_retirement.py
+
+Źródło: [tasks/test_retirement.py](../tasks/test_retirement.py).
+
+- `RetiredTasksTests`: 8 metod testowych.
 
 ### tasks/test_section_sharing.py
 

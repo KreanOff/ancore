@@ -30,7 +30,8 @@ Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 
 | Zadanie | Opis i punkty wejścia |
 | --- | --- |
-| Nowe pole zadania/projektu | Moduły: Zadania; Mechanizmy: numeracja, zapis, słowniki; `tasks/models.py`, `tasks/forms.py`, `tasks/views/tasks.py` |
+| Nowe pole zadania | [Przestrzenie](SPACES.md); `spaces/models.py`, `spaces/forms.py`, `spaces/task_views.py` |
+| Wycofane Projekty, Grupy, Zadania, Ulubione projekty i Szablony | Moduły: historyczne Tasks; `tasks/urls.py`, `tasks/test_retirement.py`, `spaces/middleware.py` |
 | Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `spaces/`, `static/js/spaces.js` |
 | Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `kanban/urls.py`, `spaces/middleware.py` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |

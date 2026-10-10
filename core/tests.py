@@ -54,121 +54,30 @@ class SidebarActiveStateTests(SimpleTestCase):
         button_end = html.index('>', button_start) + 1
         return html[button_start:button_end]
 
-    def test_active_subnav_does_not_activate_primary_link(self):
-        cases = (
-            ('tasks', 'projects', '', 'Zadania', 'Projekty'),
-            ('kanban', 'projects', '', 'Kanban', 'Przestrzenie Kanban'),
-            ('contacts', '', 'all', 'Kontakty', 'Kontakty'),
-        )
-
-        for app_name, active_view, contact_status, primary_label, subnav_label in cases:
-            with self.subTest(app_name=app_name):
-                request = SimpleNamespace(
-                    resolver_match=SimpleNamespace(app_name=app_name, view_name=''),
-                    user=AnonymousUser(),
-                )
-                html = render_to_string('core/base.html', {
-                    'request': request,
-                    'workplace_app_urls': {},
-                    'active_view': active_view,
-                    'active_contact_status': contact_status,
-                })
-
-                primary_button = self._sidebar_button_html(html, primary_label)
-                if app_name == 'contacts':
-                    subnav_marker = '<span>Kontakty</span>'
-                    subnav_start = html.index('class="sidebar-subnav"', html.index('id="sidebar-contacts-title"'))
-                    subnav_label_start = html.index(subnav_marker, subnav_start)
-                    subnav_link_start = html.rfind('<a ', subnav_start, subnav_label_start)
-                    subnav_link_end = html.index('>', subnav_link_start) + 1
-                    subnav_link = html[subnav_link_start:subnav_link_end]
-                else:
-                    subnav_link = self._sidebar_link_html(html, subnav_label)
-
-                self.assertNotIn(' active', primary_button)
-                self.assertIn(' active', subnav_link)
-
     def test_sidebar_groups_have_accessible_collapse_controls(self):
-        request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='', view_name=''),
-            user=AnonymousUser(),
-        )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': '',
-            'active_contact_status': '',
-        })
-
-        self.assertEqual(html.count('data-sidebar-group-toggle'), 3)
-        for group_key, group_name in (
-            ('tasks', 'Zadania'),
-            ('kanban', 'Kanban'),
-            ('contacts', 'Kontakty'),
-        ):
+        request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='', view_name=''), user=AnonymousUser())
+        html = render_to_string('core/base.html', {'request': request})
+        self.assertEqual(html.count('data-sidebar-group-toggle'), 2)
+        for group_key, group_name in (('spaces', 'Przestrzenie'), ('pulpits', 'Pulpity')):
             with self.subTest(group=group_key):
                 self.assertIn(f'data-sidebar-group="{group_key}"', html)
                 self.assertIn(f'aria-controls="sidebar-{group_key}-subnav"', html)
                 self.assertIn(f'aria-label="Zwiń sekcję {group_name}"', html)
-                self.assertIn(f'id="sidebar-{group_key}-subnav"', html)
-                button_html = self._sidebar_button_html(html, group_name)
-                self.assertIn('sidebar-primary-link sidebar-group-toggle', button_html)
-                self.assertNotIn('href=', button_html)
+                self.assertIn('sidebar-primary-link sidebar-group-toggle', self._sidebar_button_html(html, group_name))
 
-    def test_tasks_sidebar_links_follow_expected_order(self):
-        request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='tasks', view_name=''),
-            user=AnonymousUser(),
-        )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': 'projects',
-            'active_contact_status': '',
-        })
-
-        subnav_start = html.index('id="sidebar-tasks-subnav"')
-        subnav_end = html.index('</div>', subnav_start)
-        subnav_html = html[subnav_start:subnav_end]
-        positions = [
-            subnav_html.index(f'<span>{label}</span>')
-            for label in (
-                'Projekty',
-                'Grupy',
-                'Zadania',
-            )
-        ]
-
-        self.assertEqual(positions, sorted(positions))
-        self.assertNotIn('Zadania nieprzydzielone', subnav_html)
-
-    def test_tasks_sidebar_uses_project_and_group_directory_icons(self):
-        request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='tasks', view_name=''),
-            user=AnonymousUser(),
-        )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': 'projects',
-            'active_contact_status': '',
-        })
-
-        subnav_start = html.index('id="sidebar-tasks-subnav"')
-        subnav_end = html.index('</div>', subnav_start)
-        subnav_html = html[subnav_start:subnav_end]
-
-        self.assertIn('data-icon="briefcase-business"', subnav_html)
-        self.assertIn('data-icon="layers-3"', subnav_html)
-        self.assertNotIn('data-icon="folders"', subnav_html)
-        self.assertNotIn('data-icon="folder-open"', subnav_html)
-
-        favorite_icons = {
-            item['key']: item['icon']
-            for item in SIDEBAR_FAVORITE_DEFINITIONS
-        }
-        self.assertEqual(favorite_icons['tasks-projects'], 'briefcase-business')
-        self.assertEqual(favorite_icons['tasks-groups'], 'layers-3')
+    def test_retired_task_directories_are_absent_from_sidebar(self):
+        request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='spaces', url_name='items'), user=AnonymousUser(), GET={})
+        html = render_to_string('core/base.html', {'request': request})
+        for label in ('Projekty', 'Grupy', 'Zadania', 'Ulubione projekty', 'Szablony projektów', 'Starsze widoki'):
+            self.assertNotIn(f'>{label}</span>', html)
+        self.assertNotIn('data-sidebar-group="legacy"', html)
+        self.assertNotIn('href="/tasks/', html)
+        self.assertIn(' active', self._sidebar_link_html(html, 'Wszystkie zadania'))
+        favorites = {item['key']: item for item in SIDEBAR_FAVORITE_DEFINITIONS}
+        self.assertEqual(favorites['tasks-projects']['app'], 'spaces')
+        self.assertEqual(favorites['tasks-all']['app'], 'spaces')
+        self.assertNotIn('tasks-groups', favorites)
+        self.assertNotIn('tasks-my', favorites)
 
     def test_retired_contact_directories_are_absent_from_sidebar(self):
         request = SimpleNamespace(
@@ -180,7 +89,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         for label in ('Kontakty', 'Firmy', 'Użytkownicy', 'Goście'):
             self.assertNotIn(f'>{label}</span>', html)
         self.assertNotIn('/contacts/', html)
-        for label in ('Projekty', 'Grupy', 'Zadania', 'Szablony projektów'):
+        for label in ('Przestrzenie', 'Wszystkie zadania', 'Zespoły'):
             self.assertIn(f'>{label}</span>', html)
 
     def test_sidebar_has_favorites_and_workspace_sections(self):
@@ -200,7 +109,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         favorites_content_position = html.index('id="sidebar-favorites-content"')
         remove_dropzone_position = html.index('data-sidebar-favorites-remove-dropzone')
         workspace_position = html.index('id="sidebar-workspace-title">Workspace</h2>')
-        tasks_position = html.index('data-sidebar-group="tasks"')
+        tasks_position = html.index('data-sidebar-group="spaces"')
 
         self.assertLess(favorites_position, favorites_content_position)
         self.assertLess(favorites_content_position, remove_dropzone_position)
@@ -241,59 +150,6 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('aria-controls="global-search-panel"', topbar)
         self.assertIn('aria-controls="notifications-panel"', topbar)
 
-    def test_sidebar_view_switcher_uses_turquoise_active_state(self):
-        css_path = finders.find('css/style.css')
-
-        self.assertIsNotNone(css_path)
-        with open(css_path, encoding='utf-8') as css_file:
-            css = css_file.read()
-
-        self.assertIn(
-            '.sidebar-view-switcher__item.is-active {\n'
-            '    --app-text-color: var(--text-primary);\n\n'
-            '    background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);\n'
-            '    color: var(--app-text-color);\n'
-            '}',
-            css,
-        )
-        self.assertIn('.sidebar-view-switcher__item:not(.sidebar-collapse-toggle):not(.is-active):hover {', css)
-        self.assertIn('.sidebar-view-switcher {\n    width: 106px;\n    height: 42px;', css)
-        self.assertIn(
-            '.sidebar-view-switcher--collapse {\n'
-            '    width: 42px;\n'
-            '    justify-content: center;',
-            css,
-        )
-        self.assertIn(
-            '.sidebar-view-switcher--collapse .sidebar-view-switcher__item {\n'
-            '    width: 32px;\n'
-            '    flex-basis: 32px;\n'
-            '}',
-            css,
-        )
-        self.assertIn(
-            '.sidebar-view-switcher.sidebar-view-switcher--collapse .sidebar-collapse-toggle:hover,\n'
-            '.sidebar-view-switcher.sidebar-view-switcher--collapse .sidebar-collapse-toggle[aria-expanded="true"] {\n'
-            '    border-color: transparent;\n'
-            '    background: transparent;',
-            css,
-        )
-        self.assertIn(
-            '.sidebar-collapse-toggle svg {\n'
-            '    width: var(--sidebar-icon-size);\n'
-            '    height: var(--sidebar-icon-size);\n'
-            '}',
-            css,
-        )
-        self.assertIn(
-            '.sidebar.is-searching .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {',
-            css,
-        )
-
     def test_topbar_search_controls_existing_panel_and_sidebar_can_collapse(self):
         request = SimpleNamespace(
             resolver_match=SimpleNamespace(app_name='', view_name=''),
@@ -317,195 +173,19 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('data-icon="panel-left"', html)
         self.assertNotIn('class="sidebar-collapse-icon', html)
 
-    def test_collapsed_sidebar_keeps_all_navigation_actions_available(self):
-        request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='', view_name='', url_name=''),
-            user=AnonymousUser(),
-        )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': '',
-            'active_contact_status': '',
-        })
-
-        for label in ('Dashboard', 'Kalendarz'):
+    def test_collapsed_sidebar_keeps_current_navigation_actions_available(self):
+        request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='', view_name='', url_name=''), user=AnonymousUser())
+        html = render_to_string('core/base.html', {'request': request})
+        for label in ('Kalendarz', 'Dysk', 'Dokumenty', 'Zasoby'):
             with self.subTest(label=label):
                 link_html = self._sidebar_link_html(html, label)
                 self.assertIn(f'aria-label="{label}"', link_html)
                 self.assertIn(f'title="{label}"', link_html)
-
-        for group_name in ('Zadania', 'Kanban', 'Kontakty'):
-            with self.subTest(group=group_name):
-                self.assertIn(f'data-sidebar-group-label="{group_name}"', html)
-
-        self.assertIn('id="sidebar-collapsed-flyout"', html)
-        self.assertIn('data-sidebar-collapsed-flyout-title', html)
-        self.assertIn('data-sidebar-collapsed-flyout-links', html)
-        self.assertIn('data-sidebar-collapsed-flyout-close', html)
-
-        css_path = finders.find('css/style.css')
-        js_path = finders.find('js/layout.js')
-        self.assertIsNotNone(css_path)
-        self.assertIsNotNone(js_path)
-
-        with open(css_path, encoding='utf-8') as css_file:
-            css = css_file.read()
-        with open(js_path, encoding='utf-8') as js_file:
-            js = js_file.read()
-
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher:not(.sidebar-view-switcher--collapse) {\n'
-            '        height: 106px;\n'
-            '        display: inline-flex;',
-            css,
-        )
-        self.assertIn('        gap: 0;', css)
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher__item {\n'
-            '        width: 32px;\n'
-            '        height: 32px;\n'
-            '        flex: 0 0 32px;\n'
-            '        padding: 0;\n'
-            '        border: 0;\n'
-            '        border-radius: 999px;\n'
-            '        background: transparent;',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher {\n'
-            '        width: 42px;\n'
-            '        height: 42px;\n'
-            '        padding: 3px;\n'
-            '        border: 2px solid #e9eaec;\n'
-            '        border-radius: 21px;\n'
-            '        background: #ffffff;',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher__item.is-active {\n'
-            '        background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher__item:not(.sidebar-collapse-toggle):not(.is-active):hover {',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-view-switcher--collapse .sidebar-view-switcher__item {\n'
-            '        width: 32px;\n'
-            '        flex-basis: 32px;',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-menu-section--favorites {\n'
-            '        display: block;',
-            css,
-        )
-        self.assertIn('html.sidebar-collapsed .sidebar .sidebar-workspace-switcher {', css)
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar .sidebar-workspace-toggle,\n'
-            '    html.sidebar-collapsed .sidebar .logo {\n'
-            '        gap: 0;',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-header {\n'
-            '        justify-content: flex-start;\n'
-            '        padding-inline: var(--sidebar-rail-gutter);',
-            css,
-        )
-        self.assertIn('html.sidebar-is-collapsing .sidebar .sidebar-workspace-toggle {', css)
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar .sidebar-workspace-avatar {\n'
-            '        width: var(--sidebar-avatar-size);\n'
-            '        height: var(--sidebar-avatar-size);\n'
-            '        flex-basis: var(--sidebar-avatar-size);',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar .sidebar-footer .nav-link .sidebar-profile-avatar {\n'
-            '        width: var(--sidebar-avatar-size);\n'
-            '        height: var(--sidebar-avatar-size);\n'
-            '        flex-basis: var(--sidebar-avatar-size);',
-            css,
-        )
-        self.assertIn('function openCollapsedSidebarFlyout(group, focusFirstLink) {', js)
-        self.assertIn('if (isSidebarCollapsedMode()) {', js)
-        self.assertIn('--sidebar-compact-control-size: 42px;', css)
-        self.assertIn('--sidebar-compact-item-height: 36px;', css)
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar-favorites-list {\n'
-            '        gap: 0.125rem;',
-            css,
-        )
-        self.assertIn(
-            'min-height: var(--sidebar-compact-item-height);\n'
-            '        height: var(--sidebar-compact-item-height);',
-            css,
-        )
-        self.assertIn(
-            '.sidebar,\n'
-            '.sidebar-collapsed-flyout {\n'
-            '    --sidebar-icon-size: 18px;\n'
-            '}',
-            css,
-        )
-        self.assertIn('--sidebar-avatar-size: 39px;', css)
-        self.assertIn(
-            '.sidebar-workspace-toggle {\n'
-            '    width: 100%;\n'
-            '    min-width: 0;\n'
-            '    height: 42px;',
-            css,
-        )
-        self.assertIn(
-            '    gap: 0.55rem;\n'
-            '    padding: 0 0.35rem 0 var(--sidebar-avatar-inset);\n'
-            '    border-radius: 8px;',
-            css,
-        )
-        self.assertIn('padding: 0.625rem var(--sidebar-rail-gutter);', css)
-        self.assertIn('--sidebar-rail-gutter: calc(', css)
-        self.assertIn('--sidebar-icon-inset: calc(', css)
-        self.assertIn('--sidebar-avatar-inset: calc(', css)
-        self.assertIn(
-            '.sidebar .sidebar-primary-link {\n'
-            '    min-height: var(--sidebar-compact-item-height);\n'
-            '    height: var(--sidebar-compact-item-height);',
-            css,
-        )
-        self.assertIn(
-            '.sidebar-favorite-link {\n'
-            '    min-height: var(--sidebar-compact-item-height);\n'
-            '    height: var(--sidebar-compact-item-height);',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-collapsed .sidebar .sidebar-primary-link,\n'
-            '    html.sidebar-collapsed .sidebar .sidebar-footer .nav-link {\n'
-            '        width: 100%;\n'
-            '        min-width: 0;',
-            css,
-        )
-        self.assertIn(
-            'html.sidebar-is-expanding .sidebar :is(\n'
-            '        .nav-label,\n'
-            '        .sidebar-workspace-name,\n'
-            '        .sidebar-brand-name,\n'
-            '        .sidebar-workspace-chevron\n'
-            '    ) {',
-            css,
-        )
-        self.assertIn(
-            '.sidebar .sidebar-footer .nav-link--profile {\n'
-            '    min-height: var(--sidebar-compact-control-size);\n'
-            '    height: var(--sidebar-compact-control-size);',
-            css,
-        )
-        self.assertIn('margin-inline: var(--sidebar-rail-gutter);', css)
-        self.assertNotIn('--sidebar-compact-avatar-size:', css)
-        self.assertIn('background: #eceef1;', css)
+        for group_name in ('Przestrzenie', 'Pulpity'):
+            self.assertIn(f'data-sidebar-group-label="{group_name}"', html)
+        for marker in ('id="sidebar-collapsed-flyout"', 'data-sidebar-collapsed-flyout-title', 'data-sidebar-collapsed-flyout-links', 'data-sidebar-collapsed-flyout-close'):
+            self.assertIn(marker, html)
+        self.assertNotIn('data-sidebar-group="legacy"', html)
 
     def test_sidebar_navigation_icons_share_one_size_in_both_modes(self):
         css_path = finders.find('css/style.css')

@@ -83,7 +83,7 @@ class IndependentTaskTests(TestCase):
         self.assertFalse(Space.objects.filter(project=old).exists())
         self.assertFalse(WorkItem.objects.filter(legacy_task=task).exists())
         self.assertNotContains(self.client.get(self.url('?view=list')), 'Starsze zadanie')
-        self.assertEqual(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks', f'view-task/{task.task_id}/?task_pk={task.pk}')).status_code, 200)
+        self.assertEqual(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks', f'view-task/{task.task_id}/?task_pk={task.pk}')).status_code, 404)
 
     def test_save_status_completion_history_and_reopen(self):
         response = self.client.post(self.task_url('?view=list'), self.data(status='closed'))
@@ -286,7 +286,7 @@ class IndependentTaskTests(TestCase):
         self.client.post(self.task_url(), self.data(title='Niezależna treść'))
         legacy.refresh_from_db()
         self.assertEqual(legacy.title, 'Archiwalna treść')
-        self.assertNotContains(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks')), 'Archiwalna treść')
+        self.assertNotContains(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks'), follow=True), 'Archiwalna treść')
         self.client.post(self.task_url(), {'action': 'delete'})
         self.assertTrue(Task.objects.filter(pk=legacy.pk, space_archived=True).exists())
         self.assertEqual(self.client.get(old).status_code, 404)

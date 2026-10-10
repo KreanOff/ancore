@@ -2,22 +2,25 @@
 
 Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
 szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
-aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają Tasks.
+aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces.SpaceTask`.
 [Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
 
 ## Zespoły pracy a członkostwo Workspace
 
 Moduł `/teams/` grupuje aktywnych członków Workspace w zespoły z własnymi
 administratorami i profilami. Powiązanie z przestrzenią i przypisanie zadania
-do zespołu nie nadaje dostępu do danych. Dotychczasowe role Workspace,
-projektów, grup i zadań nadal obowiązują. „Zarządzana przez zespół” w kreatorze
+do zespołu nie nadaje dostępu do danych. Obowiązują role Workspace oraz niezależne członkostwa Przestrzeni i ich zadań. „Zarządzana przez zespół” w kreatorze
 przestrzeni oznacza niezależną konfigurację, nie automatyczne udostępnienie
 członkom zespołu. [Pełny opis](SPACES.md).
 
 
+Starsze Projekty, Grupy, Zadania, Ulubione projekty i Szablony projektów są
+wycofane. Opisy ich członkostw poniżej stanowią referencję historycznych danych,
+bez aktywnych ekranów udostępniania. Bieżący dostęp i role opisuje [SPACES.md](SPACES.md).
+
 ## Zakres pierwszej wersji
 
-Workspace obejmuje wspólne Projekty i Zadania, Kanban, Kalendarz, Dysk,
+Workspace obejmuje Przestrzenie i ich zadania, Kalendarz, Dysk,
 Dokumenty oraz Zasoby. Dawne katalogi Kontaktów, Firm, Użytkowników i Gości
 są wycofane; nie zmienia to kont ani członkostw Workspace. Dołączenie udostępnia wspólne dane Workspace.
 Projekty Zadań mają widoczność **Publiczny** (cały Workspace) lub **Prywatny**

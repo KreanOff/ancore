@@ -69,39 +69,12 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
     if item_key == 'resources':
         return app_name in {'resources', 'workplace_resources'}
 
-    if item_key.startswith('tasks-'):
-        if app_name not in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:
-            return False
-        expected_view = {
-            'tasks-my': 'unassigned_tasks',
-            'tasks-all': ('all_tasks', 'unassigned_tasks'),
-            'tasks-projects': ('projects', 'project'),
-            'tasks-groups': ('all_groups', 'section'),
-        }.get(item_key)
-        if item_key.startswith('tasks-') and app_name not in {'tasks', 'workplace_tasks'}:
-            return False
-        return active_view in expected_view if isinstance(expected_view, tuple) else active_view == expected_view
-
-    if item_key.startswith('kanban-'):
-        if app_name not in {'kanban', 'workplace_kanban'}:
-            return False
-        expected_view = {
-            'kanban-spaces': ('projects', 'project'),
-            'kanban-boards': ('all_groups', 'section'),
-        }[item_key]
-        return active_view in expected_view
-
     return item_key == 'calendar' and app_name in {'planner', 'workplace_planner'}
 
 
 def sidebar_favorites_for_request(request, workplace, favorite_keys):
     catalog = sidebar_favorite_catalog(workplace)
     active_view = request.GET.get('view', '').replace('-', '_') if hasattr(request, 'GET') else ''
-    resolver_match = getattr(request, 'resolver_match', None)
-    app_name = getattr(resolver_match, 'app_name', '') or ''
-    view_name = getattr(resolver_match, 'url_name', '') or ''
-    if not active_view and app_name in {'tasks', 'workplace_tasks', 'kanban', 'workplace_kanban'}:
-        active_view = 'section' if view_name == 'task_group' else 'projects'
     active_view = getattr(request, 'sidebar_active_view', active_view)
     items = []
     for key in favorite_keys:

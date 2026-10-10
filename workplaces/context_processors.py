@@ -48,7 +48,6 @@ def current_workplace(request):
             'spaces': scoped_workplace_app_path(active_workplace, 'spaces'),
             'teams': scoped_workplace_app_path(active_workplace, 'teams'),
             'for_you': scoped_workplace_app_path(active_workplace, 'for-you'),
-            'tasks': scoped_workplace_app_path(active_workplace, 'tasks'),
             'calendar': scoped_workplace_app_path(active_workplace, 'calendar'),
             'documents': scoped_workplace_app_path(active_workplace, 'documents'),
             'office': scoped_workplace_app_path(active_workplace, 'office'),

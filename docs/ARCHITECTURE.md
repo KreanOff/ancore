@@ -24,7 +24,7 @@ ancore/                 konfiguracja projektu, główny routing, WSGI/ASGI
 accounts/               użytkownik, logowanie, profil, wiele kont, obecność
 workplaces/             Workspace, aktywny kontekst, nawigacja, ulubione
 spaces/                 przestrzenie, własne zadania, historia, pliki, planowanie i zespoły
-tasks/                  starsze projekty, grupy i zadania oraz wspólny słownik tagów
+tasks/                  historyczne dane pracy, stare linki i wspólny słownik tagów
 kanban/                 historyczne źródła kart i zgodność starych adresów
 contacts/               historyczne kontakty i firmy; bez aktywnego routingu
 planner/                wydarzenia i kalendarz
@@ -65,8 +65,9 @@ Pełny indeks źródeł znajduje się w [CODE_INDEX.md](CODE_INDEX.md).
 | CSS | Wygląd i responsywność | `static/css/` |
 | JavaScript | Interakcje i komunikacja HTTP | `static/js/` |
 
-Duża część logiki Zadań/Kanbana jest nadal skupiona w dużych plikach widoków
-i `static/js/tasks.js`. Nie zakładaj istnienia osobnej warstwy usług dla każdej
+Historyczna logika Zadań/Kanbana pozostaje w dużych plikach widoków,
+bez rejestracji aktywnych ekranów. `static/js/tasks.js` nadal obsługuje
+wspólne komponenty bieżących modułów. Nie zakładaj istnienia osobnej warstwy usług dla każdej
 operacji. Moduł `workplaces.services` jest rzeczywistą wspólną warstwą kontekstu.
 
 ## 4. Przepływ żądania
@@ -108,8 +109,8 @@ flowchart LR
     T -->|TaskTag| K
     T -->|wspólny słownik TaskTag| S
     S --> H
-    T --> H[dashboard: wyszukiwanie i historia]
-    K --> H
+    T -.->|historyczne relacje| H[dashboard: wyszukiwanie i powiadomienia]
+    K -.->|historyczne relacje| H
     P --> H
     D --> H
 ```
@@ -119,17 +120,11 @@ flowchart LR
 - `Workplace` jest kontekstem danych zespołu. Właściciel i członkowie mają wspólny
   dostęp; role i zakres pierwszej wersji opisuje [Praca zespołowa](TEAMWORK.md).
   Dane zachowują właściciela Workspace, a autor operacji to `request.user`.
-  Projekty Zadań mogą być prywatne: `private_owner` i jawny filtr
-  `tasks.access.visible_to` ograniczają projekt oraz jego zawartość do tej osoby
-  i wskazanych członków projektu z `shared_with` (przez `TaskProjectMembership`).
-  `tasks/views/project_team.py` nadaje dostęp natychmiast aktywnym członkom tego
-  samego Workspace. Grupy mają analogiczne `TaskSectionMembership` obsługiwane
-  przez `tasks/views/section_team.py`; ich dostęp zawęża dostęp projektu.
-  Zadania mają `TaskMembership` i `tasks/views/task_team.py`; ich prywatność
-  dodatkowo zawęża grupę i całe drzewo rodziców.
-  Projekt, grupa i zadanie nie wymagają zaproszeń ani akceptacji; modele zaproszeń
-  pozostają wyłącznie historyczne.
-  Projekt, grupa, zadanie i Workspace współdzielą szablony tabel zespołu oraz picker osoby.
+  Bieżąca prywatność i członkostwa należą do `spaces.access`, `SpaceMembership`
+  i `SpaceTaskMembership`. Przestrzenie oraz Workspace współdzielą komponenty
+  tabel zespołu i picker osoby. Historyczne projekty/grupy/zadania przechowują
+  dawne prywatne właścicielstwo i członkostwa, lecz `tasks.access.visible_to`
+  wyklucza te modele z aktywnego odczytu. Ich dawne widoki zespołów nie mają tras.
 - Zadania i Kanban mają różne hierarchie i osobne tabele. Kanban nie jest
   jedynie innym sposobem wyświetlenia `Task`. `kanban.access` ogranicza przestrzenie,
   tablice i dziedziczoną zawartość historyczną, obecnie zawsze zwracając pusty
@@ -140,21 +135,22 @@ flowchart LR
   Globalny katalog i jego akcje są wycofane, bez menu, Favorites i wyszukiwania.
   Kanban oraz Dokumenty zachowują historyczne powiązania.
 - `dashboard` integruje moduły w wyszukiwaniu; powiadomienia buduje z aktywności
-  typu komentarz z Zadań i Przestrzeni, zaproszeń oraz osobistych przypomnień
-  `TaskReminder` i `spaces.SpaceTaskReminder`.
+  typu komentarz z Przestrzeni, zaproszeń Workspace oraz osobistych przypomnień
+  `spaces.SpaceTaskReminder`. Historyczne `TaskReminder` nie są dostarczane.
   Wycofany Kanban pozostaje tylko źródłem danych historycznych i mapowań importu.
   Wpisy historii zmian pozostają wyłącznie w historii obiektów.
 - `core` dostarcza powłokę interfejsu i upload; `core` nie ma własnych modeli domenowych. `dashboard.NotificationState`
   zapisuje osobisty odczyt, archiwum i usunięcie powiadomień, odwołując się do istniejących
-  aktywności, zaproszeń i dostarczonych przypomnień. `ObjectFollow` przechowuje
-  osobiste subskrypcje zadań/projektów, a `ActivityInterest` wiąże istniejące
-  aktywności z odbiorcami wzmianek i obserwowania, bez kopiowania historii.
+  aktywności, zaproszeń i dostarczonych przypomnień. `ObjectFollow` i
+  `ActivityInterest` zachowują historyczne subskrypcje i odbiorców aktywności
+  Tasks/Kanbana, bez nowych dostarczeń. Wzmianki Przestrzeni są zapisane
+  w metadanych `SpaceTaskActivity`.
 
 ## 6. Hierarchie danych
 
 ```text
 Użytkownik → Workspace
-  ├─ Zadania: TaskProject → TaskSection → Task → podzadanie
+  ├─ Historyczne Zadania: TaskProject → TaskSection → Task → podzadanie
   │                                      ├─ TaskActivity → TaskCommentImage
   │                                      ├─ TaskAttachment
   │                                      └─ TaskWorkLog
@@ -163,7 +159,7 @@ Użytkownik → Workspace
   │                                              ├─ KanbanActivity → KanbanCommentImage
   │                                              └─ KanbanAttachment
   ├─ Historyczne dane Kontaktów: Company ← Contact ← UserContact → konto Ancore
-  ├─ Kalendarz: CalendarEvent + terminy Task / Kanban (bez kopiowania rekordów)
+  ├─ Kalendarz: CalendarEvent + terminy SpaceTask (bez kopiowania rekordów)
   ├─ Zasoby: Resource (typ, status, przypisanie, lokalizacja i daty)
   ├─ Dysk: DocumentLibrary → Folder / Document (foldery mogą być zagnieżdżone)
   └─ Dokumenty: WorkspaceDocument (płaski katalog)
@@ -289,14 +285,9 @@ Nie ma rejestracji URL ani ekranów Django admin; dane nie są kasowane.
 Obecność `ASGI_APPLICATION`/pliku ASGI nie oznacza działającej komunikacji
 WebSocket. W sprawdzonych źródłach nie ma workera do automatyzacji tagów,
 wysyłania push/e-mail ani synchronizacji kalendarza z zewnętrznym serwisem.
-Przypomnienia w aplikacji materializuje `dashboard/reminders.py` podczas
+Przypomnienia Przestrzeni materializuje `dashboard/reminders.py` podczas
 odpytywania centrum powiadomień; nie wymagają workera. `TaskProjectTemplate`
-przechowuje niezależny snapshot struktury projektu w JSON, odtwarzany przez
-`tasks/project_templates.py` w transakcji z normalnym zapisem modeli.
-Edytor szablonu otwierany w modalu nad katalogiem zmienia wyłącznie ten snapshot;
-endpoint zwraca formularze i wyniki zapisu bez nawigacji strony. Formularze jego grup
-i zadań nie zapisują żywych modeli. Każda operacja blokuje wiersz szablonu,
-aby równoległe zmiany różnych elementów nie nadpisywały całej struktury.
+zachowuje historyczne snapshoty JSON, bez katalogu, edytora ani tworzenia projektów.
 Aktualne ograniczenia i pozostałości historyczne są zebrane w
 [MODULES.md](MODULES.md) i [DEVELOPMENT.md](DEVELOPMENT.md).
 
@@ -308,11 +299,36 @@ przechowuje planowanie oraz trwały klucz, np. `PRO-1`. Lista, tablica, backlog
 oraz szczegóły używają tego samego `SpaceTask`. Szczegóły pozostają pod
 `/space/<slug>/tasks/<klucz>/`, w zwykłym i scoped adresie.
 
-`tasks.TaskProject`, `TaskSection` i `Task` pozostają starszym, odrębnym
-systemem. Nowe obiekty nie tworzą rekordów po drugiej stronie. Opcjonalne
+`tasks.TaskProject`, `TaskSection` i `Task` są historycznym, wycofanym
+systemem, bez ekranów i operacji również dla rekordów bez importu. Nowe obiekty nie tworzą rekordów po drugiej stronie. Opcjonalne
 mapowania `Space.project` i `WorkItem.legacy_task` obsługują wyłącznie import
 oraz stare linki, bez synchronizacji. Źródła importu są zachowane i archiwalne.
 `spaces.access` stosuje aktywny Workspace oraz prywatność przestrzeni i drzewa
 zadań. Dashboard, „Dla ciebie”, postęp pulpitów i wyszukiwanie korzystają
 z nowych danych; Planner uwzględnia ich terminy. Szczegóły migracji,
 konfiguracji i ograniczeń: [SPACES.md](SPACES.md).
+
+## Wycofanie starszych systemów pracy (10.10.2026)
+
+Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony
+projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
+w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
+pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
+
+`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
+wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
+a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
+Workspace i bieżący dostęp Przestrzeni. Obiekt bez mapowania, usunięty albo
+niedostępny zwraca 404. POST pod zachowany adres zwraca 409; usunięte endpointy
+szablonów, statusów, usuwania, zespołów, ulubionych i obserwowania zwracają 404.
+
+`tasks.access` zwraca pusty wynik dla historycznych modeli pracy. Menedżery
+modeli nadal widzą zapisane dane dla migracji i utrzymania. `TaskTag` i
+`TaskTagNote`, wspólne szablony oraz `static/js/tasks.js` pozostają używane
+przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
+Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
+historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
+powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
+`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
+nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.

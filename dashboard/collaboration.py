@@ -151,6 +151,8 @@ def deliver_activity_interest(sender, instance, created, raw=False, **kwargs):
     if not created or raw or instance.kind != 'comment':
         return
     task = instance.task
+    if not visible_to(type(task).objects.filter(pk=task.pk), instance.actor).exists():
+        return
     if task.workplace_id and task.user_id != task.workplace.owner_id:
         return
     app = 'tasks' if sender is TaskActivity else 'kanban'

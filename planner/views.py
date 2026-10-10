@@ -6,13 +6,11 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from tasks.access import visible_to
 from workplaces.services import workspace_owner
 
 from .forms import CalendarEventForm
 from .models import CalendarEvent
 from workplaces.services import scoped_workplace_app_path
-from tasks.models import Task
 
 
 def _active_workplace(request):
@@ -35,21 +33,6 @@ def _event_payload(event):
         'all_day': event.all_day,
         'color': event.color,
         'source': 'events',
-    }
-
-
-def _task_payload(task):
-    due = timezone.localtime(task.due_at)
-    label = 'Podzadanie' if task.parent_id else 'Zadanie'
-    route = 'view-subtask' if task.parent_id else 'view-task'
-    return {
-        'id': f'tasks:{task.pk}', 'source': 'tasks',
-        'title': f'{label} #{task.task_id} · {task.title}',
-        'description': task.description,
-        'start': due.isoformat(), 'end': due.isoformat(),
-        'all_day': False, 'color': 'blue',
-        'status': task.status,
-        'url': scoped_workplace_app_path(task.workplace, 'tasks', f'{route}/{task.task_id}/?task_pk={task.pk}'),
     }
 
 
@@ -122,11 +105,6 @@ def events_list(request):
         end__gte=start,
     ), _active_workplace(request))
     payload = [_event_payload(event) for event in events]
-    tasks = visible_to(Task.objects.all(), request.user).filter(
-        user=workspace_owner(request), workplace=_active_workplace(request),
-        due_at__gte=start, due_at__lte=end,
-    ).exclude(status='closed').select_related('workplace')
-    payload.extend(_task_payload(task) for task in tasks)
     from spaces.services import visible_items, task_url
     for item in visible_items(request).filter(task__due_at__gte=start, task__due_at__lte=end).exclude(task__status='closed'):
         due = timezone.localtime(item.task.due_at).isoformat()

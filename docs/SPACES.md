@@ -385,8 +385,9 @@ przydział wykonawcy nie rozszerza tego dostępu.
 
 `tasks.0066_task_space_archived_taskproject_space_archived` oraz
 `spaces.0007_archive_import_sources` oznaczają źródła jako archiwalne.
-Starsze listy i operacje wykluczają je również po usunięciu nowego zadania
-lub przestrzeni. GET/HEAD starego linku szczegółów przekierowuje do nowego
+Starsze systemy projektów, grup i zadań są w całości wycofane, również dla
+rekordów bez importu i po usunięciu nowego zadania lub przestrzeni.
+[Kontrakt zgodności](MODULES.md#3-projekty-grupy-i-zadania--tasks). GET/HEAD starego linku szczegółów przekierowuje do nowego
 adresu po bieżącej kontroli dostępu; POST tego linku zwraca 409. Pobieranie
 importowanego pliku przekierowuje do chronionego endpointu przestrzeni.
 Usunięcie starego źródła nie usuwa nowego zadania (`SET_NULL`).

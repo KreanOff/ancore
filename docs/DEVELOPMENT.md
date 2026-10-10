@@ -15,7 +15,61 @@ sprawdź też stary link, pustą listę, walidację, obserwatora, Dashboard oraz
 szerokości desktop/tablet/telefon. Dane do zapisów przygotuj w odrębnej bazie QA.
 
 
-## Regresje zapisu i numeracji
+## Wycofanie starszych systemów pracy (10.10.2026)
+
+Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony
+projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
+w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
+pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
+
+`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
+wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
+a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
+Workspace i bieżący dostęp Przestrzeni. Obiekt bez mapowania, usunięty albo
+niedostępny zwraca 404. POST pod zachowany adres zwraca 409; usunięte endpointy
+szablonów, statusów, usuwania, zespołów, ulubionych i obserwowania zwracają 404.
+
+`tasks.access` zwraca pusty wynik dla historycznych modeli pracy. Menedżery
+modeli nadal widzą zapisane dane dla migracji i utrzymania. `TaskTag` i
+`TaskTagNote`, wspólne szablony oraz `static/js/tasks.js` pozostają używane
+przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
+Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
+historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
+powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
+`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
+nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.
+
+Testy `tasks.test_retirement` sprawdzają menu, zwykłe/scoped linki, brak operacji
+i ekranów admin, zachowanie danych/szablonów/plików, mapowania importu, cofnięcie
+dostępu, nieprawidłowe identyfikatory, wyszukiwanie, historię sesji, ulubione,
+kalendarz i brak dostarczania historycznych powiadomień/przypomnień.
+Uruchamiaj też `spaces`, `planner`, `core.tests.SidebarActiveStateTests`,
+`dashboard.test_for_you`, `dashboard.test_pulpits`, `core.test_file_lifecycle`
+i `kanban.test_retirement`. Historyczne testy ekranów Tasks nie opisują już
+kontraktu bieżącej aplikacji; ich oczekiwania aktywnych URL są nieaktualne.
+Browser QA: Przestrzenie → Wszystkie zadania → zadanie → powrót, stary katalog
+i importowane szczegóły, brak starych pozycji, pusty Workspace i wynik szukania,
+błąd sieci, referencyjny pulpit, częściowa nawigacja i ponowne wejście,
+zwinięty sidebar oraz desktop/tablet/telefon.
+
+Weryfikacja (10.10.2026): wszystkie **273 testy** powyższego zestawu przeszły
+na osobnej bazie PostgreSQL. Playwright/Chrome (plugin Browser niedostępny)
+na izolowanej bazie QA przy 1440×1000, 1920×1000, 1024×1000 i 390×844
+potwierdził menu bez starszych systemów, Wszystkie zadania → szczegóły →
+Wstecz/Dalej/reload, zachowanie dokumentu przy częściowej nawigacji,
+przekierowania katalogu i importowanych szczegółów, zwinięty sidebar/Escape,
+menu telefonu, referencyjny pulpit, pusty Workspace, pusty wynik katalogu
+oraz pusty wynik i błąd sieci globalnego wyszukiwania. Zrzuty desktop/telefon
+potwierdziły dotychczasowy wygląd bez starej sekcji. Nie było nieoczekiwanych
+błędów konsoli, pustych ekranów, nakładek błędów ani przepełnienia strony;
+symulowana awaria wyszukiwania wywołała oczekiwany `ERR_FAILED`.
+Kontrole Django, braku zmian modeli/migracji, linków i kotwic dokumentacji,
+indeksu oraz `git diff --check` przeszły. Serwer i baza QA zostały usunięte.
+Nie uruchamiano całego repozytorium, historycznych testów ekranów Tasks,
+Safari ani Firefox. Kod nie wymaga migracji i nie kasuje danych użytkowników.
+
+## Historyczne regresje zapisu i numeracji
 
 `tasks.test_task_moves` sprawdza wycofanie przenoszenia zadań: ignorowanie
 starych pól miejsca w zwykłych/scoped adresach i AJAX, zachowanie grupy,
