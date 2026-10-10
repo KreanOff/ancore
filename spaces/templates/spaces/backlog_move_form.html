@@ -1,0 +1,12 @@
+<form method="post" action="{{ item.action_url }}" data-work-action>
+    {% csrf_token %}
+    <input type="hidden" name="action" value="plan">
+    <input type="hidden" name="return_view" value="backlog">
+    <input type="hidden" name="space" value="{{ space.pk }}">
+    <input type="hidden" name="source_sprint" value="{{ item.sprint_id|default:'' }}">
+    <input type="hidden" name="source_rank" value="{{ item.rank }}">
+    <input type="hidden" name="sprint" value="{{ destination.pk|default:'' }}">
+    <input type="hidden" name="before" value="">
+    <input type="hidden" name="after" value="{{ last_item.pk|default:'' }}">
+    <button class="tasks-project-menu-button" type="submit"><i data-icon="arrow-right" aria-hidden="true"></i><span>{% if destination %}Przenieś do sprintu: {{ destination.name }}{% else %}Przenieś do backlogu{% endif %}</span></button>
+</form>

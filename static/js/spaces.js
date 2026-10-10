@@ -196,8 +196,12 @@
                 const result = await request(url, { method: 'POST', body }, 'X-Work-Action');
                 if (result.error) throw new Error(result.error);
                 if (!signal.aborted) await navigate(window.location.href);
-            } catch (error) { if (!signal.aborted) window.showNotification?.(error.message, 'error'); }
-            finally { pending = false; }
+                return true;
+            } catch (error) {
+                if (!signal.aborted) window.showNotification?.(
+                    ['TypeError', 'TimeoutError'].includes(error.name) ? 'Nie udało się zapisać zmian. Spróbuj ponownie.' : error.message, 'error');
+            } finally { pending = false; }
+            return false;
         }
         page.addEventListener('submit', event => { const form = event.target.closest('[data-work-action]'); if (form) { event.preventDefault(); action(form.getAttribute('action'), new FormData(form)); } }, { signal });
         let dragged;
@@ -217,6 +221,135 @@
             action(dragged.dataset.actionUrl, body); dragged = null;
         }, { signal });
         page.addEventListener('dragend', () => { dragged = null; page.querySelectorAll('.is-drag-over').forEach(column => column.classList.remove('is-drag-over')); }, { signal });
+        const backlog = page.querySelector('[data-work-backlog]');
+        if (backlog) {
+            let draggedRow, dropPosition, pointer, scrollFrame, pointerPoint;
+            const content = backlog.closest('.work-content');
+            const status = message => {
+                const live = document.querySelector('[data-backlog-status]');
+                if (live) live.textContent = message;
+            };
+            function clearIndicators() {
+                backlog.querySelectorAll('.is-backlog-drop-target, .is-backlog-drop-before, .is-backlog-drop-after').forEach(element => {
+                    element.classList.remove('is-backlog-drop-target', 'is-backlog-drop-before', 'is-backlog-drop-after');
+                });
+                dropPosition = null;
+            }
+            function resetDrag() {
+                draggedRow?.classList.remove('is-dragging');
+                draggedRow = null;
+                clearIndicators();
+                cancelAnimationFrame(scrollFrame);
+                scrollFrame = null;
+            }
+            function positionAt(target, y) {
+                const group = target?.closest('[data-work-backlog-group]');
+                clearIndicators();
+                if (!group || !backlog.contains(group) || !draggedRow || pending) return;
+                const rows = [...group.querySelectorAll('[data-work-backlog-row]')].filter(row => row !== draggedRow);
+                // A collapsed section accepts a move to the end of its visible group.
+                const index = group.classList.contains('is-collapsed') ? rows.length : rows.findIndex(row => {
+                    const rect = row.getBoundingClientRect();
+                    return y < rect.top + rect.height / 2;
+                });
+                const insertion = index === -1 ? rows.length : index;
+                const before = rows[insertion] || null, after = rows[insertion - 1] || null;
+                group.classList.add('is-backlog-drop-target');
+                if (before) before.classList.add('is-backlog-drop-before');
+                else if (after) after.classList.add('is-backlog-drop-after');
+                dropPosition = { group, before, after };
+            }
+            async function commitDrop() {
+                if (!draggedRow || !dropPosition || pending) { resetDrag(); return; }
+                const row = draggedRow, position = dropPosition;
+                const body = new FormData(backlog.querySelector('[data-backlog-csrf]'));
+                body.set('action', 'plan'); body.set('return_view', 'backlog');
+                body.set('space', backlog.dataset.spaceId);
+                body.set('source_sprint', row.dataset.sprintId); body.set('source_rank', row.dataset.rank);
+                body.set('sprint', position.group.dataset.sprintId);
+                body.set('before', position.before?.dataset.itemId || '');
+                body.set('after', position.after?.dataset.itemId || '');
+                const label = position.group.dataset.groupLabel;
+                resetDrag();
+                backlog.setAttribute('aria-busy', 'true');
+                status('Zapisuję położenie zadania.');
+                const saved = await action(row.dataset.actionUrl, body);
+                if (!signal.aborted) backlog.removeAttribute('aria-busy');
+                status(saved ? `Zapisano położenie zadania. ${label}.` : 'Nie zapisano położenia zadania. Spróbuj ponownie.');
+            }
+            backlog.addEventListener('dragstart', event => {
+                const row = event.target.closest('[data-work-backlog-row][draggable=true]');
+                if (!row) return;
+                if (pending || event.target.closest('a, button, input, select, textarea')) { event.preventDefault(); return; }
+                draggedRow = row;
+                row.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('application/x-ancore-backlog', row.dataset.itemId);
+                event.dataTransfer.setData('text/plain', row.dataset.itemId);
+                status('Przeciągnij zadanie na inną pozycję lub do wybranej sekcji. Escape anuluje.');
+            }, { signal });
+            backlog.addEventListener('dragover', event => {
+                if (!draggedRow || pending) return;
+                positionAt(event.target, event.clientY);
+                if (dropPosition) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
+            }, { signal });
+            backlog.addEventListener('dragleave', event => {
+                if (!backlog.contains(event.relatedTarget)) clearIndicators();
+            }, { signal });
+            backlog.addEventListener('drop', event => {
+                if (!draggedRow) return;
+                event.preventDefault();
+                positionAt(event.target, event.clientY);
+                commitDrop();
+            }, { signal });
+            backlog.addEventListener('dragend', resetDrag, { signal });
+            // Touch starts on the existing priority icon; ordinary swipes still scroll.
+            backlog.addEventListener('pointerdown', event => {
+                const handle = event.target.closest('[data-work-backlog-row][draggable=true] > .tasks-row-priority');
+                if (!handle || event.pointerType === 'mouse' || !event.isPrimary || pending) return;
+                event.preventDefault();
+                pointer = { id: event.pointerId, handle, row: handle.closest('[data-work-backlog-row]'), x: event.clientX, y: event.clientY };
+                handle.setPointerCapture(event.pointerId);
+            }, { signal });
+            function scrollTouch() {
+                if (!pointer || !draggedRow || !pointerPoint) { scrollFrame = null; return; }
+                const rect = content.getBoundingClientRect();
+                const step = pointerPoint.y < rect.top + 40 ? -10 : pointerPoint.y > rect.bottom - 40 ? 10 : 0;
+                if (step) content.scrollTop += step;
+                positionAt(document.elementFromPoint(pointerPoint.x, pointerPoint.y), pointerPoint.y);
+                scrollFrame = requestAnimationFrame(scrollTouch);
+            }
+            backlog.addEventListener('pointermove', event => {
+                if (!pointer || event.pointerId !== pointer.id) return;
+                if (!draggedRow && Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) < 6) return;
+                event.preventDefault();
+                draggedRow = pointer.row;
+                draggedRow.classList.add('is-dragging');
+                pointerPoint = { x: event.clientX, y: event.clientY };
+                positionAt(document.elementFromPoint(event.clientX, event.clientY), event.clientY);
+                if (!scrollFrame) scrollFrame = requestAnimationFrame(scrollTouch);
+            }, { signal });
+            function releasePointer() {
+                if (pointer?.handle.hasPointerCapture(pointer.id)) pointer.handle.releasePointerCapture(pointer.id);
+                pointer = null;
+                pointerPoint = null;
+            }
+            backlog.addEventListener('pointerup', event => {
+                if (!pointer || event.pointerId !== pointer.id) return;
+                releasePointer();
+                commitDrop();
+            }, { signal });
+            backlog.addEventListener('pointercancel', event => {
+                if (!pointer || event.pointerId !== pointer.id) return;
+                releasePointer(); resetDrag();
+            }, { signal });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && draggedRow) {
+                    releasePointer(); resetDrag(); status('Anulowano przeciąganie zadania.');
+                }
+            }, { signal });
+            signal.addEventListener('abort', () => { releasePointer(); resetDrag(); }, { once: true });
+        }
         if (modal()) display(host.innerHTML);
     }
     if (!window.AncoreTaskModals) document.addEventListener('DOMContentLoaded', init, { once: true });

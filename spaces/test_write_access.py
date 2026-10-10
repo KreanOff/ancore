@@ -68,6 +68,20 @@ class SpaceWriteAccessRaceTests(TransactionTestCase):
         self.task.refresh_from_db()
         self.assertEqual(self.task.title, 'Original')
 
+    def test_backlog_drag_rechecks_role_after_waiting_for_lock(self):
+        item = self.task.work_item
+        item.in_backlog = True
+        item.save(update_fields=['in_backlog'])
+        request = self.request(f'items/{item.pk}/action/', {
+            'action': 'plan', 'space': item.space_id, 'source_sprint': '',
+            'source_rank': item.rank, 'sprint': '', 'before': '', 'after': '',
+        })
+        with self.changed_access_before_lock(), self.assertRaises(PermissionDenied):
+            views.item_action(request, item.pk)
+        item.refresh_from_db()
+        self.assertTrue(item.in_backlog)
+        self.assertEqual(self.task.activities.count(), 1)
+
     def test_item_create_rechecks_project_role_after_waiting_for_lock(self):
         request = self.request(f'{self.project.space.pk}/items/create/', {'title': 'Forbidden creation', 'work_type': 'task', 'priority': 'medium', 'section': self.section.pk})
         with self.changed_access_before_lock(), self.assertRaises(PermissionDenied):

@@ -1,0 +1,7 @@
+<span class="work-sprint-dates">{{ sprint.start_on|date:'d.m' }}–{{ sprint.end_on|date:'d.m.Y' }}</span>
+{% if can_manage %}
+<form method="post" action="{{ sprint.action_url }}" class="work-sprint-action">
+    {% csrf_token %}
+    <button class="tasks-filter-button" name="action" value="{% if sprint.state == 'planned' %}start{% else %}close{% endif %}">{% if sprint.state == 'planned' %}Rozpocznij sprint{% else %}Zakończ sprint{% endif %}</button>
+</form>
+{% endif %}

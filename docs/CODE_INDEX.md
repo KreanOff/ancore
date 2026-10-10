@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 27 | 4 | 28 | 106 |
+| [spaces](../spaces) | 29 | 4 | 31 | 125 |
 
 ## 2. Modele i relacje
 
@@ -1395,6 +1395,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/__init__.py](../spaces/__init__.py)
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
 - [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
+- [spaces/backlog.py](../spaces/backlog.py) — `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
 - [spaces/defaults.py](../spaces/defaults.py) — `issue_type_icon`, `template_settings`
 - [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
@@ -1618,6 +1619,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [spaces/templates/spaces/avatar.html](../spaces/templates/spaces/avatar.html)
 - [spaces/templates/spaces/avatar_picker.html](../spaces/templates/spaces/avatar_picker.html)
+- [spaces/templates/spaces/backlog.html](../spaces/templates/spaces/backlog.html)
+- [spaces/templates/spaces/backlog_move_form.html](../spaces/templates/spaces/backlog_move_form.html)
 - [spaces/templates/spaces/base.html](../spaces/templates/spaces/base.html)
 - [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
 - [spaces/templates/spaces/configuration.html](../spaces/templates/spaces/configuration.html)
@@ -1639,6 +1642,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/sidebar_navigation.html](../spaces/templates/spaces/sidebar_navigation.html)
 - [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
 - [spaces/templates/spaces/sidebar_row.html](../spaces/templates/spaces/sidebar_row.html)
+- [spaces/templates/spaces/sprint_header_details.html](../spaces/templates/spaces/sprint_header_details.html)
 - [spaces/templates/spaces/summary.html](../spaces/templates/spaces/summary.html)
 - [spaces/templates/spaces/tags.html](../spaces/templates/spaces/tags.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
@@ -2233,6 +2237,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceAvatarTests`: 11 metod testowych.
 
+### spaces/test_backlog_drag.py
+
+Źródło: [spaces/test_backlog_drag.py](../spaces/test_backlog_drag.py).
+
+- `BacklogDragTests`: 18 metod testowych.
+
 ### spaces/test_backlog_ordering.py
 
 Źródło: [spaces/test_backlog_ordering.py](../spaces/test_backlog_ordering.py).
@@ -2274,7 +2284,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [spaces/test_write_access.py](../spaces/test_write_access.py).
 
-- `SpaceWriteAccessRaceTests`: 4 metod testowych.
+- `SpaceWriteAccessRaceTests`: 5 metod testowych.
 
 ### spaces/tests.py
 

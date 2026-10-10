@@ -10,6 +10,14 @@
             {% if view == 'backlog' %}
             <form method="post" action="{{ item.action_url }}">{% csrf_token %}<input type="hidden" name="action" value="up"><input type="hidden" name="return_view" value="backlog"><button class="tasks-project-menu-button" type="submit"><i data-icon="arrow-up" aria-hidden="true"></i><span>Przesuń wyżej</span></button></form>
             <form method="post" action="{{ item.action_url }}">{% csrf_token %}<input type="hidden" name="action" value="down"><input type="hidden" name="return_view" value="backlog"><button class="tasks-project-menu-button" type="submit"><i data-icon="arrow-down" aria-hidden="true"></i><span>Przesuń niżej</span></button></form>
+            {% if space.template == 'scrum' %}
+            {% for destination in sprints %}
+            {% if destination.state != 'closed' and destination.pk != item.sprint_id %}
+            {% include 'spaces/backlog_move_form.html' with destination=destination last_item=destination.visible_items|last %}
+            {% endif %}
+            {% endfor %}
+            {% if item.sprint_id %}{% include 'spaces/backlog_move_form.html' with destination=None last_item=backlog_items|last %}{% endif %}
+            {% endif %}
             {% endif %}
             {% if space.template == 'kanban' %}<form method="post" action="{{ item.action_url }}">{% csrf_token %}<input type="hidden" name="action" value="{% if item.in_backlog %}board{% else %}backlog{% endif %}"><input type="hidden" name="return_view" value="{{ view }}"><button class="tasks-project-menu-button" type="submit"><i data-icon="arrow-right" aria-hidden="true"></i><span>{% if item.in_backlog %}Przenieś na tablicę{% else %}Przenieś do backlogu{% endif %}</span></button></form>{% endif %}
         </div>

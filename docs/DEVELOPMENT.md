@@ -21,6 +21,52 @@ testy prywatności Zadań. Kontrola przeglądarkowa: logowanie e-mailem zapisany
 inną wielkością liter, menu backlogu → „Przesuń niżej”, zachowanie filtra i
 kolejności po powrocie/przeładowaniu, pusty wynik oraz desktop/telefon.
 
+Weryfikacja wyglądu backlogu (9.10.2026): 44 testy `spaces.tests.SpaceTests`,
+`spaces.test_backlog_ordering` i `spaces.test_write_access` przeszły.
+Playwright/Chrome na oddzielnej bazie QA (plugin Browser niedostępny) sprawdził
+Scrum i Kanban przy 1440×1000, 1920×1000, 1024×1000 i 390×844.
+Geometria sekcji i wierszy odpowiada Liście zadań. Potwierdzono zwijanie myszą
+i klawiaturą, checkboxy, menu/Escape/fokus, zmianę kolejności z reload,
+przeniesienie na tablicę, daty i cel sprintu, pusty wynik i pusty backlog,
+zwykłe/scoped adresy, częściową nawigację i ponowne wejście oraz brak akcji
+zapisu obserwatora. Formularz sprintu zachowuje błędy i zamykanie; celowo
+niepoprawny POST zwrócił oczekiwany HTTP 400. Nie było nieoczekiwanych błędów
+konsoli. Kontrole Django, szablonów, linków dokumentacji, indeksu i
+`git diff --check` przeszły. Nie uruchamiano całego zestawu repozytorium.
+
+Przeciąganie backlogu: `spaces.test_backlog_drag` sprawdza kolejność w sekcji,
+przeniesienia do/z pustych planowanych i aktywnych sprintów, rzeczywistego autora
+historii, zachowanie statusu, filtry i zwykłe/scoped URL. Obejmuje gęste/powtarzające
+się numery kolejności, ukrytych i obserwowanych sąsiadów, stronę 100 wyników,
+nieaktualne dane, obce przestrzenie/Workspace, zakończone sprinty/zadania,
+CSRF i Kanban. `spaces.test_write_access` sprawdza cofnięcie roli przed blokadą.
+Weryfikacja (9.10.2026): 127 testów `spaces core.test_status_updates` przeszło;
+po dodaniu dwóch przypadków sąsiadów ponownie przeszło 18 testów
+`spaces.test_backlog_drag`. Playwright/Chrome na oddzielnej bazie QA przy
+1440×1000 i 390×844 potwierdził przeciąganie myszą oraz rzeczywistymi zdarzeniami
+dotyku, wstawienie przed pierwszym zadaniem i na zwinięty nagłówek, trwałość po
+reload, liczniki, zachowanie statusu, menu klawiaturą, Escape, błąd sieci bez
+pozornej zmiany, powrót przez częściową nawigację bez podwójnego zapisu,
+filtry/URL i brak kontrolek obserwatora. Lista zadań oraz przeciąganie statusu
+na tablicy zachowują działanie; telefon nie ma poziomego przepełnienia strony.
+Końcowe przejście przy 1920×1000 i 1024×1000 potwierdziło geometrię wiersza
+40px, brak przepełnienia strony, pusty backlog i wynik filtrów oraz obsługę
+przeciągania pojedynczego zadania Kanbana (bez zmiany kolejności).
+Nie było nieoczekiwanych błędów konsoli; symulowany błąd sieci jest oczekiwany.
+Plugin Browser był niedostępny. Nie sprawdzano Safari/Firefox ani całego
+zestawu testów repozytorium.
+
+Usunięcie ikon uchwytu backlogu (10.10.2026): nie ma osobnego elementu ani
+kolumny z kropkami, a checkbox pozostaje pierwszym elementem wiersza.
+Playwright/Chrome na osobnej bazie QA przy 1440×1000 i 390×844 potwierdził
+przeciąganie myszą oraz dotykiem od istniejącej ikony priorytetu, zapis po
+przeładowaniu, przeniesienia między sprintami/backlogiem, menu klawiaturą,
+Escape, błąd sieci, filtry i zwykłe/scoped URL, ponowne wejście przez częściową
+nawigację oraz brak przeciągania u obserwatora. Lista zadań i tablica zachowują
+dotychczasowe działanie; nie było nieoczekiwanych błędów konsoli ani
+przepełnienia strony na telefonie. Kontrola Django, składni JS, indeksu i
+`git diff --check` przeszła. Nie ponawiano testów backendu ani innych przeglądarek.
+
 ## Uruchomienie przestrzeni i zespołów
 
 Przed nowym kodem wykonaj backup i `manage.py migrate`. Migracje `spaces/0001`

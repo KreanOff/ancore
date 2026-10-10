@@ -10,7 +10,7 @@
 </nav>
 {% endblock %}
 {% block work_toolbar %}{% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/item_toolbar.html' %}{% endif %}{% endblock %}
-{% block work_content_class %}{% if view == 'list' or view == 'board' %} work-content--tasks{% endif %}{% endblock %}
+{% block work_content_class %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% endblock %}
 {% block work_content %}
 {% if view == 'overview' %}
     {% include 'spaces/summary.html' %}
@@ -38,8 +38,7 @@
             {% endfor %}
         </div>
     {% elif view == 'backlog' %}
-        {% if space.template == 'scrum' %}<div class="work-panel-heading"><h2>Planowanie sprintów</h2>{% if can_manage %}<a class="btn btn-secondary" href="{{ sprint_create_url }}" data-work-open>Utwórz sprint</a>{% endif %}</div>{% for sprint in sprints %}{% if sprint.state != 'closed' %}<section class="work-panel work-sprint"><header class="work-panel-heading"><h2>{{ sprint.name }} · {{ sprint.get_state_display }}</h2><span>{{ sprint.start_on|date:'d.m' }}–{{ sprint.end_on|date:'d.m.Y' }}</span>{% if can_manage %}<form method="post" action="{{ sprint.action_url }}">{% csrf_token %}<button class="btn btn-secondary" name="action" value="{% if sprint.state == 'planned' %}start{% else %}close{% endif %}">{% if sprint.state == 'planned' %}Rozpocznij sprint{% else %}Zakończ sprint{% endif %}</button></form>{% endif %}</header><p>{{ sprint.goal }}</p><div class="tasks-issue-list work-backlog-items">{% for item in sprint.visible_items %}{% include 'spaces/row.html' %}{% empty %}<p>Przypisz zadania do tego sprintu w oknie edycji zadania.</p>{% endfor %}</div></section>{% endif %}{% endfor %}{% endif %}
-        <section class="work-panel"><h2>Backlog</h2><div class="tasks-issue-list work-backlog-items">{% for item in backlog_items %}{% include 'spaces/row.html' %}{% empty %}<p>Brak zadań do zaplanowania.</p>{% endfor %}</div></section>
+        {% include 'spaces/backlog.html' %}
     {% elif view == 'timeline' %}<section class="work-panel"><h2>Oś czasu</h2><p>Zaplanowane daty dostępnych zadań.</p>{% if timeline %}<div class="work-timeline-scale"><span>{{ timeline.start|date:"d.m.Y" }}</span><span>{{ timeline.end|date:"d.m.Y" }}</span></div>{% endif %}{% for item in items %}<div class="work-timeline-row"><a href="{{ item.url }}">{{ item.key }} · {{ item.task.title }}</a><span>{{ item.start_on|date:'d.m.Y'|default:'Bez daty rozpoczęcia' }}</span><i data-icon="arrow-right" aria-hidden="true"></i><span>{{ item.task.due_at|date:'d.m.Y'|default:'Bez terminu' }}</span>{% if item.editable %}<a class="tasks-filter-button" href="{{ item.edit_url }}" data-work-open aria-label="Zmień daty {{ item.key }}"><i data-icon="pencil" aria-hidden="true"></i></a>{% endif %}<div class="work-timeline-track" aria-label="{{ item.timeline_start|date:'d.m.Y' }} – {{ item.timeline_end|date:'d.m.Y' }}"><span style="left:{{ item.timeline_left }}%;width:{{ item.timeline_width }}%"></span></div></div>{% empty %}<div class="work-empty"><i data-icon="calendar-days" aria-hidden="true"></i><h2>Brak zaplanowanych terminów</h2><p>Ustaw datę rozpoczęcia lub termin w edycji zadania.</p></div>{% endfor %}</section>{% endif %}
 {% endif %}
 {% endblock %}

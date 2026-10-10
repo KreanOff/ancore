@@ -55,6 +55,40 @@ Menu oferuje edycję, zmianę statusu i kolejności oraz przeniesienie na tablic
 Kanbana. Obsługuje je wspólny `row-actions.js`, również po podmianie treści.
 Obserwatorzy zachowują wiersze bez przycisków zapisu.
 
+Backlog i otwarte sprinty używają `spaces/backlog.html` oraz tej samej powłoki
+`tasks-table-wrap tasks-board`, sekcji `tasks-issue-group tasks-status-block`
+i nagłówka `tasks/includes/issue_group_header.html` co Lista zadań.
+Treść ma wariant `work-content--tasks`, bez dodatkowego paddingu paneli;
+wiersze dochodzą do krawędzi sekcji. Nagłówki mają standardową wysokość 40px,
+przycisk zwijania i licznik zadań bieżącej strony po filtrach.
+Sprint planowany korzysta z koloru kategorii `new`, aktywny z `in_progress`,
+a Backlog z neutralnego nagłówka grupy i ikony warstw. Wspólny include obsługuje
+opcjonalne `label_suffix` i `details_template`; sprint dodaje nimi stan, daty
+i dotychczasową akcję rozpoczęcia/zakończenia. Na wąskim ekranie nagłówek
+zawija metadane i przyciski, a wiersze przewijają się poziomo wewnątrz sekcji.
+Cel sprintu pojawia się tylko, gdy został podany, i zwija się razem z listą.
+Puste sekcje używają `tasks-empty-section` z `role="status"`; brak wyników
+backlogu po filtrach ma osobny komunikat. Zwijanie obsługuje istniejący `tasks.js`,
+również po częściowej nawigacji. Kolejność planowania i menu wierszy są zachowane.
+
+Wiersze backlogu z prawem edycji mogą być przeciągane w sekcji, pomiędzy
+otwartymi sprintami oraz do/z backlogu. Nie pokazują osobnego uchwytu ani
+kolumny przeciągania; pierwszym elementem wiersza pozostaje checkbox.
+Dotyk korzysta z istniejącej ikony priorytetu i Pointer Events; gest poza nią
+nadal przewija listę. Fioletowy obrys wskazuje sekcję docelową, a linia miejsce wstawienia.
+Zwinięty nagłówek i pusta sekcja przyjmują zadanie na końcu swojej dostępnej
+grupy. Escape anuluje przeciąganie, a dotyk obsługuje przewijanie pionowe
+przy krawędzi treści. Zapis korzysta z `X-Work-Action` i istniejącego endpointu
+zadania z akcją `plan`; po potwierdzeniu odświeża treść, liczniki i menu,
+zachowując filtry oraz URL. Podczas zapisu blokowane jest kolejne
+przeciąganie; `aria-busy` i region live informują o stanie oraz wyniku. Błąd nie przestawia wiersza
+w DOM i wyświetla komunikat. Obserwator nie ma `draggable` ani obsługi przeciągania dotykiem.
+Menu sprintu/backlogu udostępnia te same przeniesienia klawiaturą;
+„Przesuń wyżej/niżej” pozostaje alternatywą dla zmiany kolejności.
+`tasks.js` pomija własną obsługę drag tych wierszy, które mają
+`data-work-backlog-row`; obsługuje je delegacja w `spaces.js`, odnawiana
+po `ancore:content-loaded`. Tablica zachowuje istniejące przeciąganie statusów.
+
 Zakładka „Tagi” zachowuje nagłówek i nawigację otwartej przestrzeni.
 `spaces/tags.html` korzysta ze wspólnych include'ów `tag_directory`,
 `tag_sort`, `tag_filters`, `tag_modal` i `tag_notes_modal`. Przycisk „Dodaj tag”,
@@ -330,8 +364,9 @@ Toolbar zawiera filtr „Typ zgłoszenia”;
 dotychczasowe pole biznesowe w szczegółach ma etykietę „Kategoria zadania”.
 Pierwsza kolumna wiersza zawiera stale widoczny, standardowy `tasks-row-checkbox`
 z etykietą zawierającą kod i tytuł zadania. Zaznaczenie myszą lub Spacją podświetla
-wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list, backlogu
-i sprintów nie pokazują menu trzech pasków. Checkbox służy lokalnemu zaznaczeniu,
+wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list nie pokazują
+menu trzech pasków; backlog i sprinty udostępniają je osobom z prawem edycji
+przez `spaces/item_actions.html`. Checkbox służy lokalnemu zaznaczeniu,
 bez operacji zbiorczych i utrwalania wyboru po zmianie widoku.
 Grupowanie dotyczy dostępnej strony wyników; rozróżnia nazwy własnych statusów
 nawet wtedy, gdy mają tę samą kategorię. Backlog zachowuje kolejność planowania.

@@ -1,0 +1,41 @@
+{% if space.template == 'scrum' %}
+<div class="work-panel-heading work-backlog-heading">
+    <h2>Planowanie sprintów</h2>
+    {% if can_manage %}<a class="tasks-filter-button" href="{{ sprint_create_url }}" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz sprint</a>{% endif %}
+</div>
+{% endif %}
+<div class="tasks-table-wrap tasks-board work-backlog" data-work-backlog data-space-id="{{ space.pk }}">
+    <form hidden data-backlog-csrf>{% csrf_token %}</form>
+    <span class="u-sr-only" role="status" aria-live="polite" data-backlog-status></span>
+    {% if space.template == 'scrum' %}
+    {% for sprint in sprints %}
+    {% if sprint.state != 'closed' %}
+    <section class="tasks-issue-group tasks-status-block work-backlog-group work-sprint" data-work-backlog-group data-sprint-id="{{ sprint.pk }}" data-group-label="{{ sprint.name }}">
+        {% if sprint.state == 'active' %}
+        {% include 'tasks/includes/issue_group_header.html' with category='in_progress' label=sprint.name label_suffix=sprint.get_state_display count=sprint.visible_items|length details_template='spaces/sprint_header_details.html' %}
+        {% else %}
+        {% include 'tasks/includes/issue_group_header.html' with category='new' label=sprint.name label_suffix=sprint.get_state_display count=sprint.visible_items|length details_template='spaces/sprint_header_details.html' %}
+        {% endif %}
+        <div class="tasks-issue-list work-backlog-items">
+            {% if sprint.goal %}<p class="work-sprint-goal">{{ sprint.goal }}</p>{% endif %}
+            {% for item in sprint.visible_items %}
+            {% include 'spaces/row.html' %}
+            {% empty %}
+            <div class="tasks-empty-section" role="status">{% if can_edit %}Przeciągnij zadanie do tego sprintu lub przypisz je w oknie edycji.{% else %}Brak zadań do zaplanowania w tym sprincie.{% endif %}</div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    <section class="tasks-issue-group tasks-status-block work-backlog-group" data-work-backlog-group data-sprint-id="" data-group-label="Backlog">
+        {% include 'tasks/includes/issue_group_header.html' with label='Backlog' icon='layers' count=backlog_items|length only %}
+        <div class="tasks-issue-list work-backlog-items">
+            {% for item in backlog_items %}
+            {% include 'spaces/row.html' %}
+            {% empty %}
+            <div class="tasks-empty-section" role="status">{% if query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Nie znaleziono zadań do zaplanowania. Zmień lub wyczyść filtry.{% else %}Brak zadań do zaplanowania.{% endif %}</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>

@@ -4957,7 +4957,7 @@ function initTasksPage() {
         });
     }
 
-    document.querySelectorAll('.task-row[draggable="true"], .tasks-issue-row[draggable="true"]').forEach(row => {
+    document.querySelectorAll('.task-row[draggable="true"], .tasks-issue-row[draggable="true"]:not([data-work-backlog-row])').forEach(row => {
         row.addEventListener('dragstart', function(event) {
             if (isReadonlyTaskRow(this)) {
                 event.preventDefault();

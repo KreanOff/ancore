@@ -221,7 +221,14 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
   a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
 - Scrum: backlog, epiki, punkty, planowanie i rozpoczęcie sprintu, jeden aktywny
   sprint, zakończenie z powrotem niezakończonych zadań do backlogu.
-- Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności.
+  Backlog i sprinty mają zwarte sekcje Listy zadań ze zwijaniem, licznikami,
+  datami i akcjami sprintu w nagłówku; pusty cel nie dodaje odstępu.
+  Przeciąganie zmienia kolejność oraz przenosi zadania między backlogiem
+  a planowanymi/aktywnymi sprintami; dotyk zaczyna gest na istniejącej ikonie
+  priorytetu. Osobne uchwyty i ich kolumna nie są wyświetlane.
+  Te same przeniesienia są dostępne w menu zadania.
+- Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności,
+  wyświetlana w tej samej zwijanej sekcji Zadań.
 
 - Oś czasu: paski pomiędzy początkiem i terminem; zadania bez dat są pomijane.
 - Raporty: aktualne liczby statusów, zakończone i zaległe zadania oraz sprinty.
@@ -236,6 +243,21 @@ Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
 sprintu. Pomija zadania na tablicy Kanbana, zadania zamknięte i wykluczone przez
 filtry. URL akcji oraz powrót zachowują wyszukiwanie i filtry listy. Odczyt listy
 i zmiana kolejności korzystają z tych samych funkcji filtrujących.
+
+Przeciąganie (`spaces/backlog.py`, akcja `plan` w `item_action`) waliduje
+zadanie i oba sąsiednie wiersze w zakresie filtrów oraz bieżącej strony
+100 wyników. Cel należy do tej samej przestrzeni; zakończone sprinty,
+zamknięte zadania, elementy na tablicy Kanbana i rekordy poza widoczną stroną
+są odrzucane. Kanban udostępnia wyłącznie kolejność backlogu, bez sprintów.
+Serwer porównuje również przestrzeń, sprint źródłowy i zapamiętaną kolejność
+zadania; stare położenie wymaga odświeżenia listy. Blokady właściciela,
+Workspace, przestrzeni i rekordu oraz ponowne sprawdzenie dostępu chronią zapis.
+Zmiana ustawia wyłącznie `sprint`, `in_backlog` i `rank`, bez zmiany statusu
+lub daty zakończenia zadania; historia zapisuje rzeczywistego autora.
+Nowa pozycja korzysta z wolnego numeru pomiędzy sąsiadami. Gdy brak miejsca
+między całkowitymi numerami, rotuje dostępne numery bieżącej grupy, sprawdzając
+prawo edycji każdego zmienianego rekordu. Zadania ukryte, pominięte filtrami
+lub poza stroną zachowują swoje numery. Zapis jest atomowy i wymaga CSRF.
 
 Klucz przestrzeni jest unikalny w Workspace. Zadania otrzymują trwały klucz,
 np. `ANC-12`, z rosnącego licznika przestrzeni. Usunięcie zadania nie zmienia

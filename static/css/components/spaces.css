@@ -220,11 +220,29 @@
 .work-kanban-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .work-page [data-work-column] { cursor: default; }
 .work-page [data-work-column] .tasks-kanban-column__header > .tasks-rail-count { margin-left: auto; }
-.work-backlog-items { margin-top: 12px; overflow-x: auto; }
+.work-backlog { flex: none; }
+.work-content--tasks > .work-backlog-heading { padding: 12px 0.95rem 0; }
+.work-backlog-heading h2 { margin: 0; font-size: var(--font-size-sm); }
+.work-backlog-heading a { text-decoration: none; }
+.work-backlog-group > .tasks-issue-group-header { height: auto; min-height: 40px; flex-wrap: wrap; padding-block: 4px; }
+.work-backlog-group > .tasks-issue-group-header > :is(.status-indicator, .tasks-issue-group-label) { min-width: 0; overflow-wrap: anywhere; }
+.work-backlog-group .tasks-issue-group-label { display: inline-flex; align-items: center; gap: 8px; }
+.work-backlog-group .tasks-issue-group-label [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
+.work-sprint > .tasks-issue-group-header > .tasks-rail-count { margin-left: 0; }
+.work-sprint-dates { margin-left: auto; white-space: nowrap; }
+.work-sprint-action { margin: 0; }
+.work-sprint-action .tasks-filter-button { white-space: nowrap; }
+.work-sprint-goal { margin: 0; padding: 8px 0.75rem; overflow-wrap: anywhere; }
+.work-backlog-items { overflow-x: auto; }
 .work-backlog-items .work-issue-row { min-width: 460px; }
+.work-issue-row.work-issue-row--draggable { cursor: grab; }
+.work-issue-row--draggable > .tasks-row-priority { touch-action: none; }
+.work-backlog .work-issue-row.is-dragging { opacity: 0.45; cursor: grabbing; }
+.work-backlog-group.is-backlog-drop-target { outline: 2px solid var(--system-accent); outline-offset: -2px; }
+.work-backlog [data-work-backlog-row]:is(.is-backlog-drop-before, .is-backlog-drop-after)::before { content: ''; position: absolute; inset: 0 0 auto; height: 2px; background: var(--system-accent); pointer-events: none; z-index: 3; }
+.work-backlog [data-work-backlog-row].is-backlog-drop-after::before { inset: auto 0 0; }
 .work-panel .work-item-list { padding: 0; }
 .work-content--tasks > .work-panel-heading { padding: 12px 16px 0; }
-.work-sprint { margin-bottom: 20px; }
 .work-member { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--border-color); }
 .work-member > :first-child { flex: 1; min-width: 180px; }
 .work-member form { margin: 0; }
@@ -281,6 +299,7 @@
     .work-page .tasks-titlebar-left { flex-wrap: wrap; }
     .work-content { padding: 16px var(--work-space-inline-padding, 12px); }
     .work-content--tasks, .work-content--directory { padding: 0; }
+    .work-sprint > .tasks-issue-group-header > .tasks-rail-count { margin-left: auto; }
     .work-item-list { overflow-x: auto; }
     .work-item-list > .tasks-issue-group { min-width: 560px; }
     .work-tabs { padding: 0 var(--work-space-inline-padding, 12px); }

@@ -29,6 +29,7 @@ from tasks.models import Task, TaskProject, TaskProjectMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import delete_avatar_after_commit
+from .backlog import move_backlog_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
@@ -506,6 +507,12 @@ def item_action(request, pk):
                 item.sprint = None
                 item.save(update_fields=['in_backlog', 'sprint'])
                 record(item, request.user, 'updated', 'przeniósł zadanie do backlogu' if item.in_backlog else 'przeniósł zadanie na tablicę')
+            elif action == 'plan':
+                Space.objects.select_for_update().get(pk=item.space_id)
+                space = space_object(request, item.space_id)
+                candidates, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
+                candidates = items_for_view(space, candidates, 'backlog')
+                move_backlog_item(request, space, item, candidates)
             elif action in {'up', 'down'}:
                 Space.objects.select_for_update().get(pk=item.space_id)
                 space = space_object(request, item.space_id)
