@@ -16,6 +16,7 @@ def current_workplace(request):
     sidebar_favorites = []
     space_navigation = {'navigation_spaces': [], 'navigation_starred_spaces': [], 'navigation_recent_spaces': []}
     dashboard_navigation = {'navigation_starred_dashboards': [], 'navigation_recent_dashboards': []}
+    filter_navigation = {'navigation_starred_filters': [], 'navigation_recent_filters': []}
     spaces_management_available = False
     resolver = getattr(request, 'resolver_match', None)
     spaces_management_mode = bool(
@@ -39,11 +40,14 @@ def current_workplace(request):
         from spaces.services import can_manage_spaces
         from spaces.navigation import sidebar_spaces
         from dashboard.pulpit_navigation import sidebar_dashboards
+        from dashboard.filters import sidebar_filters
         space_navigation = sidebar_spaces(request)
         dashboard_navigation = sidebar_dashboards(request)
+        filter_navigation = sidebar_filters(request)
         request.sidebar_default_pulpit = dashboard_navigation['default_dashboard_is_current']
         spaces_management_available = can_manage_spaces(request)
         workplace_app_urls = {
+            'filters': scoped_workplace_app_path(active_workplace, 'filters'),
             'dashboards': scoped_workplace_app_path(active_workplace, 'dashboards'),
             'spaces': scoped_workplace_app_path(active_workplace, 'spaces'),
             'teams': scoped_workplace_app_path(active_workplace, 'teams'),
@@ -67,6 +71,7 @@ def current_workplace(request):
         'current_workplace': active_workplace,
         **space_navigation,
         **dashboard_navigation,
+        **filter_navigation,
         'spaces_management_available': spaces_management_available,
         'spaces_management_mode': spaces_management_mode,
         'pulpits_management_mode': pulpits_management_mode,

@@ -1,0 +1,16 @@
+<a href="{{ sidebar_filters_url }}search/" class="nav-link sidebar-subnav-link{% if request.resolver_match.url_name == 'search' and request.resolver_match.app_name == 'filters' or request.resolver_match.url_name == 'search' and request.resolver_match.app_name == 'workplace_filters' %} active{% endif %}"><i class="sidebar-subnav-icon" data-icon="search" aria-hidden="true"></i><span>Wyszukaj zadania</span></a>
+{% if navigation_starred_filters %}
+<section class="sidebar-space-list" aria-labelledby="sidebar-filters-starred-title">
+    <h3 class="sidebar-space-list-title" id="sidebar-filters-starred-title">Oznaczone gwiazdką</h3>
+    {% for nav_filter in navigation_starred_filters %}
+    {% include 'dashboard/filters/sidebar_row.html' %}
+    {% endfor %}
+</section>
+{% endif %}
+{% if navigation_recent_filters %}
+<section class="sidebar-space-list" aria-labelledby="sidebar-filters-recent-title">
+    <h3 class="sidebar-space-list-title" id="sidebar-filters-recent-title">Ostatnie</h3>
+    {% for nav_filter in navigation_recent_filters %}{% include 'dashboard/filters/sidebar_row.html' %}{% endfor %}
+</section>
+{% endif %}
+<button type="button" class="nav-link sidebar-subnav-link sidebar-spaces-more" popovertarget="sidebar-filter-picker" aria-haspopup="dialog" aria-controls="sidebar-filter-picker" aria-expanded="false" data-sidebar-picker-toggle="filters"><i class="sidebar-subnav-icon" data-icon="align-left" aria-hidden="true"></i><span>Więcej filtrów</span><i class="sidebar-spaces-more__chevron" data-icon="chevron-right" aria-hidden="true"></i></button>

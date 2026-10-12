@@ -2,6 +2,11 @@
 
 ## 1. Kształt aplikacji
 
+Moduł [Filtry](FILTERS.md) należy do dashboard: model zapisanej definicji,
+osobny routing pod /filters/ i /workplaces/<slug>/filters/, formularze
+oraz kompilator warunków do ORM. Wyniki odczytują wyłącznie bieżące zadania
+przez istniejący zakres widoczności Przestrzeni.
+
 Ancore jest aplikacją Django podzieloną na moduły domenowe we wspólnym procesie.
 Serwer pobiera dane przez ORM, waliduje je formularzami i renderuje HTML.
 JavaScript dodaje interakcje: dialogi, filtry, kolumny tabel, przeciąganie,
@@ -330,5 +335,6 @@ przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
 Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
 historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
 powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
-`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
-nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.
+`tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
+zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
+lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.

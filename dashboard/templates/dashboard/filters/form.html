@@ -1,0 +1,11 @@
+<div class="tasks-modal app-modal-panel app-modal-panel--compact tasks-form-modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" aria-hidden="true" data-filter-modal>
+    <div class="tasks-modal__dialog"><form method="post" action="{{ modal.action }}" class="tasks-modal__form" data-filter-form>{% csrf_token %}
+        <header class="tasks-modal__header"><h2 id="filter-modal-title">{{ modal.title }}</h2><button type="button" class="tasks-modal__close" aria-label="Zamknij" data-close-modal></button></header>
+        <div class="tasks-modal__body documents-form task-filter-form">
+            <div class="tasks-modal__errors" role="alert" data-filter-error hidden></div>
+            {% if modal.form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
+            {% for field in modal.form %}{% if field.is_hidden %}{{ field }}{% else %}<div class="documents-field tasks-form-field" data-filter-field="{{ field.name }}"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>{{ field }}{% if field.help_text %}<small id="{{ field.auto_id }}_helptext">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="tasks-modal__errors" id="{{ field.auto_id }}_error" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endif %}{% endfor %}
+        </div>
+        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zapisz</button></footer>
+    </form></div>
+</div>

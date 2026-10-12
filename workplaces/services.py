@@ -40,7 +40,7 @@ DEFAULT_WORKPLACE_NAMES = (
     'Klub Wędrujących Kubków',
     'Bunkier Zapomnianych Haseł',
 )
-SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'space', 'teams', 'dashboards'}
+SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'space', 'teams', 'dashboards', 'filters'}
 
 
 def workplace_management_url(workplace, view='members'):

@@ -213,8 +213,11 @@ walidatory plików i komponenty UI pozostają mechanizmami całej aplikacji.
 
 Punkty wejścia: `spaces/views.py`, `task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`,
 `signals.py`, `middleware.py`, `templates/spaces/`, `static/js/spaces.js`.
-Trasy `/spaces/`, `/spaces/items/`, `/teams/` mają również warianty scoped
+Trasy `/spaces/` i `/teams/` mają również warianty scoped
 `/workplaces/<slug>/spaces/` i `/workplaces/<slug>/teams/`.
+Dawne `/spaces/items/` oraz scoped odpowiednik przekierowują do
+„Filtry → Wyszukaj zadania”, zachowując tekst, typ, przypisanie do mnie
+i stronę. Osobny ekran Wszystkich zadań i skrót `tasks-all` są wycofane.
 
 ## Dostępne funkcje
 
@@ -393,7 +396,7 @@ importowanego pliku przekierowuje do chronionego endpointu przestrzeni.
 Usunięcie starego źródła nie usuwa nowego zadania (`SET_NULL`).
 Migracja jest jednokierunkowa; cofnięcie wdrożenia wymaga backupu bazy i storage.
 
-Wszystkie zadania, „Dla ciebie”, Dashboard, postęp pulpitów i wyszukiwanie
+Filtry („Wyszukaj zadania”), „Dla ciebie”, Dashboard, postęp pulpitów i wyszukiwanie
 odczytują nowe zadania przez ich ACL. Kalendarz pokazuje również ich terminy.
 Wspólne listy nie wymagają odwołania do projektu lub grupy.
 

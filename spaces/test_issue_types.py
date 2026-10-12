@@ -143,12 +143,15 @@ class IssueTypeTests(TestCase):
         WorkItem.objects.filter(task=hidden).update(work_type='bug')
         for scoped in (False, True):
             for suffix, app in ((f'{self.space.slug}/?view=list', 'space'), (f'{self.space.slug}/?view=board', 'space'), ('items/?', 'spaces')):
-                response = self.client.get(self.url(suffix, app=app, scoped=scoped) + '&work_type=bug&q=zespołu')
+                response = self.client.get(self.url(suffix, app=app, scoped=scoped) + '&work_type=bug&q=zespołu', follow=True)
                 self.assertContains(response, self.task.title)
                 self.assertNotContains(response, 'Zwykłe zadanie')
                 self.assertNotContains(response, 'Poufny błąd')
-                self.assertContains(response, 'Typ zgłoszenia: Błąd')
-            response = self.client.get(self.url(f'{self.space.slug}/?view=list&work_type=unknown', app='space', scoped=scoped))
+                if app == 'spaces':
+                    self.assertEqual(response.context['search_form'].cleaned_data['type'], ['bug'])
+                else:
+                    self.assertContains(response, 'Typ zgłoszenia: Błąd')
+            response = self.client.get(self.url(f'{self.space.slug}/?view=list&work_type=unknown', app='space', scoped=scoped), follow=True)
             self.assertEqual(response.context['page'].paginator.count, 0)
 
     def test_epic_relations_are_validated_in_detail_form(self):

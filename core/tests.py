@@ -57,8 +57,8 @@ class SidebarActiveStateTests(SimpleTestCase):
     def test_sidebar_groups_have_accessible_collapse_controls(self):
         request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='', view_name=''), user=AnonymousUser())
         html = render_to_string('core/base.html', {'request': request})
-        self.assertEqual(html.count('data-sidebar-group-toggle'), 2)
-        for group_key, group_name in (('spaces', 'Przestrzenie'), ('pulpits', 'Pulpity')):
+        self.assertEqual(html.count('data-sidebar-group-toggle'), 3)
+        for group_key, group_name in (('spaces', 'Przestrzenie'), ('pulpits', 'Pulpity'), ('filters', 'Filtry')):
             with self.subTest(group=group_key):
                 self.assertIn(f'data-sidebar-group="{group_key}"', html)
                 self.assertIn(f'aria-controls="sidebar-{group_key}-subnav"', html)
@@ -66,16 +66,17 @@ class SidebarActiveStateTests(SimpleTestCase):
                 self.assertIn('sidebar-primary-link sidebar-group-toggle', self._sidebar_button_html(html, group_name))
 
     def test_retired_task_directories_are_absent_from_sidebar(self):
-        request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='spaces', url_name='items'), user=AnonymousUser(), GET={})
+        request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='filters', url_name='search'), user=AnonymousUser(), GET={})
         html = render_to_string('core/base.html', {'request': request})
-        for label in ('Projekty', 'Grupy', 'Zadania', 'Ulubione projekty', 'Szablony projektów', 'Starsze widoki'):
+        for label in ('Projekty', 'Grupy', 'Zadania', 'Ulubione projekty', 'Szablony projektów', 'Starsze widoki', 'Wszystkie zadania'):
             self.assertNotIn(f'>{label}</span>', html)
         self.assertNotIn('data-sidebar-group="legacy"', html)
         self.assertNotIn('href="/tasks/', html)
-        self.assertIn(' active', self._sidebar_link_html(html, 'Wszystkie zadania'))
+        self.assertNotIn('data-sidebar-source-item="tasks-all"', html)
+        self.assertIn(' active', self._sidebar_link_html(html, 'Wyszukaj zadania'))
         favorites = {item['key']: item for item in SIDEBAR_FAVORITE_DEFINITIONS}
         self.assertEqual(favorites['tasks-projects']['app'], 'spaces')
-        self.assertEqual(favorites['tasks-all']['app'], 'spaces')
+        self.assertNotIn('tasks-all', favorites)
         self.assertNotIn('tasks-groups', favorites)
         self.assertNotIn('tasks-my', favorites)
 
@@ -89,7 +90,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         for label in ('Kontakty', 'Firmy', 'Użytkownicy', 'Goście'):
             self.assertNotIn(f'>{label}</span>', html)
         self.assertNotIn('/contacts/', html)
-        for label in ('Przestrzenie', 'Wszystkie zadania', 'Zespoły'):
+        for label in ('Przestrzenie', 'Wyszukaj zadania', 'Zespoły'):
             self.assertIn(f'>{label}</span>', html)
 
     def test_sidebar_has_favorites_and_workspace_sections(self):

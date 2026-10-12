@@ -1,5 +1,13 @@
 # Moduły i funkcje aplikacji
 
+## Filtry zadań
+
+Menu Filtry zawiera wyszukiwanie podstawowe i zaawansowane, zapisane
+definicje, osobiste gwiazdki, katalog i udostępnianie wybranym osobom
+lub całemu Workspace. Twórca zarządza definicją, a każdy odbiorca widzi
+wyłącznie zadania dostępne dla swojego konta. Filtry obsługują bieżące
+zadania Przestrzeni. [Przepływ, składnia i źródła](FILTERS.md).
+
 ## Przestrzenie i zespoły — aktualna nawigacja
 
 Przestrzenie mają własne modele `Space`, `SpaceTask`, członkostwa, historię,
@@ -121,8 +129,9 @@ przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
 Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
 historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
 powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
-`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
-nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.
+`tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
+zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
+lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.
 
 Źródła: [modele historyczne](../tasks/models.py), [routing zgodności](../tasks/urls.py),
 [przekierowania](../spaces/middleware.py), [testy wycofania](../tasks/test_retirement.py).

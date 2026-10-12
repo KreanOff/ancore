@@ -1,4 +1,4 @@
-/* Shared searchable navigation for spaces and dashboards. */
+/* Shared searchable navigation for spaces, dashboards and task filters. */
 (function () {
     if (window.ancoreSidebarPickerLoaded) return;
     window.ancoreSidebarPickerLoaded = true;

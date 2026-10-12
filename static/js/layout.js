@@ -69,8 +69,9 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|space|teams|dashboards)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|space|teams|dashboards|filters)(\/|$))/, '/');
         const appShellPaths = [
+            /^\/filters\/(?:search\/|new\/|\d+\/(?:edit\/)?)?$/,
             /^\/(spaces|space|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
             /^\/dashboards\/default\/$/,
@@ -313,6 +314,26 @@
             });
             syncSidebarSpaces(nextSidebar);
             syncSidebarDashboards(nextSidebar);
+            const currentFilters = sidebar.querySelector('#sidebar-filters-subnav');
+            const nextFilters = nextSidebar.querySelector('#sidebar-filters-subnav');
+            if (currentFilters && nextFilters) {
+                const focused = document.activeElement;
+                const hadFocus = currentFilters.contains(focused);
+                const focusedId = focused?.closest('[data-sidebar-filter-row]')?.dataset.sidebarFilterRow;
+                const selector = focused?.matches('[data-sidebar-filter-link]') ? '[data-sidebar-filter-link]' : '[data-row-actions-toggle]';
+                const more = currentFilters.querySelector('[data-sidebar-picker-toggle]');
+                currentFilters.replaceChildren(...Array.from(nextFilters.children, child =>
+                    child.matches('[data-sidebar-picker-toggle]') && more ? more : child.cloneNode(true)
+                ));
+                window.AncoreIcons?.render(currentFilters);
+                if (hadFocus) {
+                    const replacement = focusedId && currentFilters.querySelector('[data-sidebar-filter-row="' + focusedId + '"] ' + selector);
+                    (currentFilters.contains(focused) ? focused : replacement || currentFilters.closest('[data-sidebar-group]').querySelector('[data-sidebar-group-toggle]'))?.focus({ preventScroll: true });
+                }
+                if (sidebarCollapsedFlyoutTrigger?.closest('[data-sidebar-group="filters"]')) {
+                    closeCollapsedSidebarFlyout({ restoreFocus: sidebarCollapsedFlyout.contains(document.activeElement) });
+                }
+            }
             syncPulpitEditorNavigation(nextSidebar);
         }
         document.querySelectorAll('[data-sidebar-picker]').forEach(picker => {
@@ -968,12 +989,12 @@
 
         sidebarCollapsedFlyoutTitle.textContent = toggleButton.dataset.sidebarGroupName || '';
         const sourceLinks = [
-            ...(['spaces', 'pulpits'].includes(group.dataset.sidebarGroup) ? sourceSubnav.children : sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-picker-toggle]')),
+            ...(group.classList.contains('sidebar-nav-group--collection') ? sourceSubnav.children : sourceSubnav.querySelectorAll('a.sidebar-subnav-link, [data-sidebar-picker-toggle]')),
             ...group.querySelectorAll('a[data-sidebar-group-action]'),
         ];
         sourceLinks.forEach(function (sourceLink) {
             const flyoutLink = sourceLink.cloneNode(true);
-            const links = flyoutLink.matches('a, [data-sidebar-picker-toggle]') ? [flyoutLink] : flyoutLink.querySelectorAll('[data-sidebar-space-link], [data-sidebar-pulpit-link]');
+            const links = flyoutLink.matches('a, [data-sidebar-picker-toggle]') ? [flyoutLink] : flyoutLink.querySelectorAll('[data-sidebar-space-link], [data-sidebar-pulpit-link], [data-sidebar-filter-link]');
             links.forEach(link => {
                 link.classList.remove('nav-link', 'sidebar-subnav-link', 'sidebar-header-action', 'tasks-project-menu-button');
                 link.classList.add('sidebar-collapsed-flyout__link');
@@ -2322,7 +2343,7 @@
     }
 
     sidebar.addEventListener('click', function (event) {
-        const link = event.target.closest('a.nav-link, a[data-sidebar-group-action], a[data-sidebar-space-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-picker-toggle])');
+        const link = event.target.closest('a.nav-link, a[data-sidebar-group-action], a[data-sidebar-space-action], a[data-sidebar-filter-action], button.nav-link:not([data-sidebar-group-toggle]):not([data-sidebar-picker-toggle])');
         if (!link || !sidebar.contains(link)) return;
         setSidebarSearchOpen(false);
         if (isOverlayMode()) {

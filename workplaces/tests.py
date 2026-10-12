@@ -304,7 +304,7 @@ class WorkplaceSelectionTests(TestCase):
         SidebarFavorite.objects.create(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='tasks-all',
+            item_key='filters',
             position=1,
         )
         SidebarFavorite.objects.create(
@@ -319,7 +319,7 @@ class WorkplaceSelectionTests(TestCase):
 
         response = self.client.post(
             endpoint,
-            {'item_order': json.dumps(['calendar', 'dashboard', 'tasks-all'])},
+            {'item_order': json.dumps(['calendar', 'dashboard', 'filters'])},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
 
@@ -329,23 +329,23 @@ class WorkplaceSelectionTests(TestCase):
                 SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
                 .values_list('item_key', flat=True)
             ),
-            ['calendar', 'dashboard', 'tasks-all'],
+            ['calendar', 'dashboard', 'filters'],
         )
-        page = self.client.get(reverse('tasks:tasks')).content.decode()
+        page = self.client.get(scoped_workplace_app_path(self.first_workplace, 'filters', 'search/')).content.decode()
         self.assertLess(
             page.index('data-sidebar-favorite-item="calendar"'),
             page.index('data-sidebar-favorite-item="dashboard"'),
         )
         self.assertLess(
             page.index('data-sidebar-favorite-item="dashboard"'),
-            page.index('data-sidebar-favorite-item="tasks-all"'),
+            page.index('data-sidebar-favorite-item="filters"'),
         )
 
     def test_sidebar_favorite_reorder_requires_the_complete_unique_item_set(self):
         SidebarFavorite.objects.create(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='tasks-all',
+            item_key='filters',
             position=1,
         )
         self.client.force_login(self.user)
@@ -369,14 +369,14 @@ class WorkplaceSelectionTests(TestCase):
                 SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
                 .values_list('item_key', flat=True)
             ),
-            ['dashboard', 'tasks-all'],
+            ['dashboard', 'filters'],
         )
 
     def test_new_sidebar_favorite_is_appended_after_reordered_items(self):
         SidebarFavorite.objects.create(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='tasks-all',
+            item_key='filters',
             position=1,
         )
         self.client.force_login(self.user)
@@ -384,7 +384,7 @@ class WorkplaceSelectionTests(TestCase):
         toggle_endpoint = reverse('workplaces:toggle-sidebar-favorite', args=[self.first_workplace.pk])
         self.client.post(
             reorder_endpoint,
-            {'item_order': json.dumps(['tasks-all', 'dashboard'])},
+            {'item_order': json.dumps(['filters', 'dashboard'])},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
 
@@ -400,7 +400,7 @@ class WorkplaceSelectionTests(TestCase):
                 SidebarFavorite.objects.filter(user=self.user, workplace=self.first_workplace)
                 .values_list('item_key', flat=True)
             ),
-            ['tasks-all', 'dashboard', 'calendar'],
+            ['filters', 'dashboard', 'calendar'],
         )
 
     def test_removed_people_search_favorite_is_not_rendered(self):

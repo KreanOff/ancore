@@ -1,0 +1,10 @@
+{% extends 'spaces/base.html' %}
+{% load static %}
+{% block work_title %}Filtry{% endblock %}
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/components/task-filters.css' %}?v=20261011-status-groups">
+<script src="{% static 'js/task-filters.js' %}?v=20261010-1" defer></script>
+{% endblock %}
+{% block work_page_class %} task-filters-page{% endblock %}
+{% block page_modals %}<div data-filter-modal-host data-filter-return-url="{{ list_url }}">{% if modal %}{% include 'dashboard/filters/form.html' %}{% endif %}</div>{% endblock %}

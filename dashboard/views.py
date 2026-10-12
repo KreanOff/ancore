@@ -94,14 +94,14 @@ def _ranked_search_queryset(queryset, field_name, query):
 
 
 def _navigation_search_results(query, workplace):
-    tasks_url = _workspace_app_url(workplace, 'spaces', 'items/')
+    tasks_url = _workspace_app_url(workplace, 'filters', 'search/')
     calendar_url = _workspace_app_url(workplace, 'calendar')
     entries = (
         ('Dla ciebie', 'Twoje zadania, ulubione i ostatnia praca', scoped_workplace_app_path(workplace, 'for-you') if workplace else reverse('for_you'), 'user-round-check', 'dla ciebie for you przypisane ostatnie'),
         ('Dashboard', 'Strona główna i podsumowanie', reverse('home'), 'layout-dashboard', 'dashboard start podsumowanie'),
         ('Pulpity', 'Własne pulpity i gadżety zespołu', _workspace_app_url(workplace, 'dashboards'), 'layout-dashboard', 'pulpity dashboard gadzety'),
-        ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, assignee='me'), 'user-round-check', 'tasks moje zadania'),
-        ('Wszystkie zadania', 'Pełna lista zadań', tasks_url, 'list-checks', 'tasks lista'),
+        ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, basic='1', sort='created_desc', assignee='me'), 'user-round-check', 'tasks moje zadania'),
+        ('Wyszukaj zadania', 'Wyszukiwanie zadań w Filtrach', tasks_url, 'search', 'tasks lista wszystkie zadania'),
         ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),
         ('Zespoły', 'Osoby i ich zespoły', _workspace_app_url(workplace, 'teams'), 'users', 'zespoly osoby teams'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),

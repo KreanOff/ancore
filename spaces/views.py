@@ -41,7 +41,7 @@ def space_object(request, pk):
 
 
 def base_context(request):
-    return {'spaces_url': app_url(request), 'spaces_manage_url': app_url(request, 'manage/'), 'teams_url': app_url(request, app='teams'), 'all_items_url': app_url(request, 'items/')}
+    return {'spaces_url': app_url(request), 'spaces_manage_url': app_url(request, 'manage/'), 'teams_url': app_url(request, app='teams')}
 
 
 def decorate_items(request, items):
@@ -280,18 +280,21 @@ def detail(request, pk):
 
 @login_required
 @require_GET
-def all_items(request):
-    items = visible_items(request)
-    type_options, type_filter = issue_type_filters(request)
-    if type_filter:
-        items = items.filter(work_type=type_filter)
-    query = request.GET.get('q', '').strip()[:120]
-    if query:
-        items = items.filter(Q(key__icontains=query) | Q(task__title__icontains=query))
+def retired_all_items(request):
+    """Keep bookmarks to the removed directory working through Filters."""
+    criteria = {}
+    for old_name, new_name, limit in (('q', 'q', 120), ('work_type', 'type', 40)):
+        value = request.GET.get(old_name, '').strip()[:limit]
+        if value:
+            criteria[new_name] = value
     if request.GET.get('assignee') == 'me':
-        items = items.filter(task__assignee=request.user)
-    page = Paginator(items.order_by('-task__created_at', '-pk'), 50).get_page(request.GET.get('page'))
-    return render(request, 'spaces/items.html', {**base_context(request), 'items': decorate_items(request, page.object_list), 'page': page, 'query': query, 'assignee_filter': request.GET.get('assignee', ''), 'type_options': type_options, 'type_filter': type_filter})
+        criteria['assignee'] = 'me'
+    if request.GET.get('page'):
+        criteria['page'] = request.GET['page']
+    target = app_url(request, 'search/', app='filters')
+    if criteria:
+        target += '?' + urlencode({'basic': '1', 'mode': 'basic', 'sort': 'created_desc', **criteria})
+    return redirect(target)
 
 
 def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False):

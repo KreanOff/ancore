@@ -23,11 +23,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [tasks](../tasks) | 42 | 66 | 46 | 332 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 35 | 13 | 29 | 212 |
+| [dashboard](../dashboard) | 41 | 14 | 41 | 233 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 37 | 9 | 34 | 174 |
+| [spaces](../spaces) | 37 | 9 | 33 | 174 |
 
 ## 2. Modele i relacje
 
@@ -562,6 +562,22 @@ Pola zadeklarowane tutaj: `content_type` (ForeignKey), `object_id` (PositiveBigI
 Metody/properties: `save`, `deactivate`, `__str__`.
 
 ## Modele: dashboard
+
+### `SavedTaskFilter`
+
+Źródło: [dashboard/models.py](../dashboard/models.py).
+
+Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `description` (TextField), `query` (TextField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `revision` (PositiveIntegerField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workspace_task_filters' |
+| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='task_filters' |
+| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='created_task_filters' |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_filters' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_task_filters' |
+
+Metody/properties: `__str__`.
 
 ### `Dashboard`
 
@@ -1101,6 +1117,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'^workplaces/[-a-zA-Z0-9_]+/filters/'` | `include((filter_urls.urlpatterns, 'workplace_filters'), namespace='workplace_filters')` | — |
+| `'filters/'` | `include('dashboard.filter_urls')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/dashboards/'` | `include((pulpit_urls.urlpatterns, 'workplace_pulpits'), namespace='workplace_pulpits')` | — |
 | `'dashboards/'` | `include('dashboard.pulpit_urls')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/'` | `include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')` | — |
@@ -1277,7 +1295,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'spaces/manage/<int:pk>/edit/'` | `views.edit` | 'manage_edit' |
 | `'spaces/search/'` | `views.search` | 'search' |
 | `'spaces/create/'` | `views.edit` | 'create' |
-| `'spaces/items/'` | `views.all_items` | 'items' |
+| `'spaces/items/'` | `views.retired_all_items` | 'items' |
 | `'spaces/items/<int:pk>/edit/'` | `views.item_edit` | 'item_edit' |
 | `'spaces/items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
 | `'spaces/manage/<slug:pk>/edit/'` | `views.edit` | 'manage_edit' |
@@ -1438,9 +1456,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/admin.py](../dashboard/admin.py)
 - [dashboard/apps.py](../dashboard/apps.py) — `DashboardConfig`
 - [dashboard/collaboration.py](../dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`, `follow_context`, `follow_object`, `deliver_activity_interest`
+- [dashboard/filter_forms.py](../dashboard/filter_forms.py) — `BasicTaskSearchForm`, `SavedTaskFilterForm`
+- [dashboard/filter_search.py](../dashboard/filter_search.py) — `QueryError`, `quote`, `SearchQuery`, `Parser`, `parse_query`, `date_value`, `Compiler`, `apply_query`, `basic_query`
+- [dashboard/filter_urls.py](../dashboard/filter_urls.py)
+- [dashboard/filter_views.py](../dashboard/filter_views.py) — `get_filter`, `catalog_context`, `search_context`, `index`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
+- [dashboard/filters.py](../dashboard/filters.py) — `filter_url`, `visible_filters`, `decorate_filter`, `sidebar_filters`
 - [dashboard/for_you.py](../dashboard/for_you.py) — `for_you_context`
 - [dashboard/identifiers.py](../dashboard/identifiers.py) — `DashboardSlugConverter`, `unique_dashboard_slug`
-- [dashboard/models.py](../dashboard/models.py) — `Dashboard`, `DashboardGadget`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
+- [dashboard/models.py](../dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardGadget`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
 - [dashboard/notification_service.py](../dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [dashboard/overview.py](../dashboard/overview.py) — `dashboard_overview`
 - [dashboard/pulpit_forms.py](../dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
@@ -1520,7 +1543,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
 - [spaces/testing.py](../spaces/testing.py) — `make_space`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`
 
 ## 6. Szablony
@@ -1652,6 +1675,18 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### dashboard
 
+- [dashboard/templates/dashboard/filters/base.html](../dashboard/templates/dashboard/filters/base.html)
+- [dashboard/templates/dashboard/filters/favorite.html](../dashboard/templates/dashboard/filters/favorite.html)
+- [dashboard/templates/dashboard/filters/form.html](../dashboard/templates/dashboard/filters/form.html)
+- [dashboard/templates/dashboard/filters/index.html](../dashboard/templates/dashboard/filters/index.html)
+- [dashboard/templates/dashboard/filters/results.html](../dashboard/templates/dashboard/filters/results.html)
+- [dashboard/templates/dashboard/filters/row_actions.html](../dashboard/templates/dashboard/filters/row_actions.html)
+- [dashboard/templates/dashboard/filters/search.html](../dashboard/templates/dashboard/filters/search.html)
+- [dashboard/templates/dashboard/filters/search_results.html](../dashboard/templates/dashboard/filters/search_results.html)
+- [dashboard/templates/dashboard/filters/sidebar.html](../dashboard/templates/dashboard/filters/sidebar.html)
+- [dashboard/templates/dashboard/filters/sidebar_navigation.html](../dashboard/templates/dashboard/filters/sidebar_navigation.html)
+- [dashboard/templates/dashboard/filters/sidebar_picker.html](../dashboard/templates/dashboard/filters/sidebar_picker.html)
+- [dashboard/templates/dashboard/filters/sidebar_row.html](../dashboard/templates/dashboard/filters/sidebar_row.html)
 - [dashboard/templates/dashboard/for_you.html](../dashboard/templates/dashboard/for_you.html)
 - [dashboard/templates/dashboard/home.html](../dashboard/templates/dashboard/home.html)
 - [dashboard/templates/dashboard/includes/notification_controls.html](../dashboard/templates/dashboard/includes/notification_controls.html)
@@ -1745,7 +1780,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/item_actions.html](../spaces/templates/spaces/item_actions.html)
 - [spaces/templates/spaces/item_list.html](../spaces/templates/spaces/item_list.html)
 - [spaces/templates/spaces/item_toolbar.html](../spaces/templates/spaces/item_toolbar.html)
-- [spaces/templates/spaces/items.html](../spaces/templates/spaces/items.html)
 - [spaces/templates/spaces/manage.html](../spaces/templates/spaces/manage.html)
 - [spaces/templates/spaces/pagination.html](../spaces/templates/spaces/pagination.html)
 - [spaces/templates/spaces/row.html](../spaces/templates/spaces/row.html)
@@ -1799,6 +1833,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/sticky-note.css](../static/css/components/sticky-note.css)
 - [static/css/components/tables.css](../static/css/components/tables.css)
 - [static/css/components/task-edit.css](../static/css/components/task-edit.css)
+- [static/css/components/task-filters.css](../static/css/components/task-filters.css)
 - [static/css/components/tasks.css](../static/css/components/tasks.css)
 - [static/css/components/toolbar.css](../static/css/components/toolbar.css)
 - [static/css/components/workplace-team.css](../static/css/components/workplace-team.css)
@@ -1820,6 +1855,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/documents.js](../static/js/documents.js)
 - [static/js/dropdown-layer.js](../static/js/dropdown-layer.js)
 - [static/js/file-upload.js](../static/js/file-upload.js)
+- [static/js/filter-navigation.js](../static/js/filter-navigation.js)
 - [static/js/flaticon-icons.js](../static/js/flaticon-icons.js)
 - [static/js/for-you.js](../static/js/for-you.js)
 - [static/js/global-search.js](../static/js/global-search.js)
@@ -1842,6 +1878,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/space-picker.js](../static/js/space-picker.js)
 - [static/js/spaces.js](../static/js/spaces.js)
 - [static/js/sticky-note.js](../static/js/sticky-note.js)
+- [static/js/task-filters.js](../static/js/task-filters.js)
 - [static/js/task-work-log.js](../static/js/task-work-log.js)
 - [static/js/tasks.js](../static/js/tasks.js)
 - [static/js/workplace-avatars.js](../static/js/workplace-avatars.js)
@@ -2157,6 +2194,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [dashboard/test_default_pulpit.py](../dashboard/test_default_pulpit.py).
 
 - `DefaultPulpitTests`: 7 metod testowych.
+
+### dashboard/test_filters.py
+
+Źródło: [dashboard/test_filters.py](../dashboard/test_filters.py).
+
+- `TaskFilterTests`: 21 metod testowych.
 
 ### dashboard/test_for_you.py
 
@@ -2619,6 +2662,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [dashboard/migrations/0011_default_dashboard.py](../dashboard/migrations/0011_default_dashboard.py)
 - [dashboard/migrations/0012_dashboard_slugs.py](../dashboard/migrations/0012_dashboard_slugs.py)
 - [dashboard/migrations/0013_remove_notificationstate_notification_exactly_one_source_and_more.py](../dashboard/migrations/0013_remove_notificationstate_notification_exactly_one_source_and_more.py)
+- [dashboard/migrations/0014_savedtaskfilter.py](../dashboard/migrations/0014_savedtaskfilter.py)
 
 ### planner
 

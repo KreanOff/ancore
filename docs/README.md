@@ -26,6 +26,8 @@ Przestrzenie, niezależne zadania `SpaceTask`, sprinty i zespoły: [Przestrzenie
 
 Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 
+Wyszukiwanie zadań, zapisane filtry i udostępnianie: [Filtry](FILTERS.md).
+
 ## Co czytać przed konkretnym zadaniem
 
 | Zadanie | Opis i punkty wejścia |

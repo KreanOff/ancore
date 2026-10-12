@@ -7522,6 +7522,10 @@ function initTasksPage() {
         function getDefaultDirectoryTrackWidths(cells) {
             return cells.map(cell => {
                 const column = cell.dataset.column || '';
+                if (cell.closest('.task-filter-directory')) {
+                    const widths = { select: 40, menu: 40, name: 320, leader: 220, visibility: 190, description: 320 };
+                    if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
+                }
                 if (cell.closest('.pulpit-directory-sheet')) {
                     const widths = { select: 40, menu: 40, name: 320, leader: 220, visibility: 190, gadgets: 130, description: 320 };
                     if (Object.prototype.hasOwnProperty.call(widths, column)) return widths[column];
@@ -7605,6 +7609,7 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
+            if (document.querySelector('.task-filter-directory')) return 'task-filters-directory';
             if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
             if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
             if (document.querySelector('.work-space-sheet--management')) return 'spaces-management';

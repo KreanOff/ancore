@@ -1,0 +1,19 @@
+<section class="sidebar-nav-group sidebar-nav-group--collection" aria-labelledby="sidebar-filters-title" data-sidebar-group="filters">
+    <div class="sidebar-group-header">
+        <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Filtry" title="Zwiń sekcję Filtry" aria-controls="sidebar-filters-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Filtry">
+            <i class="nav-icon sidebar-spaces-icon" data-icon="filter" aria-hidden="true"></i><i class="nav-icon sidebar-spaces-chevron" data-icon="chevron-down" aria-hidden="true"></i><span id="sidebar-filters-title" class="nav-label">Filtry</span>
+        </button>
+        <div class="sidebar-header-actions sidebar-group-actions">
+            <a href="{{ sidebar_filters_url }}search/" class="sidebar-header-action" aria-label="Nowe wyszukiwanie" title="Nowe wyszukiwanie" data-sidebar-group-action><i data-icon="plus" aria-hidden="true"></i><span class="u-sr-only">Nowe wyszukiwanie</span></a>
+            <div data-row-actions>
+                <button type="button" class="sidebar-header-action" aria-label="Opcje filtrów" title="Opcje filtrów" aria-expanded="false" aria-controls="sidebar-filters-actions" popovertarget="sidebar-filters-actions" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
+                <div id="sidebar-filters-actions" class="tasks-section-menu sidebar-group-menu" popover="auto" role="group" aria-label="Opcje filtrów" data-row-actions-panel>
+                    <a href="{{ sidebar_filters_url }}" class="tasks-project-menu-button" data-sidebar-group-action data-sidebar-source-item="filters" draggable="true"><i data-icon="settings" aria-hidden="true"></i><span>Zarządzaj filtrami</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="sidebar-subnav sidebar-subnav--extended sidebar-subnav--spaces" id="sidebar-filters-subnav" data-sidebar-group-label="Filtry" aria-label="Filtry">
+        {% include 'dashboard/filters/sidebar_navigation.html' %}
+    </div>
+</section>

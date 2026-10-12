@@ -64,7 +64,8 @@ class RetiredTasksTests(TestCase):
                     for marker in ('data-sidebar-group="legacy"', 'Starsze widoki', '<span>Projekty</span>', '<span>Grupy</span>', '<span>Zadania</span>', 'Ulubione projekty', 'Szablony projektów', 'href="/tasks/', self.url()):
                         self.assertNotContains(response, marker)
                     self.assertNotIn('tasks', response.context['workplace_app_urls'])
-                    self.assertContains(response, 'Wszystkie zadania')
+                    self.assertContains(response, 'Wyszukaj zadania')
+                    self.assertNotContains(response, 'Wszystkie zadania')
                     self.assertContains(response, 'Przestrzenie')
         self.assertEqual(self.client.head(self.url()).status_code, 302)
 
@@ -185,6 +186,7 @@ class RetiredTasksTests(TestCase):
         for key in ('tasks-projects', 'tasks-all', 'tasks-groups', 'tasks-my'):
             SidebarFavorite.objects.create(user=self.owner, workplace=self.workspace, item_key=key)
         response = self.client.get(self.url(app='spaces'))
+        self.assertNotContains(response, 'data-sidebar-favorite-item="tasks-all"')
         self.assertNotContains(response, 'data-sidebar-favorite-item="tasks-groups"')
         self.assertNotContains(response, 'data-sidebar-favorite-item="tasks-my"')
         self.assertTrue(all('/tasks/' not in item['url'] for item in response.context['sidebar_favorites']))

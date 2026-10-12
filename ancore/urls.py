@@ -10,10 +10,12 @@ from documents import workspace_urls as office_urls
 from documents import suite_views
 from resources import urls as resources_urls
 from spaces import urls as spaces_urls, team_urls
-from dashboard import pulpit_urls
+from dashboard import filter_urls, pulpit_urls
 from core.media import public_media
 
 urlpatterns = [
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/filters/', include((filter_urls.urlpatterns, 'workplace_filters'), namespace='workplace_filters')),
+    path('filters/', include('dashboard.filter_urls')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/dashboards/', include((pulpit_urls.urlpatterns, 'workplace_pulpits'), namespace='workplace_pulpits')),
     path('dashboards/', include('dashboard.pulpit_urls')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/', include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')),

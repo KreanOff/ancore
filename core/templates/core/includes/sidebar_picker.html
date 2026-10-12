@@ -4,7 +4,7 @@
         <button type="button" class="sidebar-collapsed-flyout__close" aria-label="{{ close_label }}" title="Zamknij" data-sidebar-picker-close><i data-icon="x" aria-hidden="true"></i></button>
     </header>
     <form class="sidebar-workspace-search" action="{{ directory_url }}" method="get" data-sidebar-picker-form>
-        {% if picker_group == 'pulpits' %}<input type="hidden" name="tab" value="all">{% endif %}
+        {% if picker_group == 'pulpits' or picker_group == 'filters' %}<input type="hidden" name="tab" value="all">{% endif %}
         <label><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" placeholder="{{ search_label }}" aria-label="{{ search_label }}" maxlength="120" autocomplete="off" aria-controls="{{ picker_id }}-results" data-sidebar-picker-input></label>
     </form>
     <p class="sidebar-workspace-search__empty" role="status" aria-live="polite" data-sidebar-picker-status hidden></p>

@@ -1,0 +1,7 @@
+{% if items %}
+    {% include 'spaces/item_list.html' %}
+{% else %}
+<div class="tasks-table-wrap tasks-board work-item-list tasks-board--empty">
+    <div class="tasks-empty-state tasks-empty-state--centered" role="status"><span class="tasks-empty-state__icon"><i data-icon="search" aria-hidden="true"></i></span><div class="tasks-empty-state__copy"><h2>{% if search_error %}Popraw warunki wyszukiwania{% else %}Nie znaleziono zadań{% endif %}</h2><p>{% if search_error %}Po poprawieniu zapytania wybierz „Szukaj”.{% else %}Zmień warunki lub wyczyść filtry, aby zobaczyć inne wyniki.{% endif %}</p></div></div>
+</div>
+{% endif %}

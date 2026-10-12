@@ -1,5 +1,14 @@
 # Wspólne mechanizmy i przepływy
 
+## Zapisane filtry
+
+Definicje są ograniczone do właściciela i aktywnego Workspace, twórcy
+lub jawnych odbiorców. Ulubione są osobiste. Parser kompiluje ograniczoną
+składnię do ORM po zastosowaniu aktualnych ACL Przestrzeni; udostępnienie
+filtra nie zmienia dostępu do zadań. Zapisy używają blokady wiersza i rewizji,
+a currentUser() jest ustalany dla osoby otwierającej wynik.
+[Szczegóły](FILTERS.md).
+
 Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
 szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
 aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `SpaceTask`.
@@ -1039,5 +1048,6 @@ przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
 Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
 historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
 powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
-`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
-nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.
+`tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
+zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
+lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.

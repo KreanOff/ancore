@@ -1,5 +1,36 @@
 # Standard UI Ancore
 
+## Filtry zadań
+
+Szablony dashboard/filters rozszerzają spaces/base i core/base.
+Katalog używa wspólnych zakładek notifications-tabs/work-tabs, menu
+directory_row_menu oraz tabeli tasks-directory-sheet. Wariant
+task-filter-directory określa kolumny katalogu; ich szerokości mają
+osobny klucz ustawień w tasks.js. Wyniki w „Wyszukaj zadania” i zapisanych
+filtrach korzystają z spaces/item_list.html i spaces/row.html: kolorowych
+grup statusów, zwijania oraz wierszy z checkboxem, priorytetem, statusem,
+kluczem, tytułem, typem, licznikami tagów/załączników i oznaczeniem terminu.
+Grupy obejmują bieżącą stronę wyników, a sortowanie zachowuje kolejność
+zadań wewnątrz grup. Wyniki nie używają tabeli z nagłówkami kolumn.
+
+Podstawowe pola korzystają z AncoreCustomSelect, tekstowego wyszukiwania
+i istniejących przycisków. Zaawansowany tryb ma pole zapytania i pomoc
+ze składnią. Formularz zapisu/edycji korzysta z AncoreTaskModals:
+fokus, inert, Escape, potwierdzenie odrzucenia zmian i błędy w dialogu.
+Skrypt task-filters.js inicjalizuje się także po ancore:content-loaded,
+usuwając poprzednie listenery. Częściowa nawigacja aktualizuje gwiazdki
+i ulubione w menu. Na telefonie pola zawijają się, a listy przewijają się
+we własnym kontenerze. [Zakres funkcji](FILTERS.md).
+
+Przestrzenie, Pulpity i Filtry współdzielą wariant sidebar-nav-group--collection:
+ta sama wysokość nagłówka, fokus, plus, trzy kropki i strzałka zastępująca
+ikonę przy hover/fokusie. Wiersze Filtrów korzystają z sidebar-space-row,
+sidebar-subnav-link i istniejących menu akcji. Ulubione/ostatnie mają
+ten sam styl i wspólny limit sześciu skrótów. Panel „Więcej filtrów”
+używa core/includes/sidebar_picker.html i space-picker.js; działa także
+w zwiniętym pasku i na telefonie. filter-navigation.js obsługuje gwiazdki
+z dowolnego ekranu, zachowując aktualny URL oraz przywracając fokus.
+
 Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
 szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
 aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces.SpaceTask`.
@@ -81,7 +112,7 @@ Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
 Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Tagi, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
-przestrzenie, Wszystkie zadania i Zespoły.
+przestrzenie, Filtry z wyszukiwaniem zadań i Zespoły.
 
 Wiersze backlogu z prawem edycji używają wariantu `work-issue-row--actions`
 z dodatkową kolumną 30px i istniejącym include'em `spaces/item_actions.html`.
@@ -181,7 +212,7 @@ otwierają widok Ogólne.
 
 Sekcja „Starsze widoki” wraz z Projektami, Ulubionymi projektami, Grupami,
 Zadaniami i Szablonami projektów jest usunięta. Menu zachowuje Przestrzenie,
-Wszystkie zadania i pozostałe aktywne moduły, także po częściowej nawigacji,
+Filtry i pozostałe aktywne moduły, także po częściowej nawigacji,
 zwinięciu sidebaru i na telefonie.
 Globalny katalog „Tagi” nie ma pozycji menu, skrótów Favorites ani modali
 w katalogu Zadań; tagi są dostępne wyłącznie w zakładce przestrzeni.
@@ -366,7 +397,7 @@ katalogiem (`spaces/index.html`), tak jak formularze Zasobów. Po zamknięciu
 dodatkowego wpisu w historii. Plus w menu bocznym oraz w panelu zwiniętego
 sidebaru używa `data-work-open`; na ekranach Przestrzeni i Zespołów działa nad
 bieżącą treścią. W innych modułach otwiera kreator nad katalogiem.
-Listy zadań w przestrzeni, „Wszystkie zadania” oraz zadania zespołu zachowują
+Listy zadań w przestrzeni, „Wyszukaj zadania” w Filtrach oraz zadania zespołu zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
 Wspólny `work-issue-row` w `spaces.css` podświetla cały wiersz przy najechaniu
@@ -626,7 +657,7 @@ korzystają ze wspólnego `tasks-empty-state__copy`.
 Zakładki pozostają w jednym wierszu i przewijają się poziomo,
 gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
 Zadania we wszystkich pięciu zakładkach używają wspólnego `spaces/row.html`,
-tak jak „Wszystkie zadania”: wiersza `tasks-issue-row` z priorytetem,
+tak jak „Wyszukaj zadania” w Filtrach: wiersza `tasks-issue-row` z priorytetem,
 ikoną statusu, oznaczeniem typu zgłoszenia, kluczem, tytułem, licznikami tagów
 i załączników oraz ikoną terminu. Link obejmujący typ, klucz i tytuł w „Dla ciebie”
 nie ma podkreślenia tekstu, również po najechaniu kursorem.
@@ -793,6 +824,11 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 - Stała nawigacja z modułami i ulubionymi.
   Menu zaczyna się od Favorites, bez osobnego przycisku domu.
   Do strony głównej prowadzi istniejący link Dashboard.
+  „Zasoby” i „Zespoły”, w tej kolejności, znajdują się przy dolnej krawędzi
+  menu Workspace we wspólnym wariancie `sidebar-menu-section--bottom`.
+  Pionowy układ nawigacji i automatyczny margines oddzielają je od głównej
+  listy, także po zwinięciu menu i na telefonie. Przy braku wysokości menu
+  przewija się razem ze wszystkimi pozycjami, bez nakładania linków.
 - Stan zwinięty/rozwinięty i regulowana szerokość sidebaru. Odsunięcie i szerokość
   treści korzystają z `--app-sidebar-total-width`, także przy szerokości
   768–1024px; zwinięcie menu do ikon zwalnia miejsce dla treści. Na telefonie

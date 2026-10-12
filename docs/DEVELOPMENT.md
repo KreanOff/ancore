@@ -1,5 +1,72 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Weryfikacja Filtrów
+
+Moduł wymaga migracji dashboard.0014_savedtaskfilter. Testy
+dashboard.test_filters obejmują parser, sortowanie, aktualne ACL zadań
+i rodziców, Workspace, udostępnianie, cofnięcie dostępu, autorstwo,
+rewizje, formularze, CSRF, zwykłe/scoped URL i paginację.
+Powiązane zestawy to spaces.tests.SpaceTests, spaces.test_tags
+oraz dashboard.test_pulpits.
+
+UI należy sprawdzać na osobnej bazie QA: podstawowe/zaawansowane
+wyszukiwanie, zapis i edycja, widoczność, gwiazdki, menu, zamykanie
+dialogu, błędy i pusty wynik, ponowne wejście przez częściową nawigację,
+desktop i telefon oraz referencyjną listę zadań Przestrzeni.
+
+Wycofanie osobnego ekranu „Wszystkie zadania” (11.10.2026): przeszło
+86 testów dashboard.test_filters, spaces.tests.SpaceTests,
+spaces.test_issue_types, tasks.test_retirement, core.tests.SidebarActiveStateTests
+oraz trzech testów kolejności Favorites w workplaces.tests. Sprawdzono
+przekierowania zwykłych/scoped adresów, zachowanie kryteriów, ACL,
+ukrycie starego skrótu i wyszukiwanie globalne. Chrome z Playwright
+na osobnej bazie QA przy 1280×720 i 390×844 potwierdził menu,
+zwinięty sidebar, listę referencyjną Przestrzeni, zapisany filtr,
+stany puste/błędy, ponowne wejście przez częściową nawigację i reload.
+Strona nie przepełniała się poziomo; konsola nie zgłosiła błędów ani ostrzeżeń.
+Plugin Browser był niedostępny. Nie sprawdzano całego repozytorium
+ani innych przeglądarek; zmiana nie wymaga migracji.
+
+Grupowana lista wyników (11.10.2026): przeszło 109 testów
+dashboard.test_filters, spaces.tests.SpaceTests, spaces.test_tags,
+dashboard.test_pulpits i core.tests.SidebarActiveStateTests. Playwright
+z Chrome na osobnej bazie QA przy 1920×1080, 1024×900 i 390×844 potwierdził
+grupy statusów i liczniki, zwijanie klawiaturą i nagłówkiem, zaznaczenie,
+przejście do zadania/powrót, sortowanie, paginację, błędy i puste wyniki,
+zapisany filtr oraz statusy z różnych słowników. Geometria, fonty i kolory
+wiersza/nagłówka zgadzają się z listą Przestrzeni. Sprawdzono zwykły/scoped
+adres, częściową nawigację, reload, katalog filtrów i przewijanie listy
+na telefonie bez przepełnienia strony. Konsola nie zgłosiła błędów.
+Plugin Browser był niedostępny. Nie sprawdzano całego repozytorium
+ani innych przeglądarek; zmiana nie wymaga migracji.
+
+Weryfikacja (10.10.2026): przeszło 96 testów wymienionych wyżej zestawów,
+kontrola Django, zgodność migracji, składnia zmienionego JS, lokalne linki,
+indeks kodu i git diff --check. Przeglądarka Codex na oddzielnej bazie QA
+potwierdziła wybór wielu kryteriów, zapis, zmianę warunków i widoczności,
+gwiazdki i aktualizację menu, błędne zapytanie, pusty wynik, czyszczenie,
+błąd zapisu w modalu, Escape/odrzucenie szkicu, potwierdzenie usuwania
+oraz ponowne wejście z Wszystkich zadań. Sprawdzono szerokości 1280,
+1024 i 390 px, modal na telefonie i brak przepełnienia strony.
+Konsola nie zgłosiła błędów ani ostrzeżeń.
+
+Szersze starsze zestawy dashboard.test_search_regressions i workplaces.tests
+mają wcześniejsze rozbieżności z wycofanymi Tasks oraz nawigacją.
+Powtórzenie ich na niezmienionym HEAD fed9ebd, w odrębnej bazie testowej,
+potwierdziło 23 niepowodzenia i 5 błędów w 56 testach.
+Nie sprawdzono całego repozytorium ani innych silników przeglądarek.
+
+Ujednolicenie menu Filtrów z Przestrzeniami (10.10.2026): przeszły 123 testy
+dashboard.test_filters, spaces.tests.SpaceTests, dashboard.test_pulpits,
+dashboard.test_for_you oraz core.tests.SidebarActiveStateTests.
+Przeglądarka na osobnej bazie QA przy 1280×720 i 390×844 potwierdziła
+wspólne nagłówki, zarządzanie pod trzema kropkami, panel „Więcej filtrów”,
+wyszukiwanie i pusty wynik, Escape, zmianę gwiazdki z Wszystkich zadań,
+podział ulubione/ostatnie, ponowne wejście przez częściową nawigację,
+zwijanie sekcji oraz całego paska i zamknięcie menu telefonu po nawigacji.
+Strona nie przepełniała się poziomo, konsola nie miała błędów ani ostrzeżeń.
+Nie zmieniono modeli ani migracji. Nie sprawdzano innych przeglądarek.
+
 Oddzielny system Zadań przestrzeni (10.10.2026) wymaga migracji
 `spaces.0006_independent_space_tasks`, `tasks.0066_task_space_archived_taskproject_space_archived`
 i `spaces.0007_archive_import_sources`, po backupie bazy i storage.
@@ -37,8 +104,9 @@ przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
 Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
 historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
 powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
-`tasks-projects` i `tasks-all` prowadzą do Przestrzeni oraz ich Wszystkich zadań;
-nieobsługiwane skróty grup i „moich zadań” pozostają ukryte.
+`tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
+zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
+lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.
 
 Testy `tasks.test_retirement` sprawdzają menu, zwykłe/scoped linki, brak operacji
 i ekranów admin, zachowanie danych/szablonów/plików, mapowania importu, cofnięcie
@@ -544,7 +612,7 @@ Przy zmianach uruchom też Dashboard, testy prywatności Zadań i Kanbana,
 `core.test_task_integrity.TaskIdentityTests`, Workplaces i testy menu Core.
 W przeglądarce sprawdź wszystkie zakładki, limit 20 bez paginacji w czterech
 zakładkach, paginację oglądanych, wejście w element i powrót,
-Dashboard i listę „Wszystkie zadania” jako referencje, nawigację modułów,
+Dashboard i listę zadań Przestrzeni jako referencje, nawigację modułów,
 kolory/liczniki statusów i zwijanie myszą/klawiaturą (również po ponownym wejściu),
 telefon, puste stany oraz błąd sieci.
 Przestrzenie w zakładkach „Ulubione” i „Ostatnio oglądane” porównaj z tabelą

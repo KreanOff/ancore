@@ -1,0 +1,43 @@
+/* Filters use the shared directory sheet, controls and modal shell. */
+.task-filters-page > .tasks-workspace > .tasks-topbar { padding-inline: var(--work-space-inline-padding, 22px); }
+.task-filters-page .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
+.task-filters-page .tasks-titlebar-left { min-width: 0; flex-wrap: wrap; gap: 8px; }
+.task-filters-page .tasks-topbar-title { overflow-wrap: anywhere; }
+.task-filters-page .tasks-titlebar-actions { flex-wrap: wrap; }
+.task-filters-page form { margin: 0; }
+.task-filters-page .tasks-filter-button { text-decoration: none; }
+.task-filters-page .tasks-filterbar-left, .task-filters-page .tasks-filterbar-right { flex-wrap: wrap; }
+.task-filter-control { width: 160px; min-width: 0; }
+.task-filter-control > .ancore-custom-select { width: 100%; }
+.task-filter-search { flex-shrink: 0; }
+.task-filter-controls { row-gap: 8px; }
+.task-filter-controls .tasks-search-field { width: 280px; max-width: 100%; }
+.task-filter-advanced { display: flex; align-items: flex-start; gap: 8px; padding: 14px var(--work-space-inline-padding, 22px) 8px; }
+.task-filter-advanced textarea { flex: 1; min-width: 0; resize: vertical; font-family: monospace; }
+.task-filter-advanced .tasks-filter-button { flex-shrink: 0; }
+.task-filter-help { padding: 0 var(--work-space-inline-padding, 22px) 12px; font-size: var(--font-size-sm); }
+.task-filter-help summary { cursor: pointer; }
+.task-filter-help p { margin: 8px 0 0; }
+.task-filter-help code { overflow-wrap: anywhere; }
+.task-filter-query-error { margin: 8px var(--work-space-inline-padding, 22px); flex-shrink: 0; }
+.task-filter-disabled { opacity: .65; padding: 10px 0; cursor: default; align-self: center; }
+.task-filter-form { display: flex; flex-direction: column; gap: var(--app-modal-field-gap); }
+.task-filter-form [name="query"] { font-family: monospace; }
+.task-filter-form [hidden] { display: none !important; }
+.tasks-directory-board.work-space-sheet.task-filter-directory {
+    --tasks-directory-grid: 40px 40px 320px 220px 190px 320px;
+}
+.task-filter-directory a { text-decoration: none; }
+.task-filter-directory a:hover { text-decoration: underline; }
+.task-filter-directory [data-column="select"] { justify-content: center; }
+.task-filter-directory .tasks-icon-button.is-active { color: var(--system-accent); }
+.task-filter-directory .tasks-icon-button.is-active [data-icon] { fill: currentColor; }
+@media (max-width: 767px) {
+    .task-filters-page .tasks-topbar { align-items: flex-start; gap: 10px; }
+    .task-filters-page .tasks-titlebar-actions { justify-content: flex-start; width: 100%; max-width: 100%; }
+    .task-filter-controls .tasks-filterbar-left, .task-filter-controls .tasks-filterbar-right { width: 100%; }
+    .task-filter-control { width: calc(50% - 4px); flex: 1 1 140px; }
+    .task-filter-controls .tasks-search-field { width: 100%; flex-basis: 100%; }
+    .task-filter-advanced { flex-wrap: wrap; }
+    .task-filter-advanced textarea { flex-basis: 100%; }
+}

@@ -1,0 +1,4 @@
+{% for item in results %}
+<a class="sidebar-workspace-option sidebar-space-picker__result" href="{{ item.url }}" title="{{ item.name }}"><i data-icon="filter" aria-hidden="true"></i><span>{{ item.name }}</span></a>
+{% endfor %}
+{% if has_more %}<p class="sidebar-workspace-search__empty">Więcej wyników znajdziesz w katalogu filtrów.</p>{% endif %}

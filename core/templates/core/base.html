@@ -3,6 +3,8 @@
 {% url 'teams:index' as sidebar_teams_fallback_url %}
 {% firstof workplace_app_urls.spaces sidebar_spaces_fallback_url as sidebar_spaces_url %}
 {% firstof workplace_app_urls.teams sidebar_teams_fallback_url as sidebar_teams_url %}
+{% url 'filters:index' as sidebar_filters_fallback_url %}
+{% firstof workplace_app_urls.filters sidebar_filters_fallback_url as sidebar_filters_url %}
 {% url 'planner:index' as sidebar_calendar_fallback_url %}
 {% url 'documents:library' as sidebar_documents_fallback_url %}
 {% url 'office:index' as sidebar_office_fallback_url %}
@@ -62,7 +64,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261009-issue-type-colors">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261011-sidebar-bottom-links">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-all-avatars-30">
     {% block extra_head %}{% endblock %}
 </head>
@@ -210,7 +212,7 @@
                 <span class="nav-label">Dla ciebie</span>
             </a>
             {% sidebar_favorite_toggle 'for-you' 'Dla ciebie' 'user-round-check' sidebar_for_you_url %}
-            <section class="sidebar-nav-group" aria-labelledby="sidebar-pulpits-title" data-sidebar-group="pulpits">
+            <section class="sidebar-nav-group sidebar-nav-group--collection" aria-labelledby="sidebar-pulpits-title" data-sidebar-group="pulpits">
                 <div class="sidebar-group-header">
                     <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Pulpity" title="Zwiń sekcję Pulpity" aria-controls="sidebar-pulpits-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Pulpity">
                         <i class="nav-icon sidebar-spaces-icon" data-icon="layout-dashboard" aria-hidden="true"></i><i class="nav-icon sidebar-spaces-chevron" data-icon="chevron-down" aria-hidden="true"></i><span id="sidebar-pulpits-title" class="nav-label">Pulpity</span>
@@ -228,7 +230,7 @@
             </section>
             {% sidebar_favorite_toggle 'dashboard' 'Dashboard' 'layout-dashboard' sidebar_dashboard_url %}
             {% sidebar_favorite_toggle 'pulpits' 'Pulpity' 'layout-dashboard' sidebar_pulpits_url %}
-            <section class="sidebar-nav-group" aria-labelledby="sidebar-spaces-title" data-sidebar-group="spaces">
+            <section class="sidebar-nav-group sidebar-nav-group--collection" aria-labelledby="sidebar-spaces-title" data-sidebar-group="spaces">
                 <div class="sidebar-group-header">
                     <button type="button" class="nav-link sidebar-primary-link sidebar-group-toggle" aria-label="Zwiń sekcję Przestrzenie" title="Zwiń sekcję Przestrzenie" aria-controls="sidebar-spaces-subnav" aria-expanded="true" data-sidebar-group-toggle data-sidebar-group-name="Przestrzenie">
                         <i class="nav-icon sidebar-spaces-icon" data-icon="layers" aria-hidden="true"></i>
@@ -252,10 +254,8 @@
                     {% include 'spaces/sidebar_navigation.html' %}
                 </div>
             </section>
-            <a href="{{ sidebar_spaces_url }}items/" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.url_name == 'items' %}active{% endif %}" data-sidebar-source-item="tasks-all" draggable="true"><i class="nav-icon" data-icon="list-checks" aria-hidden="true"></i><span class="nav-label">Wszystkie zadania</span></a>
-            {% sidebar_favorite_toggle 'tasks-all' 'Wszystkie zadania' 'list-checks' sidebar_spaces_url|add:'items/' %}
-            <a href="{{ sidebar_teams_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'teams' or request.resolver_match.app_name == 'workplace_teams' %}active{% endif %}" data-sidebar-source-item="teams" draggable="true"><i class="nav-icon" data-icon="users" aria-hidden="true"></i><span class="nav-label">Zespoły</span></a>
-            {% sidebar_favorite_toggle 'teams' 'Zespoły' 'users' sidebar_teams_url %}
+            {% include 'dashboard/filters/sidebar.html' %}
+            {% sidebar_favorite_toggle 'filters' 'Filtry' 'filter' sidebar_filters_url %}
             <a href="{{ sidebar_calendar_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'planner' or request.resolver_match.app_name == 'workplace_planner' %}active{% endif %}" aria-label="Kalendarz" title="Kalendarz" data-sidebar-source-item="calendar" draggable="true">
                 <i class="nav-icon nav-icon--calendar" data-icon="calendar-days" aria-hidden="true"></i>
                 <span class="nav-label">Kalendarz</span>
@@ -271,11 +271,15 @@
                 <span class="nav-label">Dokumenty</span>
             </a>
             {% sidebar_favorite_toggle 'office' 'Dokumenty' 'file-text' sidebar_office_url %}
+            </section>
+            <div class="sidebar-menu-section sidebar-menu-section--bottom">
             <a href="{{ sidebar_resources_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'resources' or request.resolver_match.app_name == 'workplace_resources' %}active{% endif %}" aria-label="Zasoby" title="Zasoby" data-sidebar-source-item="resources" draggable="true">
                 <i class="nav-icon" data-icon="package" aria-hidden="true"></i><span class="nav-label">Zasoby</span>
             </a>
             {% sidebar_favorite_toggle 'resources' 'Zasoby' 'package' sidebar_resources_url %}
-            </section>
+            <a href="{{ sidebar_teams_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone {% if request.resolver_match.app_name == 'teams' or request.resolver_match.app_name == 'workplace_teams' %}active{% endif %}" aria-label="Zespoły" title="Zespoły" data-sidebar-source-item="teams" draggable="true"><i class="nav-icon" data-icon="users" aria-hidden="true"></i><span class="nav-label">Zespoły</span></a>
+            {% sidebar_favorite_toggle 'teams' 'Zespoły' 'users' sidebar_teams_url %}
+            </div>
 
         </nav>
         {% include 'core/includes/space_management_sidebar.html' %}
@@ -287,6 +291,7 @@
     </aside>
     {% include 'spaces/sidebar_picker.html' %}
     {% include 'dashboard/pulpits/sidebar_picker.html' %}
+    {% include 'dashboard/filters/sidebar_picker.html' %}
     <div class="sidebar-collapsed-flyout" id="sidebar-collapsed-flyout" role="dialog" aria-labelledby="sidebar-collapsed-flyout-title" data-sidebar-collapsed-flyout hidden>
         <header class="sidebar-collapsed-flyout__header">
             <strong id="sidebar-collapsed-flyout-title" data-sidebar-collapsed-flyout-title></strong>
@@ -364,8 +369,9 @@
     {% endif %}
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
-    <script src="{% static 'js/layout.js' %}?v=20261010-space-slugs"></script>
+    <script src="{% static 'js/layout.js' %}?v=20261010-filter-navigation"></script>
     <script src="{% static 'js/space-navigation.js' %}?v=20261007-directory-controls"></script>
+    <script src="{% static 'js/filter-navigation.js' %}?v=20261010-1"></script>
     <script src="{% static 'js/pulpit-navigation.js' %}?v=20261007-pulpit-navigation"></script>
     <script src="{% static 'js/space-picker.js' %}?v=20261007-sidebar-picker"></script>
     <script src="{% static 'js/global-search.js' %}?v=20261003-search-no-close"></script>
@@ -377,7 +383,7 @@
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20260926-unified-small-dialogs"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20260921-dropdown-search"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20261009-backlog-drag-drop"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20261011-filter-status-groups"></script>
     <script src="{% static 'js/profile.js' %}?v=20261003-user-avatars"></script>
     <script src="{% static 'js/workplace-avatars.js' %}?v=20261003-user-avatars"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20261010-select-detail-labels"></script>

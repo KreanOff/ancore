@@ -7,9 +7,9 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'for-you', 'label': 'Dla ciebie', 'icon': 'user-round-check', 'app': 'for-you'},
     {'key': 'dashboard', 'label': 'Dashboard', 'icon': 'layout-dashboard', 'route_name': 'home'},
     {'key': 'pulpits', 'label': 'Pulpity', 'icon': 'layout-dashboard', 'app': 'dashboards'},
+    {'key': 'filters', 'label': 'Filtry', 'icon': 'filter', 'app': 'filters'},
     {'key': 'spaces', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'teams', 'label': 'Zespoły', 'icon': 'users', 'app': 'teams'},
-    {'key': 'tasks-all', 'label': 'Wszystkie zadania', 'icon': 'list-checks', 'app': 'spaces', 'suffix': 'items/'},
     {'key': 'tasks-projects', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'kanban-spaces', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'kanban-boards', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
@@ -48,8 +48,8 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
         return app_name in {'spaces', 'workplace_spaces'} and view_name not in {'items', 'manage', 'manage_create', 'manage_edit'}
     if item_key == 'teams':
         return app_name in {'teams', 'workplace_teams'}
-    if item_key == 'tasks-all' and app_name in {'spaces', 'workplace_spaces'}:
-        return view_name == 'items'
+    if item_key == 'filters':
+        return app_name in {'filters', 'workplace_filters'}
 
     if item_key == 'for-you':
         return view_name in {'for_you', 'workplace_for_you'}

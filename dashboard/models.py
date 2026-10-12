@@ -4,6 +4,33 @@ from django.db import models, router, transaction
 from .identifiers import SLUG_MAX_LENGTH, unique_dashboard_slug
 
 
+class SavedTaskFilter(models.Model):
+    class Visibility(models.TextChoices):
+        PRIVATE = 'private', 'Prywatny'
+        SELECTED = 'selected', 'Wybrane osoby'
+        WORKSPACE = 'workspace', 'Cały Workspace'
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workspace_task_filters')
+    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='task_filters')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_task_filters')
+    name = models.CharField('Nazwa', max_length=150)
+    description = models.TextField('Opis', blank=True, max_length=2000)
+    query = models.TextField('Warunki wyszukiwania', blank=True, max_length=4000)
+    visibility = models.CharField('Widoczność', max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
+    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='shared_task_filters')
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_task_filters')
+    revision = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name', 'pk']
+        indexes = [models.Index(fields=['owner', 'workplace'], name='task_filter_workspace_idx')]
+
+    def __str__(self):
+        return self.name
+
+
 class Dashboard(models.Model):
     class Visibility(models.TextChoices):
         PRIVATE = 'private', 'Prywatny'
