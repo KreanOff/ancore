@@ -1843,9 +1843,17 @@ Menu pozostaje w DOM formularza, więc zachowuje delegację zdarzeń i pułapkę
 Nie wyłączaj `overflow` przewijanej treści modala ani nie zwiększaj lokalnie
 `z-index`, aby ominąć przycinanie. Warstwa dobiera kierunek góra/dół według
 miejsca w widocznym obszarze ekranu, ogranicza wysokość listy i uwzględnia skalę UI.
-Szerokość listy jest równa aktualnej szerokości otwierającej ją kontrolki,
-także po zmianie rozmiaru okna. Stałe szerokości poszczególnych menu nie
-nadpisują tej zasady; jedynym ograniczeniem jest widoczna szerokość ekranu.
+Lista ma co najmniej szerokość kontrolki i wspólną szerokość bazową 240px
+(`--dropdown-menu-min-width`, domyślne `--dropdown-menu-width`). Dłuższe opcje
+mogą rozszerzyć ją do 360px
+(`--dropdown-menu-max-width`); szersze pola formularzy zachowują wyrównanie
+do kontrolki. Widoczna szerokość ekranu ogranicza wszystkie te wartości,
+także po zmianie rozmiaru okna. Długi tekst opcji zawija się, zamiast ucinać
+nazwę; tooltip udostępnia jej pełną treść.
+`dropdown-layer.css` określa wspólną powierzchnię list wyboru i menu akcji:
+ramkę, tło, cień, zaokrąglenia, font, odstępy i podświetlenie pozycji.
+Przełącznik Workspace korzysta z tych samych tokenów. Wielopolowe panele
+filtrów zachowują układ, a listy ich pól używają wspólnej warstwy.
 Aktualizuje pozycję przy przewijaniu i zmianie rozmiaru; gdy kontrolka znika
 z przewijanego obszaru lub modal zostaje zamknięty/usunięty, zamyka też menu.
 Escape zamyka najpierw listę i przywraca fokus kontrolce; kliknięcie poza listą,
@@ -1859,15 +1867,29 @@ bez zmiany wybranej wartości i pokazuje „Brak wyników”. Strzałki nawiguj�
 po widocznych opcjach, Enter zatwierdza wybór, a Escape zamyka listę.
 Ponowne otwarcie czyści zapytanie. Istniejące wyszukiwarki firm/osób i źródeł
 zachowują własną obsługę wyszukiwania oraz dodawania wartości.
+Listy wielokrotnego wyboru i zwykłe selecty z ponad ośmioma opcjami mają
+wyszukiwarkę również poza modalami; wyszukiwanie pomija polskie znaki.
+`AncoreCustomSelect` zachowuje podglądy `data-ancore-option-preview`
+i ikony `data-ancore-option-icon`, a pozostałym opcjom dobiera ikonę pola.
+Wspólna warstwa uzupełnia ikony prostych filtrów, sortowania i paginacji.
+`core.widgets.VisualSelect/VisualSelectMultiple` przekazują serwerowe ikony
+lub podglądy przez lokalne szablony, bez zmiany wartości opcji i walidacji.
+Filtry zadań pokazują awatary/zdjęcia widocznych przestrzeni, wykonawców
+i zespołów, kolorowe typy zgłoszeń, statusy i priorytety. Podglądy korzystają
+z tych samych include'ów co szczegóły i zachowują kontrolowane adresy obrazów.
+`UserSelectMultiple` rozszerza podglądy kont o wybór osób w dostępie Pulpitów
+i Filtrów. `SpaceSelect` i `TeamSelect` zachowują queryset formularza;
+formularz Zasobów używa istniejącego `UserSelect`. Brak zdjęcia pokazuje
+obecny awatar lub ikonę. Miniatury kont/przestrzeni/zespołów mają 24px.
 Warstwa obejmuje `AncoreCustomSelect`, priorytety/statusy/tagi oraz wybór projektu
 i grupy w zadaniach, listy firm/osób, Kontaktów, Kalendarza i Profilu,
 również w szczegółach zadań/Kanbana. Ta sama zasada obowiązuje w listach
 filtrów i prostego sortowania, warunkach tekstowych w panelach filtrów
 (także Dysku i Dokumentów), wyborze liczby wierszy we wszystkich katalogach
 i Workspace oraz filtrze aktywności zadania/karty. Lista filtra w zbiorczym
-panelu otwiera się ponad panelem i zachowuje szerokość kontrolki bez zmiany
+panelu otwiera się ponad panelem i stosuje wspólną minimalną szerokość bez zmiany
 układu pozostałych pól. Wielopolowe panele konfiguracji filtrów/sortowania
-oraz menu działań przy przyciskach ikonowych zachowują własną szerokość;
+zachowują własną szerokość; menu działań mają wspólną szerokość bazową,
 zawarte w nich listy wyboru korzystają z tej samej warstwy co formularze.
 Rozwijane panele edycji firmy/osoby z
 `position: static` zachowują swój układ wewnątrz formularza.

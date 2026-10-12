@@ -1,4 +1,52 @@
-/* Only positioning belongs to the layer; each existing menu keeps its appearance. */
+/* Shared surface for choice lists and action menus across the application. */
+:is(
+    .ancore-dropdown-layer[popover],
+    .ancore-custom-select__menu,
+    .tasks-filter-menu:not(.tasks-company-select__panel, .tasks-responsible-select__panel),
+    .tasks-issue-dropdown-menu,
+    .tasks-chip-picker__menu,
+    .tasks-section-menu,
+    .tasks-project-pagination__size-menu,
+    .contacts-custom-select__menu,
+    .contacts-actions-menu__panel,
+    .calendar-color-select__menu,
+    .profile-status-menu,
+    .workplace-invite__results
+) {
+    padding: var(--dropdown-menu-padding);
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-menu-radius);
+    background: var(--card-bg);
+    box-shadow: var(--dropdown-menu-shadow);
+    font-family: var(--font-family-ui);
+    font-size: var(--dropdown-menu-font-size);
+}
+
+/* Configuration panels keep their field layout and use the same menu surface. */
+:is(.tasks-directory-column-menu, .tasks-project-query-panel) {
+    border-color: var(--border-color);
+    border-radius: var(--dropdown-menu-radius);
+    background: var(--card-bg);
+    box-shadow: var(--dropdown-menu-shadow);
+}
+
+:is(.ancore-dropdown-layer, .tasks-section-menu, .tasks-project-pagination__size-menu) :is(.ancore-custom-select__option, .tasks-project-menu-button, .tasks-project-delete-button, .tasks-issue-dropdown-option, .tasks-project-pagination__size-option),
+.ancore-dropdown-layer > button,
+.ancore-dropdown-layer > :is(.tasks-chip-picker__list, .contacts-custom-select__list) > button {
+    min-height: var(--dropdown-menu-item-height);
+    height: auto;
+    padding: 4px 8px;
+    gap: 8px;
+    border-radius: var(--dropdown-menu-item-radius);
+    font-size: var(--dropdown-menu-font-size);
+    line-height: 1.4;
+}
+
+:is(.tasks-section-menu, .tasks-project-pagination__size-menu, .contacts-actions-menu__panel) {
+    width: max(var(--dropdown-menu-width), var(--dropdown-menu-min-width));
+    max-width: calc(var(--app-viewport-width) - 16px);
+}
+
 .ancore-dropdown-layer[popover] {
     position: fixed !important;
     inset: auto !important;
@@ -10,8 +58,24 @@
     max-height: var(--dropdown-layer-height, var(--dropdown-menu-max-height)) !important;
     margin: 0 !important;
     box-sizing: border-box;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     transform: none !important;
+}
+
+.ancore-dropdown-layer .ancore-custom-select__search-input {
+    height: 28px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.ancore-dropdown-layer :is(button, a):is(:hover, :focus-visible, .is-selected, .is-active) {
+    background: var(--dropdown-menu-highlight-bg);
+    outline: none;
 }
 
 .ancore-dropdown-layer[popover]::backdrop {

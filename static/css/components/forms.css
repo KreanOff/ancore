@@ -262,10 +262,30 @@ select.form-select {
 }
 
 .ancore-custom-select__option-label {
+    flex: 1 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ancore-custom-select__preview.profile-avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: var(--dropdown-control-radius);
+}
+
+.ancore-custom-select__preview.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ancore-custom-select__preview.profile-avatar [data-icon] {
+    width: 16px;
+    height: 16px;
 }
 
 .ancore-custom-select__empty {

@@ -1,7 +1,11 @@
 from django import forms
 
+from accounts.avatar import account_avatar
+from accounts.widgets import UserSelectMultiple
+from core.widgets import VisualSelectMultiple
+from spaces.defaults import issue_type_icon
 from spaces.models import SpaceTask
-from spaces.services import teams_for, visible_spaces
+from spaces.services import app_url, teams_for, visible_spaces
 from tasks.models import TaskTag
 from workplaces.services import workplace_people
 from .filter_search import BASIC_SORTS, Compiler, QueryError, parse_query
@@ -25,20 +29,46 @@ class BasicTaskSearchForm(forms.Form):
         super().__init__(*args, **kwargs)
         spaces = list(visible_spaces(request).order_by('name', 'pk'))
         self.fields['space'].choices = [(str(space.pk), f'{space.name} ({space.key})') for space in spaces]
+        visuals = {
+            'space': {str(space.pk): {'template': 'spaces/avatar.html', 'context': {'space': space}} for space in spaces},
+            'type': {}, 'status': {},
+            'priority': {key: {'template': 'core/includes/select_priority.html', 'context': {'priority': key}}
+                         for key, _ in SpaceTask.PRIORITY_CHOICES},
+        }
         for field, key in [('status', 'statuses'), ('type', 'types')]:
             choices = {}
             for space in spaces:
                 for row in space.configuration.settings.get(key, []):
                     choices.setdefault(row['key'], row['label'])
+                    visuals[field].setdefault(row['key'],
+                        {'icon': issue_type_icon(row['key'])} if field == 'type' else
+                        {'template': 'core/includes/select_status.html', 'context': {'category': row['category']}})
             self.fields[field].choices = list(choices.items())
+        people = list(workplace_people(request.workplace, request.user))
         self.fields['assignee'].choices = [('me', 'Przypisane do mnie'), ('unassigned', 'Nieprzypisane'), *[
             (str(person.pk), person.get_full_name() or person.email)
-            for person in workplace_people(request.workplace, request.user)
+            for person in people
         ]]
+        visuals['assignee'] = {str(person.pk): {
+            'template': 'accounts/includes/user_avatar.html',
+            'context': {'avatar': account_avatar(person), 'avatar_class': 'tasks-issue-mini-avatar'},
+        } for person in people}
+        visuals['assignee']['me'] = {
+            'template': 'accounts/includes/user_avatar.html',
+            'context': {'avatar': account_avatar(request.user), 'avatar_class': 'tasks-issue-mini-avatar'},
+        }
+        visuals['assignee']['unassigned'] = {'icon': 'user-round'}
         self.fields['tag'].choices = [(str(tag.pk), f'{tag.name} ({tag.space.key})') for tag in TaskTag.objects.filter(
             user=request.workplace.owner, workplace=request.workplace, space_id__in=[space.pk for space in spaces],
         ).select_related('space').order_by('name', 'pk')]
-        self.fields['team'].choices = [(str(team.pk), team.name) for team in teams_for(request).order_by('name', 'pk')]
+        teams = list(teams_for(request).order_by('name', 'pk'))
+        self.fields['team'].choices = [(str(team.pk), team.name) for team in teams]
+        visuals['team'] = {str(team.pk): {
+            'template': 'spaces/team_avatar.html',
+            'context': {'photo_url': app_url(request, f'{team.pk}/photo/', 'teams') if team.photo else ''},
+        } for team in teams}
+        for name, options in visuals.items():
+            self.fields[name].widget = VisualSelectMultiple(choices=self.fields[name].choices, visuals=options)
         style_fields(self)
         for name, field in self.fields.items():
             field.widget.attrs['aria-label'] = field.label
@@ -54,7 +84,8 @@ class SavedTaskFilterForm(forms.ModelForm):
         fields = ['name', 'description', 'visibility', 'shared_with', 'query']
         labels = {'shared_with': 'Osoby z dostępem'}
         widgets = {'description': forms.Textarea(attrs={'rows': 2}),
-                   'query': forms.Textarea(attrs={'rows': 3}), 'visibility': DashboardVisibilitySelect}
+                   'query': forms.Textarea(attrs={'rows': 3}), 'visibility': DashboardVisibilitySelect,
+                   'shared_with': UserSelectMultiple}
 
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)

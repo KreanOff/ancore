@@ -1,6 +1,8 @@
 from django import forms
 
+from accounts.widgets import UserSelectMultiple
 from spaces.services import visible_spaces
+from spaces.widgets import SpaceSelect
 from workplaces.services import workplace_people
 from .models import Dashboard, DashboardGadget
 from .pulpits import AVAILABLE_GADGET_KINDS, GADGET_CATALOG, GADGET_ICONS
@@ -38,7 +40,7 @@ class DashboardAccessForm(forms.ModelForm):
         model = Dashboard
         fields = ['visibility', 'shared_with']
         labels = {'shared_with': 'Osoby z dostępem'}
-        widgets = {'visibility': DashboardVisibilitySelect}
+        widgets = {'visibility': DashboardVisibilitySelect, 'shared_with': UserSelectMultiple}
 
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
@@ -92,7 +94,7 @@ class GadgetForm(forms.ModelForm):
     class Meta:
         model = DashboardGadget
         fields = ['kind', 'title', 'space', 'assignee']
-        widgets = {'kind': GadgetKindSelect}
+        widgets = {'kind': GadgetKindSelect, 'space': SpaceSelect}
 
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)

@@ -82,7 +82,9 @@
     --checkbox-minus-icon: var(--icon-minus-white);
     --dropdown-control-height: 36px;
     --dropdown-control-radius: 6px;
-    --dropdown-menu-width: 188px;
+    --dropdown-menu-min-width: 240px;
+    --dropdown-menu-width: var(--dropdown-menu-min-width);
+    --dropdown-menu-max-width: 360px;
     --dropdown-menu-max-height: 280px;
     --dropdown-menu-padding: 0.35rem;
     --dropdown-menu-radius: 7px;

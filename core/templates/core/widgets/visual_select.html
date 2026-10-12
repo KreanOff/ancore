@@ -1,0 +1,4 @@
+{% include 'django/forms/widgets/select.html' %}
+{% for group_name, group_choices, group_index in widget.optgroups %}{% for option in group_choices %}{% if option.preview_html %}
+<template id="{{ option.preview_id }}">{{ option.preview_html }}</template>
+{% endif %}{% endfor %}{% endfor %}

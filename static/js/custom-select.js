@@ -100,7 +100,8 @@
         return (value || '')
             .toLocaleLowerCase('pl-PL')
             .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '');
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/ł/g, 'l');
     }
 
     function optionButtons(wrapper) {
@@ -153,7 +154,7 @@
         filterOptions(wrapper);
     }
 
-    function optionVisual(option) {
+    function optionVisual(option, select) {
         const templateId = option?.dataset.ancoreOptionPreview;
         const template = templateId ? document.getElementById(templateId) : null;
         if (template instanceof HTMLTemplateElement && template.content.firstElementChild) {
@@ -162,7 +163,35 @@
             preview.setAttribute('aria-hidden', 'true');
             return preview;
         }
-        const name = option?.dataset.ancoreOptionIcon;
+        const field = select?.name;
+        const value = option?.value;
+        if (field === 'priority' && ['urgent', 'high', 'medium', 'low'].includes(value)) {
+            const preview = document.createElement('span');
+            preview.className = `ancore-custom-select__preview tasks-row-priority priority-${value}`;
+            preview.setAttribute('aria-hidden', 'true');
+            preview.append(window.AncoreIcons.create({ urgent: 'circle-alert', high: 'arrow-up', medium: 'equal', low: 'arrow-down' }[value]));
+            return preview;
+        }
+        if (field === 'status' && ['new', 'in_progress', 'resolved', 'closed', 'reopened'].includes(value)) {
+            const preview = document.createElement('span');
+            preview.className = `ancore-custom-select__preview status-indicator status-${value} tasks-filter-status-icon`;
+            preview.setAttribute('aria-hidden', 'true');
+            return preview;
+        }
+        const fieldIcons = {
+            assignee: 'user-round', assigned_to: 'user-round', responsible_user: 'user-round', shared_with: 'users',
+            space: 'layers', team: 'users', tags: 'tag', tag: 'tag',
+            work_type: 'shapes', type: 'shapes', task_type: 'list',
+            sort: 'arrow-up-down', visibility: 'users', kind: 'layers',
+            management: 'building-2', configuration: 'settings', sprint: 'timer', epic: 'zap',
+        };
+        const values = {
+            visibility: { private: 'lock', public: 'users', selected: 'users', workspace: 'building-2' },
+            kind: { software: 'code', business: 'briefcase', service: 'headset', equipment: 'monitor', license: 'key-round', tool: 'wrench' },
+            management: { team: 'users', company: 'building-2' },
+        };
+        const name = option?.dataset.ancoreOptionIcon || values[field]?.[value]
+            || select?.dataset.ancoreCustomSelectIcon || fieldIcons[field] || 'list';
         return name ? window.AncoreIcons?.create(name, { className: 'ancore-custom-select__icon' }) : null;
     }
 
@@ -182,9 +211,10 @@
         const label = document.createElement('span');
         label.className = 'ancore-custom-select__option-label';
         label.textContent = option.textContent.trim() || option.value || 'Opcja';
+        button.title = label.textContent;
 
         button.append(check);
-        const visual = optionVisual(option);
+        const visual = optionVisual(option, select);
         if (visual) button.append(visual);
         button.append(label);
         button.setAttribute('aria-selected', option.selected ? 'true' : 'false');
@@ -237,8 +267,8 @@
         label.textContent = selectedLabel(select);
         button.querySelector('.ancore-custom-select__icon, .ancore-custom-select__preview')?.remove();
         const icon = select.getAttribute('data-ancore-custom-select-icon');
-        const visual = (select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0]) : null)
-            || (icon ? window.AncoreIcons?.create(icon, { className: 'ancore-custom-select__icon' }) : null);
+        const visual = (select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0], select) : null)
+            || window.AncoreIcons?.create(icon || 'list-filter', { className: 'ancore-custom-select__icon' });
         if (visual) {
             button.prepend(visual);
             renderIcon(button);
@@ -398,7 +428,7 @@
         menu.setAttribute('data-ancore-custom-select-menu', '');
         menu.hidden = true;
 
-        if (select.hasAttribute(SEARCH_ATTR) || select.closest('.tasks-modal, .profile-edit-dialog')) {
+        if (select.hasAttribute(SEARCH_ATTR) || select.multiple || select.options.length > 8 || select.closest('.tasks-modal, .profile-edit-dialog')) {
             const searchWrap = document.createElement('div');
             searchWrap.className = 'ancore-custom-select__search';
 

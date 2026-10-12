@@ -350,6 +350,7 @@ class TaskFilterTests(TestCase):
         form = BasicTaskSearchForm(data, request=self.request())
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(basic_query(form.cleaned_data), source)
+
         mixed = basic_query({'assignee': ['me', 'unassigned'], 'sort': 'created_desc'})
         self.assertEqual(parse_query(mixed).basic()['assignee'], ['me', 'unassigned'])
         complex_query = 'priority = high OR assignee IS EMPTY'
@@ -359,6 +360,32 @@ class TaskFilterTests(TestCase):
         response = self.client.get(self.url('search/'), {'basic': '1', 'priority': ['high', 'urgent'],
                                                       'sort': 'priority_desc', 'mode': 'basic'})
         self.assertEqual([item.task_id for item in response.context['items']], [self.urgent.pk, self.high.pk])
+
+    def test_option_previews_keep_values_and_visibility_scope(self):
+        self.member.profile_photo = 'profile_photos/dropdown-member.png'
+        self.member.save(update_fields=['profile_photo'])
+        self.private.avatar_photo = 'space_avatars/private-dropdown.png'
+        self.private.save(update_fields=['avatar_photo'])
+        self.team.photo = 'teams/dropdown-team.png'
+        self.team.save(update_fields=['photo'])
+        self.private.configuration.settings['types'].append({'key': 'secret-type', 'label': 'Poufny typ'})
+        self.private.configuration.save(update_fields=['settings'])
+        self.space.configuration.settings['types'].append({'key': 'custom-type', 'label': '<script>Własny typ</script>'})
+        self.space.configuration.save(update_fields=['settings'])
+        request = self.request(self.member)
+        form = BasicTaskSearchForm({'space': [str(self.space.pk)], 'type': ['custom-type'],
+                                    'assignee': ['me', 'unassigned', str(self.member.pk)], 'sort': 'created_desc'}, request=request)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data['assignee'], ['me', 'unassigned', str(self.member.pk)])
+        html = form.as_p()
+        self.assertIn('data-ancore-option-icon="shapes"', html)
+        self.assertIn('&lt;script&gt;Własny typ&lt;/script&gt;', html)
+        self.assertIn('/media/profile_photos/dropdown-member.png', html)
+        self.assertIn(scoped_workplace_app_path(self.workplace, 'teams', f'{self.team.pk}/photo/'), html)
+        self.assertNotIn('private-dropdown.png', html)
+        self.assertNotIn('Poufny typ', html)
+        self.assertNotIn(self.private.name, str(form['space']))
+        self.assertNotIn(self.other.email, str(form['assignee']))
 
     def test_clear_and_modal_close_preserve_saved_definition(self):
         response = self.client.get(self.url(f'{self.saved.pk}/'))

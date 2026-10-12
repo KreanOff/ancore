@@ -1,5 +1,6 @@
 from django import forms
 
+from accounts.widgets import UserSelect
 from workplaces.services import workplace_people
 from .models import Resource
 
@@ -9,6 +10,7 @@ class ResourceForm(forms.ModelForm):
         model = Resource
         fields = ['name', 'kind', 'inventory_number', 'serial_number', 'status', 'assigned_to', 'location', 'purchased_on', 'expires_on', 'notes']
         widgets = {
+            'assigned_to': UserSelect,
             'purchased_on': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'expires_on': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'notes': forms.Textarea(attrs={'rows': 3}),

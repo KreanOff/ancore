@@ -5,6 +5,23 @@
     let active = null;
     let frame = null;
 
+    function addOptionIcons(menu, anchor) {
+        const name = anchor.querySelector('[data-icon]:not([data-icon^="chevron-"])')?.getAttribute('data-icon')
+            || (anchor.matches('[data-project-text-filter-operator-toggle]') ? 'search' : 'list');
+        menu.querySelectorAll('[role="menuitemradio"], [data-project-text-filter-operator-option]').forEach(option => {
+            if (option.querySelector('[data-icon], .profile-avatar, .status-indicator, .tasks-row-priority')) return;
+            const icon = window.AncoreIcons?.create(name, { className: 'ancore-custom-select__icon' });
+            if (!icon) return;
+            if (!option.children.length) {
+                const label = document.createElement('span');
+                label.textContent = option.textContent.trim();
+                option.title = label.textContent;
+                option.replaceChildren(icon, label);
+            } else option.prepend(icon);
+        });
+        window.AncoreIcons?.render(menu);
+    }
+
     // Existing searchable pickers keep their own filtering (including remote
     // company/person lookups). Add the same search UI to the remaining choices.
     function addModalSearch(menu, anchor) {
@@ -147,7 +164,11 @@
         const rightEdge = (viewport?.offsetLeft || 0) + (viewport?.width || innerWidth) - 8;
         const bottomEdge = (viewport?.offsetTop || 0) + (viewport?.height || innerHeight) - 8;
         const gap = 4 * scale;
-        const desiredWidth = rect.width / scale;
+        const style = getComputedStyle(menu);
+        const minimumWidth = parseFloat(style.getPropertyValue('--dropdown-menu-min-width')) || 240;
+        const preferredWidth = parseFloat(style.getPropertyValue('--dropdown-menu-max-width')) || 360;
+        // Keep wide form fields aligned; compact filters need room for their visuals.
+        const desiredWidth = Math.max(rect.width / scale, Math.min(preferredWidth, Math.max(minimumWidth, active.contentWidth)));
         menu.style.setProperty('--dropdown-layer-width', `${Math.min(desiredWidth, (rightEdge - leftEdge) / scale)}px`);
 
         const desiredHeight = Math.min(maxHeight, menu.scrollHeight + menu.offsetHeight - menu.clientHeight) * scale;
@@ -175,20 +196,23 @@
             return;
         }
         dismiss();
+        addOptionIcons(menu, anchor);
         const search = addModalSearch(menu, anchor);
         const scale = anchor.currentCSSZoom || anchor.getBoundingClientRect().width / anchor.offsetWidth || 1;
         const width = anchor.getBoundingClientRect().width / scale;
+        // Measure at the shared maximum before pinning the popover's width.
+        menu.style.setProperty('--dropdown-layer-width', 'max-content');
         const maxHeight = parseFloat(getComputedStyle(menu).maxHeight) || Infinity;
         const observer = new MutationObserver(() => {
             if (!isVisible(anchor) || menu.hidden || anchor.getAttribute('aria-expanded') === 'false') dismiss();
             else schedulePosition();
         });
         const resizeObserver = new ResizeObserver(schedulePosition);
-        active = { menu, anchor, onClose, maxHeight, observer, resizeObserver, search };
-        menu.style.setProperty('--dropdown-layer-width', `${width}px`);
+        active = { menu, anchor, onClose, maxHeight, observer, resizeObserver, search, contentWidth: width };
         menu.classList.add('ancore-dropdown-layer');
         menu.setAttribute('popover', 'manual');
         menu.showPopover();
+        active.contentWidth = menu.getBoundingClientRect().width / scale;
         position();
 
         for (let element = anchor; element; element = element.parentElement) {

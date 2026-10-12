@@ -16,7 +16,7 @@ from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, visible_items, visible_spaces
-from .widgets import IssueTypeSelect, TaskVisibilitySelect
+from .widgets import IssueTypeSelect, TaskVisibilitySelect, TeamSelect
 
 
 class StyledForm(forms.Form):
@@ -114,7 +114,7 @@ class ItemForm(StyledForm):
         'data-ancore-custom-select-search': 'true', 'data-ancore-custom-select-search-placeholder': 'Szukaj tagów',
     }))
     assignee = UserChoiceField(label='Wykonawca', queryset=None, required=False, empty_label='Brak osoby')
-    team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False)
+    team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False, widget=TeamSelect)
     in_backlog = forms.BooleanField(label='Umieść w backlogu', required=False)
     sprint = forms.ModelChoiceField(label='Sprint', queryset=Sprint.objects.none(), required=False)
     epic = forms.ModelChoiceField(label='Epik', queryset=WorkItem.objects.none(), required=False)
@@ -136,7 +136,7 @@ class ItemForm(StyledForm):
             self.initial['tags'] = item.task.tags.all()
         self.fields['work_type'].choices = [(t['key'], t['label']) for t in config['types']]
         self.fields['assignee'].queryset = workplace_people(request.workplace)
-        self.fields['team'].queryset = teams_for(request).filter(spaces=space)
+        self.fields['team'].queryset = teams_for(request).filter(spaces=space).select_related('workplace')
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
         self.fields['epic'].queryset = visible_items(request).filter(space=space, work_type='epic').exclude(pk=getattr(item, 'pk', None))
         self.fields['epic'].label_from_instance = lambda epic: f'{epic.key} · {epic.task.title}'

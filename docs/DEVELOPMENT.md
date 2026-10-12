@@ -1,5 +1,29 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Wspólne dropdowny (13.10.2026)
+
+Przeszło 112 testów `dashboard.test_filters`, `spaces.test_issue_types`,
+`spaces.test_task_detail_parity`, `spaces.tests.SpaceTests` i `dashboard.test_pulpits`.
+Zestaw 65 testów Zasobów, powiadomień, Kalendarza i awatarów kont/Workspace
+miał 47 sukcesów oraz 17 niepowodzeń i jeden błąd w historycznych testach
+powiadomień. Osobny przebieg `dashboard.test_notifications` na niezmienionym
+HEAD `2bb0b0b` potwierdził identyczną listę 18 błędów; pozostałe 39 testów
+powiązanych modułów przeszło. Nowa regresja sprawdza wartości wielokrotnego
+wyboru, zdjęcia i kontrolowane adresy podglądów, prywatne przestrzenie,
+obcy Workspace oraz escapowanie własnego typu zgłoszenia.
+
+Playwright z lokalnym Chrome na osobnej bazie QA, przy 1440×1000,
+1024×844 i 390×844, potwierdził szerokość/pozycję menu, ikony i zdjęcia,
+wybór wielokrotny, wyszukiwanie polskich znaków, brak wyników, długie nazwy,
+klawiaturę/Escape/fokus, modal, referencyjną listę Przestrzeni, menu działań,
+filtry/formularz Zasobów, Profil, Kalendarz, listy warunków Dysku/Dokumentów,
+przełącznik Workspace i awatary w powiadomieniach, zwykłe/scoped adresy,
+częściową nawigację i ponowne wejście/reload. Strona nie przepełniała się
+poziomo; konsola nie zgłosiła błędów ani ostrzeżeń. Plugin Browser nie był
+dostępny, dlatego użyto zwykłego Playwright. Kontrola Django, składnia JS,
+indeks kodu i `git diff --check` przeszły. Zmiana nie wymaga migracji;
+nie sprawdzano całego repozytorium ani innych silników przeglądarek.
+
 ## Weryfikacja Filtrów
 
 Moduł wymaga migracji dashboard.0014_savedtaskfilter. Testy

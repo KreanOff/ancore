@@ -17,17 +17,17 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 20 | 0 | 18 | 55 |
+| [core](../core) | 21 | 0 | 21 | 55 |
 | [accounts](../accounts) | 20 | 7 | 9 | 56 |
 | [workplaces](../workplaces) | 22 | 10 | 13 | 116 |
 | [tasks](../tasks) | 42 | 66 | 46 | 332 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 41 | 14 | 41 | 233 |
+| [dashboard](../dashboard) | 41 | 14 | 41 | 234 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 37 | 9 | 33 | 174 |
+| [spaces](../spaces) | 37 | 9 | 34 | 174 |
 
 ## 2. Modele i relacje
 
@@ -1356,6 +1356,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/task_requests.py](../core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
 - [core/upload_validation.py](../core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
 - [core/views/__init__.py](../core/views/__init__.py)
+- [core/widgets.py](../core/widgets.py) — `VisualSelect`, `VisualSelectMultiple`
 - [core/work_logs.py](../core/work_logs.py) — `DateTimeLocalInput`, `TimeLogForm`
 
 ### accounts
@@ -1375,7 +1376,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [accounts/templatetags/account_avatar.py](../accounts/templatetags/account_avatar.py) — `user_avatar`
 - [accounts/urls.py](../accounts/urls.py)
 - [accounts/views.py](../accounts/views.py) — `AccountLoginView`, `AccountLogoutView`, `register`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
-- [accounts/widgets.py](../accounts/widgets.py) — `UserSelect`, `UserChoiceField`
+- [accounts/widgets.py](../accounts/widgets.py) — `UserSelect`, `UserChoiceField`, `UserSelectMultiple`
 
 ### workplaces
 
@@ -1544,7 +1545,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/testing.py](../spaces/testing.py) — `make_space`
 - [spaces/urls.py](../spaces/urls.py)
 - [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
-- [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`
+- [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `TeamSelect`
 
 ## 6. Szablony
 
@@ -1562,12 +1563,15 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/priority_icon.html](../core/templates/core/includes/priority_icon.html)
 - [core/templates/core/includes/pulpit_editor_sidebar.html](../core/templates/core/includes/pulpit_editor_sidebar.html)
 - [core/templates/core/includes/pulpit_management_sidebar.html](../core/templates/core/includes/pulpit_management_sidebar.html)
+- [core/templates/core/includes/select_priority.html](../core/templates/core/includes/select_priority.html)
+- [core/templates/core/includes/select_status.html](../core/templates/core/includes/select_status.html)
 - [core/templates/core/includes/settings_secondary_menu.html](../core/templates/core/includes/settings_secondary_menu.html)
 - [core/templates/core/includes/settings_sidebar.html](../core/templates/core/includes/settings_sidebar.html)
 - [core/templates/core/includes/sidebar_picker.html](../core/templates/core/includes/sidebar_picker.html)
 - [core/templates/core/includes/space_management_sidebar.html](../core/templates/core/includes/space_management_sidebar.html)
 - [core/templates/core/includes/trash_icon.html](../core/templates/core/includes/trash_icon.html)
 - [core/templates/core/includes/workplace_management_sidebar.html](../core/templates/core/includes/workplace_management_sidebar.html)
+- [core/templates/core/widgets/visual_select.html](../core/templates/core/widgets/visual_select.html)
 
 ### accounts
 
@@ -1794,6 +1798,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/task_comment.html](../spaces/templates/spaces/task_comment.html)
 - [spaces/templates/spaces/task_detail.html](../spaces/templates/spaces/task_detail.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
+- [spaces/templates/spaces/team_avatar.html](../spaces/templates/spaces/team_avatar.html)
 - [spaces/templates/spaces/teams.html](../spaces/templates/spaces/teams.html)
 - [spaces/templates/spaces/template_picker.html](../spaces/templates/spaces/template_picker.html)
 
@@ -2199,7 +2204,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_filters.py](../dashboard/test_filters.py).
 
-- `TaskFilterTests`: 21 metod testowych.
+- `TaskFilterTests`: 22 metod testowych.
 
 ### dashboard/test_for_you.py
 

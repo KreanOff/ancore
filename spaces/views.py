@@ -195,6 +195,9 @@ def detail_context(request, space, view):
     query = request.GET.get('q', '').strip()[:120]
     items = visible_items(request).filter(space=space)
     assignee_options = get_user_model().objects.filter(pk__in=items.order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
+    space_teams = list(teams_for(request).filter(spaces=space))
+    for team_option in space_teams:
+        team_option.select_photo_url = app_url(request, f'{team_option.pk}/photo/', 'teams') if team_option.photo else ''
     type_options, type_filter = issue_type_filters(request, space)
     team = request.GET.get('team', '')
     now = timezone.now()
@@ -241,7 +244,7 @@ def detail_context(request, space, view):
         sprint.visible_count = all_items.filter(sprint=sprint).count()
         sprint.finished_count = all_items.filter(sprint=sprint, task__status='closed').count()
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), **summary_filters, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': teams_for(request).filter(spaces=space), 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
+    return {**base_context(request), **summary_filters, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': space_teams, 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
 
 
 @login_required

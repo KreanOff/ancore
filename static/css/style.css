@@ -1,6 +1,6 @@
 /* Main Style Entry Point */
 @import 'base/fonts.css?v=20261003-atlassian-sans';
-@import 'base/variables.css?v=20261005-teams-accent';
+@import 'base/variables.css?v=20261013-dropdown-width';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261003-border-visibility-2pct';
 @import 'layout/main.css?v=20261003-topbar-sticker';
@@ -9,11 +9,11 @@
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
 @import 'components/toolbar.css?v=20260918-flaticon-v1';
 @import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
-@import 'components/forms.css?v=20261003-border-visibility-2pct';
+@import 'components/forms.css?v=20261013-select-visuals';
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20261009-issue-type-colors';
+@import 'components/tasks.css?v=20261013-filter-type-colors';
 @import 'components/contacts.css?v=20261003-border-visibility-2pct';
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
@@ -26,7 +26,7 @@
 @import 'theme/elestio.css?v=20261005-summary-status-colors';
 @import 'components/profile.css?v=20261003-border-visibility-2pct';
 @import 'components/modal-system.css?v=20260927-project-heading';
-@import 'components/dropdown-layer.css?v=20260921-dropdown-search';
+@import 'components/dropdown-layer.css?v=20261013-shared-dropdowns';
 @import 'components/global-search.css?v=20261003-search-no-close';
 @import 'components/notifications-panel.css?v=20261003-notifications-modal';
 
@@ -704,12 +704,12 @@ body :where(input, textarea)::placeholder {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    padding: 0.4rem;
+    padding: var(--dropdown-menu-padding);
     overflow: hidden;
-    border: 1px solid #dcdfe3;
-    border-radius: 10px;
-    background: #ffffff;
-    box-shadow: 0 18px 44px rgba(39, 43, 53, 0.16), 0 2px 8px rgba(39, 43, 53, 0.08);
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-menu-radius);
+    background: var(--card-bg);
+    box-shadow: var(--dropdown-menu-shadow);
 }
 
 .sidebar-workspace-menu[hidden] {
@@ -796,7 +796,7 @@ body :where(input, textarea)::placeholder {
     align-items: center;
     gap: 0.6rem;
     padding: 0.3rem 0.5rem;
-    border-radius: 7px;
+    border-radius: var(--dropdown-menu-item-radius);
     background: transparent;
     color: var(--text-strong);
     font-size: 13px;
@@ -807,7 +807,7 @@ body :where(input, textarea)::placeholder {
 .sidebar-workspace-option:hover,
 .sidebar-workspace-option.is-active,
 .sidebar-workspace-manage:hover {
-    background: #f1f2f4;
+    background: var(--dropdown-menu-highlight-bg);
 }
 
 .sidebar-workspace-option > span:not(.profile-avatar),

@@ -26,3 +26,7 @@ class UserChoiceField(forms.ModelChoiceField):
 
     def label_from_instance(self, user):
         return user.get_full_name() or user.email or user.username
+
+
+class UserSelectMultiple(UserSelect, forms.SelectMultiple):
+    """Use the same account previews when selecting several people."""

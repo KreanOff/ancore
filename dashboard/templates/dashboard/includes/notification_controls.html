@@ -1,3 +1,4 @@
+{% load workplace_avatar %}
 <div class="notifications-controls">
     <div class="notifications-tabs" role="group" aria-label="Filtr powiadomień">
         <button type="button" data-notification-filter="all" aria-pressed="{% if not notification_filters.view or notification_filters.view == 'all' %}true{% else %}false{% endif %}">Wszystkie</button>
@@ -11,8 +12,9 @@
     <div class="notifications-toolbar">
         <select class="form-select" aria-label="Workspace powiadomień" data-notification-workspace>
             <option value="">Wszystkie Workspace</option>
-            {% for workplace in available_workplaces %}<option value="{{ workplace.pk }}"{% if notification_filters.workspace == workplace.pk|stringformat:'s' %} selected{% endif %}>{{ workplace.name }}</option>{% endfor %}
+            {% for workplace in available_workplaces %}<option value="{{ workplace.pk }}" data-ancore-option-preview="notification-workspace-{{ workplace.pk }}"{% if notification_filters.workspace == workplace.pk|stringformat:'s' %} selected{% endif %}>{{ workplace.name }}</option>{% endfor %}
         </select>
+        {% for workplace in available_workplaces %}{% workplace_avatar workplace as workplace_logo %}<template id="notification-workspace-{{ workplace.pk }}"><span class="profile-avatar space-avatar{% if workplace_logo.photo_url %} has-photo{% else %} space-avatar-art {{ workplace_logo.preset_class }}{% endif %}" aria-hidden="true">{% if workplace_logo.photo_url %}<img src="{{ workplace_logo.photo_url }}" alt="">{% endif %}</span></template>{% endfor %}
         <button type="button" class="btn btn-secondary btn-sm" data-notification-read-all{% if not filtered_unread_count %} disabled{% endif %} title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze"><i data-icon="check" aria-hidden="true"></i><span>Oznacz wszystkie jako przeczytane</span></button>
         <button type="button" class="tasks-icon-button" data-notification-delete-all disabled title="Usuń wszystkie powiadomienia z wybranego filtra" aria-label="Usuń wszystkie powiadomienia z wybranego filtra"><i data-icon="trash-2" aria-hidden="true"></i></button>
         <button type="button" class="tasks-icon-button" data-notification-refresh title="Odśwież powiadomienia" aria-label="Odśwież powiadomienia"><i data-icon="refresh-cw" aria-hidden="true"></i></button>

@@ -1,5 +1,7 @@
 from django import forms
 
+from core.widgets import VisualSelect
+from workplaces.services import scoped_workplace_app_path
 from .defaults import issue_type_icon
 
 
@@ -18,3 +20,19 @@ class TaskVisibilitySelect(forms.Select):
         option = super().create_option(name, value, label, selected, index, subindex, attrs)
         option['attrs']['data-ancore-option-icon'] = 'lock' if value == 'private' else 'users'
         return option
+
+
+class SpaceSelect(VisualSelect):
+    def option_visual(self, value):
+        space = getattr(value, 'instance', None)
+        return {'template': 'spaces/avatar.html', 'context': {'space': space}} if space else {'icon': 'layers'}
+
+
+class TeamSelect(VisualSelect):
+    def option_visual(self, value):
+        team = getattr(value, 'instance', None)
+        if team is None:
+            return {'icon': 'users'}
+        return {'template': 'spaces/team_avatar.html', 'context': {
+            'photo_url': scoped_workplace_app_path(team.workplace, 'teams', f'{team.pk}/photo/') if team.photo else '',
+        }}
