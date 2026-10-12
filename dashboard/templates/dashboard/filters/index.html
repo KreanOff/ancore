@@ -13,7 +13,7 @@
 <form method="get" action="{{ filters_url }}" class="tasks-filterbar tasks-filterbar--directory" data-filter-search>
     <input type="hidden" name="tab" value="{{ tab }}">
     <div class="tasks-filterbar-left"><span>Wyszukaj zapisany filtr</span></div>
-    <div class="tasks-filterbar-right"><label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj filtrów" aria-label="Szukaj filtrów"></label><button type="submit" class="tasks-filter-button">Szukaj</button>{% include 'spaces/pagination.html' %}</div>
+    <div class="tasks-filterbar-right"><label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj filtrów" aria-label="Szukaj filtrów"></label><button type="submit" class="tasks-filter-button">Szukaj</button></div>
 </form>
 {% endblock %}
 {% block work_content_class %} work-content--directory{% endblock %}

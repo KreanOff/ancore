@@ -5,7 +5,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
 <link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261001-project-list">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261010-task-parity-1">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261013-pagination-footer">
 <script src="{% static 'js/spaces.js' %}?v=20261010-task-parity-1" defer></script>
 {% endblock %}
 {% block content %}
@@ -18,6 +18,7 @@
         {% block work_navigation %}{% endblock %}
         {% block work_toolbar %}{% endblock %}
         <div class="work-content{% block work_content_class %}{% endblock %}">{% block work_content %}{% endblock %}</div>
+        {% block work_pagination %}{% include 'spaces/pagination.html' %}{% endblock %}
     </section>
 </div>
 {% endblock %}

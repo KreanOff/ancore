@@ -34,7 +34,7 @@
     {% endif %}
 </form>
 {% if search_error %}<div class="task-filter-query-error tasks-modal__errors" id="filter-query-error" role="alert">{{ search_error }}</div>{% endif %}
-<div class="tasks-filterbar tasks-filterbar--directory"><div class="tasks-filterbar-left"><span role="status">Zadania: {{ page.paginator.count }}{% if saved_filter %} · {{ saved_filter.get_visibility_display }}{% endif %}</span></div><div class="tasks-filterbar-right">{% include 'spaces/pagination.html' %}</div></div>
+<div class="tasks-filterbar tasks-filterbar--directory"><div class="tasks-filterbar-left"><span role="status">Zadania: {{ page.paginator.count }}{% if saved_filter %} · {{ saved_filter.get_visibility_display }}{% endif %}</span></div></div>
 {% endblock %}
 {% block work_content_class %} work-content--tasks{% endblock %}
 {% block work_content %}{% include 'dashboard/filters/results.html' %}{% endblock %}

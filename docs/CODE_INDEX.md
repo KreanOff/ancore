@@ -1541,7 +1541,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/team_urls.py](../spaces/team_urls.py)
 - [spaces/teams.py](../spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
-- [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `space_avatar`, `status_groups`
+- [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
 - [spaces/testing.py](../spaces/testing.py) — `make_space`
 - [spaces/urls.py](../spaces/urls.py)
 - [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`

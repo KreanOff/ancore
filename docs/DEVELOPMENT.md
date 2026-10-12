@@ -1,5 +1,25 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Dolny pasek stron Przestrzeni (13.10.2026)
+
+Przeszło 80 testów `spaces.tests.SpaceTests`, `spaces.test_backlog_ordering`,
+`spaces.test_backlog_drag` i `dashboard.test_filters`. Playwright/Chrome na
+oddzielnej bazie QA pod `127.0.0.1:8014` sprawdził backlog i referencyjną listę
+zadań, tablicę, oś czasu, katalog/zarządzanie Przestrzeniami, Zespoły oraz Filtry.
+Potwierdzono numery i strzałki na pierwszej, środkowej i ostatniej stronie,
+zakres wyników, zachowanie filtrów, zwykłe/scoped linki, częściową nawigację,
+Wstecz/Dalej, reload, ponowne wejście, klawiaturę i działanie bez JavaScriptu.
+Pusty backlog i brak wyników pokazują wyłączone strzałki; podsumowanie,
+raporty i ustawienia nie pokazują paginacji.
+
+Przy 1920×1000, 1440×1000, 1024×1000 i 390×844 pasek mieści się pod
+przewijaną treścią i pozostaje widoczny przy dolnej krawędzi panelu.
+Osobne renderowanie zakresów 7 i 40 stron potwierdziło zawijanie bez
+przepełnienia przy 390px i 320px oraz skracanie zakresu wielokropkiem.
+Konsola nie zgłosiła błędów ani ostrzeżeń. Plugin Browser był niedostępny,
+dlatego użyto zwykłego Playwright. Nie sprawdzano Safari/Firefox ani całego
+zestawu repozytorium. Zmiana nie wymaga migracji.
+
 ## Wspólne dropdowny (13.10.2026)
 
 Przeszło 112 testów `dashboard.test_filters`, `spaces.test_issue_types`,

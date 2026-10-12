@@ -18,11 +18,6 @@
     </div>
     <div class="tasks-filterbar-right">
         <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj zadań" aria-label="Szukaj zadania lub oznaczenia"></label>
-        <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony zadań">
-            {% if page.has_previous %}<a class="tasks-project-pagination__button" href="{% querystring page=page.previous_page_number %}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
-            <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
-            {% if page.has_next %}<a class="tasks-project-pagination__button" href="{% querystring page=page.next_page_number %}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
-        </nav>
     </div>
 </form>
 {% if summary_filter %}<div class="work-summary-filter" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}

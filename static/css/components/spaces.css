@@ -258,7 +258,20 @@
 .work-report-row progress { width: 100%; accent-color: var(--system-accent); height: 8px; }
 .work-timeline-row { display: grid; grid-template-columns: minmax(180px,1fr) 160px 20px 160px 32px; align-items: center; gap: 12px; border-top: 1px solid var(--border-color); padding: 16px 0; }
 .work-timeline-row > svg { width: 16px; }
-.work-pagination { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: flex-end; margin-top: 20px; }
+.work-page .work-pagination {
+    flex-shrink: 0;
+    height: auto;
+    min-height: 45px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 8px var(--work-space-inline-padding, 24px);
+    background: var(--card-bg);
+}
+.work-pagination .tasks-project-pagination__summary { text-align: left; }
+.work-pagination .tasks-project-pagination__pages { margin-left: auto; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
+.work-pagination .tasks-project-pagination__button { text-decoration: none; flex-shrink: 0; }
+.work-pagination [aria-current="page"] { cursor: default; }
 .work-modal .documents-form { gap: 16px; }
 .work-modal .documents-field input[type=checkbox] { width: 16px; height: 16px; min-height: 16px; padding: 0; justify-self: start; }
 .work-modal select[multiple] { min-height: 90px; }

@@ -1,5 +1,24 @@
 # Standard UI Ancore
 
+## Dolny pasek stron Przestrzeni
+
+`spaces/base.html` umieszcza wspólny `spaces/pagination.html` pod przewijaną
+treścią w bloku `work_pagination`. Pasek pozostaje widoczny przy dolnej
+krawędzi panelu, także przy krótkiej lub pustej liście. Pokazuje zakres
+wyników, strzałki i numery stron; aktualny numer ma `aria-current="page"`,
+a niedostępne strzałki są wyłączone. Długie zakresy skraca tag
+`pagination_pages` z `space_ui`, zachowując pierwszą, ostatnią i sąsiednie strony.
+Linki używają `querystring`, zachowują filtry oraz zwykłe/scoped adresy
+i korzystają z istniejącej częściowej nawigacji. Bez JavaScriptu działają
+jako zwykłe linki.
+
+Wariant `work-pagination` rozszerza wspólne klasy `tasks-project-pagination`
+w `spaces.css`. Na wąskim ekranie zakres i przyciski mogą przejść do dwóch
+wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami, lista zadań,
+backlog, tablica, oś czasu, Zespoły oraz katalog/wyniki Filtrów.
+Podsumowanie, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
+Tagi przestrzeni zachowują osobny mechanizm `directory_pagination_toolbar.html`.
+
 ## Filtry zadań
 
 Szablony dashboard/filters rozszerzają spaces/base i core/base.
@@ -89,7 +108,7 @@ Include obsługuje opcjonalny `actions_template` dla działań danego modułu.
 Menu Przestrzeni otwiera przestrzeń, zmienia osobiste ulubione, otwiera ustawienia
 i według uprawnień edycję lub dodawanie osób do prywatnej przestrzeni.
 Zachowuje wspólne wysokości wierszy, separatory, zmianę szerokości kolumn,
-poziome przewijanie oraz pasek filtrów, wyszukiwania i paginacji. Nazwa otwiera
+poziome przewijanie oraz pasek filtrów i wyszukiwania z paginacją na dole. Nazwa otwiera
 przestrzeń, a akcja w menu wiersza zmienia osobiste ulubione, zachowując filtry.
 `tasks.js` obsługuje zaznaczenie i szerokości, a `space-navigation.js` zapis
 gwiazdki oraz przywrócenie fokusu po częściowej nawigacji. Pusty wynik ukrywa nagłówki
@@ -183,7 +202,7 @@ Checkboxy zaznaczają tylko bieżącą stronę, bez operacji zbiorczych.
 `work-space-sheet--management` wybiera osobny klucz `spaces-management`
 dla preferencji kolumn w `tasks.js`, wspólny dla zwykłego i scoped URL;
 nie nadpisuje wspólnej siatki. Filtry rodzaju i sposobu zarządzania są po lewej,
-wyszukiwarka i paginacja po prawej. Nazwa przestrzeni otwiera ustawienia.
+wyszukiwarka po prawej, a paginacja na dole panelu. Nazwa przestrzeni otwiera ustawienia.
 Wspólne menu `spaces/directory_row_actions.html` zachowuje osobistą gwiazdkę,
 otwarcie, edycję, ustawienia dostępu i konfigurację zadań według uprawnień.
 Formularze, `row-actions.js` i obsługa częściowej nawigacji pozostają wspólne.
@@ -434,7 +453,8 @@ nawet wtedy, gdy mają tę samą kategorię. Backlog zachowuje kolejność plano
 Na telefonie lista zachowuje kolumny i przewija się poziomo we własnym obszarze.
 Tablica używa dotychczasowych `tasks-kanban-column` i `tasks-kanban-card`,
 włącznie z oznaczeniem zakończonych kart. Nie ma osobnej tabeli ani szarych
-paneli zastępujących te komponenty. Filtry i paginacja korzystają z paska Zadań.
+paneli zastępujących te komponenty. Filtry korzystają z paska Zadań,
+a paginacja z dolnego paska Przestrzeni.
 
 Karty tablicy w `item_actions.html` używają wspólnego menu `row-actions.js`: otwarcie zadania,
 edycja, dozwolone przejścia statusów i planowanie. Menu działa klawiaturą,

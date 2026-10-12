@@ -76,7 +76,7 @@ oraz paginację. Lista współdzieli `spaces/directory.html` z „Przestrzenie�
 checkboxy, menu po lewej oraz kolumny Klucz, Przestrzeń, Rodzaj, Szablon, Opis
 i liczba widocznych zadań. Zachowuje te same szerokości, ikony i awatary.
 Zaznaczenie dotyczy bieżącej strony, bez operacji zbiorczych.
-Filtry są po lewej, wyszukiwarka i paginacja po prawej.
+Filtry są po lewej, wyszukiwarka po prawej, a pasek stron na dole panelu.
 Nazwa prowadzi do ustawień przestrzeni; menu wiersza udostępnia otwarcie,
 osobiste ulubione, edycję, ustawienia dostępu i konfigurację zadań
 (jeśli osoba może ją zmieniać). Gwiazdka zachowuje adres i filtry zarządzania.
@@ -237,7 +237,12 @@ i stronę. Osobny ekran Wszystkich zadań i skrót `tasks-all` są wycofane.
 - Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty, tagi i ustawienia.
   Lista zachowuje zwarte wiersze i grupy statusów Zadań, a tablica dotychczasowy
   wygląd kart Kanbana. Status zmienia się przez przeciąganie lub menu działań,
-  dostępne również klawiaturą. Filtry i paginacja są w standardowym pasku Zadań.
+  dostępne również klawiaturą. Filtry są w standardowym pasku Zadań.
+  Lista, backlog, tablica i oś czasu mają wspólny dolny pasek z zakresem
+  wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
+  treścią, zachowuje filtry i działa również dla jednej strony/pustego wyniku.
+  Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
+  podsumowanie, raporty i ustawienia nie pokazują stron wyników.
 - Podsumowanie: cztery liczniki zakończonych, zaktualizowanych i utworzonych
   zadań w ostatnich 7 dniach oraz otwartych z terminem w najbliższych 7 dniach.
   Aktualizacja wynika z historii `SpaceTaskActivity` (dowolna akcja poza utworzeniem);

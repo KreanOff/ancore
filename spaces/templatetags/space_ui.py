@@ -4,6 +4,12 @@ register = template.Library()
 
 
 @register.simple_tag
+def pagination_pages(page):
+    """Keep the first, last and neighbouring pages in a compact footer."""
+    return page.paginator.get_elided_page_range(page.number, on_each_side=1, on_ends=1)
+
+
+@register.simple_tag
 def space_avatar(space):
     from spaces.avatars import space_avatar as get_avatar
     return get_avatar(space)
