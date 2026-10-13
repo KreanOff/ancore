@@ -225,8 +225,44 @@
 .work-kanban-card[draggable=true] { cursor: grab; }
 .work-kanban-context { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--text-secondary); font-size: var(--font-size-sm); }
 .work-kanban-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.work-page [data-work-column] { cursor: default; }
+.work-page [data-work-column] { position: relative; cursor: default; }
+.work-board-drop-marker { position: absolute; left: 0.55rem; right: 0.55rem; z-index: 4; height: 0; border-top: calc(2px / var(--app-ui-scale, 1)) dashed var(--system-accent); pointer-events: none; }
 .work-page [data-work-column] .tasks-kanban-column__header > .tasks-rail-count { margin-left: auto; }
+/* Active sprint keeps board interactions with the task list's status sections and rows. */
+.work-content--tasks:has(> .work-sprint-board) { display: flex; flex-direction: column; overflow: hidden; }
+.work-content--tasks:has(> .work-sprint-board) > .work-panel-heading { flex-shrink: 0; }
+.work-sprint-board > .tasks-kanban-column { --tasks-kanban-list-inline-offset: 0; position: relative; gap: 0.65rem; border: 0; align-self: stretch; height: 100%; transition: background-color 160ms ease; }
+.work-sprint-board > .tasks-issue-group + .tasks-issue-group { margin-top: 0; }
+.work-sprint-board .tasks-issue-group-header { flex-shrink: 0; border-width: 1px; border-style: solid; border-radius: var(--tasks-kanban-header-radius); }
+.work-sprint-board .tasks-issue-group-header > .status-indicator { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.work-sprint-board .tasks-issue-group-header > .tasks-rail-count { margin-left: auto; }
+.work-sprint-board .tasks-kanban-column__list { flex: 1; max-height: none; gap: 0.55rem; padding-right: 0; }
+.work-sprint-board > .tasks-kanban-column::before { content: ''; position: absolute; inset: 0; z-index: 3; border: 2px dashed var(--system-accent); border-width: calc(2px / var(--app-ui-scale, 1)); border-radius: var(--tasks-kanban-header-radius); opacity: 0; pointer-events: none; }
+.work-sprint-board .tasks-kanban-column.is-drag-over { outline: none; background: color-mix(in srgb, var(--system-accent) 4%, var(--card-bg)); }
+.work-sprint-board > .tasks-kanban-column.is-drag-over::before { opacity: 1; transition: none; }
+.work-page [data-work-card].is-dragging { opacity: 1; border-style: dashed; border-color: var(--system-accent); background: color-mix(in srgb, var(--system-accent) 4%, var(--card-bg)); box-shadow: none; }
+.work-page [data-work-card].is-dragging > * { opacity: 0.25; }
+.work-page [data-work-card].is-dragging::after { opacity: 0; }
+:is(.work-sprint-card, .work-kanban-card).work-board-drag-preview { position: fixed; inset: 0 auto auto 0; z-index: 10000; min-height: 0; margin: 0; border-color: var(--system-accent); border-radius: var(--tasks-kanban-header-radius, 5px); background: var(--card-bg); box-shadow: var(--shadow-lg), var(--shadow-md); opacity: 1; pointer-events: none; user-select: none; rotate: 1.25deg; scale: 1.02; will-change: transform; }
+:is(.work-sprint-card, .work-kanban-card).work-board-drag-preview :is(a, span, button) { font-weight: inherit; }
+.work-board-drag-preview::after { opacity: 0; }
+.work-board-drag-preview a { color: inherit; }
+.work-board-native-drag-image { position: fixed; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; }
+.work-page [data-work-card].is-board-arriving { animation: work-board-card-arrival 450ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes work-board-card-arrival { from { translate: 0 6px; opacity: 0.7; box-shadow: 0 0 0 3px color-mix(in srgb, var(--system-accent) 20%, transparent); } to { translate: 0 0; opacity: 1; box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) {
+    .work-sprint-board > .tasks-kanban-column, .work-sprint-board > .tasks-kanban-column::before { transition: none; }
+    :is(.work-sprint-card, .work-kanban-card).work-board-drag-preview { transition: none; rotate: 0deg; scale: 1; }
+    .work-page [data-work-card].is-board-arriving { animation: none; outline: 2px solid var(--system-accent); outline-offset: -2px; }
+}
+.work-sprint-board .tasks-empty-section { margin: 0; border: 1px solid var(--border-color); border-radius: var(--tasks-kanban-header-radius); }
+.work-issue-row.work-sprint-card { flex: 0 0 auto; grid-template-columns: 22px 24px minmax(0, 1fr) 30px; align-items: start; gap: 8px; padding-block: 10px; border: 1px solid var(--border-color); border-radius: var(--tasks-kanban-header-radius); }
+.work-sprint-card::after { border-radius: var(--tasks-kanban-header-radius) 0 0 var(--tasks-kanban-header-radius); }
+.work-sprint-card[draggable=true] { cursor: grab; }
+.work-sprint-card > .tasks-row-title { display: block; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+.work-sprint-card > .work-item-actions { grid-column: 4; }
+.work-sprint-card-meta { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.work-sprint-card-context { grid-column: 1 / -1; }
 .work-backlog { flex: none; }
 .work-backlog-group > .tasks-issue-group-header { height: auto; min-height: 40px; flex-wrap: wrap; padding-block: 4px; }
 .work-backlog-group > .tasks-issue-group-header > :is(.status-indicator, .tasks-issue-group-label) { min-width: 0; overflow-wrap: anywhere; }
@@ -255,10 +291,10 @@
 .work-backlog-group > .tasks-issue-group-header:has(> .work-backlog-sprint-create) > .tasks-rail-count { margin-left: 0; }
 .work-backlog-group a.tasks-filter-button { text-decoration: none; }
 .work-backlog-create { width: auto; margin: 4px 8px; color: var(--text-secondary); text-decoration: none; }
-.work-backlog .work-issue-row { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(5, max-content); min-width: 520px; }
-.work-backlog .work-issue-row--actions { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(5, max-content) 30px; }
-.work-backlog .work-issue-row:has(> .work-item-points) { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(6, max-content); min-width: 560px; }
-.work-backlog .work-issue-row--actions:has(> .work-item-points) { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(6, max-content) 30px; }
+.work-issue-row.work-issue-row--planning { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(5, max-content); min-width: 520px; }
+.work-issue-row--planning.work-issue-row--actions { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(5, max-content) 30px; }
+.work-issue-row--planning:has(> .work-item-points) { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(6, max-content); min-width: 560px; }
+.work-issue-row--planning.work-issue-row--actions:has(> .work-item-points) { grid-template-columns: 18px 22px 24px minmax(0, 1fr) repeat(6, max-content) 30px; }
 .work-item-points { min-width: 28px; padding: 2px 6px; border-radius: var(--radius); background: var(--system-interaction-soft); text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; }
 .work-backlog-assignee { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; }
 .work-backlog-assignee > [data-icon] { width: 16px; height: 16px; }
@@ -266,7 +302,7 @@
 .work-sprint-preview p { margin: 0 0 6px; overflow-wrap: anywhere; }
 .work-sprint-preview p:last-child { margin: 6px 0 0; }
 .work-panel .work-item-list { padding: 0; }
-.work-content--tasks > .work-panel-heading { padding: 12px 16px 0; }
+.work-content--tasks > .work-panel-heading { padding: 12px 16px 0; flex-wrap: wrap; }
 .work-member { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--border-color); }
 .work-member > :first-child { flex: 1; min-width: 180px; }
 .work-member form { margin: 0; }

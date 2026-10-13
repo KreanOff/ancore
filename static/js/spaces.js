@@ -1,7 +1,7 @@
 (function () {
     if (window.ancoreWorkLoaded) return;
     window.ancoreWorkLoaded = true;
-    let controller;
+    let controller, boardArrival;
 
     function initTaskDetail(page, signal) {
         const form = page.querySelector('#space-task-form');
@@ -118,6 +118,7 @@
 
     function init() {
         controller?.abort();
+        if (boardArrival && boardArrival.url !== window.location.href) boardArrival = null;
         controller = new AbortController();
         const { signal } = controller;
         const page = document.querySelector('[data-work-page]');
@@ -318,23 +319,191 @@
             return false;
         }
         page.addEventListener('submit', event => { const form = event.target.closest('[data-work-action]'); if (form) { event.preventDefault(); action(form.getAttribute('action'), new FormData(form)); } }, { signal });
-        let dragged;
-        page.addEventListener('dragstart', event => {
-            dragged = event.target.closest('[data-work-card][draggable=true]');
-            if (dragged && event.target.closest('a, button')) { dragged = null; return; }
-            if (dragged) { event.dataTransfer.setData('text/plain', dragged.dataset.itemId); event.dataTransfer.effectAllowed = 'move'; }
-        }, { signal });
-        page.addEventListener('dragover', event => { const column = event.target.closest('[data-work-column]'); if (dragged && column) { event.preventDefault(); column.classList.add('is-drag-over'); } }, { signal });
-        page.addEventListener('dragleave', event => { const column = event.target.closest('[data-work-column]'); if (column && !column.contains(event.relatedTarget)) column.classList.remove('is-drag-over'); }, { signal });
-        page.addEventListener('drop', event => {
-            const column = event.target.closest('[data-work-column]');
-            if (!dragged || !column) return;
-            event.preventDefault(); column.classList.remove('is-drag-over');
-            const body = new FormData(page.querySelector('[data-board-csrf]'));
-            body.set('action', 'status'); body.set('status', column.dataset.workColumn);
-            action(dragged.dataset.actionUrl, body); dragged = null;
-        }, { signal });
-        page.addEventListener('dragend', () => { dragged = null; page.querySelectorAll('.is-drag-over').forEach(column => column.classList.remove('is-drag-over')); }, { signal });
+        const board = page.querySelector('[data-work-board]');
+        const arrival = boardArrival;
+        boardArrival = null;
+        if (board) {
+            let dragged, dragPreview, dropPosition, pointerPoint, scrollFrame, scrollTime, startedOnControl = false;
+            const marker = document.createElement('span');
+            marker.className = 'work-board-drop-marker';
+            marker.setAttribute('aria-hidden', 'true');
+            const status = message => { const live = document.querySelector('[data-work-page] [data-board-status]'); if (live) live.textContent = message; };
+            const controls = 'button, input, select, textarea, [data-row-actions]';
+            board.querySelectorAll('[data-work-card] a, [data-work-card] img').forEach(element => { element.draggable = false; });
+            if (arrival?.url === window.location.href) {
+                const card = [...board.querySelectorAll('[data-work-card]')].find(element =>
+                    element.dataset.itemId === arrival.itemId && element.closest('[data-work-column]').dataset.workColumn === arrival.column);
+                if (card) {
+                    card.classList.add('is-board-arriving');
+                    card.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+                    const timer = window.setTimeout(() => card.classList.remove('is-board-arriving'), 600);
+                    signal.addEventListener('abort', () => { window.clearTimeout(timer); card.classList.remove('is-board-arriving'); }, { once: true });
+                }
+            }
+            function moveBoardDragPreview(event) {
+                if (!dragPreview || (!event.clientX && !event.clientY)) return;
+                const { element, offsetX, offsetY, scale, width, height } = dragPreview;
+                const left = Math.max(8, Math.min(event.clientX - offsetX, window.innerWidth - width - 8));
+                const top = Math.max(8, Math.min(event.clientY - offsetY, window.innerHeight - height - 8));
+                element.style.transform = `translate3d(${left / scale}px, ${top / scale}px, 0)`;
+            }
+            function createBoardDragPreview(card, event) {
+                const bounds = card.getBoundingClientRect(), style = window.getComputedStyle(card);
+                const element = card.cloneNode(true), image = document.createElement('canvas');
+                element.classList.remove('is-dragging', 'is-board-arriving');
+                element.classList.add('work-board-drag-preview');
+                element.removeAttribute('draggable');
+                element.removeAttribute('data-work-card');
+                element.removeAttribute('data-item-id');
+                element.removeAttribute('data-action-url');
+                element.querySelectorAll('[data-row-actions-panel]').forEach(panel => panel.remove());
+                [element, ...element.querySelectorAll('*')].forEach(node => {
+                    ['id', 'for', 'aria-controls', 'aria-labelledby', 'popovertarget', 'data-row-actions', 'data-row-actions-toggle', 'data-work-open', 'data-work-action'].forEach(attribute => node.removeAttribute(attribute));
+                });
+                element.inert = true;
+                element.setAttribute('aria-hidden', 'true');
+                element.style.width = `${card.offsetWidth}px`;
+                element.style.minHeight = `${card.offsetHeight}px`;
+                element.style.font = style.font;
+                element.style.color = style.color;
+                element.style.setProperty('--tasks-kanban-header-radius', style.getPropertyValue('--tasks-kanban-header-radius') || '5px');
+                image.width = image.height = 1;
+                image.className = 'work-board-native-drag-image';
+                image.setAttribute('aria-hidden', 'true');
+                const scale = bounds.width / card.offsetWidth || 1;
+                dragPreview = { element, image, scale, width: bounds.width, height: bounds.height, offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top };
+                element.style.transformOrigin = `${dragPreview.offsetX / scale}px ${dragPreview.offsetY / scale}px`;
+                moveBoardDragPreview(event);
+                document.body.append(element, image);
+                event.dataTransfer.setDragImage(image, 0, 0);
+            }
+            function clearBoardDrop() {
+                board.querySelectorAll('.is-drag-over').forEach(column => column.classList.remove('is-drag-over'));
+                marker.remove();
+                dropPosition = null;
+            }
+            function positionBoardDrop(column, y) {
+                if (!column || !board.contains(column) || !dragged || pending) { clearBoardDrop(); return; }
+                board.querySelectorAll('.is-drag-over').forEach(target => { if (target !== column) target.classList.remove('is-drag-over'); });
+                const list = column.querySelector('.tasks-kanban-column__list');
+                const cards = [...list.querySelectorAll('[data-work-card]')].filter(card => card !== dragged);
+                const collapsed = column.classList.contains('is-collapsed');
+                const index = collapsed ? -1 : cards.findIndex(card => { const rect = card.getBoundingClientRect(); return y < rect.top + rect.height / 2; });
+                const insertion = index < 0 ? cards.length : index;
+                const before = cards[insertion] || null, after = cards[insertion - 1] || null;
+                dropPosition = { column, before, after };
+                column.classList.add('is-drag-over');
+                const bounds = column.getBoundingClientRect(), listBounds = list.getBoundingClientRect();
+                const scale = bounds.width / column.offsetWidth || 1;
+                const gap = (parseFloat(getComputedStyle(list).rowGap) || 8) * scale;
+                const header = column.querySelector('header').getBoundingClientRect();
+                const top = collapsed ? header.bottom + gap / 2 : before ? before.getBoundingClientRect().top - gap / 2 : after ? after.getBoundingClientRect().bottom + gap / 2 : listBounds.top + gap / 2;
+                const minimum = collapsed ? header.bottom : listBounds.top;
+                const maximum = collapsed ? bounds.bottom : listBounds.bottom;
+                marker.style.top = `${(Math.max(minimum + 2, Math.min(top, maximum - 2)) - bounds.top) / scale}px`;
+                if (marker.parentNode !== column) column.append(marker);
+            }
+            function edgeSpeed(point, start, end) {
+                const edge = Math.min(48, (end - start) / 4);
+                if (point < start || point > end) return 0;
+                return point < start + edge ? -600 * (start + edge - point) / edge : point > end - edge ? 600 * (point - end + edge) / edge : 0;
+            }
+            function scrollBoard(time) {
+                if (!dragged) return;
+                const elapsed = Math.min(time - (scrollTime || time), 32) / 1000;
+                scrollTime = time;
+                if (pointerPoint) {
+                    const bounds = board.getBoundingClientRect();
+                    if (pointerPoint.y >= bounds.top && pointerPoint.y <= bounds.bottom) board.scrollLeft += edgeSpeed(pointerPoint.x, Math.max(0, bounds.left), Math.min(innerWidth, bounds.right)) * elapsed;
+                    const column = document.elementFromPoint(pointerPoint.x, pointerPoint.y)?.closest('[data-work-column]');
+                    if (column && board.contains(column)) {
+                        const list = column.querySelector('.tasks-kanban-column__list'), rect = list.getBoundingClientRect();
+                        if (!column.classList.contains('is-collapsed')) list.scrollTop += edgeSpeed(pointerPoint.y, rect.top, rect.bottom) * elapsed;
+                        positionBoardDrop(column, pointerPoint.y);
+                    } else clearBoardDrop();
+                }
+                scrollFrame = requestAnimationFrame(scrollBoard);
+            }
+            function resetBoardDrag() {
+                dragged?.classList.remove('is-dragging');
+                dragged = null;
+                dragPreview?.element.remove();
+                dragPreview?.image.remove();
+                dragPreview = null;
+                pointerPoint = null;
+                cancelAnimationFrame(scrollFrame);
+                scrollFrame = scrollTime = null;
+                startedOnControl = false;
+                board.classList.remove('is-board-dragging');
+                clearBoardDrop();
+            }
+            board.addEventListener('pointerdown', event => {
+                startedOnControl = Boolean(event.target.closest(controls));
+            }, { signal });
+            board.addEventListener('dragstart', event => {
+                const card = event.target.closest('[data-work-card][draggable=true]');
+                if (!card) return;
+                if (pending || startedOnControl || event.target.closest(controls)) { event.preventDefault(); return; }
+                dragged = card;
+                event.dataTransfer.clearData();
+                event.dataTransfer.setData('text/plain', card.dataset.itemId);
+                event.dataTransfer.effectAllowed = 'move';
+                createBoardDragPreview(card, event);
+                board.classList.add('is-board-dragging');
+                card.classList.add('is-dragging');
+                status('Przeciągnij zadanie na wybraną pozycję. Przerywana linia wskazuje miejsce wstawienia. Escape anuluje.');
+                scrollFrame = requestAnimationFrame(scrollBoard);
+            }, { signal });
+            document.addEventListener('dragover', event => {
+                moveBoardDragPreview(event);
+                if (dragged) pointerPoint = { x: event.clientX, y: event.clientY };
+            }, { signal });
+            board.addEventListener('dragenter', event => {
+                if (dragged && !pending && event.target.closest('[data-work-column]')) {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                }
+            }, { signal });
+            board.addEventListener('dragover', event => {
+                if (!dragged || pending) return;
+                const column = event.target.closest('[data-work-column]');
+                positionBoardDrop(column, event.clientY);
+                if (dropPosition) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; }
+            }, { signal });
+            board.addEventListener('dragleave', event => {
+                const column = event.target.closest('[data-work-column]');
+                if (column && !column.contains(event.relatedTarget) && dropPosition?.column === column) clearBoardDrop();
+            }, { signal });
+            board.addEventListener('drop', async event => {
+                const column = event.target.closest('[data-work-column]');
+                if (!dragged || !column) return;
+                event.preventDefault();
+                positionBoardDrop(column, event.clientY);
+                if (!dropPosition || pending) { resetBoardDrag(); return; }
+                const card = dragged, position = dropPosition, source = card.closest('[data-work-column]');
+                const original = [...source.querySelectorAll('[data-work-card]')];
+                const index = original.indexOf(card);
+                if (source === column && (original[index + 1] || null) === position.before && (original[index - 1] || null) === position.after) { resetBoardDrag(); return; }
+                const body = new FormData(page.querySelector('[data-board-csrf]'));
+                body.set('action', 'position'); body.set('status', column.dataset.workColumn); body.set('return_view', 'board');
+                body.set('space', board.dataset.spaceId);
+                body.set('source_status', card.dataset.status); body.set('source_sprint', card.dataset.sprintId); body.set('source_rank', card.dataset.rank);
+                body.set('before', position.before?.dataset.itemId || ''); body.set('after', position.after?.dataset.itemId || '');
+                body.set('before_rank', position.before?.dataset.rank || ''); body.set('after_rank', position.after?.dataset.rank || '');
+                resetBoardDrag();
+                board.setAttribute('aria-busy', 'true');
+                status('Zapisuję położenie zadania.');
+                const nextArrival = { itemId: card.dataset.itemId, column: column.dataset.workColumn, url: window.location.href };
+                boardArrival = nextArrival;
+                const saved = await action(card.dataset.actionUrl, body);
+                if (!signal.aborted) board.removeAttribute('aria-busy');
+                status(saved ? 'Zapisano położenie zadania.' : 'Nie zapisano położenia zadania. Spróbuj ponownie.');
+                if (!saved && boardArrival === nextArrival) boardArrival = null;
+            }, { signal });
+            board.addEventListener('dragend', resetBoardDrag, { signal });
+            document.addEventListener('keydown', event => { if (event.key === 'Escape' && dragged) { resetBoardDrag(); status('Anulowano przeciąganie zadania.'); } }, { signal });
+            signal.addEventListener('abort', resetBoardDrag, { once: true });
+        }
         const backlog = page.querySelector('[data-work-backlog]');
         if (backlog) {
             const bulk = page.querySelector('[data-backlog-bulk]');

@@ -28,6 +28,7 @@ from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import delete_avatar_after_commit
 from .backlog import bulk_plan_items, move_backlog_item
+from .board import move_board_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
@@ -579,6 +580,11 @@ def item_action(request, pk=None, space_pk=None, key=None):
             action = request.POST.get('action')
             if action == 'status':
                 set_status(request, item, request.POST.get('status'))
+            elif action == 'position':
+                space = space_object(request, item.space_id)
+                candidates, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
+                active_sprint = space.sprints.filter(state='active').first()
+                move_board_item(request, space, item, items_for_view(space, candidates, 'board', active_sprint))
             elif action in {'backlog', 'board'}:
                 item.in_backlog = action == 'backlog'
                 item.sprint = None

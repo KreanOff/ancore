@@ -1,0 +1,14 @@
+<article class="tasks-issue-row work-issue-row work-sprint-card{% if item.task.status == 'closed' %} completed{% endif %}" data-work-card data-item-id="{{ item.pk }}" data-action-url="{{ item.action_url }}" data-rank="{{ item.rank }}" data-sprint-id="{{ item.sprint_id|default_if_none:'' }}" data-status="{{ item.status }}"{% if item.editable %} draggable="true"{% endif %}>
+    <span class="tasks-row-priority priority-{{ item.task.priority }}" title="Priorytet: {{ item.task.get_priority_display }}" aria-label="Priorytet: {{ item.task.get_priority_display }}">{% include 'core/includes/priority_icon.html' with priority=item.task.priority only %}</span>
+    <span class="status-indicator status-{{ item.task.status }}" title="{{ item.status_label }}" aria-label="{{ item.status_label }}"></span>
+    <a href="{{ item.url }}" class="tasks-row-title" title="{{ item.key }} · {{ item.task.title }}"><span class="work-item-key">{{ item.key }}</span> {{ item.task.title }}</a>
+    {% if item.editable %}{% include 'spaces/item_actions.html' %}{% endif %}
+    <div class="work-sprint-card-meta" aria-label="Metadane zadania">
+        {% include 'spaces/issue_type.html' %}
+        {% include 'spaces/item_planning.html' with item=item only %}
+        <span class="tasks-row-tags" title="Tagi: {{ item.tags_count }}" aria-label="Tagi: {{ item.tags_count }}"><i data-icon="tag" aria-hidden="true"></i>{{ item.tags_count }}</span>
+        <span class="tasks-row-attachments" title="Załączniki: {{ item.attachments_count }}" aria-label="Załączniki: {{ item.attachments_count }}"><i data-icon="paperclip" aria-hidden="true"></i>{{ item.attachments_count }}</span>
+        {% if item.task.due_at %}<span class="tasks-row-date tasks-row-due tasks-row-due--{{ item.task.due_urgency }}" title="Termin: {{ item.task.due_at|date:'d.m.Y, H:i' }}" aria-label="Termin: {{ item.task.due_at|date:'d.m.Y, H:i' }}"><i data-icon="flame" aria-hidden="true"></i></span>{% endif %}
+    </div>
+    {% if item.team %}<div class="work-kanban-context work-sprint-card-context"><span title="Zespół: {{ item.team.name }}">{{ item.team.name }}</span></div>{% endif %}
+</article>

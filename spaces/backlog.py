@@ -111,7 +111,7 @@ def redistribute_ranks(request, item, target_rows, insertion):
     while len(slots) < len(ordered):
         maximum += 100
         if maximum > MAX_RANK:
-            raise ValidationError('Nie można zmienić kolejności. Odśwież backlog i spróbuj ponownie.')
+            raise ValidationError('Nie można zmienić kolejności. Odśwież listę i spróbuj ponownie.')
         slots.append(maximum)
     changed = []
     for row, rank in zip(ordered, slots):

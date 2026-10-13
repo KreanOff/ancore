@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 38 | 9 | 35 | 196 |
+| [spaces](../spaces) | 40 | 9 | 38 | 213 |
 
 ## 2. Modele i relacje
 
@@ -1536,6 +1536,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
 - [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
 - [spaces/backlog.py](../spaces/backlog.py) — `append_planned_items`, `bulk_plan_items`, `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
+- [spaces/board.py](../spaces/board.py) — `move_board_item`
 - [spaces/defaults.py](../spaces/defaults.py) — `issue_type_icon`, `template_settings`
 - [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/identifiers.py](../spaces/identifiers.py) — `unique_space_slug`
@@ -1783,6 +1784,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/backlog_header_details.html](../spaces/templates/spaces/backlog_header_details.html)
 - [spaces/templates/spaces/backlog_move_form.html](../spaces/templates/spaces/backlog_move_form.html)
 - [spaces/templates/spaces/base.html](../spaces/templates/spaces/base.html)
+- [spaces/templates/spaces/board_order_form.html](../spaces/templates/spaces/board_order_form.html)
 - [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
 - [spaces/templates/spaces/configuration.html](../spaces/templates/spaces/configuration.html)
 - [spaces/templates/spaces/detail.html](../spaces/templates/spaces/detail.html)
@@ -1794,6 +1796,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/issue_type.html](../spaces/templates/spaces/issue_type.html)
 - [spaces/templates/spaces/item_actions.html](../spaces/templates/spaces/item_actions.html)
 - [spaces/templates/spaces/item_list.html](../spaces/templates/spaces/item_list.html)
+- [spaces/templates/spaces/item_planning.html](../spaces/templates/spaces/item_planning.html)
 - [spaces/templates/spaces/item_toolbar.html](../spaces/templates/spaces/item_toolbar.html)
 - [spaces/templates/spaces/manage.html](../spaces/templates/spaces/manage.html)
 - [spaces/templates/spaces/pagination.html](../spaces/templates/spaces/pagination.html)
@@ -1802,6 +1805,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/sidebar_navigation.html](../spaces/templates/spaces/sidebar_navigation.html)
 - [spaces/templates/spaces/sidebar_picker.html](../spaces/templates/spaces/sidebar_picker.html)
 - [spaces/templates/spaces/sidebar_row.html](../spaces/templates/spaces/sidebar_row.html)
+- [spaces/templates/spaces/sprint_card.html](../spaces/templates/spaces/sprint_card.html)
 - [spaces/templates/spaces/sprint_header_details.html](../spaces/templates/spaces/sprint_header_details.html)
 - [spaces/templates/spaces/subtask_modal.html](../spaces/templates/spaces/subtask_modal.html)
 - [spaces/templates/spaces/summary.html](../spaces/templates/spaces/summary.html)
@@ -2454,6 +2458,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [spaces/test_backlog_planning.py](../spaces/test_backlog_planning.py).
 
 - `BacklogPlanningTests`: 22 metod testowych.
+
+### spaces/test_board_order.py
+
+Źródło: [spaces/test_board_order.py](../spaces/test_board_order.py).
+
+- `BoardOrderTests`: 17 metod testowych.
 
 ### spaces/test_independent_tasks.py
 

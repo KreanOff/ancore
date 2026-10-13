@@ -1,4 +1,4 @@
-<article class="tasks-kanban-card work-kanban-card{% if item.task.status == 'closed' %} completed{% endif %}" data-work-card data-item-id="{{ item.pk }}" data-action-url="{{ item.action_url }}"{% if item.editable %} draggable="true"{% endif %}>
+<article class="tasks-kanban-card work-kanban-card{% if item.task.status == 'closed' %} completed{% endif %}" data-work-card data-item-id="{{ item.pk }}" data-action-url="{{ item.action_url }}" data-rank="{{ item.rank }}" data-sprint-id="{{ item.sprint_id|default_if_none:'' }}" data-status="{{ item.status }}"{% if item.editable %} draggable="true"{% endif %}>
     <div class="tasks-kanban-card__header">
         <a class="tasks-kanban-card__title" href="{{ item.url }}">{{ item.task.title }}</a>
         {% if item.editable %}{% include 'spaces/item_actions.html' %}{% endif %}

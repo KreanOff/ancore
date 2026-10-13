@@ -275,8 +275,13 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Szablony: Kanban, Scrum, zarządzanie zadaniami, marketing, rekrutacja,
   obsługa zgłoszeń. Szablon określa początkowe statusy, typy i pola.
 - Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty, tagi i ustawienia.
-  Lista zachowuje zwarte wiersze i grupy statusów Zadań, a tablica dotychczasowy
-  wygląd kart Kanbana. Status zmienia się przez przeciąganie lub menu działań,
+  Lista i aktywny sprint współdzielą kolorowe, zwijane nagłówki statusów
+  oraz styl zadań. Tak jak backlog pokazują punkty w Scrum, awatar wykonawcy
+  i menu z trzema paskami dla zadań z prawem edycji. Sprint zachowuje osobne
+  kafelki w kolumnach i zawijane tytuły, a tablica
+  Kanbana dotychczasowy wygląd kart. Przeciąganie zapisuje kolejność w kolumnie
+  oraz miejsce wstawienia w innym statusie; przerywana linia wskazuje pozycję.
+  Status i kolejność można zmienić również przez menu działań,
   dostępne również klawiaturą. Filtry są w standardowym pasku Zadań.
   Lista, backlog, tablica i oś czasu mają wspólny dolny pasek z zakresem
   wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
@@ -320,7 +325,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   członkowie i administratorzy, powiązane przestrzenie i przypisane zadania.
   Zadanie może równocześnie mieć zespół oraz konkretnego wykonawcę.
 
-„Przesuń wyżej/niżej” działa w zakresie widocznego backlogu i tej samej grupy
+W backlogu „Przesuń wyżej/niżej” działa w zakresie widocznych zadań i tej samej grupy
 sprintu. Pomija zadania na tablicy Kanbana, zadania zamknięte i wykluczone przez
 filtry. URL akcji oraz powrót zachowują wyszukiwanie i filtry listy. Odczyt listy
 i zmiana kolejności korzystają z tych samych funkcji filtrujących.
@@ -329,7 +334,7 @@ Przeciąganie (`spaces/backlog.py`, akcja `plan` w `item_action`) waliduje
 zadanie i oba sąsiednie wiersze w zakresie filtrów oraz bieżącej strony
 100 wyników. Cel należy do tej samej przestrzeni; zakończone sprinty,
 zamknięte zadania, elementy na tablicy Kanbana i rekordy poza widoczną stroną
-są odrzucane. Kanban udostępnia wyłącznie kolejność backlogu, bez sprintów.
+są odrzucane. Akcja planowania w backlogu Kanbana nie przyjmuje sprintów ani kart z tablicy.
 Serwer porównuje również przestrzeń, sprint źródłowy i zapamiętaną kolejność
 zadania; stare położenie wymaga odświeżenia listy. Blokady właściciela,
 Workspace, przestrzeni i rekordu oraz ponowne sprawdzenie dostępu chronią zapis.
@@ -339,6 +344,22 @@ Nowa pozycja korzysta z wolnego numeru pomiędzy sąsiadami. Gdy brak miejsca
 między całkowitymi numerami, rotuje dostępne numery bieżącej grupy, sprawdzając
 prawo edycji każdego zmienianego rekordu. Zadania ukryte, pominięte filtrami
 lub poza stroną zachowują swoje numery. Zapis jest atomowy i wymaga CSRF.
+
+Tablica (`spaces/board.py`, akcja `position` w `item_action`) korzysta z tych
+samych numerów `WorkItem.rank` i funkcji wyznaczania wolnego miejsca.
+Obsługuje kolejność w statusie i wstawienie między sąsiadami innego statusu;
+menu „Przesuń wyżej/niżej” działa w bieżącej kolumnie. Źródło i sąsiedzi muszą
+należeć do aktualnej widocznej, przefiltrowanej strony 100 wyników. Scrum
+ogranicza operację do aktywnego sprintu, a pozostałe tablice do zadań poza
+backlogiem. Porównanie przestrzeni, źródłowego statusu, sprintu, numeru
+kolejności oraz numerów obu sąsiadów odrzuca nieaktualne położenie.
+Zapis zachowuje Workspace, ACL, CSRF i blokady jak planowanie; ukryte,
+wykluczone i pozostałe strony nie są przestawiane. Czytelny sąsiad bez prawa
+edycji może wskazać miejsce, ale jego numer nie może zostać zmieniony.
+Zmiana statusu przechodzi przez `set_status`, z zachowaniem sygnałów zadania,
+dat zakończenia i historii rzeczywistego autora; cała operacja jest atomowa.
+Zmiana samej kolejności, także w kolumnie zakończonych, zachowuje status
+i datę zakończenia. Niezmienione położenie nie dopisuje historii.
 
 Klucz przestrzeni jest unikalny w Workspace. Zadania otrzymują trwały klucz,
 np. `ANC-12`, z rosnącego licznika przestrzeni. Usunięcie zadania nie zmienia

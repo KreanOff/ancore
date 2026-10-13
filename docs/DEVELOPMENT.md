@@ -1,5 +1,111 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Wygląd Aktywnego sprintu (13.10.2026)
+
+Przeszło 61 istniejących testów `spaces.tests.SpaceTests`,
+`spaces.test_backlog_drag` i `spaces.test_issue_types` na odrębnej bazie
+PostgreSQL. Kontrola Django, składnia `tasks.js`, `git diff --check`
+oraz sprawdzenie indeksu również przeszły.
+
+Playwright/Chrome na osobnej bazie QA pod `127.0.0.1:8016` sprawdził szerokości
+1920, 1024 i 390px. Wszystkie pięć nagłówków miało te same kolory, font,
+wysokość i maski ikon co Lista zadań; zgodne były też etykiety i liczniki.
+Sprawdzono zwijanie klawiaturą/nagłówkiem, rzeczywisty zapis statusu przez
+przeciąganie i menu, liczniki po zapisie, reload, częściową nawigację,
+ponowne wejście, zwykły/scoped URL, długi tytuł, zerową estymację,
+brak sprintu i wyniki po filtrach oraz obserwatora bez edycji/przeciągania.
+Celowo przerwane żądanie pokazało błąd i zachowało pierwotną kolumnę zadania.
+Lista, Backlog i Kanban były ekranami referencyjnymi. Nie było przepełnienia
+całej strony ani nieoczekiwanych błędów JS/konsoli w końcowym przebiegu.
+Plugin Browser był niedostępny; użyto zwykłego Playwright z lokalnym Chrome.
+Nie sprawdzano Safari/Firefox ani pełnego zestawu testów repozytorium.
+
+Poprawka nakładania kart w długiej kolumnie: odtworzono problem z 14 zadaniami
+w jednym statusie. Brak blokady `flex-shrink` zmniejszał karty poniżej wysokości
+ich zawartości. Karty otrzymały `flex: 0 0 auto`, a wysokość tablicy została
+ograniczona do dostępnej treści ponad paginacją. Po poprawce sprawdzono
+w Chrome 1920×1000, 1024×844, 390×844 i 1920×600: metadane mieściły się w każdej
+karcie, sąsiednie karty nie nachodziły na siebie, a cała ostatnia karta i jej
+menu mieściły się w widocznej treści po przewinięciu. Ponownie sprawdzono zwijanie, przeciąganie
+z zapisem statusu, reload, powrót z Listy zadań, Backlog, Kanban i pusty sprint.
+Nie było błędów JS ani ostrzeżeń konsoli; sprawdzenie indeksu i diffu przeszło.
+Przy tej poprawce samego CSS nie powtarzano testów backendu.
+
+Osobne kafelki zadań: kolumna nie ma ciągłej ramki, nagłówek jest oddzielony,
+a każda karta ma pełne obramowanie, zaokrąglenie i odstęp od sąsiedniej.
+Chrome na tej samej izolowanej bazie QA potwierdził te cechy dla wszystkich
+14 kart przy 1920×1000, 1024×844, 390×844 i 1920×600. Ponownie sprawdzono
+metadane, przewijanie do całej ostatniej karty, jej menu, zwijanie,
+przeciąganie z zapisem statusu, reload, powrót z Listy zadań oraz referencyjny
+Backlog, Kanban i pusty sprint. Nie było błędów JS ani ostrzeżeń konsoli.
+Sprawdzenie indeksu i diffu przeszło; testów backendu nie powtarzano.
+
+Ujednolicenie punktów, wykonawcy i menu z backlogiem: przeszło 98 testów
+`spaces.tests.SpaceTests`, `spaces.test_backlog_planning`,
+`spaces.test_backlog_drag` i `dashboard.test_filters` na odrębnej bazie.
+Kontrola Django, indeks oraz `git diff --check` przeszły. Chrome/Playwright
+na izolowanym QA przy 1920×1000, 1024×844 i 390×844 porównał markup i końcowe
+style punktów, awatarów oraz przycisku menu w backlogu, liście i sprincie.
+Sprawdzono zero, brak estymacji, przypisaną/brakującą osobę, geometrię
+metadanych, menu ostatniego kafelka, zapis statusu z listy z zachowaniem
+filtra i częściowej nawigacji oraz reload. Edycja z listy przez rzeczywisty
+custom select zapisała punkty i wykonawcę widoczne we wszystkich trzech
+widokach. Sprawdzono również przeciąganie sprintu, ponowne wejście, puste
+wyniki, obserwatora bez akcji, zwykły/scoped URL, Kanban i wyniki Filtrów.
+Nie było błędów JS ani ostrzeżeń konsoli. Plugin Browser pozostawał
+niedostępny; nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
+
+Naprawa przeciągania kafelków sprintu: przed zmianą Chrome odtworzył gest
+od tytułu jako przeciąganie URL bez zapisu statusu. Krótkie kolumny miały
+również ograniczony do zawartości obszar upuszczania. Po poprawce linki
+i obrazy w kartach nie uruchamiają osobnego drag, a kolumny sprintu i ich
+listy wypełniają dostępną wysokość tablicy. Ponownie przeszło 98 testów
+wymienionego wyżej zestawu, kontrola Django, składnia `spaces.js`, indeks
+oraz diff. Native drag w Chrome na osobnym QA sprawdził tytuł, klucz,
+awatar i tło, upuszczenie pod zawartością pustej/krótkiej kolumny,
+jedno żądanie zapisu, brak URI w danych gestu, ten sam status bez zapisu,
+Escape i czyszczenie podświetleń. Kliknięcie tytułu, menu, błąd zapisu,
+ponowienie, reload, zwykły/scoped URL i częściowa nawigacja przeszły.
+Sprawdzono też gest backlogu, tytuł karty Kanbana i brak drag obserwatora.
+Geometria przy 1920×1000, 1024×844 i 390×844 potwierdziła pełną wysokość
+celów i widoczność ostatniego kafelka; gesty wykonano myszą. Nie było
+błędów JS/konsoli. Nie sprawdzano przeciągania dotykiem ani Safari/Firefox.
+
+Efekty przeciągania: czytelny podgląd DOM zastępuje natywny półprzezroczysty
+obraz; źródło oraz cel mają przerywane ramki, a potwierdzony zapis krótką
+animację kafelka. Przeszło 98 testów tego samego zestawu oraz pełny przebieg
+wcześniejszych prób gestu w Chrome. Osobny przebieg sprawdził cień, skalę,
+przechylenie, współrzędne podglądu, `inert`, brak ID/form/aktywnych hooków
+w kopii, pojedynczą widoczną ramkę celu nad kafelkami oraz czyszczenie
+podglądu i obrazu gestu. Zapis uruchamiał animację, błąd pozostawiał zadanie
+w źródle bez efektu sukcesu. Escape i ponowna inicjalizacja czyściły stan.
+`prefers-reduced-motion` wyłączał ruch i zachowywał statyczne potwierdzenie.
+Sprawdzono również 1024 i 390px; końcowe przebiegi nie miały błędów JS/konsoli.
+Kontrola Django, składnia JS, indeks i diff przeszły. Nadal nie sprawdzano
+gestów dotykiem ani Safari/Firefox; QA używało Playwright z lokalnym Chrome.
+
+Kolejność kafelków na tablicy: przeszło 125 testów `spaces.tests.SpaceTests`,
+`spaces.test_backlog_planning`, `spaces.test_backlog_drag`,
+`spaces.test_board_order`, `spaces.test_issue_types` i `dashboard.test_filters`
+na osobnej bazie PostgreSQL. Nowe 17 testów sprawdza przesunięcia w kolumnie
+i między statusami, puste cele, kierunki z menu, zachowanie dat zakończenia,
+historię autora, konflikty źródła/sąsiadów, atomowość, ACL, CSRF, filtry,
+paginację, gęste/zdublowane numery, Kanban i zwykłe/scoped adresy z kluczem.
+Chrome/Playwright na odrębnej bazie potwierdził rzeczywiste przeciąganie
+tytułu w górę/w dół, wstawienie między sąsiadami innego statusu i trwałość
+po reloadzie. Sprawdzono menu klawiaturą, filtry z zachowaniem pominiętego
+numeru, faktyczny konflikt równoczesnego zapisu, pusty i zwinięty cel,
+przerywaną linię wstawienia, przewijanie pionowe/poziome, Escape, powrót
+z Listy zadań, ponowne wejście oraz 1920, 1024 i 390px bez przepełnienia.
+Przy przewijaniu odtworzono utratę natywnego upuszczenia po zmianie kafelka
+pod kursorem; obsługa `dragenter` naprawiła ten gest. Kontrola referencji
+potwierdziła przeniesienie w backlogu do planowanego sprintu, tytuł karty
+Kanbana i obserwatora bez drag. Pusty sprint oraz puste wyniki filtrów
+zachowały swój stan. Sprawdzono również podgląd, potwierdzenie, błąd zapisu,
+czyszczenie po podmianie treści i ograniczenie ruchu. Kontrola Django,
+składnia JS/Python, indeks oraz diff przeszły. Nie ma nowych migracji ani
+zależności; nie sprawdzano dotyku, Safari/Firefox ani całego repozytorium.
+
 ## Planowanie Backlogu (13.10.2026)
 
 `spaces.test_backlog_planning` sprawdza zbiorcze przeniesienia, zachowanie

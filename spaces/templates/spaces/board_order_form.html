@@ -1,0 +1,12 @@
+<form method="post" action="{{ item.action_url }}" data-work-action>
+    {% csrf_token %}
+    <input type="hidden" name="action" value="position">
+    <input type="hidden" name="direction" value="{{ direction }}">
+    <input type="hidden" name="return_view" value="board">
+    <input type="hidden" name="space" value="{{ item.space_id }}">
+    <input type="hidden" name="source_status" value="{{ item.status }}">
+    <input type="hidden" name="status" value="{{ item.status }}">
+    <input type="hidden" name="source_sprint" value="{{ item.sprint_id|default_if_none:'' }}">
+    <input type="hidden" name="source_rank" value="{{ item.rank }}">
+    <button class="tasks-project-menu-button" type="submit"><i data-icon="{{ icon }}" aria-hidden="true"></i><span>{{ label }}</span></button>
+</form>
