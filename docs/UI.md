@@ -151,6 +151,25 @@ Menu oferuje edycję, zmianę statusu i kolejności oraz przeniesienie na tablic
 Kanbana. Obsługuje je wspólny `row-actions.js`, również po podmianie treści.
 Obserwatorzy zachowują wiersze bez przycisków zapisu.
 
+Backlog rozszerza wiersz o wykonawcę i, w Scrum, małą etykietę punktów.
+Nie ma osobnego nagłówka „Planowanie sprintów” ani stałego paska zaznaczania.
+`work-backlog-bulk` pojawia się dopiero po zaznaczeniu checkboxu wiersza;
+pokazuje liczbę zaznaczonych zadań, przyciski i `AncoreCustomSelect`.
+Odznaczenie ostatniego zadania lub „Odznacz” ukrywa cały pasek; fokus wraca
+do checkboxu wiersza. Zadania tylko do odczytu są pomijane.
+Nagłówki sprintów i Backlogu nie mają checkboxów. Zachowują dotychczasowe kolory,
+zwijanie i licznik strony, dodając `work-planning-summary` dla pełnych
+agregacji po filtrach. Sekcje mają link do wspólnego modalnego tworzenia
+zadania z wybranym backlogiem/sprintem. „Utwórz sprint” znajduje się po prawej
+stronie nagłówka sekcji Backlog, przed licznikiem, i pozostaje
+widoczne po jej zwinięciu; przycisk widzi osoba zarządzająca przestrzenią Scrum.
+Formularze sprintu używają tej samej powłoki, z opcjonalnym podsumowaniem
+`work-sprint-preview` i etykietą zapisu.
+Bezpośredni adres formularza pokazuje go nad pełnym backlogiem; Escape wraca
+do backlogu. Nowa logika odnawia się na `ancore:content-loaded`, usuwa poprzednie
+listenery przez `AbortController` i zachowuje częściową nawigację.
+Na telefonie kontrolki i metadane zawijają się, a wiersze przewijają wewnątrz sekcji.
+
 Backlog i otwarte sprinty używają `spaces/backlog.html` oraz tej samej powłoki
 `tasks-table-wrap tasks-board`, sekcji `tasks-issue-group tasks-status-block`
 i nagłówka `tasks/includes/issue_group_header.html` co Lista zadań.

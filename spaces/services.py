@@ -107,10 +107,15 @@ def task_url(request, task):
 def create_work_item(task):
     space = Space.objects.select_for_update().get(pk=task.space_id)
     number = space.next_number
+    maximum = WorkItem.objects.filter(space=space).aggregate(value=Max('rank'))['value'] or 0
+    rank = max(number * 100, maximum + 100)
+    from .backlog import MAX_RANK
+    if rank > MAX_RANK:
+        raise ValidationError('Brak miejsca na zapis kolejności zadania. Odśwież backlog.')
     space.next_number += 1
     space.save(update_fields=['next_number'])
     status = next(s['key'] for s in space.statuses if s['category'] == task.status)
-    return WorkItem.objects.create(task=task, space=space, number=number, key=f'{space.key}-{number}', rank=number * 100, status=status, work_type=space.configuration.settings['types'][0]['key'])
+    return WorkItem.objects.create(task=task, space=space, number=number, key=f'{space.key}-{number}', rank=rank, status=status, work_type=space.configuration.settings['types'][0]['key'])
 
 
 def record(item, actor, action, message, metadata=None):
@@ -152,30 +157,46 @@ def set_status(request, item, target):
         })
 
 
-def update_sprint(request, sprint, action):
+def update_sprint(request, sprint, action, destination=None):
     with transaction.atomic():
+        from workplaces.models import Workplace
+        if request.workplace:
+            Workplace.objects.select_for_update().get(pk=request.workplace.pk)
         Space.objects.select_for_update().get(pk=sprint.space_id)
-        sprint = Sprint.objects.select_for_update().get(pk=sprint.pk)
+        space = visible_spaces(request).filter(pk=sprint.space_id).first()
+        if space is None:
+            raise PermissionDenied
+        sprint = Sprint.objects.select_for_update().get(pk=sprint.pk, space=space)
+        if space.template != 'scrum':
+            raise ValidationError('Sprinty są dostępne wyłącznie w przestrzeni Scrum.')
         if not manage_space(request, sprint.space):
             raise PermissionDenied
         if action == 'start':
             if sprint.state != 'planned' or Sprint.objects.filter(space=sprint.space, state='active').exists():
                 raise ValidationError('W przestrzeni może trwać jeden sprint. Wybierz sprint planowany.')
+            if not sprint.items.exists():
+                raise ValidationError('Dodaj zadania do sprintu przed jego rozpoczęciem.')
             sprint.state = 'active'
         elif action == 'close':
             if sprint.state != 'active':
                 raise ValidationError('Możesz zakończyć tylko aktywny sprint.')
-            items = sprint.items.select_related('task')
+            items = sprint.items.select_related('task').order_by('rank', 'pk')
             allowed = editable_to(SpaceTask.objects.all(), request.user)
             if items.exclude(task__in=allowed).exists():
                 raise ValidationError('Sprint zawiera zadania, których nie możesz zmieniać.')
             done = list(items.filter(task__status='closed').values('task_id', 'points'))
-            sprint.result = {'completed': done, 'total': items.count(), 'finished': len(done)}
-            for item in items.exclude(task__status='closed'):
-                item.sprint = None
-                item.in_backlog = True
-                item.save(update_fields=['sprint', 'in_backlog'])
-                record(item, request.user, 'updated', f'przeniósł zadanie do backlogu po zakończeniu sprintu „{sprint.name}”')
+            target = None
+            if destination is not None:
+                target = Sprint.objects.select_for_update().filter(pk=destination.pk, space=space, state='planned').exclude(pk=sprint.pk).first()
+                if target is None:
+                    raise ValidationError('Sprint docelowy jest już niedostępny. Wybierz backlog lub sprint planowany.')
+            unfinished = list(items.exclude(task__status='closed'))
+            sprint.result = {'completed': done, 'total': items.count(), 'finished': len(done),
+                             'points': sum(item.points or 0 for item in items),
+                             'finished_points': sum(item['points'] or 0 for item in done),
+                             'carried': len(unfinished), 'destination_id': getattr(target, 'pk', None)}
+            from .backlog import append_planned_items
+            append_planned_items(request, space, unfinished, target, message_suffix=f' po zakończeniu sprintu „{sprint.name}”')
             sprint.state = 'closed'
             sprint.completed_at = timezone.now()
         else:

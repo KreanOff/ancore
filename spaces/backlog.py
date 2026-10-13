@@ -1,4 +1,5 @@
-"""Backlog positioning inside the caller's filtered, visible page."""
+"""Backlog planning inside the caller's filtered, visible page."""
+import json
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Max
@@ -10,6 +11,62 @@ from .services import record
 
 
 MAX_RANK = 2147483647
+
+
+def append_planned_items(request, space, items, sprint=None, *, board=False, message_suffix=''):
+    """Append in source order under the Space lock, preserving every other row."""
+    maximum = WorkItem.objects.filter(space=space).aggregate(value=Max('rank'))['value'] or 0
+    for item in items:
+        maximum += 100
+        if maximum > MAX_RANK:
+            raise ValidationError('Brak miejsca na zapis kolejności. Odśwież backlog.')
+        old_sprint, old_rank = item.sprint_id, item.rank
+        item.sprint, item.in_backlog, item.rank = sprint, sprint is None and not board, maximum
+        item.save(update_fields=['sprint', 'in_backlog', 'rank'])
+        destination = f'do sprintu „{sprint.name}”' if sprint else 'na tablicę' if board else 'do backlogu'
+        record(item, request.user, 'updated', f'przeniósł zadanie {destination}{message_suffix}', {
+            'old_sprint_id': old_sprint, 'new_sprint_id': item.sprint_id,
+            'old_rank': old_rank, 'new_rank': item.rank,
+        })
+
+
+def bulk_plan_items(request, space, scope):
+    """Validate the complete selection before moving anything; caller is atomic."""
+    if space.template not in {'scrum', 'kanban'}:
+        raise ValidationError('Ta przestrzeń nie korzysta z backlogu.')
+    selected = request.POST.getlist('item_ids')
+    if not selected or len(selected) > 100 or any(not value.isascii() or not value.isdecimal() or len(value) > 18 for value in selected):
+        raise ValidationError('Zaznacz od 1 do 100 zadań na bieżącej stronie.')
+    ids = {int(value) for value in selected}
+    if len(ids) != len(selected):
+        raise ValidationError('Nieprawidłowe zaznaczenie zadań.')
+    rows = list(Paginator(scope.order_by('rank', 'pk'), 100).get_page(request.GET.get('page')).object_list)
+    items = [item for item in rows if item.pk in ids]
+    if len(items) != len(ids):
+        raise ValidationError('Zaznaczone zadania nie są już dostępne na tej stronie. Odśwież backlog.')
+    allowed = set(editable_to(SpaceTask.objects.filter(pk__in=[item.task_id for item in items]), request.user).values_list('pk', flat=True))
+    if any(item.task_id not in allowed for item in items):
+        raise PermissionDenied
+    try:
+        positions = json.loads(request.POST.get('positions', ''))
+    except (ValueError, TypeError):
+        raise ValidationError('Nieprawidłowe dane planowania. Odśwież backlog.')
+    expected = {str(item.pk): [item.sprint_id, item.rank] for item in items}
+    if positions != expected:
+        raise ValidationError('Położenie zaznaczonych zadań zmieniło się. Odśwież backlog i spróbuj ponownie.')
+    destination = request.POST.get('destination', '')
+    sprint, board = None, destination == 'board'
+    if board and space.template != 'kanban':
+        raise ValidationError('W Scrum zadania planuje się w sprintach.')
+    if destination != 'board' and destination:
+        if space.template != 'scrum' or not destination.isascii() or not destination.isdecimal() or len(destination) > 18:
+            raise ValidationError('Nieprawidłowe miejsce docelowe.')
+        sprint = Sprint.objects.select_for_update().filter(space=space, pk=int(destination), state__in=['planned', 'active']).first()
+        if sprint is None:
+            raise ValidationError('Sprint jest niedostępny lub został zakończony. Odśwież backlog.')
+    changed = [item for item in items if item.sprint_id != getattr(sprint, 'pk', None) or item.in_backlog != (sprint is None and not board)]
+    append_planned_items(request, space, changed, sprint, board=board)
+    return len(changed)
 
 
 def posted_number(request, name, *, optional=False):

@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 37 | 9 | 34 | 174 |
+| [spaces](../spaces) | 38 | 9 | 35 | 196 |
 
 ## 2. Modele i relacje
 
@@ -1101,6 +1101,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `SubtaskForm`
 - `WorkLogForm`
 - `SprintForm`
+- `SprintCloseForm`
 - `TeamForm`
 - `MemberForm`
 - `StatusForm`
@@ -1313,6 +1314,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'space/<slug:pk>/favorite/'` | `views.favorite` | 'favorite' |
 | `'space/<slug:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
 | `'space/<slug:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
+| `'space/<slug:pk>/backlog/plan/'` | `views.backlog_plan` | 'backlog_plan' |
+| `'space/<slug:pk>/sprints/<int:sprint_pk>/edit/'` | `views.sprint_plan` | 'sprint_edit' |
+| `'space/<slug:pk>/sprints/<int:sprint_pk>/start/'` | `views.sprint_plan` | 'sprint_start' |
+| `'space/<slug:pk>/sprints/<int:sprint_pk>/complete/'` | `views.sprint_plan` | 'sprint_complete' |
 | `'space/<slug:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
 | `'space/<slug:pk>/members/'` | `views.members` | 'members' |
 | `'space/<slug:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
@@ -1324,6 +1329,10 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'spaces/<int:pk>/favorite/'` | `views.favorite` | 'favorite' |
 | `'spaces/<int:space_pk>/items/create/'` | `views.item_edit` | 'item_create' |
 | `'spaces/<int:pk>/sprints/create/'` | `views.sprint_create` | 'sprint_create' |
+| `'spaces/<int:pk>/backlog/plan/'` | `views.backlog_plan` | 'backlog_plan' |
+| `'spaces/<int:pk>/sprints/<int:sprint_pk>/edit/'` | `views.sprint_plan` | 'sprint_edit' |
+| `'spaces/<int:pk>/sprints/<int:sprint_pk>/start/'` | `views.sprint_plan` | 'sprint_start' |
+| `'spaces/<int:pk>/sprints/<int:sprint_pk>/complete/'` | `views.sprint_plan` | 'sprint_complete' |
 | `'spaces/<int:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
 | `'spaces/<int:pk>/members/'` | `views.members` | 'members' |
 | `'spaces/<int:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
@@ -1526,9 +1535,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/access.py](../spaces/access.py) — `spaces_for`, `editable_spaces`, `tree_ids`, `visible_to`, `editable_to`, `require_editable`, `task_people`
 - [spaces/apps.py](../spaces/apps.py) — `SpacesConfig`
 - [spaces/avatars.py](../spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
-- [spaces/backlog.py](../spaces/backlog.py) — `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
+- [spaces/backlog.py](../spaces/backlog.py) — `append_planned_items`, `bulk_plan_items`, `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
 - [spaces/defaults.py](../spaces/defaults.py) — `issue_type_icon`, `template_settings`
-- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
+- [spaces/forms.py](../spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [spaces/identifiers.py](../spaces/identifiers.py) — `unique_space_slug`
 - [spaces/middleware.py](../spaces/middleware.py) — `LegacyKanbanMiddleware`
 - [spaces/models.py](../spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
@@ -1544,7 +1553,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templatetags/space_ui.py](../spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
 - [spaces/testing.py](../spaces/testing.py) — `make_space`
 - [spaces/urls.py](../spaces/urls.py)
-- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `item_action`, `sprint_create`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [spaces/views.py](../spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [spaces/widgets.py](../spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `TeamSelect`
 
 ## 6. Szablony
@@ -1771,6 +1780,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/avatar.html](../spaces/templates/spaces/avatar.html)
 - [spaces/templates/spaces/avatar_picker.html](../spaces/templates/spaces/avatar_picker.html)
 - [spaces/templates/spaces/backlog.html](../spaces/templates/spaces/backlog.html)
+- [spaces/templates/spaces/backlog_header_details.html](../spaces/templates/spaces/backlog_header_details.html)
 - [spaces/templates/spaces/backlog_move_form.html](../spaces/templates/spaces/backlog_move_form.html)
 - [spaces/templates/spaces/base.html](../spaces/templates/spaces/base.html)
 - [spaces/templates/spaces/card.html](../spaces/templates/spaces/card.html)
@@ -2438,6 +2448,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [spaces/test_backlog_ordering.py](../spaces/test_backlog_ordering.py).
 
 - `BacklogOrderingTests`: 7 metod testowych.
+
+### spaces/test_backlog_planning.py
+
+Źródło: [spaces/test_backlog_planning.py](../spaces/test_backlog_planning.py).
+
+- `BacklogPlanningTests`: 22 metod testowych.
 
 ### spaces/test_independent_tasks.py
 

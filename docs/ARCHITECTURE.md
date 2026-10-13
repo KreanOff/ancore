@@ -315,6 +315,11 @@ zadań. Dashboard, „Dla ciebie”, postęp pulpitów i wyszukiwanie korzystaj�
 z nowych danych; Planner uwzględnia ich terminy. Szczegóły migracji,
 konfiguracji i ograniczeń: [SPACES.md](SPACES.md).
 
+Planowanie backlogu korzysta z `spaces/backlog.py` i endpointu
+`space/<slug>/backlog/plan/` (również scoped i numerycznego). Formularze
+`sprints/<pk>/edit/`, `start/` i `complete/` używają istniejącej powłoki modalnej.
+Operacje obejmują te same `SpaceTask`/`WorkItem`, bez nowej warstwy danych.
+
 ## Wycofanie starszych systemów pracy (10.10.2026)
 
 Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony

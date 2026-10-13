@@ -25,6 +25,14 @@ zachowują zakończenie i autora historii. Cykl statusu starszych Tasks jest wy�
 Stare pliki współdzielone po imporcie są usuwane dopiero po ostatnim odwołaniu
 i zatwierdzeniu transakcji. [Modele, adresy, migracja i granice](SPACES.md).
 
+Zbiorcze planowanie backlogu waliduje całą bieżącą stronę zaznaczenia i snapshot
+`sprint_id/rank` pod blokadą Workspace oraz Przestrzeni. Zapis dopisuje wyłącznie
+edytowalne zadania na końcu grupy docelowej i tworzy historię autora; błąd
+wycofuje całą transakcję. Zakończenie sprintu korzysta z tego samego mechanizmu
+dopisania dla niedokończonych zadań, z wyborem backlogu lub sprintu planowanego.
+Pełne liczniki punktów i postępu są ograniczone aktualnymi ACL i filtrami.
+[Przepływ planowania](SPACES.md#planowanie-w-backlogu).
+
 
 ## 1. Tożsamość, sesja i obecność
 

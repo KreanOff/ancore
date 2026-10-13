@@ -1,8 +1,13 @@
-{% if space.template == 'scrum' %}
-<div class="work-panel-heading work-backlog-heading">
-    <h2>Planowanie sprintów</h2>
-    {% if can_manage %}<a class="tasks-filter-button" href="{{ sprint_create_url }}" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz sprint</a>{% endif %}
-</div>
+{% if can_edit %}
+<form class="work-backlog-bulk" method="post" action="{{ bulk_plan_url }}" data-backlog-bulk hidden>
+    {% csrf_token %}
+    <span data-backlog-selection-count role="status" aria-live="polite"></span>
+    <div class="work-backlog-bulk-controls">
+        <select name="destination" class="tasks-inline-select" aria-label="Miejsce docelowe zaznaczonych zadań"><option value="">Backlog</option>{% if space.template == 'scrum' %}{% for destination in sprints %}<option value="{{ destination.pk }}">{{ destination.name }} · {{ destination.get_state_display }}</option>{% endfor %}{% else %}<option value="board">Tablica</option>{% endif %}</select>
+        <button type="submit" class="tasks-filter-button"><i data-icon="arrow-right" aria-hidden="true"></i>Przenieś zaznaczone</button>
+        <button type="button" class="tasks-filter-button" data-backlog-clear-selection>Odznacz</button>
+    </div>
+</form>
 {% endif %}
 <div class="tasks-table-wrap tasks-board work-backlog" data-work-backlog data-space-id="{{ space.pk }}">
     <form hidden data-backlog-csrf>{% csrf_token %}</form>
@@ -21,21 +26,23 @@
             {% for item in sprint.visible_items %}
             {% include 'spaces/row.html' %}
             {% empty %}
-            <div class="tasks-empty-section" role="status">{% if can_edit %}Przeciągnij zadanie do tego sprintu lub przypisz je w oknie edycji.{% else %}Brak zadań do zaplanowania w tym sprincie.{% endif %}</div>
+            <div class="tasks-empty-section" role="status">{% if sprint.open_count %}Zadania tego sprintu znajdują się na innej stronie wyników.{% elif query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Brak zadań pasujących do filtrów.{% elif can_edit %}Przeciągnij zadania lub zaznacz je i wybierz ten sprint.{% else %}Brak zadań do zaplanowania w tym sprincie.{% endif %}</div>
             {% endfor %}
+            {% if can_edit %}<a href="{{ sprint.create_item_url }}" class="work-backlog-create tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie w sprincie</a>{% endif %}
         </div>
     </section>
     {% endif %}
     {% endfor %}
     {% endif %}
     <section class="tasks-issue-group tasks-status-block work-backlog-group" data-work-backlog-group data-sprint-id="" data-group-label="Backlog">
-        {% include 'tasks/includes/issue_group_header.html' with label='Backlog' icon='layers' count=backlog_items|length only %}
+        {% include 'tasks/includes/issue_group_header.html' with label='Backlog' icon='layers' count=backlog_items|length details_template='spaces/backlog_header_details.html' %}
         <div class="tasks-issue-list work-backlog-items">
             {% for item in backlog_items %}
             {% include 'spaces/row.html' %}
             {% empty %}
-            <div class="tasks-empty-section" role="status">{% if query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Nie znaleziono zadań do zaplanowania. Zmień lub wyczyść filtry.{% else %}Brak zadań do zaplanowania.{% endif %}</div>
+            <div class="tasks-empty-section" role="status">{% if backlog_totals.total %}Zadania backlogu znajdują się na innej stronie wyników.{% elif query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Nie znaleziono zadań do zaplanowania. <a href="{{ space_url }}?view=backlog">Wyczyść filtry</a>.{% else %}Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.{% endif %}</div>
             {% endfor %}
+            {% if can_edit %}<a href="{{ backlog_create_url }}" class="work-backlog-create tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie w backlogu</a>{% endif %}
         </div>
     </section>
 </div>

@@ -1,5 +1,58 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Planowanie Backlogu (13.10.2026)
+
+`spaces.test_backlog_planning` sprawdza zbiorcze przeniesienia, zachowanie
+kolejności/statusów/zakończenia/autora, snapshot położenia, atomowy rollback,
+zadania ukryte i tylko do odczytu, cofnięcie członkostwa, obcy sprint/Workspace,
+bieżącą stronę, CSRF, Kanban, zwykłe/scoped adresy, pełne agregacje po filtrach,
+zero i brak estymacji, tworzenie w sekcji, edycję i cykl sprintu oraz przydział
+kolejności nowych zadań po planowaniu. Sprawdzaj razem z
+`spaces.test_backlog_drag`, `spaces.test_backlog_ordering` i całym `spaces`.
+Powiązane aktywne moduły: `dashboard.test_overview`, `dashboard.test_for_you`
+i `planner.test_task_calendar`. Nie ma nowych migracji ani zależności.
+
+Weryfikacja: przeszło 196 testów Przestrzeni i 43 testy wskazanych aktywnych
+modułów. Szersza próba wykazała 4 nieudane asercje `core.test_status_updates`
+oraz 8 nieudanych asercji i 4 błędy `dashboard.test_search_regressions` dotyczące
+historycznych Tasks. Te same błędy odtworzono w osobnej kopii niezmienionego
+HEAD; nie przywracano wycofanych endpointów. Kontrole Django, składni JS,
+stanu migracji, indeksu i `git diff --check` przeszły.
+
+Playwright/Chrome (plugin Browser niedostępny) na osobnej bazie QA sprawdził
+zaznaczanie sekcji/strony i stan częściowy, rzeczywisty dropdown, przeniesienie
+zbiorcze i trwałość po reload, tworzenie zadania w sprincie z punktami, edycję
+celu, zamknięcie z przeniesieniem do następnego sprintu, błąd dat i rozpoczęcie,
+przeciąganie, listę referencyjną, częściową nawigację i ponowne wejście,
+puste/odfiltrowane wyniki, przeniesienie na tablicę Kanbana oraz obserwatora.
+Widoki sprawdzono przy 1440×1000, 1920×1000, 1024×1000 i świeżym wejściu
+390×844, także modal/Escape i kompaktowy pasek operacji. Nie było błędów
+aplikacji w konsoli; odpowiedź 400 przy błędnych datach była oczekiwana.
+Nie uruchamiano całego repozytorium ani Safari/Firefox. Tymczasowe dane QA
+nie należą do bazy użytkownika.
+
+Po usunięciu checkboxów nagłówków sprintów i Backlogu sprawdzono w Chrome
+1440×1000 i 390×844 brak tych kontrolek, zaznaczanie wierszy i całej strony,
+stan częściowy, zwijanie, listę referencyjną, ponowne wejście, reload i pusty
+backlog. Kontrole składni JS, Django, indeksu i `git diff --check` przeszły;
+konsola i aplikacja nie zgłaszały błędów. Nie powtarzano testów backendu
+dla tej korekty szablonów i obsługi zaznaczenia.
+
+Po przeniesieniu „Utwórz sprint” do nagłówka Backlogu sprawdzono w Chrome
+1440×1000 i 390×844 jego pojedyncze wystąpienie, położenie, zwiniętą sekcję,
+otwarcie formularza, walidację wymaganej nazwy i rzeczywiste utworzenie sprintu.
+Sprawdzono również pusty backlog, Escape, listę referencyjną, ponowne wejście,
+reload i brak przycisku dla obserwatora oraz Kanbana. Nie było błędów konsoli
+ani przepełnienia strony; Django, indeks i `git diff --check` przeszły.
+
+Po usunięciu nagłówka „Planowanie sprintów” i stałego paska wyboru sprawdzono
+w Chrome 1440×1000 i 390×844 brak nagłówka/górnego checkboxu oraz pustego
+odstępu. Pasek pojawia się po zaznaczeniu wiersza, aktualizuje licznik, znika
+po odznaczeniu, a „Odznacz” przywraca fokus do wiersza. Rzeczywiste przeniesienie
+zbiorcze, modal sprintu, lista referencyjna, ponowne wejście, reload, pusty wynik,
+Kanban i obserwator przeszły bez błędów konsoli. Kontrole Django, JS, indeksu
+i `git diff --check` przeszły; nie powtarzano pełnego zestawu backendu.
+
 ## Zarządzanie w Ustawieniach (13.10.2026)
 
 Zarządzanie Przestrzeniami, Pulpitami i Filtrami ma trzy osobne strony

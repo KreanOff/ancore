@@ -220,6 +220,17 @@ class SprintForm(StyledForm):
         return data
 
 
+class SprintCloseForm(StyledForm):
+    destination = forms.ModelChoiceField(label='Przenieś niezakończone zadania do', queryset=Sprint.objects.none(), required=False, empty_label='Backlog')
+    compact = True
+    submit_label = 'Zakończ sprint'
+
+    def __init__(self, *args, space, sprint, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['destination'].queryset = space.sprints.filter(state='planned').exclude(pk=sprint.pk)
+        self.fields['destination'].help_text = 'Zakończone zadania pozostaną w tym sprincie. Statusy zadań nie zmienią się.'
+
+
 class TeamForm(StyledForm):
     name = forms.CharField(label='Nazwa zespołu', max_length=120)
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))

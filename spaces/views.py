@@ -27,9 +27,9 @@ from .models import SpaceTask, SpaceMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import delete_avatar_after_commit
-from .backlog import move_backlog_item
+from .backlog import bulk_plan_items, move_backlog_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
-from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintForm, StatusForm, TypeForm
+from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manageable_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
@@ -56,6 +56,7 @@ def decorate_items(request, items):
         item.action_url = space_url(request, item.space, f'tasks/{item.key}/action/')
         if request.GET:
             item.action_url += '?' + request.GET.urlencode()
+            item.edit_url += '?' + request.GET.urlencode()
         item.editable = item.task_id in editable_ids and item.space_id is not None
         settings = item.space.configuration.settings if item.space_id else template_settings()
         item.status_label = next((s['label'] for s in settings['statuses'] if s['key'] == item.status), item.task.get_status_display())
@@ -170,6 +171,22 @@ def items_for_view(space, items, view, active_sprint=None):
     return items
 
 
+def backlog_url(request, space, suffix=''):
+    params = request.GET.copy()
+    params.pop('planning_sprint', None)
+    params['view'] = 'backlog'
+    return space_url(request, space, suffix + '?') + params.urlencode()
+
+
+def planning_totals(items):
+    totals = items.aggregate(total=Count('pk'), point_total=Sum('points', default=0),
+                           finished=Count('pk', filter=Q(task__status='closed')),
+                           finished_points=Sum('points', filter=Q(task__status='closed'), default=0),
+                           unestimated=Count('pk', filter=Q(points__isnull=True) & ~Q(task__status='closed')))
+    totals['points'] = totals.pop('point_total')
+    return totals
+
+
 def detail_context(request, space, view):
     allowed_views = {'overview', 'board', 'list', 'timeline', 'reports', 'tags', 'settings'}
     if space.template in {'kanban', 'scrum'}:
@@ -237,14 +254,32 @@ def detail_context(request, space, view):
     counts = dict(all_items.order_by().values_list('status').annotate(n=Count('pk')))
     column_counts = dict(items.order_by().values_list('status').annotate(n=Count('pk')))
     columns = [{**s, 'items': [i for i in rows if i.status == s['key']], 'count': column_counts.get(s['key'], 0)} for s in space.statuses]
-    sprints = list(space.sprints.all())
+    sprint_totals = {row['sprint_id']: row for row in all_items.order_by().values('sprint_id').annotate(
+        total=Count('pk'), point_total=Sum('points', default=0),
+        finished=Count('pk', filter=Q(task__status='closed')),
+        finished_points=Sum('points', filter=Q(task__status='closed'), default=0),
+        unestimated=Count('pk', filter=Q(points__isnull=True) & ~Q(task__status='closed')),
+    )}
+    for totals in sprint_totals.values():
+        totals['points'] = totals.pop('point_total')
+    sprints = list(space.sprints.exclude(state='closed') if view == 'backlog' else space.sprints.all())
+    sprints.sort(key=lambda sprint: (sprint.state != 'active', sprint.start_on, sprint.pk))
     for sprint in sprints:
-        sprint.action_url = base + f'sprints/{sprint.pk}/action/'
+        sprint.action_url = backlog_url(request, space, f'sprints/{sprint.pk}/action/')
+        sprint.edit_url = backlog_url(request, space, f'sprints/{sprint.pk}/edit/')
+        sprint.start_url = backlog_url(request, space, f'sprints/{sprint.pk}/start/')
+        sprint.complete_url = backlog_url(request, space, f'sprints/{sprint.pk}/complete/')
+        sprint.create_item_url = backlog_url(request, space, 'items/create/') + f'&planning_sprint={sprint.pk}'
         sprint.visible_items = [i for i in rows if i.sprint_id == sprint.pk]
-        sprint.visible_count = all_items.filter(sprint=sprint).count()
-        sprint.finished_count = all_items.filter(sprint=sprint, task__status='closed').count()
+        sprint.planning = sprint_totals.get(sprint.pk, {'total': 0, 'points': 0, 'finished': 0, 'finished_points': 0, 'unestimated': 0})
+        sprint.visible_count = sprint.planning['total']
+        sprint.finished_count = sprint.planning['finished']
+        sprint.open_count = sprint.visible_count - sprint.finished_count
+    backlog_context = {'backlog_totals': planning_totals(items.filter(sprint__isnull=True)),
+                       'bulk_plan_url': backlog_url(request, space, 'backlog/plan/'),
+                       'backlog_create_url': backlog_url(request, space, 'items/create/')} if view == 'backlog' else {}
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), **summary_filters, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': base + 'items/create/', 'sprint_create_url': base + 'sprints/create/', 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': space_teams, 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
+    return {**base_context(request), **summary_filters, **backlog_context, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': backlog_url(request, space, 'items/create/') if view == 'backlog' else base + 'items/create/', 'sprint_create_url': backlog_url(request, space, 'sprints/create/'), 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': space_teams, 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
 
 
 @login_required
@@ -300,7 +335,7 @@ def retired_all_items(request):
     return redirect(target)
 
 
-def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False):
+def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False, background_space=None):
     if saved:
         if request.headers.get('X-Work-Modal') == 'true':
             return JsonResponse({'saved': True, 'url': return_url})
@@ -314,6 +349,10 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
         context.update(index_context(request, management=management))
         modal['directory_url'] = return_url
         return render(request, 'spaces/manage.html' if management else 'spaces/index.html', context, status=status)
+    if background_space:
+        context.update(detail_context(request, background_space, 'backlog'))
+        modal['directory_url'] = return_url
+        return render(request, 'spaces/detail.html', context, status=status)
     return render(request, 'spaces/form_page.html', context, status=status)
 
 
@@ -448,7 +487,18 @@ def item_edit(request, pk=None, space_pk=None, key=None):
     elif not editable_to(Space.objects.filter(pk=space.pk), request.user).exists():
         raise PermissionDenied
     form = ItemForm(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
-    url = task_url(request, item.task) if key else space_url(request, space, '?view=list')
+    in_planning = request.GET.get('view') == 'backlog' and space.template in {'scrum', 'kanban'}
+    if not item and in_planning:
+        form.initial['in_backlog'] = True
+        if request.GET.get('planning_sprint'):
+            if space.template != 'scrum':
+                raise Http404
+            sprint_id = request.GET['planning_sprint']
+            if not sprint_id.isascii() or not sprint_id.isdecimal() or len(sprint_id) > 18:
+                raise Http404
+            sprint = get_object_or_404(space.sprints.filter(state__in=['planned', 'active']), pk=int(sprint_id))
+            form.initial.update(sprint=sprint, in_backlog=False)
+    url = backlog_url(request, space) if in_planning else task_url(request, item.task) if key else space_url(request, space, '?view=list')
     if request.method == 'POST':
         with transaction.atomic():
             if request.workplace:
@@ -462,7 +512,7 @@ def item_edit(request, pk=None, space_pk=None, key=None):
             space = space_object(request, space.pk)
             form = ItemForm(request.POST, request=request, space=space, item=item)
             if not form.is_valid():
-                return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url)
+                return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, background_space=space if in_planning else None)
             data = form.cleaned_data
             task = SpaceTask.objects.select_for_update().get(pk=item.task_id) if item else SpaceTask(space=space, created_by=request.user, visibility='public')
             for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
@@ -484,7 +534,29 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 }]} if old_type != item.work_type else {}
                 record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni', metadata)
         return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url)
+    return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, background_space=space if in_planning else None)
+
+
+@login_required
+@require_POST
+def backlog_plan(request, pk):
+    space = space_object(request, pk)
+    try:
+        with transaction.atomic():
+            if request.workplace:
+                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            Space.objects.select_for_update().get(pk=space.pk)
+            space = space_object(request, space.pk)
+            scope, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
+            changed = bulk_plan_items(request, space, items_for_view(space, scope, 'backlog'))
+    except ValidationError as error:
+        if request.headers.get('X-Work-Action') == 'true':
+            return JsonResponse({'error': ' '.join(error.messages)}, status=400)
+        messages.error(request, ' '.join(error.messages))
+        return redirect(backlog_url(request, space))
+    if request.headers.get('X-Work-Action') == 'true':
+        return JsonResponse({'saved': True, 'changed': changed, 'url': backlog_url(request, space)})
+    return redirect(backlog_url(request, space))
 
 
 @login_required
@@ -557,12 +629,72 @@ def sprint_create(request, pk):
     space = space_object(request, pk)
     if space.template != 'scrum' or not manage_space(request, space):
         raise PermissionDenied
-    form = SprintForm(request.POST if request.method == 'POST' else None)
-    url = space_url(request, space, '?view=backlog')
+    today = timezone.localdate()
+    last_end = space.sprints.exclude(state='closed').aggregate(value=Max('end_on'))['value']
+    start = max(today, last_end + timedelta(days=1)) if last_end else today
+    form = SprintForm(request.POST if request.method == 'POST' else None, initial={
+        'name': f'Sprint {space.sprints.count() + 1}', 'start_on': start, 'end_on': start + timedelta(days=13),
+    })
+    url = backlog_url(request, space)
     if request.method == 'POST' and form.is_valid():
-        Sprint.objects.create(space=space, **form.cleaned_data)
+        with transaction.atomic():
+            if request.workplace:
+                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            space = space_object(request, space.pk)
+            if not manage_space(request, space):
+                raise PermissionDenied
+            Sprint.objects.create(space=space, **form.cleaned_data)
         return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Utwórz sprint', url)
+    form.submit_label = 'Utwórz sprint'
+    return dialog_response(request, form, 'Utwórz sprint', url, background_space=space)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def sprint_plan(request, pk, sprint_pk, operation='edit'):
+    space = space_object(request, pk)
+    if space.template != 'scrum' or not manage_space(request, space):
+        raise PermissionDenied
+    sprint = get_object_or_404(space.sprints.exclude(state='closed'), pk=sprint_pk)
+    title = {'edit': 'Edytuj sprint', 'start': 'Rozpocznij sprint', 'complete': 'Zakończ sprint'}[operation]
+    def build_form(current):
+        data = request.POST if request.method == 'POST' else None
+        if operation == 'complete':
+            form = SprintCloseForm(data, space=space, sprint=current)
+        else:
+            form = SprintForm(data, initial={name: getattr(current, name) for name in ('name', 'goal', 'start_on', 'end_on')})
+            form.submit_label = 'Rozpocznij sprint' if operation == 'start' else 'Zapisz'
+        form.planning_summary = planning_totals(visible_items(request).filter(space=space, sprint=current))
+        form.sprint_name = current.name
+        return form
+    form = build_form(sprint)
+    url = backlog_url(request, space)
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                if request.workplace:
+                    Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+                Space.objects.select_for_update().get(pk=space.pk)
+                space = space_object(request, space.pk)
+                if not manage_space(request, space):
+                    raise PermissionDenied
+                sprint = get_object_or_404(space.sprints.select_for_update(), pk=sprint.pk)
+                form = build_form(sprint)
+                if sprint.state == 'closed':
+                    raise ValidationError('Sprint został już zakończony. Odśwież backlog.')
+                if form.is_valid():
+                    if operation == 'complete':
+                        update_sprint(request, sprint, 'close', form.cleaned_data['destination'])
+                    else:
+                        for name, value in form.cleaned_data.items():
+                            setattr(sprint, name, value)
+                        sprint.save()
+                        if operation == 'start':
+                            update_sprint(request, sprint, 'start')
+                    return dialog_response(request, form, '', url, saved=True)
+        except ValidationError as error:
+            form.add_error(None, error)
+    return dialog_response(request, form, title, url, background_space=space)
 
 
 @login_required
@@ -574,7 +706,7 @@ def sprint_action(request, pk, sprint_pk):
         update_sprint(request, sprint, request.POST.get('action'))
     except ValidationError as error:
         messages.error(request, ' '.join(error.messages))
-    return redirect(space_url(request, space, '?view=backlog'))
+    return redirect(backlog_url(request, space))
 
 
 @login_required

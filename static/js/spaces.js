@@ -337,6 +337,40 @@
         page.addEventListener('dragend', () => { dragged = null; page.querySelectorAll('.is-drag-over').forEach(column => column.classList.remove('is-drag-over')); }, { signal });
         const backlog = page.querySelector('[data-work-backlog]');
         if (backlog) {
+            const bulk = page.querySelector('[data-backlog-bulk]');
+            const boxes = () => [...backlog.querySelectorAll('[data-work-backlog-row] > .tasks-row-checkbox:not(:disabled)')];
+            const selected = () => boxes().filter(box => box.checked);
+            function syncSelection() {
+                const checked = selected();
+                if (bulk) {
+                    const wasHidden = bulk.hidden;
+                    bulk.hidden = !checked.length;
+                    bulk.querySelector('[data-backlog-selection-count]').textContent = checked.length ? `Zaznaczono: ${checked.length}` : '';
+                    if (wasHidden && checked.length) window.AncoreCustomSelect?.refresh(bulk);
+                }
+            }
+            backlog.addEventListener('change', syncSelection, { signal });
+            bulk?.querySelector('[data-backlog-clear-selection]').addEventListener('click', () => {
+                const focus = selected()[0] || boxes()[0];
+                boxes().forEach(box => { box.checked = false; });
+                syncSelection(); focus?.focus();
+            }, { signal });
+            bulk?.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (pending || !selected().length) return;
+                const body = new FormData(bulk), positions = {};
+                selected().forEach(box => {
+                    const row = box.closest('[data-work-backlog-row]');
+                    body.append('item_ids', row.dataset.itemId);
+                    positions[row.dataset.itemId] = [row.dataset.sprintId ? Number(row.dataset.sprintId) : null, Number(row.dataset.rank)];
+                });
+                body.set('positions', JSON.stringify(positions));
+                bulk.setAttribute('aria-busy', 'true');
+                const saved = await action(bulk.getAttribute('action'), body);
+                if (!signal.aborted) bulk.removeAttribute('aria-busy');
+                if (saved) window.showNotification?.('Zapisano planowanie zaznaczonych zadań.', 'success');
+            }, { signal });
+            syncSelection();
             let draggedRow, dropPosition, pointer, scrollFrame, pointerPoint;
             const content = backlog.closest('.work-content');
             const status = message => {

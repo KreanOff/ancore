@@ -219,6 +219,48 @@ i stronę. Osobny ekran Wszystkich zadań i skrót `tasks-all` są wycofane.
 
 ## Dostępne funkcje
 
+### Planowanie w Backlogu
+
+Backlog Scrum pokazuje aktywny sprint jako pierwszy, następnie sprinty planowane
+i kolejkę bez sprintu. Wiersze mają estymację (zero jest wartością, „—” oznacza
+brak estymacji) oraz wykonawcę. Nagłówki pokazują punkty, brakujące estymacje
+i postęp ukończenia. Agregacje obejmują wszystkie dostępne zadania po filtrach,
+również poza stroną; licznik wierszy dotyczy bieżącej strony, a różnica jest
+opisana jako „Na stronie”. Zakończone zadania nie należą do kolejki planowania.
+
+Checkboxy wierszy zaznaczają wyłącznie zadania bieżącej strony,
+do których użytkownik ma prawo edycji. Nie ma górnego checkboxu ani nagłówka
+„Planowanie sprintów”; pasek operacji pojawia się po zaznaczeniu zadania
+i znika po odznaczeniu ostatniego. „Przenieś zaznaczone” przenosi od 1 do
+100 zadań do otwartego sprintu lub backlogu, w dotychczasowej kolejności,
+na koniec grupy docelowej. Kanban pozwala przenieść zaznaczenie na tablicę.
+`backlog/plan/` sprawdza pełne zaznaczenie, filtry, stronę, ACL i zapamiętane
+położenia przed zapisem. Konflikt lub brak prawa do jednego zadania wycofuje
+całą operację. Pozostałe zadania zachowują kolejność; statusy i daty zakończenia
+nie zmieniają się, a historia wskazuje faktycznego autora.
+Nagłówki sprintów i sekcji Backlog nie zawierają checkboxów.
+Nowy `WorkItem` otrzymuje kolejność po najwyższym aktualnym numerze, niezależnie
+od trwałego klucza zadania; tworzenie nie koliduje z pozycjami zmienionymi w planowaniu.
+
+Każda sekcja pozwala utworzyć zadanie z domyślnym miejscem planowania.
+Tworzenie i edycja zachowują filtry oraz wracają do backlogu. Sprint można
+edytować, rozpocząć po dodaniu zadań oraz zakończyć przez wspólne okno aplikacji.
+Przycisk „Utwórz sprint” znajduje się w nagłówku sekcji Backlog, również
+przy zwiniętej liście, z dotychczasową kontrolą uprawnień zarządzania Scrum.
+Nowy sprint otrzymuje propozycję nazwy i dwutygodniowych dat po ostatnim
+otwartym sprincie. Zakończenie pokazuje podsumowanie dostępnej pracy i pozwala
+przenieść niedokończone zadania do backlogu lub kolejnego sprintu planowanego.
+Zakończone zadania pozostają w starym sprincie. `Sprint.result` zachowuje
+podsumowanie punktów i przeniesień, bez zmiany statusów zadań.
+
+Zarządzanie sprintami wymaga `manage_space`; przenoszenie zadań wymaga ich
+indywidualnego prawa edycji. Obserwator widzi dane bez kontrolek zapisu.
+Zakończenie sprintu z zadaniem niedostępnym do edycji jest odrzucane atomowo.
+Endpointy planowania i formularze sprintów mają zwykłe, scoped oraz zachowane
+numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
+
+### Pozostałe funkcje
+
 - Katalog przestrzeni: lista w stylu projektów i grup, wyszukiwanie, rodzaj,
   ulubione, prywatne i paginacja. Kolumny pokazują klucz, nazwę, rodzaj,
   szablon, opis i liczbę dostępnych zadań.

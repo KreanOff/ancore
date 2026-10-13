@@ -19,6 +19,10 @@ Główne menu używa Przestrzeni, Wszystkich zadań i Zespołów. Starsze system
 projektów, grup, zadań, ulubionych projektów i szablonów są wycofane.
 Nowy przepływ pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
 
+Backlog udostępnia indywidualne i zbiorcze planowanie, estymacje, wykonawców,
+tworzenie w sekcji, edycję sprintu oraz zamknięcie z przeniesieniem pracy
+do backlogu lub następnego sprintu. [Funkcje i zasady dostępu](SPACES.md#planowanie-w-backlogu).
+
 
 Ten dokument opisuje aktywny kod lokalny. Szczegółowe modele, relacje,
 formularze, endpointy i szablony są w [indeksie kodu](CODE_INDEX.md).
