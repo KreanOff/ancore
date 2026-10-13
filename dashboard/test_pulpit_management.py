@@ -43,11 +43,18 @@ class PulpitManagementTests(TestCase):
             self.assertTrue(response.context['pulpits_management_mode'])
             self.assertContains(response, 'data-sidebar-mode="pulpits-management"')
             self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
+            self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
             self.assertNotContains(response, 'data-sidebar-navigation="pulpits-management" hidden')
-            self.assertContains(response, 'Wróć do pulpitów')
+            menu = response.content.decode().split('data-sidebar-navigation="pulpits-management"', 1)[1].split('</nav>', 1)[0]
+            self.assertIn('Zarządzanie pulpitami', menu)
+            self.assertIn('aria-current="page" aria-label="Pulpity"', menu)
+            for label in ['Ogólne', 'Konto i dostęp', 'Workspace', 'Przestrzenie', 'Filtry']:
+                self.assertNotIn(label, menu)
+            self.assertEqual(menu.count('<a '), 2)
+            self.assertContains(response, 'Wróć do ustawień')
         response = self.client.get(scoped_workplace_app_path(self.workspace, 'dashboards'))
         self.assertFalse(response.context['pulpits_management_mode'])
-        self.assertContains(response, 'data-sidebar-navigation="pulpits-management" hidden')
+        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
         self.assertContains(response, self.url())
 
     def test_only_editable_dashboards_in_current_scope_are_managed(self):

@@ -203,8 +203,9 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   go w osobistych gwiazdkach i ostatnich. Jest widoczny w katalogu i zarządzaniu;
   ma te same ustawienia i dostępy, ale nie można usunąć jego rekordu.
   `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
-  własnymi pulpitami, ze wspólną listą katalogu Pulpitów i trybem bocznego menu
-  `pulpits-management`. Nazwa pulpitu otwiera jego edytor z odrębnym menu
+  własnymi pulpitami, ze wspólną listą katalogu Pulpitów i wewnętrznym trybem
+  `pulpits-management`, wyświetlającym własne minimalne menu zarządzania.
+  Nazwa pulpitu otwiera jego edytor z odrębnym menu
   `pulpit-editor`: „Gadżety i układ”, „Dostępy” i „Ustawienia”.
   `Dashboard.slug` jest nazwą w formie URL, przydzielaną w obrębie Workspace
   przy tworzeniu (istniejącym rekordom przez `dashboard.0012_dashboard_slugs`).
@@ -236,7 +237,8 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   `w_` + 26 małych liter/cyfr, niezależnego od dowolnej, powtarzalnej nazwy.
   Stare segmenty zachowuje `Workplace.legacy_slug`; middleware obsługuje je
   z dotychczasowymi kontrolami członkostwa i kieruje GET/HEAD na aktualny adres.
-  „Zarządzaj przestrzeniami” ma odrębne menu dotyczące przestrzeni. Okna zarządzania i błędy
+  Katalogi zarządzania przestrzeniami, pulpitami i filtrami mają osobne
+  minimalne menu, jak katalog Workspace: powrót do Ustawień i własną pozycję. Okna zarządzania i błędy
   formularzy pozostają nad tym katalogiem, bez zmiany aktywnego Workspace.
 - Moduły mają adresy bazowe `/tasks/`, `/kanban/`, `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
@@ -245,7 +247,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 - `/spaces/` jest katalogiem do pracy, a `/spaces/manage/` osobnym ekranem
   zarządzania widocznymi przestrzeniami zgodnie z rolami. Oba mają scoped
   odpowiedniki i korzystają z tych samych modeli. Ekran zarządzania przełącza
-  główny pasek boczny na nawigację administracyjną; [szczegóły](SPACES.md).
+  główny pasek boczny na własne minimalne menu zarządzania; [szczegóły](SPACES.md).
   Poszczególne przestrzenie używają `/space/<slug>/` i scoped odpowiednika.
   Segment z nazwy przydzielany jest raz w obrębie Workspace; późniejsza edycja
   nazwy zachowuje adres. Stare `/spaces/<pk>/` przekierowuje po kontroli dostępu.

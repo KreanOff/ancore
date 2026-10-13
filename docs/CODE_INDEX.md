@@ -17,13 +17,13 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [ancore](../ancore) | 5 | 0 | 0 | 0 |
-| [core](../core) | 21 | 0 | 21 | 55 |
+| [core](../core) | 21 | 0 | 20 | 55 |
 | [accounts](../accounts) | 20 | 7 | 9 | 56 |
 | [workplaces](../workplaces) | 22 | 10 | 13 | 116 |
 | [tasks](../tasks) | 42 | 66 | 46 | 332 |
 | [kanban](../kanban) | 18 | 39 | 10 | 9 |
 | [contacts](../contacts) | 10 | 8 | 11 | 6 |
-| [dashboard](../dashboard) | 41 | 14 | 41 | 234 |
+| [dashboard](../dashboard) | 41 | 14 | 43 | 237 |
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
@@ -1460,7 +1460,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [dashboard/filter_forms.py](../dashboard/filter_forms.py) — `BasicTaskSearchForm`, `SavedTaskFilterForm`
 - [dashboard/filter_search.py](../dashboard/filter_search.py) — `QueryError`, `quote`, `SearchQuery`, `Parser`, `parse_query`, `date_value`, `Compiler`, `apply_query`, `basic_query`
 - [dashboard/filter_urls.py](../dashboard/filter_urls.py)
-- [dashboard/filter_views.py](../dashboard/filter_views.py) — `get_filter`, `catalog_context`, `search_context`, `index`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
+- [dashboard/filter_views.py](../dashboard/filter_views.py) — `get_filter`, `catalog_context`, `search_context`, `index`, `manage`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
 - [dashboard/filters.py](../dashboard/filters.py) — `filter_url`, `visible_filters`, `decorate_filter`, `sidebar_filters`
 - [dashboard/for_you.py](../dashboard/for_you.py) — `for_you_context`
 - [dashboard/identifiers.py](../dashboard/identifiers.py) — `DashboardSlugConverter`, `unique_dashboard_slug`
@@ -1559,16 +1559,15 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [core/templates/core/includes/bootstrap.html](../core/templates/core/includes/bootstrap.html)
 - [core/templates/core/includes/content_skeleton.html](../core/templates/core/includes/content_skeleton.html)
 - [core/templates/core/includes/icon_credit.html](../core/templates/core/includes/icon_credit.html)
+- [core/templates/core/includes/management_sidebar.html](../core/templates/core/includes/management_sidebar.html)
 - [core/templates/core/includes/photo_crop_dialog.html](../core/templates/core/includes/photo_crop_dialog.html)
 - [core/templates/core/includes/priority_icon.html](../core/templates/core/includes/priority_icon.html)
 - [core/templates/core/includes/pulpit_editor_sidebar.html](../core/templates/core/includes/pulpit_editor_sidebar.html)
-- [core/templates/core/includes/pulpit_management_sidebar.html](../core/templates/core/includes/pulpit_management_sidebar.html)
 - [core/templates/core/includes/select_priority.html](../core/templates/core/includes/select_priority.html)
 - [core/templates/core/includes/select_status.html](../core/templates/core/includes/select_status.html)
 - [core/templates/core/includes/settings_secondary_menu.html](../core/templates/core/includes/settings_secondary_menu.html)
 - [core/templates/core/includes/settings_sidebar.html](../core/templates/core/includes/settings_sidebar.html)
 - [core/templates/core/includes/sidebar_picker.html](../core/templates/core/includes/sidebar_picker.html)
-- [core/templates/core/includes/space_management_sidebar.html](../core/templates/core/includes/space_management_sidebar.html)
 - [core/templates/core/includes/trash_icon.html](../core/templates/core/includes/trash_icon.html)
 - [core/templates/core/includes/workplace_management_sidebar.html](../core/templates/core/includes/workplace_management_sidebar.html)
 - [core/templates/core/widgets/visual_select.html](../core/templates/core/widgets/visual_select.html)
@@ -1680,9 +1679,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### dashboard
 
 - [dashboard/templates/dashboard/filters/base.html](../dashboard/templates/dashboard/filters/base.html)
+- [dashboard/templates/dashboard/filters/directory.html](../dashboard/templates/dashboard/filters/directory.html)
 - [dashboard/templates/dashboard/filters/favorite.html](../dashboard/templates/dashboard/filters/favorite.html)
 - [dashboard/templates/dashboard/filters/form.html](../dashboard/templates/dashboard/filters/form.html)
 - [dashboard/templates/dashboard/filters/index.html](../dashboard/templates/dashboard/filters/index.html)
+- [dashboard/templates/dashboard/filters/manage.html](../dashboard/templates/dashboard/filters/manage.html)
 - [dashboard/templates/dashboard/filters/results.html](../dashboard/templates/dashboard/filters/results.html)
 - [dashboard/templates/dashboard/filters/row_actions.html](../dashboard/templates/dashboard/filters/row_actions.html)
 - [dashboard/templates/dashboard/filters/search.html](../dashboard/templates/dashboard/filters/search.html)
@@ -2204,7 +2205,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [dashboard/test_filters.py](../dashboard/test_filters.py).
 
-- `TaskFilterTests`: 22 metod testowych.
+- `TaskFilterTests`: 25 metod testowych.
 
 ### dashboard/test_for_you.py
 

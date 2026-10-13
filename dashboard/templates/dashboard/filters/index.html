@@ -17,33 +17,4 @@
 </form>
 {% endblock %}
 {% block work_content_class %} work-content--directory{% endblock %}
-{% block work_content %}
-<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet task-filter-directory">
-    {% if filters %}
-    <section class="tasks-directory-group" role="table" aria-label="Lista filtrów">
-        <div class="tasks-directory-header" role="row">
-            <span class="tasks-directory-sheet__cell" role="columnheader" data-column="select" aria-label="Ulubione"><i data-icon="star" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell" role="columnheader" data-column="menu" aria-label="Działania"><span class="u-sr-only">Działania</span></span>
-            <span class="tasks-directory-sheet__cell" role="columnheader" data-column="name">FILTR<i data-icon="filter" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell" role="columnheader" data-column="leader">TWÓRCA<i data-icon="user-round" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell" role="columnheader" data-column="visibility">WIDOCZNOŚĆ<i data-icon="lock" aria-hidden="true"></i></span>
-            <span class="tasks-directory-sheet__cell" role="columnheader" data-column="description">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
-        </div>
-        <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
-            {% for item in filters %}
-            <article class="tasks-issue-row tasks-directory-row" role="row">
-                <span class="tasks-directory-sheet__cell" role="cell" data-column="select">{% include 'dashboard/filters/favorite.html' %}</span>
-                {% include 'tasks/includes/directory_row_menu.html' with kind='filter' item_id=item.pk item_name=item.name actions_template='dashboard/filters/row_actions.html' cell_role='cell' directory=True %}
-                <span class="tasks-directory-sheet__cell tasks-directory-name" role="cell" data-column="name"><a href="{{ item.url }}" title="{{ item.name }}">{{ item.name }}</a></span>
-                <span class="tasks-directory-sheet__cell" role="cell" data-column="leader">{{ item.created_by.get_full_name|default:item.created_by.email }}</span>
-                <span class="tasks-directory-sheet__cell" role="cell" data-column="visibility">{{ item.get_visibility_display }}</span>
-                <span class="tasks-directory-sheet__cell tasks-project-sheet__description" role="cell" data-column="description" title="{{ item.description }}">{{ item.description|default:'Brak opisu' }}</span>
-            </article>
-            {% endfor %}
-        </div>
-    </section>
-    {% else %}
-    <div class="tasks-empty-state tasks-empty-state--centered" role="status"><span class="tasks-empty-state__icon"><i data-icon="filter" aria-hidden="true"></i></span><div class="tasks-empty-state__copy"><h2>{% if query %}Brak pasujących filtrów{% else %}Brak filtrów{% endif %}</h2><p>{% if query %}Zmień wyszukiwanie lub wyczyść jego warunki.{% elif tab == 'favorites' %}Oznacz filtr gwiazdką, aby mieć go pod ręką.{% elif tab == 'shared' %}Filtry udostępnione przez inne osoby pojawią się tutaj.{% else %}Zapisz wyszukiwanie, aby wracać do aktualnych wyników.{% endif %}</p><a href="{{ search_url }}" class="tasks-filter-button">Wyszukaj zadania</a>{% if tab == 'favorites' %}<a href="{{ filters_url }}?tab=all" class="tasks-filter-button">Przeglądaj filtry</a>{% endif %}</div></div>
-    {% endif %}
-</div>
-{% endblock %}
+{% block work_content %}{% include 'dashboard/filters/directory.html' %}{% endblock %}

@@ -1,0 +1,11 @@
+<nav class="sidebar-navigation" aria-label="{{ section_title }}" data-sidebar-navigation="{{ mode }}"{% if sidebar_mode != mode %} hidden{% endif %}>
+    <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-management-title-{{ mode }}">
+        <h2 class="sidebar-menu-section-title" id="sidebar-management-title-{{ mode }}">{{ section_title }}</h2>
+        <a href="{% url 'settings' %}#workspace" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" aria-label="Wróć do ustawień" title="Wróć do ustawień">
+            <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i><span class="nav-label">Wróć do ustawień</span>
+        </a>
+        <a href="{{ catalog_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone active" aria-current="page" aria-label="{{ label }}" title="{{ label }}">
+            <i class="nav-icon" data-icon="{{ icon }}" aria-hidden="true"></i><span class="nav-label">{{ label }}</span>
+        </a>
+    </section>
+</nav>

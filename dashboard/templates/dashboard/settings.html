@@ -33,7 +33,7 @@
                     </div>
                 </section>
                 <section class="settings-group" id="workspace" data-settings-group="workspace" aria-labelledby="settings-workspace-title">
-                    <header class="settings-group-heading"><h2 id="settings-workspace-title">Workspace</h2><p>Organizacja pracy i ustawienia projektów.</p></header>
+                    <header class="settings-group-heading"><h2 id="settings-workspace-title">Workspace</h2><p>Organizacja pracy, przestrzenie, pulpity i filtry.</p></header>
                     <div class="settings-rows">
                         <a href="{% url 'workplaces:workplaces' %}" class="settings-row settings-row--link" data-settings-row>
                             <span class="settings-row-icon" aria-hidden="true"><i data-icon="folder"></i></span>
@@ -45,6 +45,12 @@
                         {% firstof workplace_app_urls.spaces|add:'manage/' spaces_manage_fallback_url as spaces_manage_url %}
                         {% include 'dashboard/includes/settings_row.html' with href=spaces_manage_url icon='layers' title='Zarządzaj przestrzeniami' description='Ustawienia, konfiguracje i dostęp do przestrzeni w bieżącym Workspace.' only %}
                         {% endif %}
+                        {% url 'pulpits:manage' as pulpits_manage_fallback_url %}
+                        {% firstof workplace_app_urls.dashboards|add:'manage/' pulpits_manage_fallback_url as pulpits_manage_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=pulpits_manage_url icon='layout-dashboard' title='Zarządzaj pulpitami' description='Własne pulpity, ich konfiguracja i dostęp w bieżącym Workspace.' only %}
+                        {% url 'filters:manage' as filters_manage_fallback_url %}
+                        {% firstof workplace_app_urls.filters|add:'manage/' filters_manage_fallback_url as filters_manage_url %}
+                        {% include 'dashboard/includes/settings_row.html' with href=filters_manage_url icon='filter' title='Zarządzaj filtrami' description='Własne zapisane filtry i ich udostępnianie w bieżącym Workspace.' only %}
                         {% if request.user.is_staff %}
                             {% url 'admin:index' as admin_url %}
                             {% include 'dashboard/includes/settings_row.html' with href=admin_url icon='shield-check' title='Panel administracyjny' description='Zarządzaj systemem i dostępem użytkowników.' only %}

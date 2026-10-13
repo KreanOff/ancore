@@ -82,6 +82,7 @@
             event.preventDefault();
             if (pending) return;
             const body = new FormData(form);
+            body.set('return_to', host.dataset.filterReturnUrl);
             const controls = [...form.querySelectorAll('button, input, select, textarea')].map(control => [control, control.disabled]);
             pending = true;
             controls.forEach(([control]) => { control.disabled = true; });
@@ -166,6 +167,6 @@
         if (modal()) display(host.innerHTML);
     }
     document.addEventListener('ancore:content-loaded', init);
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+    if (!window.AncoreTaskModals) document.addEventListener('DOMContentLoaded', init, { once: true });
     else init();
 })();

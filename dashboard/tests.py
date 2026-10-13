@@ -40,6 +40,9 @@ class DashboardViewTests(TestCase):
         self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
         self.assertNotContains(response, 'data-sidebar-navigation="settings" hidden')
         self.assertNotContains(response, 'class="settings-navigation"')
+        menu = response.content.decode().split('data-sidebar-navigation="settings"', 1)[1].split('</nav>', 1)[0]
+        for label in ['Zarządzaj przestrzeniami', 'Zarządzaj pulpitami', 'Zarządzaj filtrami']:
+            self.assertNotIn(label, menu)
         self.assertContains(response, f'href="{reverse("settings")}#account"')
         self.assertContains(response, 'Ustawienia Ancore')
         self.assertNotContains(response, 'settings/project-fields/')

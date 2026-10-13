@@ -188,6 +188,7 @@ function initTasksPage() {
     const projectCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-project-id]');
     const spaceCheckboxes = document.querySelectorAll('.work-space-row .tasks-row-checkbox[data-space-id]');
     const pulpitCheckboxes = document.querySelectorAll('.pulpit-directory-row .tasks-row-checkbox[data-pulpit-id]');
+    const filterCheckboxes = document.querySelectorAll('[data-filter-directory-row] .tasks-row-checkbox');
     const tagCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-tag-id]');
     const contactCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-contact-id]');
     const companyCheckboxes = document.querySelectorAll('.tasks-row-checkbox[data-company-id]');
@@ -5045,7 +5046,7 @@ function initTasksPage() {
     }
 
     function checkboxRow(checkbox) {
-        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row, .contacts-directory-row, .work-space-row, .pulpit-directory-row');
+        return checkbox.closest('.task-row, .tasks-project-row, .tasks-section-row, .tasks-all-groups-row, .contacts-directory-row, .work-space-row, .pulpit-directory-row, [data-filter-directory-row]');
     }
 
     function taskCheckboxCanEdit(checkbox) {
@@ -5073,6 +5074,8 @@ function initTasksPage() {
             targetCheckboxes = Array.from(spaceCheckboxes);
         } else if (target === 'pulpits') {
             targetCheckboxes = Array.from(pulpitCheckboxes);
+        } else if (target === 'filters') {
+            targetCheckboxes = Array.from(filterCheckboxes);
         } else if (target === 'sections') {
             targetCheckboxes = Array.from(sectionCheckboxes);
         } else if (target === 'tags') {
@@ -5292,6 +5295,9 @@ function initTasksPage() {
         pulpitCheckboxes.forEach(cb => {
             cb.closest('.pulpit-directory-row')?.classList.toggle('checked', cb.checked);
         });
+        filterCheckboxes.forEach(cb => {
+            cb.closest('[data-filter-directory-row]')?.classList.toggle('checked', cb.checked);
+        });
 
         tagCheckboxes.forEach(cb => {
             cb.closest('.tasks-all-groups-row, .tasks-tag-sheet__row')?.classList.toggle('checked', cb.checked);
@@ -5353,6 +5359,12 @@ function initTasksPage() {
     });
 
     pulpitCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function(e) {
+            e.stopPropagation();
+            updateSelection();
+        }, pageListenerOptions);
+    });
+    filterCheckboxes.forEach(cb => {
         cb.addEventListener('change', function(e) {
             e.stopPropagation();
             updateSelection();
@@ -7609,6 +7621,7 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
+            if (document.querySelector('.task-filter-directory--management')) return 'task-filters-management';
             if (document.querySelector('.task-filter-directory')) return 'task-filters-directory';
             if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
             if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';

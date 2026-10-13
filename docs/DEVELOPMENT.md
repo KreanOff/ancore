@@ -1,5 +1,51 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Zarządzanie w Ustawieniach (13.10.2026)
+
+Zarządzanie Przestrzeniami, Pulpitami i Filtrami ma trzy osobne strony
+z własnymi minimalnymi paskami bocznymi, według wzorca katalogu Workspace.
+Filtry mają osobny katalog `/filters/manage/` oraz scoped
+odpowiednik, ograniczony do własnych definicji. Formularze i akcje zachowują
+kryteria listy; zmiana nie wymaga migracji.
+
+Boczne menu Ustawień zawiera tylko Ogólne, Konto i dostęp i Workspace.
+Trzy linki zarządzania pozostają w treści sekcji Workspace. Strony zarządzania
+pokazują tylko powrót do Ustawień oraz jedną aktywną pozycję własnego modułu.
+Po usunięciu duplikatów przeszły cztery istniejące testy
+Ustawień i katalogów zarządzania. Chrome przy 1440×1000 i 390×844 potwierdził
+brak tych pozycji w menu, działanie linków w treści, powroty, częściową nawigację,
+Wstecz/Dalej, reload i ekran referencyjny Przestrzeni, bez błędów konsoli.
+
+Końcowy zestaw 84 testów Filtrów, zarządzania Przestrzeniami/Pulpitami/Workspace,
+edytora Pulpitów, Ustawień i aktywności menu przeszedł. Po ostatniej poprawce
+powrotu z bezpośredniego modalu ponownie przeszły trzy testy nowego zarządzania
+Filtrami. Szerszy przebieg 87 testów
+miał 85 sukcesów i dwa wcześniejsze problemy powiadomień w `DashboardViewTests`.
+Oba odtworzono z identycznymi komunikatami na niezmienionym HEAD w osobnej
+bazie. Nie sprawdzano całego repozytorium.
+
+Playwright z Chrome na osobnej bazie QA pod `127.0.0.1:8015`, przy 1440×1000,
+1024×844 i 390×844, sprawdził Ustawienia → zarządzanie Filtrami → Przestrzenie
+→ Pulpity → powrót, aktywne menu, skrót pod trzema kropkami, nawigację częściową,
+Wstecz/Dalej, reload, paginację, zaznaczenie wszystkich/części wierszy,
+wyszukiwanie, filtr widoczności, gwiazdkę, pusty wynik/czyszczenie,
+modal tworzenia/edycji, także bezpośredni adres formularza, walidację HTTP 400,
+zapis z zachowaniem kryteriów,
+usuwanie, Escape/fokus oraz zwykłe/scoped adresy. Strona nie przepełniała się
+poziomo, a konsola nie zgłosiła nieoczekiwanych błędów ani ostrzeżeń.
+Tabela zarządzania Przestrzeniami była referencją powłoki, toolbaru i ikon.
+Plugin Browser był niedostępny. Nie sprawdzano Safari/Firefox.
+
+Wariant osobnych minimalnych menu: przeszło 81 testów Przestrzeni, Filtrów,
+zarządzania Pulpitami i ich edytora, zarządzania Workspace, Ustawień oraz menu.
+Chrome z Playwright na odrębnej bazie QA przy 1440×1000, 1024×844 i 390×844
+potwierdził dokładnie dwa linki każdego menu, brak kategorii Ustawień,
+identyczne wysokości/fonty jak w katalogu Workspace, modale/Escape, wejście
+z centrum Ustawień, powroty, częściową nawigację, Wstecz/Dalej, reload,
+zwykłe/scoped URL, pusty wynik, zwinięte menu oraz mobilne otwieranie/zamykanie.
+Konsola bez błędów i ostrzeżeń. Zmiana nie wymaga migracji. Nie ponawiano
+całego repozytorium ani sprawdzeń Safari/Firefox.
+
 ## Dolny pasek stron Przestrzeni (13.10.2026)
 
 Przeszło 80 testów `spaces.tests.SpaceTests`, `spaces.test_backlog_ordering`,

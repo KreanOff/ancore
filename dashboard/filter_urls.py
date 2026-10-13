@@ -4,6 +4,9 @@ from . import filter_views as views
 app_name = 'filters'
 urlpatterns = [
     path('', views.index, name='index'),
+    path('manage/', views.manage, name='manage'),
+    path('manage/new/', views.edit, {'management': True}, name='manage_create'),
+    path('manage/<int:pk>/edit/', views.edit, {'management': True}, name='manage_edit'),
     path('search/', views.search, name='search'),
     path('lookup/', views.lookup, name='lookup'),
     path('new/', views.edit, name='create'),

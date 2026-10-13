@@ -12,7 +12,7 @@
     const SIDEBAR_FAVORITES_STORAGE_KEY = 'ancoreSidebarFavoritesCollapsed';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
-    const MANAGEMENT_MODES = new Set(['workplaces', 'administration', 'pulpits-management', 'pulpit-editor']);
+    const MANAGEMENT_MODES = new Set(['workplaces', 'administration', 'pulpits-management', 'filters-management', 'pulpit-editor']);
     const RETURN_SCROLL_SELECTORS = ['.main-content', '.settings-scroll-area', '.work-content', '.tasks-table-wrap', '.tasks-board'];
 
     const sidebar = document.querySelector('.sidebar');
@@ -71,7 +71,7 @@
         // Scoped module URLs use the same views and shell as their base URLs.
         pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|space|teams|dashboards|filters)(\/|$))/, '/');
         const appShellPaths = [
-            /^\/filters\/(?:search\/|new\/|\d+\/(?:edit\/)?)?$/,
+            /^\/filters\/(?:search\/|new\/|\d+\/(?:edit\/)?|manage\/(?:new\/|\d+\/edit\/)?)?$/,
             /^\/(spaces|space|teams)(\/.*)?$/,
             /^\/for-you\/?$/,
             /^\/dashboards\/default\/$/,
@@ -135,9 +135,10 @@
         const url = getUrl(href);
         if (!url || url.origin !== window.location.origin) return '';
         if (/^\/workplaces\/?$/.test(url.pathname)) return 'workplaces';
-        const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards)\/)/, '/');
+        const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards|filters)\/)/, '/');
         if (/^\/dashboards\/(manage\/)?[-a-zA-Z0-9_]+\/(edit|access|gadgets)(\/|$)/.test(path)) return 'pulpit-editor';
         if (/^\/dashboards\/manage(\/|$)/.test(path)) return 'pulpits-management';
+        if (/^\/filters\/manage(\/|$)/.test(path)) return 'filters-management';
         return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
     }
 
@@ -350,6 +351,7 @@
             const navigation = link.closest('[data-sidebar-navigation]');
             const nextLink = nextLinks.find(candidate =>
                 candidate.getAttribute('href') === link.getAttribute('href')
+                && candidate.dataset.settingsCategory === link.dataset.settingsCategory
                 && (navigation
                     ? candidate.closest('[data-sidebar-navigation]')?.dataset.sidebarNavigation === navigation.dataset.sidebarNavigation
                     : candidate.closest('.app-topbar'))

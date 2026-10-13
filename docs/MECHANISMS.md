@@ -820,8 +820,10 @@ Przy nowym skrypcie zachowaj inicjalizację na pierwszym wejściu i po podmianie
 sprawdzanie istnienia elementu oraz sprzątanie/ochronę listenerów.
 Nie opieraj całej inicjalizacji wyłącznie na jednorazowym `DOMContentLoaded`.
 
-Linki `data-management-return` w menu zarządzania Workspace, przestrzeniami i pulpitami
-wracają do miejsca wejścia. `layout.js` zapisuje źródłowy URL z query/hash,
+Linki `data-management-return` w menu zarządzania Workspace i edytora pulpitu
+wracają do miejsca wejścia. Katalogi zarządzania przestrzeniami, pulpitami
+i filtrami pokazują osobne minimalne menu; ich stały powrót prowadzi do
+`/settings/#workspace`. `layout.js` zapisuje źródłowy URL z query/hash,
 etykietę i przewinięcie w `history.state.ancoreManagementReturn` oraz
 `sessionStorage`, w zakresie konta i aktywnego Workspace. Wewnętrzne przejścia,
 filtry i okna zarządzania nie nadpisują źródła; historia odtwarza kontekst
@@ -983,8 +985,10 @@ korzystają z tych samych operacji, z jawnym parametrem `management=True`.
 budując docelowy adres w aktywnym Workspace. Bezpośrednie wejście oraz błędy
 tworzenia renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
 Ostatnia zmiana pochodzi z `Dashboard.updated_at`, nie z aktywności zadań.
-Tryb `pulpits-management` korzysta ze wspólnego mechanizmu źródła powrotu;
-nie nadpisuje źródła podczas filtrowania, paginacji i pracy w modalu.
+Tryb `pulpits-management` wyświetla własny wariant `management_sidebar.html`.
+Katalog zarządzania zawsze odsyła do Ustawień (`#workspace`). Mechanizm
+źródła powrotu nadal obsługuje osobny edytor pulpitu, zachowując adres
+katalogu, filtry i przewinięcie.
 
 Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor`; wejście z nazwy
 w zarządzaniu otwiera gadżety. `editor_navigation_context` buduje jego trzy

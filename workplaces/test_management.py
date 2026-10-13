@@ -61,7 +61,7 @@ class WorkspaceManagementTests(TestCase):
         self.assertNotContains(response, 'data-workplace-main-action')
         self.assertNotContains(response, 'data-team-remove')
         self.assertNotContains(response, 'id="team-role-modal"')
-        self.assertContains(response, 'data-sidebar-navigation="administration" hidden')
+        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
         response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {'name': 'Nie wolno'})
         self.assertEqual(response.status_code, 403)
         self.selected.refresh_from_db()
@@ -170,7 +170,7 @@ class WorkspaceManagementTests(TestCase):
         response = self.client.get(reverse('workplaces:workplaces'))
         self.assertEqual(response.context['sidebar_mode'], 'workplaces')
         self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
-        self.assertContains(response, 'data-sidebar-navigation="administration" hidden')
+        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
         self.assertNotContains(response, 'data-sidebar-navigation="workplaces" hidden')
         menu = response.content.decode().split('data-sidebar-navigation="workplaces"', 1)[1].split('</nav>', 1)[0]
         self.assertNotIn('przestrzeni', menu)

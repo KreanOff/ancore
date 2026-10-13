@@ -39,8 +39,22 @@ zmienić również nazwę, opis i udostępnianie. „Wyczyść” zmienia bież�
 wyszukiwanie; definicja pozostaje zapisana do użycia „Zapisz”.
 Wyniki są odczytywane na nowo przy każdym otwarciu filtra.
 
-„Zarządzaj filtrami” zawiera zakładki Ulubione, Moje filtry, Udostępnione
+Katalog „Filtry” zawiera zakładki Ulubione, Moje filtry, Udostępnione
 i Wszystkie, wyszukiwanie nazw/opisów i paginację. Gwiazdka jest osobista.
+Osobny ekran „Zarządzaj filtrami” (`/filters/manage/` i scoped odpowiednik)
+należy do Ustawień Ancore, podobnie jak zarządzanie przestrzeniami i pulpitami.
+Pokazuje wyłącznie filtry twórcy w aktywnym Workspace. Używa wspólnej tabeli
+katalogu, bez zakładek: checkboxy bieżącej strony, menu działań po lewej,
+nazwa, twórca, widoczność i opis. Zaznaczenie nie uruchamia operacji zbiorczych.
+Filtry widoczności/gwiazdki są po lewej, wyszukiwarka po prawej, a paginacja
+na dole. Nazwa otwiera edycję w standardowym modalu; menu pozwala uruchomić
+filtr, zmienić gwiazdkę lub usunąć definicję. Tworzenie, walidacja, zapis,
+anulowanie i usuwanie zachowują katalog oraz jego kryteria. Sekcja Workspace
+w treści centrum Ustawień udostępnia wszystkie trzy strony zarządzania;
+każda ma własny minimalny pasek boczny, jak katalog Workspace. Dla Filtrów
+menu zawiera tylko „Wróć do ustawień” i aktywne „Filtry”, bez kategorii
+Ustawień oraz innych modułów.
+„Wróć do ustawień” prowadzi do kategorii Workspace.
 Menu boczne stosuje wzorzec Przestrzeni: nagłówek z plusem i menu trzech
 kropek, sekcje „Oznaczone gwiazdką” oraz „Ostatnie” i panel „Więcej filtrów”.
 Skróty mają wspólny limit sześciu pozycji; ulubione mają pierwszeństwo.
@@ -48,7 +62,8 @@ Ostatnie są układane według osobistych odwiedzin w aktywnym Workspace,
 następnie według daty utworzenia. Wiersze pozwalają zmienić gwiazdkę
 oraz otworzyć ustawienia własnego filtra. Operacja gwiazdki zachowuje
 bieżący ekran, także poza modułem Filtry. „Zarządzaj filtrami” znajduje
-się pod trzema kropkami, a „Więcej filtrów” korzysta ze wspólnego panelu
+się także pod trzema kropkami jako skrót do osobnej strony Ustawień,
+a „Więcej filtrów” korzysta ze wspólnego panelu
 wyszukiwania Przestrzeni i prowadzi do wszystkich dostępnych definicji.
 Usunięcie filtra usuwa jego definicję i ulubione, zachowując zadania.
 
@@ -126,6 +141,8 @@ subskrypcji e-mail, harmonogramu wykonywania ani filtrowania historycznych model
 Adresy zwykłe i scoped są równoważne:
 
 - /filters/ — katalog definicji;
+- /filters/manage/ — zarządzanie własnymi definicjami w Ustawieniach;
+- /filters/manage/new/, manage/<pk>/edit/ — modal tworzenia/edycji nad zarządzaniem;
 - /filters/search/ — niezapisane wyszukiwanie;
 - /filters/lookup/ — wyszukiwanie definicji dla panelu menu (JSON);
 - /filters/new/ — utworzenie;

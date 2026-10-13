@@ -1,0 +1,17 @@
+{% extends 'dashboard/filters/base.html' %}
+{% block work_title %}Zarządzaj filtrami{% endblock %}
+{% block work_page_class %}{{ block.super }} work-page--management{% endblock %}
+{% block work_heading %}<h1 class="tasks-topbar-title">Zarządzaj filtrami</h1>{% endblock %}
+{% block work_actions %}<a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-filter-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz filtr</a>{% endblock %}
+{% block work_toolbar %}
+<form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ management_url }}" data-filter-search>
+    <div class="tasks-filterbar-left">
+        <select name="visibility" class="tasks-inline-select" aria-label="Widoczność filtra"><option value="">Każda widoczność</option>{% for value, label in visibility_choices %}<option value="{{ value }}"{% if visibility_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <select name="favorite" class="tasks-inline-select" aria-label="Oznaczenie gwiazdką"><option value="">Wszystkie filtry</option><option value="starred"{% if favorite_filter == 'starred' %} selected{% endif %}>Oznaczone gwiazdką</option><option value="unstarred"{% if favorite_filter == 'unstarred' %} selected{% endif %}>Bez gwiazdki</option></select>
+        <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
+    </div>
+    <div class="tasks-filterbar-right"><label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj filtrów" aria-label="Szukaj filtrów"></label></div>
+</form>
+{% endblock %}
+{% block work_content_class %} work-content--directory{% endblock %}
+{% block work_content %}{% include 'dashboard/filters/directory.html' %}{% endblock %}

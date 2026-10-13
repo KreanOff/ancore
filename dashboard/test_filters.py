@@ -80,6 +80,90 @@ class TaskFilterTests(TestCase):
                 self.assertContains(response, 'Filtry')
         self.assertContains(self.client.get(self.url('search/')), 'Nieprzypisane')
 
+    def test_management_has_settings_navigation_and_only_own_filters(self):
+        shared = SavedTaskFilter.objects.create(owner=self.owner, workplace=self.workplace, created_by=self.member,
+                                               name='Filtr członka', visibility='workspace')
+        foreign = SavedTaskFilter.objects.create(owner=self.other, workplace=self.foreign, created_by=self.owner,
+                                                name='Filtr innego Workspace')
+        for prefix in ['/filters/', self.url()]:
+            response = self.client.get(prefix + 'manage/')
+            self.assertTemplateUsed(response, 'dashboard/filters/manage.html')
+            self.assertEqual([row.pk for row in response.context['filters']], [self.saved.pk])
+            self.assertTrue(response.context['settings_management_mode'])
+            self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
+            self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
+            self.assertNotContains(response, 'data-sidebar-navigation="filters-management" hidden')
+            menu = response.content.decode().split('data-sidebar-navigation="filters-management"', 1)[1].split('</nav>', 1)[0]
+            self.assertIn('Zarządzanie filtrami', menu)
+            self.assertIn('aria-current="page" aria-label="Filtry"', menu)
+            self.assertIn('Wróć do ustawień', menu)
+            for label in ['Ogólne', 'Konto i dostęp', 'Workspace', 'Przestrzenie', 'Pulpity']:
+                self.assertNotIn(label, menu)
+            self.assertEqual(menu.count('<a '), 2)
+            self.assertContains(response, 'data-select-all-target="filters"')
+            self.assertNotContains(response, 'aria-label="Katalog filtrów"')
+            self.assertContains(response, f'href="{self.url(f"manage/{self.saved.pk}/edit/")}" data-filter-open')
+            self.assertEqual(self.client.post(prefix + 'manage/').status_code, 405)
+            self.assertEqual(self.client.get(prefix + f'manage/{foreign.pk}/edit/').status_code, 404)
+            self.assertEqual(self.client.get(prefix + f'manage/{shared.pk}/edit/').status_code, 403)
+        settings = self.client.get('/settings/')
+        for app in ['spaces', 'dashboards', 'filters']:
+            self.assertContains(settings, f'href="{scoped_workplace_app_path(self.workplace, app, "manage/")}"')
+        self.login(self.member)
+        self.assertEqual([row.pk for row in self.client.get(self.url('manage/')).context['filters']], [shared.pk])
+        self.assertEqual(self.client.post(self.url(f'manage/{self.saved.pk}/edit/'), {}).status_code, 404)
+        self.assertContains(self.client.get(self.url() + '?tab=all'), 'Filtr członka')
+        self.client.logout()
+        self.assertEqual(self.client.get('/filters/manage/').status_code, 302)
+
+    def test_management_filters_pagination_and_invalid_values(self):
+        self.saved.favorited_by.add(self.owner)
+        for number in range(31):
+            SavedTaskFilter.objects.create(owner=self.owner, workplace=self.workplace, created_by=self.owner,
+                                          name=f'Plan {number:02}', visibility='workspace')
+        response = self.client.get(self.url('manage/'), {'q': 'Plan', 'visibility': 'workspace', 'favorite': 'unstarred', 'page': 2, 'tab': 'shared'})
+        self.assertEqual(response.context['page'].paginator.count, 31)
+        self.assertEqual(len(response.context['filters']), 1)
+        self.assertContains(response, 'visibility=workspace')
+        self.assertContains(response, 'favorite=unstarred')
+        self.assertEqual([row.pk for row in self.client.get(self.url('manage/?favorite=starred')).context['filters']], [self.saved.pk])
+        response = self.client.get(self.url('manage/?visibility=invalid&favorite=invalid'))
+        self.assertEqual(response.context['page'].paginator.count, 32)
+        for params in [{'q': 'nieistniejący'}, {'visibility': 'selected'}]:
+            response = self.client.get(self.url('manage/'), params)
+            self.assertContains(response, 'Brak pasujących filtrów')
+            self.assertContains(response, 'Wyczyść filtry')
+
+    def test_management_modal_save_validation_and_delete_preserve_list(self):
+        for prefix in ['/filters/', self.url()]:
+            target = self.url('manage/?q=Moje&visibility=private&favorite=unstarred')
+            edit_url = prefix + f'manage/{self.saved.pk}/edit/?q=Moje&visibility=private&favorite=unstarred'
+            response = self.client.get(edit_url)
+            self.assertTemplateUsed(response, 'dashboard/filters/manage.html')
+            self.assertEqual(response.context['list_url'], target)
+            payload = {'name': 'Moje zmienione', 'query': 'priority = high', 'visibility': 'private', 'revision': self.saved.revision, 'return_to': target}
+            invalid = self.client.post(edit_url, {**payload, 'name': ''}, HTTP_X_FILTER_MODAL='true')
+            self.assertEqual(invalid.status_code, 400)
+            self.assertIn('Moje', invalid.json()['html'])
+            self.assertIn('return_to', invalid.json()['html'])
+            response = self.client.post(edit_url, payload, HTTP_X_FILTER_MODAL='true')
+            self.assertEqual(response.json(), {'saved': True, 'url': target})
+            self.saved.refresh_from_db()
+        created = self.client.post(self.url('manage/new/?q=Moje'), {'name': 'Moje nowe', 'query': '', 'visibility': 'private'}, HTTP_X_FILTER_MODAL='true')
+        self.assertEqual(created.json(), {'saved': True, 'url': self.url('manage/?q=Moje')})
+        item = SavedTaskFilter.objects.get(name='Moje nowe')
+        self.assertEqual(item.created_by, self.owner)
+        self.assertTrue(item.favorited_by.filter(pk=self.owner.pk).exists())
+        deleted = self.client.post(self.url(f'{item.pk}/delete/'), {'return_to': target}, HTTP_X_FILTER_MODAL='true')
+        self.assertEqual(deleted.json(), {'saved': True, 'url': target})
+        self.assertFalse(SavedTaskFilter.objects.filter(pk=item.pk).exists())
+        self.assertTrue(SpaceTask.objects.filter(pk=self.high.pk).exists())
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
+        self.assertEqual(csrf_client.post('/filters/manage/new/', {}).status_code, 403)
+        rejected = self.client.post(self.url('manage/new/'), {'name': 'Bez przekierowania', 'query': '', 'visibility': 'private', 'return_to': 'https://example.test/filters/'}, HTTP_X_FILTER_MODAL='true')
+        self.assertEqual(rejected.json()['url'], self.url('manage/'))
+
     def test_retired_all_items_redirects_to_search_preserving_criteria_and_acl(self):
         for task in (self.hidden, self.hidden_task):
             task.title = 'Poufny błąd płatności'

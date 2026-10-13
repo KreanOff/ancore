@@ -47,7 +47,7 @@ class PulpitEditorTests(TestCase):
                         self.assertEqual(response.status_code, 200)
                         self.assertTrue(response.context['pulpit_editor_mode'])
                         self.assertContains(response, 'data-sidebar-mode="pulpit-editor"')
-                        self.assertContains(response, 'data-sidebar-navigation="pulpits-management" hidden')
+                        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
                         self.assertNotContains(response, 'data-sidebar-navigation="pulpit-editor" hidden')
                         sections = response.context['pulpit_editor_navigation']
                         self.assertEqual([entry['label'] for entry in sections], ['Gadżety i układ', 'Dostępy', 'Ustawienia'])

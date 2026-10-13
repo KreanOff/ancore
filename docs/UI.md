@@ -32,11 +32,23 @@ kluczem, tytułem, typem, licznikami tagów/załączników i oznaczeniem terminu
 Grupy obejmują bieżącą stronę wyników, a sortowanie zachowuje kolejność
 zadań wewnątrz grup. Wyniki nie używają tabeli z nagłówkami kolumn.
 
+„Zarządzaj filtrami” jest osobną stroną `dashboard/filters/manage.html`,
+bez zakładek katalogu, z własnym minimalnym menu zarządzania: powrót
+do Ustawień i aktywna pozycja „Filtry”.
+`directory.html` współdzieli tabelę z katalogiem; wariant
+`task-filter-directory--management` zamienia gwiazdki w pierwszej kolumnie
+na checkboxy i przenosi gwiazdki do menu wiersza. Nazwa otwiera modal edycji.
+`tasks.js` obsługuje zaznaczanie bieżącej strony, stan częściowy i osobny
+klucz szerokości `task-filters-management`, wspólny dla zwykłego/scoped URL.
+Toolbar i przycisk tworzenia korzystają z wzorca zarządzania Przestrzeniami.
+
 Podstawowe pola korzystają z AncoreCustomSelect, tekstowego wyszukiwania
 i istniejących przycisków. Zaawansowany tryb ma pole zapytania i pomoc
 ze składnią. Formularz zapisu/edycji korzysta z AncoreTaskModals:
 fokus, inert, Escape, potwierdzenie odrzucenia zmian i błędy w dialogu.
-Skrypt task-filters.js inicjalizuje się także po ancore:content-loaded,
+Skrypt task-filters.js czeka przy pierwszym ładowaniu na wspólny
+AncoreTaskModals (jak spaces.js), dzięki czemu bezpośredni adres formularza
+otwiera dialog. Inicjalizuje się także po ancore:content-loaded,
 usuwając poprzednie listenery. Częściowa nawigacja aktualizuje gwiazdki
 i ulubione w menu. Na telefonie pola zawijają się, a listy przewijają się
 we własnym kontenerze. [Zakres funkcji](FILTERS.md).
@@ -187,12 +199,14 @@ zadania korzystają wyłącznie z tagów jego zapisanej przestrzeni. Dane opcji
 są filtrowane przez widoczność projektów; etykiety trafiają do DOM jako tekst.
 
 Osobny ekran „Zarządzaj przestrzeniami” (`spaces/manage.html`) używa tej samej
-powłoki. Główny pasek boczny przełącza się z menu Workspace na menu zarządzania
-przestrzeniami (`core/includes/space_management_sidebar.html`): powrót do
-miejsca wejścia i zarządzanie przestrzeniami. Po wejściu z Ustawień link
-powrotu ma etykietę „Wróć do ustawień”; z katalogu — „Wróć do przestrzeni”.
-Nie zawiera dodatkowych pozycji Workspace ani Ustawienia Ancore. Treść zajmuje całą szerokość
-obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijanie,
+powłoki. Główny pasek boczny przełącza się na minimalne menu danej strony,
+według wzorca katalogu Workspace. Wspólny wariant
+`core/includes/management_sidebar.html` renderuje osobne menu Przestrzeni,
+Pulpitów i Filtrów: nagłówek „Zarządzanie…”, „Wróć do ustawień” oraz jedną
+aktywną pozycję z nazwą modułu. Nie zawiera kategorii centrum Ustawień
+ani linków pozostałych stron zarządzania. Strony otwiera się z wierszy
+sekcji Workspace w centrum Ustawień. „Wróć do ustawień” prowadzi do `#workspace`.
+Treść zajmuje całą szerokość obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijanie,
 zmianę szerokości oraz mobilne otwieranie/zamykanie. `layout.js` przełącza
 widoczną nawigację również przy częściowym przejściu, powrocie i historii
 przeglądarki. Bezpośrednie wejście do kreatora/edycji używa trybu administracyjnego.
@@ -215,8 +229,13 @@ nawigacji. Szczegóły uprawnień: [SPACES.md](SPACES.md).
 
 Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
 głównego paska bocznego (`core/includes/settings_sidebar.html`). Zastępuje
-menu Workspace kategoriami Ogólne, Konto i dostęp i Workspace
-oraz linkiem „Wróć do przestrzeni”. Treść nie ma dodatkowej wewnętrznej nawigacji;
+menu Workspace kategoriami Ogólne, Konto i dostęp i Workspace.
+Trzy linki zarządzania znajdują się w treści sekcji Workspace, bez duplikatów
+w bocznym menu. Link przestrzeni zależy od istniejącego prawa zarządzania. Na stronie centrum
+jest „Wróć do przestrzeni”. Strony zarządzania mają osobne minimalne menu
+z linkiem „Wróć do ustawień”.
+Sekcja Workspace centrum zawiera również wiersze prowadzące do tych stron.
+Treść nie ma dodatkowej wewnętrznej nawigacji;
 wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
 `settings.js` obsługuje kategorie w stałej powłoce, aktywne pozycje, adresy
 z fragmentem (`#account`, `#workspace` i skrót `#security`),
@@ -2613,16 +2632,12 @@ do tego katalogu z jego filtrami; błąd pozostaje na stronie edycji.
 Tworzenie i usunięcie zachowują katalog oraz filtry. Filtry widoczności
 i gwiazdki wysyłają formularz także po wyborze wartości.
 
-`core/includes/pulpit_management_sidebar.html` pokazuje nawigację administracyjną
-„Zarządzanie pulpitami”, powrót oraz „Zarządzaj pulpitami”. Tryb jest odrębny
-od zarządzania Przestrzeniami i Workspace.
-Wspólny `layout.js` zachowuje miejsce
-wejścia, filtry i przewinięcie przez częściową nawigację, reload i Wstecz/Dalej.
-Świeży bezpośredni URL używa powrotu do wszystkich pulpitów.
-Po usunięciu pulpitu, z którego otwarto zarządzanie, link powrotu prowadzi
-do wszystkich pulpitów. Usunięcie innego pulpitu zachowuje pierwotny cel.
-Nieaktualny powrót ze starszej historii lub po usunięciu w innej karcie
-również otwiera domyślny katalog zamiast strony błędu.
+Katalog zarządzania pulpitami pokazuje własne minimalne menu przez
+`core/includes/management_sidebar.html`: „Wróć do ustawień” i aktywne „Pulpity”.
+Powrót prowadzi do Ustawień (`#workspace`), również po usunięciu pulpitu.
+Wewnętrzny tryb `pulpits-management` pozostaje osobny od edytora pulpitu
+oraz zarządzania Workspace. Wspólny `layout.js` synchronizuje aktywność
+i widoczność menu przy częściowej nawigacji, reload i Wstecz/Dalej.
 
 Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor` i menu
 `core/includes/pulpit_editor_sidebar.html`. Pokazuje nazwę pulpitu, powrót oraz

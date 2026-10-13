@@ -497,8 +497,10 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   „Zarządzaj pulpitami” w menu „…” otwiera osobny katalog zarządzania pod
   `/dashboards/manage/` i scoped adresem. Pokazuje tylko pulpity twórcy
   w aktywnym Workspace, zgodnie z dotychczasowymi prawami edycji.
-  Zachowuje osobne menu z powrotem do miejsca wejścia, wyszukiwanie po nazwie/opisie,
-  filtry widoczności i gwiazdki oraz paginację 30 pozycji. Lista jest wspólna
+  Jest dostępny również z sekcji Workspace w treści Ustawień Ancore, obok
+  zarządzania przestrzeniami i filtrami. Powrót prowadzi do Ustawień (Workspace).
+  Zachowuje wyszukiwanie po nazwie/opisie, filtry widoczności i gwiazdki
+  oraz paginację 30 pozycji. Lista jest wspólna
   z „Pulpity”: checkboxy, menu po lewej oraz kolumny Pulpit, Twórca,
   Widoczność, Gadżety i Opis. Gwiazdka jest akcją menu wiersza.
   Nazwa otwiera osobny edytor wybranego pulpitu,

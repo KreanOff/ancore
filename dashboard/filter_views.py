@@ -31,13 +31,27 @@ def get_filter(request, pk, editable=False, lock=False):
     return decorate_filter(request, item)
 
 
-def catalog_context(request):
+def catalog_context(request, management=False):
     tab = request.GET.get('tab', 'favorites')
     if tab not in {'favorites', 'mine', 'shared', 'all'}:
         tab = 'favorites'
     query = request.GET.get('q', '').strip()[:120]
     filters = visible_filters(request).select_related('created_by')
-    if tab == 'favorites':
+    visibility = request.GET.get('visibility', '')
+    favorite = request.GET.get('favorite', '')
+    if management:
+        filters = filters.filter(created_by=request.user)
+        if visibility in SavedTaskFilter.Visibility.values:
+            filters = filters.filter(visibility=visibility)
+        else:
+            visibility = ''
+        if favorite == 'starred':
+            filters = filters.filter(favorited_by=request.user)
+        elif favorite == 'unstarred':
+            filters = filters.exclude(favorited_by=request.user)
+        else:
+            favorite = ''
+    elif tab == 'favorites':
         filters = filters.filter(favorited_by=request.user)
     elif tab == 'mine':
         filters = filters.filter(created_by=request.user)
@@ -48,9 +62,18 @@ def catalog_context(request):
     page = Paginator(filters.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     rows = list(page.object_list)
     favorites = set(visible_filters(request).filter(favorited_by=request.user, pk__in=[row.pk for row in rows]).values_list('pk', flat=True))
-    return {'filters': [decorate_filter(request, row, favorites) for row in rows], 'page': page,
+    rows = [decorate_filter(request, row, favorites) for row in rows]
+    management_url = filter_url(request, 'manage/')
+    list_url = management_url + ('?' + request.GET.urlencode() if request.GET else '') if management else request.get_full_path()
+    if management:
+        for row in rows:
+            row.edit_url = filter_url(request, f'manage/{row.pk}/edit/') + ('?' + request.GET.urlencode() if request.GET else '')
+    return {'filters': rows, 'page': page, 'management': management,
             'tab': tab, 'query': query, 'filters_url': filter_url(request), 'search_url': filter_url(request, 'search/'),
-            'list_url': request.get_full_path()}
+            'management_url': management_url, 'visibility_filter': visibility, 'favorite_filter': favorite,
+            'visibility_choices': SavedTaskFilter.Visibility.choices,
+            'create_url': filter_url(request, 'manage/new/') + ('?' + request.GET.urlencode() if request.GET else ''),
+            'list_url': list_url}
 
 
 def search_context(request, item=None):
@@ -107,6 +130,12 @@ def index(request):
 
 @login_required
 @require_GET
+def manage(request):
+    return render(request, 'dashboard/filters/manage.html', catalog_context(request, management=True))
+
+
+@login_required
+@require_GET
 def search(request, pk=None):
     item = get_filter(request, pk) if pk else None
     if item:
@@ -155,7 +184,8 @@ def return_url(request, fallback=None):
 
 @login_required
 @require_http_methods(['GET', 'POST'])
-def edit(request, pk=None):
+def edit(request, pk=None, management=False):
+    catalog = catalog_context(request, management=True) if management else None
     with transaction.atomic():
         item = get_filter(request, pk, editable=True, lock=request.method == 'POST') if pk else None
         form = SavedTaskFilterForm(request.POST if request.method == 'POST' else None, request=request, instance=item,
@@ -174,14 +204,14 @@ def edit(request, pk=None):
                 form.save_m2m()
                 if not item:
                     saved.favorited_by.add(request.user)
-                return mutation_response(request, filter_url(request, f'{saved.pk}/'))
+                return mutation_response(request, return_url(request, catalog['list_url']) if management else filter_url(request, f'{saved.pk}/'))
     modal = {'form': form, 'title': 'Edytuj filtr' if item else 'Zapisz filtr', 'action': request.get_full_path()}
-    context = search_context(request, item)
+    context = catalog if management else search_context(request, item)
     context['modal'] = modal
     status = 400 if request.method == 'POST' else 200
     if request.headers.get('X-Filter-Modal') == 'true':
         return JsonResponse({'html': render_to_string('dashboard/filters/form.html', context, request=request)}, status=status)
-    return render(request, 'dashboard/filters/search.html', context, status=status)
+    return render(request, 'dashboard/filters/manage.html' if management else 'dashboard/filters/search.html', context, status=status)
 
 
 @login_required
@@ -223,4 +253,4 @@ def delete(request, pk):
         item = get_filter(request, pk, editable=True, lock=True)
         item.delete()
     messages.success(request, 'Filtr został usunięty.')
-    return mutation_response(request, filter_url(request, '?tab=mine'))
+    return mutation_response(request, return_url(request, filter_url(request, '?tab=mine')))

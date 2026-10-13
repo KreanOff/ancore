@@ -33,8 +33,13 @@ def current_workplace(request):
         and resolver.url_name in {'edit', 'access', 'gadgets', 'gadget_add', 'gadget_edit',
                                   'manage_edit', 'manage_access', 'manage_gadgets', 'manage_gadget_add', 'manage_gadget_edit'}
     )
+    filters_management_mode = bool(
+        resolver and resolver.app_name in {'filters', 'workplace_filters'}
+        and (resolver.url_name or '').startswith('manage')
+    )
+    settings_management_mode = spaces_management_mode or (pulpits_management_mode and not pulpit_editor_mode) or filters_management_mode
     sidebar_mode = 'settings' if resolver and resolver.view_name == 'settings' else (
-        'administration' if spaces_management_mode else 'pulpit-editor' if pulpit_editor_mode else 'pulpits-management' if pulpits_management_mode else 'workspace'
+        'administration' if spaces_management_mode else 'pulpit-editor' if pulpit_editor_mode else 'pulpits-management' if pulpits_management_mode else 'filters-management' if filters_management_mode else 'workspace'
     )
     if active_workplace:
         from spaces.services import can_manage_spaces
@@ -76,6 +81,8 @@ def current_workplace(request):
         'spaces_management_mode': spaces_management_mode,
         'pulpits_management_mode': pulpits_management_mode,
         'pulpit_editor_mode': pulpit_editor_mode,
+        'filters_management_mode': filters_management_mode,
+        'settings_management_mode': settings_management_mode,
         'sidebar_mode': sidebar_mode,
         'available_workplaces': user_workplaces,
         'available_workplace_count': len(user_workplaces),
