@@ -52,6 +52,8 @@ def from_template(request):
             raise
         else:
             editor_url = editor_views._url(request, f'{item.pk}/editor/')
+            if getattr(request, '_react_api', False):
+                return JsonResponse({'redirect': editor_views._url(request), 'editor_url': editor_url})
             if request.headers.get('X-Document-Modal') == 'true':
                 return JsonResponse({'redirect_url': editor_views._url(request), 'editor_url': editor_url})
             return redirect(editor_url)

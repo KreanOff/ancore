@@ -12,7 +12,8 @@ from django.db.models import BigIntegerField, Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.deletion import RestrictedError
 from django.http import FileResponse, Http404, JsonResponse, QueryDict
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -108,7 +109,7 @@ def _sidebar(request, active_view=None):
     )
     counts['starred'] += _folders(request).filter(library__in=_libraries(request), is_starred=True).count()
     return {
-        'sidebar_libraries': _libraries(request).only('id', 'name'),
+        'sidebar_libraries': _libraries(request).only('id', 'name', 'color', 'updated_at'),
         'sidebar_views': [
             {**option, 'url': _url(request, view=option['value']),
              'count': counts.get(option['value']), 'active': active_view == option['value']}
@@ -327,6 +328,9 @@ def _library_page(request, form_context=None):
 
 def _render_form(request, context, template='documents/form.html'):
     context['form_action'] = request.get_full_path()
+    if getattr(request, '_react_api', False):
+        invalid = context.get('form') is not None and context['form'].is_bound and context['form'].errors
+        return render(request, template, {'modal': context}, status=400 if invalid else 200)
     if request.headers.get('X-Document-Modal') == 'true':
         return render(request, template, {'modal': context})
     # Direct links and ordinary form submissions use the same dialog over its list.

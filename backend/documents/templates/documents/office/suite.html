@@ -7,7 +7,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261004-document-color-input">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-suite-title-radius">
-<script src="{% static 'js/office-suite.js' %}?v=20260921-suite-toolbar-minimal" defer></script>
+<script src="{% static 'js/office-suite.js' %}?v=20261016-react-migration" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-suite" data-app-full-navigation data-office-suite data-kind="{{ document.kind }}" data-state-url="{{ documents_url }}{{ document.pk }}/state/" data-save-url="{{ documents_url }}{{ document.pk }}/save/" data-revision="{{ document.revision }}" data-back-url="{{ folder_url }}">

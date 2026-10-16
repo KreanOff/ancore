@@ -4,6 +4,7 @@
     function initOffice() {
         controller?.abort();
         controller = new AbortController();
+        if (document.querySelector('[data-react-root="page"]')) return;
         const options = { signal: controller.signal };
         document.querySelector('[data-office-catalog]')?.addEventListener('submit', event => {
             const target = event.target.closest('[data-document-confirm]');

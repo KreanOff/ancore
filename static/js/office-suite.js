@@ -98,6 +98,7 @@
     }
 
     function init() {
+        if (document.querySelector('[data-react-root="page"]')) return;
         const root = document.querySelector('[data-office-suite]');
         if (!root || root.dataset.initialized) return;
         root.dataset.initialized = 'true';

@@ -12,7 +12,8 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, JsonResponse, QueryDict
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -151,6 +152,9 @@ def _list(request, modal=None):
 
 def _modal(request, context, preview=False):
     context['form_action'] = request.get_full_path()
+    if getattr(request, '_react_api', False):
+        invalid = context.get('form') is not None and context['form'].is_bound and context['form'].errors
+        return render(request, 'documents/preview.html' if preview else 'documents/form.html', {'modal': context}, status=context.get('form_status', 400) if invalid else 200)
     if request.headers.get('X-Document-Modal') == 'true':
         return render(request, 'documents/preview.html' if preview else 'documents/form.html', {'modal': context})
     background = copy(request)
@@ -228,13 +232,13 @@ def edit(request, pk=None):
             raise
         if not conflict:
             target = _url(request, f'{item.pk}/') if item.kind == Document.Kind.TEXT else _url(request)
-            if request.headers.get('X-Office-Editor') == 'true':
+            if request.headers.get('X-Office-Editor') == 'true' or (getattr(request, '_react_api', False) and item.kind == Document.Kind.TEXT):
                 return JsonResponse({'url': target, 'revision': item.revision, 'saved_at': timezone.localtime(item.updated_at).strftime('%H:%M'), 'title': item.title})
             messages.success(request, 'Utworzono dokument.' if is_new else 'Zapisano dokument.')
             return _form_success(request, target)
-    if request.method == 'POST' and request.headers.get('X-Office-Editor') == 'true':
+    if request.method == 'POST' and (request.headers.get('X-Office-Editor') == 'true' or (getattr(request, '_react_api', False) and instance.kind == Document.Kind.TEXT)):
         return JsonResponse({'errors': form.errors.get_json_data()}, status=409 if conflict else 400)
-    context = {**_context(request), 'form': form, 'document': instance, 'is_new': is_new}
+    context = {**_context(request), 'form': form, 'document': instance, 'is_new': is_new, 'form_status': 409 if conflict else 400}
     if instance.kind != Document.Kind.TEXT:
         context.update({'form_title': 'Dane dokumentu', 'submit_label': 'Zapisz zmiany'})
         return _modal(request, context)

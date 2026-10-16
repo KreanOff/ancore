@@ -14,7 +14,8 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.http import FileResponse, Http404, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect, render as django_render
+from core.frontend import render
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.csrf import csrf_exempt
@@ -87,6 +88,8 @@ def create(request):
                 item.file.storage.delete(item.file.name)
                 raise
         editor_url = _url(request, f'{item.pk}/editor/')
+        if getattr(request, '_react_api', False):
+            return JsonResponse({'redirect': _url(request), 'editor_url': editor_url})
         if item.has_full_editor and request.headers.get('X-Document-Modal') == 'true':
             return JsonResponse({'redirect_url': _url(request),
                                  'editor_url': editor_url})
@@ -117,7 +120,7 @@ def board_frame(request, pk):
     item = _item(request, pk, kind=Document.Kind.BOARD)
     config = {'scene': json.loads(item.content or json.dumps(EMPTY_SCENE)), 'revision': item.revision,
               'saveUrl': _url(request, f'{pk}/board/save/'), 'name': item.title}
-    response = render(request, 'documents/office/board_frame.html', {'board_config': config})
+    response = django_render(request, 'documents/office/board_frame.html', {'board_config': config})
     # Images are data URLs; application assets/fonts and saves stay on this origin.
     response['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'"
     return _private(response)

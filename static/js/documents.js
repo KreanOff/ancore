@@ -4,6 +4,7 @@
     function initDocuments() {
         controller?.abort();
         controller = new AbortController();
+        if (document.querySelector('[data-react-root="page"]')) return;
         const options = { signal: controller.signal };
         initDocumentSidebar(options);
         initDocumentColors(options);
