@@ -63,6 +63,9 @@ def team_context(request, task):
 
 def payload(request, task):
     context = team_context(request, task)
+    if getattr(request, '_react_api', False):
+        from .frontend import task_members_payload
+        return task_members_payload(context)
     return {'members': render_to_string('tasks/includes/project_members_panel.html', context, request=request),
             'modals': render_to_string('tasks/includes/project_team_modals.html', context, request=request), 'can_manage': context['can_manage_team']}
 
@@ -119,5 +122,8 @@ def candidates(request, space_pk, key):
     for term in query.split():
         people = people.filter(Q(first_name__icontains=term) | Q(last_name__icontains=term) | Q(middle_name__icontains=term) | Q(username__icontains=term) | Q(email__icontains=term))
     people = list(people[:11])
+    if getattr(request, '_react_api', False):
+        from accounts.avatar import account_avatar
+        return JsonResponse({'results': [{'email': person.email, 'name': person.get_full_name() or person.username, 'avatar': account_avatar(person)} for person in people[:10]], 'has_more': len(people) > 10})
     return JsonResponse({'results': [{'email': person.email, 'name': person.get_full_name() or person.username,
         'html': render_to_string('workplaces/includes/invitation_person.html', {'person': person})} for person in people[:10]], 'has_more': len(people) > 10})

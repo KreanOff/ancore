@@ -7,7 +7,8 @@ from django.db.models import F, Sum
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.formats import date_format

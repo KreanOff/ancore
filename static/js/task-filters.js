@@ -6,6 +6,7 @@
     function init() {
         controller?.abort();
         controller = new AbortController();
+        if (document.querySelector('[data-react-root="page"]')) return;
         const { signal } = controller;
         const page = document.querySelector('.task-filters-page');
         const host = document.querySelector('[data-filter-modal-host]');

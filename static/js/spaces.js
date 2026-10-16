@@ -247,6 +247,7 @@
         if (boardArrival && boardArrival.url !== window.location.href) boardArrival = null;
         controller = new AbortController();
         const { signal } = controller;
+        if (document.querySelector('[data-react-root="page"]')) return;
         const page = document.querySelector('[data-work-page]');
         const host = document.querySelector('[data-work-modal-host]');
         if (!page || !host) return;

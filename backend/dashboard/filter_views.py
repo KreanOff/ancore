@@ -7,7 +7,8 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
@@ -153,6 +154,11 @@ def lookup(request):
     results = list(visible_filters(request).filter(
         Q(name__icontains=query) | Q(description__icontains=query),
     ).order_by('name', 'pk')[:21]) if query else []
+    if getattr(request, '_react_api', False):
+        rows = [decorate_filter(request, item, set()) for item in results[:20]]
+        return JsonResponse({'results': [{'id': str(item.pk), 'name': item.name, 'url': item.url,
+                                         'detail': item.get_visibility_display()} for item in rows],
+                             'count': len(rows), 'has_more': len(results) > 20})
     response = JsonResponse({
         'html': render_to_string('dashboard/filters/search_results.html', {
             'results': [decorate_filter(request, item, set()) for item in results[:20]],

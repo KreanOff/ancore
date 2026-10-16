@@ -96,6 +96,8 @@ def tag_action(request, space):
             TaskTagNote.objects.create(tag=tag, author=request.user, message=message)
             messages.success(request, 'Notatka dodana.')
         else:
+            if getattr(request, '_react_api', False):
+                return JsonResponse({'message': 'Wpisz treść notatki.'}, status=400)
             messages.error(request, 'Wpisz treść notatki.')
         return redirect(url)
     note = get_object_or_404(tag.tag_notes, pk=_posted_pk(request, 'note_id'), author=request.user)
@@ -106,7 +108,7 @@ def tag_action(request, space):
     message = (request.POST.get('message') or '').strip()
     ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     if not message:
-        if ajax:
+        if ajax or getattr(request, '_react_api', False):
             return JsonResponse({'status': 'error', 'message': 'Wpisz treść notatki.'}, status=400)
         messages.error(request, 'Wpisz treść notatki.')
         return redirect(url)

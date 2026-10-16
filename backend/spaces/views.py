@@ -14,7 +14,8 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q, Sum
 from django.forms import formset_factory
 from django.http import FileResponse, Http404, HttpResponseBadRequest, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -137,6 +138,11 @@ def search(request):
     results = results[:20]
     for space in results:
         space.url = space_url(request, space)
+    if getattr(request, '_react_api', False):
+        from spaces.avatars import space_avatar
+        return JsonResponse({'results': [{'id': str(item.pk), 'name': item.name, 'url': item.url,
+                                         'avatar': space_avatar(item), 'detail': f'{item.get_kind_display()} · {item.get_management_display()}'} for item in results],
+                             'count': len(results), 'has_more': has_more})
     response = JsonResponse({
         'html': render_to_string('spaces/search_results.html', {'results': results, 'has_more': has_more}),
         'count': len(results),
@@ -311,7 +317,8 @@ def detail(request, pk):
             if not isinstance(result, dict):
                 return result
             context.update(result)
-        return render(request, 'spaces/tags.html', context)
+        status = 400 if getattr(request, '_react_api', False) and context.get('tag_modal_open') else 200
+        return render(request, 'spaces/tags.html', context, status=status)
     if request.method == 'POST':
         raise Http404
     return render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
@@ -344,6 +351,8 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
     modal = {'form': form, 'title': title, 'action': request.get_full_path(), 'return_url': return_url}
     context = {**base_context(request), 'modal': modal}
     status = 400 if request.method == 'POST' else 200
+    if getattr(request, '_react_api', False):
+        return render(request, 'spaces/form_page.html', context, status=status)
     if request.headers.get('X-Work-Modal') == 'true':
         return JsonResponse({'html': render_to_string('spaces/form.html', context, request=request)}, status=status)
     if directory:
@@ -551,11 +560,11 @@ def backlog_plan(request, pk):
             scope, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
             changed = bulk_plan_items(request, space, items_for_view(space, scope, 'backlog'))
     except ValidationError as error:
-        if request.headers.get('X-Work-Action') == 'true':
+        if getattr(request, '_react_api', False) or request.headers.get('X-Work-Action') == 'true':
             return JsonResponse({'error': ' '.join(error.messages)}, status=400)
         messages.error(request, ' '.join(error.messages))
         return redirect(backlog_url(request, space))
-    if request.headers.get('X-Work-Action') == 'true':
+    if getattr(request, '_react_api', False) or request.headers.get('X-Work-Action') == 'true':
         return JsonResponse({'saved': True, 'changed': changed, 'url': backlog_url(request, space)})
     return redirect(backlog_url(request, space))
 
@@ -618,13 +627,13 @@ def item_action(request, pk=None, space_pk=None, key=None):
             else:
                 return HttpResponseBadRequest('Nieprawidłowa operacja.')
     except ValidationError as error:
-        if request.headers.get('X-Work-Action') == 'true':
+        if getattr(request, '_react_api', False) or request.headers.get('X-Work-Action') == 'true':
             return JsonResponse({'error': ' '.join(error.messages)}, status=400)
         messages.error(request, ' '.join(error.messages))
     params = request.GET.copy()
     params['view'] = request.POST.get('return_view') if request.POST.get('return_view') in {'list', 'board', 'backlog', 'timeline'} else 'board'
     url = space_url(request, item.space, '?') + params.urlencode()
-    if request.headers.get('X-Work-Action') == 'true':
+    if getattr(request, '_react_api', False) or request.headers.get('X-Work-Action') == 'true':
         return JsonResponse({'saved': True, 'url': url})
     return redirect(url)
 

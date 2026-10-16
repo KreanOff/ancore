@@ -25,6 +25,7 @@
         controller?.abort();
         controller = new AbortController();
         const { signal } = controller;
+        if (document.querySelector('[data-react-root="page"]')) return;
         const page = document.querySelector('.tasks-issue-page[data-task-app="tasks"], .work-task-page');
         if (!page) return;
         const panel = page.querySelector('#task-work-log');

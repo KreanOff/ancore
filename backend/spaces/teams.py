@@ -6,7 +6,8 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from workplaces.models import Workplace
@@ -131,6 +132,9 @@ def remove_member(request, pk, member_pk):
             raise PermissionDenied
         member = get_object_or_404(team.memberships, pk=member_pk)
         if member.role == 'admin' and team.memberships.filter(role='admin', user__in=workplace_people(request.workplace)).count() == 1:
+            if getattr(request, '_react_api', False):
+                from core.api import api_error
+                return api_error('Zespół musi mieć co najmniej jednego aktywnego administratora.', 400)
             messages.error(request, 'Zespół musi mieć co najmniej jednego aktywnego administratora.')
         else:
             member.delete()
