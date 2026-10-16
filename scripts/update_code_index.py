@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+BACKEND = ROOT / "backend"
 OUTPUT = ROOT / "docs" / "CODE_INDEX.md"
 SOURCE_SUFFIXES = {".py", ".html", ".css", ".js"}
 
@@ -44,13 +45,13 @@ def keyword(call, name):
 
 
 def project_apps():
-    settings = tree(ROOT / "ancore" / "settings.py")
+    settings = tree(BACKEND / "ancore" / "settings.py")
     configured = next(value for name, value in assignments(settings.body) if name == "INSTALLED_APPS")
     apps = []
     for name in ast.literal_eval(configured):
         # This project lists local app packages directly in INSTALLED_APPS.
         package = name.split(".")[0]
-        if (ROOT / package / "apps.py").is_file() and package not in apps:
+        if (BACKEND / package / "apps.py").is_file() and package not in apps:
             apps.append(package)
     return apps
 
@@ -116,14 +117,14 @@ def route_section(path):
 def generate():
     apps = project_apps()
     roots = ["ancore", *apps]
-    files_by_root = {name: source_files(ROOT / name) for name in roots}
+    files_by_root = {name: source_files(BACKEND / name) for name in roots}
     lines = [
         "# Indeks kodu Ancore",
         "",
         "Plik generowany przez `python scripts/update_code_index.py`. Nie edytuj ręcznie.",
         "",
-        "Zakres: lokalne źródła skonfigurowanych aplikacji, konfiguracja Django oraz",
-        "zasoby `static/`. Uwzględnia pliki nieśledzone i ignorowane przez Git, jeśli",
+        "Zakres: lokalne źródła skonfigurowanych aplikacji i konfiguracja Django w `backend/` oraz",
+        "zasoby `static/` i źródła React `frontend/app`. Uwzględnia pliki nieśledzone i ignorowane przez Git, jeśli",
         "są obecne lokalnie. Pomija sekrety, uploady, środowisko i cache Pythona.",
         "Generator nie importuje aplikacji ani nie łączy się z bazą.",
         "",
@@ -145,16 +146,16 @@ def generate():
             sum(isinstance(n, ast.FunctionDef) and n.name.startswith("test_") for n in ast.walk(tree(p)))
             for p in python if test_file(p)
         )
-        lines.append(f"| {link(ROOT / name, name)} | {len(python)} | {len(migrations)} | {len(html)} | {count} |")
+        lines.append(f"| {link(BACKEND / name, 'backend/' + name)} | {len(python)} | {len(migrations)} | {len(html)} | {count} |")
     lines += ["", "## 2. Modele i relacje", ""]
     for app in apps:
-        path = ROOT / app / "models.py"
+        path = BACKEND / app / "models.py"
         if path.is_file():
             lines += [f"## Modele: {app}", "", *model_section(path)]
 
     lines += ["## 3. Formularze", "", "Wypisane są deklaracje klas, także bazowe klasy i widgety.", ""]
     for app in apps:
-        path = ROOT / app / "forms.py"
+        path = BACKEND / app / "forms.py"
         if not path.is_file():
             continue
         lines += [f"### {app}", "", f"Źródło: {link(path)}.", ""]
@@ -169,7 +170,7 @@ def generate():
 
     lines += ["## 4. Routing", "", "Ścieżki modułowe są względne wobec include'a w głównym routingu.", ""]
     for name in roots:
-        path = ROOT / name / "urls.py"
+        path = BACKEND / name / "urls.py"
         if path.is_file():
             lines += route_section(path)
 
@@ -195,6 +196,11 @@ def generate():
     for kind in ("css", "js", "img"):
         paths = sorted(p for p in (ROOT / "static" / kind).rglob("*") if p.is_file())
         lines += [f"### {kind}", "", *[f"- {link(path)}" for path in paths], ""]
+    frontend = ROOT / "frontend" / "app"
+    paths = sorted(path for path in frontend.rglob("*") if path.is_file()
+                   and "node_modules" not in path.parts
+                   and path.suffix in {".ts", ".tsx", ".mjs", ".json", ".yaml"})
+    lines += ["### React — frontend/app", "", *[f"- {link(path)}" for path in paths], ""]
 
     lines += ["## 8. Testy", "", "Liczby dotyczą definicji metod, nie uruchomionych przypadków.", ""]
     for files in files_by_root.values():

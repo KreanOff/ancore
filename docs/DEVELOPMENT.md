@@ -1,5 +1,248 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Układ repozytorium
+
+Kod i konfiguracja Django znajdują się w `backend/`. Polecenia poniżej nadal
+uruchamiaj przez `manage.py` w katalogu głównym; dodaje on katalog źródeł do
+ścieżki importów. Nazwy modułów, etykiety aplikacji i migracje pozostają takie
+same. Test runner `ancore.testing.BackendDiscoverRunner` wykrywa testy w
+`backend/` również po samym `manage.py test`; jawne etykiety testów działają
+jak wcześniej. W zwykłym skrypcie Pythona ustaw `PYTHONPATH` na katalog `backend/`.
+
+Szablony, migracje i testy pozostają wewnątrz swoich aplikacji, React w
+`frontend/`, wspólne zasoby w `static/`, a konfiguracja usług w `deploy/`.
+Nie umieszczaj nowych aplikacji Django w katalogu głównym.
+Katalog `files/` zawierał wyłącznie nieużywany cache Pythona i został usunięty;
+nie jest modułem aplikacji. Usunięto też puste `deploy/chat/` i `deploy/cypht/`.
+Zasady formatu plików zapisuje `.editorconfig`. Wersjonowane
+`.vscode/settings.json` ustawia katalog importów i ukrywa cache, zależności,
+bundle oraz lokalne dane w Explorerze, bez usuwania ich z dysku.
+
+## Weryfikacja przeniesienia backendu (17.10.2026)
+
+Porównanie sum kontrolnych zachowało wszystkie 712 plików źródłowych obecnych
+przed przeniesieniem, w tym wcześniejsze zmiany robocze. W istniejącym kodzie
+backendu zmieniono jedynie ustawienie katalogów i test runnera w konfiguracji;
+nowe pliki to runner i cztery testy struktury. Modele, migracje, szablony,
+widoki i wcześniejsze testy pozostały identyczne. Zachowano 75 modeli i nazw
+tabel, 451 wzorców URL, 185 migracji odczytywanych przez Django oraz ścieżki
+storage. Wszystkie 178 lokalnych plików migracji (łącznie z `__init__.py`)
+pozostały dostępne do wersjonowania. Domyślne wykrywanie znajduje 1402 testy:
+1398 wcześniejszych i cztery nowe.
+
+Przeszły kontrola Django, składnia Pythona, build Reacta z TypeScriptem,
+`makemigrations --check --dry-run`, odczyt planu migracji, `collectstatic
+--dry-run --noinput` (1325 zasobów), linki lokalne dokumentacji, indeks kodu
+oraz `git diff --check`. Plan nie wykazał oczekujących migracji. Nowe testy
+potwierdziły uruchomienie `manage.py` spoza repozytorium, importy WSGI/ASGI
+z `backend/` na ścieżce importów, wykrywanie testów oraz dostęp do szablonów
+i lokalizacje domyślnego storage.
+
+Regresję wykonano na osobnych bazach PostgreSQL i storage w `/tmp`.
+Zestaw obejmował wspólne API i powłokę React, konta, Zasoby, Przestrzenie,
+Workspace, Filtry, nawigację Pulpitów, Planner, Dokumenty i zgodność wycofanych
+modułów. Końcowy przebieg wykonał **625 testów: 622 sukcesy, dwie nieudane
+asercje i jeden błąd**. Trzy problemy odtworzono na kopii kodu sprzed przeniesienia.
+Dwa kolejne wcześniejsze błędy potwierdzono w pierwszym przebiegu i osobno
+na tej samej kopii; pominięto je w końcowym zestawie:
+
+| Testy z wcześniejszym problemem | Obserwacja na kodzie przed i po przeniesieniu |
+| --- | --- |
+| `spaces.test_issue_types.IssueTypeTests.test_detail_edit_and_reopen_keep_type_and_history` oraz `test_other_detail_edits_do_not_reset_type` | Oczekiwane 302, odpowiedź 200 |
+| `contacts.tests.RetiredContactDirectoryTests.test_legacy_favorites_do_not_restore_retired_directories` | Oczekiwana usunięta sekcja „Starsze widoki” |
+| `contacts.tests.RetiredContactDirectoryTests.test_search_omits_retired_records_and_navigation` | Oczekiwana usunięta grupa wyników `projects` |
+| `documents.tests.DocumentLibraryTests.test_workspace_view_search_tag_pagination_and_actions_keep_workspace_scope` | Oczekiwana usunięta grupa wyników `tags` |
+
+Pierwszy przebieg przerwano na
+`spaces.test_summary.SpaceSummaryTests.test_priority_type_and_workload_totals_include_all_pages_and_subtasks`
+z powodu wielominutowego zapytania agregującego. Anulowano wyłącznie zapytanie
+w tymczasowej bazie testowej; wszystkie bazy testowe zostały usunięte przez
+runnera. Dziesięć testów `spaces.test_summary` pominięto w końcowym przebiegu.
+Nie wykonano całego zestawu 1402 testów ani weryfikacji w przeglądarce;
+porządkowanie nie zmieniło UI. Nie wykonywano wdrożenia ani migracji bazy
+z danymi użytkownika. Konfiguracja serwera WSGI/ASGI przy następnym wdrożeniu
+wymaga dodania `backend/` do ścieżki importów zgodnie z sekcją „Wdrożenie”.
+
+## Dokończenie frontendu React (16.10.2026)
+
+Wspólną powłokę renderuje teraz `src/shell/Shell.tsx`. Nawigacja używa JSON
+z `api/v1/navigation/`, a same kolekcje i Favorites można odświeżyć przez
+`api/v1/shell/` bez utraty szkicu strony. Oba endpointy mają zwykły i scoped
+adres, wymagają sesji i zachowują aktualne uprawnienia Django. Stare kontrolery
+menu/nawigacji/toastów nie są ładowane w aktywnej powłoce. Szczegóły kontraktu:
+[Frontend React](FRONTEND.md#powłoka-i-nawigacja-json).
+
+Przeszło **246 testów** na oddzielnej bazie PostgreSQL: 14 nowych w
+`core.test_navigation_frontend`, a także `core.test_shell_frontend`,
+`core.test_frontend`, `core.test_document_frontend`, `core.test_filter_frontend`,
+`core.test_pulpit_frontend`, `core.test_workspace_frontend`, `accounts.test_frontend`,
+całe `resources`, `spaces.test_navigation`, `spaces.test_task_detail_parity`,
+`spaces.test_tags`, `dashboard.test_pulpit_navigation`, `dashboard.test_filters`,
+`workplaces.test_management` i `workplaces.test_defaults`.
+Nowe testy obejmują wszystkie rodzaje ekranów, typowane pickery/Favorites,
+osobisty i kompletny porządek, CSRF (odrzucenie oraz poprawny token z nawigacji),
+prywatne zadania/Przestrzenie, odebrane członkostwo, obcy i zmieniony w innej
+karcie Workspace, tryby zarządzania oraz brak starych kontrolerów w powłoce.
+
+Browser QA: Chrome przez istniejący Playwright, 1440×900, 1024×900 i 390×900
+(oraz 390×844 bez localStorage), lokalny serwer z fikcyjnymi danymi i osobną
+bazą. Klasyfikacja: **Browser plugin not available**; użyto dostępnego
+Playwright/Chrome. Nie instalowano nowych zależności. Tymczasowe skrypty,
+logi i zrzuty pozostały poza repozytorium; serwer i baza QA zostały usunięte.
+
+| Sprawdzenie | Wynik |
+| --- | --- |
+| Adres, tytuł i właściwy ekran | OK dla 12 modułów, zwykłych/scoped tras |
+| Treść i brak overlay błędu frameworka | OK |
+| Konsola i błędy wykonania | Brak nieoczekiwanych błędów |
+| Wygląd i responsywność | Zrzuty przy trzech szerokościach, bez overflow |
+| Wzorzec poprzedniego menu | Zgodne wymiary nagłówka, sidebaru, sekcji i wierszy |
+| Interakcje | OK, scenariusze poniżej |
+
+Sprawdzono rzeczywiste linki, JSON zamiast dokumentów HTML przy przejściach,
+trwałość powłoki, Wstecz/Dalej, query/hash i kategorię `#security`, przewijanie
+oraz aktywność menu. Szerokość działa myszą i klawiaturą (Home/End, strzałki,
+reset), zachowuje się po reloadzie; to samo dotyczy grup i Favorites.
+Przeciągnięcie rzeczywiście dodaje/usuwa skrót, Alt+strzałki zapisują kolejność.
+Naprawiono konflikt natywnego drag linku z gestem wskaźnika.
+
+Pickery mają wyniki/stan pusty oraz brak dostępu do prywatnej Przestrzeni,
+strzałki, Escape i powrót fokusu także ze zwiniętego paska. Sprawdzono
+normalizację wyszukiwania Workspace, natywne przełączenie Workspace i powrót,
+reset dokumentu po zmianie konta lub bundla, zachowanie ustawień bez storage.
+Gwiazdka odświeża menu bez utraty zapytania Zasobów. Modal z menu zachowuje
+`inert`, szkic i potwierdzenie odrzucenia; anulowanie pozostawia edycję.
+Wstecz po wpisach hash z niezapisanym modalem przywraca właściwy wpis historii.
+Zagnieżdżony powrót edytor→katalog→Ustawienia zachowuje kontekst po reloadzie.
+Awaria 503 pozostawia ekran i pozwala ponowić, a spóźniona odpowiedź nie
+zastępuje nowszej. Regresyjnie sprawdzono wyszukiwanie globalne, powiadomienia,
+Sticker oraz deduplikację/zamykanie toastów. Menu/pickery mobilne mieszczą
+się w oknie, a zamknięcie przywraca interaktywność treści.
+
+Przeszły produkcyjny `pnpm --dir frontend/app build` (w tym TypeScript),
+Prettier, kontrola Django, składnia Pythona, lokalne linki dokumentacji,
+indeks kodu i `git diff --check`. Nie zmieniono modeli, migracji ani zależności.
+Nie uruchamiano całego historycznego zestawu repozytorium, Safari/Firefox,
+rzeczywistego urządzenia dotykowego ani produkcyjnego ONLYOFFICE. Nie wykonano
+wdrożenia produkcyjnego; przed nim nadal trzeba zbudować bundle i wykonać
+`collectstatic` zgodnie z rozdziałem Frontend.
+
+## Globalne panele w React (16.10.2026)
+
+`core.test_shell_frontend` sprawdza bootstrap i brak równoległych starych
+handlerów, sesję/CSRF, scoped wyszukiwanie i ostatnio oglądane z ponowną
+kontrolą ACL, jawny kontrakt powiadomień, dostępne Workspace, filtry,
+podpisaną paginację, odczyt/archiwum/usunięcie, zaproszenia, wzmianki,
+przypomnienia i osobiste operacje zbiorcze ograniczone snapshotem.
+Uruchamiaj razem z `core.test_frontend`, `accounts.test_frontend`,
+`spaces.test_task_detail_parity`, `spaces.test_tags` oraz regresjami dostępu
+Workspace w `dashboard.test_search_regressions`.
+
+Weryfikacja: wszystkie **85 testów** powyższego zestawu (w tym 16 nowych)
+przeszły na oddzielnej bazie PostgreSQL. Z regresji wyszukiwania uruchomiono
+`test_workspace_results_follow_viewer_memberships_not_data_owner` oraz
+`test_revoked_membership_removes_workspace_and_business_results`;
+pozostałe historyczne testy Tasks nie stanowią opisu aktywnego modułu.
+Nie zmieniano modeli, migracji ani zależności.
+
+Playwright/Chrome na izolowanym QA sprawdził wyszukiwanie, filtry typów,
+ostatnio oglądane, stany pusty/błąd, opóźnioną odpowiedź, skróty i klawiaturę,
+częściowe przejście do zadania, listę powiadomień na trzech stronach,
+archiwizację/przywracanie, filtrowanie Workspace i zachowanie filtrów po
+ponownym otwarciu. Sprawdzono polling z jawnym odświeżeniem czytanej listy,
+usunięcie zaproszenia z potwierdzeniem/anulowaniem, aktualizację licznika,
+zbiorczy odczyt i przejście po oznaczeniu wpisu jako przeczytany.
+Sticker sprawdzono przez zapis tekstu, drag, zmianę rozmiaru klawiaturą,
+przejście do Zasobów i reload oraz zmianę konta w tym samym localStorage.
+Wyszukiwanie porównano z dawnym panelem. Szerokości 1440, 1024 i 390 px
+nie miały przepełnienia dokumentu ani nieoczekiwanych błędów JS/konsoli.
+
+Osobny przebieg sprawdził Ctrl+K z powiadomień, Home/End i `/`, błąd odczytu
+oraz kolejnej strony z zachowaniem kart i kursora, błąd zapisu bez zmiany
+stanu oraz ponowienie. Błąd pollingu zachowywał licznik. Sprawdzono kolejność
+Escape w menu/panelu, fokus i zamknięcie tłem, ochronę edytora profilu,
+Escape powiadomień na ekranie Zasobów, Back/Forward bez podwójnego korzenia,
+potwierdzenie zbiorczego usunięcia z archiwum oraz działanie Stickera na
+telefonie z wyłączonym localStorage. Nie było błędów JS/konsoli.
+Końcowe porównanie ze starym panelem powiadomień potwierdziło tę samą
+geometrię okna i treść przy 1440 i 390 px. Serwer, baza, metadane sesji
+i storage QA zostały usunięte po sprawdzeniu.
+
+Browser plugin był niedostępny, użyto lokalnego Playwrighta z Chrome.
+Nie uruchamiano całego zestawu repozytorium ani Safari/Firefox.
+Build/typecheck, formatowanie, kontrola Django, składnia Python/JS,
+indeks, lokalne linki i `git diff --check` przeszły.
+
+## Konta i profil w React (16.10.2026)
+
+`accounts.test_frontend` sprawdza publiczne i prywatne API kont, zamkniętą
+listę adresów/metod, walidację i brak haseł w odpowiedzi, CSRF i jego rotację,
+rejestrację bez logowania, niezmienny cel logowania, profil i upload/kadr,
+status, udowodnione uwierzytelnienie przełączanych kont oraz wylogowanie.
+Uruchamiaj razem z `accounts.test_login_redirects`, `accounts.tests`,
+`accounts.test_avatars` i `accounts.test_email_identity.EmailIdentityTests`.
+Po zmianie wspólnego adaptera awatara sprawdzaj także `core.test_frontend`,
+`core.test_workspace_frontend`, `workplaces.test_avatars`,
+`workplaces.test_management` i `workplaces.test_invitation_candidates`.
+
+Weryfikacja: przeszły wszystkie **72 testy kont** (w tym 17 nowych) oraz
+**65 testów wspólnego API i Workspace**, na oddzielnych bazach PostgreSQL.
+Build/typecheck, formatowanie, kontrola Django, składnia Pythona/JS,
+indeks dokumentacji, linki i `git diff --check` przeszły.
+Nie zmieniano modeli, migracji ani zależności.
+
+Playwright z lokalnym Chrome na oddzielnej bazie i storage QA sprawdził
+logowanie, rejestrację, dodanie/przełączenie/usunięcie konta, profil,
+walidację, status, 30 awatarów, kadrowanie/zoom, usunięcie zdjęcia i reload.
+Porównano logowanie/rejestrację/profil z dawnym renderowaniem szablonów.
+Sprawdzono desktop 1440, tablet 1024 i telefon 390 px, błędy 503 i 401
+z zachowaniem szkicu/ponowieniem, blokadę podwójnej rejestracji, fokus,
+Escape i niezapisane zmiany, powrót przez Zasoby oraz Back/Forward.
+Osobny przebieg potwierdził współdzielony picker i zapis awatara Workspace,
+odrębną pulę użytkownika oraz czyszczenie zagnieżdżonych okien po ponownym
+wejściu. Nie było nieoczekiwanych błędów konsoli ani JS. Browser plugin był
+niedostępny. Nie sprawdzano Safari/Firefox ani całego zestawu repozytorium.
+Serwer QA i jego baza zostały usunięte po sprawdzeniu.
+
+## Etapowa migracja do Reacta (16.10.2026)
+
+Przeniesione ekrany wymagają zbudowanego `frontend/app` przed uruchomieniem
+aplikacji, testami renderującymi te ekrany i `collectstatic`. Aktualny zakres
+i końcowa weryfikacja są w rozdziale „Kontynuacja migracji React” poniżej:
+
+```sh
+pnpm --dir frontend/app install --frozen-lockfile
+pnpm --dir frontend/app build
+.venv/bin/python manage.py test resources
+```
+
+Wymagania, tryb obserwowania plików, deployment i kontrakt API opisuje
+[Frontend React](FRONTEND.md). Nie ma nowych zależności Python ani migracji.
+`resources.test_api` sprawdza CRUD JSON, scoped i zwykłe adresy, właściciela,
+autora, aktywne osoby, walidację, izolację Workspace, cofnięcie członkostwa,
+CSRF, kody błędów i bezpieczny bootstrap. Uruchamiaj razem z `resources.tests`
+i testami kontekstu Workspace oraz logowania. Browser QA obejmuje listę
+referencyjną, CRUD, walidację i sieć, filtry, kolumny, Escape/fokus,
+bezpośredni edytor, ponowne wejście, historię nawigacji i telefon.
+
+Weryfikacja 16.10.2026: wszystkie 35 testów Zasobów (w tym 16 nowych API)
+przeszły na osobnej bazie PostgreSQL. Szerszy przebieg 113 testów miał
+99 sukcesów, 11 nieudanych asercji i 3 błędy. Te same 14 problemów odtworzono
+na niezmienionym HEAD w osobnej kopii i bazie: testy `workplaces.test_team`
+odwołują się do wycofanego Tasks, a test migracji identyfikatorów zgłasza
+brak kolumny `legacy_slug`. Nie przywracano historycznych funkcji.
+
+Playwright/Chrome na izolowanym QA przy 1440×1000, 1024×900 i 390×900
+potwierdził listę i formularz referencyjny, rzeczywisty CRUD przez JSON,
+walidację z zachowaniem pól, błąd odczytu/zapisu i ponowienie, nowszy tekst
+podczas opóźnionego wyszukiwania, filtry, sortowanie, paginację, kolumny
+z obsługą klawiatury i trwałością, zaznaczenia, Escape i porzucenie szkicu,
+bezpośredni edytor, zwykły/scoped URL, powrót i Wstecz/Dalej, pusty Workspace
+oraz brak przepełnienia i nieoczekiwanych błędów konsoli/JS. Plugin Browser
+był niedostępny. Nie sprawdzano Safari/Firefox ani całego repozytorium.
+Instalacja z lockfile, build, typy, format, start trybu watch, kontrola Django,
+składnia Pythona i JS, linki dokumentacji, indeks i diff przeszły.
+
 ## Usunięcie statusu zapisu z nagłówka (15.10.2026)
 
 Nagłówek szczegółów zadania zawiera powrót i tytuł. Automatyczny zapis
@@ -401,7 +644,7 @@ projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
 w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
 pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
 
-`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+`backend/tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
 odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
 wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
 a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
@@ -692,7 +935,7 @@ wycofanie Kanbana oraz brak tagów w Dokumentach. Browser QA: zakładka i ekran
 referencyjny, dodanie/edycja/usunięcie, notatka, błąd nazwy, filtry, pusty stan,
 Escape, powrót po częściowej nawigacji oraz desktop i 390px.
 
-Źródła: [requirements.txt](../requirements.txt), [settings.py](../ancore/settings.py).
+Źródła: [requirements.txt](../requirements.txt), [settings.py](../backend/ancore/settings.py).
 
 - Python zgodny z używaną wersją Django.
 - PostgreSQL; migracje Tasks korzystają z `TrigramExtension` (`pg_trgm`) i GIN.
@@ -738,6 +981,8 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 środowiskowe o tych samych nazwach.
 
 Nie nadpisuj istniejącego `.env` podczas wykonywania zwykłego zadania.
+Nowe środowisko skonfiguruj na podstawie [.env.example](../.env.example).
+`.gitignore` pomija `.env` i jego lokalne warianty, zachowując ten przykład.
 
 ## 3. Start nowego środowiska
 
@@ -1049,7 +1294,7 @@ To obserwacje stanu na 15.09.2026, nie lista wdrożonych poprawek.
   katalogów wykazał migracje nieśledzone także w starszych modułach.
   Sam `rg --files` respektujący ignore może ich nie pokazać.
 - `requirements.txt` nie przypina dokładnych wersji.
-- `tasks/views.py` jest pustą pozostałością; routing używa pakietu `tasks/views/`.
+- `backend/tasks/views.py` jest pustą pozostałością; routing używa pakietu `backend/tasks/views/`.
 - Nazwy części plików/bloków/klas są historyczne. Decydują aktywne importy,
   trasy i wywołania, nie nazwa.
 - Uprawnienia udostępniania są wyłączone mimo pozostałych modeli/helperów.
@@ -1070,6 +1315,20 @@ osobnego runnera frontendowych testów ani serwisu zadań w tle. Nie oznacza to,
 
 ## 8. Wdrożenie
 
+Po przeniesieniu źródeł dodaj katalog `backend/` do ścieżki importów procesu
+serwera. Przykład zmiennej środowiskowej (podstaw rzeczywistą ścieżkę):
+
+```sh
+export PYTHONPATH=/ścieżka/do/ancore/backend
+```
+
+Wejścia pozostają `ancore.wsgi:application` oraz `ancore.asgi:application`.
+Alternatywnie użyj opcji serwera wskazującej katalog importów. Nie importuj
+`backend.ancore` ani `backend.spaces`: aplikacje zachowują pierwotne nazwy.
+`manage.py` ustawia ścieżkę samodzielnie. `BASE_DIR` nadal wskazuje katalog
+repozytorium, więc nie trzeba przenosić `.env`, mediów, prywatnych dokumentów,
+zasobów ani plików zbieranych przez `collectstatic`.
+
 Projekt ma wejścia WSGI i ASGI. Repozytorium nie dokumentuje konkretnego
 serwera wdrożenia, domeny, pipeline'u ani backupów; ten opis nie zakłada ich
 konfiguracji. `STATIC_ROOT` wskazuje `BASE_DIR / 'staticfiles'` (katalog ignorowany
@@ -1080,7 +1339,7 @@ Publiczne media ogranicz do `profile_photos/`, `company_photos/` i
 `workplace_photos/` oraz rozszerzeń JPG/JPEG/PNG/WebP. Nie konfiguruj publicznego
 aliasu całego `MEDIA_ROOT`: `task_attachments/` i `kanban_attachments/` są
 prywatne i wymagają pobierania przez widoki aplikacji. Wbudowany routing DEBUG
-egzekwuje tę listę w `core/media.py`. Dysk/Dokumenty pozostają poza publicznym
+egzekwuje tę listę w `backend/core/media.py`. Dysk/Dokumenty pozostają poza publicznym
 storage. Konfiguracja zewnętrznego serwera nie jest częścią repozytorium.
 
 Przy osobnym zadaniu wdrożeniowym ustal konfigurację procesu, statycznych
@@ -1175,7 +1434,7 @@ Migracja `documents/0011_workspacedocument_is_pdf_form_and_more.py` dodaje
 pola formularza PDF i szablonu oraz `DocumentVersion` z wyłącznym powiązaniem
 z Dyskiem albo Dokumentami. Jest addytywna; istniejące pliki nie są przenoszone.
 Zastosuj ją przed uruchomieniem ekranów PDF i szablonów. Nowe puste PDF-y są wersjonowane
-w `documents/blank/`; ich pochodzenie opisuje tamtejszy README. Nie ma nowych
+w `backend/documents/blank/`; ich pochodzenie opisuje tamtejszy README. Nie ma nowych
 zależności aplikacji. Historia wersji została wycofana z Dysku i Dokumentów;
 model i migracja pozostają dla zgodności z istniejącymi danymi. Nie ma nowej
 migracji ani masowego usuwania archiwów. Dotychczasowe pliki historii nadal
@@ -1459,7 +1718,7 @@ Testy wycofania kopiowania w `dashboard.test_pulpits`
 sprawdzają 404 dawnych adresów GET/POST (zwykłe/scoped, katalog/zarządzanie)
 dla twórcy i członka, zachowanie konfiguracji, gadżetów, dostępu i gwiazdek,
 brak akcji kopiowania w menu oraz brak pustego menu w przeglądzie odbiorcy.
-Katalog `GADGET_CATALOG` i `AVAILABLE_GADGET_KINDS` w `dashboard/pulpits.py`
+Katalog `GADGET_CATALOG` i `AVAILABLE_GADGET_KINDS` w `backend/dashboard/pulpits.py`
 obejmują wyłącznie „Postęp pracy”. Migracja `dashboard.0010_work_progress_gadget`
 zastępuje stare gadżety jedną kartą na niepusty pulpit, w miejscu pierwszej starej
 karty; resetuje jej tytuł/źródło/przypisanie i usuwa pozostałe stare karty.
@@ -1666,7 +1925,7 @@ migracji w Git. `spaces.test_task_detail_parity` obejmuje pięć paneli,
 kategorię/przypomnienie, widoczność i prywatnych potomków, modal podzadania,
 zbiorcze usuwanie, modal czasu z dodawaniem/edycją/usuwaniem, paginację,
 udostępnianie/role, granice administratora, nieprawidłowe ID i powiadomienia.
-Wspólna walidacja czasu jest w `core/work_logs.py`; testuj także starsze
+Wspólna walidacja czasu jest w `backend/core/work_logs.py`; testuj także starsze
 `tasks.test_work_logs`, `dashboard.test_notifications`, `test_reminders`,
 `test_collaboration` i `core.test_file_lifecycle`.
 
@@ -1700,3 +1959,322 @@ Po weryfikacji usunięto bazę i pliki QA oraz tymczasową sesję używaną
 do odczytu lokalnego ekranu. Wcześniejsze dane planowania, adresy i treści
 importowanych zadań pozostały zachowane.
 Safari i Firefox nie były sprawdzane.
+
+## Kontynuacja migracji React (16.10.2026)
+
+Aktualny zakres ekranów, API, budowanie i pozostałe moduły:
+[FRONTEND.md](FRONTEND.md). Przed uruchomieniem testów renderujących te ekrany
+zbuduj `frontend/app`. Wspólna powłoka Django i nieprzeniesione moduły nadal
+są potrzebne; nie usuwaj starszych skryptów ani szablonów przy okazji migracji.
+
+Wykonany zestaw `core.test_frontend spaces resources planner
+ dashboard.test_for_you core.test_file_lifecycle` objął 319 testów:
+317 przeszło. Dwie asercje `spaces.test_issue_types` oczekują HTTP 302
+po AJAX zapisie szczegółów, choć obecny widok zwraca JSON 200. Obie awarie
+odtworzono na osobnej kopii niezmienionego HEAD. Nowe testy API uruchomiono
+też osobno; po dodaniu ochrony starszych nagłówków AJAX przeszło 20 testów.
+Pełny zestaw wszystkich aplikacji nie był ponawiany; znane starsze problemy
+pozostają opisane we wcześniejszych rozdziałach.
+
+Browser plugin był niedostępny, dlatego użyto Playwright z lokalnym Chrome,
+oddzielną bazą testową, kontami i storage QA. Sprawdzono 1440×1000,
+1024×900 i 390×900: katalog/formularze, zapis, błędy, ponowne wejście,
+częściową nawigację, Back/Forward, filtry i kolumny Zasobów, cztery widoki
+Kalendarza, Dla ciebie/Ustawienia, Przestrzenie/listę/tablicę/backlog,
+przeciąganie kart, zbiorcze planowanie i rozpoczęcie sprintu, konfigurację,
+Zespoły i ochronę ostatniego administratora. Dla zadań: automatyczny zapis,
+komentarz ze wzmianką, prywatny upload/download/usunięcie pliku, podzadania,
+walidację/dodawanie/edycję czasu, historię, wyszukiwanie osób, udostępnianie,
+role, obserwatora i odebranie dostępu. Porównano ekran zadania z dotychczasowym
+szablonem; nie wykonywano automatycznego porównania pikseli całej aplikacji.
+Safari i Firefox nie były sprawdzane.
+
+Przy wymianie hashowanego entry pointu `AncoreReactRuntime.dispose()` odłącza
+starsze listenery i korzenie Reacta przed rejestracją nowej wersji. Zapobiega
+to podwójnemu montowaniu po wdrożeniu i częściowej nawigacji. Zmiany tej
+warstwy wymagają sprawdzenia również ponownego załadowania entry pointu
+w otwartej karcie. Nie zmieniono modeli ani migracji bazy.
+
+Dodatkowe końcowe sprawdzenia Chrome potwierdziły zachowanie pogrubienia
+oraz list w opisie zadania po ponownym wejściu, filtrowanie znaczników/atrybutów
+według dotychczasowej listy dozwolonych, szczegółowy komunikat odrzuconego
+załącznika i usuwanie oczekującego pliku. Sprawdzono przeniesienie wybranego
+dnia z miesiąca do widoku dziennego, linię bieżącej godziny oraz wyświetlanie
+czasu pracy w Europe/Warsaw przy strefie przeglądarki America/Los_Angeles.
+Symulacja trzykrotnego zastąpienia entry pointu nie tworzyła dodatkowych
+korzeni ani modali. Poprawka wspólnego otwierania okna respektuje fokus,
+który użytkownik zdążył już przenieść do innego pola; regresje Kalendarza
+i Zasobów z szybkim wypełnianiem formularzy przeszły ponownie.
+
+## Migracja Tagów i Filtrów do Reacta (16.10.2026)
+
+Tagi Przestrzeni oraz katalog, zarządzanie i wyniki Filtrów używają
+`frontend/app/src/tags`, `src/filters`, `backend/spaces/tag_frontend.py`
+i `backend/dashboard/filter_frontend.py`. API nadal deleguje do `tag_action`
+i `filter_views`, zachowując właściciela Workspace, faktycznego autora,
+ACL Przestrzeni/zadań, transakcje, rewizje oraz ograniczone opcje formularzy.
+Nie zmieniono modeli, migracji ani zależności.
+
+Wykonany końcowy zestaw:
+
+```sh
+.venv/bin/python manage.py test core.test_filter_frontend core.test_frontend \
+  dashboard.test_filters spaces.test_tags dashboard.test_pulpits resources --noinput
+```
+
+Na osobnej bazie PostgreSQL przeszło **139/139 testów**, w tym 12 nowych
+`core.test_filter_frontend`. Sprawdzają JSON i bootstrap zwykłych/scoped adresów,
+ACL wyników/opcji, wyszukiwanie wielowartościowe i paginację, CRUD i udostępnianie,
+autora notatek, rewizje, atomowe usuwanie wielu tagów, obserwatora, CSRF
+i usuwanie starszych nagłówków AJAX. Szerszy przebieg 147 testów miał 143 sukcesy;
+trzy awarie i jeden błąd w `tasks.test_tag_retirement` odtworzono identycznie
+na tymczasowej kopii niezmienionego HEAD i osobnej bazie. Testy oczekują dawnych
+ekranów Tasks (200 zamiast obecnych 302/409) oraz usuniętej trasy admina
+`tasks_task_change`. Nie przywracano wycofanych ekranów.
+
+Plugin Browser był niedostępny; użyto Playwright z lokalnym Chrome,
+fikcyjnymi kontami oraz oddzielną bazą i storage QA. Sprawdzono 1440×900/1000,
+1024×900 i 390×900. Tagi: katalog, filtry, sortowanie, paginację/rozmiar strony,
+wyszukiwanie i pusty wynik, CRUD, duplikat/kolor, informacje, notatki
+z dodawaniem/edycją/usuwaniem i ponownym wejściem, zaznaczanie/usuwanie zbiorcze,
+kolumny i ich trwałość/zmianę szerokości klawiaturą oraz Escape/porzucenie szkicu.
+Filtry: wybory wielokrotne, grupy statusów/zaznaczenie/zwijanie, zaawansowane
+zapytanie i błędną składnię, ochronę bezstratnego przełączenia trybu, zapis,
+kopię, edycję, zarządzanie z zachowaniem URL, gwiazdki, strony, udostępnienie,
+odbiorcę bez prywatnego zadania oraz obserwatora tagów bez akcji zapisu.
+Bezpośredni adres modalu zachowuje kryteria przy anulowaniu. Konflikt dwóch
+okien nie nadpisuje nowszej definicji i zachowuje starszy szkic. Błąd sieci
+zachowuje pola i pozwala ponowić zapis. Usunięcie filtra wymaga potwierdzenia
+i zachowuje kontekst zarządzania.
+
+Porównano ekran tagów, katalog i wyniki Filtrów oraz modal tagu z zachowanymi
+szablonami Django przy 1440×1000; nie wykonywano automatycznego porównania pikseli
+całej aplikacji. Sprawdzono częściową nawigację, Wstecz/Dalej, ponowne otwieranie
+modali, brak pustej strony/nakładki błędu, brak przepełnienia dokumentu
+i brak nieoczekiwanych ostrzeżeń/błędów konsoli. Pełna regresja przeglądarkowa
+Zasobów po wydzieleniu `shared/DirectoryColumns.tsx` także przeszła.
+Safari/Firefox ani pełny zestaw repozytorium nie były sprawdzane.
+
+Kontrole wykryły i objęły poprawkami obramowania pól wyszukiwania, widoczność
+checkboxów i rozmiary ikon tagów, zagnieżdżone menu, etykietę zapisu po walidacji,
+natywne zdarzenie widoczności dla pól DOM i inicjalizację ujawnionego pickera
+osób. Zapis czeka na zakończenie częściowej nawigacji przed odblokowaniem
+kolejnej akcji. Budowanie/typecheck, Prettier, kontrola Django, składnia JS,
+linki dokumentacji, indeks kodu i `git diff --check` przeszły.
+
+
+## Migracja Pulpitów do Reacta (16.10.2026)
+
+Katalog, zarządzanie, pulpit domyślny, przegląd, ustawienia/dostępy oraz edytor
+używają `frontend/app/src/pulpits/` i `backend/dashboard/pulpit_frontend.py`.
+Oryginalne formularze i widoki zachowują ACL, autora, transakcje i rewizje.
+Strukturalny JSON dopuszczono wyłącznie dla `arrange` i `gadget_quick_add`;
+pozostałe operacje zachowują kontrakt formularza. Nowy gadżet odczytuje bieżące
+`SpaceTask` tak samo jak pełny przegląd, także przed odświeżeniem. Usunięcie
+przekazuje unieważnione adresy powrotu do istniejącej powłoki.
+Nie zmieniono modeli, migracji ani zależności.
+
+Wykonany końcowy zestaw:
+
+```sh
+.venv/bin/python manage.py test core.test_pulpit_frontend dashboard.test_pulpits \
+  dashboard.test_pulpit_editor dashboard.test_pulpit_catalog \
+  dashboard.test_pulpit_management dashboard.test_pulpit_urls \
+  dashboard.test_default_pulpit dashboard.test_pulpit_navigation \
+  dashboard.test_work_progress_migration dashboard.test_pulpit_group_retirement \
+  core.test_frontend core.test_filter_frontend resources --noinput
+```
+
+Na osobnej bazie PostgreSQL przeszły **164/164 testy**, w tym 13 nowych testów
+kontraktu React Pulpitów. Obejmują zwykłe/scoped adresy, inicjalizację domyślnego
+pulpitu, uprawnienia twórcy, prywatne źródła i liczniki, oddzielne formularze,
+relacje dozwolonych osób/Przestrzeni, walidację, autora, bieżące dane zadań,
+kompletny układ i atomowe odrzucenie błędnych ID, rewizje, limit, gwiazdki,
+paginację, unieważnienie powrotów, starsze nagłówki AJAX, CSRF i sesję.
+Pełny zestaw repozytorium nie był ponawiany.
+
+
+Plugin Browser był niedostępny; użyto Playwright z lokalnym Chrome,
+oddzielną bazą, fikcyjnymi kontami i storage QA. Sprawdzono 1440×1000/900,
+1024×900 i 390×900: katalog/zarządzanie, wyszukiwanie i puste wyniki,
+paginację, zaznaczenie i stan częściowy, gwiazdki, tworzenie z walidacją
+odbiorców, zachowanie szkicu, ustawienia/dostępy i ponowne wejście.
+Edytor: pięć układów, scalanie usuwanych kolumn, przenoszenie menu i natywnym
+uchwytem pomiędzy kolumnami, konfigurację/usuwanie gadżetów, szybkie dodawanie
+z bieżącymi licznikami, szukanie bez polskich znaków, kategorie i trwałość
+katalogu oraz limit 24. Odbiorca nie ma kontrolek edycji, liczy własne przypisania
+i nie widzi nazwy/liczników prywatnego źródła. Usunięcie Pulpitu zachowuje
+kontekst zarządzania. Pulpit domyślny nie ma akcji usuwania, a usunięte gadżety
+nie wracają po przeładowaniu.
+
+Bezpośrednie adresy tworzenia i gadżetu otwierają pojedynczy modal nad ekranem;
+anulowanie w zarządzaniu zachowuje parametry. Sprawdzono Escape/fokus,
+potwierdzenie porzucenia szkicu, częściową nawigację i Wstecz/Dalej.
+Symulacja HTTP 503 zachowuje formularz i pozwala ponowić zapis, a błąd układu
+cofa zmianę. Dwa okna potwierdziły HTTP 409 i odświeżenie nowszej rewizji;
+nawigacja czeka na zapis. Nie stwierdzono pustych ekranów, nakładki błędu,
+przepełnienia dokumentu ani nieoczekiwanych błędów/ostrzeżeń konsoli.
+
+Porównano katalog, przegląd, edytor, ustawienia/dostępy i modal tworzenia
+z zachowanymi szablonami Django. Poprawiono rozmiar ikon, semantyczną nazwę
+filtra widoczności (zachowuje ikony opcji), łamanie opisu i geometrię pól.
+Zrzuty porównywano po skończeniu animacji modalu; nie wykonano automatycznego
+porównania pikseli całej aplikacji. Pełna regresja Chrome Zasobów po zmianach
+wspólnych komponentów przeszła. Budowanie/typecheck, Prettier, kontrola Django,
+składnia JS, linki dokumentacji, indeks i `git diff --check` przeszły.
+Safari i Firefox nie były sprawdzane.
+
+## Migracja Dysku i Dokumentów do Reacta (16.10.2026)
+
+`backend/documents/frontend.py` oraz `frontend/app/src/documents/` przenoszą katalogi,
+listy/kafelki, formularze, upload, podglądy, przenoszenie, gwiazdki, kosz,
+szablony, tekstowy edytor Ancore i powłokę pełnych edytorów. Django zachowuje
+formularze, sesję/CSRF, zakres właściciela Workspace, prywatny storage, sygnatury
+plików, rewizje, transakcje i kontrolowane źródła/callbacki. Nie zmieniono modeli,
+migracji ani zależności. Chronione pobieranie i zapis sceny tablicy pozostają
+poza proxy API ekranów. Poprawiono też zgodność rodzaju podglądu ZIP w szablonie
+HTML oraz wybór pełnej nawigacji do edytora podczas importu tekstu.
+
+Końcowy zestaw na osobnej bazie PostgreSQL:
+
+```sh
+.venv/bin/python manage.py test core.test_document_frontend documents.tests \
+  documents.test_office documents.test_previews documents.test_moves \
+  documents.test_suite documents.test_office_extras documents.test_drive_office \
+  documents.test_colors documents.test_rename documents.test_drive_folders \
+  documents.test_office_folders documents.test_folder_icons documents.test_query \
+  documents.test_office_query documents.test_library_photos core.test_frontend \
+  core.test_filter_frontend core.test_pulpit_frontend --noinput
+```
+
+**258 z 259 testów przeszło**, w tym wszystkie 15 nowych testów kontraktu.
+Jedyna nieudana asercja, `documents.tests.DocumentLibraryTests.
+test_workspace_view_search_tag_pagination_and_actions_keep_workspace_scope`,
+oczekuje wycofanych globalnych tagów (`'tags' in groups`). Odtworzono ją
+identycznie na osobnej kopii niezmienionego HEAD i osobnej bazie. Nie
+przywracano tagów. Nowe testy obejmują zwykłe/scoped adresy, członkostwo i jego
+cofnięcie, obcy Workspace, CSRF, metody, niedozwolone endpointy proxy,
+bezpieczny bootstrap, filtry/strony, formularze, kolory, upload i limity,
+przenoszenie poddrzewa, kosz, prywatne pobranie, podgląd archiwum,
+sześć typów dokumentów, niezależne kopie szablonów, czyszczenie HTML,
+konflikt tekstu i metadanych oraz zmianę nazwy bez zmiany rewizji/klucza.
+
+Plugin Browser był niedostępny; użyto Playwright z lokalnym Chrome,
+fikcyjnymi kontami oraz oddzielną bazą i storage QA. Przy 1440×1000/900,
+1024×900 i 390×900 sprawdzono katalogi i modale, zaznaczenia, filtry,
+sortowanie, paginację, listę/kafelki i trwałość, pusty wynik, tworzenie dysku
+oraz folderu, kolory, duplikat z zachowaniem danych, rzeczywisty upload wielu
+plików, podglądy tekstu/obrazu/ZIP, metadane, natywne przeciąganie do folderu,
+przenoszenie między dyskami, gwiazdkę, kosz/przywracanie i prywatne pobranie.
+Sprawdzono mobilny panel dysków, fokus/Escape, ponowne wejście i brak
+przepełnienia dokumentu oraz nieoczekiwanych błędów/ostrzeżeń konsoli.
+
+Dokumenty: utworzenie i kopia szablonu otwierają osobną kartę; blokada popupu
+pokazuje link do jednego zapisanego pliku. Zmiana nazwy zachowuje się po reload,
+Escape anuluje szkic. Sprawdzono potwierdzenie kosza, rzeczywisty zapis tekstu
+Ctrl+S z formatowaniem, reload, HTTP 409 z zachowaniem lokalnej treści i import
+TXT. Istniejąca tablica Excalidraw działała w prawdziwym iframe: narysowany
+kształt zapisano przez Django i odtworzono po reload.
+
+Pełny serwer ONLYOFFICE nie był uruchamiany w QA. Sprawdzono jego stan
+niedostępności oraz protokół powłoki z lokalnym symulatorem `DocEditor`:
+automatyczny zapis, HTTP 503, ponowienie, oczekiwanie na rzeczywistą rewizję
+Django i unieważnienie sesji. To nie potwierdza edycji formatów biurowych przez
+żywą usługę. Testy backendu integracji używają istniejących atrap sieciowych.
+Nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
+
+Dodatkowe scenariusze Chrome potwierdziły zachowanie wybranych plików po
+błędzie sygnatury i HTTP 503, pojedynczy zapis po ponowieniu, anulowanie/
+porzucenie szkicu, zamknięcie bezpośredniego formularza z powrotem do dysku,
+zrzut pliku z systemu do wskazanego folderu i brak zmiany źródła po odrzuconym
+przeniesieniu. Opóźniona starsza odpowiedź wyszukiwania nie zastępuje nowszego
+tekstu, również ze spacjami na brzegach. Konflikt metadanych HTTP 409 zachowuje
+nazwę i wybrany plik zastępujący. Menu, częściowa nawigacja Dysk–Zasoby oraz
+Wstecz/Dalej działają bez błędów JS. Pełna regresja przeglądarkowa Zasobów
+po zmianach wspólnych helperów także przeszła.
+
+Porównano katalogi Dysku/Dokumentów, listę plików, modal dysku oraz oba rodzaje
+powłoki edytora z zachowanymi szablonami Django. Poprawki obejmują rozmiary
+ikon, osobny wybór liczby wierszy, menu akcji, układ etykiet formularza,
+panele filtrów/sortowania i szybkie zamykanie mobilnego panelu dysków.
+Nie wykonywano automatycznego porównania pikseli całej aplikacji.
+Build/typecheck, Prettier, kontrola Django, składnia Pythona i trzech skryptów
+Dokumentów, lokalne linki dokumentacji, aktualność indeksu oraz diff przeszły.
+
+## Migracja zarządzania Workspace do Reacta (16.10.2026)
+
+Katalog, tworzenie, ustawienia, członkowie/role, wysłane i otrzymane zaproszenia
+korzystają z `backend/workplaces/frontend.py` i `frontend/app/src/workspaces/`.
+Django zachowuje formularze, transakcje, sesję/CSRF, ograniczenia administratora,
+walidację plików, stały kod oraz czyszczenie dostępów po odebraniu członkostwa.
+Wybrany Workspace do zarządzania nie zmienia aktywnego kontekstu. Picker awatara
+jest wyspą DOM używającą istniejącego kadrowania i ilustracji. Nie zmieniono
+modeli, migracji ani zależności.
+
+Końcowy celowany zestaw na oddzielnej bazie PostgreSQL przeszedł **45/45**:
+
+```sh
+.venv/bin/python manage.py test core.test_workspace_frontend \
+  workplaces.test_management workplaces.test_avatars \
+  workplaces.test_invitation_candidates --noinput
+```
+
+W tym 12 nowych testów kontraktu: bootstrap i JSON, zwykłe/scoped API, wybór
+niezależny od aktywnego kontekstu, utworzenie i powtarzające się nazwy, stały
+kod, błędy formularzy, ilustracje/zdjęcia i cleanup, podpowiedzi bez HTML,
+ponowna walidacja zaproszenia, role i uprawnienia, autor, anulowanie, cofnięcie
+dostępu i klucze Office, odpowiedź odbiorcy/wygaśnięcie, kontekst przeglądania
+zaproszeń, przełączenie, ostatni własny Workspace, obce identyfikatory,
+sesja, CSRF i metody.
+
+Szerszy zestaw obejmował powyższe moduły oraz `workplaces.tests`,
+`workplaces.test_team`, `workplaces.test_defaults`, `accounts.test_avatars`,
+`core.test_frontend`, `core.test_document_frontend`, `core.test_filter_frontend`
+i `core.test_pulpit_frontend`: **158 z 186 testów przeszło**. Wszystkie 26
+nieudanych asercji i 2 błędy odtworzono na tymczasowej kopii niezmienionego
+HEAD i osobnej bazie. Zgodne były nazwy testów, linie i powody błędów
+(z wyjątkiem losowych identyfikatorów w adresach). Dotyczą dawnych Tasks,
+Favorites, przekierowań i starych asercji HTML Workspace. Nie przywracano
+wycofanych funkcji ani nie zmieniano testów tylko po to, aby były zielone.
+Nie uruchamiano testów migracji ani całego repozytorium.
+
+Plugin Browser był niedostępny; użyto Playwright z lokalnym Chrome oraz
+fikcyjnymi kontami, oddzielną bazą i storage QA. Katalog → utworzenie →
+ustawienia → awatar/kadr → zapis/reload i członkowie → zaproszenie → role →
+anulowanie były sprawdzane przez rzeczywiste API. Przeszły zaznaczenia i stan
+częściowy, rozmiar strony/strony, wyszukiwanie/pusty wynik, Enter na wierszu,
+klawiatura zakładek i zachowanie szkicu, anulowanie/porzucenie zmian,
+błąd HTTP 503 i ponowienie bez duplikatu, błędy ustawień i e-maila,
+30 ilustracji, anulowanie wyboru, uszkodzony obraz, Escape w kadrze,
+powiększenie i zapis zdjęcia. Zmiana nazwy/zdjęcia zachowała kod i aktywny
+kontekst. Porównano katalog i okna z zachowanymi szablonami Django.
+
+Przy 1440×1000/900, 1024×900 i 390×900 sprawdzono katalog, tworzenie, Główną,
+członków, wysłane i otrzymane zaproszenia, ponowne wejście oraz brak
+przepełnienia dokumentu i nieoczekiwanych błędów/ostrzeżeń konsoli.
+Właściciel promuje i obniża rolę; administrator nie ma operacji na
+administratorach/właścicielu i zaproszeniach administratorów; członek widzi
+ustawienia tylko do odczytu i nie dostaje wysłanych zaproszeń. Odebranie dostępu
+wymaga potwierdzenia; anulowanie nic nie usuwa, a zatwierdzenie blokuje także
+stare żądanie członka. Zagnieżdżone okno zachowuje szkic ustawień rodzica.
+Otrzymane zaproszenia przeglądano, odroczono, odrzucono i przyjęto;
+rzeczywiste członkostwo oraz jawne przełączenie zmieniły aktywny Workspace.
+
+Poprawiono wspólną kontrolę przycięcia menu w `dropdown-layer.js`: kontenery
+za przodkiem `position: fixed` nie przycinają kontrolek modala. Krótkie menu
+akcji używa wariantu `Dropdown.searchable=false`. Escape respektuje otwarty
+kadr i podpowiedzi osoby. Nowe API widgetu awatara ma inicjalizację per kontener
+i sprzątanie przy odmontowaniu. Kontrola Django, build/typy, format, składnia
+Pythona/JS, linki dokumentacji, indeks i diff przeszły. Safari/Firefox oraz
+pełna regresja wszystkich ekranów nie były sprawdzane.
+
+Dodatkowo sprawdzono błąd odczytu wybranego kontekstu i ponowienie zachowujące
+żądaną zakładkę, menu otwierane klawiaturą nad boczną nawigacją oraz Escape
+bez zamykania rodzica. Opóźniona odpowiedź podpowiedzi nie zastępuje nowszego
+tekstu. Błąd podpowiedzi nadal pozwala wpisać e-mail; wysłanie przy otwartej
+liście nie gubi kliknięcia, a walidacja zachowuje tekst i pozwala ponowić zapis.
+Regresja wspólnych elementów potwierdziła powrót do pulpitu, częściową nawigację
+Wstecz/Dalej, select i zamykanie formularza Zasobów, dotychczasowy picker awatara
+konta oraz ponowne wejście i sprzątanie pickera Workspace. Początkowy fokus
+modala pomija kontrolki schowanego, zagnieżdżonego pickera i wybiera aktywną
+zakładkę lub pole tworzenia.

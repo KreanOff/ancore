@@ -6,6 +6,11 @@ nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
 
 ## Szybkie wejście w projekt
 
+Kod Django znajduje się w `backend/`, frontend w `frontend/`, a wspólne zasoby
+w `static/`. Główne instrukcje startu i mapa repozytorium są w
+[README projektu](../README.md). Polecenia Django nadal uruchamiaj przez
+`manage.py` w katalogu głównym. Importy Pythona zachowują dotychczasowe nazwy.
+
 1. [Architektura](ARCHITECTURE.md) — czym jest aplikacja, drzewo katalogów,
    granice modułów, przepływ żądania i najważniejsze zależności.
 2. [Moduły](MODULES.md) — dostępne funkcje, ekrany, dane i scenariusze użytkownika.
@@ -26,23 +31,26 @@ Przestrzenie, niezależne zadania `SpaceTask`, sprinty i zespoły: [Przestrzenie
 
 Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 
+Frontend React, budowanie i API Django: [Frontend React](FRONTEND.md).
+
 Wyszukiwanie zadań, zapisane filtry i udostępnianie: [Filtry](FILTERS.md).
 
 ## Co czytać przed konkretnym zadaniem
 
 | Zadanie | Opis i punkty wejścia |
 | --- | --- |
-| Nowe pole zadania | [Przestrzenie](SPACES.md); `spaces/models.py`, `spaces/forms.py`, `spaces/task_views.py` |
-| Wycofane Projekty, Grupy, Zadania, Ulubione projekty i Szablony | Moduły: historyczne Tasks; `tasks/urls.py`, `tasks/test_retirement.py`, `spaces/middleware.py` |
-| Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `spaces/`, `static/js/spaces.js` |
-| Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `kanban/urls.py`, `spaces/middleware.py` |
+| Nowe pole zadania | [Przestrzenie](SPACES.md); `backend/spaces/models.py`, `backend/spaces/forms.py`, `backend/spaces/task_views.py` |
+| Wycofane Projekty, Grupy, Zadania, Ulubione projekty i Szablony | Moduły: historyczne Tasks; `backend/tasks/urls.py`, `backend/tasks/test_retirement.py`, `backend/spaces/middleware.py` |
+| Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `backend/spaces/`, `static/js/spaces.js` |
+| Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `backend/kanban/urls.py`, `backend/spaces/middleware.py` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
-| Profil lub historyczne dane Kontaktów/Firm | Moduły: Accounts i wycofane katalogi Contacts; Mechanizmy: tożsamość, dostęp, obrazy |
-| Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |
+| Logowanie, profil lub historyczne dane Kontaktów/Firm | Moduły: Accounts i wycofane katalogi Contacts; Mechanizmy: tożsamość, dostęp, obrazy; [API kont React](FRONTEND.md#api-i-interfejs-kont) |
+| Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `backend/resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
-| Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `documents/`, `core/upload_validation.py` |
-| Dokumenty i edycja treści | [Pełne edytory](OFFICE.md); `documents/editor_views.py`, `suite_views.py`, `office_service.py`, `frontend/board/` |
-| Wyszukiwanie lub powiadomienia | Mechanizmy: wyszukiwanie i historia; `dashboard/views.py` oraz odpowiedni panel JS |
+| React, JSON API i migracja frontendu | [Frontend React](FRONTEND.md); `frontend/app/`, `backend/core/frontend.py`, `backend/core/api.py`, domenowe `frontend.py` |
+| Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `backend/documents/`, `backend/core/upload_validation.py` |
+| Dokumenty i edycja treści | [Pełne edytory](OFFICE.md); `backend/documents/editor_views.py`, `suite_views.py`, `office_service.py`, `frontend/board/` |
+| Wyszukiwanie lub powiadomienia | Mechanizmy: wyszukiwanie i historia; `backend/dashboard/views.py` oraz odpowiedni panel JS |
 | Baza, migracje, środowisko | Praca developerska; modele i odpowiednie testy migracyjne |
 
 ## Jak interpretować opis

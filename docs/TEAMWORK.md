@@ -90,7 +90,7 @@ Odbiorca musi mieć aktywne konto i należeć do Workspace. Historyczne modele
 i `cancel` są odrzucane. Historyczne `SharedItem` i tokeny pozostają wyłączone.
 Zaproszenia do samego Workspace nadal wymagają decyzji odbiorcy.
 
-Endpointy w `tasks/views/project_team.py` ponownie weryfikują uprawnienia,
+Endpointy w `backend/tasks/views/project_team.py` ponownie weryfikują uprawnienia,
 aktywność kont i członkostwo przy każdym odczycie i zapisie. Operacje blokują
 Workspace i projekt w transakcji. Udostępnienie lub zmiana członka
 zapisują się osobno od pól głównego formularza; jego niezapisane dane pozostają.
@@ -99,14 +99,14 @@ pól projektu zachowuje członków. Zmiana na publiczny czyści członkostwa i a
 historyczne oczekujące zaproszenia; ponowne ustawienie prywatności zaczyna się bez odbiorców.
 
 Usunięcie lub dezaktywacja członkostwa Workspace przez zapis modelu usuwa
-udostępnienia i anuluje zaproszenia do projektów (`tasks/sharing_signals.py`);
+udostępnienia i anuluje zaproszenia do projektów (`backend/tasks/sharing_signals.py`);
 ponowne dołączenie nie przywraca ich. Operacje utrzymaniowe przez
 `QuerySet.update()` muszą same wyczyścić członkostwa i zaproszenia, ponieważ
 omijają sygnały. Sam filtr dostępu zawsze sprawdza członkostwo Workspace.
 
 Grupy oraz zadania mogą dodatkowo ograniczać widoczność projektu; podzadania dziedziczą ograniczenia wszystkich rodziców. Kontrola obejmuje
 całe drzewo rodziców, również stare podzadania z inną grupą niż rodzic;
-usuwanie zadania, grupy lub projektu odrzuca kaskadę obejmującą niedostępne podzadania. `tasks/access.py`
+usuwanie zadania, grupy lub projektu odrzuca kaskadę obejmującą niedostępne podzadania. `backend/tasks/access.py`
 filtruje jawnie według rzeczywistego odbiorcy: listy, nawigację, opcje formularzy,
 bezpośrednie URL, edycję i usuwanie (także zbiorcze), notatki, dziennik pracy,
 pliki, ustawienia terminów, wyszukiwanie, Dashboard, kalendarz i powiadomienia.
@@ -132,17 +132,17 @@ Kanban ma własne modele i analogiczne udostępnianie przestrzeni oraz tablic, o
 
 Migracja Tasks `0054_project_visibility` zachowuje istniejące projekty i szablony
 jako publiczne. Starszy formularz bez pola widoczności zachowuje bieżącą wartość.
-Testy `tasks/test_project_visibility.py` obejmują role, oba warianty URL,
+Testy `backend/tasks/test_project_visibility.py` obejmują role, oba warianty URL,
 spreparowane żądania, powiązane moduły, szablony i cofnięcie dostępu.
 Migracja `0055_project_sharing` dodaje pustą relację odbiorców, bez zmiany
 istniejącego dostępu. `0056_project_invitations` przenosi dotychczasowe udostępnienia
 do członkostw z rolą „Członek”, zachowując dostęp, i dodaje zaproszenia.
 Dashboard `0005_project_invitations` dodaje osobisty stan ich powiadomień.
 Tasks `0057_project_observer` rozszerza wybór roli w członkostwach i zaproszeniach,
-bez zmiany istniejących ról. `tasks/test_project_observer.py` sprawdza odczyt,
+bez zmiany istniejących ról. `backend/tasks/test_project_observer.py` sprawdza odczyt,
 blokady zapisu, zmianę roli, formularze, operacje zbiorcze i oba warianty URL.
-Testy `tasks/test_project_sharing.py` obejmują dostęp i integracje modułów,
-a `tasks/test_project_invitations.py` natychmiastowy dostęp, role, granice Workspace,
+Testy `backend/tasks/test_project_sharing.py` obejmują dostęp i integracje modułów,
+a `backend/tasks/test_project_invitations.py` natychmiastowy dostęp, role, granice Workspace,
 cofnięcie, brak zaproszeń i zachowanie wcześniejszych członkostw podczas migracji.
 
 ## Widoczność i udostępnianie grup
@@ -163,7 +163,7 @@ mają tę samą macierz co w projekcie, ale obowiązują w grupie. Obserwator pr
 pozostaje tylko czytelnikiem także wtedy, gdy w grupie ma wyższą rolę.
 
 Zakładki „Główna” i „Członkowie” korzystają z komponentów projektu.
-`tasks/views/section_team.py` obsługuje zespół i kandydatów pod
+`backend/tasks/views/section_team.py` obsługuje zespół i kandydatów pod
 `groups/<pk>/team/` oraz `groups/<pk>/team/candidates/`, także w adresach scoped.
 Można udostępnić grupę aktywnej osobie z tego Workspace mającej dostęp do
 projektu. `action=share` od razu tworzy `TaskSectionMembership`; grupa i jej
@@ -187,7 +187,7 @@ jeśli zawiera prywatną grupę, sam jest prywatny dla autora snapshotu.
 
 Migracje `tasks/0058_section_sharing` i `dashboard/0006_section_sharing`
 dodają pola, członkostwa, zaproszenia i osobisty stan ich powiadomień.
-Nie zmieniają istniejącego dostępu. Testy: `tasks/test_section_sharing.py`.
+Nie zmieniają istniejącego dostępu. Testy: `backend/tasks/test_section_sharing.py`.
 Migracja `tasks/0059_direct_sharing` zamienia ważne oczekujące zaproszenia
 projektów i grup w członkostwa, zachowując istniejące role. Ponownie sprawdza
 aktywność obu kont, Workspace, aktualne uprawnienia autora, prywatność oraz
@@ -195,7 +195,7 @@ projekt nadrzędny grupy. Nie przywraca zaproszeń odrzuconych, anulowanych,
 wygasłych ani dostępu po utracie uprawnień. Kończy wszystkie pozostałe oczekujące
 zaproszenia statusem `revoked`, bez przypisywania odbiorcy decyzji o akceptacji.
 Cofnięcie migracji nie odbiera nadanych członkostw. Regresje migracji:
-`tasks/test_direct_sharing_migration.py`.
+`backend/tasks/test_direct_sharing_migration.py`.
 
 ## Widoczność i udostępnianie zadań
 
@@ -217,7 +217,7 @@ Publiczne zadanie pokazuje osoby z dostępem odziedziczonym. Udostępnienie
 prywatnego zadania zapisuje się osobno od głównego formularza i działa od razu,
 bez zaproszenia, powiadomienia do akceptacji ani wysyłania e-maila.
 
-`tasks/views/task_team.py` obsługuje `items/<pk>/team/` oraz
+`backend/tasks/views/task_team.py` obsługuje `items/<pk>/team/` oraz
 `items/<pk>/team/candidates/`, także w adresach scoped. `pk` jest stabilnym
 kluczem bazy, nie wyświetlanym numerem `task_id`. Kandydat musi być aktywnym
 członkiem tego Workspace z dostępem do wszystkich nadrzędnych elementów.
@@ -238,7 +238,7 @@ Migracja `tasks/0060_task_sharing` zachowuje istniejące zadania jako publiczne
 w odziedziczonym zakresie. Wiąże starsze wpisy utworzenia podzadania ze stabilnym
 PK tylko przy zgodnym rodzicu, numerze i tytule. Niejednoznaczne lub nieaktualne
 wpisy zachowuje jako zdarzenia bez tytułu i numeru podzadania. Regresje dostępu,
-formularzy, migracji i integracji: `tasks/test_task_sharing.py`.
+formularzy, migracji i integracji: `backend/tasks/test_task_sharing.py`.
 
 ## Zaproszenia i ekran zespołu
 
@@ -411,14 +411,14 @@ właściciela, co po przyjęciu zaproszenia mogłoby wskazywać niewłaściwy Wo
 Migracja zachowuje pierwsze wystąpienie slugu, a kolejnym dopisuje identyfikator.
 Adresy z takim zmienionym slugiem trzeba odświeżyć; dane i nazwy pozostają zachowane.
 
-Testy `workplaces/test_team.py` obejmują role, zaproszenia, zakres danych,
+Testy `backend/workplaces/test_team.py` obejmują role, zaproszenia, zakres danych,
 przypisania, historię, oba warianty URL, pobieranie plików, odebranie dostępu,
 Office i osobiste dane bez Workspace. Weryfikacja wymaga PostgreSQL.
 
-Testy `workplaces/test_management.py` obejmują wybór niezależny od aktywnej sesji,
+Testy `backend/workplaces/test_management.py` obejmują wybór niezależny od aktywnej sesji,
 powroty po zapisie i błędach, stare linki, niedostępne identyfikatory, role, CSRF
 oraz jawne przełączenie kontekstu.
-`workplaces/test_invitation_candidates.py` obejmuje podpowiedzi, limit, uprawnienia,
+`backend/workplaces/test_invitation_candidates.py` obejmuje podpowiedzi, limit, uprawnienia,
 wykluczenia w wybranym Workspace, cofnięcie dostępu, escapowanie danych i ponowną
 walidację zapisu po zmianie członkostwa.
 
@@ -438,8 +438,18 @@ Endpoint po blokadzie ponownie sprawdza autora, kandydata i zakres.
 Zmiana widoczności na dziedziczoną czyści członkostwa samego zadania,
 pozostawiając niezależne prywatne podzadania.
 
-`spaces/signals.py` czyści udostępnienia po usunięciu lub dezaktywacji członka
+`backend/spaces/signals.py` czyści udostępnienia po usunięciu lub dezaktywacji członka
 Workspace, usunięciu członka prywatnej przestrzeni lub prywatnego rodzica.
 Ponowne dodanie nie przywraca tych dostępów. `QuerySet.update()` pomija
 sygnały i wymaga jawnego czyszczenia. Historyczne uprawnienia zostały
 jednorazowo odwzorowane podczas migracji opisanej w [SPACES.md](SPACES.md).
+
+## Interfejs zarządzania Workspace w React
+
+Katalog i okna ustawień/członków/zaproszeń korzystają z React/TypeScript oraz
+JSON API Django (`backend/workplaces/frontend.py`, `frontend/app/src/workspaces/`).
+Reguły ról, transakcje i operacje domenowe pozostają w `views.py` oraz
+`team_views.py`. Wybór do zarządzania nadal nie przełącza aktywnego Workspace.
+Odpowiedź na otrzymane zaproszenie jest dostępna wyłącznie jego odbiorcy;
+przyjęcie tworzy/aktywuje członkostwo i przełącza kontekst. API podpowiedzi
+osób udostępnia dane zamiast HTML. [Kontrakt migracji](FRONTEND.md).

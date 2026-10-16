@@ -48,6 +48,14 @@ Logowanie korzysta z Django Auth oraz `accounts.User`, gdzie `USERNAME_FIELD`
 to `email`. Profil i publiczny identyfikator są oddzielone od danych wpisu
 `Contact`. Aktualne konto jest w `request.user`.
 
+React używa osobnego `/accounts/api/v1/page/` z jawną listą operacji.
+Anonimowy dostęp dotyczy tylko logowania/rejestracji, a wszystkie zapisy
+zachowują CSRF. Adapter przekazuje zmienionego użytkownika do middleware
+i zachowuje cookie CSRF z wewnętrznej odpowiedzi `LoginView`, gdy zamienia
+przekierowanie na JSON. Dane kont nie są cache'owane; hasła i hashe sesyjne
+przełącznika pozostają wyłącznie w Django. Zmiana tożsamości wymaga pełnego
+odświeżenia powłoki, aby nie zachować danych poprzedniego konta w interfejsie.
+
 Każde udane logowanie przez `/accounts/login/` otwiera „Dla ciebie”
 (`LOGIN_REDIRECT_URL = 'for_you'`), także pierwsze logowanie po rejestracji.
 `AccountLoginView` ignoruje `next` z GET i POST, więc katalog Workspace ani
@@ -79,11 +87,11 @@ ponownego uwierzytelnienia pozostałych kont. Wylogowanie czyści cały przełą
 
 Obecność składa się z:
 
-- [middleware](../accounts/middleware.py), który aktualizuje aktywność przy żądaniach;
-- [presence.py](../accounts/presence.py), który obsługuje status i ostatnią aktywność;
+- [middleware](../backend/accounts/middleware.py), który aktualizuje aktywność przy żądaniach;
+- [presence.py](../backend/accounts/presence.py), który obsługuje status i ostatnią aktywność;
 - [presence.js](../static/js/presence.js), który wysyła heartbeat do
   `/accounts/presence/ping/` i współdzieli czas aktywności między kartami;
-- konfiguracji w `core/base.html` i `ancore/settings.py`.
+- konfiguracji w `core/base.html` i `backend/ancore/settings.py`.
 
 Domyślne wartości: bezczynność 120 s, heartbeat 30 s, ograniczenie zapisu
 `last_seen_at` 25 s. Wymuszone aktualizacje mogą ominąć ograniczenie.
@@ -102,7 +110,7 @@ znane wartości `view`; ustawienia odtwarzają zakładkę z formularza. Oglądan
 oraz tworzenie Workspace nie wywołują `set_active_workplace()`; jawne przełączenie,
 scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
 
-Źródło: [workplaces/services.py](../workplaces/services.py).
+Źródło: [workplaces/services.py](../backend/workplaces/services.py).
 
 1. Middleware sprawdza, czy adres zawiera `/workplaces/<slug>/<app>/`.
 2. Wyszukuje Workspace w zbiorze właściciela i członkostw bieżącego użytkownika.
@@ -180,12 +188,12 @@ do właściciela Workspace i odpowiedniego kontekstu. `workspace_owner(request)`
 weryfikuje rzeczywiste członkostwo przed przekazaniem właściciela danych do
 istniejących helperów Tasks/Kanban. Komentarze i historia zachowują rzeczywistego autora.
 
-W `tasks/views/tasks.py` są starsze funkcje udostępniania i linków, ale:
+W `backend/tasks/views/tasks.py` są starsze funkcje udostępniania i linków, ale:
 
 - `_received_share_permission()` i `_direct_share_permission()` zwracają pusty tekst;
 - `_task_shared_ids()` zwraca pustą listę, a współdzielone querysety są puste;
 - flagi widoków współdzielonych są wyłączone;
-- aktywny `tasks/urls.py` nie rejestruje endpointów tworzenia/akceptacji linków.
+- aktywny `backend/tasks/urls.py` nie rejestruje endpointów tworzenia/akceptacji linków.
 
 Samo istnienie `SharedItem`, `SharedItemLink`, `CompanyMembership`,
 `assignee` czy `responsible_user` nie daje dostępu. Aktywne członkostwo
@@ -241,7 +249,7 @@ Przy zmianie uprawnień trzeba świadomie przeanalizować całą ścieżkę,
 `Task.code` i `Task.full_code` zwracają obecnie tekst numeru `task_id`.
 Liczniki grup/zadań korzystają z blokady `select_for_update()` i transakcji.
 Numer `task_id` powstaje z maksimum w zakresie właściciela/Workspace.
-`core/task_numbering.py` blokuje wiersz właściciela przed zapisem, usuwaniem
+`backend/core/task_numbering.py` blokuje wiersz właściciela przed zapisem, usuwaniem
 i renumeracją; blokada poprzedza blokadę Workspace i blokady grup/zadań,
 również podczas tworzenia projektu z szablonu. Odroczone ograniczenie
 unikalności w PostgreSQL chroni kombinację użytkownika, Workspace i numeru.
@@ -329,7 +337,7 @@ w `Task` nie są synchronizowane z dziennikiem.
 
 ## 7. Katalogi, filtry i wydajność
 
-Katalogi projektów, wszystkich grup i wszystkich zadań używają `tasks/directory.py` do
+Katalogi projektów, wszystkich grup i wszystkich zadań używają `backend/tasks/directory.py` do
 wyboru `tab=private|shared|public|favorites` (domyślnie `private`). Filtr zakładki
 jest nakładany po `visible_to` i ograniczeniu Workspace, przed sortowaniem,
 licznikami i paginacją. Publiczne grupy dziedziczą kategorię projektu; własna
@@ -389,7 +397,7 @@ Wycofane widoki Kontaktów i Firm zachowują historyczny kod okien wyników. Dys
 na jednej stronie najpierw rozlicza foldery, potem pliki, aby nie
 powielać i nie pomijać pozycji przy przechodzeniu między stronami.
 
-`documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
+`backend/documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
 wykonaniem zapytań. Warunki są nakładane na zbiory ograniczone właścicielem
 i Workspace; wybór dysku również weryfikuje ten zakres. Dawny parametr `tag`
 jest ignorowany, a wyszukiwanie nie używa historycznych tagów dokumentów.
@@ -413,7 +421,7 @@ Przed zmianą zapytań sprawdź testy liczby zapytań i renderowania tylko bież
 
 ## 8. Pola i terminy projektów
 
-Źródła: [modele Tasks](../tasks/models.py), [formularze](../tasks/forms.py),
+Źródła: [modele Tasks](../backend/tasks/models.py), [formularze](../backend/tasks/forms.py),
 `_project_choices()` i `_decorate_project_dates()` w głównych widokach.
 
 Status/etap/kondycja mają stałe opcje. Lista i formularze uwzględniają także
@@ -431,7 +439,7 @@ Historyczne migracje tworzące słowniki pozostają częścią łańcucha migrac
 
 ## 9. Upload, obrazy i pobieranie
 
-Źródło: [core/upload_validation.py](../core/upload_validation.py).
+Źródło: [core/upload_validation.py](../backend/core/upload_validation.py).
 
 - Zdjęcia kont/firm/Workspace: JPEG, PNG, WebP, domyślnie 5 MB.
 - Załączniki: lista rozszerzeń w `ATTACHMENT_ALLOWED_EXTENSIONS`, domyślnie 10 MB.
@@ -457,7 +465,7 @@ Foldery Dysku mają osobne `is_starred`. POST `folders/<pk>/star/` blokuje rekor
 przełącza gwiazdkę i zachowuje kontekst dysku albo widoku Workspace wraz
 z filtrami, układem i stroną. GET `folders/<pk>/download/` sprawdza także
 właściciela/Workspace dysku i tworzy ZIP przez wspólny
-[folder_exports.py](../documents/folder_exports.py). Zakres obejmuje tylko
+[folder_exports.py](../backend/documents/folder_exports.py). Zakres obejmuje tylko
 dostępne foldery i aktywne pliki tego samego dysku; błędna relacja między
 dyskami nie pozwala włączyć obcego poddrzewa. Pozostałe zasady archiwizacji
 (bezpieczne nazwy, kolizje, plik tymczasowy i brakujące pliki) są wspólne
@@ -479,7 +487,7 @@ jego rozmiar, rewizję i datę. Kosz/przywrócenie zmieniają klucz sesji pod bl
 rekordu, a zapis metadanych aktualizuje tylko swoje pola. Szczegóły zabezpieczeń
 i uruchomienia: [OFFICE.md](OFFICE.md). Upload Dysku waliduje także pakiety OOXML.
 
-`documents/previews.py` odczytuje pozostałe obsługiwane formaty lokalnie,
+`backend/documents/previews.py` odczytuje pozostałe obsługiwane formaty lokalnie,
 a szablon escapuje cały tekst. Archiwa nie są rozpakowywane na dysk;
 relacje zewnętrzne arkuszy są odrzucane, formuły i makra nie są wykonywane.
 Limity podglądu: tekst 256 KiB (arkusze/DOCX do 262144 znaków), 200 wierszy
@@ -490,7 +498,7 @@ odczytu daje komunikat; oryginał pozostaje dostępny do pobrania, jeśli istnie
 Upload waliduje całą partię, używa transakcji bazy i sprząta już zapisane
 pliki przy błędzie. Transakcja bazy sama nie wycofuje plików na dysku.
 
-Przenoszenie obsługuje [move_views.py](../documents/move_views.py):
+Przenoszenie obsługuje [move_views.py](../backend/documents/move_views.py):
 `<uuid>/move/` dla plików i `folders/<pk>/move/` dla folderów Dysku,
 również pod scoped URL. GET renderuje modal, POST wymaga CSRF i waliduje
 cel `folder:<pk>` lub `library:<pk>` wyłącznie w zakresie właściciela
@@ -502,7 +510,7 @@ i w koszu. Niespójne lub obce relacje w tym poddrzewie blokują zmianę dysku.
 Przenoszenie zachowuje PK, prywatny plik i klucz edytora; zmiana
 lokalizacji pliku zwiększa rewizję i datę modyfikacji. Nie zmienia jego treści.
 
-[location_lock.py](../documents/location_lock.py) serializuje zapisy lokalizacji
+[location_lock.py](../backend/documents/location_lock.py) serializuje zapisy lokalizacji
 blokadą wiersza Workspace przed blokadami dokumentów. Obejmuje przenoszenie,
 upload, tworzenie/edycję folderów i dokumentów, usuwanie pustych lokalizacji
 oraz tworzenie kopii przez konwersję. Zapobiega cyklom przy równoczesnym
@@ -588,8 +596,8 @@ nie wolno publicznie mapować całego `MEDIA_ROOT`. Szczegóły wdrożenia:
 
 ## 10. Globalne wyszukiwanie
 
-Źródła: [dashboard/views.py](../dashboard/views.py),
-[global-search.js](../static/js/global-search.js).
+Źródła: [dashboard/views.py](../backend/dashboard/views.py),
+[Search.tsx](../frontend/app/src/shell/Search.tsx); `global-search.js` pozostaje trybem zgodności.
 
 GET `/global-search/?q=...` wymaga logowania. Minimum wynosi 2 znaki,
 tekst jest ograniczany do 120 znaków. Wyszukiwanie obejmuje zadania Przestrzeni
@@ -635,7 +643,7 @@ w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszu
 ## 11. Historia a powiadomienia
 
 `TaskActivity`, `KanbanActivity` i `ContactActivity` są historią obiektów.
-Centrum powiadomień (`dashboard/notification_service.py`) odczytuje wyłącznie
+Centrum powiadomień (`backend/dashboard/notification_service.py`) odczytuje wyłącznie
 komentarze (`kind='comment'`) Zadań, ważne oczekujące zaproszenia
 oraz osobiste przypomnienia. Wpisy historii (`kind='system'`), np. utworzenie,
 edycja lub zmiana statusu, pozostają tylko w historii obiektu. Nie trafiają
@@ -697,11 +705,20 @@ Otwarta lista sygnalizuje zmianę przyciskiem odświeżenia, bez przestawiania
 czytanej treści. Błędy sieci zachowują ostatni licznik; panel udostępnia ponowienie.
 To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila i workera.
 
+Interfejs React wywołuje te same operacje przez jawny rejestr API ekranów.
+`notifications` w tym trybie zwraca `items` z `notification_frontend.py`,
+bez HTML, wraz z aktualnie dostępnymi Workspace, tokenami i licznikami.
+Wyszukiwanie korzysta ze scoped adresu API, więc cel zapytania jest odporny
+na zmianę aktywnego Workspace w innej karcie. Korzeń paneli nie jest usuwany
+przy częściowej nawigacji; wyszukiwarka i modal zamykają się przed podmianą,
+a osobista treść Stickera trwa. Zmiana konta/Workspace nadal wymaga pełnego
+przeładowania. [Cykl życia i kontrakt](FRONTEND.md#globalne-wyszukiwanie-powiadomienia-i-sticker).
+
 ### Pliki i zdjęcia w komentarzach
 `TaskCommentImage` i `KanbanCommentImage` zachowują historyczne nazwy, ale przechowują
 wszystkie załączniki komentarzy. Mają rozmiar `file_size` i FK do aktywności (`images`),
-nie do ogólnych załączników zadania. Wspólny `core/comment_images.py` waliduje
-całą partię przez `validate_comment_attachments()` w `core/upload_validation.py`
+nie do ogólnych załączników zadania. Wspólny `backend/core/comment_images.py` waliduje
+całą partię przez `validate_comment_attachments()` w `backend/core/upload_validation.py`
 (wspólna lista `ATTACHMENT_ALLOWED_EXTENSIONS`, łącznie 10 plików i `MAX_ATTACHMENT_SIZE`). Dopiero potem zapisuje komentarz,
 wzmianki i pliki w jednej transakcji. Przy rollbacku usuwa nowe pliki;
 usunięcie aktywności/zadania usuwa pliki dopiero po zatwierdzeniu transakcji.
@@ -746,7 +763,7 @@ w szczegółach albo nagłówku projektu wysyła POST pod
 aktywnego Workspace i prawidłowego właściciela danych. Stan `following`
 jest jawny, więc ponowienie żądania nie odwraca subskrypcji.
 
-`dashboard/collaboration.py` odbiera utworzenie `TaskActivity` i `KanbanActivity`.
+`backend/dashboard/collaboration.py` odbiera utworzenie `TaskActivity` i `KanbanActivity`.
 Nowe komentarze obserwowanego elementu oraz zadań/kart w obserwowanym projekcie
 otrzymują `ActivityInterest` z odbiorcą i flagami `mentioned`/`followed`.
 Dotyczy to także komentarzy do nowo tworzonych zadań i podzadań projektu.
@@ -767,7 +784,7 @@ powiązania po usunięciu źródła. Powiadomienia działają wewnątrz aplikacj
 
 ### Przypomnienia zadań
 
-`dashboard/reminders.py` podczas odczytu centrum i jego licznika wyszukuje
+`backend/dashboard/reminders.py` podczas odczytu centrum i jego licznika wyszukuje
 otwarte zadania z `reminder_at <= teraz`. Odbiorcą jest wykonawca albo,
 przy jego braku, właściciel zadania/Workspace. Wymagany jest aktualny dostęp
 do przestrzeni; samo przypisanie wykonawcy go nie nadaje. Zapytania ponownie
@@ -786,81 +803,53 @@ widocznej karcie uruchamia dostarczanie. Przy zamkniętej aplikacji wpis czeka
 do kolejnego odczytu. Przypomnienia nie są wpisami historii wykonanymi przez
 użytkownika i pozostają domyślnie nieprzeczytane również dla właściciela.
 
-## 12. Częściowa nawigacja i cykl życia frontendowej strony
+## 12. Nawigacja i cykl życia frontendowej strony
 
-Źródło: [layout.js](../static/js/layout.js).
+Źródła: [kontrakt React](FRONTEND.md#powłoka-i-nawigacja-json),
+[navigation.ts](../frontend/app/src/shell/navigation.ts), [shell.py](../backend/core/shell.py).
 
-1. `canNavigatePartially()` sprawdza origin i listę dozwolonych ekranów,
-   normalizując `/workplaces/<slug>/<moduł>/` do bazowej ścieżki modułu.
-2. Zwykłe kliknięcia oraz formularze GET korzystają z `navigate()`. Pobieranie
-   HTML przerywa poprzedni request; spóźniona odpowiedź nie nadpisuje nowego ekranu.
-3. `ancore:before-navigate` pozwala anulować opuszczenie niezapisanego zadania.
-   `event.detail.waitUntil(promise)` pozwala zaczekać na zapis w tle; odrzucenie
-   obietnicy lub wynik `false` zatrzymuje przejście. Przy kolejnych kliknięciach
-   podczas oczekiwania działa ostatni cel. Szczegóły przestrzeni wykorzystują
-   ten mechanizm do zakończenia zapisu przed nawigacją.
-   Przed podmianą `ancore:content-unloading` usuwa listenery szczegółów zadania/karty.
-4. Kod wczytuje brakujące style, podmienia kontener strony z modalami oraz
-   komunikaty. Ustawia URL przed inicjalizacją, synchronizuje aktywne linki menu
-   według adresów i wykonuje skrypty inline raz, z pominięciem danych JSON.
-   Zewnętrzne skrypty są ładowane tylko raz; równoczesne przejścia współdzielą
-   oczekujące pobrania.
-5. Aktualizuje tytuł, historię, przewijanie i ikony, a następnie wysyła
-   `ancore:content-loaded`. Wstecz/Dalej także podmienia treść. Odrzucenie wyjścia
-   z niezapisanego zadania przywraca pozycję historii i zachowuje formularz.
-6. Boczne menu i dokument przeglądarki pozostają na miejscu. Lista przestrzeni
-   w menu jest synchronizowana z odpowiedzią serwera: nowe linki są dodawane,
-   nieobecne usuwane, a nazwy, awatary i kolejność aktualizowane. Grupa zachowuje
-   stan zwinięcia; istniejące linki i przycisk „Więcej przestrzeni” zachowują
-   swoje elementy. Delegowana obsługa kliknięć zamyka menu na telefonie także
-   dla nowych linków. Pobieranie oznacza
-   `.main-content` przez `aria-busy`. `requestContentLoading()` po 180 ms pokazuje
-   szkielet wyłącznie nad treścią i wyłącza zasłonięty kontener przez `inert`.
-   Zakończenie bieżącego żądania usuwa szkielet, timer i tymczasowy stan kontenera;
-   zakończenie starszego, anulowanego żądania nie ukrywa wskaźnika nowszego.
-   Szybkie odpowiedzi nie pokazują placeholderów ani nie mają sztucznego opóźnienia.
-   Nieobsługiwane adresy i błędy pobrania zachowują pełną nawigację.
+1. `AncoreApp.canNavigatePartially()` sprawdza origin i jawnie obsługiwane
+   ekrany, normalizując scoped ścieżki Workspace. Zwykłe kliknięcia i formularze
+   GET używają `navigate()`. Pliki, nowe karty, zewnętrzne linki, przełączanie
+   konta/Workspace i pełne edytory mają własne przepływy.
+2. `ancore:before-navigate` może zatrzymać wyjście. `waitUntil(promise)` czeka
+   na zapis; odrzucenie lub `false` zatrzymuje przejście. Przy kolejnych próbach
+   obowiązuje ostatni cel. Działa to również dla automatycznego zapisu zadania
+   oraz oczekujących zmian menu i Favorites.
+3. Scoped `api/v1/navigation/` pobiera dane ekranu i powłoki przez istniejące
+   widoki, formularze i ACL Django. Anulowanie/wersja żądania chroni przed starą
+   odpowiedzią. `main.tsx` ładuje route chunk i style przed usunięciem treści.
+   Nie ma parsowania HTML ani wykonywania skryptów z odpowiedzi.
+4. `ancore:content-unloading` odmontowuje ekran, a trwała powłoka pozostaje.
+   URL jest publikowany przed montowaniem kolejnego ekranu React. Powłoka
+   otrzymuje aktualne kolekcje, uprawnienia, aktywne linki i tryb zarządzania.
+   `ancore:content-loaded` zachowuje kontrakt inicjalizacji wspólnych adapterów.
+5. Wstecz/Dalej odtwarza dane i przewinięcie; odrzucone opuszczenie szkicu
+   przywraca wpis historii. `setPageLocation()` włącza lokalne zmiany URL
+   komponentów do tej samej historii. Błąd pobrania zachowuje ekran i pokazuje
+   komunikat. Konto, Workspace lub inny build w odpowiedzi wymuszają pełny
+   reload, aby osobiste elementy nie przetrwały zmiany tożsamości.
+6. `.main-content[aria-busy]` oznacza pobieranie. Po 180 ms pojawia się istniejący
+   szkielet nad treścią i tymczasowe `inert`; szybka odpowiedź nie miga szkieletem.
+   Tylko zakończenie bieżącego żądania usuwa jego stan ładowania.
 
-Powłoka oznacza konto i Workspace przez `body[data-account-id]` oraz
-`body[data-workplace-id]`. Zmiana któregokolwiek z nich w odpowiedzi wymaga
-pełnego przeładowania, aby osobiste elementy, ulubione i adresy operacji
-nie pozostały z poprzedniego kontekstu. Tak samo działa odpowiedź bez powłoki
-aplikacji (np. logowanie) lub z edytorem `data-app-full-navigation`.
+`Sidebar.tsx` obsługuje menu Workspace, Ustawień, zarządzania i edytora pulpitu.
+Zwijanie grup, Favorites i szerokość zachowują dotychczasowe klucze. Menu mobilne
+ma backdrop, fokus i `inert` treści. Pickery kolekcji pobierają typowane wyniki
+z tym samym ACL co katalogi. Gwiazdka odświeża tylko powłokę, bez resetowania
+szkicu strony. Favorites używają dotychczasowej bazy i widoków z walidacją
+kompletnego porządku, sesji oraz CSRF; odpowiedź API nie zawiera HTML.
 
-Lista obejmuje Dashboard, „Dla ciebie”, ustawienia i pola projektów, zarządzanie Workspace,
-profil, katalogi Zadań, grupy, szczegóły zadań/podzadań, szablony
-projektów, Kalendarz oraz katalogi Dysku i Dokumentów. Działa dla
-bazowych i scoped URL, łącznie z query string filtrów i paginacji. Otwieranie
-zadania z Kalendarza, powiadomień i powrót ze szczegółów używają tego samego API.
-Pobieranie plików, zewnętrzne linki, nowe karty, akcje POST, przełączanie konta
-lub Workspace i pełne edytory nadal mają własne przepływy. Nowy ekran wymaga
-jawnego dopisania do listy. Tasks ma także własną podmianę pojedynczego stanu katalogu.
+Link `data-management-return` odtwarza źródłowy URL z query/hash, etykietę
+oraz przewinięcie. `ancoreManagementReturn` w historii i `sessionStorage`
+zachowuje zakres konta/Workspace i poprzedni poziom zarządzania. Wewnętrzne
+przejścia nie nadpisują źródła. Świeży bezpośredni adres używa domyślnego celu;
+reload zachowuje źródło. `AncoreApp.invalidateManagementReturn` usuwa cele
+potwierdzonego usunięcia, także z kontekstu nadrzędnego. 404 przy powrocie
+uruchamia domyślny katalog; zwykłe wejście do usuniętego obiektu nadal daje 404.
 
-Przy nowym skrypcie zachowaj inicjalizację na pierwszym wejściu i po podmianie,
-sprawdzanie istnienia elementu oraz sprzątanie/ochronę listenerów.
-Nie opieraj całej inicjalizacji wyłącznie na jednorazowym `DOMContentLoaded`.
-
-Linki `data-management-return` w menu zarządzania Workspace i edytora pulpitu
-wracają do miejsca wejścia. Katalogi zarządzania przestrzeniami, pulpitami
-i filtrami pokazują osobne minimalne menu; ich stały powrót prowadzi do
-`/settings/#workspace`. `layout.js` zapisuje źródłowy URL z query/hash,
-etykietę i przewinięcie w `history.state.ancoreManagementReturn` oraz
-`sessionStorage`, w zakresie konta i aktywnego Workspace. Wewnętrzne przejścia,
-filtry i okna zarządzania nie nadpisują źródła; historia odtwarza kontekst
-właściwego wpisu. Powrót odtwarza przewinięcie po inicjalizacji docelowego UI.
-Adres musi być lokalny i obsługiwany przez częściową nawigację. Świeże
-bezpośrednie wejście używa domyślnego linku z szablonu; reload oraz formularze
-wewnątrz zarządzania zachowują wcześniej zapamiętane źródło.
-Po potwierdzonym usunięciu pulpitu odpowiedź JSON zawiera
-`invalidated_return_paths` dla zwykłego i scoped przeglądu/edytora.
-`pulpits.js` przekazuje je do `AncoreApp.invalidateManagementReturn` przed
-odświeżeniem listy. `layout.js` usuwa pasujące cele także z zagnieżdżonego
-kontekstu, bieżącego wpisu historii i osobistego `sessionStorage`;
-pozostałe cele oraz filtry zachowuje. Powrót dotyczący usuniętego pulpitu
-korzysta wtedy z domyślnego katalogu. Jeśli stary wpis historii lub usunięcie
-w innej karcie pozostawi nieaktualny cel, odpowiedź 404 przy kliknięciu
-`data-management-return` uruchamia domyślny powrót w powłoce aplikacji.
-Bezpośrednie wejście na adres usuniętego pulpitu nadal zwraca 404.
+`layout.js` zachowuje wcześniejszy kontrakt wyłącznie dla szablonów zgodności;
+przy aktywnej powłoce Reacta nie jest ładowany.
 
 ## 13. Stan w przeglądarce
 
@@ -881,7 +870,7 @@ aktywności z `actor=request.user`, nie na dacie zmiany przez dowolnego członka
 | Aktywne konto i Workspace | Sesja Django |
 | Ulubione i kolejność | Baza: użytkownik + Workspace |
 | Szerokość i zwinięcie sidebaru | `localStorage`, np. `ancoreSidebarWidth`, `ancoreSidebarCollapsed` |
-| Zwijanie grup/ulubionych/sidebaru pomocniczego | `localStorage` w `layout.js` |
+| Zwijanie grup i Favorites | Dotychczasowe klucze `localStorage`, obsługiwane przez `src/shell` |
 | Widoczność/szerokość/kolejność kolumn | `localStorage` w `tasks.js` i `documents.js`; klucze zależą od komponentu |
 | Powrót z zadania do listy | `sessionStorage`, klucze modułu Tasks/Kanban |
 | Okładki i tapety Kanban | `localStorage`; wybrana tapeta m.in. wg ścieżki tablicy |
@@ -916,6 +905,12 @@ Nie wyciągaj zachowania całego scenariusza tylko z jednej deklaracji `on_delet
 
 ## 15. Ewidencja zasobów
 
+Główny katalog oraz GET tworzenia/edycji montują teraz moduł React.
+JSON API v1 w `backend/resources/api.py` współdzieli z widokami HTML zakres,
+katalog i zapis z `backend/resources/services.py`; walidacja pozostaje w `ResourceForm`.
+Sesja i CSRF nadal pochodzą z Django. Szczegóły kontraktu, cyklu życia
+i zgodności: [Frontend React](FRONTEND.md).
+
 `resources.views` ogranicza każdy odczyt i zapis jednocześnie przez
 `workspace_owner(request)` i `request.workplace`, w obu wariantach adresów.
 `ResourceForm` dopuszcza przypisanie wyłącznie aktywnych osób z
@@ -933,7 +928,7 @@ Terminy i przypisanie są informacją ewidencyjną, bez automatycznych zmian sta
 GET katalogu łączy filtry i paginację. Formularze używają scoped adresów,
 więc zmiana Workspace w drugiej karcie nie zmienia celu zapisu. Nagłówek
 `X-Resource-Modal: true` wybiera JSON z HTML formularza (400 dla walidacji)
-lub potwierdzenie zapisu; zwykłe wejście renderuje katalog z otwartym oknem.
+lub potwierdzenie zapisu; zwykły GET otwiera katalog i okno w React.
 Usuwanie wymaga POST i CSRF. Query string przekazuje wyłącznie znane parametry
 katalogu; klient nie może wskazać dowolnego adresu przekierowania.
 
@@ -950,7 +945,7 @@ Osobisty domyślny pulpit nie jest powielany w gwiazdkach ani historii menu twó
 udostępniony domyślny pulpit innej osoby używa zwykłego linku ze slugiem.
 
 `Dashboard.slug` to zapisany segment URL pochodzący z nazwy, unikalny w obrębie
-Workspace. `dashboard/identifiers.py` normalizuje nazwę przez `slugify` i transliterację
+Workspace. `backend/dashboard/identifiers.py` normalizuje nazwę przez `slugify` i transliterację
 `ł/Ł`, a dla kolizji dopisuje `-2`, `-3`. Nazwy `default`, `manage`, `create`,
 `search`, `groups` oraz same cyfry otrzymują prefiks `pulpit-`; nazwa bez znaków
 możliwych do użycia w URL daje `pulpit`. Przy tworzeniu `Dashboard.save()` blokuje
@@ -984,7 +979,7 @@ Odpowiedź zawiera escapowany HTML i `Cache-Control: private, no-store`;
 puste zapytanie zwraca pustą listę. Link katalogu zachowuje frazę.
 Katalog pokazuje wszystkie dostępne pulpity bez zakładek; dawny parametr `tab`
 jest ignorowany, a filtry widoczności i wyszukiwania nadal ograniczają wyniki.
-Ostatnie odwiedziny korzystają z `dashboard/recent.py`, który
+Ostatnie odwiedziny korzystają z `backend/dashboard/recent.py`, który
 zapisuje tylko identyfikatory, osobno dla użytkownika i Workspace. Samo otwarcie
 katalogu nie dopisuje historii. Pulpit domyślny jest stałym skrótem do `/`.
 Grupy pulpitów, ich formularze, przypisania i routing są usunięte.
@@ -1018,8 +1013,8 @@ Tworzenie używa pełnego `DashboardForm`. Kopiowanie pulpitów jest usunięte;
 dawne endpointy kopiowania zwracają 404 w obu zakresach URL, także w zarządzaniu.
 Wszystkie konfiguracje wymagają
 twórcy i zwiększają rewizję pod blokadą wiersza. Układ zmienia wyłącznie edytor
-gadżetów przez `arrange/`. `layout.js` wymienia menu konkretnego pulpitu przy
-częściowej nawigacji, odświeżając nazwę, adresy, aktywną pozycję i fokus.
+gadżetów przez `arrange/`. Nawigacja React aktualizuje kontekst i menu konkretnego
+pulpitu z odpowiedzi JSON, odświeżając nazwę, adresy i aktywną pozycję.
 Źródło powrotu edytora przechowuje również wcześniejsze źródło katalogu;
 powrót oraz zwykły POST przywracają odpowiedni poziom zarządzania.
 
@@ -1057,7 +1052,7 @@ projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
 w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
 pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
 
-`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+`backend/tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
 odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
 wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
 a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
@@ -1075,3 +1070,31 @@ powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skr�
 `tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
 zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
 lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.
+
+## Adapter ekranów React
+
+`backend/core/frontend.py` rejestruje jawne serializery i dopuszczone operacje
+migracji. JSON API korzysta z sesji, CSRF i aktywnego scoped Workspace;
+nie wywołuje dowolnych widoków z adresu klienta. Kontrakty danych i reguły
+nawigacji/zapisu opisano w [FRONTEND.md](FRONTEND.md).
+Pulpity zachowują własną walidację strukturalnego JSON wyłącznie dla układu
+i szybkiego dodawania gadżetu. Jawna lista wyjątków nie zmienia płaskiego
+kontraktu innych formularzy. Rewizje i transakcje należą do widoków domenowych;
+frontend cofa optymistyczny układ po błędzie, a usunięcie unieważnia zapisane
+adresy powrotu powłoki przez `AncoreApp.invalidateManagementReturn`.
+
+Dysk i Dokumenty korzystają z `backend/documents/frontend.py`. Formularze JSON opisują
+wyłącznie autoryzowane pola, upload używa FormData, a metadane plików nie
+ujawniają nazw storage. Rewizje i unieważnianie klucza edytora nadal obsługują
+oryginalne widoki. Konflikt edycji Dokumentów daje HTTP 409 z zachowanym
+formularzem. Chronione pobieranie, źródło/callback ONLYOFFICE i zapis sceny
+tablicy pozostają poza listą proxy. Powłoka React pełnego edytora używa
+oryginalnych endpointów JSON i niszczy wyspę edytora przy odmontowaniu.
+
+Zarządzanie Workspace serializuje `backend/workplaces/frontend.py`. Jawnie dopuszczone
+operacje API wywołują te same widoki zarządzania i zaproszeń. Wybrany Workspace
+jest autoryzowany niezależnie od aktywnej sesji, bez automatycznego przełączania
+przy odczycie/edycji. Role i ograniczenia zaproszeń nadal sprawdzają formularze
+oraz blokowane transakcje; kod Workspace jest nieedytowalny. Podpowiedzi API
+zwracają dane awatara bez fragmentu HTML. Favorites należą do trwałej powłoki
+React i korzystają z jawnie dopuszczonych operacji API ekranów. [Pełny kontrakt](FRONTEND.md).

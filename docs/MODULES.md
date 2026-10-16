@@ -33,20 +33,27 @@ Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).
 
 ## 1. Konta i profil — Accounts
 
-Źródła: [widoki](../accounts/views.py), [model](../accounts/models.py),
-[formularze](../accounts/forms.py), [obecność](../accounts/presence.py).
+Źródła: [widoki](../backend/accounts/views.py), [model](../backend/accounts/models.py),
+[formularze](../backend/accounts/forms.py), [obecność](../backend/accounts/presence.py).
 
 **Funkcje:** rejestracja, logowanie przez e-mail, wylogowanie, edycja profilu,
 30 gotowych awatarów zwierzęcych, wybór automatyczny oraz zdjęcie z kadrowaniem/usuwaniem,
 publiczny identyfikator Ancore, dane kontaktowe,
 status obecności i przełączanie między kontami dodanymi do jednej sesji.
 
+Logowanie, rejestracja, dodanie konta i profil są renderowane przez React
+(`frontend/app/src/accounts/`) z jawnymi danymi `backend/accounts/frontend.py`.
+Osobne API Accounts deleguje do tych samych formularzy i operacji Django;
+publiczne pozostają wyłącznie logowanie i rejestracja. Po zapisie profilu lub
+przełączeniu konta pełna nawigacja aktualizuje również awatar i kontekst
+wspólnej powłoki. [Kontrakt migracji](FRONTEND.md#api-i-interfejs-kont).
+
 `User` rozszerza `AbstractUser`. E-mail jest unikalny bez względu na wielkość
 liter (formularze oraz ograniczenie bazy `Lower(email)`) i służy do logowania;
 `username` pozostaje osobnym publicznym identyfikatorem. Profil zawiera imiona,
 nazwisko, telefon, stanowisko, opis, zdjęcie i dane obecności.
 
-`User.avatar` zapisuje wybraną ilustrację z osobnej puli `accounts/avatar_presets.py`;
+`User.avatar` zapisuje wybraną ilustrację z osobnej puli `backend/accounts/avatar_presets.py`;
 nie korzysta z motywów Przestrzeni i Workspace. Pusty identyfikator oznacza
 stabilny wybór automatyczny według użytkownika z pierwotnych 24 ilustracji;
 rozszerzenie katalogu nie zmienia wcześniejszych przypisań. Istniejące zdjęcie ma pierwszeństwo.
@@ -69,9 +76,9 @@ obsługuje osobny mechanizm opisany w Mechanizmach.
 
 ## 2. Workspace — Workplaces
 
-Źródła: [modele](../workplaces/models.py), [usługi](../workplaces/services.py),
-[middleware](../workplaces/middleware.py), [widoki](../workplaces/views.py),
-[nawigacja](../workplaces/navigation.py).
+Źródła: [modele](../backend/workplaces/models.py), [usługi](../backend/workplaces/services.py),
+[middleware](../backend/workplaces/middleware.py), [widoki](../backend/workplaces/views.py),
+[nawigacja](../backend/workplaces/navigation.py).
 
 **Funkcje:** katalog Workspace oraz zakładki „Główna”, „Członkowie”
 i „Wysłane zaproszenia” w oknie edycji miejsca pracy. Otrzymane zaproszenia
@@ -121,7 +128,7 @@ projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
 w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
 pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
 
-`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+`backend/tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
 odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
 wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
 a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
@@ -140,8 +147,8 @@ powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skr�
 zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
 lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.
 
-Źródła: [modele historyczne](../tasks/models.py), [routing zgodności](../tasks/urls.py),
-[przekierowania](../spaces/middleware.py), [testy wycofania](../tasks/test_retirement.py).
+Źródła: [modele historyczne](../backend/tasks/models.py), [routing zgodności](../backend/tasks/urls.py),
+[przekierowania](../backend/spaces/middleware.py), [testy wycofania](../backend/tasks/test_retirement.py).
 
 ## 4. Wycofany moduł Tablice Kanban
 
@@ -162,13 +169,13 @@ zwraca 409, a usunięte endpointy operacji 404. Zapisane skróty `kanban-spaces`
 i `kanban-boards` wskazują Przestrzenie. Obecna tablica Kanban w Przestrzeniach
 nadal działa na `tasks.Task`. [Migracja i zgodność](SPACES.md#historyczny-import-kanbana-3102026).
 
-Źródła: [adresy zgodności](../kanban/urls.py), [przekierowania](../spaces/middleware.py),
-[modele historyczne](../kanban/models.py).
+Źródła: [adresy zgodności](../backend/kanban/urls.py), [przekierowania](../backend/spaces/middleware.py),
+[modele historyczne](../backend/kanban/models.py).
 
 ## 5. Tagi przestrzeni
 
-Źródła: `TaskTag`, `TaskTagNote` w [tasks/models.py](../tasks/models.py),
-formularze Tasks, `tasks/tagging.py` oraz zakładka przestrzeni w `spaces/views.py`.
+Źródła: `TaskTag`, `TaskTagNote` w [tasks/models.py](../backend/tasks/models.py),
+formularze Tasks, `backend/tasks/tagging.py` oraz zakładka przestrzeni w `backend/spaces/views.py`.
 
 Tag ma nazwę, opis, kod, kategorię, kolor, ikonę, priorytet, deklarowany zakres,
 etykietę właściciela, status, powiązane tagi, notatki użycia i tekst reguł.
@@ -199,7 +206,7 @@ Nie występują w menu, ulubionych ani globalnym wyszukiwaniu. Dawne adresy
 usuwanie i wyszukiwanie kont Ancore, zwracają 404. Modele nie są udostępniane
 w panelu administracyjnym Django.
 
-[Modele](../contacts/models.py) i migracje pozostają dla zgodności danych:
+[Modele](../backend/contacts/models.py) i migracje pozostają dla zgodności danych:
 `Company` zachowuje powiązania z projektami Tasks/Kanban, a `Contact`,
 `UserContact` i `ContactActivity` historyczne wpisy i powiązania.
 Pole firmy w istniejących mechanizmach projektów nadal korzysta z tych rekordów.
@@ -207,14 +214,14 @@ Nie wykonano migracji kasującej dane ani usuwania kont użytkowników.
 Logowanie, profil, członkostwa i zaproszenia Workspace oraz zespoły działają
 przez Accounts/Workplaces/Spaces niezależnie od dawnych katalogów.
 
-Historyczne widoki, formularze i szablony w `contacts/` nie mają aktywnego
-routingu; `contacts/urls.py` jest pusty. Nie traktuj ich jako dostępnej funkcji.
+Historyczne widoki, formularze i szablony w `backend/contacts/` nie mają aktywnego
+routingu; `backend/contacts/urls.py` jest pusty. Nie traktuj ich jako dostępnej funkcji.
 `SharedItem` i `SharedItemLink` nadal pozostają wyłączone.
 
 ## 7. Kalendarz — Planner
 
-Źródła: [widoki](../planner/views.py), [formularz](../planner/forms.py),
-[szablon](../planner/templates/planner/index.html), [JS](../static/js/calendar.js).
+Źródła: [widoki](../backend/planner/views.py), [formularz](../backend/planner/forms.py),
+[szablon](../backend/planner/templates/planner/index.html), [JS](../static/js/calendar.js).
 
 Własny kalendarz przeglądarkowy pracuje na `CalendarEvent`: tytuł, opis,
 początek, koniec, cały dzień, kolor, użytkownik i Workspace.
@@ -236,11 +243,17 @@ synchronizacji z Google Calendar/Outlook.
 
 ## 8. Dysk — Documents
 
-Źródła: [modele](../documents/models.py), [widoki](../documents/views.py),
-[podgląd](../documents/previews.py), [formularze](../documents/forms.py), [JS](../static/js/documents.js).
+Źródła: [modele](../backend/documents/models.py), [widoki](../backend/documents/views.py),
+[podgląd](../backend/documents/previews.py), [formularze](../backend/documents/forms.py), [JS](../static/js/documents.js).
 
 **Hierarchia:** Workspace → dyski → foldery i pliki; foldery mogą zawierać podfoldery i pliki.
 Pliki mogą znajdować się także bezpośrednio w katalogu głównym dysku.
+
+Katalogi, formularze i podglądy renderuje React (`src/documents/`), a
+`backend/documents/frontend.py` przekazuje dane z istniejących widoków i formularzy Django.
+Dotyczy to także Dokumentów, edytora tekstowego i powłoki pełnego edytora;
+prywatne pliki, reguły dostępu oraz integracja ONLYOFFICE pozostają w Django.
+Szczegóły kontraktu: [FRONTEND.md](FRONTEND.md).
 
 Nazwa modułu w nawigacji to „Dysk”, a jego ekran główny to „Dyski”.
 Każda dotychczasowa biblioteka jest osobnym dyskiem; nazwy i zawartość istniejących
@@ -359,8 +372,8 @@ opisuje [OFFICE.md](OFFICE.md). Pełne edytory biurowe są wspólne dla obu modu
 
 ### Dokumenty — osobny katalog i edytor
 
-Źródła: [widoki](../documents/editor_views.py), [formularze](../documents/editor_forms.py),
-[format treści i eksport](../documents/rich_text.py), [routing](../documents/workspace_urls.py),
+Źródła: [widoki](../backend/documents/editor_views.py), [formularze](../backend/documents/editor_forms.py),
+[format treści i eksport](../backend/documents/rich_text.py), [routing](../backend/documents/workspace_urls.py),
 [edytor JS](../static/js/office.js).
 
 „Dokumenty” w nawigacji otwierają `/office/` albo
@@ -427,7 +440,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 
 ## 9. Start, ustawienia, wyszukiwarka i powiadomienia — Dashboard
 
-Źródła: [widoki](../dashboard/views.py), [routing](../dashboard/urls.py).
+Źródła: [widoki](../backend/dashboard/views.py), [routing](../backend/dashboard/urls.py).
 
 - **Dla ciebie:** osobisty przegląd pod `/for-you/` i
   `/workplaces/<slug>/for-you/`, dostępny w menu nad Dashboardem, globalnym
@@ -475,6 +488,8 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   projektów i kalendarza starego Dashboardu nie są już renderowane na stronie głównej.
 - **Pulpity:** osobny katalog `/dashboards/` oraz scoped odpowiednik, dostępny
   w menu, ulubionych menu i globalnym wyszukiwaniu jako skrót modułu.
+  Katalog, zarządzanie, przegląd i edytor renderuje React (`src/pulpits/`),
+  a dane i zapisy obsługują istniejące widoki Django przez JSON API v1.
   Katalog pokazuje wszystkie dostępne pulpity, bez zakładek Wszystkie,
   Ulubione i Moje. Wyszukiwanie po nazwie/opisie i filtr widoczności mają
   paginację po 30 pozycji. Dawny parametr `tab` jest ignorowany.
@@ -548,8 +563,8 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   jedna karta „Postęp pracy” na niepusty stary pulpit, bez dawnych filtrów i tytułów.
   Puste pulpity pozostają puste. Nie ma automatycznego odświeżania ani zewnętrznych gadżetów;
   „Odśwież” w przeglądzie pulpitu pobiera aktualne dane. Szczegóły implementacji:
-  [pulpits.py](../dashboard/pulpits.py), [widoki](../dashboard/pulpit_views.py)
-  i [routing](../dashboard/pulpit_urls.py). Inspiracja funkcjonalna:
+  [pulpits.py](../backend/dashboard/pulpits.py), [widoki](../backend/dashboard/pulpit_views.py)
+  i [routing](../backend/dashboard/pulpit_urls.py). Inspiracja funkcjonalna:
   [pulpity Jira](https://support.atlassian.com/jira-software-cloud/docs/create-and-edit-dashboards/).
 - **Ustawienia:** centrum linków do profilu, kont i Workspace oraz zarządzania sesją.
   Sekcja Preferencje jest usunięta; zwijanie menu i powiadomienia są dostępne
@@ -559,9 +574,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
   Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
-Historyczny serwis [overview.py](../dashboard/overview.py) i jego testy pozostają
+Historyczny serwis [overview.py](../backend/dashboard/overview.py) i jego testy pozostają
 w repozytorium, ale routing strony głównej korzysta z `pulpit_views.default` oraz
-[pulpits.py](../dashboard/pulpits.py). Dane każdego gadżetu są ponownie filtrowane
+[pulpits.py](../backend/dashboard/pulpits.py). Dane każdego gadżetu są ponownie filtrowane
 według właściciela/Workspace i prywatności oglądającego; udostępnienie konfiguracji
 pulpitu nie nadaje dostępu do jego źródeł. `/` nadal używa aktywnego kontekstu z sesji.
 
@@ -590,7 +605,7 @@ przy kolejnym odczycie. Nie ma wysyłki push/e-mail poza aplikacją.
 
 ## 10. Wspólna powłoka i narzędzia — Core / Static
 
-[core/base.html](../core/templates/core/base.html) dostarcza nawigację,
+[core/base.html](../backend/core/templates/core/base.html) dostarcza nawigację,
 przełącznik Workspace, ulubione, profil, obszar treści, host modali,
 komunikaty, globalne wyszukiwanie, panel powiadomień i Sticker.
 
@@ -615,8 +630,15 @@ Przed rozwinięciem tych obszarów sprawdź ich aktualne wywołania i testy.
 
 ## 12. Zasoby — Resources
 
-Źródła: [modele](../resources/models.py), [formularz](../resources/forms.py),
-[widoki](../resources/views.py), [katalog](../resources/templates/resources/index.html).
+Źródła: [modele](../backend/resources/models.py), [formularz](../backend/resources/forms.py),
+[widoki](../backend/resources/views.py), [API](../backend/resources/api.py),
+[frontend React](../frontend/app/src/resources/App.tsx),
+[powłoka](../backend/resources/templates/resources/react.html).
+
+Lista i formularze są pierwszym modułem przeniesionym do Reacta z TypeScriptem.
+Django udostępnia JSON API v1 i nadal odpowiada za sesję, CSRF, zakres danych
+oraz walidację. Pozostałe moduły zachowują dotychczasowy frontend.
+Budowanie i granice migracji: [Frontend React](FRONTEND.md).
 
 Katalog „Zasoby” jest dostępny w menu Workspace pod `/resources/` oraz
 `/workplaces/<slug>/resources/`. Przechowuje sprzęt, licencje i narzędzia:
@@ -646,3 +668,10 @@ Dane należą do właściciela i aktywnego Workspace; rzeczywisty autor utworzen
 oraz ostatniej zmiany jest zapisany osobno. Formularz przypisania ogranicza
 osoby do aktywnego zespołu. Model nie zawiera kluczy licencyjnych, załączników,
 rezerwacji, amortyzacji ani automatycznego śledzenia dostępności.
+
+## Zakres frontendu React
+
+Zasoby, Kalendarz, Dla ciebie, centrum Ustawień, Przestrzenie z Tagami,
+szczegóły ich zadań, Zespoły, Filtry, Pulpity, Dysk, Dokumenty i zarządzanie Workspace korzystają z Reacta i JSON API Django.
+Pozostałe aktywne moduły nadal działają w dotychczasowej architekturze;
+lista i ograniczenia migracji: [FRONTEND.md](FRONTEND.md).

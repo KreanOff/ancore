@@ -1,7 +1,10 @@
 # Pełne edytory Dokumentów
 
-Dokumenty pozostają osobnym modułem obok Dysku. Katalog i metadane używają
-Django, wspólnych szablonów/CSS oraz zwykłego JavaScriptu. DOCX, XLSX, PPTX i PDF
+Dokumenty pozostają osobnym modułem obok Dysku. Katalog, formularze, podglądy,
+edytor tekstowy Ancore i powłokę pełnych edytorów renderuje React/TypeScript
+(`frontend/app/src/documents/`). Django udostępnia JSON, walidację i prywatne
+pliki; interfejs zachowuje istniejący CSS. [Kontrakt migracji](FRONTEND.md).
+DOCX, XLSX, PPTX i PDF
 edytuje lokalny ONLYOFFICE Docs; tablice — lokalnie zbudowany Excalidraw.
 To edytory zgodne z formatami Microsoft Office, a nie oryginalne aplikacje
 Microsoft 365. Zgodność wszystkich funkcji desktopowego Office nie jest gwarantowana.
@@ -46,8 +49,10 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
   oryginał pozostaje w katalogu. PDF otwiera pełny edytor, zachowując kontrolowane pobieranie.
 - Starsze dokumenty Ancore nadal używają prostego edytora. Przycisk nad treścią
   tworzy kopię DOCX z obsługiwanym formatowaniem i otwiera pełny edytor.
-- Pliki należą wyłącznie do właściciela i Workspace. Integracja nie włącza
-  udostępniania, współpracy pomiędzy kontami ani dostępu członków Workspace.
+- Pliki są ograniczone do właściciela danych wyznaczonego przez
+  `workspace_owner(request)` i aktywnego Workspace. Aktywni członkowie Workspace
+  mają dostęp do wspólnych danych według [TEAMWORK.md](TEAMWORK.md). Integracja
+  nie dodaje publicznych linków ani osobnych zaproszeń do plików.
 
 ## Szablony i wycofana historia wersji
 
@@ -112,7 +117,8 @@ się nadal w `private_documents/`, tablice w bazie PostgreSQL.
 ## Zasoby tablicy
 
 Node i pnpm są potrzebne wyłącznie przy budowaniu lokalnych zasobów. React
-jest ograniczony do odizolowanego iframe edytora; nie zastępuje frontendu Ancore.
+tego pakietu działa w odizolowanym iframe edytora. Frontend aplikacji
+buduje się niezależnie w `frontend/app` według [FRONTEND.md](FRONTEND.md).
 Źródła i lockfile znajdują się w [frontend/board](../frontend/board/package.json).
 
 ```sh
@@ -158,7 +164,7 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   prywatnego storage, wspólnej walidacji sygnatur i limitu 10 MiB.
 - Pliki OOXML są dodatkowo sprawdzane pod kątem głównej części pakietu,
   liczby wpisów i łącznego rozmiaru po rozpakowaniu; archiwa nie są wypakowywane
-  na dysk. Domyślne puste pliki w `documents/blank/` powstały lokalnie i nie
+  na dysk. Domyślne puste pliki w `backend/documents/blank/` powstały lokalnie i nie
   zawierają danych użytkowników ani makr.
 - Dwa serwisowe endpointy `/office-service/<uuid>/source/` i `callback/` nie
   używają sesji ani aktywnego Workspace z ciasteczka. Wymagają podpisanej

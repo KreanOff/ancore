@@ -8,67 +8,94 @@ oraz kompilator warunków do ORM. Wyniki odczytują wyłącznie bieżące zadani
 przez istniejący zakres widoczności Przestrzeni.
 
 Ancore jest aplikacją Django podzieloną na moduły domenowe we wspólnym procesie.
-Serwer pobiera dane przez ORM, waliduje je formularzami i renderuje HTML.
-JavaScript dodaje interakcje: dialogi, filtry, kolumny tabel, przeciąganie,
-upload, kalendarz i częściową nawigację. Wybrane endpointy zwracają JSON lub
-fragmenty HTML.
+Serwer pobiera dane przez ORM i waliduje je formularzami. Frontend aktywnej aplikacji korzysta
+z Reacta i TypeScriptu. Zasoby, Kalendarz, Dla ciebie,
+centrum Ustawień, Przestrzenie z Tagami,
+zadania Przestrzeni, Zespoły, Filtry, Pulpity, Dysk, Dokumenty, zarządzanie Workspace
+oraz konta i profil korzystają z `frontend/app` i JSON API v1.
+Menu, nagłówek, Favorites, pickery, wyszukiwanie, centrum powiadomień, Sticker
+i komunikaty mają trwały korzeń Reacta. Nawigacja pobiera dane JSON i montuje
+kolejny ekran React bez pobierania HTML. Szablony zachowują pierwszy render
+i zgodność, a wspólne helpery pozostają adapterami komponentów. Sesja, CSRF, Workspace
+i uprawnienia pozostają po stronie Django. Budowanie, kontrakt API i granice
+migracji opisuje [Frontend React](FRONTEND.md).
 
-Główna aplikacja pozostaje szablonowa. Jedyny pakiet frontendowy (`frontend/board`)
-buduje odizolowany edytor Excalidraw/React do iframe. Pełne edytory biurowe
+Osobny pakiet `frontend/board` buduje odizolowany edytor Excalidraw/React do iframe.
+Pełne edytory biurowe
 uruchamia osobny serwer ONLYOFFICE. Python używa Django, `psycopg2-binary`,
 `python-dotenv` i PyJWT. Szczegóły: [Dokumenty](OFFICE.md).
 Kod używa mechanizmów PostgreSQL, w tym indeksów GIN i rozszerzenia `pg_trgm`.
 
-Źródła: [settings.py](../ancore/settings.py), [requirements.txt](../requirements.txt),
-[główny routing](../ancore/urls.py).
+Źródła: [settings.py](../backend/ancore/settings.py), [requirements.txt](../requirements.txt),
+[główny routing](../backend/ancore/urls.py).
 
 ## 2. Struktura katalogów
 
 ```text
-ancore/                 konfiguracja projektu, główny routing, WSGI/ASGI
-accounts/               użytkownik, logowanie, profil, wiele kont, obecność
-workplaces/             Workspace, aktywny kontekst, nawigacja, ulubione
-spaces/                 przestrzenie, własne zadania, historia, pliki, planowanie i zespoły
-tasks/                  historyczne dane pracy, stare linki i wspólny słownik tagów
-kanban/                 historyczne źródła kart i zgodność starych adresów
-contacts/               historyczne kontakty i firmy; bez aktywnego routingu
-planner/                wydarzenia i kalendarz
-resources/              ewidencja sprzętu, licencji i narzędzi Workspace
-documents/              Dysk, Dokumenty i bezpieczna integracja edytorów
+backend/                katalog źródeł Pythona, dodawany do ścieżki importów
+  ancore/               konfiguracja, główny routing, WSGI/ASGI i test runner
+  accounts/             użytkownik, logowanie, profil, wiele kont, obecność
+  workplaces/           Workspace, aktywny kontekst, nawigacja, ulubione
+  spaces/               przestrzenie, zadania, historia, pliki, planowanie i zespoły
+  tasks/                historyczne dane pracy, stare linki i wspólny słownik tagów
+  kanban/               historyczne źródła kart i zgodność starych adresów
+  contacts/             historyczne kontakty i firmy; bez aktywnego routingu
+  planner/              wydarzenia i kalendarz
+  resources/            ewidencja sprzętu, licencji i narzędzi Workspace
+  documents/            Dysk, Dokumenty i bezpieczna integracja edytorów
+  dashboard/            pulpity, ustawienia, wyszukiwanie i powiadomienia
+  core/                 wspólna powłoka aplikacji, JSON API i walidacja uploadu
 frontend/board/         izolowany bundle Excalidraw/React i lockfile
+frontend/app/           frontend React/TypeScript aktywnych modułów
 deploy/                 lokalny serwer ONLYOFFICE (Compose)
-dashboard/              start, pulpity i gadżety, ustawienia, szukanie, powiadomienia
-core/                   wspólny szablon aplikacji i walidacja uploadu
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
-static/img/             logo i favicon
-static/vendor/flaticon/ lokalny podzbiór Flaticon UIcons i licencja
+static/frontend/        generowany bundle React z manifestem, poza Git
+static/img/             logo, ilustracje i favicon
+static/vendor/          lokalne biblioteki, ikony i generowany bundle tablicy
 media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
 private_documents/      prywatne pliki Dysku, Dokumentów i komentarzy
-files/                  katalog lokalny; brak aktywnej aplikacji Django o tej nazwie
 docs/                   opisy projektu i generowany indeks kodu
-scripts/                narzędzia utrzymania dokumentacji
+scripts/                narzędzia dokumentacji, ikon i lokalnego ONLYOFFICE
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
+.env.example            przykład lokalnej konfiguracji bez sekretów
+.editorconfig           wspólne reguły zapisu i wcięć plików
+.vscode/settings.json   importy Pythona i widoczność plików technicznych
 ```
 
 `.env` zawiera lokalną konfigurację; `.venv` lokalne środowisko Python.
 Treść uploadów i sekrety nie należą do dokumentacji.
 Pełny indeks źródeł znajduje się w [CODE_INDEX.md](CODE_INDEX.md).
 
+`backend/` jest katalogiem źródeł, nie nową przestrzenią nazw Pythona.
+Importy nadal używają `spaces`, `accounts`, `ancore.settings` itd.; etykiety
+aplikacji, nazwy tabel i zależności migracji są zachowane. Szablony i testy
+pozostają przy swoich aplikacjach. Historyczne modele pozostają w tych samych
+aplikacjach, ponieważ uczestniczą w migracjach i relacjach aktywnych modułów.
+
+Główny `manage.py` ustawia ścieżkę importów niezależnie od katalogu roboczego.
+`BackendDiscoverRunner` zachowuje pełne wykrywanie testów bez podawania etykiet.
+WSGI/ASGI i inne bezpośrednie procesy wymagają dodania `backend/` do `PYTHONPATH`;
+szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).
+`BASE_DIR` nadal oznacza katalog główny repozytorium, a `BACKEND_DIR` katalog
+źródeł Django. Lokalizacje `.env`, uploadów i zasobów pozostają takie same.
+
 ## 3. Warstwy i odpowiedzialności
 
 | Warstwa | Odpowiedzialność | Główne źródła |
 | --- | --- | --- |
-| Routing | Wybór modułu, endpointu i nazwy URL | `ancore/urls.py`, modułowe `urls.py` |
-| Middleware | Sesja, uwierzytelnienie, obecność, Workspace, CSRF | `ancore/settings.py`, middleware Accounts/Workplaces |
-| Widoki | Zakres dostępu, akcja, wybór formularza, odpowiedź | modułowe `views.py`, `tasks/views/`, `kanban/views/` |
+| Routing | Wybór modułu, endpointu i nazwy URL | `backend/ancore/urls.py`, modułowe `urls.py` |
+| Middleware | Sesja, uwierzytelnienie, obecność, Workspace, CSRF | `backend/ancore/settings.py`, middleware Accounts/Workplaces |
+| Widoki | Zakres dostępu, akcja, wybór formularza, odpowiedź | modułowe `views.py`, `backend/tasks/views/`, `backend/kanban/views/` |
+| JSON API | Kontrakt Reacta, sesja, błędy i zakres danych | `backend/core/api.py`, `backend/core/frontend.py`, `backend/core/shell.py`, domenowe `frontend.py`, `backend/resources/api.py` |
 | Formularze | Walidacja i wybór dostępnych powiązań | modułowe `forms.py` |
 | Modele | Dane, relacje, unikalność, zapis i sygnały | modułowe `models.py`, `migrations/` |
 | Szablony | Układ strony, pola, listy i kontrakt `data-*` | modułowe `templates/` |
 | CSS | Wygląd i responsywność | `static/css/` |
 | JavaScript | Interakcje i komunikacja HTTP | `static/js/` |
+| React/TypeScript | Stan i renderowanie przeniesionych modułów | `frontend/app/src/` |
 
 Historyczna logika Zadań/Kanbana pozostaje w dużych plikach widoków,
 bez rejestracji aktywnych ekranów. `static/js/tasks.js` nadal obsługuje
@@ -228,8 +255,8 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
   Blokada rekordu pulpitu chroni limit oraz układ przed równoczesnymi zmianami. Warianty
   zarządzania zachowują filtry katalogu; wszystkie adresy mają scoped odpowiedniki.
 - `/for-you/` oraz `/workplaces/<slug>/for-you/` pokazują osobisty widok
-  „Dla ciebie”, składany przez `dashboard/for_you.py` z dostępnych danych.
-  `dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
+  „Dla ciebie”, składany przez `backend/dashboard/for_you.py` z dostępnych danych.
+  `backend/dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
   nie tworzy dodatkowych modeli ani kopii danych biznesowych.
 - `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
   Katalog `/workplaces/` jest osobną stroną z własnym menu zarządzania Workspace.
@@ -263,7 +290,7 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 Przy rozbudowie modułu trzeba uwzględnić także nawigację Workspace,
 context processor, wyszukiwarkę i ograniczenia częściowej nawigacji.
 
-Zasoby korzystają z osobnego modelu `resources.Resource` i `resources/urls.py`;
+Zasoby korzystają z osobnego modelu `resources.Resource` i `backend/resources/urls.py`;
 scoped namespace to `workplace_resources`. Współdzielą właściciela i aktywny
 Workspace, nawigację, ulubione, globalne wyszukiwanie, filtry i paginację Zadań
 oraz powłokę modali. Nie są powiązane z prywatnymi projektami ani plikami Dysku.
@@ -274,7 +301,7 @@ nowe zapisy nie tworzą archiwów. `WorkspaceDocument.is_template` oznacza wzorz
 katalogu właściciela; kopia nie dziedziczy tego oznaczenia.
 
 Dokumenty mają osobne modele w aplikacji `documents`, widoki w
-`documents/editor_views.py` i routing `documents/workspace_urls.py` z przestrzeniami
+`backend/documents/editor_views.py` i routing `backend/documents/workspace_urls.py` z przestrzeniami
 nazw `office` oraz `workplace_office`. Nie są filtrem Dysku i nie przenoszą
 jego dotychczasowych danych. Współdzielą prywatny storage, walidację uploadu,
 podglądy i powłokę formularzy/modalów. Dysk i Dokumenty korzystają też ze wspólnych
@@ -292,7 +319,7 @@ Nie ma rejestracji URL ani ekranów Django admin; dane nie są kasowane.
 Obecność `ASGI_APPLICATION`/pliku ASGI nie oznacza działającej komunikacji
 WebSocket. W sprawdzonych źródłach nie ma workera do automatyzacji tagów,
 wysyłania push/e-mail ani synchronizacji kalendarza z zewnętrznym serwisem.
-Przypomnienia Przestrzeni materializuje `dashboard/reminders.py` podczas
+Przypomnienia Przestrzeni materializuje `backend/dashboard/reminders.py` podczas
 odpytywania centrum powiadomień; nie wymagają workera. `TaskProjectTemplate`
 zachowuje historyczne snapshoty JSON, bez katalogu, edytora ani tworzenia projektów.
 Aktualne ograniczenia i pozostałości historyczne są zebrane w
@@ -315,7 +342,7 @@ zadań. Dashboard, „Dla ciebie”, postęp pulpitów i wyszukiwanie korzystaj�
 z nowych danych; Planner uwzględnia ich terminy. Szczegóły migracji,
 konfiguracji i ograniczeń: [SPACES.md](SPACES.md).
 
-Planowanie backlogu korzysta z `spaces/backlog.py` i endpointu
+Planowanie backlogu korzysta z `backend/spaces/backlog.py` i endpointu
 `space/<slug>/backlog/plan/` (również scoped i numerycznego). Formularze
 `sprints/<pk>/edit/`, `start/` i `complete/` używają istniejącej powłoki modalnej.
 Operacje obejmują te same `SpaceTask`/`WorkItem`, bez nowej warstwy danych.
@@ -327,7 +354,7 @@ projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
 w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
 pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
 
-`tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
+`backend/tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
 odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
 wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
 a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny

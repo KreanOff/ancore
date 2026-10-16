@@ -1,5 +1,55 @@
 # Standard UI Ancore
 
+## Wspólna powłoka React
+
+`frontend/app/src/shell/Shell.tsx` renderuje nagłówek, menu Workspace,
+minimalne menu zarządzania, Favorites i globalne panele. `core/base.html`
+zachowuje kontenery oraz pierwszy render. Istniejące klasy, font, tokeny,
+szerokości i wysokości kontrolek pozostają wspólne. Minimalny wariant selektorów
+w `layout/main.css` uwzględnia korzeń Reacta z `display: contents`, zachowując
+wysokość topbaru i położenie sidebaru. Dropdowny korzystają ze wspólnego
+adaptera; `.react-sidebar-row-menu` nie dodaje własnego pola w układzie.
+
+Menu ma dotychczasowe grupy i skróty, zapamiętywanie szerokości/zwinięcia,
+podmenu w zwiniętym pasku oraz backdrop na telefonie. Wybór Workspace
+obsługuje wyszukiwanie z normalizacją polskich znaków i klawiaturę.
+Pickery Przestrzeni, Pulpitów i Filtrów używają istniejącej powłoki popover,
+stanu pustego/błędu/ponowienia, strzałek i Escape z powrotem fokusu.
+Menu mobilne wyłącza treść przez `inert` i ogranicza Tab do swoich kontrolek.
+
+Favorites zachowują bazę i klucze ustawień. Obsługują dodanie/usunięcie przez
+przeciąganie, zmianę kolejności, anulowanie gestu oraz Alt+strzałki i akcje
+dostępne klawiaturą. Dotyk używa ikony jako uchwytu, a tekst pozwala przewijać
+menu. Natywny drag linku wewnątrz ulubionego wiersza jest wyłączony, by nie
+przerywał gestu wskaźnika. Krótkie komunikaty renderuje `Toasts.tsx`, z tymi
+samymi klasami i bez interpretacji HTML. Formularze otwierane z menu używają
+`FormDialog` w `app-shell-modals`, ze wspólną obsługą fokusu i szkicu.
+
+Historyczne odwołania do szablonów i ich kontrolerów poniżej opisują wzorzec
+wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą do Reacta.
+
+## Konta w React
+
+Logowanie, rejestracja i dodanie konta renderują `src/accounts/AuthPage.tsx`
+w dotychczasowej powłoce `accounts/auth_base.html`: te same klasy, typografia,
+opowieść po lewej, pola, przełączanie widoczności hasła i układ mobilny.
+`auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
+Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
+
+Profil używa istniejącego układu szczegółów zadania, listy kont w sesji,
+panelu właściwości i menu „Edytuj”. React renderuje formularz edycji we
+wspólnym `Modal` z klasami `profile-edit-overlay`, `profile-edit-dialog`
+oraz `profile-edit-form`. Zachowuje Escape, fokus, inert, błędy i potwierdzenie
+odrzucenia zmian. Wybór statusu korzysta ze wspólnego dropdownu i menu z
+zaznaczeniem aktualnej opcji, obsługiwanego również klawiaturą.
+
+`shared/AvatarControl.tsx` jest wspólnym adapterem istniejącego pickera i
+kadrowania. W profilu używa puli 30 zwierzęcych ilustracji, klas
+`user-avatar-art` i pól `profile_photo*`; w Workspace zachowuje osobne
+ilustracje, klasy i pola `workplace_photo*`. Zagnieżdżony picker i canvas
+mają własny cykl życia. Minimalne adaptery `react.css` zachowują przepływ
+kontenera awatara i wielowierszowe bio. Nie dodano nowego systemu stylów.
+
 ## Dolny pasek stron Przestrzeni
 
 `spaces/base.html` umieszcza wspólny `spaces/pagination.html` pod przewijaną
@@ -61,6 +111,14 @@ ten sam styl i wspólny limit sześciu skrótów. Panel „Więcej filtrów”
 używa core/includes/sidebar_picker.html i space-picker.js; działa także
 w zwiniętym pasku i na telefonie. filter-navigation.js obsługuje gwiazdki
 z dowolnego ekranu, zachowując aktualny URL oraz przywracając fokus.
+
+W przeniesionych ekranach powyższy układ i klasy renderują komponenty
+`frontend/app/src/filters`. `task-filters.js` pomija korzeń Reacta;
+stan formularza, walidację i modal obsługuje React z `AncoreTaskModals`.
+Pola wyszukiwania korzystają z wariantu `FieldControl` bez stylu właściwości
+szczegółów zadania, zachowując dotychczasowe obramowania i ikony wyboru.
+Menu boczne, gwiazdki i pickery renderuje teraz `src/shell`; dawny
+`filter-navigation.js` pozostaje wyłącznie dla zgodności.
 
 Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
 szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
@@ -288,7 +346,9 @@ Zakładka „Tagi” zachowuje nagłówek i nawigację otwartej przestrzeni.
 `spaces/tags.html` korzysta ze wspólnych include'ów `tag_directory`,
 `tag_sort`, `tag_filters`, `tag_modal` i `tag_notes_modal`. Przycisk „Dodaj tag”,
 menu wiersza, informacje, notatki, wybór kolumn i operacje zbiorcze obsługuje
-istniejący `tasks.js`, również po `ancore:content-loaded`. Obserwator widzi
+`frontend/app/src/tags`, z tymi samymi klasami CSS i powłoką modali.
+`tasks.js` zachowuje obsługę szablonów zgodności i pomija korzeń Reacta.
+Inicjalizacja działa również po `ancore:content-loaded`. Obserwator widzi
 informacje i notatki bez przycisków zapisu; modal edycji jest niedostępny.
 Tabela dochodzi do krawędzi kontenera jak lista zadań. W formularzu zadania
 przestrzeni picker „Tagi” korzysta z `AncoreCustomSelect` i lokalnego wyszukiwania.
@@ -306,8 +366,8 @@ aktywną pozycję z nazwą modułu. Nie zawiera kategorii centrum Ustawień
 ani linków pozostałych stron zarządzania. Strony otwiera się z wierszy
 sekcji Workspace w centrum Ustawień. „Wróć do ustawień” prowadzi do `#workspace`.
 Treść zajmuje całą szerokość obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijanie,
-zmianę szerokości oraz mobilne otwieranie/zamykanie. `layout.js` przełącza
-widoczną nawigację również przy częściowym przejściu, powrocie i historii
+zmianę szerokości oraz mobilne otwieranie/zamykanie. `Sidebar.tsx` przełącza
+widoczną nawigację z danych JSON również przy powrocie i historii
 przeglądarki. Bezpośrednie wejście do kreatora/edycji używa trybu administracyjnego.
 Tabela ma te same kolumny, szerokości i awatary co „Przestrzenie”: checkbox,
 menu z trzema paskami, Klucz, Przestrzeń, Rodzaj, Szablon, Opis i Zadania.
@@ -786,7 +846,7 @@ znacznikiem (`for-you-tasks-empty.webp`), Przypisane do mnie — karty z symbole
 osoby (`for-you-assigned-empty.webp`), Ulubione — folder z gwiazdką
 (`for-you-starred-empty.webp`), Ostatnia praca — zegar i ołówek
 (`for-you-worked-empty.webp`), Ostatnio oglądane — dokumenty z symbolem oka
-(`for-you-viewed-empty.webp`). `EMPTY_ILLUSTRATIONS` w `dashboard/for_you.py`
+(`for-you-viewed-empty.webp`). `EMPTY_ILLUSTRATIONS` w `backend/dashboard/for_you.py`
 wybiera ilustrację aktywnej zakładki, również przy braku wyników filtrów.
 Obrazki z `static/img/empty-states/` mają przezroczyste tło, maksymalną
 szerokość 240px i skalują się do kontenera. Są dekoracyjne (`alt=""`,
@@ -902,7 +962,7 @@ zmiany oznaczenia. Usunięcie z zakładki „Ulubione” odświeża jej wyniki i
 zachowując URL i przywracając fokus aktywnej zakładce. Puste stany odróżniają
 brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 
-Źródło: [core/base.html](../core/templates/core/base.html).
+Źródło: [core/base.html](../backend/core/templates/core/base.html).
 
 - Stały pasek u góry całej aplikacji (`app-topbar`) ma tło
   `--sidebar-bg`, identyczne jak boczna nawigacja, i wysokość `--app-topbar-height`
@@ -1036,7 +1096,7 @@ definiują bloki `secondary_menu`/`page_header`, których aktualny base nie
 wywołuje. Sprawdź rzeczywiste dziedziczenie, zanim skopiujesz cały szablon.
 
 Ekrany logowania/rejestracji mają oddzielny
-[auth_base.html](../accounts/templates/accounts/auth_base.html), z osobnym
+[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z osobnym
 układem i akcentem typograficznym Playfair Display. To istniejący wyjątek;
 nie należy przenosić jego dekoracyjnej typografii do tabel aplikacji.
 
@@ -1125,23 +1185,23 @@ Ważne wyjątki:
 
 | Element | Wzorzec do ponownego użycia | Styl / zachowanie |
 | --- | --- | --- |
-| Katalog projektów/grup | [tasks/tasks.html](../tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
-| Historyczna lista kontaktów i firm (wycofana) | [contacts.html](../contacts/templates/contacts/contacts.html), [companies.html](../contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
-| Tytuł i toolbar katalogu | [toolbar Dysku](../documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
-| Paginacja | [directory_pagination_toolbar.html](../tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |
-| Zarządzanie kolumnami | [directory_column_manager.html](../tasks/templates/tasks/includes/directory_column_manager.html) | `tasks.js`, zapis ustawień lokalnych |
-| Agregat filtrów | [directory_filter_aggregate.html](../tasks/templates/tasks/includes/directory_filter_aggregate.html) | Wspólne menu i aktywny stan |
-| Wiersz zadania | [task_issue_row.html](../tasks/templates/tasks/includes/task_issue_row.html) | Stan, uprawnienia, `data-task-*`, ikony, JS listy |
-| Karta Kanban | [task_board_card.html](../kanban/templates/kanban/includes/task_board_card.html) | Kolumna, okładka i przeciąganie |
-| Standardowy modal formularza | [form.html Dysku](../documents/templates/documents/form.html), modale projektów/zadań | `tasks-modal*` + `modal-system.css` |
+| Katalog projektów/grup | [tasks/tasks.html](../backend/tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
+| Historyczna lista kontaktów i firm (wycofana) | [contacts.html](../backend/contacts/templates/contacts/contacts.html), [companies.html](../backend/contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
+| Tytuł i toolbar katalogu | [toolbar Dysku](../backend/documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
+| Paginacja | [directory_pagination_toolbar.html](../backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |
+| Zarządzanie kolumnami | [directory_column_manager.html](../backend/tasks/templates/tasks/includes/directory_column_manager.html) | `tasks.js`, zapis ustawień lokalnych |
+| Agregat filtrów | [directory_filter_aggregate.html](../backend/tasks/templates/tasks/includes/directory_filter_aggregate.html) | Wspólne menu i aktywny stan |
+| Wiersz zadania | [task_issue_row.html](../backend/tasks/templates/tasks/includes/task_issue_row.html) | Stan, uprawnienia, `data-task-*`, ikony, JS listy |
+| Karta Kanban | [task_board_card.html](../backend/kanban/templates/kanban/includes/task_board_card.html) | Kolumna, okładka i przeciąganie |
+| Standardowy modal formularza | [form.html Dysku](../backend/documents/templates/documents/form.html), modale projektów/zadań | `tasks-modal*` + `modal-system.css` |
 | Potwierdzenie | [modal.js](../static/js/modal.js) | `showConfirmModal`, `dialogs.css` |
 | Zwykłe przyciski | [buttons.css](../static/css/components/buttons.css) | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-sm`, `.btn-cancel` |
 | Formularz/dropdown | [forms.css](../static/css/components/forms.css), [custom-select.js](../static/js/custom-select.js) | `.form-input`, `.form-select`, `.ancore-custom-select*` |
 | Checkbox | [checkboxes.css](../static/css/components/checkboxes.css) | Wspólna geometria i stany |
-| Avatar konta | [user_avatar.html](../accounts/templates/accounts/includes/user_avatar.html) | Helper `accounts.avatar`, zdjęcie/fallback/status |
-| Priorytet | [priority_icon.html](../core/templates/core/includes/priority_icon.html) | Istniejąca symbolika priorytetów |
-| Ikony załączników | [attachment_icon.html](../core/templates/core/includes/attachment_icon.html) | `attachment-icons.js`, format i typ pliku |
-| Wiersz ustawień | [settings_row.html](../dashboard/templates/dashboard/includes/settings_row.html) | `settings.css` |
+| Avatar konta | [user_avatar.html](../backend/accounts/templates/accounts/includes/user_avatar.html) | Helper `accounts.avatar`, zdjęcie/fallback/status |
+| Priorytet | [priority_icon.html](../backend/core/templates/core/includes/priority_icon.html) | Istniejąca symbolika priorytetów |
+| Ikony załączników | [attachment_icon.html](../backend/core/templates/core/includes/attachment_icon.html) | `attachment-icons.js`, format i typ pliku |
+| Wiersz ustawień | [settings_row.html](../backend/dashboard/templates/dashboard/includes/settings_row.html) | `settings.css` |
 
 Referencje pokazują bieżące wzorce kodu, a nie polecenie skopiowania całych
 ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include'a
@@ -1531,9 +1591,9 @@ są dostępne w menu przed ikoną. Kosz nie udostępnia przeciągania.
 
 Filtry Dysku używają panelu `tasks-project-filter-builder` i wspólnych
 szablonów warunków tekstowych oraz wyboru wartości. Lista pól i aktywne warunki
-pochodzą z `documents/query.py`; obsługę wyszukiwania, czyszczenia i nawigacji
+pochodzą z `backend/documents/query.py`; obsługę wyszukiwania, czyszczenia i nawigacji
 zapewnia `tasks.js`. Panel sortowania
-[directory_sort_builder.html](../tasks/templates/tasks/includes/directory_sort_builder.html)
+[directory_sort_builder.html](../backend/tasks/templates/tasks/includes/directory_sort_builder.html)
 jest wspólny dla Dysku i Wszystkich projektów: wyszukiwanie pola,
 wybór kierunku i zaznaczenie aktualnego ustawienia. Dysk, folder i widok
 stanowią kontekst nawigacji; przycisk „Wyczyść” w panelu filtrów ich nie usuwa.
@@ -2205,7 +2265,7 @@ Oglądanie lub edycja wybranego Workspace nie przełącza aktywnego kontekstu pr
 
 Profil użytkownika korzysta ze wspólnego okna `core/includes/avatar_picker.html`
 i `workplace-avatars.js`, z osobną pulą 30 zwierzęcych maskotek w
-`accounts/avatar_presets.py`. Lokalne atlasy `static/img/user-avatars/illustrations-v1.png`
+`backend/accounts/avatar_presets.py`. Lokalne atlasy `static/img/user-avatars/illustrations-v1.png`
 oraz `illustrations-extra-v1.png` zachowują proste wypełnione kształty i kolorystykę
 Przestrzeni i Workspace; nie zawierają portretów ludzi. Dodatkowe sześć ilustracji
 to ośmiornica, wieloryb, żółw, nietoperz, pszczoła i dinozaur. Pierwotne 24 grafiki
@@ -2219,7 +2279,7 @@ przeciąganie, anulowanie, Escape, fokus i inicjalizację po częściowej nawiga
 Pula kont nie zmienia dostępnych motywów Przestrzeni ani Workspace.
 
 Workspace korzysta z tych samych 30 ilustracji co Przestrzenie. Wspólne
-`core/avatars.py` i `core/includes/avatar_presets.html` definiują motywy
+`backend/core/avatars.py` i `core/includes/avatar_presets.html` definiują motywy
 oraz siatkę radio; `space-avatars.css` obsługuje atlasy i zaznaczenie.
 W formularzach tworzenia i edycji kliknięcie awatara albo „Dodaj”/„Zmień”
 otwiera osobne okno „Wybierz awatar” z powłoką `app-modal-panel--compact`,
@@ -2419,9 +2479,11 @@ Ustawienia prowadzą do wspólnego panelu przez „Zarządzaj Workspace”. Funk
 
 ## 13. Centrum powiadomień
 
-Powiadomienia są dostępne wyłącznie w panelu dzwonka. Panel używa include'ów
-`notification_controls.html`, `notification_list.html`, `notification_pagination.html`
-oraz `notifications-panel.js` i `notifications-panel.css`. Używa tej samej powłoki
+Powiadomienia są dostępne wyłącznie w panelu dzwonka. Panel renderuje
+`src/shell/NotificationPanel.tsx` z jawnymi danymi JSON i dotychczasowym
+`notifications-panel.css`. Include'y `notification_controls.html`,
+`notification_list.html`, `notification_pagination.html` oraz
+`notifications-panel.js` pozostają wzorcem i trybem zgodności. Panel używa tej samej powłoki
 `tasks-modal app-modal-panel` co „Utwórz zadanie”: szerokiego okna z jasnoszarym
 tłem, białą treścią, wspólnymi odstępami i animacją. Nagłówek zawiera tytuł
 „Powiadomienia” i standardowy krzyżyk. Stała stopka zawiera „Zamknij” oraz
@@ -2448,13 +2510,13 @@ Wpisy historii zmian nie pojawiają się w żadnym filtrze ani liczniku panelu.
 Puste stany „Wszystkie” i „Obserwowane” opisują komentarze i pozostałe dostępne
 typy powiadomień, bez zapowiadania historii zmian.
 Na każdej karcie jest jeden stale widoczny przycisk z trzema paskami (`menu`).
-Otwiera wspólne menu `row-actions.js` z akcją odczytu, archiwizacji/przywrócenia
+Otwiera wspólny React `Dropdown` z akcją odczytu, archiwizacji/przywrócenia
 i usunięcia; zaproszenia nie mają akcji archiwizacji. Menu korzysta z
-`tasks-section-menu`, `tasks-project-menu-button` i natywnego popovera,
+`tasks-section-menu`, `tasks-project-menu-button` i wspólnej warstwy dropdownu,
 więc nie jest przycinane przez przewijaną listę. Ma szare stany interakcji,
 obsługuje strzałki, Home/End i Escape z powrotem fokusu na przycisk.
-Zdarzenie `ancore:notifications-loaded` inicjalizuje menu również po doczytaniu
-starszych stron i zmianie stanu. Odświeżenie listy lub zamknięcie panelu zamyka
+React odnawia menu po doczytaniu starszych stron i zmianie stanu.
+Odświeżenie listy lub zamknięcie panelu zamyka
 otwarte menu; zapis blokuje przyciski i przywraca fokus na widoczny przycisk karty.
 „Oznacz wszystkie jako przeczytane” obejmuje bieżący filtr, również starsze strony;
 przycisk jest nieaktywny, gdy wszystkie wpisy w tym widoku są przeczytane.
@@ -2485,6 +2547,14 @@ Skrót wyszukiwania zamyka powiadomienia i ustawia fokus w wyszukiwarce.
 Na telefonie okno zajmuje ekran, a toolbar zawija kontrolki.
 Inicjalizacja po `ancore:content-loaded` nie powiela listenerów; polling działa
 wyłącznie w widocznej karcie. Dane są prywatne dla konta i nie trafiają do localStorage.
+
+Panele globalne mają trwały korzeń `[data-react-global-panels]` i osobny host
+modali, poza podmienianą treścią strony. Wyszukiwarka używa tego samego pola,
+grup, filtrów oraz skrótów Ctrl/⌘+K i `/`, strzałek, Home/End i Escape.
+Po nawigacji czyści frazę i anuluje pobranie. Sticker zachowuje dotychczasowy
+wygląd, klucz zapisu konta, geometrię i zmianę rozmiaru klawiaturą. Jego treść
+trwa podczas częściowej nawigacji. Stare skrypty tych trzech paneli nie są
+ładowane razem z Reactem; helpery ikon, selectów, modali i toastów pozostają wspólne.
 
 ### Załączniki czatu
 Wspólny `comment_composer.html` rozszerza obecne pole komentarza Zadań i Kanbana.
@@ -2538,18 +2608,25 @@ z dodatkowymi filtrami „Wzmianki” i „Obserwowane”, w tym stanami pustymi
 
 ## 14. Katalog Zasobów
 
+Od 16.10.2026 interaktywny katalog i formularz renderuje React/TypeScript
+z `frontend/app/src/resources/`. Powłoka, CSS, polskie etykiety i geometria
+pozostają wspólne. Komponenty React zarządzają filtrami, kolumnami, zaznaczeniem
+i tabelą bez równoczesnego modyfikowania ich DOM przez `tasks.js`.
+Adaptery ikon i custom selectów mają osobne kontenery; modal nadal używa
+`AncoreTaskModals`. Szczegóły: [Frontend React](FRONTEND.md).
+
 Zasoby rozszerzają `core/base.html`, `tasks-topbar`, `tasks-filterbar`, wspólne
-menu filtrów/sortowania i `directory_pagination_toolbar.html`. Lista używa
+menu filtrów/sortowania oraz wygląd wspólnej paginacji. Lista używa
 wspólnej tabeli Projektów (`tasks-directory-sheet tasks-project-sheet`) z wariantem
 `resources-sheet`: wiersze 35px, separatory, nagłówki z ikonami, checkboxy
 z podświetleniem zaznaczenia oraz menu działań po lewej. Dalej są numer ewidencyjny,
 nazwa z ikoną typu, typ, status, osoba, lokalizacja i ważność/gwarancja.
 Miniony termin korzysta ze wspólnego oznaczenia `tasks-project-value-badge--due-overdue`.
-Menu wiersza używa `row-actions.js`, oferuje edycję i usunięcie z potwierdzeniem.
+Menu wiersza używa adaptera `AncoreDropdownLayer`, oferuje edycję i usunięcie z potwierdzeniem.
 Zamknięcie edycji przywraca fokus do przycisku menu.
 
-Pasek zawiera `directory_column_manager.html`, wspólny agregat „Filtruj”
-i sortowanie z widoczną bieżącą opcją. `tasks.js` obsługuje szerokości,
+Pasek zachowuje wygląd zarządzania kolumnami, agregatu „Filtruj”
+i sortowania z widoczną bieżącą opcją. Komponent `columns.tsx` obsługuje szerokości,
 kolejność i widoczność kolumn; Zasoby mają oddzielny klucz ustawień `resources`,
 wspólny dla zwykłego i scoped URL. Checkbox nagłówka zaznacza bieżącą stronę,
 a częściowy wybór pokazuje stan pośredni; nie uruchamia operacji zbiorczych.
@@ -2559,7 +2636,8 @@ Pusty katalog i brak wyników mają osobne komunikaty i działające akcje.
 `resources.css` ustala wariant siatki oraz dwukolumnowy układ formularza,
 który przechodzi w jedną kolumnę na telefonie. Powłoka, pola i przyciski
 pozostają wspólne (`tasks-modal app-modal-panel`, `documents-field`, `form-input`).
-`resources.js` korzysta z `AncoreTaskModals`, ikon, custom selectów,
+Zgodne formularze HTML nadal używają `resources.js`, który pomija kontener React.
+Skrypt korzysta z `AncoreTaskModals`, ikon, custom selectów,
 `showConfirmModal` oraz `AncoreApp.navigate`. Inicjalizuje się na pierwszym
 wejściu i `ancore:content-loaded`, anulując poprzednie listenery i żądania.
 Modal blokuje tło przez `inert`, zachowuje fokus, Escape i potwierdzenie
@@ -2569,6 +2647,13 @@ porzucenia zmian. Pobranie/zapis/usunięcie pokazują błędy umożliwiające po
 
 System „Pulpity” rozszerza Dashboard przez `dashboard/pulpits/base.html`,
 wspólne paski, przyciski, `row-actions.js` i `AncoreCustomSelect`.
+Od 16.10.2026 interaktywne ekrany renderuje `frontend/app/src/pulpits/`.
+Zachowuje te same klasy, tokeny i układy; poniższe szablony są również
+referencją oraz początkowym HTML. React obsługuje zaznaczenie, szerokości,
+formularze, katalog i układ. `pulpits.js` pomija korzeń Reacta; wspólne
+menu boczne i wyszukiwarka Pulpitów nadal należą do powłoki.
+Małe adaptery w `react.css` zachowują rozmiar ikon nagłówka, łamanie opisu
+oraz geometrię pól renderowanych przez wyspy kontrolek DOM.
 Katalog i zarządzanie współdzielą `dashboard/pulpits/directory.html`
 oraz tabelę Przestrzeni w powłoce `work-page`:
 `tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable
@@ -2582,7 +2667,7 @@ Wszystkie, Ulubione i Moje; pokazuje wszystkie dostępne pulpity.
 Filtr widoczności i przycisk „Filtruj”
 są po lewej, wyszukiwarka i paginacja po 30 pozycji po prawej.
 Checkboxy zaznaczają wyłącznie bieżącą stronę, bez operacji zbiorczych.
-`tasks.js` obsługuje zaznaczenie, stan częściowego wyboru i szerokości kolumn
+React (a w szablonach zgodności `tasks.js`) obsługuje zaznaczenie, stan częściowego wyboru i szerokości kolumn
 z osobnym kluczem `pulpits-directory`, wspólnym dla zwykłego i scoped URL.
 Menu z trzema paskami używa `directory_row_menu.html` oraz
 `dashboard/pulpits/row_actions.html`; zawiera osobistą gwiazdkę i dotychczasowe
@@ -2791,3 +2876,40 @@ pozornego gadżetu; przy niepewnym wyniku żądania należy odświeżyć pulpit.
 Po zakończeniu dodawania przycisk odzyskuje fokus utracony podczas blokady,
 również po błędzie; przy osiągnięciu limitu fokus przechodzi do zamknięcia katalogu.
 Nowe menu gadżetów inicjalizują się przez `ancore:modals-loaded`.
+
+## Ekrany React podczas migracji
+
+Aktualny zakres i kontrakt danych opisuje [FRONTEND.md](FRONTEND.md).
+Przeniesione ekrany zachowują klasy istniejących szablonów. Małe adaptery
+są w `static/css/components/react.css`: kontenery `display: contents`,
+wyspy ikon/selectów i jawne ukrywanie paneli z `hidden`, których dawny
+CSS był związany z atrybutami starszego JavaScriptu. Wariant
+`tasks-issue-select-wrap` zapewnia kontrolkom zadania ten sam wygląd co wcześniej.
+Modale, paginacja, tabela członków i grupy statusów mają współdzielone
+komponenty React. Biblioteka ikon, tokeny i kolory pozostają istniejące.
+
+Dysk i Dokumenty używają `src/documents/`: zachowane klasy katalogów, ikon SVG,
+paneli filtrów/sortowania, osobnego wyboru liczby wierszy i modali. Adapter CSS
+odwzorowuje selektory ikon opakowanych w `react-icon` oraz desktopowy układ
+etykieta–pole w formularzu. Ikony plików/folderów/dysków mają tę samą geometrię
+co include’y Django. React obsługuje listę/kafelki, zaznaczenia, panel dysków
+z fokusem i Escape, przenoszenie oraz podglądy. Opisy wcześniejszych funkcji
+`documents.js`, `office.js` i `office-suite.js` dotyczą szablonów zgodności;
+te skrypty pomijają korzeń Reacta. Tekstowy edytor treści oraz zewnętrzne
+edytory mają odrębne wyspy DOM. Tworzenie pliku zachowuje katalog i otwiera
+nową kartę; blokada popupu pokazuje jeden link do zapisanego dokumentu.
+
+Zarządzanie Workspace renderuje `src/workspaces/`. Zachowuje katalog, lokalne
+wyszukiwanie/paginację, zaznaczenia bieżącej strony i oddzielne przełączanie
+kontekstu. Okna używają istniejących klas `workplace-create-modal`,
+`workplace-edit-modal`, zakładek, tabel członków i zaproszeń oraz kompaktowych
+okien ról/zapraszania. Zmiana zakładki zachowuje szkic ustawień; zamknięcie
+zagnieżdżonego okna wraca do rodzica. `shared/Modal` ma opcjonalny nagłówek
+i klasy dialogu dla powłoki Projektów, z tą samą obsługą fokusu i Escape.
+Picker awatara/kadrowania jest wyspą DOM z dotychczasowym wyglądem i helperami.
+Escape w kadrze lub podpowiedziach osoby zamyka najpierw ten element.
+Menu działań Workspace wyłącza dodawanie wyszukiwania do krótkiej listy akcji.
+Pozycjonowanie dropdownu pomija kontenery za przodkiem `position: fixed`,
+które nie przycinają kontrolek pełnego modala nad boczną nawigacją.
+Powłoka modala wybiera początkowy fokus wyłącznie spośród własnych kontrolek
+w widocznych panelach; pomija schowany picker awatara i preferuje aktywną zakładkę.

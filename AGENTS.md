@@ -25,12 +25,21 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
 
 ## Architektura i mechanizmy, które trzeba zachować
 
-- Backend to Django, PostgreSQL i szablony Django; frontend to wspólny CSS
-  oraz zwykły JavaScript. Rozszerzaj tę architekturę w istniejącym projekcie.
-- Bieżące zadania należą do Przestrzeni: `spaces.SpaceTask`, `spaces/views.py`
-  i `spaces/task_views.py`. Projekty, Grupy, starsze Zadania, Ulubione projekty
+- Kod Django i konfiguracja są w `backend/`; nowe aplikacje umieszczaj tam.
+  Zachowuj importy `spaces`, `accounts`, `ancore.settings` itd., bez prefiksu
+  `backend`. Główny `manage.py` dodaje katalog źródeł; inne procesy wymagają
+  `PYTHONPATH` wskazującego `backend/`. `BASE_DIR` nadal oznacza katalog główny.
+  Szablony, migracje i testy pozostają przy aplikacjach. Nie zmieniaj etykiet
+  aplikacji ani nazw tabel przy porządkowaniu struktury.
+- Backend to Django i PostgreSQL. Frontend aktywnej aplikacji i wspólna powłoka
+  korzystają z Reacta i TypeScriptu (`frontend/app`) oraz JSON API Django.
+  `docs/FRONTEND.md` opisuje zakres i cykl życia. Szablony Django zachowują
+  pierwszy render i zgodność; CSS i adaptery ikon/modali pozostają wspólne. Zasady migracji, API i budowania:
+  [Frontend React](docs/FRONTEND.md). Zachowuj istniejące mechanizmy domenowe.
+- Bieżące zadania należą do Przestrzeni: `spaces.SpaceTask`, `backend/spaces/views.py`
+  i `backend/spaces/task_views.py`. Projekty, Grupy, starsze Zadania, Ulubione projekty
   i Szablony projektów są wycofane, podobnie Kanban. Nie przywracaj ich tras
-  ani historycznych widoków z `tasks/views/tasks.py` i `kanban/views/tasks.py`.
+  ani historycznych widoków z `backend/tasks/views/tasks.py` i `backend/kanban/views/tasks.py`.
 - `tasks.Task` i `kanban.Kanban` pozostają osobnymi modelami historycznymi
   dla zachowania danych, migracji, plików i zgodności linków. Przestrzenie
   współdzielą `tasks.TaskTag`, część szablonów oraz `static/js/tasks.js`.
@@ -51,7 +60,7 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   Linki zgodności muszą rozróżniać `pk`, `task_id` i kody projektu/grupy/tagu.
 - Przy zmianie statusu zachowaj logikę zakończenia, historii i operacji zbiorczych.
   Bezpośrednie `QuerySet.update()` omija `save()` i sygnały modelu.
-- Zachowaj walidację plików w `core/upload_validation.py`, kontrolowane
+- Zachowaj walidację plików w `backend/core/upload_validation.py`, kontrolowane
   pobieranie i prywatny storage Dokumentów.
 - Dostęp Przestrzeni i ich zadań wyznaczają `SpaceMembership` oraz
   `SpaceTaskMembership`, z ograniczeniami prywatnych rodziców. Historyczne
@@ -100,7 +109,7 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `python scripts/update_code_index.py --check`; nie trzeba uruchamiać
   całej aplikacji wyłącznie dla korekty dokumentacji.
 - Przy zmianie modeli sprawdź migracje i ich obecność w Git. `.gitignore`
-  ignoruje część nowych plików migracji; lokalny katalog może mieć więcej
+  nie może ignorować nowych plików migracji; lokalny katalog może mieć więcej
   migracji niż wersjonowane repozytorium.
 - Aktualizuj odpowiedni rozdział dokumentacji w tym samym zadaniu, jeśli
   zmieniają się struktura, funkcje, uprawnienia, przepływ danych, UI albo uruchamianie.

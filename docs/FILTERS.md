@@ -69,7 +69,7 @@ Usunięcie filtra usuwa jego definicję i ulubione, zachowując zadania.
 
 ## Dostęp i dane
 
-[SavedTaskFilter](../dashboard/models.py) zapisuje właściciela Workspace,
+[SavedTaskFilter](../backend/dashboard/models.py) zapisuje właściciela Workspace,
 aktywny Workspace, faktycznego twórcę, nazwę, opis, zapytanie, widoczność,
 odbiorców, ulubione, rewizję i daty. Widoczność może być prywatna,
 dla wybranych aktywnych osób Workspace albo dla całego Workspace.
@@ -151,14 +151,22 @@ Adresy zwykłe i scoped są równoważne:
 - /filters/<pk>/save/, favorite/, delete/ — akcje POST;
 - /workplaces/<slug>/filters/... — wariant aktywnego Workspace.
 
-Źródła: [routing](../dashboard/filter_urls.py),
-[widoki](../dashboard/filter_views.py), [zakres definicji](../dashboard/filters.py),
-[formularze](../dashboard/filter_forms.py),
-[parser i kompilator](../dashboard/filter_search.py),
-[szablony](../dashboard/templates/dashboard/filters),
+Źródła: [routing](../backend/dashboard/filter_urls.py),
+[widoki](../backend/dashboard/filter_views.py), [zakres definicji](../backend/dashboard/filters.py),
+[formularze](../backend/dashboard/filter_forms.py),
+[parser i kompilator](../backend/dashboard/filter_search.py),
+[szablony](../backend/dashboard/templates/dashboard/filters),
 [JS](../static/js/task-filters.js), [CSS](../static/css/components/task-filters.css),
 [nawigacja menu](../static/js/filter-navigation.js),
-[testy](../dashboard/test_filters.py).
+[testy](../backend/dashboard/test_filters.py).
 
-Schemat dodaje [migracja 0014](../dashboard/migrations/0014_savedtaskfilter.py).
+Ekrany katalogu, zarządzania i wyników oraz modale są renderowane przez
+[React](../frontend/app/src/filters/SearchPage.tsx) i
+[jawny serializer](../backend/dashboard/filter_frontend.py). JSON API deleguje zapis
+do tych samych widoków i formularzy, zachowując ACL, rewizje i transakcje.
+`task-filters.js` pozostaje obsługą zgodności szablonów i pomija korzeń Reacta.
+Globalny pasek boczny i jego picker nadal korzystają z dotychczasowych skryptów.
+Budowanie oraz granice migracji: [FRONTEND.md](FRONTEND.md).
+
+Schemat dodaje [migracja 0014](../backend/dashboard/migrations/0014_savedtaskfilter.py).
 Przed uruchomieniem kodu na innym środowisku należy wykonać manage.py migrate.

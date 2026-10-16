@@ -42,7 +42,7 @@ Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni w bloka
 uporządkowane po nazwie; pozostałe miejsca zajmują ostatnio odwiedzone
 przestrzenie, a następnie najnowsze. Historia korzysta z istniejącej sesji
 `dashboard.recent` i zapamiętuje oglądaną przestrzeń przed renderowaniem menu.
-Puste bloki nie pokazują nagłówków. `spaces/navigation.py` za każdym razem
+Puste bloki nie pokazują nagłówków. `backend/spaces/navigation.py` za każdym razem
 sprawdza aktywny Workspace i bieżący dostęp; gwiazdka nie nadaje uprawnień.
 Częściowa nawigacja odświeża linki z
 odpowiedzi serwera, więc utworzenie przestrzeni nie wymaga ręcznego przeładowania
@@ -101,7 +101,7 @@ Oba katalogi korzystają z tego samego modelu `Space`.
 
 „Utwórz przestrzeń” w katalogu, zarządzaniu oraz plus w menu bocznym otwierają
 ten sam kreator. Pierwszy krok to ilustrowane kafelki wszystkich sześciu
-szablonów z `spaces/defaults.py`: Kanban, Scrum, Zarządzanie zadaniami,
+szablonów z `backend/spaces/defaults.py`: Kanban, Scrum, Zarządzanie zadaniami,
 Marketing, Rekrutacja i Obsługa zgłoszeń. Wybranie kafelka otwiera drugi krok
 z nazwą, kluczem, opisem, sposobem zarządzania, wspólną konfiguracją
 i widocznością. Rodzaj przestrzeni jest automatycznie ustalany na podstawie
@@ -209,7 +209,7 @@ mapowaniami importu. Nie wyznaczają bieżącej treści ani uprawnień i nie
 synchronizują zmian. Wspólne konto, Workspace, słownik tagów `TaskTag`,
 walidatory plików i komponenty UI pozostają mechanizmami całej aplikacji.
 
-Punkty wejścia: `spaces/views.py`, `task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`,
+Punkty wejścia: `backend/spaces/views.py`, `task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`,
 `signals.py`, `middleware.py`, `templates/spaces/`, `static/js/spaces.js`.
 Trasy `/spaces/` i `/teams/` mają również warianty scoped
 `/workplaces/<slug>/spaces/` i `/workplaces/<slug>/teams/`.
@@ -330,7 +330,7 @@ sprintu. Pomija zadania na tablicy Kanbana, zadania zamknięte i wykluczone prze
 filtry. URL akcji oraz powrót zachowują wyszukiwanie i filtry listy. Odczyt listy
 i zmiana kolejności korzystają z tych samych funkcji filtrujących.
 
-Przeciąganie (`spaces/backlog.py`, akcja `plan` w `item_action`) waliduje
+Przeciąganie (`backend/spaces/backlog.py`, akcja `plan` w `item_action`) waliduje
 zadanie i oba sąsiednie wiersze w zakresie filtrów oraz bieżącej strony
 100 wyników. Cel należy do tej samej przestrzeni; zakończone sprinty,
 zamknięte zadania, elementy na tablicy Kanbana i rekordy poza widoczną stroną
@@ -345,7 +345,7 @@ między całkowitymi numerami, rotuje dostępne numery bieżącej grupy, sprawdz
 prawo edycji każdego zmienianego rekordu. Zadania ukryte, pominięte filtrami
 lub poza stroną zachowują swoje numery. Zapis jest atomowy i wymaga CSRF.
 
-Tablica (`spaces/board.py`, akcja `position` w `item_action`) korzysta z tych
+Tablica (`backend/spaces/board.py`, akcja `position` w `item_action`) korzysta z tych
 samych numerów `WorkItem.rank` i funkcji wyznaczania wolnego miejsca.
 Obsługuje kolejność w statusie i wstawienie między sąsiadami innego statusu;
 menu „Przesuń wyżej/niżej” działa w bieżącej kolumnie. Źródło i sąsiedzi muszą
@@ -389,7 +389,7 @@ z niezapisanymi zmianami chroni `beforeunload`; szkic nie jest utrwalany poza
 otwartą stroną. Bez JavaScript pozostaje zwykły przycisk „Zapisz” i POST.
 Załączniki wybrane przy „Dodaj załącznik” zapisują się razem z danymi zadania,
 z walidacją i wycofaniem całej operacji przy błędzie. „Główna”, „Podzadania”, „Dziennik pracy”,
-„Członkowie” i „Historia” mają własne operacje w `spaces/task_views.py`.
+„Członkowie” i „Historia” mają własne operacje w `backend/spaces/task_views.py`.
 Pliki są walidowane i pobierane po ponownej kontroli dostępu. Usunięcie
 zadania wymaga prawa edycji wszystkich kaskadowo usuwanych potomków.
 
@@ -504,7 +504,7 @@ zwracają 409 i adres nowego modułu, a usunięte endpointy operacji — 404. Ma
 aby archiwalne dane nie pojawiły się ponownie.
 
 Załączniki wskazują istniejące ścieżki; migracja nie kopiuje plików na dysku.
-`core/task_files.py` usuwa plik dopiero po zatwierdzeniu transakcji i zniknięciu
+`backend/core/task_files.py` usuwa plik dopiero po zatwierdzeniu transakcji i zniknięciu
 ostatniego odwołania w modelach Tasks, Kanbana i SpaceTaskFile. Historyczne źródło zachowuje więc plik.
 Zdjęcia zespołów podlegają wspólnemu walidatorowi i prywatnemu pobieraniu.
 
@@ -568,8 +568,8 @@ indeksu kodu i `git diff --check` przeszły.
 
 ## Pełne szczegóły niezależnego zadania
 
-`spaces/task_views.py` obsługuje właściwości, podzadania, wpisy czasu,
-pliki i komentarze, a `spaces/task_team.py` tabelę członków, kandydatów,
+`backend/spaces/task_views.py` obsługuje właściwości, podzadania, wpisy czasu,
+pliki i komentarze, a `backend/spaces/task_team.py` tabelę członków, kandydatów,
 udostępnianie, zmianę roli i odbieranie dostępu. Wszystkie operacje zapisują
 własne modele przestrzeni. Zakładki zachowują szkic formularza. Statusy
 pochodzą z konfiguracji przestrzeni, numer to trwały klucz `WorkItem`.
@@ -586,3 +586,13 @@ Polling skrzynki dostarcza termin raz dla wykonawcy, a bez wykonawcy dla
 właściciela zadania lub przestrzeni. Zamknięcie, zmiana terminu i cofnięcie
 dostępu wycofują przypomnienie z wyników. Wzmianki są walidowane według
 bieżącego dostępu do zadania i pojawiają się w istniejącej skrzynce.
+
+## Migracja React (16.10.2026)
+
+Katalog Przestrzeni, formularze, podsumowanie/lista/tablica/backlog/sprinty,
+oś czasu/raporty/ustawienia, konfiguracja, Tagi, szczegóły zadania i Zespoły
+są renderowane przez `frontend/app`.
+Serializery `backend/spaces/frontend.py` i `backend/spaces/tag_frontend.py` otrzymują zakres już ograniczony przez
+istniejące widoki, a API deleguje zapisy do tych samych formularzy i operacji.
+Nie zmieniono modeli ani reguł ACL. Schemat, build i szczegóły cyklu życia:
+[FRONTEND.md](FRONTEND.md).
