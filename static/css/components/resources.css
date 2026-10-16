@@ -27,7 +27,6 @@
 .resources-form .tasks-form-field { min-width: 0; }
 .resources-form small { font-size: var(--font-size-sm); line-height: 1.5; }
 .resources-form [hidden] { display: none; }
-.react-icon { display: contents; }
 .resources-react-fieldset { display: contents; }
 [data-react-root="resources"] { display: contents; }
 .resources-react-filter { margin: 8px; }
@@ -36,7 +35,7 @@
 .resources-react-row-actions .tasks-filter-menu { display: none; }
 .resources-react-row-actions.is-open .tasks-filter-menu { display: block; }
 .resources-sheet .tasks-directory-sheet__cell { position: relative; }
-.resources-sheet .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
+.resources-sheet .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 .resources-page .tasks-filterbar-right > form { flex: 1 1 160px; width: auto; max-width: 420px; min-width: 120px; margin: 0; }
 .resources-page .tasks-filterbar-right > form .tasks-search-field { width: 100%; max-width: none; }
 .resources-page :is(a, button):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }

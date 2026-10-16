@@ -2882,15 +2882,33 @@ Nowe menu gadżetów inicjalizują się przez `ancore:modals-loaded`.
 Aktualny zakres i kontrakt danych opisuje [FRONTEND.md](FRONTEND.md).
 Przeniesione ekrany zachowują klasy istniejących szablonów. Małe adaptery
 są w `static/css/components/react.css`: kontenery `display: contents`,
-wyspy ikon/selectów i jawne ukrywanie paneli z `hidden`, których dawny
+wyspy selectów i jawne ukrywanie paneli z `hidden`, których dawny
 CSS był związany z atrybutami starszego JavaScriptu. Wariant
 `tasks-issue-select-wrap` zapewnia kontrolkom zadania ten sam wygląd co wcześniej.
 Modale, paginacja, tabela członków i grupy statusów mają współdzielone
 komponenty React. Biblioteka ikon, tokeny i kolory pozostają istniejące.
 
+`shared/Icon` renderuje bezpośredni SVG, pobierając glif przez `AncoreIcons`
+w odłączonym kontenerze. React zachowuje własność korzenia, a helper nie
+podmienia zamontowanego elementu. Brak dodatkowego wrappera zachowuje
+selektory `> svg`, rozmiary, kolejność i wyrównanie ikon wspólnego CSS.
+Strzałkę grupy obraca istniejący CSS według `aria-expanded`.
+`Select.hideLabel` używa `tasks-inline-select` i wariantu `react-select-inline`:
+kontenery nie dodają marginesów ani własnych pól do układu flex. Filtry
+Przestrzeni zachowują nazwy pól, ikony i zawijanie jak w szablonie.
+
+Pola formularzy wewnątrz `resources-react-fieldset` zachowują na szerokim
+ekranie wiersze z etykietą 180px, odstępem 24px i elastyczną kontrolką.
+`react-field-control` jest przezroczysty dla układu; pomoc i błędy należą
+do kolumny kontrolki. Kompaktowe modale zachowują układ pionowy.
+Backlog i kolumny aktywnego sprintu renderują `StatusGroup` bez dodatkowej
+sekcji: działają odstępy między grupami, wysokości list i kolejność
+metadanych, akcji oraz końcowego licznika. Komórki miesiąca Kalendarza
+używają dotychczasowego tekstowego „+”, dopasowanego do szerokości na telefonie.
+
 Dysk i Dokumenty używają `src/documents/`: zachowane klasy katalogów, ikon SVG,
 paneli filtrów/sortowania, osobnego wyboru liczby wierszy i modali. Adapter CSS
-odwzorowuje selektory ikon opakowanych w `react-icon` oraz desktopowy układ
+odwzorowuje rozmiary bezpośrednich ikon SVG oraz desktopowy układ
 etykieta–pole w formularzu. Ikony plików/folderów/dysków mają tę samą geometrię
 co include’y Django. React obsługuje listę/kafelki, zaznaczenia, panel dysków
 z fokusem i Escape, przenoszenie oraz podglądy. Opisy wcześniejszych funkcji

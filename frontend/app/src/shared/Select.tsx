@@ -26,7 +26,7 @@ export function Select({
     select.id = id;
     if (name) select.name = name;
     select.setAttribute('aria-label', label);
-    select.className = 'form-select';
+    select.className = hideLabel ? 'tasks-inline-select' : 'form-select';
     options.forEach(([key, text]) => select.add(new Option(text, key)));
     select.value = value;
     element.append(select);
@@ -35,9 +35,11 @@ export function Select({
     return () => {
       element.replaceChildren();
     };
-  }, [id, label, name, options, value]);
+  }, [id, label, name, options, value, hideLabel]);
   return (
-    <div className="documents-field resources-react-filter">
+    <div
+      className={`documents-field resources-react-filter ${hideLabel ? 'react-select-inline' : ''}`}
+    >
       <label htmlFor={id} className={hideLabel ? 'u-sr-only' : undefined}>
         {label}
       </label>

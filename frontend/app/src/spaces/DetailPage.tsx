@@ -219,78 +219,76 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     const rows = data.items.filter((item) => item.sprint_id === (sprint?.id ?? null)),
       totals = sprint?.planning || data.backlog_totals;
     return (
-      <div
+      <StatusGroup
         key={sprint?.id ?? 'backlog'}
         onDragOver={dragged ? (event) => event.preventDefault() : undefined}
         onDrop={(event) => drop(event, sprint?.id ?? null)}
-      >
-        <StatusGroup
-          label={sprint?.name || 'Backlog'}
-          category={sprint ? (sprint.state === 'active' ? 'in_progress' : 'new') : undefined}
-          count={rows.length}
-          className={`work-backlog-group ${sprint ? 'work-sprint' : ''}`}
-          details={
-            sprint ? (
-              sprintDetails(sprint)
-            ) : (
-              <>
-                <span className="work-planning-summary">
-                  {data.space.template === 'scrum' ? (
-                    <>
-                      <span>{totals.points} pkt</span>
-                      {totals.unestimated ? <span>{totals.unestimated} bez estymacji</span> : null}
-                    </>
-                  ) : null}
-                  {totals.total !== rows.length ? (
-                    <span>
-                      Na stronie: {rows.length} z {totals.total}
-                    </span>
-                  ) : null}
-                </span>
-                {data.space.template === 'scrum' && data.can_manage ? (
-                  <button
-                    type="button"
-                    className="tasks-filter-button work-backlog-sprint-create"
-                    disabled={busy}
-                    onClick={() => void openForm(data.sprint_create_url)}
-                  >
-                    <Icon name="plus" />
-                    Utwórz sprint
-                  </button>
+        label={sprint?.name || 'Backlog'}
+        labelSuffix={sprint?.state_label}
+        category={sprint ? (sprint.state === 'active' ? 'in_progress' : 'new') : undefined}
+        count={rows.length}
+        className={`work-backlog-group ${sprint ? 'work-sprint' : ''}`}
+        details={
+          sprint ? (
+            sprintDetails(sprint)
+          ) : (
+            <>
+              <span className="work-planning-summary">
+                {data.space.template === 'scrum' ? (
+                  <>
+                    <span>{totals.points} pkt</span>
+                    {totals.unestimated ? <span>{totals.unestimated} bez estymacji</span> : null}
+                  </>
                 ) : null}
-              </>
-            )
-          }
-        >
-          <div className="tasks-issue-list work-backlog-items">
-            {sprint?.goal ? <p className="work-sprint-goal">{sprint.goal}</p> : null}
-            {rows.length ? (
-              rows.map(row)
-            ) : (
-              <div className="tasks-empty-section" role="status">
-                {totals.total
-                  ? 'Zadania znajdują się na innej stronie wyników.'
-                  : filtered
-                    ? 'Brak zadań pasujących do filtrów.'
-                    : sprint
-                      ? 'Przeciągnij zadania lub zaznacz je i wybierz ten sprint.'
-                      : 'Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.'}
-              </div>
-            )}
-            {data.can_edit ? (
-              <button
-                type="button"
-                className="work-backlog-create tasks-project-menu-button"
-                disabled={busy}
-                onClick={() => void openForm(sprint?.create_item_url || data.backlog_create_url)}
-              >
-                <Icon name="plus" />
-                {sprint ? 'Utwórz zadanie w sprincie' : 'Utwórz zadanie w backlogu'}
-              </button>
-            ) : null}
-          </div>
-        </StatusGroup>
-      </div>
+                {totals.total !== rows.length ? (
+                  <span>
+                    Na stronie: {rows.length} z {totals.total}
+                  </span>
+                ) : null}
+              </span>
+              {data.space.template === 'scrum' && data.can_manage ? (
+                <button
+                  type="button"
+                  className="tasks-filter-button work-backlog-sprint-create"
+                  disabled={busy}
+                  onClick={() => void openForm(data.sprint_create_url)}
+                >
+                  <Icon name="plus" />
+                  Utwórz sprint
+                </button>
+              ) : null}
+            </>
+          )
+        }
+      >
+        <div className="tasks-issue-list work-backlog-items">
+          {sprint?.goal ? <p className="work-sprint-goal">{sprint.goal}</p> : null}
+          {rows.length ? (
+            rows.map(row)
+          ) : (
+            <div className="tasks-empty-section" role="status">
+              {totals.total
+                ? 'Zadania znajdują się na innej stronie wyników.'
+                : filtered
+                  ? 'Brak zadań pasujących do filtrów.'
+                  : sprint
+                    ? 'Przeciągnij zadania lub zaznacz je i wybierz ten sprint.'
+                    : 'Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.'}
+            </div>
+          )}
+          {data.can_edit ? (
+            <button
+              type="button"
+              className="work-backlog-create tasks-project-menu-button"
+              disabled={busy}
+              onClick={() => void openForm(sprint?.create_item_url || data.backlog_create_url)}
+            >
+              <Icon name="plus" />
+              {sprint ? 'Utwórz zadanie w sprincie' : 'Utwórz zadanie w backlogu'}
+            </button>
+          ) : null}
+        </div>
+      </StatusGroup>
     );
   }
   return (
@@ -355,16 +353,15 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
               ) : null}
               <div className="tasks-filterbar-left">
                 {filterKeys.map((key) => (
-                  <div key={key}>
-                    <input type="hidden" name={key} value={filters[key] || ''} />
-                    <Select
-                      hideLabel
-                      label={LABELS[key]}
-                      value={filters[key] || ''}
-                      options={data.filter_options[key]}
-                      onChange={(value) => setFilters((current) => ({ ...current, [key]: value }))}
-                    />
-                  </div>
+                  <Select
+                    key={key}
+                    name={key}
+                    hideLabel
+                    label={LABELS[key]}
+                    value={filters[key] || ''}
+                    options={data.filter_options[key]}
+                    onChange={(value) => setFilters((current) => ({ ...current, [key]: value }))}
+                  />
                 ))}
                 <button className="tasks-filter-button" type="submit">
                   <Icon name="filter" />
@@ -510,33 +507,36 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       )}
                     </div>
                   );
+                  if (data.space.template === 'scrum')
+                    return (
+                      <StatusGroup
+                        key={column.key}
+                        className="tasks-kanban-column"
+                        category={column.category}
+                        label={column.label}
+                        count={column.count}
+                        onDragOver={dragged ? (event) => event.preventDefault() : undefined}
+                        onDrop={(event) => drop(event, column.key)}
+                      >
+                        {cards}
+                      </StatusGroup>
+                    );
                   return (
                     <section
                       key={column.key}
-                      className={`tasks-kanban-column ${column.category === 'closed' && data.space.template !== 'scrum' ? 'tasks-kanban-column--done' : ''}`}
+                      className={`tasks-kanban-column ${column.category === 'closed' ? 'tasks-kanban-column--done' : ''}`}
+                      data-work-column={column.key}
                       aria-label={column.label}
                       onDragOver={dragged ? (event) => event.preventDefault() : undefined}
                       onDrop={(event) => drop(event, column.key)}
                     >
-                      {data.space.template === 'scrum' ? (
-                        <StatusGroup
-                          category={column.category}
-                          label={column.label}
-                          count={column.count}
-                        >
-                          {cards}
-                        </StatusGroup>
-                      ) : (
-                        <>
-                          <header className="tasks-kanban-column__header">
-                            <span className={`status-indicator status-${column.category}`}>
-                              {column.label}
-                            </span>
-                            <span className="tasks-rail-count">{column.count}</span>
-                          </header>
-                          {cards}
-                        </>
-                      )}
+                      <header className="tasks-kanban-column__header">
+                        <span className={`status-indicator status-${column.category}`}>
+                          {column.label}
+                        </span>
+                        <span className="tasks-rail-count">{column.count}</span>
+                      </header>
+                      {cards}
                     </section>
                   );
                 })}

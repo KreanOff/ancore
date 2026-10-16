@@ -529,6 +529,7 @@ export function FormDialog({
               {schema.fields.map((field) => (
                 <div
                   key={field.name}
+                  className="react-field-slot"
                   hidden={field.name === 'shared_with' && visibility !== 'selected'}
                 >
                   <FieldControl field={field} />

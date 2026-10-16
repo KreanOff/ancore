@@ -81,7 +81,7 @@ function FieldControl({ field, errors }: { field: Field; errors?: Errors[string]
         {field.label}
         {field.required ? <span aria-hidden="true"> *</span> : null}
       </label>
-      <div ref={ref} />
+      <div ref={ref} className="react-field-control" />
       {field.help_text ? <small id={`id_${field.name}_helptext`}>{field.help_text}</small> : null}
       {errors?.length ? (
         <div className="tasks-modal__errors" id={`id_${field.name}_error`} role="alert">

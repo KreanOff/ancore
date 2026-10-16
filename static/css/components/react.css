@@ -1,12 +1,16 @@
 /* React adapters preserve the existing component classes and design tokens. */
-.react-icon { display: contents; }
+.react-icon { display: contents; } /* Grouped breadcrumbs and formatting controls. */
 [data-react-root="page"] { display: contents; }
+.react-select-inline, .react-select-inline > div { display: contents; }
+.tasks-modal .tasks-form-field > .react-field-control { display: contents; }
+.tasks-modal .tasks-modal__body > fieldset > .tasks-form-field + .tasks-form-field { margin-top: var(--app-modal-field-gap); }
+.tasks-modal .documents-form > fieldset > .tasks-form-field + .tasks-form-field { margin-top: 0; }
 [data-react-screen="calendar"] .calendar-body--agenda-hidden { grid-template-columns: minmax(0, 1fr); }
 [data-react-screen="calendar"] .resources-react-filter { margin: 0; }
 .tasks-modal .tasks-modal__dialog > .tasks-modal__form { min-height: 0; flex: 1; }
-.for-you-space-sheet .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
+.for-you-space-sheet .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 [data-react-screen="space-directory"] .resources-react-filter { margin: 0; }
-[data-react-screen="space-directory"] .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
+[data-react-screen="space-directory"] .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 .resources-react-fieldset { display: contents; }
 
 .react-task-form, .react-field-slot { display: contents; }
@@ -15,25 +19,25 @@
 [data-react-screen="space-task"] .tasks-mention-menu:not([hidden]) { display: grid; }
 
 [data-react-screen] [hidden], .tasks-form-modal [hidden] { display: none !important; }
-[data-react-screen="space-task"] .workplace-members-sheet .tasks-directory-header .react-icon svg,
-[data-react-screen="space-task"] .tasks-work-log-sheet .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; }
+[data-react-screen="space-task"] .workplace-members-sheet .tasks-directory-header svg.ancore-icon,
+[data-react-screen="space-task"] .tasks-work-log-sheet .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; }
 
 [data-react-screen="filter-search"] .task-filter-control .ancore-custom-select { width: 100%; }
 [data-react-screen="filter-search"] .tasks-search-field > div,
 [data-react-screen="filter-search"] .tasks-search-field > div > div { display: contents; }
 [data-react-screen="filter-directory"] .resources-react-filter { margin: 0; }
-[data-react-screen="filter-directory"] .tasks-directory-header .react-icon svg,
-[data-react-screen="space-tags"] .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
+[data-react-screen="filter-directory"] .tasks-directory-header svg.ancore-icon,
+[data-react-screen="space-tags"] .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 .tasks-form-modal.tasks-project-notes-modal .tasks-project-note__message { white-space: pre-wrap; }
 [data-react-screen="space-tags"] .tasks-sort-dropdown { order: 2; }
 .tasks-filter-dropdown > .tasks-filter-menu[hidden] { display: none !important; }
 [data-react-screen="pulpit-detail"] .pulpit-intro { white-space: pre-line; }
-[data-react-screen="pulpit-detail"] .dashboard-panel-header > .react-icon svg { width: 16px; height: 16px; flex: 0 0 16px; }
+[data-react-screen="pulpit-detail"] .dashboard-panel-header > svg.ancore-icon { width: 16px; height: 16px; flex: 0 0 16px; }
 [data-react-screen="pulpit-directory"] .resources-react-filter { margin: 0; }
-[data-react-screen="pulpit-directory"] .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
+[data-react-screen="pulpit-directory"] .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 .pulpit-form .react-field-control { display: contents; }
-[data-react-screen="document-directory"] .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
-[data-react-screen="document-directory"] .documents-empty > div > .react-icon svg { display: block; width: 42px; height: 42px; margin: 0 auto 16px; }
+[data-react-screen="document-directory"] .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
+[data-react-screen="document-directory"] .documents-empty > div > svg.ancore-icon { display: block; width: 42px; height: 42px; margin: 0 auto 16px; }
 [data-react-screen="document-directory"] .documents-filterbar-right > form { margin: 0; }
 [data-react-screen="document-directory"] .documents-library-sheet .documents-item-actions,
 [data-react-screen="document-directory"] .office-document-sheet .documents-item-actions { width: 100%; height: 100%; }
@@ -44,31 +48,37 @@
 [data-react-screen="document-directory"] [data-doc-row][draggable="true"] { transition: opacity 140ms ease; }
 [data-react-screen="document-directory"] [data-doc-row].is-document-dragging { opacity: .4; }
 [data-react-screen="document-directory"] [data-doc-row][draggable="true"] :is(.documents-card-entry, .documents-name) { cursor: grab; }
-[data-react-screen="document-directory"] .office-create-card > .react-icon svg { width: 56px; height: 56px; flex: 0 0 auto; }
-[data-react-screen="document-directory"] .tasks-project-filter-field-list > button > .react-icon svg,
-[data-react-screen="document-directory"] .tasks-project-sort-field-list > button > .react-icon svg,
-[data-react-screen="document-directory"] .tasks-project-filter-choice > .react-icon svg { width: 16px; height: 16px; }
-[data-react-screen="document-directory"] .tasks-project-filter-field-list > button > .react-icon svg { color: #9aa1ac; }
-[data-react-screen="document-directory"] .tasks-project-sort-field-list > button > .react-icon svg,
-[data-react-screen="document-directory"] .tasks-project-filter-choice > .react-icon svg { visibility: hidden; color: #59616d; }
-[data-react-screen="document-directory"] .tasks-project-sort-field-list > button.is-active > .react-icon svg,
-[data-react-screen="document-directory"] .tasks-project-filter-choice.is-active > .react-icon svg { visibility: visible; }
+[data-react-screen="document-directory"] .office-create-card > svg.ancore-icon { width: 56px; height: 56px; flex: 0 0 auto; }
+[data-react-screen="document-directory"] .tasks-project-filter-field-list > button > svg.ancore-icon,
+[data-react-screen="document-directory"] .tasks-project-sort-field-list > button > svg.ancore-icon,
+[data-react-screen="document-directory"] .tasks-project-filter-choice > svg.ancore-icon { width: 16px; height: 16px; }
+[data-react-screen="document-directory"] .tasks-project-filter-field-list > button > svg.ancore-icon { color: #9aa1ac; }
+[data-react-screen="document-directory"] .tasks-project-sort-field-list > button > svg.ancore-icon,
+[data-react-screen="document-directory"] .tasks-project-filter-choice > svg.ancore-icon { visibility: hidden; color: #59616d; }
+[data-react-screen="document-directory"] .tasks-project-sort-field-list > button.is-active > svg.ancore-icon,
+[data-react-screen="document-directory"] .tasks-project-filter-choice.is-active > svg.ancore-icon { visibility: visible; }
 @media (min-width: 1100px) {
-  .tasks-modal.app-modal-panel.documents-modal .tasks-modal__body > fieldset > .tasks-form-field {
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > .tasks-form-field,
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > :is([data-pulpit-field], .react-field-slot) > .tasks-form-field {
     display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 24px; row-gap: 6px; align-items: start;
   }
-  .tasks-modal.app-modal-panel.documents-modal .tasks-modal__body > fieldset > .tasks-form-field > label { grid-column: 1; padding-top: 9px; }
-  .tasks-modal.app-modal-panel.documents-modal .tasks-modal__body > fieldset > .tasks-form-field > :not(label),
-  .tasks-modal.app-modal-panel.documents-modal .tasks-modal__body > fieldset > .tasks-form-field > .react-field-control > * { grid-column: 2; }
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > .tasks-form-field > label,
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > :is([data-pulpit-field], .react-field-slot) > .tasks-form-field > label { grid-column: 1; padding-top: 9px; }
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > .tasks-form-field > :not(label),
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > :is([data-pulpit-field], .react-field-slot) > .tasks-form-field > :not(label),
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > .tasks-form-field > .react-field-control > *,
+  .tasks-modal.app-modal-panel:not(.app-modal-panel--compact) .tasks-modal__body > fieldset > :is([data-pulpit-field], .react-field-slot) > .tasks-form-field > .react-field-control > *,
+  .tasks-modal.app-modal-panel .tasks-modal__body > .tasks-form-field > .react-field-control > *,
+  .tasks-modal.app-modal-panel .tasks-project-heading-fields > .tasks-form-field > .react-field-control > * { grid-column: 2; }
 }
 @media (max-width: 767px) {
-  [data-react-screen="document-directory"] .office-create-card > .react-icon svg { width: 28px; height: 28px; }
+  [data-react-screen="document-directory"] .office-create-card > svg.ancore-icon { width: 28px; height: 28px; }
 }
 .react-workspace-avatar, .react-invitation-detail { display: contents; }
-[data-react-screen="workspace-directory"] .tasks-directory-header .react-icon svg,
-.workplace-edit-modal .tasks-directory-header .react-icon svg { width: 0.875rem; height: 0.875rem; order: -1; }
+[data-react-screen="workspace-directory"] .tasks-directory-header svg.ancore-icon,
+.workplace-edit-modal .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 .workplace-edit-modal .documents-item-actions { width: 100%; height: 100%; }
-.workplace-edit-modal .documents-empty > div > .react-icon svg { display: block; width: 42px; height: 42px; margin: 0 auto 16px; }
+.workplace-edit-modal .documents-empty > div > svg.ancore-icon { display: block; width: 42px; height: 42px; margin: 0 auto 16px; }
 .react-profile-bio { white-space: pre-wrap; }
 .react-account-editor .profile-edit-body { flex: 1; }
 .react-notification-workspaces { flex: 1; min-width: 0; max-width: 240px; }

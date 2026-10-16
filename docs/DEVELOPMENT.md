@@ -2313,3 +2313,41 @@ nie wykryto przepełnienia dokumentu ani błędów wykonania JavaScript.
 Build TypeScript, formatowanie, kontrola Django, indeks kodu i diff przeszły.
 Nie uruchamiano ponownie pełnego zestawu repozytorium; wynik powyżej dotyczy
 wymienionych modułów. Safari i Firefox nie były sprawdzane.
+
+## Korekty układu po migracji React (17.10.2026)
+
+`shared/Icon` zachowuje bezpośredni SVG, a selecty toolbarów nie dodają
+marginesów technicznych kontenerów. Adapter pól odtwarza etykiety i kontrolki
+przez fieldsety, również w formularzach Pulpitów/Filtrów. Backlog i aktywny
+sprint zachowują bezpośrednią strukturę grup, odstępy, wysokości list oraz
+kolejność metadanych/liczników. Strzałki grup i plusy miesiąca Kalendarza
+używają dotychczasowego mechanizmu CSS. Wersje zasobów w szablonach zostały
+odświeżone. Nie zmieniono modeli, uprawnień ani zależności.
+
+Wykonano `pnpm --dir frontend/app build` (z TypeScriptem), Prettier,
+`manage.py check`, kontrolę lokalnych linków UI/Frontend, indeksu i diffu.
+Na osobnej bazie PostgreSQL przeszły **50/50 istniejących testów**:
+
+```sh
+.venv/bin/python manage.py test core.test_frontend \
+  core.test_navigation_frontend core.test_shell_frontend --noinput
+```
+
+Plugin Browser był niedostępny; wykorzystano istniejący Playwright i Chrome,
+osobną bazę, storage oraz fikcyjne dane. Układ 15 ekranów sprawdzono przy
+1440, 1280, 1100, 1024, 768 i 390px; zrzuty porównano także z zachowanymi
+szablonami listy Przestrzeni i szczegółów zadania. Kontrole adresu, tytułu,
+treści, konsoli oraz geometrii nie wykazały pustych ekranów, nakładki błędu,
+przepełnienia dokumentu ani nakładania sekcji nagłówka.
+
+Sprawdzono modale zadania, sprintu, Zasobów, Pulpitu i Dysku przy 1440, 1100,
+1024 i 390px: geometrię pól, selecty i Escape. Przeszły filtrowanie/pusty
+wynik, zwijanie, zaznaczanie, pasek zbiorczy, aktywny sprint, przeciąganie
+z backlogu do sprintu i między kolumnami, utworzenie zadania oraz błąd 503
+Zasobów z zachowaniem szkicu i rzeczywistym zapisem po ponowieniu. Częściowe
+przejścia Zasoby–Kalendarz–Przestrzenie oraz Wstecz/Dalej zachowały dokument
+i nie zgłosiły błędów JS. Sprawdzono też mobilny przycisk dodania wydarzenia oraz formularz tagu
+i drugi krok kreatora Przestrzeni przy czterech szerokościach, wraz
+z potwierdzeniem odrzucenia szkicu.
+Zrzuty i skrypty QA pozostały w `/tmp`. Pełny zestaw backendu, Safari,
+Firefox, fizyczny ekran dotykowy i produkcyjne ONLYOFFICE nie były sprawdzane.

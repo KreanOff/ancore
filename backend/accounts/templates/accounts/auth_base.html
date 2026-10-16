@@ -13,7 +13,7 @@
     <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin-ext.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% include 'core/includes/bootstrap.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261009-issue-type-colors">
-    {% if frontend_bootstrap %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261016-accounts">{% react_bundle %}{% endif %}
+    {% if frontend_bootstrap %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261017-layout-parity">{% react_bundle %}{% endif %}
 </head>
 <body class="auth-page {% block auth_page_class %}auth-page--login{% endblock %}">
     <a class="auth-skip-link" href="#auth-form-title">Przejdź do formularza</a>

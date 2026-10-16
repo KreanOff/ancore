@@ -104,6 +104,11 @@ Pakiet tablicy nadal buduje się osobno według [OFFICE.md](OFFICE.md).
 - `src/shared/` zawiera klienta API oraz adaptery istniejących ikon,
   dropdownów i custom selectów. Zmiany DOM wykonywane przez wspólne helpery
   są zamknięte w osobnych kontenerach, których wnętrza nie renderuje React.
+  Ikony korzystają z glifu wygenerowanego w odłączonym kontenerze i korzenia
+  SVG należącego do Reacta, bez wrappera zmieniającego selektory wspólnego CSS.
+  Selecty z ukrytą etykietą zachowują geometrię `tasks-inline-select` przez
+  `react-select-inline`; adapter formularzy uwzględnia techniczne fieldsety
+  oraz kontenery kontrolek. [Szczegóły układu](UI.md#ekrany-react-podczas-migracji).
   `DirectoryColumns.tsx` współdzieli zarządzanie kolumnami Zasobów i Tagów,
   zachowując dotychczasowe klucze localStorage. Tagi zachowują również dawny
   podział kluczy zwykłego/scoped adresu (`tasks`/`workplaces`).

@@ -215,7 +215,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                           newEvent(date);
                         }}
                       >
-                        <Icon name="plus" />
+                        +
                       </button>
                       <span
                         className="calendar-day-number"

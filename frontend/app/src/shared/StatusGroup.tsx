@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type DragEventHandler, type ReactNode, useState } from 'react';
 import { Icon } from './Icon';
 export function StatusGroup({
   label,
@@ -8,6 +8,9 @@ export function StatusGroup({
   children,
   className = '',
   details,
+  labelSuffix,
+  onDragOver,
+  onDrop,
 }: {
   label: string;
   category?: string;
@@ -16,10 +19,18 @@ export function StatusGroup({
   children: ReactNode;
   className?: string;
   details?: ReactNode;
+  labelSuffix?: string;
+  onDragOver?: DragEventHandler<HTMLElement>;
+  onDrop?: DragEventHandler<HTMLElement>;
 }) {
   const [open, setOpen] = useState(true);
   return (
-    <section className={`tasks-issue-group tasks-status-block ${className}`}>
+    <section
+      className={`tasks-issue-group tasks-status-block ${className}`}
+      aria-label={label}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <header
         className={`tasks-issue-group-header ${category ? `tasks-status-block-header tasks-status-block-header--${category}` : ''}`}
       >
@@ -30,18 +41,22 @@ export function StatusGroup({
           aria-expanded={open}
           onClick={() => setOpen(!open)}
         >
-          <Icon name={open ? 'chevron-down' : 'chevron-right'} />
+          <Icon name="chevron-down" />
         </button>
         {category ? (
-          <span className={`status-indicator status-${category}`}>{label}</span>
+          <span className={`status-indicator status-${category}`}>
+            {label}
+            {labelSuffix ? ` · ${labelSuffix}` : ''}
+          </span>
         ) : (
           <span className="tasks-issue-group-label">
             <Icon name={icon} />
             {label}
+            {labelSuffix ? ` · ${labelSuffix}` : ''}
           </span>
         )}
-        <span className="tasks-rail-count">{count}</span>
         {details}
+        <span className="tasks-rail-count">{count}</span>
       </header>
       {open ? children : null}
     </section>
