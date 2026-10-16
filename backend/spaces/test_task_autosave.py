@@ -9,10 +9,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.utils import timezone
 
-from workplaces.models import create_workplace_for_user
+from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from tasks.models import TaskTag
 from . import test_independent_tasks as fixtures
-from .models import SpaceTaskFile, SpaceTaskMembership, Sprint
+from .models import SpaceTask, SpaceTaskFile, SpaceTaskMembership, Sprint, Team
 
 
 class TaskAutosaveTests(TestCase):
@@ -85,6 +85,83 @@ class TaskAutosaveTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['task']['completion_date'], '')
         self.assertEqual(self.task.activities.filter(action='status_changed', actor=self.owner).count(), 2)
+
+    def test_former_assignee_is_preserved_but_cannot_be_selected_again(self):
+        self.task.assignee = self.member
+        self.task.save()
+        WorkplaceMembership.objects.get(workplace=self.workspace, user=self.member).delete()
+        for url in (self.task_url(), f'/space/{self.space.slug}/tasks/{self.key}/'):
+            with self.subTest(url=url):
+                response = self.save(['title'], url=url, title='Zachowane przypisanie', assignee=self.observer.pk)
+                self.assertEqual(response.status_code, 200, response.content)
+                self.task.refresh_from_db()
+                self.assertEqual((self.task.title, self.task.assignee_id), ('Zachowane przypisanie', self.member.pk))
+        response = self.save(['title', 'assignee'], title='Niedozwolona zmiana', assignee=self.member.pk)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('assignee', response.json()['errors'])
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.title, 'Zachowane przypisanie')
+        self.assertEqual(self.save(['assignee'], assignee='').status_code, 200)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.assignee_id)
+
+    def test_hidden_epic_is_preserved_without_becoming_a_choice_in_api(self):
+        from urllib.parse import quote
+        from workplaces.services import scoped_workplace_app_path
+        epic = SpaceTask.objects.create(space=self.space, title='Poufny epik', created_by=self.owner,
+                                        visibility='private', private_owner=self.owner)
+        epic_item = epic.work_item
+        epic_item.work_type = 'epic'
+        epic_item.save()
+        item = self.task.work_item
+        item.epic = epic_item
+        item.save()
+        self.login(self.member)
+        target = self.task_url('?view=list')
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') + '?url=' + quote(target, safe='')
+        response = self.client.post(api, {'action': 'save', 'autosave_fields': '["title"]',
+                                          'title': 'Dostępne zadanie', 'epic': ''})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.task.refresh_from_db(); item.refresh_from_db()
+        self.assertEqual((self.task.title, item.epic_id), ('Dostępne zadanie', epic_item.pk))
+        response = self.client.get(api)
+        self.assertEqual(response.status_code, 200, response.content)
+        field = next(field for field in response.json()['data']['form']['fields'] if field['name'] == 'epic')
+        self.assertNotIn(str(epic_item.pk), {choice['value'] for choice in field['choices']})
+        self.assertNotIn('Poufny epik', response.content.decode())
+        response = self.save(['epic'], epic=epic_item.pk)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('epic', response.json()['errors'])
+        self.assertEqual(self.save(['epic'], epic='').status_code, 200)
+        item.refresh_from_db()
+        self.assertIsNone(item.epic_id)
+
+    def test_unlinked_team_is_preserved_but_new_assignments_remain_scoped(self):
+        team = Team.objects.create(workplace=self.workspace, owner=self.owner, created_by=self.owner, name='Odłączony zespół')
+        item = self.task.work_item
+        item.team = team
+        item.save()
+        response = self.save(['description'], description='Zmieniony opis')
+        self.assertEqual(response.status_code, 200, response.content)
+        item.refresh_from_db()
+        self.assertEqual(item.team_id, team.pk)
+        response = self.save(['team'], team=team.pk)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('team', response.json()['errors'])
+
+    def test_preserved_relations_still_participate_in_cross_field_validation(self):
+        epic = SpaceTask.objects.create(space=self.space, title='Epik', created_by=self.owner)
+        epic_item = epic.work_item
+        epic_item.work_type = 'epic'
+        epic_item.save()
+        item = self.task.work_item
+        item.epic = epic_item
+        item.save()
+        response = self.save(['work_type'], work_type='epic')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('epic', response.json()['errors'])
+        item.refresh_from_db()
+        self.assertEqual(item.work_type, 'task')
 
     def test_clearing_tags_and_optional_fields_and_preserving_custom_zero(self):
         tag = TaskTag.objects.create(name='Tag', user=self.owner, workplace=self.workspace, space=self.space)

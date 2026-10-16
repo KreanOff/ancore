@@ -155,6 +155,13 @@ kontrolowanymi adresami domenowymi, z dotychczasowym prywatnym storage.
 Automatyczny zapis zadania wysyła `autosave_fields`, łączy je po stronie
 Django z aktualnymi pozostałymi wartościami i szereguje kolejne zapisy.
 Nawigacja aplikacji czeka na zakończenie zapisu; błąd zachowuje wpisane dane.
+Niezmieniane relacje zachowują wartości również po odebraniu dostępu do epika
+lub usunięciu wykonawcy z Workspace, bez dodawania ich do dostępnych wyborów.
+Niewysłany tekst komentarza albo wybrane pliki uruchamiają wspólne ostrzeżenie
+przed opuszczeniem zadania i zamknięciem karty. Anulowanie pozostawia szkic;
+udane wysłanie lub ręczne wyczyszczenie usuwa ostrzeżenie. Zgoda na odrzucenie
+zmian formularza dotyczy jednej próby nawigacji, więc błąd pobrania lub blokada
+innego formularza nie wyłącza ochrony przy następnej próbie.
 Tablica/backlog przekazują istniejące migawki statusu, sprintu, rankingu
 oraz sąsiadów. Odrzucony konflikt nie zmienia częściowo kolejności.
 Konfiguracja zachowuje kontrolę rewizji i ochronę używanych statusów/typów.

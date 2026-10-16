@@ -1,5 +1,6 @@
 import { type ClipboardEvent, type DragEvent, useEffect, useRef, useState } from 'react';
 import { Icon } from '../shared/Icon';
+import { useDirtyGuard } from '../shared/useDirtyGuard';
 import type { TaskData } from './types';
 type Mention = { user_id: number; start: number; end: number };
 export default function CommentComposer({
@@ -20,6 +21,8 @@ export default function CommentComposer({
   const input = useRef<HTMLTextAreaElement>(null),
     picker = useRef<HTMLInputElement>(null),
     life = useRef(true);
+  const hasDraft = !!text.trim() || files.length > 0;
+  useDirtyGuard(hasDraft, hasDraft && pending);
   useEffect(
     () => () => {
       life.current = false;

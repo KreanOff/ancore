@@ -174,13 +174,35 @@ class DetailForm(ItemForm):
     """Issue properties with the existing planning values submitted unchanged."""
     visibility = forms.ChoiceField(label='Widoczność', required=False, choices=[('private', 'Prywatne — wybrane osoby'), ('public', 'Publiczne — dostęp odziedziczony')], widget=TaskVisibilitySelect)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, changed_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
         from .services import manage_space
         task = self.item.task
         self.initial['visibility'] = task.visibility
         owner = task.private_owner_id == self.request.user.pk if task.visibility == 'private' else manage_space(self.request, self.space)
         self.fields['visibility'].disabled = not owner
+        # Values omitted by autosave come from the locked task, never from POST.
+        # They may no longer be selectable (e.g. a former assignee or private epic).
+        self.unchanged_relations = {
+            name: self.initial.get(name) for name, field in self.fields.items()
+            if changed_fields is not None and name not in changed_fields
+            and isinstance(field, forms.ModelChoiceField)
+        }
+        self.complete_fields = self.fields
+
+    def full_clean(self):
+        self.fields = {name: field for name, field in self.complete_fields.items()
+                       if name not in self.unchanged_relations}
+        try:
+            super().full_clean()
+        finally:
+            self.fields = self.complete_fields
+
+    def clean(self):
+        # Restore the schema before cross-field validation can add field errors.
+        self.fields = self.complete_fields
+        self.cleaned_data.update(self.unchanged_relations)
+        return super().clean()
 
     def clean_visibility(self):
         return self.cleaned_data.get('visibility') or self.item.task.visibility

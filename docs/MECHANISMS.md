@@ -32,6 +32,11 @@ Zapis, status, historia i pliki pozostają jedną transakcją; autor to
 `request.user`. Odpowiedź JSON aktualizuje otwarty widok bez zastępowania
 edytowanych pól. Niepowodzenie zachowuje szkic; dopiero powodzenie przesuwa
 snapshot zapisu. Żądanie bez `autosave_fields` zachowuje pełny formularz.
+Niezmieniane relacje (wykonawca, zespół, sprint, epik) zachowują bieżące
+wartości także po utracie możliwości ich wyboru. Nie są ponownie walidowane
+jako nowe przypisania; nadal uczestniczą w walidacji zależności pól.
+Jawna zmiana lub wyczyszczenie relacji przechodzi zwykłą walidację,
+a niedostępne obiekty nie są dodawane do opcji formularza ani API.
 
 Zbiorcze planowanie backlogu waliduje całą bieżącą stronę zaznaczenia i snapshot
 `sprint_id/rank` pod blokadą Workspace oraz Przestrzeni. Zapis dopisuje wyłącznie
@@ -73,6 +78,11 @@ Ograniczenie `accounts_user_email_ci_unique` na `Lower(email)` chroni również
 równoczesne zapisy i operacje ORM. Konflikt pomiędzy walidacją a zapisem
 wraca jako błąd pola e-mail, bez błędu HTTP 500. Zaproszenia wymagają
 jednoznacznego odbiorcy; starsze duplikaty są odrzucane.
+Przy rejestracji kolizja wygenerowanego `username` powoduje ponowny wybór
+unikatowego ID i zapis w osobnym savepoincie (maksymalnie pięć prób).
+Równoczesne rejestracje osób o takich samych imionach i nazwiskach mogą
+dzięki temu utworzyć konta z kolejnymi końcówkami ID. Konflikty e-mail
+zachowują dotychczasową obsługę błędu formularza.
 
 Sesja zawiera m.in. `switch_account_user_ids`, `switch_account_auth_hashes`, `active_workplace_id`
 i `workspace_url_scope_enabled`. Przełączenie konta wykonuje `auth_login()`

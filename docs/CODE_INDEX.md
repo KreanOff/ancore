@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
 | [backend/core](../backend/core) | 34 | 0 | 20 | 161 |
-| [backend/accounts](../backend/accounts) | 23 | 7 | 9 | 73 |
+| [backend/accounts](../backend/accounts) | 24 | 7 | 9 | 74 |
 | [backend/workplaces](../backend/workplaces) | 23 | 10 | 13 | 116 |
 | [backend/tasks](../backend/tasks) | 42 | 66 | 46 | 332 |
 | [backend/kanban](../backend/kanban) | 18 | 39 | 10 | 9 |
@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 2 | 2 | 7 |
 | [backend/documents](../backend/documents) | 38 | 11 | 31 | 203 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 43 | 9 | 39 | 223 |
+| [backend/spaces](../backend/spaces) | 43 | 9 | 39 | 227 |
 
 ## 2. Modele i relacje
 
@@ -2198,6 +2198,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `LoginRedirectTests`: 9 metod testowych.
 
+### backend/accounts/test_registration_races.py
+
+Źródło: [backend/accounts/test_registration_races.py](../backend/accounts/test_registration_races.py).
+
+- `RegistrationRaceTests`: 1 metod testowych.
+
 ### backend/accounts/tests.py
 
 Źródło: [backend/accounts/tests.py](../backend/accounts/tests.py).
@@ -2713,7 +2719,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_task_autosave.py](../backend/spaces/test_task_autosave.py).
 
-- `TaskAutosaveTests`: 10 metod testowych.
+- `TaskAutosaveTests`: 14 metod testowych.
 
 ### backend/spaces/test_task_detail_parity.py
 

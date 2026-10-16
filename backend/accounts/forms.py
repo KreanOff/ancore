@@ -6,7 +6,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.core.files.base import ContentFile
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from core.upload_validation import validate_image_bytes, validate_image_upload
 from .avatar import avatar_color_seed
 from .avatar_presets import AVATARS, AVATAR_CHOICES, preset_avatar
@@ -71,11 +71,22 @@ class UserRegistrationForm(UserCreationForm):
         user.middle_name = self.cleaned_data.get('middle_name', '')
         user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
-        user.username = unique_public_username(
-            default_public_username(user.first_name, user.last_name, user.email)
-        )
-        if commit:
-            user.save()
+        base_username = default_public_username(user.first_name, user.last_name, user.email)
+        for attempt in range(5):
+            user.username = unique_public_username(base_username)
+            if not commit:
+                break
+            try:
+                # A savepoint allows a fresh lookup after a concurrent INSERT,
+                # including when the caller already owns a transaction.
+                with transaction.atomic():
+                    user.save()
+            except IntegrityError as error:
+                constraint = getattr(getattr(error.__cause__, 'diag', None), 'constraint_name', '')
+                if constraint != 'accounts_user_username_key' or attempt == 4:
+                    raise
+            else:
+                break
         return user
 
 

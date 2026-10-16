@@ -152,7 +152,8 @@ def detail(request, space_pk, key):
                     files = request.FILES.getlist('files')
                     current_form = DetailForm(request=request, space=space, item=item)
                     posted, changed_fields = detail_post_data(request, current_form)
-                    form = DetailForm(posted, request=request, space=space, item=item)
+                    form = DetailForm(posted, request=request, space=space, item=item,
+                                      changed_fields=changed_fields if 'autosave_fields' in posted else None)
                     validate_comment_attachments(files)
                     if form.is_valid():
                         data = form.cleaned_data

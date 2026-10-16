@@ -2278,3 +2278,38 @@ Wstecz/Dalej, select i zamykanie formularza Zasobów, dotychczasowy picker awata
 konta oraz ponowne wejście i sprzątanie pickera Workspace. Początkowy fokus
 modala pomija kontrolki schowanego, zagnieżdżonego pickera i wybiera aktywną
 zakładkę lub pole tworzenia.
+
+## Naprawy czterech błędów P2 (17.10.2026)
+
+Autosave zachowuje niezmieniane relacje, których nie można już wybrać;
+jawne przypisania nadal podlegają ograniczeniom formularza. Komentarz z tekstem
+lub plikami chroni szkic przed opuszczeniem zadania. Zgoda na odrzucenie zmian
+dotyczy pojedynczej próby nawigacji. Rejestracja ponawia zapis po kolizji
+wygenerowanego ID użytkownika.
+
+Na osobnej bazie PostgreSQL przeszły **182/182 testy**:
+
+```sh
+.venv/bin/python manage.py test accounts spaces.test_task_autosave \
+  spaces.test_task_detail_parity spaces.test_independent_tasks \
+  spaces.test_write_access core.test_frontend core.test_navigation_frontend \
+  core.test_shell_frontend --noinput
+```
+
+Nowe przypadki obejmują dawnego wykonawcę, prywatnego epika, odłączony zespół,
+walidację zależności pól, zwykłe/scoped adresy i JSON API oraz rzeczywistą
+równoczesną rejestrację przez HTML i API. Nie rozszerzają dostępnych wyborów
+relacji ani nie zmieniają migracji.
+
+Plugin Browser był niedostępny; użyto Playwright i lokalnego Chrome z fikcyjnymi
+kontami, osobną bazą i storage. Przy 1440×900 i 390×900 sprawdzono pusty
+komentarz, tekst, same pliki, anulowanie/Escape, błąd wysłania i ponowienie,
+udane wysłanie oraz ostrzeżenie przed zamknięciem karty. Kontrolowany błąd
+nawigacji HTTP 503 zachował szkic i ponownie uruchomił ostrzeżenie dla komentarza
+oraz konfiguracji. Zapis konfiguracji, autosave zadania z niedostępnymi
+relacjami i ponowne wejście przeszły. Porównano zadanie z profilem użytkownika;
+nie wykryto przepełnienia dokumentu ani błędów wykonania JavaScript.
+
+Build TypeScript, formatowanie, kontrola Django, indeks kodu i diff przeszły.
+Nie uruchamiano ponownie pełnego zestawu repozytorium; wynik powyżej dotyczy
+wymienionych modułów. Safari i Firefox nie były sprawdzane.

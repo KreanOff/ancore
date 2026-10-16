@@ -2,11 +2,15 @@ import { useEffect, useRef } from 'react';
 import { navigate } from './page';
 export function useDirtyGuard(dirty: boolean, pending = false) {
   const latest = useRef({ dirty, pending }),
-    discard = useRef(false);
+    allowNextNavigation = useRef(false);
   latest.current = { dirty, pending };
   useEffect(() => {
     function beforeNavigate(event: Event) {
-      if (discard.current || (!latest.current.dirty && !latest.current.pending)) return;
+      if (allowNextNavigation.current) {
+        allowNextNavigation.current = false;
+        return;
+      }
+      if (!latest.current.dirty && !latest.current.pending) return;
       event.preventDefault();
       if (latest.current.pending) return;
       const url = (event as CustomEvent<{ url?: string }>).detail?.url;
@@ -16,13 +20,20 @@ export function useDirtyGuard(dirty: boolean, pending = false) {
         confirmText: 'Opuść bez zapisu',
         cancelText: 'Wróć do edycji',
         onConfirm: () => {
-          discard.current = true;
-          if (url) navigate(url);
+          if (!url) return;
+          allowNextNavigation.current = true;
+          try {
+            void navigate(url);
+          } finally {
+            // The navigation event consumes permission synchronously. Also
+            // clear it when another guard or an invalid target stops the attempt.
+            allowNextNavigation.current = false;
+          }
         },
       });
     }
     function beforeUnload(event: BeforeUnloadEvent) {
-      if (!discard.current && (latest.current.dirty || latest.current.pending)) {
+      if (latest.current.dirty || latest.current.pending) {
         event.preventDefault();
         event.returnValue = '';
       }
@@ -35,6 +46,6 @@ export function useDirtyGuard(dirty: boolean, pending = false) {
     };
   }, []);
   return () => {
-    discard.current = true;
+    allowNextNavigation.current = true;
   };
 }
