@@ -15,8 +15,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Keep configuration, uploads and static assets relative to the repository root.
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = BACKEND_DIR.parent
 
 # Load environment variables
 load_dotenv(BASE_DIR / '.env')
@@ -141,6 +142,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ancore.wsgi.application'
+TEST_RUNNER = 'ancore.testing.BackendDiscoverRunner'
 
 
 # Database

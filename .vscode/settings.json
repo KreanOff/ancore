@@ -1,0 +1,15 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "**/node_modules": true,
+    ".venv": true,
+    "media": true,
+    "private_documents": true,
+    "staticfiles": true,
+    "static/frontend": true,
+    "static/vendor/board": true
+  }
+}
