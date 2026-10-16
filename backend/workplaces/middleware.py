@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django.shortcuts import redirect
+from core.api import api_error, is_api_request
 
 from .services import (
     enable_workspace_url_scope,
@@ -33,6 +34,8 @@ class ActiveWorkplaceMiddleware:
             ).first()
             if workplace is None:
                 request.workplace = get_active_workplace(request)
+                if is_api_request(request):
+                    return api_error('Nie masz dostępu do tego Workspace.', 403)
                 return redirect('workplaces:workplaces')
             set_active_workplace(request, workplace)
             enable_workspace_url_scope(request)
