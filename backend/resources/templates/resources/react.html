@@ -1,0 +1,17 @@
+{% extends 'core/base.html' %}
+{% load static frontend %}
+{% block title %}Zasoby | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
+<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261016-react">
+{% react_bundle %}
+{% endblock %}
+{% block content %}
+{{ react_bootstrap|json_script:'ancore-resources-data' }}
+<div data-react-root="resources" data-bootstrap-id="ancore-resources-data" data-csrf-token="{{ csrf_token }}">
+    {% include 'resources/directory.html' %}
+</div>
+<noscript>Włącz JavaScript, aby korzystać z interaktywnego interfejsu Zasobów.</noscript>
+{% endblock %}
+{% block page_modals %}<div data-resource-modal-host>{% if modal %}{% include 'resources/form.html' %}{% endif %}</div>{% endblock %}

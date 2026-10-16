@@ -1,4 +1,8 @@
 function initCalendarPage() {
+    if (document.querySelector('[data-react-root="page"]')) {
+        window.ancoreCalendarPageListenersController?.abort();
+        return;
+    }
     const configEl = document.getElementById('calendar-config');
     if (!configEl) {
         window.ancoreCalendarPageListenersController?.abort();

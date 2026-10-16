@@ -4,7 +4,8 @@ from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, IntegerField, Q, Value, When
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
+from core.frontend import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -336,7 +337,7 @@ def home(request):
 @login_required
 @require_GET
 def notifications(request):
-    is_panel_request = (request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    is_panel_request = getattr(request, '_react_api', False) or (request.headers.get('X-Requested-With') == 'XMLHttpRequest'
                         and 'text/html' not in request.headers.get('Accept', ''))
     if request.GET.get('summary') != '1' and not is_panel_request:
         return redirect('home')
@@ -350,6 +351,11 @@ def notifications(request):
     except ValueError as error:
         return JsonResponse({'error': str(error)}, status=400)
     context.update(summary)
+    if getattr(request, '_react_api', False):
+        from .notification_frontend import notification_payload
+        response = JsonResponse({**summary, **notification_payload(request.user, context)})
+        response['Cache-Control'] = 'no-store'
+        return response
     response = JsonResponse({
         **summary,
         'count': len(context['dashboard_notifications']),

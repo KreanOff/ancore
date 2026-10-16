@@ -7,6 +7,7 @@
         controller?.abort();
         controller = new AbortController();
         const { signal } = controller;
+        if (document.querySelector('[data-react-root="resources"]')) return;
         const page = document.querySelector('[data-resources-page]');
         const host = document.querySelector('[data-resource-modal-host]');
         if (!page || !host) return;

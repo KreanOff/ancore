@@ -6,6 +6,7 @@
     function initializeSettings() {
         cleanup();
         cleanup = () => {};
+        if (document.querySelector('[data-react-root="page"]')) return;
         const page = document.querySelector('[data-settings-center]');
         if (!page) return;
         const controller = new AbortController();

@@ -2,7 +2,8 @@ from datetime import date, datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
+from core.frontend import render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 

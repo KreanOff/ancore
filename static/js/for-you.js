@@ -11,6 +11,7 @@
 
     function init() {
         disconnect();
+        if (document.querySelector('[data-react-root="page"]')) return;
         const tabs = document.querySelector('.for-you-tabs');
         const active = tabs?.querySelector('[aria-current="page"]');
         if (!active) return;
