@@ -7,7 +7,8 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -15,7 +16,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from workplaces.services import workspace_owner
 from spaces.services import visible_spaces
 from tasks.access import visible_to
-from tasks.models import Task
+from spaces.models import SpaceTask
 from .models import Dashboard, DashboardGadget
 from .pulpit_forms import DashboardAccessForm, DashboardForm, DashboardSettingsForm, GadgetForm
 from .pulpits import (GADGET_CATALOG, MAX_GADGETS, app_url, decorate_dashboard, decorate_gadget,
@@ -73,6 +74,10 @@ def search(request):
     results = results[:20]
     for dashboard in results:
         dashboard.url = dashboard_url(request, dashboard)
+    if getattr(request, '_react_api', False):
+        return JsonResponse({'results': [{'id': str(item.pk), 'name': item.name, 'url': item.url,
+                                         'detail': item.get_visibility_display()} for item in results],
+                             'count': len(results), 'has_more': has_more})
     response = JsonResponse({
         'html': render_to_string('dashboard/pulpits/search_results.html', {'results': results, 'has_more': has_more}),
         'count': len(results),
@@ -211,6 +216,8 @@ def form_response(request, form, title, return_url, dashboard=None, gadget=False
 
 
 def saved_response(request, url, **extra):
+    if getattr(request, '_react_api', False):
+        return JsonResponse({'redirect': url, **extra})
     if request.headers.get('X-Pulpit-Modal') == 'true':
         return JsonResponse({'saved': True, 'url': url, **extra})
     return redirect(url)
@@ -368,8 +375,13 @@ def gadget_quick_add(request, pk, management=False):
     if management:
         gadget.edit_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/edit/')
         gadget.delete_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/delete/')
-    tasks = visible_to(Task.objects.filter(user=workspace_owner(request), workplace=request.workplace), request.user)
+    tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
     data = gadget_data(request, gadget, tasks, set(visible_spaces(request).values_list('pk', flat=True)))
+    if getattr(request, '_react_api', False):
+        from .pulpit_frontend import gadget_payload
+        return JsonResponse({'saved': True, 'gadget': gadget_payload(data, editable=True),
+                             'revision': dashboard.revision, 'column': column,
+                             'gadget_count': dashboard.gadgets.count(), 'gadget_id': gadget.pk})
     html = render_to_string('dashboard/pulpits/gadget.html', {'data': data, 'editing_gadgets': True}, request=request)
     return JsonResponse({'saved': True, 'html': html, 'revision': dashboard.revision, 'column': column,
                          'gadget_count': dashboard.gadgets.count(), 'gadget_id': gadget.pk})
