@@ -1,4 +1,4 @@
-{% load static %}
+{% load static frontend %}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -13,10 +13,15 @@
     <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin-ext.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% include 'core/includes/bootstrap.html' %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261009-issue-type-colors">
+    {% if frontend_bootstrap %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261016-accounts">{% react_bundle %}{% endif %}
 </head>
 <body class="auth-page {% block auth_page_class %}auth-page--login{% endblock %}">
     <a class="auth-skip-link" href="#auth-form-title">Przejdź do formularza</a>
 
+    {% if frontend_bootstrap %}
+    {{ frontend_bootstrap|json_script:'ancore-page-data' }}
+    <div data-react-root="page" data-bootstrap-id="ancore-page-data" data-csrf-token="{{ csrf_token }}" style="display: contents">
+    {% endif %}
     <main class="auth-shell">
         <header class="auth-topbar">
             <a href="{% url 'home' %}" class="auth-brand" aria-label="Ancore — strona główna">
@@ -72,6 +77,7 @@
             </section>
         </div>
     </main>
+    {% if frontend_bootstrap %}</div>{% endif %}
 
     {% if messages %}
     <div class="notifications-container">
@@ -84,6 +90,6 @@
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
-    <script src="{% static 'js/auth.js' %}?v=20260821-password-toggle"></script>
+    <script src="{% static 'js/auth.js' %}?v=20261016-react-accounts"></script>
 </body>
 </html>

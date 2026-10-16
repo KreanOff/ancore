@@ -25,6 +25,7 @@
     // Existing searchable pickers keep their own filtering (including remote
     // company/person lookups). Add the same search UI to the remaining choices.
     function addModalSearch(menu, anchor) {
+        if (menu.hasAttribute('data-dropdown-search-disabled')) return null;
         if (!anchor.closest('.tasks-modal, .profile-edit-dialog') || menu.querySelector('input:not([type="hidden"])')) return null;
 
         const options = Array.from(menu.querySelectorAll('button'));
@@ -139,6 +140,9 @@
                 && (rect.bottom <= bounds.top || rect.top >= bounds.bottom)) return true;
             if (/(auto|scroll|hidden|clip)/.test(style.overflowX)
                 && (rect.right <= bounds.left || rect.left >= bounds.right)) return true;
+            // A fixed modal is positioned against the viewport. Containers
+            // outside it do not clip its controls, even over the sidebar.
+            if (style.position === 'fixed') break;
         }
         return false;
     }

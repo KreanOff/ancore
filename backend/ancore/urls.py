@@ -12,8 +12,15 @@ from resources import urls as resources_urls
 from spaces import urls as spaces_urls, team_urls
 from dashboard import filter_urls, pulpit_urls
 from core.media import public_media
+from core.frontend import page_api, navigation_api, shell_api
 
 urlpatterns = [
+    path('api/v1/navigation/', navigation_api, name='react-navigation'),
+    path('api/v1/shell/', shell_api, name='react-shell'),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/api/v1/navigation/$', navigation_api, name='workplace-react-navigation'),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/api/v1/shell/$', shell_api, name='workplace-react-shell'),
+    path('api/v1/page/', page_api, name='react-page'),
+    re_path(r'^workplaces/[-a-zA-Z0-9_]+/api/v1/page/$', page_api, name='workplace-react-page'),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/filters/', include((filter_urls.urlpatterns, 'workplace_filters'), namespace='workplace_filters')),
     path('filters/', include('dashboard.filter_urls')),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/dashboards/', include((pulpit_urls.urlpatterns, 'workplace_pulpits'), namespace='workplace_pulpits')),

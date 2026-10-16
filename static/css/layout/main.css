@@ -1,4 +1,4 @@
-body:has(> .app-topbar) {
+body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     --app-topbar-height: calc(var(--dropdown-control-height) + 8px);
 }
 
@@ -215,7 +215,8 @@ body:has(> .app-topbar) {
     }
 }
 
-body:has(> .app-topbar) > :is(.sidebar, .global-search-panel, .global-search-backdrop, .sidebar-backdrop) {
+body:has(> .app-topbar) > :is(.sidebar, .global-search-panel, .global-search-backdrop, .sidebar-backdrop),
+[data-react-global-panels] > :is(.sidebar, .global-search-panel, .global-search-backdrop, .sidebar-backdrop) {
     top: var(--app-topbar-height);
 }
 

@@ -3,7 +3,7 @@
 @import 'base/variables.css?v=20261013-dropdown-width';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261003-border-visibility-2pct';
-@import 'layout/main.css?v=20261003-topbar-sticker';
+@import 'layout/main.css?v=20261016-react-shell';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261003-border-visibility-2pct';
 @import 'components/buttons.css?v=20260923-secondary-gray-hover';
