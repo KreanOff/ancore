@@ -14,6 +14,9 @@ Przestrzenie mają własne modele `Space`, `SpaceTask`, członkostwa, historię,
 pliki i dziennik pracy. Szczegóły zadań są pod `/space/<slug>/tasks/<klucz>/`,
 bez przejścia do starszych projektów, grup lub zadań. Nowe rekordy nie tworzą
 rekordów w starszym module; import i zgodność starych linków są jednokierunkowe.
+Szczegóły automatycznie zapisują pola i załączniki bez przeładowania;
+błąd zachowuje szkic i udostępnia ponowienie. Komentarze są wysyłane osobno.
+[Zasady zapisu](SPACES.md#pozostałe-funkcje).
 
 Główne menu używa Przestrzeni, Wszystkich zadań i Zespołów. Starsze systemy
 projektów, grup, zadań, ulubionych projektów i szablonów są wycofane.

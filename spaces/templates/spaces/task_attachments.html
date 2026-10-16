@@ -1,0 +1,6 @@
+{% if files %}<section class="tasks-issue-attachments" aria-label="Załączniki"><div class="tasks-attachments-grid">
+    {% for file in files %}<div class="tasks-attachment-card">
+        <a class="tasks-attachment-info" href="{{ space_url }}tasks/{{ item.key }}/files/{{ file.pk }}/">{% include 'core/includes/attachment_icon.html' with type_class=file.get_type_class size='lg' %}<span class="tasks-attachment-details"><span class="tasks-attachment-name">{{ file.filename }}</span><span class="tasks-attachment-size">{{ file.get_formatted_size }}</span></span></a>
+        {% if can_edit_task %}<form method="post" data-confirm-delete="Usunąć załącznik?">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.pk }}"><button class="tasks-delete-attach-btn" type="submit" aria-label="Usuń załącznik {{ file.filename }}" title="Usuń załącznik">{% include 'core/includes/trash_icon.html' %}</button></form>{% endif %}
+    </div>{% endfor %}
+</div></section>{% endif %}

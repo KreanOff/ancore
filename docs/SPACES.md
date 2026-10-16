@@ -367,12 +367,26 @@ kluczy pozostałych. Zadanie pozostaje w swojej przestrzeni; zapis modelu
 odrzuca zmianę przestrzeni, obcego rodzica i cykl podzadań. Nie należy mylić
 klucza z PK ani dawnym, renumerowanym `tasks.Task.task_id`.
 Szczegóły są pod `/space/<slug>/tasks/<klucz>/?view=list`. Wspólna powłoka
-zadania pokazuje strzałkę powrotu, tytuł i zapis, zakładki i treść po lewej
+zadania pokazuje strzałkę powrotu i tytuł, zakładki i treść po lewej
 oraz właściwości po prawej, bez powtarzania nagłówka przestrzeni. Powrót
 zachowuje widok i filtry. Wszystkie pięć zakładek używa układu starszego ekranu
 Zadań i wspólnych tabel, modali oraz strumienia historii. Kategoria i
 przypomnienie są polami `SpaceTask`; planowanie pozostaje w istniejącej edycji
 przestrzeni i jest zachowane przy zapisie szczegółów.
+Szczegóły automatycznie zapisują tytuł i opis po 700 ms przerwy w pisaniu;
+zmiana pola wyboru, daty lub dodanie załącznika uruchamia zapis od razu.
+Żądania do tego samego endpointu `action=save` są wykonywane kolejno, bez
+przeładowania strony. Zmiany wpisane podczas zapisu trafiają do następnego
+żądania. Lista `autosave_fields` określa zmienione pola; pozostałe wartości,
+w tym planowanie, pochodzą z aktualnego rekordu pod blokadą. Powtórzenie
+niezmienionych danych nie dopisuje historii. Nagłówek, data zamknięcia,
+historia, członkowie po zmianie widoczności i zapisane załączniki odświeżają
+się w otwartym widoku. Komentarze wymagają użycia przycisku wysyłania.
+Błąd zachowuje szkic oraz wybrane pliki; „Spróbuj ponownie” w banerze błędu ponawia zapis,
+a powrót połączenia uruchamia kolejną próbę. Częściowa nawigacja czeka na
+zapis i pozostaje na zadaniu przy błędzie. Pełne wyjście lub przeładowanie
+z niezapisanymi zmianami chroni `beforeunload`; szkic nie jest utrwalany poza
+otwartą stroną. Bez JavaScript pozostaje zwykły przycisk „Zapisz” i POST.
 Załączniki wybrane przy „Dodaj załącznik” zapisują się razem z danymi zadania,
 z walidacją i wycofaniem całej operacji przy błędzie. „Główna”, „Podzadania”, „Dziennik pracy”,
 „Członkowie” i „Historia” mają własne operacje w `spaces/task_views.py`.

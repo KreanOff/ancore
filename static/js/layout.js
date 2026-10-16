@@ -600,14 +600,21 @@
         restoreReturnPosition(options?.restorePosition);
     }
 
+    let navigationAttempt = 0;
     async function navigatePartially(href, options) {
         const url = getUrl(href);
         if (!url || !canUsePartialNavigation(url.href)) {
             return false;
         }
 
-        const leaving = new CustomEvent('ancore:before-navigate', { cancelable: true, detail: { url: url.href } });
+        const attempt = ++navigationAttempt, guards = [];
+        const leaving = new CustomEvent('ancore:before-navigate', { cancelable: true,
+            detail: { url: url.href, waitUntil: promise => guards.push(Promise.resolve(promise)) } });
         if (!document.dispatchEvent(leaving)) return false;
+        if (guards.length) {
+            const results = await Promise.allSettled(guards);
+            if (attempt !== navigationAttempt || results.some(result => result.status === 'rejected' || result.value === false)) return false;
+        }
         const source = {
             mode: sidebar?.dataset.sidebarMode, managementReturn,
             url: window.location.href, position: captureReturnPosition(),

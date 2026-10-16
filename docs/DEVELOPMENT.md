@@ -1,5 +1,68 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Usunięcie statusu zapisu z nagłówka (15.10.2026)
+
+Nagłówek szczegółów zadania zawiera powrót i tytuł. Automatyczny zapis
+uruchamia `data-space-task-autosave` formularza; widoczny status nie jest
+wymagany do jego działania. `data-save-state` przechowuje stan, a komunikaty
+otrzymuje wyłącznie czytnik ekranu. Błąd pokazuje przycisk „Spróbuj ponownie”
+w banerze. `noscript` zachowuje zwykły zapis formularza.
+
+Playwright/Chrome na osobnej bazie i storage QA przy 1440×1000 i 390×900
+potwierdził brak statusu w nagłówku przed/w trakcie/po zapisie i przy błędzie,
+zapis tytułu/opisu, nowszą edycję podczas żądania, zakończenie zadania,
+załączniki, zachowanie szkicu i ponowienie z banera, ochronę wyjścia,
+listę referencyjną, częściową nawigację, ponowne wejście i reload.
+Sprawdzono także obserwatora bez edycji i rzeczywisty zapis z wyłączonym JS.
+Nie było przepełnienia telefonu ani nieoczekiwanych błędów konsoli/JS.
+Plugin Browser był niedostępny. Kontrola Django, składni JS, indeksu i
+`git diff --check` przeszła. Backend nie zmienił się; jego testów nie ponawiano.
+Safari i Firefox nie były sprawdzane.
+
+## Automatyczny zapis szczegółów zadania (14.10.2026)
+
+`spaces.test_task_autosave` sprawdza zapis JSON, zwykły/scoped adres i zwykły
+POST, niezmienione dane bez dodatkowej historii, autora, zachowanie bieżących
+właściwości i planowania, precyzję dat, wyczyszczenie opcjonalnych pól,
+zerową wartość pola niestandardowego, status/zakończenie/ponowne otwarcie,
+walidację formularza i plików z rollbackiem, odświeżenie członków, CSRF,
+obserwatora, prywatne zadanie i obcy Workspace. Uruchamiaj także
+`spaces.test_task_detail_parity`, `spaces.test_independent_tasks`, testy tagów
+oraz `core.test_file_lifecycle`.
+
+Browser QA: tytuł/opis → zapis po przerwie → reload; szybka edycja podczas
+opóźnionego żądania; pola wyboru/daty → aktualna historia i data zamknięcia;
+komentarz bez automatycznej publikacji; załącznik → karta/pobranie/reload;
+błędne pole/plik, błąd sieci, ponowienie, brak prawa edycji; powrót do listy
+podczas oczekiwania → zapis → ponowne wejście przez częściową nawigację.
+Sprawdź brak zapisu przy pierwszym renderowaniu, podwójnych listenerów,
+pusty stan, referencyjną listę oraz desktop/tablet/telefon na osobnej bazie QA.
+
+Weryfikacja 14.10.2026: przeszły 74 testy wymienionych modułów wraz z
+`planner.test_task_calendar`. Kontrola Django, składnia Pythona/JS, lokalne
+linki dokumentacji, aktualność indeksu i `git diff --check` przeszły.
+Playwright/Chrome (plugin Browser niedostępny) na osobnej bazie PostgreSQL
+i storage QA sprawdził szerokości 1440×1000, 1024×900 i 390×900: zapis
+tytułu/opisu bez przeładowania, zmianę podczas opóźnionego żądania, pola/daty,
+historię/zakończenie, pliki/pobranie, szkic komentarza, pusty czat i pozostałe
+panele, niepoprawny tytuł/plik, błąd sieci/ponowienie i zdarzenie `online`.
+Sprawdzono także listę referencyjną, powrót przed zapisem, ponowne wejście,
+obserwatora, widoczność/tabelę członków, pięć zakładek, zwykły/scoped adres,
+zatrzymanie wyjścia przy błędzie i ostatni cel przy kolejnych kliknięciach
+podczas zapisu. Nie stwierdzono błędów wykonania JS ani przepełnienia strony.
+Celowo przerwane żądania i odrzucony plik dawały oczekiwane błędy sieci/400.
+Nie uruchamiano całego repozytorium; Safari i Firefox nie były sprawdzane.
+
+Dodatkowa zmiana stylu statusu (14.10.2026): `work-task-save-status` używa
+neutralnego tekstu bez tła i ramki. Playwright/Chrome na osobnej bazie QA
+potwierdził wygląd stanów oczekiwania, zapisywania, powodzenia i błędu,
+niezmienione etykiety, podkreślenie przy hover/fokusie klawiatury oraz
+działające ponowienie zapisu. Sprawdzono 1440×1000 i 390×900, pusty czat,
+listę referencyjną, ponowne wejście i reload, bez przepełnienia strony
+ani nieoczekiwanych błędów konsoli/JS. Kontrola Django, indeksu i
+`git diff --check` przeszła. Dla samej zmiany CSS/szablonu nie ponawiano
+testów backendu ani nie dodawano nowych testów. Innych przeglądarek nie sprawdzano.
+
 ## Wygląd Aktywnego sprintu (13.10.2026)
 
 Przeszło 61 istniejących testów `spaces.tests.SpaceTests`,

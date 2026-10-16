@@ -25,6 +25,14 @@ zachowują zakończenie i autora historii. Cykl statusu starszych Tasks jest wy�
 Stare pliki współdzielone po imporcie są usuwane dopiero po ostatnim odwołaniu
 i zatwierdzeniu transakcji. [Modele, adresy, migracja i granice](SPACES.md).
 
+Automatyczny zapis szczegółów wykonuje kolejno żądania AJAX `action=save`.
+`DetailForm` waliduje zmienione pola wskazane w `autosave_fields`, uzupełniając
+pozostałe bieżącymi wartościami pod blokadą Workspace/przestrzeni/zadania.
+Zapis, status, historia i pliki pozostają jedną transakcją; autor to
+`request.user`. Odpowiedź JSON aktualizuje otwarty widok bez zastępowania
+edytowanych pól. Niepowodzenie zachowuje szkic; dopiero powodzenie przesuwa
+snapshot zapisu. Żądanie bez `autosave_fields` zachowuje pełny formularz.
+
 Zbiorcze planowanie backlogu waliduje całą bieżącą stronę zaznaczenia i snapshot
 `sprint_id/rank` pod blokadą Workspace oraz Przestrzeni. Zapis dopisuje wyłącznie
 edytowalne zadania na końcu grupy docelowej i tworzy historię autora; błąd
@@ -787,6 +795,10 @@ użytkownika i pozostają domyślnie nieprzeczytane również dla właściciela.
 2. Zwykłe kliknięcia oraz formularze GET korzystają z `navigate()`. Pobieranie
    HTML przerywa poprzedni request; spóźniona odpowiedź nie nadpisuje nowego ekranu.
 3. `ancore:before-navigate` pozwala anulować opuszczenie niezapisanego zadania.
+   `event.detail.waitUntil(promise)` pozwala zaczekać na zapis w tle; odrzucenie
+   obietnicy lub wynik `false` zatrzymuje przejście. Przy kolejnych kliknięciach
+   podczas oczekiwania działa ostatni cel. Szczegóły przestrzeni wykorzystują
+   ten mechanizm do zakończenia zapisu przed nawigacją.
    Przed podmianą `ancore:content-unloading` usuwa listenery szczegółów zadania/karty.
 4. Kod wczytuje brakujące style, podmienia kontener strony z modalami oraz
    komunikaty. Ustawia URL przed inicjalizacją, synchronizuje aktywne linki menu

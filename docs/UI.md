@@ -72,7 +72,7 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 Szczegóły nowego zadania (`spaces/task_detail.html`) odwzorowują ekran
 `tasks/view_task.html`, używając jego powłoki, kontrolek i include'ów przez
 `spaces/base.html` oraz `core/base.html`. Nagłówek ma strzałkę powrotu,
-tytuł i „Zapisz”. Adres i nawigacja zachowują przestrzeń, a powrót `view`
+tytuł. Adres i nawigacja zachowują przestrzeń, a powrót `view`
 i filtry. Panel po prawej zawiera widoczność, status, priorytet, tagi,
 typ zgłoszenia, kategorię zadania, wykonawcę, trwały klucz z kopiowaniem,
 autora oraz daty utworzenia, zamknięcia, wykonania i przypomnienia.
@@ -80,6 +80,17 @@ Widoczność jest polem tego samego formularza; właściciel prywatnego zadania
 zarządza jego widocznością. Planowanie jest dostępne przez dotychczasową
 edycję w przestrzeni; jego wartości są zachowane przy zapisie szczegółów.
 Na wąskim ekranie panel przechodzi pod treść, a zakładki przewijają się.
+
+Nagłówek nie wyświetla statusu ani przycisku zapisu. Automatyczny zapis
+uruchamia atrybut `data-space-task-autosave` formularza, niezależnie od
+widocznych kontrolek. Stan jest zapisany w `data-save-state`, a komunikat
+`role=status` ogłasza go wyłącznie czytnikom ekranu. Błędy korzystają z
+istniejącego banera i `errorlist`; przycisk „Spróbuj ponownie” pojawia się
+tylko w banerze błędu. Bez JavaScript formularz ma przycisk „Zapisz” w
+`noscript`. Edycja tekstu ma 700 ms opóźnienia,
+pozostałe pola zapisują się od razu. Kolejkowanie zachowuje nowszy szkic,
+fokus, otwartą zakładkę i komentarz. Inicjalizacja `spaces.js` działa również
+po `ancore:content-loaded`, a abort usuwa listenery i timer poprzedniej strony.
 
 Wszystkie pięć paneli jest renderowane razem. Wspólny `task-work-log.js`
 przełącza przyciski zakładek, URL `tab`, ARIA i fokus klawiatury, zachowując
@@ -94,8 +105,8 @@ Historia i komentarze współdzielą `task_activity_item.html`, z awatarami,
 datami, zmianami pól i kartami/miniaturami załączników.
 
 Pola `DetailForm` należą do `space-task-form` przez atrybut `form`.
-`spaces.js` porównuje stan formularza: „Zapisz” jest nieaktywny do zmiany
-lub wyboru pliku. Wybrane załączniki można usunąć przed zapisem. Czat używa
+`spaces.js` porównuje stan formularza i zapisuje zmianę pola lub wybór pliku.
+Wybrane załączniki można usunąć przed zapisem. Czat używa
 wspólnego composera, pickera wzmianek, uploadu i błędów AJAX. Pliki mają
 chronione adresy przestrzeni. Inicjalizacja działa również po
 `ancore:content-loaded`, z usuwaniem poprzednich listenerów.
@@ -979,8 +990,10 @@ treścią. Szybkie odpowiedzi nie pokazują szkieletu i nie czekają na animacj�
 Przy `prefers-reduced-motion` placeholdery są nieruchome. Zasłonięta treść ma
 tymczasowo `inert`, a czytnik ekranu otrzymuje „Wczytywanie widoku…”.
 Zmiana konta/Workspace, edytory i adresy spoza listy ekranów
-zachowują pełną nawigację. Szczegóły zadania pytają o porzucenie niezapisanych
-zmian, a po podmianie usuwają poprzednie listenery. Kontrakt i wyjątki opisuje
+zachowują pełną nawigację. Szczegóły zadania przestrzeni czekają na automatyczny
+zapis przed podmianą i zatrzymują nawigację przy błędzie. Pełne wyjście z
+niezapisanymi zmianami chroni `beforeunload`. Po podmianie ekran usuwa poprzednie
+listenery. Kontrakt i wyjątki opisuje
 [cykl życia strony](MECHANISMS.md#12-częściowa-nawigacja-i-cykl-życia-frontendowej-strony).
 
 Globalne wyszukiwanie pokazuje najwyżej 20 wyników w każdej kategorii danych.

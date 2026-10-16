@@ -1,7 +1,7 @@
 """Task screens remain inside the owning space and never invoke legacy Tasks views."""
 from django.contrib.auth.decorators import login_required
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from django.core.paginator import Paginator
 from django.db.models import F, Sum
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -74,6 +74,28 @@ def property_changes(before, after):
     return [{'field': key, 'from_label': before[key] or '—', 'to_label': after[key] or '—'} for key in before if before[key] != after[key]]
 
 
+def detail_post_data(request, current_form):
+    """Merge autosaved fields with live values, including unchanged planning."""
+    posted = request.POST.copy()
+    if 'autosave_fields' not in posted:
+        return posted, set(current_form.fields) | {'status', 'files'}
+    try:
+        fields = json.loads(posted['autosave_fields'])
+    except (ValueError, TypeError):
+        raise ValidationError('Nieprawidłowe pola zapisu zadania.')
+    allowed = set(current_form.fields) | {'status', 'files'}
+    if not isinstance(fields, list) or any(not isinstance(name, str) or name not in allowed for name in fields):
+        raise ValidationError('Nieprawidłowe pola zapisu zadania.')
+    for name, field in current_form.fields.items():
+        if name not in fields:
+            value = field.prepare_value(current_form.initial.get(name, field.initial))
+            value = value.isoformat() if isinstance(value, datetime) else field.widget.format_value(value)
+            posted.setlist(name, value if isinstance(value, list) else [value] if value is not None else [])
+    if 'status' not in fields:
+        posted['status'] = current_form.item.status
+    return posted, set(fields)
+
+
 def work_log_context(request, task):
     entries = task.work_logs.select_related('author')
     duration = entries.aggregate(total=Sum(F('ended_at') - F('started_at')))['total'] or timedelta()
@@ -125,35 +147,49 @@ def detail(request, space_pk, key):
                 item = task_item(request, space_pk, key)
                 action = request.POST.get('action', 'save')
                 if action == 'save':
+                    history_after = task.activities.order_by('-pk').values_list('pk', flat=True).first() or 0
                     files = request.FILES.getlist('files')
-                    form = DetailForm(request.POST, request=request, space=space, item=item)
+                    current_form = DetailForm(request=request, space=space, item=item)
+                    posted, changed_fields = detail_post_data(request, current_form)
+                    form = DetailForm(posted, request=request, space=space, item=item)
                     validate_comment_attachments(files)
                     if form.is_valid():
                         data = form.cleaned_data
                         old = property_snapshot(task, item)
+                        old_relations_dates = (task.assignee_id, task.due_at, task.reminder_at)
+                        planning_fields = ('work_type', 'team_id', 'sprint_id', 'epic_id', 'points', 'start_on', 'in_backlog', 'custom_values')
+                        old_planning = [getattr(item, name) for name in planning_fields]
                         previous = {'title': task.title, 'priority': task.priority, 'work_type': item.work_type}
-                        target = request.POST.get('status', item.status)
+                        target = form.data.get('status', item.status)
                         set_status(request, item, target)
                         task.refresh_from_db()
                         for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
-                            setattr(task, name, data[name])
-                        task.visibility = data['visibility']
+                            if name in changed_fields:
+                                setattr(task, name, data[name])
+                        if 'visibility' in changed_fields:
+                            task.visibility = data['visibility']
                         task.private_owner = (task.private_owner or request.user) if task.visibility == 'private' else None
                         task.save()
                         if task.visibility == 'public':
                             task.memberships.all().delete()
-                        task.tags.set(data['tags'])
+                        if 'tags' in changed_fields:
+                            task.tags.set(data['tags'])
                         item.refresh_from_db()
                         for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_on', 'in_backlog'):
-                            if name in data:
+                            if name in data and (name in changed_fields or name == 'in_backlog' and 'sprint' in changed_fields):
                                 setattr(item, name, data[name])
-                        item.custom_values = {f['key']: str(data.get('custom_' + f['key']) or '') for f in space.configuration.settings.get('fields', [])}
+                        custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else ''
+                                         for f in space.configuration.settings.get('fields', []) if 'custom_' + f['key'] in changed_fields}
+                        item.custom_values = {**item.custom_values, **custom_values} if 'autosave_fields' in posted else custom_values
                         item.save()
                         changes = property_changes(old, property_snapshot(task, item))
-                        record(item, request.user, 'updated', 'zaktualizował zadanie', {'before': previous, 'changes': changes})
+                        if (changes or old_relations_dates != (task.assignee_id, task.due_at, task.reminder_at)
+                                or old_planning != [getattr(item, name) for name in planning_fields]):
+                            record(item, request.user, 'updated', 'zaktualizował zadanie', {'before': previous, 'changes': changes})
                         if files:
                             attach_files(task, files, None, saved_files)
                             record(item, request.user, 'attachments_added', 'dodał załączniki')
+                        saved_history = list(task.activities.filter(pk__gt=history_after, kind='system').select_related('actor'))
                     else:
                         raise ValidationError('Popraw oznaczone pola.')
                 elif action in {'comment', 'attachment'}:
@@ -237,6 +273,16 @@ def detail(request, space_pk, key):
                     return redirect(return_url(request, space))
                 else:
                     raise Http404
+            if action == 'save' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # Only activities created by this transaction are returned to the open feed.
+                payload = {'status': 'success', 'task': {'title': task.title,
+                    'completion_date': date_format(timezone.localtime(task.completion_date), 'd.m.Y, H:i') if task.completion_date else ''},
+                    'activity_html': ''.join(render_to_string('tasks/includes/task_activity_item.html', {'item': activity}, request=request) for activity in saved_history),
+                    'attachments_html': render_to_string('spaces/task_attachments.html', {'files': task.attachments.filter(activity__isnull=True), 'space_url': space_url(request, space), 'item': item, 'can_edit_task': can_edit}, request=request) if files else None}
+                if old['widoczność'] != property_snapshot(task, item)['widoczność']:
+                    from .task_team import payload as team_payload
+                    payload['team'] = team_payload(request, task)
+                return JsonResponse(payload)
             if action == 'comment' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success', 'activity_html': render_to_string('spaces/task_comment.html', {'comment': activity, 'item': item, 'space_url': space_url(request, space)}, request=request)})
             return redirect(request.get_full_path())
@@ -245,7 +291,7 @@ def detail(request, space_pk, key):
                 file.storage.delete(file.name)
             error = ' '.join(exc.messages)
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'status': 'error', 'message': error}, status=400)
+                return JsonResponse({'status': 'error', 'message': error, 'errors': form.errors.get_json_data()}, status=400)
         except Exception:
             for file in saved_files:
                 file.storage.delete(file.name)

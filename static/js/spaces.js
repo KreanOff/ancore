@@ -6,19 +6,132 @@
     function initTaskDetail(page, signal) {
         const form = page.querySelector('#space-task-form');
         if (!form) return;
-        const save = page.querySelector('[data-space-task-save]');
+        const canAutosave = form.hasAttribute('data-space-task-autosave');
+        const retry = page.querySelector('[data-space-task-retry]');
         const upload = page.querySelector('[data-space-task-upload]');
         const list = page.querySelector('[data-space-task-upload-list]');
-        const snapshot = () => JSON.stringify([...new FormData(form)].filter(([name, value]) =>
-            name !== 'csrfmiddlewaretoken' && !(value instanceof File && !value.name)
-        ).map(([name, value]) => [name, value instanceof File ? [value.name, value.size, value.lastModified] : value]));
-        const initial = snapshot();
-        const hasErrors = Boolean(page.querySelector('.tasks-error-banner'));
+        const errorBox = page.querySelector('[data-space-task-save-error]');
+        const errorMessage = page.querySelector('[data-space-task-save-message]');
+        const feedback = page.querySelector('[data-space-task-save-status]');
+        const saveUrl = form.getAttribute('action') || window.location.href;
+        const values = data => {
+            const result = new Map();
+            for (const [name, value] of data) {
+                if (['csrfmiddlewaretoken', 'action', 'task_pk'].includes(name) || (value instanceof File && !value.name)) continue;
+                const entries = result.get(name) || [];
+                entries.push(value instanceof File ? [value.name, value.size, value.lastModified] : value);
+                result.set(name, entries);
+            }
+            return result;
+        };
+        let saved = values(new FormData(form)), pending = null, timer, composing = false;
+        let initialErrors = Boolean(errorBox && !errorBox.hidden);
+        const changedFields = current => [...new Set([...saved.keys(), ...current.keys()])].filter(name =>
+            initialErrors || JSON.stringify(saved.get(name) || []) !== JSON.stringify(current.get(name) || []));
+        const dirty = () => changedFields(values(new FormData(form))).length > 0;
+        function setState(state) {
+            if (!canAutosave) return;
+            const labels = { idle: 'Zapis automatyczny', dirty: 'Oczekiwanie...', saving: 'Zapisywanie...', saved: 'Zapisano', error: 'Spróbuj ponownie' };
+            form.dataset.saveState = state;
+            if (retry) { retry.hidden = state !== 'error'; retry.disabled = state !== 'error'; }
+            if (feedback) feedback.textContent = labels[state];
+        }
         function syncSave() {
-            if (!save) return;
-            const dirty = hasErrors || snapshot() !== initial;
-            save.disabled = !dirty;
-            save.dataset.state = dirty ? 'dirty' : 'idle';
+            if (!pending) setState(dirty() ? 'dirty' : 'idle');
+        }
+        function clearErrors() {
+            if (errorBox) errorBox.hidden = true;
+            if (errorMessage) errorMessage.textContent = '';
+            page.querySelectorAll('[data-space-task-field-error]').forEach(node => node.remove());
+            [...form.elements].forEach(field => field.removeAttribute('aria-invalid'));
+        }
+        function showError(message, errors = {}) {
+            clearErrors();
+            if (errorMessage) errorMessage.textContent = message;
+            if (errorBox) errorBox.hidden = false;
+            for (const [name, messages] of Object.entries(errors)) {
+                const field = [...form.elements].find(element => element.name === name);
+                if (!field) continue;
+                field.setAttribute('aria-invalid', 'true');
+                const list = document.createElement('ul');
+                list.className = 'errorlist'; list.dataset.spaceTaskFieldError = '';
+                messages.forEach(error => { const item = document.createElement('li'); item.textContent = error.message; list.append(item); });
+                field.insertAdjacentElement('afterend', list);
+            }
+            setState('error');
+        }
+        function scheduleSave(delay = 700) {
+            if (!canAutosave || composing) return;
+            clearTimeout(timer);
+            syncSave();
+            if (dirty()) timer = setTimeout(saveChanges, delay);
+            else if (!pending) clearErrors();
+        }
+        async function saveChanges() {
+            clearTimeout(timer);
+            if (!canAutosave || signal.aborted) return false;
+            if (pending) return pending;
+            if (!dirty()) return true;
+            if (composing) return false;
+            if (!form.checkValidity()) {
+                showError('Uzupełnij poprawnie wymagane pola. Zmiany nie zostały zapisane.');
+                return false;
+            }
+            const body = new FormData(form), sent = values(body);
+            body.set('autosave_fields', JSON.stringify(changedFields(sent)));
+            const sentFiles = [...(upload?.files || [])];
+            setState('saving');
+            pending = (async () => {
+                try {
+                    const response = await fetch(saveUrl, { method: 'POST', body, credentials: 'same-origin',
+                        signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } });
+                    if (response.redirected) {
+                        showError('Sesja wygasła. Zaloguj się ponownie, aby zapisać zmiany.');
+                        return false;
+                    }
+                    const payload = await response.json();
+                    if (!response.ok || payload.status !== 'success') {
+                        showError(payload.message || 'Nie udało się zapisać zmian.', payload.errors);
+                        return false;
+                    }
+                    if (signal.aborted) return false;
+                    saved = sent; saved.delete('files'); initialErrors = false;
+                    clearErrors();
+                    if (upload && sentFiles.length) {
+                        const remaining = new DataTransfer();
+                        [...upload.files].filter(file => !sentFiles.includes(file)).forEach(file => remaining.items.add(file));
+                        upload.files = remaining.files; renderFiles();
+                    }
+                    if (payload.attachments_html !== null) {
+                        const attachments = page.querySelector('[data-space-task-attachments]');
+                        attachments.innerHTML = payload.attachments_html;
+                        window.AncoreIcons?.render(attachments);
+                    }
+                    const title = page.querySelector('[data-space-task-title-current] span');
+                    if (title) title.textContent = form.elements.title.value.trim() || payload.task.title;
+                    const completion = page.querySelector('[data-space-task-completion-date]');
+                    if (completion) completion.textContent = payload.task.completion_date || 'Nie zamknięto';
+                    if (payload.activity_html) page.dispatchEvent(new CustomEvent('ancore:task-history-added', { detail: payload.activity_html }));
+                    if (payload.team) page.querySelector('[data-space-task-team]').dispatchEvent(new CustomEvent('ancore:task-team-updated', { detail: payload.team }));
+                    setState(dirty() ? 'dirty' : 'saved');
+                    return true;
+                } catch (error) {
+                    if (!signal.aborted) showError('Nie udało się zapisać zmian. Sprawdź połączenie i spróbuj ponownie.');
+                    return false;
+                } finally {
+                    pending = null;
+                }
+            })();
+            const success = await pending;
+            if (success && dirty()) scheduleSave(0);
+            return success;
+        }
+        async function flushSave() {
+            while (!signal.aborted && (pending || dirty())) {
+                if (!await saveChanges()) return false;
+            }
+            return !signal.aborted;
         }
         function renderFiles() {
             if (!upload || !list) return;
@@ -46,22 +159,34 @@
             });
             window.AncoreIcons.render(list);
         }
-        page.addEventListener('input', syncSave, { signal });
+        const isTaskField = target => target.form === form || target.closest('.tasks-description-editor')?.previousElementSibling?.form === form;
+        page.addEventListener('input', event => { if (isTaskField(event.target)) scheduleSave(); }, { signal });
+        page.addEventListener('compositionstart', event => { if (isTaskField(event.target)) { composing = true; clearTimeout(timer); } }, { signal });
+        page.addEventListener('compositionend', event => { if (isTaskField(event.target)) { composing = false; scheduleSave(); } }, { signal });
         page.addEventListener('change', event => {
             if (event.target === upload) renderFiles();
             if (event.target.matches('.tasks-subtasks-board .tasks-row-checkbox')) event.target.closest('.tasks-issue-row').classList.toggle('checked', event.target.checked);
-            syncSave();
+            if (isTaskField(event.target)) scheduleSave(0);
         }, { signal });
-        form.addEventListener('submit', () => {
-            if (save) { save.disabled = true; save.dataset.state = 'saving'; save.textContent = 'Zapisywanie...'; }
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            saveChanges();
         }, { signal });
+        document.addEventListener('ancore:before-navigate', event => {
+            if (canAutosave && (pending || dirty())) event.detail.waitUntil(flushSave());
+        }, { signal });
+        window.addEventListener('beforeunload', event => {
+            if (canAutosave && (pending || dirty())) { event.preventDefault(); event.returnValue = ''; }
+        }, { signal });
+        window.addEventListener('online', () => { if (dirty()) scheduleSave(0); }, { signal });
+        signal.addEventListener('abort', () => clearTimeout(timer), { once: true });
         page.addEventListener('click', async event => {
             if (event.target.closest('[data-space-task-choose-files]')) upload?.click();
             const remove = event.target.closest('[data-space-task-remove-upload]');
             if (remove && upload) {
                 const transfer = new DataTransfer();
                 [...upload.files].forEach((file, index) => { if (index !== Number(remove.dataset.spaceTaskRemoveUpload)) transfer.items.add(file); });
-                upload.files = transfer.files; renderFiles(); syncSave();
+                upload.files = transfer.files; renderFiles(); scheduleSave();
             }
             const copy = event.target.closest('[data-space-task-copy]');
             if (copy) {
@@ -113,7 +238,8 @@
             }
         }, { signal });
         if (subtaskModal?.classList.contains('is-open')) openSubtask();
-        syncSave();
+        if (initialErrors) setState('error');
+        else syncSave();
     }
 
     function init() {

@@ -27,7 +27,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [planner](../planner) | 9 | 2 | 2 | 7 |
 | [documents](../documents) | 37 | 11 | 31 | 203 |
 | [resources](../resources) | 7 | 1 | 2 | 19 |
-| [spaces](../spaces) | 40 | 9 | 38 | 213 |
+| [spaces](../spaces) | 41 | 9 | 39 | 223 |
 
 ## 2. Modele i relacje
 
@@ -1547,7 +1547,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/signals.py](../spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [spaces/summary.py](../spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
 - [spaces/task_team.py](../spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
-- [spaces/task_views.py](../spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `work_log_context`, `detail`, `members`, `download`
+- [spaces/task_views.py](../spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `detail_post_data`, `work_log_context`, `detail`, `members`, `download`
 - [spaces/team_urls.py](../spaces/team_urls.py)
 - [spaces/teams.py](../spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
 - [spaces/templatetags/__init__.py](../spaces/templatetags/__init__.py)
@@ -1810,6 +1810,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [spaces/templates/spaces/subtask_modal.html](../spaces/templates/spaces/subtask_modal.html)
 - [spaces/templates/spaces/summary.html](../spaces/templates/spaces/summary.html)
 - [spaces/templates/spaces/tags.html](../spaces/templates/spaces/tags.html)
+- [spaces/templates/spaces/task_attachments.html](../spaces/templates/spaces/task_attachments.html)
 - [spaces/templates/spaces/task_comment.html](../spaces/templates/spaces/task_comment.html)
 - [spaces/templates/spaces/task_detail.html](../spaces/templates/spaces/task_detail.html)
 - [spaces/templates/spaces/team.html](../spaces/templates/spaces/team.html)
@@ -2502,6 +2503,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceTagTests`: 14 metod testowych.
 - `SpaceTagMigrationTests`: 1 metod testowych.
+
+### spaces/test_task_autosave.py
+
+Źródło: [spaces/test_task_autosave.py](../spaces/test_task_autosave.py).
+
+- `TaskAutosaveTests`: 10 metod testowych.
 
 ### spaces/test_task_detail_parity.py
 
