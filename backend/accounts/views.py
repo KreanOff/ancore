@@ -9,9 +9,12 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from core.api import api_error
+from core.frontend import render
 from .avatar import account_avatar as _account_avatar
 from .forms import UserProfileForm, UserRegistrationForm
 from .presence import mark_user_inactive, mark_user_seen
@@ -22,6 +25,11 @@ SWITCH_ACCOUNTS_HASHES_KEY = 'switch_account_auth_hashes'
 
 class AccountLoginView(LoginView):
     template_name = 'accounts/login.html'
+
+    def render_to_response(self, context, **response_kwargs):
+        if getattr(self.request, '_react_api', False) and context['form'].errors:
+            response_kwargs['status'] = 400
+        return render(self.request, self.template_name, context, **response_kwargs)
 
     def get_redirect_url(self):
         # Every login opens the same landing page, including requests with next.
@@ -139,6 +147,7 @@ def _save_user_form(form):
     return True
 
 
+@never_cache
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -147,10 +156,12 @@ def register(request):
             return redirect('login')
     else:
         form = UserRegistrationForm()
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, 'accounts/register.html', {'form': form},
+                  status=400 if getattr(request, '_react_api', False) and form.errors else 200)
 
 
 @login_required
+@never_cache
 def profile(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=request.user)
@@ -166,7 +177,7 @@ def profile(request):
         'current_account_avatar': _account_avatar(request.user),
         'presence_status_options': _presence_status_options(form),
         'switch_accounts': _switch_account_context(request),
-    })
+    }, status=400 if getattr(request, '_react_api', False) and form.errors else 200)
 
 
 @login_required
@@ -180,6 +191,8 @@ def update_presence_status(request):
     }
 
     if presence_status not in valid_presence_statuses:
+        if getattr(request, '_react_api', False):
+            return api_error('Nieprawidłowy status użytkownika.', 400)
         messages.error(request, 'Nieprawidłowy status użytkownika.')
         return redirect('profile')
 
@@ -196,6 +209,7 @@ def update_presence_status(request):
 
 
 @login_required
+@never_cache
 def add_account(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -208,7 +222,8 @@ def add_account(request):
     else:
         form = AuthenticationForm(request)
 
-    return render(request, 'accounts/add_account.html', {'form': form})
+    return render(request, 'accounts/add_account.html', {'form': form},
+                  status=400 if getattr(request, '_react_api', False) and form.errors else 200)
 
 
 @login_required
@@ -219,6 +234,8 @@ def switch_account(request):
 
     if target_id not in account_ids:
         _save_account_ids(request, account_ids)
+        if getattr(request, '_react_api', False):
+            return api_error('Dodaj konto ponownie, podając aktualne hasło.', 403)
         messages.error(request, 'Dodaj konto ponownie, podając aktualne hasło.')
         return redirect('profile')
 
@@ -235,11 +252,15 @@ def remove_account(request):
     target_id = str(request.POST.get('user_id', ''))
 
     if target_id not in account_ids:
+        if getattr(request, '_react_api', False):
+            return api_error('To konto nie jest dodane do przełącznika.', 400)
         messages.error(request, 'To konto nie jest dodane do przełącznika.')
         return redirect('profile')
 
     remaining_ids = [account_id for account_id in account_ids if account_id != target_id]
     if not remaining_ids:
+        if getattr(request, '_react_api', False):
+            return api_error('Nie można usunąć jedynego aktywnego konta z przełącznika.', 400)
         messages.error(request, 'Nie można usunąć jedynego aktywnego konta z przełącznika.')
         _save_account_ids(request, account_ids)
         return redirect('profile')

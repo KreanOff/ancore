@@ -675,6 +675,7 @@
             open: openPhotoEditor,
             remove: removePhoto,
             save: savePhoto,
+            destroy: () => { photoLoadVersion += 1; clearObjectUrl(); if (modal && !modal.hidden) setModalOpen(false); },
             snapshot: () => ({ crop: acceptedCrop, remove: acceptedRemove, url: acceptedPhotoUrl }),
             restore: snapshot => {
                 acceptedCrop = snapshot.crop;

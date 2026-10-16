@@ -6,7 +6,8 @@ from django.db import transaction
 from django.core.exceptions import PermissionDenied
 from django.db.models import Case, Count, IntegerField, Max, Q, Value, When
 from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
+from core.frontend import render
 from django.template.loader import render_to_string
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -115,6 +116,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         avatar_edit_form = WorkplaceForm(
             instance=team_workplace, user=team_workplace.owner, auto_id='workplace-edit-%s',
         )
+    invalid = any(bound is not None and bound.is_bound and bound.errors for bound in (form, invite_form, edit_form))
     return render(request, 'workplaces/workplaces.html', {
         'sidebar_mode': 'workplaces',
         'workplaces_management_mode': True,
@@ -135,7 +137,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         **selected_team_context,
         'management_view': management_view,
         'show_invitations': workplace_edit_tab == 'invitations',
-    })
+    }, status=400 if invalid and getattr(request, '_react_api', False) else 200)
 
 
 @login_required
@@ -157,7 +159,7 @@ def toggle_sidebar_favorite(request, workplace_id):
     action = (request.POST.get('favorite_action') or '').strip()
 
     if item_key not in SIDEBAR_FAVORITE_KEYS or action not in {'add', 'remove'}:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if getattr(request, '_react_api', False) or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowa pozycja Favorites.'}, status=400)
         messages.error(request, 'Nie udało się zmienić Favorites.')
     elif action == 'add':
@@ -178,6 +180,9 @@ def toggle_sidebar_favorite(request, workplace_id):
             item_key=item_key,
         ).delete()
 
+    if getattr(request, '_react_api', False):
+        from core.shell import favorite_items
+        return JsonResponse({'status': 'success', 'favorites': favorite_items(request, workplace)})
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         favorite_keys = list(
             SidebarFavorite.objects.filter(user=request.user, workplace=workplace)
@@ -244,6 +249,9 @@ def reorder_sidebar_favorites(request, workplace_id):
             favorites_by_key[item_key].position = position
         SidebarFavorite.objects.bulk_update(favorites, ['position'])
 
+    if getattr(request, '_react_api', False):
+        from core.shell import favorite_items
+        return JsonResponse({'status': 'success', 'favorites': favorite_items(request, workplace)})
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'status': 'success', 'item_order': item_order})
 
@@ -251,7 +259,7 @@ def reorder_sidebar_favorites(request, workplace_id):
 
 
 def _sidebar_favorite_reorder_error(request, workplace):
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    if getattr(request, '_react_api', False) or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse(
             {'status': 'error', 'message': 'Nie udało się zapisać kolejności Favorites.'},
             status=400,

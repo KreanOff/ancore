@@ -1,6 +1,7 @@
 (function () {
     function initializePasswordToggles() {
         document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
+            if (toggle.closest('[data-react-root]')) return;
             if (toggle.dataset.passwordToggleReady === 'true') return;
 
             const inputId = toggle.getAttribute('aria-controls');

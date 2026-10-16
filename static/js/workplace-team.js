@@ -137,7 +137,7 @@
         cleanup();
         cleanup = () => {};
         const page = document.querySelector('[data-workplace-team], [data-team-modal-page]');
-        if (!page) return;
+        if (!page || page.closest('[data-react-root="page"]')) return;
         const controller = new AbortController();
         const options = { signal: controller.signal };
         const closePickers = [...document.querySelectorAll('[data-team-invite-picker]')]

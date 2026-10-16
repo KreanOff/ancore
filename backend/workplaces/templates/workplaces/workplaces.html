@@ -3,7 +3,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261003-border-visibility-2pct">
 <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-invite-role-row">
-<script src="{% static 'js/workplace-team.js' %}?v=20260927-direct-sharing" defer></script>
+<script src="{% static 'js/workplace-team.js' %}?v=20261016-react-workspace" defer></script>
 {% endblock %}
 
 {% block title %}Workspace | ancore{% endblock %}
@@ -194,6 +194,7 @@
 
     <script>
         (function() {
+            if (document.querySelector('[data-react-root="page"]')) return;
             const selectAll = document.querySelector('[data-workplaces-select-all]');
             const searchInput = document.querySelector('[data-workplaces-search]');
             const checkboxes = Array.from(document.querySelectorAll('[data-workplace-checkbox]'));
@@ -366,6 +367,7 @@
         })();
 
         (function() {
+            if (document.querySelector('[data-react-root="page"]')) return;
             const openButton = document.querySelector('[data-workplace-create-open]');
             const modal = document.querySelector('[data-workplace-create-modal]');
             const form = document.getElementById('workplace-create-form');

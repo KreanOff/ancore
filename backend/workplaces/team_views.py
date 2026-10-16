@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django import forms
+from accounts.avatar import account_avatar
 
 from .models import Workplace, WorkplaceInvitation, WorkplaceMembership
 from .services import can_manage_team, workplace_role, workplaces_for_user, set_active_workplace, scoped_workplace_app_path, workplace_management_url
@@ -91,7 +92,8 @@ def invitation_candidates(request, workplace_id):
     results = [{
         'email': user.email,
         'name': user.get_full_name() or user.username,
-        'html': render_to_string('workplaces/includes/invitation_person.html', {'person': user}),
+        **({'avatar': account_avatar(user)} if getattr(request, '_react_api', False) else
+           {'html': render_to_string('workplaces/includes/invitation_person.html', {'person': user})}),
     } for user in matches[:10]]
     return JsonResponse({'results': results, 'has_more': len(matches) > 10})
 

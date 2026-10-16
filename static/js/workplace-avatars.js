@@ -1,13 +1,12 @@
 (() => {
     const instances = new Set();
-    function init() {
+    function init(root = document) {
         for (const instance of instances) {
             if (!instance.form.isConnected) {
-                instance.close();
-                instances.delete(instance);
+                instance.dispose();
             }
         }
-        document.querySelectorAll('[data-workplace-avatar-picker]').forEach(picker => {
+        root.querySelectorAll('[data-workplace-avatar-picker]').forEach(picker => {
             if (picker.dataset.initialized) return;
             const form = picker.closest('form');
             const editor = picker.closest('[data-profile-photo-editor]');
@@ -15,6 +14,8 @@
             const preview = editor?.querySelector('[data-profile-photo-preview]');
             if (!form || !preview || !editor.profilePhotoEditorApi) return;
             picker.dataset.initialized = 'true';
+            const controller = new AbortController();
+            const listen = (target, type, handler, options = {}) => target.addEventListener(type, handler, { ...options, signal: controller.signal });
             const api = editor.profilePhotoEditorApi;
             const artClass = picker.dataset.avatarArtClass || 'space-avatar-art';
             const file = picker.querySelector('[type=file]');
@@ -78,8 +79,8 @@
                 close();
                 form.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            triggers.forEach(trigger => trigger.addEventListener('click', open));
-            modal.addEventListener('click', event => {
+            triggers.forEach(trigger => listen(trigger, 'click', open));
+            listen(modal, 'click', event => {
                 if (event.target.closest('[data-workplace-avatar-upload]')) api.change();
                 if (event.target.closest('[data-workplace-avatar-save]')) save();
                 if (event.target === modal || event.target.closest('[data-close-modal]')) {
@@ -87,14 +88,14 @@
                     close();
                 }
             });
-            modal.addEventListener('ancore:task-modal-before-close', event => {
+            listen(modal, 'ancore:task-modal-before-close', event => {
                 if (event.target !== modal || committed || !snapshot) return;
                 select(snapshot.choice);
                 photoUrl = snapshot.photo.url;
                 api.restore(snapshot.photo);
                 render();
             });
-            modal.addEventListener('ancore:task-modal-closed', event => {
+            listen(modal, 'ancore:task-modal-closed', event => {
                 if (event.target !== modal) return;
                 inertElements.forEach(element => { element.inert = false; });
                 inertElements = [];
@@ -102,7 +103,7 @@
                 triggers.forEach(trigger => trigger.setAttribute('aria-expanded', 'false'));
             });
             // Parent Workspace dialogs have their own keyboard handlers.
-            modal.addEventListener('keydown', event => {
+            listen(modal, 'keydown', event => {
                 if (!modal.classList.contains('is-open')) return;
                 if (event.key === 'Escape') {
                     event.preventDefault(); event.stopPropagation(); close();
@@ -117,11 +118,11 @@
                     event.preventDefault(); event.stopPropagation(); save();
                 }
             });
-            picker.addEventListener('change', event => {
+            listen(picker, 'change', event => {
                 if (!event.target.matches('input[name="avatar"]')) return;
                 clearError(); render();
             });
-            file.addEventListener('change', event => {
+            listen(file, 'change', event => {
                 const image = file.files[0];
                 if (!image) return;
                 if (!['image/png', 'image/jpeg', 'image/webp'].includes(image.type) || image.size > 5 * 1024 * 1024) {
@@ -130,29 +131,39 @@
                     return;
                 }
                 clearError(); select('upload');
-            }, true);
-            drop.addEventListener('dragover', event => { event.preventDefault(); drop.classList.add('is-drag-over'); });
-            drop.addEventListener('dragleave', event => { if (!drop.contains(event.relatedTarget)) drop.classList.remove('is-drag-over'); });
-            drop.addEventListener('drop', event => {
+            }, { capture: true });
+            listen(drop, 'dragover', event => { event.preventDefault(); drop.classList.add('is-drag-over'); });
+            listen(drop, 'dragleave', event => { if (!drop.contains(event.relatedTarget)) drop.classList.remove('is-drag-over'); });
+            listen(drop, 'drop', event => {
                 event.preventDefault(); drop.classList.remove('is-drag-over');
                 if (event.dataTransfer.files.length !== 1) { showError('Wybierz jeden obraz.'); return; }
                 file.files = event.dataTransfer.files;
                 file.dispatchEvent(new Event('change', { bubbles: true }));
             });
-            editor.addEventListener('ancore:photo-preview', () => queueMicrotask(render));
-            editor.addEventListener('ancore:photo-error', () => showError('Nie udało się odczytać obrazu. Wybierz inny plik.'));
-            editor.addEventListener('ancore:photo-saved', event => {
+            listen(editor, 'ancore:photo-preview', () => queueMicrotask(render));
+            listen(editor, 'ancore:photo-error', () => showError('Nie udało się odczytać obrazu. Wybierz inny plik.'));
+            listen(editor, 'ancore:photo-saved', event => {
                 photoUrl = event.detail.photoUrl;
                 select(photoUrl ? 'upload' : 'auto');
                 clearError(); render();
             });
-            form.addEventListener('reset', () => queueMicrotask(render));
-            instances.add({ form, close });
+            listen(form, 'reset', () => queueMicrotask(render));
+            const instance = { form, close, dispose() {
+                committed = true;
+                window.AncoreTaskModals.close(modal);
+                inertElements.forEach(element => { element.inert = false; });
+                inertElements = [];
+                anchor?.replaceWith(modal);
+                controller.abort();
+                instances.delete(instance);
+            } };
+            instances.add(instance);
             render();
         });
     }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    window.AncoreWorkplaceAvatars = { init, dispose(form) { for (const instance of [...instances]) if (instance.form === form) instance.dispose(); } };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => init());
     else init();
-    document.addEventListener('ancore:content-loaded', init);
+    document.addEventListener('ancore:content-loaded', () => init());
     document.addEventListener('ancore:before-navigate', () => instances.forEach(instance => instance.close()));
 })();
