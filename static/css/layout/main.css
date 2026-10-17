@@ -6,6 +6,7 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     --app-topbar-control-height: var(--dropdown-control-height);
     --app-topbar-avatar-size: 33px;
     --app-topbar-icon-size: 20px;
+    --app-topbar-workspace-width: 280px;
 
     position: fixed;
     inset: 0 0 auto;
@@ -33,8 +34,8 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     --sidebar-icon-size: var(--app-topbar-icon-size);
     --sidebar-avatar-inset: 0px;
 
-    width: 100%;
-    max-width: calc(var(--sidebar-width) - 1rem);
+    width: var(--app-topbar-workspace-width);
+    max-width: calc(var(--sidebar-width) - var(--app-topbar-control-height) - 3rem);
     min-width: 0;
 }
 
@@ -48,7 +49,7 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
 }
 
 .app-topbar .sidebar-workspace-menu {
-    width: min(280px, calc(100vw / var(--app-ui-scale) - 2rem));
+    width: min(var(--app-topbar-workspace-width), calc(100vw / var(--app-ui-scale) - 2rem));
     max-height: min(360px, calc(var(--app-dynamic-viewport-height) - var(--app-topbar-height) - 1rem));
 }
 
@@ -135,10 +136,14 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     font-size: var(--font-size-base);
 }
 
+.app-topbar .sidebar-workspace-toggle > .sidebar-workspace-avatar,
 .app-topbar .app-topbar__avatar {
     width: var(--app-topbar-avatar-size);
     height: var(--app-topbar-avatar-size);
     flex: 0 0 var(--app-topbar-avatar-size);
+}
+
+.app-topbar .app-topbar__avatar {
     border-radius: 50%;
 }
 
@@ -149,15 +154,11 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     white-space: nowrap;
 }
 
-.app-topbar :is(.app-topbar__action, .app-topbar__profile):is(:hover, :focus-visible, .active) {
-    background: var(--system-interaction-soft);
+.app-topbar :is(.app-topbar__action, .app-topbar__profile):is(.active, .is-open, [aria-expanded="true"]) {
+    background: transparent;
 }
 
-.app-topbar .app-topbar__action[aria-expanded="true"] {
-    background: color-mix(in srgb, var(--system-accent) 15%, #ffffff);
-}
-
-.app-topbar .app-topbar__collapse[aria-expanded="true"] {
+.app-topbar :is(.app-topbar__action, .app-topbar__profile):is(:hover, :focus-visible) {
     background: var(--system-interaction-soft);
 }
 

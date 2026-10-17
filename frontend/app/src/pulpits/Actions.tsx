@@ -34,7 +34,7 @@ export function DashboardActions({
                 <span>Otwórz pulpit</span>
               </a>
               <button
-                className="tasks-project-menu-button"
+                className="tasks-project-menu-button tasks-favorite-toggle"
                 aria-pressed={item.favorite}
                 disabled={busy}
                 onClick={() => {
@@ -42,7 +42,7 @@ export function DashboardActions({
                   favorite();
                 }}
               >
-                <Icon name="star" />
+                <Icon name={item.favorite ? 'star-filled' : 'star'} />
                 <span>{item.favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}</span>
               </button>
             </>

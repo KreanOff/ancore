@@ -17,6 +17,13 @@ Pickery Przestrzeni, Pulpitów i Filtrów używają istniejącej powłoki popove
 stanu pustego/błędu/ponowienia, strzałek i Escape z powrotem fokusu.
 Menu mobilne wyłącza treść przez `inert` i ogranicza Tab do swoich kontrolek.
 
+Akcje oznaczania Przestrzeni, Pulpitów i Filtrów współdzielą
+`tasks-favorite-toggle` oraz stan `aria-pressed`. Oznaczony element ma pełną
+żółtą gwiazdkę `star-filled` (`#e2b203`), także przy hover/fokusie;
+nieoznaczony ma zwykły kontur `star`. Dotyczy to menu bocznego i jego panelu
+skrótów, katalogów oraz zarządzania, w React i pierwszym renderze Django.
+Dekoracyjne gwiazdki zakładek i nagłówków pozostają konturowe.
+
 Favorites zachowują bazę i klucze ustawień. Obsługują dodanie/usunięcie przez
 przeciąganie, zmianę kolejności, anulowanie gestu oraz Alt+strzałki i akcje
 dostępne klawiaturą. Dotyk używa ikony jako uchwytu, a tekst pozwala przewijać
@@ -431,6 +438,11 @@ na telefonie. Lista zadań i tablica wewnątrz przestrzeni nadal korzystają
 z pełnej szerokości; katalog Zespołów zachowuje własne odstępy.
 Awatar ma 32px w nagłówku, 24px w katalogu, 20px w codziennym menu bocznym
 i 21px w panelu zwiniętego paska.
+Przycisk zmiany awatara (`space-avatar-trigger`) nie dodaje natywnej ramki,
+tła ani paddingu: jego rozmiar odpowiada awatarowi 32×32px, tak jak dla
+linku w szablonie. Fokus klawiatury używa tej samej zmiany przezroczystości
+co hover, zgodnie ze wspólną zasadą bez dodatkowej ramki;
+kliknięcie nadal otwiera standardowy wybór awatara.
 W katalogu odstęp między awatarem a nazwą przestrzeni wynosi 8px.
 Include `spaces/avatar.html` rozszerza wspólny `profile-avatar`; globalny
 `space-avatars.css` zapewnia jego wygląd również poza modułem Przestrzeni.
@@ -881,6 +893,10 @@ nagłówka jak grupy zadań. Wspólny `tasks/includes/issue_group_header.html`
 pokazuje neutralny nagłówek „Przestrzenie”, ikonę, liczbę przestrzeni na stronie
 w tej grupie dat i przycisk zwijania (mysz/Enter/Spacja). Nagłówki statusów
 korzystają z tego samego include przez `status_group_header.html`.
+W React obie sekcje renderuje wspólny `shared/StatusGroup`: sekcja Przestrzeni
+używa neutralnego wariantu z ikoną warstw, licznikiem po prawej i tym samym
+przyciskiem zwijania oraz kontenerem `tasks-issue-list` co zadania. Nie używa
+osobnego nagłówka `h3`, który pomijał styl i obsługę wspólnej grupy.
 Wiersze mają 40px wysokości jak zadania, poziome podziały i brak pionowych linii
 między kolumnami. Wszystkie komórki, również pierwsza po usunięciu menu, mają
 0,75rem odstępu wewnętrznego z obu boków i zawartość wyśrodkowaną pionowo.
@@ -909,8 +925,8 @@ a statusy są grupowane osobno wewnątrz każdej daty. „Ostatnio oglądane” 
 ostatnie 7 dni od bieżącej chwili, z grupami Dzisiaj, Wczoraj i Ostatnie 7 dni;
 pusty stan wyjaśnia ten zakres oraz zapis w sesji przeglądarki. „Ostatnia praca”
 zachowuje również grupę Wcześniej. Nagłówki dat rozszerzają
-`tasks-space-group-title`: mają ikonę `calendar-days` 18px, tekst 13px/400
-i cienki separator po etykiecie, bez tła i ramki. Margines 1rem u góry
+`tasks-space-group-title`: mają sam tekst 13px/400
+i cienki separator po etykiecie, bez ikony, tła i ramki. Margines 1rem u góry
 i 0,95rem po bokach wyrównuje je do grup i oddziela kolejne przedziały dat.
 Przestrzenie mają osobną
 sekcję bez statusu, a grupy pozostają poza sekcjami statusów. Na telefonie lista zadań przewija się
@@ -977,8 +993,13 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   na wszystkie cztery kontrolki, aby nie nachodziły na wyszukiwanie.
   Kontrolki paska mają wspólną wysokość `--app-topbar-control-height`
   (36px z `--dropdown-control-height`), ikony 20px, a tekst nazw i pola 14px.
+  Przyciski menu, Stickera, powiadomień, ustawień oraz link profilu nie mają
+  stałego tła dla aktywnej strony ani otwartego panelu (`active`, `is-open`,
+  `aria-expanded="true"`). Szare tło pojawia się przy hover/fokusie klawiatury.
   Awatary Workspace i profilu mają po 33px (`--app-topbar-avatar-size`)
-  i są wyśrodkowane pionowo w kontrolkach.
+  i są wyśrodkowane pionowo w kontrolkach. Wspólna reguła rozmiaru obejmuje
+  bezpośredni awatar przycisku Workspace, z pierwszeństwem przed bazowym
+  rozmiarem `space-avatar` (24px); nie obejmuje opcji rozwijanego menu.
   Pasek zostawia po 4px nad i pod kontrolkami; rozmiary kontrolek są lokalne dla paska.
   Odsunięcie treści i menu oraz wysokość panelu wyszukiwania uwzględniają wysokość paska.
   Wysokość pola wyszukiwania obejmuje ramkę; wewnętrzny input wypełnia jej wnętrze.
@@ -986,15 +1007,21 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   Przycisk zwijania i rozwijania menu znajduje się przy lewej krawędzi
   górnego paska, przed przełącznikiem Workspace. Korzysta z `tasks-icon-button`
   i wariantu `app-topbar__action`: ma 36px, standardowe zaokrąglenie oraz
-  ikonę `panel-left` ze wspólnego zestawu. Szare tło oznacza rozwinięte menu.
+  ikonę `panel-left` ze wspólnego zestawu. Rozwinięcie menu nie nadaje mu
+  stałego tła; szare podświetlenie pojawia się tylko przy hover/fokusie klawiatury.
   Na telefonie otwiera i zamyka boczne menu, zastępując osobny przycisk
-  pod paskiem. Zmiana stanu aktualizuje tło, etykietę i `aria-expanded`;
+  pod paskiem. Zmiana stanu aktualizuje etykietę i `aria-expanded`;
   użycie przycisku zamyka otwarte panele wyszukiwania i powiadomień.
   Pole używa istniejącego `global-search-form`; wpisywanie, strzałki i skrót
   Ctrl/Cmd+K otwierają panel szybkiego wyszukiwania. Na telefonie nazwy Workspace
   i profilu oraz podpowiedź skrótu są ukryte; wszystkie kontrolki pozostają
   dostępne. Zwinięcie sidebaru nie zmienia przełącznika Workspace ani
   położenia jego menu, które rozwija się pod avatarem w górnym pasku.
+  Przycisk i menu Workspace współdzielą szerokość docelową 280px
+  (`--app-topbar-workspace-width`). Przycisk mieści się w szerokości sidebaru
+  po odjęciu przycisku zwijania, odstępu i bocznych marginesów; w ciasnym
+  układzie skraca nazwę. Menu zachowuje czytelną szerokość z ograniczeniem
+  do szerokości ekranu.
   Na telefonie menu Workspace wyrównuje się do lewej krawędzi paska,
   aby mieściło się w szerokości ekranu.
   Menu, treść, szkielet ładowania oraz panel wyszukiwania zaczynają się
@@ -2151,7 +2178,8 @@ Rozmiary, wagi i odstępy istniejących komponentów pozostają bez zmian;
 dekoracyjny Playfair Display na ekranach uwierzytelniania zachowuje swój krój.
 Osobne edytory w iframe (Excalidraw/ONLYOFFICE) zarządzają własną typografią.
 
-Biblioteka ikon to **Flaticon UIcons Regular Rounded 3.3.1**, ładowana lokalnie
+Biblioteka ikon to **Flaticon UIcons Regular Rounded 3.3.1**, z pełną gwiazdką
+`star-filled` z wariantu Solid Rounded tej samej wersji, ładowana lokalnie
 w bazowych szablonach aplikacji i uwierzytelniania. Lokalny adapter
 [flaticon-icons.js](../static/js/flaticon-icons.js) normalizuje nazwy i udostępnia
 `AncoreIcons.render(scope)`, `create`, `html`, `safeName` i `normalize`.
@@ -2793,6 +2821,11 @@ aktywnego Workspace, bez duplikowania go w gwiazdkach i ostatnich twórcy.
 Jest aktywny także na `/` oraz w przeglądzie własnego domyślnego rekordu po PK.
 Grupy pulpitów i akcje przypisania są usunięte z katalogu, przeglądu, menu
 bocznego oraz zarządzania.
+
+Akcja gwiazdki w menu wiersza używa wspólnego `tasks-favorite-toggle` i `aria-pressed`:
+oznaczony pulpit ma wypełnioną żółtą ikonę `star-filled` (`#e2b203`), także przy hover/fokusie,
+a nieoznaczony zachowuje obrys `star` i zwykły kolor ikony. Ten sam wariant działa w katalogu,
+zarządzaniu i panelu zwiniętego menu, w React oraz pierwszym renderze Django.
 
 `layout.js` synchronizuje zawartość sekcji po częściowej nawigacji, zachowując
 stan zwinięcia i fokus. Zwinięte menu otwiera flyout z tymi samymi sekcjami,

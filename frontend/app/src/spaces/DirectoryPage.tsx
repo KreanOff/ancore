@@ -312,7 +312,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                               </a>
                               <button
                                 type="button"
-                                className="tasks-project-menu-button"
+                                className="tasks-project-menu-button tasks-favorite-toggle"
                                 aria-pressed={space.favorite}
                                 disabled={busy}
                                 onClick={() => {
@@ -320,7 +320,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                                   void favorite(space);
                                 }}
                               >
-                                <Icon name="star" />
+                                <Icon name={space.favorite ? 'star-filled' : 'star'} />
                                 <span>
                                   {space.favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
                                 </span>

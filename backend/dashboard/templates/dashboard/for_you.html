@@ -48,7 +48,7 @@
             </nav>
             <div class="for-you-task-list">
                 {% for block in for_you_groups %}
-                {% if block.date_group %}<h3 class="tasks-space-group-title for-you-date-heading"><i data-icon="calendar-days" aria-hidden="true"></i><span>{{ block.date_group }}</span></h3>{% endif %}
+                {% if block.date_group %}<h3 class="tasks-space-group-title for-you-date-heading"><span>{{ block.date_group }}</span></h3>{% endif %}
                 {% if block.task_groups %}
                 <div class="tasks-table-wrap tasks-board for-you-status-groups">
                     {% for group in block.task_groups %}

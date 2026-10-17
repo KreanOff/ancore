@@ -282,7 +282,6 @@ export default function ForYouPage({ initial }: PageProps) {
                 <div key={block.date_group || index}>
                   {block.date_group ? (
                     <h3 className="tasks-space-group-title for-you-date-heading">
-                      <Icon name="calendar-days" />
                       <span>{block.date_group}</span>
                     </h3>
                   ) : null}
@@ -306,14 +305,15 @@ export default function ForYouPage({ initial }: PageProps) {
                   ) : null}
                   {block.spaces.length ? (
                     <div className="tasks-table-wrap tasks-board for-you-space-groups">
-                      <section className="tasks-issue-group tasks-status-block for-you-space-group">
-                        <h3 className="tasks-space-group-title">
-                          <Icon name="layers" />
-                          <span>Przestrzenie</span>
-                          <span>{block.spaces.length}</span>
-                        </h3>
-                        <SpaceRows spaces={block.spaces} />
-                      </section>
+                      <StatusGroup
+                        className="for-you-space-group"
+                        label="Przestrzenie"
+                        count={block.spaces.length}
+                      >
+                        <div className="tasks-issue-list">
+                          <SpaceRows spaces={block.spaces} />
+                        </div>
+                      </StatusGroup>
                     </div>
                   ) : null}
                   {block.other_rows.map((row) => (

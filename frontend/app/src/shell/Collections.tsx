@@ -159,13 +159,14 @@ function Row({
           <>
             <button
               type="button"
-              className="tasks-project-menu-button"
+              className="tasks-project-menu-button tasks-favorite-toggle"
+              aria-pressed={row.favorite}
               onClick={() => {
                 close();
                 actions.star(row);
               }}
             >
-              <Icon name="star" />
+              <Icon name={row.favorite ? 'star-filled' : 'star'} />
               <span>
                 {row.favorite ? 'Usuń z oznaczonych gwiazdką' : 'Dodaj do oznaczonych gwiazdką'}
               </span>

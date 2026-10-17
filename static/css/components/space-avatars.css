@@ -3,8 +3,20 @@
 .profile-avatar.space-avatar--heading { width: 32px; height: 32px; flex-basis: 32px; }
 .profile-avatar.space-avatar--picker { width: 56px; height: 56px; flex-basis: 56px; }
 .space-avatar.sidebar-subnav-icon { width: 21px; height: 21px; flex-basis: 21px; }
-.space-avatar-trigger { display: inline-flex; flex: none; border-radius: 6px; }
-.space-avatar-trigger:hover { opacity: .8; }
+.space-avatar-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    appearance: none;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.space-avatar-trigger:is(:hover, :focus-visible) { opacity: .8; }
 .space-avatar-picker { display: grid; gap: 24px; min-width: 0; }
 .space-avatar-presets { min-width: 0; border: 0; margin: 0; padding: 0; }
 .space-avatar-presets legend { padding: 0; margin-bottom: 16px; font-size: var(--font-size-sm); }

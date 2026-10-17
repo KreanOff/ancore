@@ -65,8 +65,8 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261016-react-shell">
-    <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261003-all-avatars-30">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261017-topbar-no-active-background">
+    <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261017-space-avatar-trigger">
     {% block extra_head %}{% endblock %}
     {% if frontend_bootstrap or request.user.is_authenticated %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261017-layout-parity">{% react_bundle %}{% endif %}
 </head>
@@ -387,7 +387,7 @@
         };
     </script>
     {% endif %}
-    <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20260918-flaticon-v1"></script>
+    <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20261017-filled-star"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     {% if not global_panels %}<script src="{% static 'js/layout.js' %}?v=20261014-task-autosave"></script>
     <script src="{% static 'js/space-navigation.js' %}?v=20261007-directory-controls"></script>

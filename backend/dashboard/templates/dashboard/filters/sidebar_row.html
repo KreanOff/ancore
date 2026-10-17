@@ -4,7 +4,7 @@
     <div id="sidebar-filter-actions-{{ nav_filter.pk }}" class="tasks-section-menu sidebar-group-menu sidebar-space-menu" popover="auto" role="group" aria-label="Opcje filtra: {{ nav_filter.name }}" data-row-actions-panel>
         <form method="post" action="{{ nav_filter.favorite_url }}" data-sidebar-filter-favorite>
             {% csrf_token %}<input type="hidden" name="return_to" value="{{ request.get_full_path }}">
-            <button type="submit" class="tasks-project-menu-button"><i data-icon="star" aria-hidden="true"></i><span>{% if nav_filter.favorite %}Usuń z oznaczonych gwiazdką{% else %}Dodaj do oznaczonych gwiazdką{% endif %}</span></button>
+            <button type="submit" class="tasks-project-menu-button tasks-favorite-toggle" aria-pressed="{{ nav_filter.favorite|yesno:'true,false' }}"><i data-icon="{% if nav_filter.favorite %}star-filled{% else %}star{% endif %}" aria-hidden="true"></i><span>{% if nav_filter.favorite %}Usuń z oznaczonych gwiazdką{% else %}Dodaj do oznaczonych gwiazdką{% endif %}</span></button>
         </form>
         {% if nav_filter.editable %}<a href="{{ nav_filter.edit_url }}" class="tasks-project-menu-button" data-sidebar-filter-action><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia filtra i dostępy</span></a>{% endif %}
     </div>

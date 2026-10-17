@@ -261,13 +261,13 @@ export default function DirectoryPage(props: PageProps) {
                           />
                         ) : (
                           <button
-                            className={`tasks-icon-button ${item.favorite ? 'is-active' : ''}`}
+                            className={`tasks-icon-button tasks-favorite-toggle ${item.favorite ? 'is-active' : ''}`}
                             aria-label={`${item.favorite ? 'Usuń z' : 'Dodaj do'} ulubionych: ${item.name}`}
                             aria-pressed={item.favorite}
                             disabled={actions.busy}
                             onClick={() => star(item)}
                           >
-                            <Icon name="star" />
+                            <Icon name={item.favorite ? 'star-filled' : 'star'} />
                           </button>
                         )}
                       </span>
@@ -287,14 +287,15 @@ export default function DirectoryPage(props: PageProps) {
                               </a>
                               {data.management ? (
                                 <button
-                                  className="tasks-project-menu-button"
+                                  className="tasks-project-menu-button tasks-favorite-toggle"
+                                  aria-pressed={item.favorite}
                                   disabled={actions.busy}
                                   onClick={() => {
                                     close();
                                     star(item);
                                   }}
                                 >
-                                  <Icon name="star" />
+                                  <Icon name={item.favorite ? 'star-filled' : 'star'} />
                                   {item.favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
                                 </button>
                               ) : null}

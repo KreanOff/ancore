@@ -21,6 +21,10 @@
     cursor: not-allowed;
 }
 
+:is(.tasks-project-menu-button, .tasks-icon-button).tasks-favorite-toggle[aria-pressed="true"] > svg {
+    color: #e2b203;
+}
+
 .btn-primary {
     background-color: var(--accent-red);
     color: #ffffff;
