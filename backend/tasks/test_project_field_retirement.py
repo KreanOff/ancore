@@ -8,7 +8,6 @@ from django.urls import reverse
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
-from .forms import TaskProjectForm, TaskProjectRenameForm
 from .models import TaskProject
 
 
@@ -36,7 +35,7 @@ class ProjectFieldRetirementTests(TestCase):
             })
             self.assertEqual(response.status_code, 404)
         for url in [reverse('settings'), scoped_workplace_app_path(self.workplace, 'tasks')]:
-            response = self.client.get(url)
+            response = self.client.get(url, follow=True)
             self.assertEqual(response.status_code, 200)
             self.assertNotContains(response, '/settings/project-fields/')
             self.assertNotContains(response, 'Wartości pól projektu')
@@ -44,42 +43,31 @@ class ProjectFieldRetirementTests(TestCase):
         self.project.refresh_from_db()
         self.assertEqual(self.project.status, 'legacy_qa')
 
-    def test_edit_preserves_old_values_and_source_remains_plain_text(self):
+    def test_retired_edit_cannot_change_old_values_or_source(self):
         payload = {
             'name': 'Zmieniona nazwa', 'visibility': 'public', 'status': self.project.status,
             'stage': self.project.stage, 'health': self.project.health,
             'source': 'Nowe źródło wpisane ręcznie', 'due_at': '2026-10-20',
         }
-        form = TaskProjectRenameForm(payload, instance=self.project, user=self.owner, workplace=self.workplace)
-        self.assertTrue(form.is_valid(), form.errors)
-        form.save()
+        for url in ['/tasks/', scoped_workplace_app_path(self.workplace, 'tasks')]:
+            response = self.client.post(url, {'action': 'rename_project', 'project_id': self.project.pk, **payload})
+            self.assertEqual(response.status_code, 409)
         self.project.refresh_from_db()
         self.assertEqual((self.project.status, self.project.stage, self.project.health),
                          ('legacy_qa', 'legacy_stage', 'legacy_health'))
         self.assertEqual(self.project.due_at, date(2026, 10, 20))
-        self.assertEqual(self.project.source, 'Nowe źródło wpisane ręcznie')
-        form = TaskProjectForm({'name': 'Nowy', 'status': 'forged_new_option'}, user=self.owner, workplace=self.workplace)
-        self.assertFalse(form.is_valid())
-        self.assertIn('status', form.errors)
+        self.assertEqual(self.project.source, 'Polecenie klienta')
+        self.assertEqual(self.project.name, 'Historyczny projekt')
 
-    def test_legacy_values_are_filterable_and_private_options_stay_private(self):
-        private = TaskProject.objects.create(
-            user=self.owner, workplace=self.workplace, name='Poufny', visibility='private',
-            private_owner=self.owner, status='secret_qa', source='Poufne źródło',
-        )
-        foreign = create_workplace_for_user(self.owner, 'Inny Workspace')
-        TaskProject.objects.create(user=self.owner, workplace=foreign, name='Obcy', status='foreign_qa')
+    def test_legacy_values_remain_stored_but_are_absent_from_active_catalog(self):
         self.client.force_login(self.member)
-        url = scoped_workplace_app_path(self.workplace, 'tasks')
-        response = self.client.get(url, {'tab': 'public', 'status': 'legacy_qa'})
-        self.assertEqual([p.pk for p in response.context['projects']], [self.project.pk])
-        form = response.context['project_rename_form']
-        choices = dict(form.fields['status'].choices)
-        self.assertIn('legacy_qa', choices)
-        self.assertNotIn('secret_qa', choices)
-        self.assertNotIn('foreign_qa', choices)
-        self.assertNotIn(private.source, dict(form.fields['source'].widget.choices))
-        self.assertContains(response, 'legacy_qa')
+        response = self.client.get(scoped_workplace_app_path(self.workplace, 'tasks'),
+                                   {'status': 'legacy_qa'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, self.project.name)
+        self.assertNotContains(response, self.project.source)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.status, 'legacy_qa')
         self.assertEqual(self.client.get('/settings/project-fields/').status_code, 404)
 
 

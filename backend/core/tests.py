@@ -266,22 +266,8 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('tabindex="0"', html)
 
     def test_sidebar_has_no_empty_footer_after_tools_move_to_topbar(self):
-        request = SimpleNamespace(
-            resolver_match=SimpleNamespace(app_name='', view_name=''),
-            user=SimpleNamespace(
-                is_authenticated=True,
-                username='anna',
-                first_name='Anna',
-                last_name='Kowalska',
-            ),
-        )
-        html = render_to_string('core/base.html', {
-            'request': request,
-            'workplace_app_urls': {},
-            'active_view': '',
-            'active_contact_status': '',
-        })
-
+        request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='', view_name=''), user=AnonymousUser())
+        html = render_to_string('core/base.html', {'request': request, 'workplace_app_urls': {}, 'active_view': '', 'active_contact_status': ''})
         sidebar = html[html.index('<aside class="sidebar"'):html.index('id="sidebar-collapsed-flyout"')]
         self.assertNotIn('class="sidebar-footer"', sidebar)
         self.assertIn('data-sidebar-resizer', sidebar)

@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
-from tasks.models import TaskProject
+from spaces.testing import make_space
 from .models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
 from .services import scoped_workplace_app_path, workplace_management_url
 from .templatetags.workplace_avatar import workplace_avatar
@@ -72,7 +72,8 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'data-workplace-inspector-status')
         self.assertNotContains(response, 'is-inspected')
         self.assertContains(response, 'data-workplaces-select-all')
-        self.assertContains(response, 'data-workplace-id=', count=3)
+        self.assertContains(response, 'data-workplace-checkbox')
+        self.assertEqual(len(response.context['workplaces']), 3)
         self.assertNotContains(response, 'data-column="logo"')
         self.assertContains(response, 'workplace-row__avatar', count=3)
         self.assertContains(response, 'Kod miejsca pracy')
@@ -95,49 +96,38 @@ class WorkplaceSelectionTests(TestCase):
         self.assertContains(response, 'Drugi Workplace')
         self.assertContains(response, 'Nie moj Workplace')
 
-    def test_workplace_create_renders_in_tasks_project_modal_shell(self):
+    def test_workplace_create_uses_shared_modal_and_automatic_identifier(self):
         self.client.force_login(self.user)
-
         response = self.client.get(reverse('workplaces:workplaces'))
-
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-workplace-create-open')
-        self.assertContains(response, 'tasks-modal tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal')
-        self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-create-modal__form tasks-issue-modal__form workplace-create-modal__form')
+        self.assertContains(response, 'tasks-modal app-modal-panel tasks-project-modal tasks-project-create-modal tasks-issue-modal workplace-create-modal')
+        self.assertContains(response, 'id="workplace-create-form"')
         self.assertContains(response, 'Nowe miejsce pracy')
-        self.assertContains(response, 'Utwórz miejsce pracy')
         self.assertContains(response, 'Nazwa miejsca pracy')
-        self.assertContains(response, 'Kod miejsca pracy')
-        self.assertContains(response, 'Zostaw puste, aby wygenerować unikalny kod z nazwy.')
-        self.assertContains(response, 'Dodaj krótki opis miejsca pracy…')
-        self.assertContains(response, 'placeholder="Nazwa miejsca pracy"')
-        self.assertContains(response, 'class="tasks-issue-modal__crumbs"')
-        self.assertContains(response, 'class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields"')
-        self.assertContains(response, 'class="workplace-modal__content"')
-        self.assertContains(response, 'data-profile-photo-editor', count=3)
-        self.assertContains(response, 'data-profile-photo-modal', count=3)
-        self.assertContains(response, 'data-profile-photo-crop-input', count=3)
-        self.assertContains(response, 'data-profile-photo-remove-input', count=3)
-        self.assertContains(response, 'Edytuj logo miejsca pracy')
-        self.assertContains(response, '>Dodaj</button>', count=1)
+        self.assertContains(response, 'Generowany automatycznie')
+        self.assertContains(response, 'Unikatowy, losowy kod zostanie nadany przy tworzeniu Workspace i pozostanie stały.')
         self.assertContains(response, 'Po utworzeniu otworzymy panel zarządzania nowym Workspace.')
-        self.assertNotContains(response, 'class="workplace-create-modal__cancel"')
-        self.assertNotContains(response, 'workplaces-create-form--filterbar')
+        fields = response.context['form'].fields
+        self.assertTrue({'name', 'description'} <= fields.keys())
+        self.assertNotIn('code', fields)
+        self.assertNotIn('slug', fields)
+        self.assertNotContains(response, 'Zostaw puste, aby wygenerować unikalny kod z nazwy.')
 
     def test_current_workplace_is_visually_and_semantically_distinguished(self):
         self.client.force_login(self.user)
         self._activate(self.second_workplace)
-
         response = self.client.get(reverse('workplaces:workplaces'))
-
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'role="row" aria-current="true"', count=1)
-        self.assertContains(response, 'data-workplace-current-badge', count=1)
-        self.assertContains(response, '>Bieżący</span>', count=1)
-        self.assertContains(response, 'data-workplace-current-action disabled', count=1)
-        self.assertContains(response, 'data-workplace-switch-action', count=1)
-        self.assertContains(response, 'aria-label="Drugi Workplace — bieżący workspace"')
-        self.assertContains(response, 'aria-label="Przełącz na Pierwszy Workplace"')
+        rows = [part.split('</article>', 1)[0] for part in response.content.decode().split('<article class="workplace-row')[1:]]
+        self.assertEqual(len(rows), 2)
+        active = next(row for row in rows if f'data-workplace-name="{self.second_workplace.name}"' in row)
+        inactive = next(row for row in rows if f'data-workplace-name="{self.first_workplace.name}"' in row)
+        self.assertIn('aria-current="true"', active)
+        self.assertNotIn('aria-current="true"', inactive)
+        self.assertIn('data-workplace-current-badge', active)
+        self.assertIn('data-workplace-current-action disabled', active)
+        self.assertIn('aria-label="Drugi Workplace — bieżący workspace"', active)
+        self.assertIn('aria-label="Przełącz na Pierwszy Workplace"', inactive)
 
     def test_current_workplace_is_always_the_first_table_row(self):
         self.client.force_login(self.user)
@@ -201,20 +191,21 @@ class WorkplaceSelectionTests(TestCase):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="sidebar-workspace-manage"')
         self.assertContains(response, workplace_avatar(self.second_workplace)['preset_class'])
         self.assertNotContains(response, 'sidebar-workplace__avatar')
         self.assertContains(response, 'sidebar-workspace-avatar')
-        self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp', count=2)
+        self.assertContains(response, '/media/workplace_photos/moje-miejsce.webp')
+        self.assertEqual(workplace_avatar(self.first_workplace)['photo_url'], '/media/workplace_photos/moje-miejsce.webp')
 
     def test_sidebar_header_lists_workspaces_for_quick_switching(self):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
         content = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -243,28 +234,28 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.post(
             endpoint,
             {
-                'item_key': 'tasks-my',
+                'item_key': 'spaces',
                 'favorite_action': 'add',
-                'next': reverse('tasks:tasks'),
+                'next': reverse('spaces:index'),
             },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['is_favorite'])
-        self.assertIn('data-sidebar-favorite-item="tasks-my"', response.json()['html'])
+        self.assertIn('data-sidebar-favorite-item="spaces"', response.json()['html'])
         self.assertTrue(SidebarFavorite.objects.filter(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='tasks-my',
+            item_key='spaces',
         ).exists())
 
         response = self.client.post(
             endpoint,
             {
-                'item_key': 'tasks-my',
+                'item_key': 'spaces',
                 'favorite_action': 'remove',
-                'next': reverse('tasks:tasks'),
+                'next': reverse('spaces:index'),
             },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
@@ -275,7 +266,7 @@ class WorkplaceSelectionTests(TestCase):
         self.assertFalse(SidebarFavorite.objects.filter(
             user=self.user,
             workplace=self.first_workplace,
-            item_key='tasks-my',
+            item_key='spaces',
         ).exists())
 
     def test_sidebar_favorite_is_idempotent_and_scoped_to_workplace(self):
@@ -297,7 +288,7 @@ class WorkplaceSelectionTests(TestCase):
         ).count(), 1)
 
         self._activate(self.second_workplace)
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
         self.assertNotContains(response, 'data-sidebar-favorite-item="calendar"')
 
     def test_sidebar_favorites_can_be_reordered_and_keep_the_new_order(self):
@@ -412,7 +403,7 @@ class WorkplaceSelectionTests(TestCase):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'data-sidebar-favorite-item="contacts-people"')
@@ -509,16 +500,16 @@ class WorkplaceSelectionTests(TestCase):
 
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
 
         self.assertContains(response, 'data-sidebar-favorite-item="dashboard"')
         self.assertContains(response, 'data-sidebar-source-item="dashboard" draggable="true"')
-        self.assertContains(response, '>Dashboard</span>', count=2)
+        self.assertContains(response, '>Dashboard</span>')
 
     def test_workspace_management_sticker_and_settings_are_in_topbar(self):
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
         content = response.content.decode()
 
         self.assertEqual(response.status_code, 200)
@@ -536,7 +527,7 @@ class WorkplaceSelectionTests(TestCase):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="sidebar-workspace-manage"')
@@ -550,28 +541,28 @@ class WorkplaceSelectionTests(TestCase):
         self.client.force_login(self.user)
         self._activate(self.second_workplace)
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'class="app-topbar"')
+        self.assertContains(response, 'class="app-topbar"')
         self.assertNotContains(response, 'class="secondary-menu-workplace"')
         self.assertNotContains(response, 'title="Bieżące miejsce pracy: Drugi Workplace"')
 
     def test_tasks_projects_are_scoped_to_active_workplace(self):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
-        TaskProject.objects.create(
+        make_space(
             name='Projekt w pierwszym',
             user=self.user,
             workplace=self.first_workplace,
         )
-        TaskProject.objects.create(
+        make_space(
             name='Projekt w drugim',
             user=self.user,
             workplace=self.second_workplace,
         )
 
-        response = self.client.get(reverse('tasks:tasks'))
+        response = self.client.get(reverse('spaces:index'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Projekt w pierwszym')
@@ -742,51 +733,40 @@ class WorkplaceSelectionTests(TestCase):
 
     def test_scoped_tasks_url_sets_active_workplace_from_slug(self):
         self.client.force_login(self.user)
-        TaskProject.objects.create(
+        make_space(
             name='Projekt w pierwszym',
             user=self.user,
             workplace=self.first_workplace,
         )
-        TaskProject.objects.create(
+        make_space(
             name='Projekt w drugim',
             user=self.user,
             workplace=self.second_workplace,
         )
 
-        response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'))
+        response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'spaces'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Projekt w drugim')
         self.assertNotContains(response, 'Projekt w pierwszym')
         self.assertEqual(self.client.session['active_workplace_id'], self.second_workplace.pk)
 
-    def test_scoped_tasks_page_keeps_legacy_reverse_links_valid(self):
+    def test_scoped_tasks_compatibility_url_redirects_to_current_spaces(self):
         self.client.force_login(self.user)
-        project = TaskProject.objects.create(
-            name='Projekt w drugim',
-            user=self.user,
-            workplace=self.second_workplace,
-        )
-
-        response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'), {'tab': 'public'})
-
+        space = make_space(user=self.user, workplace=self.second_workplace, name='Przestrzeń w drugim')
+        response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'), {'tab': 'public'}, follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f'href="{scoped_workplace_app_path(self.second_workplace, "tasks")}?view=all-tasks"')
-        self.assertContains(response, f'data-view-url="/tasks/?project={project.pk}"')
+        self.assertEqual(response.wsgi_request.path, scoped_workplace_app_path(self.second_workplace, 'spaces'))
+        self.assertContains(response, f'/space/{space.slug}/')
         self.assertNotContains(response, '/workplaces/-/tasks/')
 
     def test_legacy_tasks_url_redirects_after_workplace_flow(self):
         self.client.force_login(self.user)
         self._activate(self.second_workplace)
         self.client.get(reverse('workplaces:workplaces'))
-
-        response = self.client.get(reverse('tasks:tasks'))
-
-        self.assertRedirects(
-            response,
-            scoped_workplace_app_path(self.second_workplace, 'tasks'),
-            fetch_redirect_response=False,
-        )
+        response = self.client.get(reverse('tasks:tasks'), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.wsgi_request.path, scoped_workplace_app_path(self.second_workplace, 'spaces'))
 
     def test_owner_can_rename_workplace_from_settings(self):
         self.client.force_login(self.user)

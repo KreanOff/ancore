@@ -4,7 +4,9 @@ from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import EmptyResultSet
 from django.db.models import Count, Q
+from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 from accounts.avatar import account_avatar
@@ -69,8 +71,29 @@ def filter_summary_items(request, space, items, now):
     }
 
 
+def materialized_summary_items(items):
+    """Keep the ACL/filter query separate from grouped summary joins.
+
+    Flattening the nested permission subqueries into an assignee aggregation
+    can make PostgreSQL choose deeply nested loops from stale row estimates.
+    The materialized IDs are still selected by the original queryset, in the
+    same statement and snapshot as each aggregate.
+    """
+    if items.query.is_empty():
+        return items
+    try:
+        sql, params = items.order_by().values('pk').query.get_compiler(using=items.db).as_sql()
+    except EmptyResultSet:
+        return items.none()
+    scope = RawSQL(
+        f'WITH summary_items AS MATERIALIZED ({sql}) SELECT "pk" FROM summary_items', params,
+    )
+    return items.model.objects.using(items.db).filter(pk__in=scope).select_related('task', 'space')
+
+
 def space_summary(request, space, items, now=None):
     now = now or timezone.now()
+    items = materialized_summary_items(items)
     base = space_url(request, space)
     # Preserve the existing space filters when following a chart or counter.
     params = {key: request.GET[key] for key in ('q', 'work_type', 'group', 'team', 'assignee', 'status', 'priority') if request.GET.get(key)}

@@ -6,7 +6,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from dashboard.views import DASHBOARD_NOTIFICATION_LIMIT, _dashboard_notifications
-from tasks.models import Task, TaskActivity
+from spaces.models import SpaceTaskActivity
+from spaces.testing import make_task
 from workplaces.models import WorkplaceInvitation, create_workplace_for_user
 from workplaces.services import workplaces_for_user
 
@@ -86,14 +87,14 @@ class WorkspaceInvitationNotificationTests(TestCase):
         self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
 
     def test_pending_invitation_stays_ahead_of_newer_task_comments(self):
-        task = Task.objects.create(user=self.recipient, workplace=self.personal, title='Aktywne zadanie')
+        task = make_task(user=self.recipient, workplace=self.personal, title='Aktywne zadanie')
         for _ in range(DASHBOARD_NOTIFICATION_LIMIT + 1):
-            TaskActivity.objects.create(task=task, actor=self.recipient, kind='comment', action='commented', message='Nowy komentarz')
+            SpaceTaskActivity.objects.create(task=task, actor=self.recipient, kind='comment', action='commented', message='Nowy komentarz')
         notifications = _dashboard_notifications(self.recipient)
         self.assertEqual(len(notifications), DASHBOARD_NOTIFICATION_LIMIT)
         self.assertEqual(notifications[0]['source'], 'workplace')
         self.assertEqual(notifications[0]['object_id'], self.invitation.pk)
-        self.assertTrue(any(item['source'] == 'tasks' for item in notifications))
+        self.assertTrue(any(item['source'] == 'spaces' for item in notifications))
 
     def test_accepting_clears_indicator_and_grants_access_only_after_post(self):
         url = reverse('workplaces:invitation-response', args=[self.invitation.pk])

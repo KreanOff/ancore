@@ -102,7 +102,7 @@ INSTALLED_APPS = [
     'workplaces',
     'tasks',
     'kanban',
-    'contacts',
+    'legacy.contacts.apps.LegacyContactsConfig',
     'dashboard',
     'planner',
     'documents',

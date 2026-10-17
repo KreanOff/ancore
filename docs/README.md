@@ -44,7 +44,7 @@ Wyszukiwanie zadań, zapisane filtry i udostępnianie: [Filtry](FILTERS.md).
 | Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `backend/spaces/`, `static/js/spaces.js` |
 | Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `backend/kanban/urls.py`, `backend/spaces/middleware.py` |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
-| Logowanie, profil lub historyczne dane Kontaktów/Firm | Moduły: Accounts i wycofane katalogi Contacts; Mechanizmy: tożsamość, dostęp, obrazy; [API kont React](FRONTEND.md#api-i-interfejs-kont) |
+| Logowanie i profil | Moduły: Accounts; Mechanizmy: tożsamość, dostęp, obrazy; [API kont React](FRONTEND.md#api-i-interfejs-kont) |
 | Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `backend/resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
 | React, JSON API i migracja frontendu | [Frontend React](FRONTEND.md); `frontend/app/`, `backend/core/frontend.py`, `backend/core/api.py`, domenowe `frontend.py` |

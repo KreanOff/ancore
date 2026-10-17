@@ -1,30 +1,8 @@
-"""Workspace-scoped mentions and subscriptions for both task modules."""
+"""Workspace-scoped mentions in current Space task comments."""
 import json
 import re
 
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
 from django.db.models import Q
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from django.views.decorators.http import require_POST
-
-from kanban.models import Kanban, KanbanActivity, KanbanProject
-from tasks.access import visible_to
-from tasks.models import Task, TaskActivity, TaskProject
-from workplaces.services import workplace_people, scoped_workplace_app_path, workspace_owner
-from .models import ActivityInterest, ObjectFollow
-
-
-OBJECTS = {
-    ('tasks', 'task'): (Task, 'task'),
-    ('tasks', 'project'): (TaskProject, 'task_project'),
-    ('kanban', 'task'): (Kanban, 'kanban'),
-    ('kanban', 'project'): (KanbanProject, 'kanban_project'),
-}
 
 
 def mention_handle(username):
@@ -89,96 +67,12 @@ def comment_mention_metadata(task, raw_comment, raw_mentions):
 
 
 def mention_people(task):
-    from spaces.models import SpaceTask
-    if isinstance(task, SpaceTask):
-        from spaces.access import task_people
-        people = task_people(task)
-        if task.visibility == 'private':
-            people = people.filter(Q(pk=task.private_owner_id) | Q(pk__in=task.memberships.values('user_id')))
-        return people.filter(Q(pk=task.space.workplace.owner_id) | Q(workplace_memberships__workplace=task.space.workplace, workplace_memberships__is_active=True, workplace_memberships__role__in=['admin', 'member'])).distinct()
-    people = workplace_people(task.workplace, task.user)
-    if task.workplace_id:
-        people = people.filter(Q(pk=task.workplace.owner_id) | Q(
-            workplace_memberships__workplace=task.workplace,
-            workplace_memberships__is_active=True,
-            workplace_memberships__role__in=['admin', 'member'],
-        )).distinct()
-    if isinstance(task, (Task, Kanban)):
-        current, seen = task, set()
-        while current is not None and current.pk not in seen:
-            seen.add(current.pk)
-            resources = [current] if isinstance(current, Task) else []
-            if current.section_id:
-                resources.extend([current.section, current.section.project])
-            for resource in resources:
-                if resource.visibility == 'private':
-                    people = (people.filter(Q(pk=resource.private_owner_id) | Q(pk__in=resource.shared_with.values('pk')))
-                              if resource.private_owner_id else people.none())
-            current = current.parent if current.parent_id else None
-    return people
-
-
-def follow_context(user, obj, app, kind):
-    if obj is None:
-        return {}
-    field = OBJECTS[app, kind][1]
-    suffix = f'follow/{kind}/{obj.pk}/'
-    url = (scoped_workplace_app_path(obj.workplace, app, suffix)
-           if obj.workplace_id else reverse(f'{app}:tasks') + suffix)
-    return {'follow_url': url, 'is_following': ObjectFollow.objects.filter(user=user, **{field: obj}).exists()}
-
-
-@login_required
-@require_POST
-def follow_object(request, app, kind, object_id):
-    if (app, kind) not in OBJECTS:
-        raise Http404
-    model, field = OBJECTS[app, kind]
-    obj = get_object_or_404(visible_to(model.objects.all(), request.user), pk=object_id, user=workspace_owner(request), workplace=request.workplace)
-    following = request.POST.get('following')
-    if following not in {'true', 'false'}:
-        return JsonResponse({'message': 'Nieprawidłowy stan obserwowania.'}, status=400)
-    if following == 'true':
-        ObjectFollow.objects.get_or_create(user=request.user, **{field: obj})
-    else:
-        ObjectFollow.objects.filter(user=request.user, **{field: obj}).delete()
-    return JsonResponse({'following': following == 'true'})
-
-
-@receiver(post_save, sender=TaskActivity)
-@receiver(post_save, sender=KanbanActivity)
-def deliver_activity_interest(sender, instance, created, raw=False, **kwargs):
-    if not created or raw or instance.kind != 'comment':
-        return
-    task = instance.task
-    if not visible_to(type(task).objects.filter(pk=task.pk), instance.actor).exists():
-        return
-    if task.workplace_id and task.user_id != task.workplace.owner_id:
-        return
-    app = 'tasks' if sender is TaskActivity else 'kanban'
-    field = OBJECTS[app, 'task'][1]
-    project_field = OBJECTS[app, 'project'][1]
-    scope = Q(**{field: task})
-    if task.section_id and task.section.project_id:
-        scope |= Q(**{project_field + '_id': task.section.project_id})
-    people = mention_people(task).exclude(pk=instance.actor_id)
-    followers = set(ObjectFollow.objects.filter(scope, user__in=people).values_list('user_id', flat=True))
-    mentions = set()
-    if instance.kind == 'comment' and '@' in instance.message:
-        selected = _validated_mentions(instance.message, (instance.metadata or {}).get('mentions', []), mention_people(task))
-        mentions.update(entry['user_id'] for entry in selected if entry['user_id'] != instance.actor_id)
-        # Selected names must not accidentally match another person's legacy login.
-        legacy_text = list(instance.message)
-        for entry in selected:
-            legacy_text[entry['start']:entry['end']] = ' ' * (entry['end'] - entry['start'])
-        legacy_text = ''.join(legacy_text)
-        for user_id, username in people.values_list('pk', 'username'):
-            # Exact handles, including Unicode/dots/email-style usernames; never an email substring.
-            if re.search(r'(?<![\w@.+-])' + re.escape(mention_handle(username)) + r'(?![\w@+-]|\.\w)', legacy_text):
-                mentions.add(user_id)
-    activity_field = 'task_activity' if app == 'tasks' else 'kanban_activity'
-    with transaction.atomic():
-        ActivityInterest.objects.bulk_create([
-            ActivityInterest(user_id=pk, **{activity_field: instance}, mentioned=pk in mentions, followed=pk in followers)
-            for pk in mentions | followers
-        ])
+    from spaces.access import task_people
+    people = task_people(task)
+    if task.visibility == 'private':
+        people = people.filter(Q(pk=task.private_owner_id) | Q(pk__in=task.memberships.values('user_id')))
+    return people.filter(Q(pk=task.space.workplace.owner_id) | Q(
+        workplace_memberships__workplace=task.space.workplace,
+        workplace_memberships__is_active=True,
+        workplace_memberships__role__in=['admin', 'member'],
+    )).distinct()

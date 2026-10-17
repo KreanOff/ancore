@@ -132,6 +132,12 @@ Szablon zawiera podstawową listę przed zamontowaniem Reacta. Interakcje Reacta
 wymagają JavaScriptu. Dotychczasowe endpointy formularzy HTML i POST pozostają
 zgodne; nie stanowią osobnego nowego modułu biznesowego.
 
+Po porządkowaniu z 18.10.2026 stare ekrany Tasks/Kanbana/Kontaktów i skrypt
+`project-templates.js` są usunięte. Wspólne include'y Tasks, adaptery JS
+oraz CSS pozostają częścią pierwszego renderu i aktualnych ekranów Reacta.
+Serializer tagów korzysta z `tasks.tag_directory`, bez importowania
+historycznych widoków. Kontrakt API i klasy interfejsu pozostały zachowane.
+
 ## API ekranów v1
 
 `GET /api/v1/page/?url=<lokalny_adres>` i scoped wariant

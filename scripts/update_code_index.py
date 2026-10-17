@@ -49,8 +49,8 @@ def project_apps():
     configured = next(value for name, value in assignments(settings.body) if name == "INSTALLED_APPS")
     apps = []
     for name in ast.literal_eval(configured):
-        # This project lists local app packages directly in INSTALLED_APPS.
-        package = name.split(".")[0]
+        # Support explicit AppConfig paths and the isolated legacy namespace.
+        package = name.split(".apps.", 1)[0].replace(".", "/")
         if (BACKEND / package / "apps.py").is_file() and package not in apps:
             apps.append(package)
     return apps

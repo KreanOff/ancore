@@ -18,28 +18,12 @@ def task_tree_ids(roots):
     )
 
 
-def require_deletable_tasks(roots, viewer):
-    """A cascade must never delete a hidden or read-only descendant."""
-    from django.core.exceptions import PermissionDenied
-    from .models import Task
-
-    descendants = Task.objects.filter(pk__in=task_tree_ids(roots))
-    if descendants.exclude(pk__in=editable_to(Task.objects.all(), viewer)).exists():
-        raise PermissionDenied('Nie można usunąć elementu zawierającego niedostępne podzadania.')
-
-
 def editable_to(queryset, viewer):
     """Only the current Space domain can expose editable work."""
     if queryset.model._meta.app_label == 'spaces':
         from spaces.access import editable_to as space_editable_to
         return space_editable_to(queryset, viewer)
     return visible_to(queryset, viewer)
-
-
-def require_editable(queryset, viewer):
-    from django.core.exceptions import PermissionDenied
-    if queryset.exclude(pk__in=editable_to(queryset.model.objects.all(), viewer)).exists():
-        raise PermissionDenied('Ten element jest archiwalny lub nie masz dostępu do jego edycji.')
 
 
 def visible_to(queryset, viewer):

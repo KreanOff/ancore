@@ -1,16 +1,16 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from spaces.testing import make_space
+from spaces.testing import make_space, make_task
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from contacts.models import Company, Contact
+from legacy.contacts.models import Company
 from dashboard.views import _dashboard_notifications
-from kanban.models import Kanban, KanbanProject, KanbanSection
+from kanban.models import Kanban
 from planner.models import CalendarEvent
-from tasks.models import Task, TaskActivity, TaskProject, TaskSection, TaskTag
+from tasks.models import Task, TaskProject, TaskSection, TaskTag
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -51,7 +51,8 @@ class DashboardViewTests(TestCase):
         self.assertNotContains(response, 'sidebar-sticker-toggle')
         self.assertContains(response, 'id="app-sticky-note"')
         self.assertContains(response, 'data-sticky-note-resize')
-        self.assertContains(response, 'src="/static/js/sticky-note.js?v=')
+        self.assertNotContains(response, 'src="/static/js/sticky-note.js?v=')
+        self.assertContains(response, 'ancore-global-panels-data')
         self.assertNotContains(response, 'href="/admin/"')
         self.assertContains(response, reverse('profile'))
         self.assertContains(response, 'Profil użytkownika')
@@ -120,74 +121,38 @@ class DashboardViewTests(TestCase):
         self.assertRedirects(response, reverse('home'), fetch_redirect_response=False)
 
     def test_notifications_view_returns_panel_content_for_ajax_request(self):
-        user = get_user_model().objects.create_user(
-            username='notifications-panel-user',
-            email='notifications-panel-user@example.com',
-            password='test-pass-123',
-        )
-        TaskActivity.objects.create(
-            task=Task.objects.create(user=user, title='Powiadomienie w panelu'),
-            actor=user,
-            kind='comment',
-            action='commented',
-            message='Komentarz w panelu',
-        )
+        user = get_user_model().objects.create_user(username='notifications-panel-user', email='notifications-panel@example.test')
+        workplace = create_workplace_for_user(user, 'Panel')
+        task = make_task(user=user, workplace=workplace, title='Powiadomienie w panelu')
+        task.activities.create(actor=user, kind='comment', action='commented', message='Komentarz w panelu')
         self.client.force_login(user)
-
-        response = self.client.get(
-            reverse('notifications'),
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
-        )
-
+        response = self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertGreaterEqual(payload['count'], 1)
+        self.assertEqual(payload['count'], 1)
         self.assertEqual(payload['count'], payload['html'].count('data-notification-item'))
-        self.assertIn('Powiadomienie w panelu', payload['html'])
+        self.assertIn(task.title, payload['html'])
         self.assertEqual(response['Cache-Control'], 'no-store')
 
-    def test_dashboard_notifications_include_tasks_and_omit_legacy_kanban(self):
-        user = get_user_model().objects.create_user(
-            username='dashboard-user',
-            email='dashboard-user@example.com',
-            password='test-pass-123',
-        )
-        user.profile_photo = 'profile_photos/dashboard-user.webp'
-        user.save(update_fields=['profile_photo'])
-        other_user = get_user_model().objects.create_user(
-            username='other-dashboard-user',
-            email='other-dashboard-user@example.com',
-            password='test-pass-123',
-        )
-        task = Task.objects.create(user=user, title='Zadanie z Tasks')
-        TaskActivity.objects.create(
-            task=task,
-            actor=user,
-            kind='comment',
-            action='commented',
-            message='Komentarz do zadania',
-        )
-        kanban_card = Kanban.objects.create(user=user, title='Karta z Kanban')
-        kanban_card.activities.create(actor=user, kind='comment', action='commented', message='Komentarz do karty')
-        foreign = Task.objects.create(user=other_user, title='Zadanie innej osoby')
-        foreign.activities.create(actor=other_user, kind='comment', action='commented', message='Obcy komentarz')
-
+    def test_dashboard_notifications_include_spaces_and_omit_historical_work(self):
+        user = get_user_model().objects.create_user(username='dashboard-user', email='dashboard@example.test')
+        other = get_user_model().objects.create_user(username='other-dashboard', email='other-dashboard@example.test')
+        workplace = create_workplace_for_user(user, 'Pulpit')
+        task = make_task(user=user, workplace=workplace, title='Zadanie Przestrzeni')
+        task.activities.create(actor=user, kind='comment', action='commented', message='Komentarz')
+        for model in (Task, Kanban):
+            historical = model.objects.create(user=user, workplace=workplace, title='Historyczne zadanie')
+            historical.activities.create(actor=user, kind='comment', action='commented', message='Wycofany komentarz')
+        foreign = make_task(user=other, workplace=create_workplace_for_user(other, 'Obcy'), title='Niedostępne')
+        foreign.activities.create(actor=other, kind='comment', action='commented')
         notifications = _dashboard_notifications(user)
-        task_notification = next(
-            notification
-            for notification in notifications
-            if notification['source'] == 'tasks' and notification['object_id'] == task.task_id
-        )
-
-        self.assertEqual(task_notification['source'], 'tasks')
-        self.assertEqual(task_notification['source_label'], 'Zadania')
-        self.assertEqual(task_notification['actor_label'], user.get_username())
-        self.assertEqual(task_notification['title'], 'Zadanie z Tasks')
-        self.assertEqual(task_notification['url'], reverse('tasks:view-task', args=[task.task_id]) + f'?task_pk={task.pk}')
-        self.assertIn('Zadanie z Tasks', task_notification['location_label'])
-
-        self.assertFalse(any(item['source'] == 'kanban' for item in notifications))
-        self.assertNotIn('Zadanie innej osoby', [notification['title'] for notification in notifications])
+        self.assertEqual(len(notifications), 1)
+        notification = notifications[0]
+        self.assertEqual(notification['source'], 'spaces')
+        self.assertEqual(notification['title'], task.title)
+        self.assertEqual(notification['actor_label'], user.get_full_name() or user.get_username())
+        self.assertEqual(notification['url'], scoped_workplace_app_path(workplace, 'space', f'{task.space.slug}/tasks/{task.work_item.key}/?view=list'))
+        self.assertIn(task.title, notification['location_label'])
 
 
 class GlobalSearchTests(TestCase):
@@ -231,98 +196,40 @@ class GlobalSearchTests(TestCase):
         self.assertEqual(response.json()['groups'], [])
         self.assertEqual(response.json()['minimum_query_length'], 2)
 
-    def test_global_search_finds_entities_across_current_workplace(self):
-        company = Company.objects.create(
-            owner=self.user,
-            workplace=self.workplace,
-            name='Apollo Partners',
-            email='hello@apollo.example.com',
-        )
-        Contact.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            first_name='Apolonia',
-            last_name='Lis',
-            company_record=company,
-        )
-        task_project = TaskProject.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            name='Projekt Apollo',
-            code='P-APOLLO',
-            icon='rocket',
-        )
-        task_section = TaskSection.objects.create(project=task_project, title='Wdrożenie Apollo', icon='star')
-        task = Task.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            section=task_section,
-            title='Przygotuj prezentację Apollo',
-        )
-        TaskTag.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            space=make_space(user=self.user, workplace=self.workplace, name='Apollo space'),
-            name='Apollo VIP',
-        )
-        kanban_project = KanbanProject.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            name='Apollo Delivery',
-            icon='rocket',
-        )
-        kanban_section = KanbanSection.objects.create(project=kanban_project, title='Apollo Board', icon='star')
-        card = Kanban.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            section=kanban_section,
-            title='Apollo card',
-        )
-        event = CalendarEvent.objects.create(
-            user=self.user,
-            workplace=self.workplace,
-            title='Spotkanie Apollo',
-            start=timezone.now() + timedelta(days=2),
-            end=timezone.now() + timedelta(days=2, hours=1),
-        )
-
+    def test_global_search_finds_current_entities_and_omits_historical_work(self):
+        space = make_space(user=self.user, workplace=self.workplace, name='Apollo space')
+        task = make_task(user=self.user, workplace=self.workplace, space=space, title='Przygotuj prezentację Apollo')
+        TaskTag.objects.create(user=self.user, workplace=self.workplace, space=space, name='Apollo VIP')
+        project = TaskProject.objects.create(user=self.user, workplace=self.workplace, name='Historyczny Apollo')
+        section = TaskSection.objects.create(project=project, title='Historyczna grupa Apollo')
+        Task.objects.create(user=self.user, workplace=self.workplace, section=section, title='Historyczne zadanie Apollo')
+        Company.objects.create(owner=self.user, workplace=self.workplace, name='Historyczna firma Apollo')
+        Kanban.objects.create(user=self.user, workplace=self.workplace, title='Historyczna karta Apollo')
+        event = CalendarEvent.objects.create(user=self.user, workplace=self.workplace, title='Spotkanie Apollo',
+            start=timezone.now()+timedelta(days=2), end=timezone.now()+timedelta(days=2, hours=1))
         response = self.client.get(reverse('global_search'), {'q': 'Apollo'})
-
         self.assertEqual(response.status_code, 200)
         groups = self._results_by_group(response)
-        self.assertIn('tasks', groups)
-        self.assertIn('projects', groups)
-        self.assertIn('groups', groups)
-        self.assertIn('tags', groups)
-        self.assertNotIn('kanban-projects', groups)
-        self.assertNotIn('kanban-boards', groups)
-        self.assertNotIn('kanban-cards', groups)
-        self.assertNotIn('contacts', groups)
-        self.assertNotIn('companies', groups)
-        self.assertIn('calendar', groups)
-        self.assertIn('workplaces', groups)
-        for key in ('tasks', 'projects', 'groups'):
-            with self.subTest(group=key):
-                self.assertTrue(all(result['icon'] == '' for result in groups[key]))
-        self.assertEqual(groups['tasks'][0]['url'], f'{scoped_workplace_app_path(self.workplace, "tasks")}view-task/{task.task_id}/?task_pk={task.pk}')
-        self.assertIn(f'event={event.id}', groups['calendar'][0]['url'])
-        calendar_response = self.client.get(groups['calendar'][0]['url'])
-        self.assertEqual(calendar_response.context['calendar_config']['initialEventId'], event.id)
-        self.assertEqual(calendar_response.context['calendar_config']['initialDay'], timezone.localtime(event.start).day)
+        self.assertTrue({'spaces', 'space_tasks', 'tags', 'calendar', 'workplaces'} <= groups.keys())
+        self.assertFalse({'tasks', 'projects', 'groups', 'kanban-cards', 'contacts', 'companies'} & groups.keys())
+        self.assertEqual(groups['space_tasks'][0]['url'], scoped_workplace_app_path(self.workplace, 'space', f'{space.slug}/tasks/{task.work_item.key}/?view=list'))
+        calendar = self.client.get(groups['calendar'][0]['url'])
+        self.assertEqual(calendar.context['calendar_config']['initialEventId'], event.pk)
+        self.assertEqual(calendar.context['calendar_config']['initialDay'], timezone.localtime(event.start).day)
         self.assertEqual(response['Cache-Control'], 'no-store')
 
     def test_global_search_is_scoped_to_active_workplace_and_owner(self):
-        Task.objects.create(
+        make_task(
             user=self.user,
             workplace=self.other_workplace,
             title='Sekret Apollo z archiwum',
         )
-        Task.objects.create(
+        make_task(
             user=self.other_user,
             workplace=self.foreign_workplace,
             title='Obcy sekret Apollo',
         )
-        visible = Task.objects.create(
+        visible = make_task(
             user=self.user,
             workplace=self.workplace,
             title='Widoczny Apollo',
@@ -331,7 +238,7 @@ class GlobalSearchTests(TestCase):
         response = self.client.get(reverse('global_search'), {'q': 'Apollo'})
 
         groups = self._results_by_group(response)
-        task_titles = [result['title'] for result in groups['tasks']]
+        task_titles = [result['title'] for result in groups['space_tasks']]
         self.assertEqual(task_titles, [visible.title])
         all_titles = [
             result['title']
@@ -351,7 +258,7 @@ class GlobalSearchTests(TestCase):
     def test_global_search_returns_all_matches_below_limit(self):
         matching_titles = [f'Przygotować materiał {index:02d}' for index in range(12)]
         for title in matching_titles:
-            Task.objects.create(
+            make_task(
                 user=self.user,
                 workplace=self.workplace,
                 title=title,
@@ -360,7 +267,7 @@ class GlobalSearchTests(TestCase):
         response = self.client.get(reverse('global_search'), {'q': 'Przygotować'})
 
         payload = response.json()
-        task_group = next(group for group in payload['groups'] if group['key'] == 'tasks')
+        task_group = next(group for group in payload['groups'] if group['key'] == 'space_tasks')
         self.assertCountEqual(
             [result['title'] for result in task_group['results']],
             matching_titles,

@@ -1,5 +1,0 @@
-{% if follow_url %}
-<button type="button" class="btn btn-secondary btn-sm" data-follow-url="{{ follow_url }}" data-follow-csrf="{{ csrf_token }}" aria-pressed="{{ is_following|yesno:'true,false' }}" title="Powiadomienia o nowych komentarzach i zmianach{% if active_project and not task %} zadań w projekcie{% endif %}">
-    <i data-icon="bell" aria-hidden="true"></i><span data-follow-label>{% if is_following %}Obserwujesz{% else %}Obserwuj{% endif %}</span>
-</button>
-{% endif %}

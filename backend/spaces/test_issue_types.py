@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import TestCase
 
-from .models import SpaceTask, Space, SpaceMembership
+from .models import SpaceTask, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .defaults import TEMPLATES, template_settings
@@ -86,7 +86,8 @@ class IssueTypeTests(TestCase):
     def test_detail_edit_and_reopen_keep_type_and_history(self):
         for scoped, work_type in ((False, 'bug'), (True, 'campaign')):
             response = self.client.post(self.detail_url(scoped), self.detail_data(work_type), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()['status'], 'success')
             self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, work_type)
             activity = self.task.activities.filter(action='updated').latest('id')
             self.assertEqual(activity.actor, self.member)
@@ -104,7 +105,8 @@ class IssueTypeTests(TestCase):
         data = self.detail_data()
         data['work_type'] = 'campaign'
         response = self.client.post(self.detail_url(), data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'success')
         self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'campaign')
         self.assertEqual(self.task.activities.latest('pk').actor, self.member)
 

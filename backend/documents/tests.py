@@ -454,7 +454,7 @@ class DocumentLibraryTests(TestCase):
         self.assertEqual(self.client.get(self.base, {'view': 'all', 'q': tag.name}).context['rows'], [])
         search = self.client.get(reverse('global_search'), {'q': tag.name}).json()
         groups = {group['key'] for group in search['groups']}
-        self.assertIn('tags', groups)
+        self.assertNotIn('tags', groups)
         self.assertNotIn('documents', groups)
         self.assertNotIn('office-documents', groups)
         params = {'scope': 'workspace', 'view': 'all', 'q': 'Instrukcja', 'page_size': 10, 'tag': tag.pk}

@@ -206,16 +206,20 @@ Nie występują w menu, ulubionych ani globalnym wyszukiwaniu. Dawne adresy
 usuwanie i wyszukiwanie kont Ancore, zwracają 404. Modele nie są udostępniane
 w panelu administracyjnym Django.
 
-[Modele](../backend/contacts/models.py) i migracje pozostają dla zgodności danych:
+[Modele](../backend/legacy/contacts/models.py) i migracje pozostają dla zgodności danych:
 `Company` zachowuje powiązania z projektami Tasks/Kanban, a `Contact`,
 `UserContact` i `ContactActivity` historyczne wpisy i powiązania.
-Pole firmy w istniejących mechanizmach projektów nadal korzysta z tych rekordów.
+Relacje firm pozostają wyłącznie w historycznych projektach Tasks/Kanbana.
 Nie wykonano migracji kasującej dane ani usuwania kont użytkowników.
 Logowanie, profil, członkostwa i zaproszenia Workspace oraz zespoły działają
 przez Accounts/Workplaces/Spaces niezależnie od dawnych katalogów.
 
-Historyczne widoki, formularze i szablony w `backend/contacts/` nie mają aktywnego
-routingu; `backend/contacts/urls.py` jest pusty. Nie traktuj ich jako dostępnej funkcji.
+Historyczne widoki, formularze, szablony, tag awatara firmy i pusty routing
+Kontaktów usunięto. Pakiet `backend/contacts` nie istnieje; minimalna zgodność
+schematu jest wydzielona do `backend/legacy/contacts` z zachowaną etykietą Django.
+Dawne rekordy nie są przypisywane przy przełączeniu Workspace, a zdjęcia firm
+nie mają publicznej trasy. Wspólne style profilu, selectów i kadrowania awatarów
+pozostają w `shared-controls.css`; style dawnych katalogów usunięto.
 `SharedItem` i `SharedItemLink` nadal pozostają wyłączone.
 
 ## 7. Kalendarz — Planner
@@ -574,8 +578,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
   Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
-Historyczny serwis [overview.py](../backend/dashboard/overview.py) i jego testy pozostają
-w repozytorium, ale routing strony głównej korzysta z `pulpit_views.default` oraz
+Historyczny serwis `dashboard.overview` i testy jego nieużywanych agregacji usunięto.
+Regresje aktywnej strony głównej zachowuje `dashboard.test_home`.
+Routing strony głównej korzysta z `pulpit_views.default` oraz
 [pulpits.py](../backend/dashboard/pulpits.py). Dane każdego gadżetu są ponownie filtrowane
 według właściciela/Workspace i prywatności oglądającego; udostępnienie konfiguracji
 pulpitu nie nadaje dostępu do jego źródeł. `/` nadal używa aktywnego kontekstu z sesji.

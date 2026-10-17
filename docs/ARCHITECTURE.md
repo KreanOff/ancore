@@ -39,7 +39,7 @@ backend/                katalog źródeł Pythona, dodawany do ścieżki import�
   spaces/               przestrzenie, zadania, historia, pliki, planowanie i zespoły
   tasks/                historyczne dane pracy, stare linki i wspólny słownik tagów
   kanban/               historyczne źródła kart i zgodność starych adresów
-  contacts/             historyczne kontakty i firmy; bez aktywnego routingu
+  legacy/contacts/      wyłącznie zgodność historycznego schematu i migracji
   planner/              wydarzenia i kalendarz
   resources/            ewidencja sprzętu, licencji i narzędzi Workspace
   documents/            Dysk, Dokumenty i bezpieczna integracja edytorów
@@ -73,7 +73,8 @@ Pełny indeks źródeł znajduje się w [CODE_INDEX.md](CODE_INDEX.md).
 Importy nadal używają `spaces`, `accounts`, `ancore.settings` itd.; etykiety
 aplikacji, nazwy tabel i zależności migracji są zachowane. Szablony i testy
 pozostają przy swoich aplikacjach. Historyczne modele pozostają w tych samych
-aplikacjach, ponieważ uczestniczą w migracjach i relacjach aktywnych modułów.
+aplikacjach lub wydzielonym pakiecie `legacy`, ponieważ uczestniczą w migracjach
+i zapisanych relacjach. Zmiana pakietu archiwum nie zmienia etykiet ani nazw tabel.
 
 Główny `manage.py` ustawia ścieżkę importów niezależnie od katalogu roboczego.
 `BackendDiscoverRunner` zachowuje pełne wykrywanie testów bez podawania etykiet.
@@ -88,7 +89,7 @@ szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).
 | --- | --- | --- |
 | Routing | Wybór modułu, endpointu i nazwy URL | `backend/ancore/urls.py`, modułowe `urls.py` |
 | Middleware | Sesja, uwierzytelnienie, obecność, Workspace, CSRF | `backend/ancore/settings.py`, middleware Accounts/Workplaces |
-| Widoki | Zakres dostępu, akcja, wybór formularza, odpowiedź | modułowe `views.py`, `backend/tasks/views/`, `backend/kanban/views/` |
+| Widoki | Zakres dostępu, akcja, wybór formularza, odpowiedź | modułowe `views.py`, `backend/spaces/task_views.py`; zgodność Tasks/Kanbana w `urls.py` i middleware Przestrzeni |
 | JSON API | Kontrakt Reacta, sesja, błędy i zakres danych | `backend/core/api.py`, `backend/core/frontend.py`, `backend/core/shell.py`, domenowe `frontend.py`, `backend/resources/api.py` |
 | Formularze | Walidacja i wybór dostępnych powiązań | modułowe `forms.py` |
 | Modele | Dane, relacje, unikalność, zapis i sygnały | modułowe `models.py`, `migrations/` |
@@ -97,8 +98,9 @@ szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).
 | JavaScript | Interakcje i komunikacja HTTP | `static/js/` |
 | React/TypeScript | Stan i renderowanie przeniesionych modułów | `frontend/app/src/` |
 
-Historyczna logika Zadań/Kanbana pozostaje w dużych plikach widoków,
-bez rejestracji aktywnych ekranów. `static/js/tasks.js` nadal obsługuje
+Historyczne widoki, formularze i ekrany Tasks/Kanbana/Kontaktów usunięto.
+`tasks.forms` zawiera wyłącznie formularz tagu, a `tasks.tag_directory`
+filtrowanie, sortowanie i paginację tagów Przestrzeni. `static/js/tasks.js` nadal obsługuje
 wspólne komponenty bieżących modułów. Nie zakładaj istnienia osobnej warstwy usług dla każdej
 operacji. Moduł `workplaces.services` jest rzeczywistą wspólną warstwą kontekstu.
 
@@ -133,11 +135,11 @@ flowchart LR
     W --> S[spaces: Space i SpaceTask]
     W --> T[tasks]
     W --> K[kanban]
-    W --> C[contacts]
+    C[legacy.contacts: schemat historyczny]
     W --> P[planner]
     W --> D[documents]
-    C -->|Company| T
-    C -->|Company| K
+    C -.->|historyczne Company| T
+    C -.->|historyczne Company| K
     T -->|TaskTag| K
     T -->|wspólny słownik TaskTag| S
     S --> H
@@ -283,9 +285,9 @@ i `RESTRICT` różnią się między modułami — szczegóły są w modelach i
 - `/settings/` jest centrum ustawień konta i Workspace oraz zarządzania sesją.
   Główny pasek boczny pokazuje jego kategorie zamiast menu Workspace,
   także przy częściowej nawigacji; [standard UI](UI.md).
-- W `tasks` istnieją zarówno `views.py`, jak i pakiet `views/`. Routing
-  używa implementacji w pakiecie. Podobnie nazwa `tasks` w Kanbanie
-  jest historycznym nazewnictwem widoków i szablonów kart.
+- `tasks` i `kanban` zachowują routing zgodności w `urls.py`; ich stare
+  pakiety widoków są usunięte. W `tasks/templates/tasks/includes/` pozostają
+  wyłącznie komponenty używane przez bieżące moduły.
 
 Przy rozbudowie modułu trzeba uwzględnić także nawigację Workspace,
 context processor, wyszukiwarkę i ograniczenia częściowej nawigacji.
@@ -309,8 +311,9 @@ widoków `suite_views.py`, serwisu ONLYOFFICE i powłoki pełnego edytora dla pl
 DOCX/XLSX/PPTX/PDF. Zapis pozostaje w modelu źródłowego modułu; osobne podpisy, URL
 serwisowe i potwierdzenia zapisu rozdzielają dostęp do obu katalogów.
 
-Katalogi Kontaktów, Firm, Użytkowników i Gości zostały wycofane. `contacts` pozostaje
-w `INSTALLED_APPS` dla modeli, migracji i historycznych relacji firm do projektów.
+Katalogi Kontaktów, Firm, Użytkowników i Gości są usunięte. `legacy.contacts`
+zachowuje wyłącznie schemat, migracje i historyczne relacje firm. Konfiguracja
+`LegacyContactsConfig` zachowuje etykietę `contacts` oraz nazwy istniejących tabel.
 Nie ma rejestracji URL ani ekranów Django admin; dane nie są kasowane.
 [Szczegóły](MODULES.md#6-wycofane-katalogi-kontaktów-firm-użytkowników-i-gości).
 

@@ -126,7 +126,10 @@ class WorkspaceIdentifierMigrationTests(TransactionTestCase):
         previous = [node for node in latest if node[0] != 'workplaces'] + [('workplaces', '0009_workplace_avatar')]
         executor.migrate(previous)
         try:
-            state = MigrationExecutor(connection).loader.project_state(previous).apps
+            # Other apps' leaf nodes can depend on 0010. The rollback also
+            # unapplies those dependants; build fixtures from the actual schema.
+            loader = MigrationExecutor(connection).loader
+            state = loader.project_state(list(loader.applied_migrations)).apps
             User = state.get_model('accounts', 'User')
             OldWorkplace = state.get_model('workplaces', 'Workplace')
             owner = User.objects.create(username='old-id-owner', email='old-id-owner@example.test')

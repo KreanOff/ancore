@@ -125,11 +125,12 @@ class PublicMediaTests(SimpleTestCase):
                     importlib.reload(ancore.urls)
                     clear_url_caches()
                     for relative in ('task_attachments/secret.txt', 'kanban_attachments/secret.png',
+                                     'company_photos/logo.png',
                                      'profile_photos/../task_attachments/secret.txt',
                                      'profile_photos/%2e%2e/kanban_attachments/secret.png'):
                         with self.subTest(path=relative):
                             self.assertEqual(self.client.get('/media/' + relative).status_code, 404)
-                    for relative in ('profile_photos/avatar.png', 'workplace_photos/logo.png', 'company_photos/logo.png'):
+                    for relative in ('profile_photos/avatar.png', 'workplace_photos/logo.png'):
                         response = self.client.get('/media/' + relative)
                         self.assertEqual(response.status_code, 200)
                         self.assertEqual(b''.join(response.streaming_content), b'Synthetic content')

@@ -65,4 +65,19 @@ class ProjectLayoutTests(SimpleTestCase):
         })
         for config in apps.get_app_configs():
             if Path(config.path).is_relative_to(settings.BACKEND_DIR):
-                self.assertEqual(config.name, config.label)
+                expected = 'legacy.contacts' if config.label == 'contacts' else config.label
+                self.assertEqual(config.name, expected)
+
+    def test_archived_contacts_keep_historical_schema_and_migration_identity(self):
+        from django.db.migrations.loader import MigrationLoader
+
+        config = apps.get_app_config('contacts')
+        self.assertEqual(config.name, 'legacy.contacts')
+        self.assertEqual(Path(config.path), Path(settings.BACKEND_DIR) / 'legacy/contacts')
+        company = apps.get_model('contacts', 'Company')
+        self.assertEqual(company._meta.db_table, 'contacts_company')
+        for label, name in [('tasks', 'TaskProject'), ('kanban', 'KanbanProject')]:
+            self.assertIs(apps.get_model(label, name)._meta.get_field('company').related_model, company)
+        loader = MigrationLoader(None)
+        self.assertIn(('contacts', '0008_remove_company_unique_company_name_per_owner_and_more'), loader.disk_migrations)
+        self.assertFalse(any(label == 'legacy' for label, name in loader.disk_migrations))

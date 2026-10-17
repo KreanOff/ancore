@@ -1,4 +1,3 @@
-from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.db import connection
@@ -10,7 +9,8 @@ from django.utils import timezone
 from dashboard.recent import RECENT_SESSION_KEY
 from dashboard.views import GLOBAL_SEARCH_GROUP_LIMIT, GLOBAL_SEARCH_RECENT_LIMIT
 from kanban.models import Kanban
-from spaces.testing import make_space
+from spaces.models import SpaceTask
+from spaces.testing import make_space, make_task
 from tasks.models import Task, TaskProject, TaskSection
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 
@@ -27,6 +27,7 @@ class GlobalSearchRegressionTests(TestCase):
         cls.private.save(update_fields=['description'])
         cls.personal = create_workplace_for_user(cls.member, 'Search personal workspace')
         cls.membership = WorkplaceMembership.objects.create(workplace=cls.team, user=cls.member, role='member')
+        cls.space = make_space(user=cls.owner, workplace=cls.team, name='Praca')
 
     def setUp(self):
         self.client.force_login(self.member)
@@ -48,7 +49,7 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertNotContains(response, self.private.slug)
 
     def test_revoked_membership_removes_workspace_and_business_results(self):
-        Task.objects.create(user=self.owner, workplace=self.team, title='Search shared task')
+        make_task(user=self.owner, workplace=self.team, space=self.space, title='Search shared task')
         self.membership.delete()
         response = self.search('Search')
         titles = [row['title'] for group in response.json()['groups'] for row in group['results']]
@@ -58,18 +59,17 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertNotIn('Search shared task', titles)
 
     def test_task_and_subtask_links_survive_renumbering_and_never_retarget_deleted_records(self):
-        for model, group_key in [(Task, 'tasks')]:
+        for model, group_key in [(SpaceTask, 'space_tasks')]:
             for is_child in (False, True):
                 with self.subTest(model=model.__name__, child=is_child):
-                    first = model.objects.create(user=self.owner, workplace=self.team, title='Earlier item')
-                    parent = model.objects.create(user=self.owner, workplace=self.team, title='Parent') if is_child else None
-                    selected = model.objects.create(user=self.owner, workplace=self.team, parent=parent,
+                    first = make_task(user=self.owner, workplace=self.team, space=self.space, title='Earlier item')
+                    parent = make_task(user=self.owner, workplace=self.team, space=self.space, title='Parent') if is_child else None
+                    selected = make_task(user=self.owner, workplace=self.team, space=self.space, parent=parent,
                                                     title=f'Search target {model.__name__} {is_child}')
-                    model.objects.create(user=self.owner, workplace=self.team, parent=parent, title='Later item')
+                    make_task(user=self.owner, workplace=self.team, space=self.space, parent=parent, title='Later item')
                     group = next(group for group in self.search(selected.title).json()['groups'] if group['key'] == group_key)
                     link = group['results'][0]['url']
-                    self.assertEqual(parse_qs(urlsplit(link).query)['task_pk'], [str(selected.pk)])
-                    self.assertIn('/view-subtask/' if is_child else '/view-task/', link)
+                    self.assertIn(f'/tasks/{selected.work_item.key}/', link)
                     first.delete()
                     response = self.client.get(link)
                     self.assertEqual(response.context['task'].pk, selected.pk)
@@ -77,34 +77,35 @@ class GlobalSearchRegressionTests(TestCase):
                     self.assertEqual(self.client.get(link).status_code, 404)
 
     def test_unicode_and_oversized_numeric_queries_are_safe(self):
-        item = Task.objects.create(user=self.owner, workplace=self.team, title='Area ²²')
+        item = make_task(user=self.owner, workplace=self.team, space=self.space, title='Area ²²')
         for query in ['²²', '①①', '9' * 120, '٠١']:
             with self.subTest(query=query):
                 response = self.search(query)
-                if query in ['²²', '٠١']:
+                if query == '²²':
                     self.assertIn(item.title, [row['title'] for group in response.json()['groups'] for row in group['results']])
 
-    def test_each_group_is_limited_in_sql_and_exact_matches_stay_first(self):
+    def test_each_current_group_is_limited_in_sql_and_tasks_keep_newest_order(self):
         for index in range(GLOBAL_SEARCH_GROUP_LIMIT + 3):
-            Task.objects.create(user=self.owner, workplace=self.team, title=f'Limit probe {index}')
-            TaskProject.objects.create(user=self.owner, workplace=self.team, name=f'Limit probe {index}')
-        Task.objects.create(user=self.owner, workplace=self.team, title='Limit probe')
+            make_task(user=self.owner, workplace=self.team, space=self.space, title=f'Limit probe {index}')
+            make_space(user=self.owner, workplace=self.team, name=f'Limit probe {index}')
+        newest = make_task(user=self.owner, workplace=self.team, space=self.space, title='Limit probe')
         with CaptureQueriesContext(connection) as queries:
             payload = self.search('Limit probe').json()
         self.assertTrue(payload['truncated'])
         self.assertEqual(payload['total'], 2 * GLOBAL_SEARCH_GROUP_LIMIT)
-        for key in ['tasks', 'projects']:
+        for key in ['space_tasks', 'spaces']:
             group = next(group for group in payload['groups'] if group['key'] == key)
             self.assertEqual(len(group['results']), GLOBAL_SEARCH_GROUP_LIMIT)
             self.assertTrue(group['has_more'])
-        self.assertEqual(next(group for group in payload['groups'] if group['key'] == 'tasks')['results'][0]['title'], 'Limit probe')
-        search_sql = [query['sql'] for query in queries if '_global_search_rank' in query['sql']]
-        self.assertTrue(search_sql)
-        self.assertTrue(all(f'LIMIT {GLOBAL_SEARCH_GROUP_LIMIT + 1}' in sql for sql in search_sql))
+        tasks = next(group for group in payload['groups'] if group['key'] == 'space_tasks')
+        self.assertEqual(tasks['results'][0]['title'], newest.title)
+        for table in ['spaces_workitem', 'spaces_space']:
+            bounded = [q['sql'] for q in queries if f'FROM "{table}"' in q['sql'] and f'LIMIT {GLOBAL_SEARCH_GROUP_LIMIT + 1}' in q['sql']]
+            self.assertTrue(bounded, table)
 
     def test_exact_limit_is_not_reported_as_truncated(self):
         for index in range(GLOBAL_SEARCH_GROUP_LIMIT):
-            Task.objects.create(user=self.owner, workplace=self.team, title=f'Boundary probe {index}')
+            make_task(user=self.owner, workplace=self.team, space=self.space, title=f'Boundary probe {index}')
         payload = self.search('Boundary probe').json()
         self.assertEqual(payload['total'], GLOBAL_SEARCH_GROUP_LIMIT)
         self.assertFalse(payload['truncated'])
@@ -126,7 +127,7 @@ class GlobalSearchRegressionTests(TestCase):
 
     def test_recent_is_explicit_empty_and_requires_login(self):
         self.assertEqual(self.recent()['groups'], [])
-        task = Task.objects.create(user=self.owner, workplace=self.team, title='Recently opened')
+        task = make_task(user=self.owner, workplace=self.team, space=self.space, title='Recently opened')
         self.remember(task)
         self.assertEqual(self.search('').json()['groups'], [])
         self.assertEqual(self.search('R').json()['groups'], [])
@@ -134,7 +135,7 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertEqual(self.client.get(reverse('global_search'), {'recent': '1'}).status_code, 302)
 
     def test_recent_preserves_order_limits_results_and_resolves_current_titles_and_numbers(self):
-        tasks = [Task.objects.create(user=self.owner, workplace=self.team, title=f'Recent {index}')
+        tasks = [make_task(user=self.owner, workplace=self.team, space=self.space, title=f'Recent {index}')
                  for index in range(GLOBAL_SEARCH_RECENT_LIMIT + 2)]
         self.remember(*reversed(tasks))
         tasks[-1].title = 'Renamed recently'
@@ -144,31 +145,28 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertEqual(payload['total'], GLOBAL_SEARCH_RECENT_LIMIT)
         rows = payload['groups'][0]['results']
         self.assertEqual([row['title'] for row in rows], [task.title for task in reversed(tasks[-GLOBAL_SEARCH_RECENT_LIMIT:])])
-        self.assertEqual(parse_qs(urlsplit(rows[0]['url']).query)['task_pk'], [str(tasks[-1].pk)])
+        self.assertIn(f'/tasks/{tasks[-1].work_item.key}/', rows[0]['url'])
         self.assertEqual(self.client.get(rows[0]['url']).context['task'].pk, tasks[-1].pk)
 
     def test_recent_rechecks_parent_privacy_deletion_and_workspace_membership(self):
-        project = TaskProject.objects.create(user=self.owner, workplace=self.team, name='Recent project')
-        section = TaskSection.objects.create(project=project, title='Recent group')
-        task = Task.objects.create(user=self.owner, workplace=self.team, section=section, title='Recent task')
-        parent = Task.objects.create(user=self.owner, workplace=self.team, title='Private parent',
-                                     visibility='private', private_owner=self.owner)
-        child = Task.objects.create(user=self.owner, workplace=self.team, parent=parent, title='Hidden child')
-        card = Kanban.objects.create(user=self.owner, workplace=self.team, title='Recent card')
-        self.remember(project, section, task, child, card)
-        self.assertEqual(self.recent()['total'], 3)
-        project.visibility, project.private_owner = 'private', self.owner
-        project.save()
+        task = make_task(user=self.owner, workplace=self.team, space=self.space, title='Recent task')
+        parent = make_task(user=self.owner, workplace=self.team, space=self.space, title='Private parent', visibility='private', private_owner=self.owner)
+        child = make_task(user=self.owner, workplace=self.team, space=self.space, parent=parent, title='Hidden child')
+        card = Kanban.objects.create(user=self.owner, workplace=self.team, title='Retired card')
+        self.remember(self.space, task, child, card)
+        self.assertEqual(self.recent()['total'], 2)
+        self.space.visibility, self.space.private_owner = 'private', self.owner
+        self.space.save()
         self.assertEqual(self.recent()['groups'], [])
-        card.delete()
+        task.delete()
         self.assertEqual(self.recent()['total'], 0)
         self.membership.delete()
         self.assertEqual(self.recent()['total'], 0)
 
     def test_recent_never_trusts_session_ids_as_workspace_or_account_access(self):
-        visible = Task.objects.create(user=self.owner, workplace=self.team, title='Visible')
-        foreign = Task.objects.create(user=self.owner, workplace=self.private, title='Foreign Workspace')
-        other_owner = Task.objects.create(user=self.member, workplace=self.team, title='Foreign owner')
+        visible = make_task(user=self.owner, workplace=self.team, space=self.space, title='Visible')
+        foreign = make_task(user=self.owner, workplace=self.private, title='Foreign Workspace')
+        other_owner = make_task(user=self.member, workplace=self.team, title='Foreign owner')
         self.remember(visible, foreign, other_owner)
         self.assertEqual([row['title'] for row in self.recent()['groups'][0]['results']], [visible.title])
         session = self.client.session
@@ -179,12 +177,16 @@ class GlobalSearchRegressionTests(TestCase):
     def test_recent_task_metadata_does_not_expose_foreign_legacy_group(self):
         project = TaskProject.objects.create(user=self.owner, workplace=self.private, name='Foreign project')
         section = TaskSection.objects.create(project=project, title='Foreign group')
-        task = Task.objects.create(user=self.owner, workplace=self.team, title='Legacy link')
-        # Simulate an old inconsistent relation without today's save normalization.
-        Task.objects.filter(pk=task.pk).update(section=section)
-        self.remember(task)
-        rows = self.recent()['groups'][0]['results']
-        self.assertEqual(rows[0]['meta'], f'#{task.task_id}')
+        legacy = Task.objects.create(user=self.owner, workplace=self.private, section=section, title='Legacy link')
+        task = make_task(user=self.owner, workplace=self.team, space=self.space, title='Current task')
+        item = task.work_item
+        item.legacy_task = legacy
+        item.save()
+        self.remember(task, legacy, section, project)
+        payload = self.recent()
+        self.assertEqual(payload['total'], 1)
+        self.assertEqual(payload['groups'][0]['results'][0]['meta'], f'{item.key} · {self.space.name}')
+        self.assertNotIn('Foreign', str(payload))
 
     def test_recent_records_current_space_views_and_rechecks_revoked_access(self):
         project = make_space(user=self.owner, workplace=self.team, name='Opened space')
@@ -201,14 +203,14 @@ class GlobalSearchRegressionTests(TestCase):
         self.assertEqual(self.recent()['total'], 0)
 
     def test_recent_records_real_base_and_scoped_visits_with_subtask_links(self):
-        parent = Task.objects.create(user=self.owner, workplace=self.team, title='Parent recent')
-        child = Task.objects.create(user=self.owner, workplace=self.team, parent=parent, title='Child recent')
-        for prefix in ('/tasks/', f'/workplaces/{self.team.slug}/tasks/'):
+        parent = make_task(user=self.owner, workplace=self.team, space=self.space, title='Parent recent')
+        child = make_task(user=self.owner, workplace=self.team, space=self.space, parent=parent, title='Child recent')
+        for prefix in ('/space/', f'/workplaces/{self.team.slug}/space/'):
             with self.subTest(prefix=prefix):
-                response = self.client.get(f'{prefix}view-subtask/{child.task_id}/', {'task_pk': child.pk})
+                response = self.client.get(f'{prefix}{child.space.slug}/tasks/{child.work_item.key}/')
                 self.assertEqual(response.status_code, 200)
                 row = self.recent()['groups'][0]['results'][0]
                 self.assertEqual(row['title'], child.title)
-                self.assertEqual(row['type'], 'Podzadanie')
-                self.assertIn('/view-subtask/', row['url'])
+                self.assertEqual(row['type'], 'Zadanie')
+                self.assertIn(f'/tasks/{child.work_item.key}/', row['url'])
                 self.assertEqual(self.client.get(row['url']).context['task'].pk, child.pk)

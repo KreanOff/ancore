@@ -134,8 +134,8 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
-Szczegóły nowego zadania (`spaces/task_detail.html`) odwzorowują ekran
-`tasks/view_task.html`, używając jego powłoki, kontrolek i include'ów przez
+Szczegóły nowego zadania (`spaces/task_detail.html`) zachowują powłokę,
+kontrolki i współdzielone include'y dawnego ekranu Tasks przez
 `spaces/base.html` oraz `core/base.html`. Nagłówek ma strzałkę powrotu,
 tytuł. Adres i nawigacja zachowują przestrzeń, a powrót `view`
 i filtry. Panel po prawej zawiera widoczność, status, priorytet, tagi,
@@ -1091,7 +1091,7 @@ zachowują pełną nawigację. Szczegóły zadania przestrzeni czekają na autom
 zapis przed podmianą i zatrzymują nawigację przy błędzie. Pełne wyjście z
 niezapisanymi zmianami chroni `beforeunload`. Po podmianie ekran usuwa poprzednie
 listenery. Kontrakt i wyjątki opisuje
-[cykl życia strony](MECHANISMS.md#12-częściowa-nawigacja-i-cykl-życia-frontendowej-strony).
+[cykl życia strony](MECHANISMS.md#12-nawigacja-i-cykl-życia-frontendowej-strony).
 
 Globalne wyszukiwanie pokazuje najwyżej 20 wyników w każdej kategorii danych.
 Jeśli dopasowań jest więcej, istniejący licznik kategorii pokazuje „20+”,
@@ -1150,7 +1150,7 @@ base/fonts.css (lokalny Atlassian Sans)
   → base/variables.css
   → base/reset.css
   → layout/*.css
-  → komponenty (m.in. buttons, forms, tables, tasks, contacts, workplaces)
+  → komponenty (m.in. buttons, forms, tables, tasks, shared-controls, workplaces)
   → theme/elestio.css
   → profile, modal-system, global-search, notifications-panel
   → reguły bezpośrednio w style.css
@@ -1165,6 +1165,11 @@ Później dołączony arkusz nie zawsze wygrywa z wcześniejszym `!important`.
 zależności od zewnętrznego systemu UI. Podobnie `bootstrap.html` zawiera
 komentarz ostrzegający przed konfliktem pełnego Bootstrap CSS, a nie import
 tej biblioteki. Nie dodawaj frameworka UI tylko na podstawie nazw plików.
+
+Wspólne menu profilu, selecty i kadrowanie obrazów należą do
+`components/shared-controls.css`. Prefiksy klas `contacts-actions-menu`,
+`contacts-custom-select` i `contacts-photo-editor` są zachowanym kontraktem
+komponentów. Nie oznaczają modułu Kontaktów; jego style katalogów usunięto.
 
 ## 4. Tokeny i język wizualny
 
@@ -1224,14 +1229,13 @@ Ważne wyjątki:
 
 | Element | Wzorzec do ponownego użycia | Styl / zachowanie |
 | --- | --- | --- |
-| Katalog projektów/grup | [tasks/tasks.html](../backend/tasks/templates/tasks/tasks.html) | `components/tasks.css`, `tasks.js` |
-| Historyczna lista kontaktów i firm (wycofana) | [contacts.html](../backend/contacts/templates/contacts/contacts.html), [companies.html](../backend/contacts/templates/contacts/companies.html) | `contacts.css` + wspólne style katalogu |
+| Katalog Przestrzeni | [spaces/directory.html](../backend/spaces/templates/spaces/directory.html) | `components/tasks.css`, `tasks.js`, React `spaces/DirectoryPage.tsx` |
 | Tytuł i toolbar katalogu | [toolbar Dysku](../backend/documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
 | Paginacja | [directory_pagination_toolbar.html](../backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |
 | Zarządzanie kolumnami | [directory_column_manager.html](../backend/tasks/templates/tasks/includes/directory_column_manager.html) | `tasks.js`, zapis ustawień lokalnych |
 | Agregat filtrów | [directory_filter_aggregate.html](../backend/tasks/templates/tasks/includes/directory_filter_aggregate.html) | Wspólne menu i aktywny stan |
-| Wiersz zadania | [task_issue_row.html](../backend/tasks/templates/tasks/includes/task_issue_row.html) | Stan, uprawnienia, `data-task-*`, ikony, JS listy |
-| Karta Kanban | [task_board_card.html](../backend/kanban/templates/kanban/includes/task_board_card.html) | Kolumna, okładka i przeciąganie |
+| Wiersz zadania | [spaces/row.html](../backend/spaces/templates/spaces/row.html) | Stan, uprawnienia, `data-task-*`, ikony, JS listy |
+| Karta tablicy Przestrzeni | [spaces/card.html](../backend/spaces/templates/spaces/card.html) | Status, kolejność i przeciąganie |
 | Standardowy modal formularza | [form.html Dysku](../backend/documents/templates/documents/form.html), modale projektów/zadań | `tasks-modal*` + `modal-system.css` |
 | Potwierdzenie | [modal.js](../static/js/modal.js) | `showConfirmModal`, `dialogs.css` |
 | Zwykłe przyciski | [buttons.css](../static/css/components/buttons.css) | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-sm`, `.btn-cancel` |

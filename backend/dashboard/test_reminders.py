@@ -7,20 +7,21 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from tasks.models import Task
+from spaces.models import SpaceTaskReminder
+from spaces.testing import make_task
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
-from .models import NotificationState, TaskReminder
-from .notification_service import change_notification_state, notification_page, notification_summary
+from .models import NotificationState
+from .notification_service import change_notification_state, notification_page
 
 
-class TaskReminderTests(TestCase):
+class SpaceTaskReminderTests(TestCase):
     def setUp(self):
         self.owner = get_user_model().objects.create_user(username='reminder-owner', email='reminder-owner@example.test')
         self.member = get_user_model().objects.create_user(username='reminder-member', email='reminder-member@example.test')
         self.other = get_user_model().objects.create_user(username='reminder-other', email='reminder-other@example.test')
         self.workspace = create_workplace_for_user(self.owner, 'Przypomnienia')
         self.membership = WorkplaceMembership.objects.create(workplace=self.workspace, user=self.member)
-        self.task = Task.objects.create(user=self.owner, workplace=self.workspace, assignee=self.member,
+        self.task = make_task(user=self.owner, workplace=self.workspace, assignee=self.member,
                                         title='Oddaj raport', reminder_at=timezone.now() - timedelta(minutes=1))
         self.filters = {'view': 'reminders', 'workspace': ''}
 
@@ -32,8 +33,8 @@ class TaskReminderTests(TestCase):
             items = self.page()['dashboard_notifications']
             self.assertEqual(len(items), 1)
             self.assertFalse(items[0]['is_read'])
-            self.assertIn(f'task_pk={self.task.pk}', items[0]['url'])
-        self.assertEqual(TaskReminder.objects.count(), 1)
+            self.assertIn(f'/tasks/{self.task.work_item.key}/', items[0]['url'])
+        self.assertEqual(SpaceTaskReminder.objects.count(), 1)
         self.assertEqual(self.page(self.owner)['dashboard_notification_count'], 0)
         self.assertEqual(self.page(self.other)['dashboard_notification_count'], 0)
         self.client.force_login(self.member)
@@ -53,8 +54,8 @@ class TaskReminderTests(TestCase):
         change_notification_state(self.member, {'action': 'delete', 'key': key})
         for _ in range(2):
             self.assertEqual(self.page()['dashboard_notification_count'], 0)
-        self.assertEqual(TaskReminder.objects.filter(task=self.task).count(), 1)
-        self.assertTrue(NotificationState.objects.get(user=self.member, reminder__task=self.task).is_deleted)
+        self.assertEqual(SpaceTaskReminder.objects.filter(task=self.task).count(), 1)
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_reminder__task=self.task).is_deleted)
         self.task.reminder_at -= timedelta(minutes=1)
         self.task.save()
         item = self.page()['dashboard_notifications'][0]
@@ -71,7 +72,7 @@ class TaskReminderTests(TestCase):
         key = self.page()['dashboard_notifications'][0]['key']
         change_notification_state(self.member, {'action': 'archive', 'key': key})
         self.assertEqual(self.page()['dashboard_notification_count'], 0)
-        self.assertTrue(NotificationState.objects.get(reminder__task=self.task).is_read)
+        self.assertTrue(NotificationState.objects.get(space_reminder__task=self.task).is_read)
         self.task.reminder_at -= timedelta(minutes=1)
         self.task.save()
         item = self.page()['dashboard_notifications'][0]
@@ -106,7 +107,7 @@ class TaskReminderTests(TestCase):
 
     def test_workspace_filter_and_reminder_pagination(self):
         for index in range(15):
-            Task.objects.create(user=self.owner, workplace=self.workspace, assignee=self.member,
+            make_task(user=self.owner, workplace=self.workspace, assignee=self.member,
                                 title=f'Raport {index}', reminder_at=timezone.now() - timedelta(minutes=1))
         page = self.page()
         next_page = notification_page(self.member, self.filters, page['next_cursor'])

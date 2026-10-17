@@ -1,6 +1,4 @@
 """Tags available exclusively within a visible space."""
-import json
-
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
@@ -9,8 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 
 from workplaces.services import workspace_owner
-from .access import editable_to, visible_to
-from .models import TaskProject, TaskTag, TaskTagNote
+from .models import TaskTag, TaskTagNote
 
 
 TAG_ACTIONS = {'create_tag', 'edit_tag', 'delete_tag', 'add_tag_note',
@@ -37,15 +34,6 @@ def _posted_pk(request, name):
 def visible_tags(request):
     from spaces.services import visible_spaces
     return TaskTag.objects.filter(user=workspace_owner(request), workplace=request.workplace, space__in=visible_spaces(request))
-
-
-def form_tags(form, user, workplace, project=None, section=None):
-    """Legacy Tasks cannot select tags belonging to the independent Space domain."""
-    form.fields['tags'].widget.attrs.update({
-        'data-tag-project-options': json.dumps({'': []}),
-        'data-tag-project': '',
-    })
-    return TaskTag.objects.none()
 
 
 def tag_action(request, space):

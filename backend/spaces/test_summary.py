@@ -3,6 +3,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.test import TestCase
 from django.utils import timezone
 
@@ -102,6 +103,10 @@ class SpaceSummaryTests(TestCase):
         for _ in range(103):
             self.task(priority='none')
         self.task(status='closed', priority='urgent', assignee=self.owner)
+        # Even on a reused connection with stale planner statistics, this
+        # small catalog must not turn a grouped ACL query into a minute of work.
+        with connection.cursor() as cursor:
+            cursor.execute("SET LOCAL statement_timeout = '2s'")
         summary = self.response(self.url('?page=2')).context['summary']
         self.assertEqual(summary['total'], 106)
         self.assertEqual(summary['open_total'], 105)
@@ -146,11 +151,14 @@ class SpaceSummaryTests(TestCase):
         response = self.response()
         summary = response.context['summary']
         self.assertEqual(summary['total'], 1)
+        self.assertEqual({row['label']: row['count'] for row in summary['workload']}, {'Nieprzypisane': 1})
         self.assertEqual([row['key'] for row in summary['activities']], [visible.work_item.key, visible.work_item.key])
         self.assertEqual(summary['activities'][0]['actor'], 'Jan')
         self.assertIn(f'/tasks/{visible.work_item.key}/', summary['activities'][0]['url'])
         SpaceTaskMembership.objects.create(task=hidden, user=self.member, role='observer')
-        self.assertEqual(self.response().context['summary']['total'], 3)
+        shared = self.response().context['summary']
+        self.assertEqual(shared['total'], 3)
+        self.assertEqual({row['label']: row['count'] for row in shared['workload']}, {'Nieprzypisane': 2, 'Jan': 1})
         SpaceTaskMembership.objects.filter(task=hidden, user=self.member).delete()
         self.assertEqual(self.response().context['summary']['total'], 1)
         SpaceMembership.objects.filter(space=self.project, user=self.member).delete()

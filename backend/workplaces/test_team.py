@@ -10,15 +10,14 @@ from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from contacts.models import Company, Contact
+from legacy.contacts.models import Company, Contact
 from documents.models import Document, DocumentLibrary, WorkspaceDocument
 from documents import office_service
-from kanban.models import Kanban, KanbanProject, KanbanSection, KanbanAttachment
+from kanban.models import Kanban, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
-from spaces.models import SpaceTask
-from spaces.testing import make_space
-from tasks.forms import TaskForm, TaskModalForm, TaskProjectForm, TaskSectionForm
-from tasks.models import Task, TaskProject, TaskSection, TaskAttachment
+from spaces.models import SpaceTask, SpaceTaskFile
+from spaces.testing import make_task
+from tasks.models import Task, TaskProject, TaskSection
 from .models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
 from .services import workplaces_for_user, scoped_workplace_app_path
 
@@ -38,10 +37,10 @@ class TeamAccessTests(TestCase):
         cls.admin_membership = WorkplaceMembership.objects.create(workplace=cls.team, user=cls.admin, role='admin')
         cls.project = TaskProject.objects.create(user=cls.owner, workplace=cls.team, name='Wspólny projekt')
         cls.section = TaskSection.objects.create(project=cls.project, title='Realizacja')
-        cls.task = Task.objects.create(user=cls.owner, workplace=cls.team, section=cls.section, title='Zespołowe wdrożenie', assignee=cls.member)
-        cls.other_task = Task.objects.create(user=cls.owner, workplace=cls.private, title='Tajne prywatne zadanie')
-        cls.task_space = make_space(user=cls.owner, workplace=cls.team, name='Przestrzeń zespołu')
-        cls.space_task = SpaceTask.objects.create(space=cls.task_space, created_by=cls.owner, title='Zespołowe zadanie przestrzeni', assignee=cls.member)
+        cls.task = make_task(user=cls.owner, workplace=cls.team, title='Zespołowe wdrożenie', assignee=cls.member)
+        cls.other_task = make_task(user=cls.owner, workplace=cls.private, title='Tajne prywatne zadanie')
+        cls.task_space = cls.task.space
+        cls.space_task = cls.task
         cls.space = KanbanProject.objects.create(user=cls.owner, workplace=cls.team, name='Zespołowa tablica')
         cls.board = KanbanSection.objects.create(project=cls.space, title='Realizacja')
         cls.card = Kanban.objects.create(user=cls.owner, workplace=cls.team, section=cls.board, title='Zespołowa karta')
@@ -58,8 +57,16 @@ class TeamAccessTests(TestCase):
         session['active_workplace_id'] = self.team.pk
         session.save()
 
-    def url(self, app='tasks', suffix=''):
+    def url(self, app='spaces', suffix=''):
         return scoped_workplace_app_path(self.team, app, suffix)
+
+    def task_url(self, task=None, suffix=''):
+        task = task or self.task
+        return scoped_workplace_app_path(self.team, 'space', f'{task.space.slug}/tasks/{task.work_item.key}/{suffix}')
+
+    def create_task(self, **data):
+        return self.client.post(self.url('space', f'{self.task_space.slug}/items/create/'),
+            {'title': 'Zadanie członka', 'priority': 'medium', 'work_type': 'task', **data})
 
     def post_json(self, url, data):
         return self.client.post(url, json.dumps(data), content_type='application/json')
@@ -70,12 +77,12 @@ class TeamAccessTests(TestCase):
         shared = next(space for space in response.context['workplaces'] if space.pk == self.team.pk)
         self.assertEqual(shared.team_member_count, 3)
         self.assertEqual(self.client.get(self.url()).status_code, 200)
-        self.assertEqual(self.client.get(self.url(suffix=f'view-task/{self.task.task_id}/')).status_code, 200)
-        self.assertEqual(self.client.get(self.url(suffix=f'view-task/{self.task.task_id}/'), {'task_pk': self.other_task.pk}).status_code, 404)
-        self.assertEqual(self.client.get(scoped_workplace_app_path(self.private, 'tasks')).status_code, 302)
+        self.assertEqual(self.client.get(self.task_url()).status_code, 200)
+        self.assertEqual(self.client.get(self.task_url(self.other_task)).status_code, 404)
+        self.assertEqual(self.client.get(scoped_workplace_app_path(self.private, 'spaces')).status_code, 302)
 
     def test_every_module_is_visible_to_members(self):
-        for app in ['tasks', 'calendar', 'documents', 'office']:
+        for app in ['spaces', 'calendar', 'documents', 'office']:
             with self.subTest(app=app):
                 self.assertEqual(self.client.get(self.url(app)).status_code, 200)
         self.assertContains(self.client.get(self.url('documents')), self.library.name)
@@ -95,55 +102,46 @@ class TeamAccessTests(TestCase):
         self.assertIn(self.task.title, notifications.json()['html'])
         self.assertNotIn(self.other_task.title, notifications.json()['html'])
 
-    def test_my_tasks_filters_by_viewer_in_shared_space(self):
-        Task.objects.create(user=self.owner, workplace=self.team, section=self.section, title='Dla administratora', assignee=self.admin)
-        response = self.client.get(self.url(), {'view': 'my-tasks'})
-        self.assertEqual(response.context['task_window']['total_tasks'], 1)
-        self.assertEqual(list(response.context['task_window']['queryset']), [self.task])
+    def test_task_assignment_filter_uses_current_space_tasks(self):
+        other = make_task(user=self.owner, workplace=self.team, space=self.task_space, title='Dla administratora', assignee=self.admin)
+        response = self.client.get(self.url('space', f'{self.task_space.slug}/'), {'assignee': self.member.pk, 'view': 'list'})
+        ids = {item.task_id for item in response.context['items']}
+        self.assertEqual(ids, {self.task.pk})
+        self.assertNotIn(other.pk, ids)
 
     def test_member_creates_task_in_owner_scope_with_real_actor(self):
-        response = self.client.post(self.url(), {'action': 'create_task_modal', 'project_id': self.project.pk,
-            'section': self.section.pk, 'title': 'Zadanie członka', 'priority': 'medium', 'status': 'new', 'assignee': self.admin.pk})
+        response = self.create_task(assignee=self.admin.pk)
         self.assertEqual(response.status_code, 302)
-        task = Task.objects.get(title='Zadanie członka')
-        self.assertEqual((task.user_id, task.workplace_id, task.assignee_id), (self.owner.pk, self.team.pk, self.admin.pk))
-        self.assertEqual(task.activities.get(action='created').actor_id, self.member.pk)
+        task = SpaceTask.objects.get(title='Zadanie członka')
+        self.assertEqual((task.space.user_id, task.space.workplace_id, task.assignee_id), (self.owner.pk, self.team.pk, self.admin.pk))
+        self.assertEqual(task.activities.get(action='created').actor, self.member)
         self.membership.delete()
-        self.assertTrue(Task.objects.filter(pk=task.pk).exists())
+        self.assertTrue(SpaceTask.objects.filter(pk=task.pk).exists())
 
     def test_comments_and_status_keep_actor_completion_and_history(self):
-        detail = self.url(suffix=f'view-task/{self.task.task_id}/')
-        response = self.client.post(detail, {'action': 'add_activity_comment', 'activity_comment': 'Gotowe do odbioru'})
+        response = self.client.post(self.task_url(), {'action': 'comment', 'activity_comment': 'Gotowe do odbioru'})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.task.activities.get(kind='comment').actor_id, self.member.pk)
-        response = self.post_json(self.url(suffix=f'update/{self.task.task_id}/'), {'task_pk': self.task.pk, 'status': 'closed'})
+        self.assertEqual(self.task.activities.get(kind='comment').actor, self.member)
+        response = self.client.post(self.task_url(suffix='action/'), {'action': 'status', 'status': 'closed'}, HTTP_X_WORK_ACTION='true')
         self.assertEqual(response.status_code, 200)
         self.task.refresh_from_db()
         self.assertTrue(self.task.is_completed)
         self.assertIsNotNone(self.task.completion_date)
-        self.assertEqual(self.task.activities.filter(action='status_changed').latest('pk').actor_id, self.member.pk)
+        self.assertEqual(self.task.activities.get(action='status_changed').actor, self.member)
         self.client.force_login(self.owner)
-        self.assertContains(self.client.get(detail), 'Gotowe do odbioru')
+        self.assertContains(self.client.get(self.task_url()), 'Gotowe do odbioru')
 
-    def test_legacy_post_uses_active_team_and_rejects_foreign_pk(self):
-        response = self.post_json(reverse('tasks:update_task_status', args=[self.task.task_id]), {'task_pk': self.task.pk, 'status': 'closed'})
-        self.assertEqual(response.status_code, 200)
-        response = self.post_json(reverse('tasks:update_task_status', args=[self.other_task.task_id]), {'task_pk': self.other_task.pk, 'status': 'closed'})
-        self.assertEqual(response.status_code, 404)
-        self.other_task.refresh_from_db()
-        self.assertEqual(self.other_task.status, 'new')
+    def test_retired_status_posts_cannot_mutate_current_or_legacy_tasks(self):
+        self.assertEqual(self.client.post(self.url('tasks', 'update/1/'), {'task_pk': self.task.pk, 'status': 'closed'}).status_code, 404)
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, 'new')
 
     def test_assignment_choices_and_forged_assignment(self):
-        expected = {self.owner.pk, self.member.pk, self.admin.pk}
-        for form, field in [(TaskForm(instance=self.task, user=self.owner, workplace=self.team), 'assignee'),
-                            (TaskModalForm(user=self.owner, workplace=self.team), 'assignee'),
-                            (TaskProjectForm(user=self.owner, workplace=self.team), 'responsible_user'),
-                            (TaskSectionForm(user=self.owner, project=self.project), 'owner')]:
-            self.assertSetEqual(set(form.fields[field].queryset.values_list('pk', flat=True)), expected)
-        response = self.client.post(self.url(), {'action': 'create_task_modal', 'section': self.section.pk,
-            'title': 'Niedozwolone przypisanie', 'priority': 'medium', 'status': 'new', 'assignee': self.outsider.pk})
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(Task.objects.filter(title='Niedozwolone przypisanie').exists())
+        form = self.client.get(self.task_url()).context['form']
+        self.assertSetEqual(set(form.fields['assignee'].queryset.values_list('pk', flat=True)), {self.owner.pk, self.member.pk, self.admin.pk})
+        response = self.create_task(title='Niedozwolone przypisanie', assignee=self.outsider.pk)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(SpaceTask.objects.filter(title='Niedozwolone przypisanie').exists())
 
     def test_member_calendar_and_kanban_writes(self):
         response = self.post_json(self.url('kanban', f'update/{self.card.task_id}/'), {'task_pk': self.card.pk, 'status': 'closed'})
@@ -158,7 +156,7 @@ class TeamAccessTests(TestCase):
 
     def test_member_can_download_both_catalogs_and_attachments_then_loses_access(self):
         with tempfile.TemporaryDirectory() as directory:
-            objects = [self.document, self.office, TaskAttachment(task=self.task), KanbanAttachment(task=self.card)]
+            objects = [self.document, self.office, SpaceTaskFile(task=self.task, filename='team.txt', file_size=11)]
             urls = [self.url('documents', f'{self.document.pk}/download/'), self.url('office', f'{self.office.pk}/download/')]
             for item in objects:
                 field = item._meta.get_field('file')
@@ -167,7 +165,7 @@ class TeamAccessTests(TestCase):
                 field.storage = FileSystemStorage(directory)
                 item.file.storage = field.storage
                 item.file.save('team.txt', ContentFile(b'Team access'), save=True)
-            urls += [self.url('tasks', f'attachments/{objects[2].pk}/download/')]
+            urls += [objects[2].get_url()]
             for url in urls:
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 200, url)
@@ -195,9 +193,9 @@ class TeamAccessTests(TestCase):
         self.client.force_login(self.member)
         for purpose, token in [('source', source_token), ('callback', callback_token)]:
             self.assertFalse(office_service.check_capability(self.office, token, purpose))
-        self.assertEqual(self.client.get(self.url(suffix=f'view-task/{self.task.task_id}/')).status_code, 302)
+        self.assertEqual(self.client.get(self.url(suffix=f'view-task/{self.task.work_item.key}/')).status_code, 302)
         self.assertNotIn(self.task.title, json.dumps(self.client.get(reverse('global_search'), {'q': 'Zespołow'}).json(), ensure_ascii=False))
-        self.assertEqual(self.post_json(self.url(suffix=f'update/{self.task.task_id}/'), {'task_pk': self.task.pk, 'status': 'closed'}).status_code, 302)
+        self.assertEqual(self.post_json(self.url(suffix=f'update/{self.task.work_item.key}/'), {'task_pk': self.task.pk, 'status': 'closed'}).status_code, 302)
         self.task.refresh_from_db()
         self.assertEqual(self.task.status, 'new')
 
@@ -254,7 +252,7 @@ class TeamAccessTests(TestCase):
         self.membership.role = 'member'
         self.membership.save()
         self.assertEqual(self.client.post(url, {'action': 'remove'}).status_code, 302)
-        self.assertTrue(Task.objects.filter(pk=self.task.pk).exists())
+        self.assertTrue(SpaceTask.objects.filter(pk=self.task.pk).exists())
 
     def test_joining_never_backfills_personal_legacy_data_into_team(self):
         legacy = Task.objects.create(user=self.member, title='Moje stare dane')
@@ -265,23 +263,19 @@ class TeamAccessTests(TestCase):
     def test_workspace_slugs_are_unique_across_owners(self):
         other = create_workplace_for_user(self.member, self.team.name)
         self.assertNotEqual(other.slug, self.team.slug)
-        self.assertEqual(self.client.get(scoped_workplace_app_path(other, 'tasks')).status_code, 200)
+        self.assertEqual(self.client.get(scoped_workplace_app_path(other, 'spaces')).status_code, 200)
         self.assertEqual(self.client.get(self.url()).status_code, 200)
 
-    def test_bulk_status_records_each_actor_and_keeps_foreign_tasks_unchanged(self):
-        response = self.post_json(self.url(suffix='bulk-update-status/'), {'task_pks': [self.task.pk, self.other_task.pk], 'status': 'closed'})
+    def test_scoped_status_records_actor_and_cannot_target_another_workspace(self):
+        response = self.client.post(self.task_url(suffix='action/'), {'action': 'status', 'status': 'closed'}, HTTP_X_WORK_ACTION='true')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['updated_count'], 1)
+        response = self.client.post(self.task_url(self.other_task, 'action/'), {'action': 'status', 'status': 'closed'}, HTTP_X_WORK_ACTION='true')
+        self.assertEqual(response.status_code, 404)
         self.task.refresh_from_db()
         self.other_task.refresh_from_db()
         self.assertTrue(self.task.is_completed)
-        self.assertIsNotNone(self.task.completion_date)
         self.assertEqual(self.other_task.status, 'new')
-        self.assertEqual(self.task.activities.filter(action='status_changed').latest('pk').actor_id, self.member.pk)
-        response = self.post_json(self.url('kanban', 'bulk-update-status/'), {'task_pks': [self.card.pk], 'status': 'closed'})
-        self.assertEqual(response.status_code, 404)
-        self.card.refresh_from_db()
-        self.assertEqual(self.card.status, 'new')
+        self.assertEqual(self.task.activities.get(action='status_changed').actor, self.member)
 
     def test_removal_invalidates_all_existing_office_sessions(self):
         token = office_service.capability(self.office, 'callback', self.owner)

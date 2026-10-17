@@ -8,6 +8,7 @@ a interfejs z Reacta i TypeScriptu.
 
 ```text
 backend/           konfiguracja Django i aplikacje domenowe z testami i szablonami
+backend/legacy/   wyłącznie zgodność dawnych schematów i migracji, bez modułów UI
 frontend/app/      interfejs React i TypeScript
 frontend/board/    odizolowany edytor tablicy Excalidraw
 static/            wspólne style, skrypty, obrazy i lokalne biblioteki

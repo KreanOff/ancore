@@ -100,6 +100,33 @@ class RetiredTasksTests(TestCase):
         self.client.logout()
         self.assertEqual(self.client.get('/tasks/').status_code, 302)
 
+    def test_retired_form_actions_cannot_change_preserved_records(self):
+        actions = (
+            'create_project', 'edit_project', 'delete_project',
+            'create_section', 'edit_section', 'delete_section',
+            'create_task_modal', 'create_subtask_modal', 'save',
+            'add_activity_comment', 'add_work_log', 'edit_work_log', 'delete_work_log',
+        )
+        before = {
+            model: list(model.objects.order_by('pk').values())
+            for model in (TaskProject, TaskSection, Task, TaskActivity, TaskProjectTemplate)
+        }
+        for user in (self.owner, self.member):
+            self.login(user)
+            for prefix in self.prefixes():
+                for suffix in ('', f'groups/{self.group.pk}/', f'view-task/{self.task.task_id}/'):
+                    for action in actions:
+                        with self.subTest(user=user.pk, path=prefix + suffix, action=action):
+                            response = self.client.post(prefix + suffix, {
+                                'action': action, 'project_id': self.project.pk,
+                                'section': self.group.pk, 'task_pk': self.task.pk,
+                                'title': 'Nie zapisuj', 'status': 'closed',
+                                'activity_comment': 'Nie dostarczaj',
+                            }, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+                            self.assertEqual(response.status_code, 409)
+        for model, rows in before.items():
+            self.assertEqual(list(model.objects.order_by('pk').values()), rows)
+
     def test_access_helpers_hide_all_historical_work_and_preserve_space_tags(self):
         for viewer in (self.owner, self.member, self.outsider):
             for model in (Task, TaskProject, TaskSection, TaskProjectTemplate, TaskActivity, TaskAttachment, TaskCommentImage):

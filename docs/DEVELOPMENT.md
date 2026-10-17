@@ -18,6 +18,177 @@ Zasady formatu plików zapisuje `.editorconfig`. Wersjonowane
 `.vscode/settings.json` ustawia katalog importów i ukrywa cache, zależności,
 bundle oraz lokalne dane w Explorerze, bez usuwania ich z dysku.
 
+## Odłączenie dawnych Kontaktów (18.10.2026)
+
+Kontakty nie są modułem aplikacji. Pakiet `backend/contacts` usunięto z katalogu
+aplikacji; jedyna zgodność pozostaje w `backend/legacy/contacts`.
+`legacy.contacts.apps.LegacyContactsConfig` zachowuje etykietę Django `contacts`,
+modele tabel historycznych i niezmienione pliki migracji, ponieważ stare
+migracje Tasks/Kanbana i zapisane relacje `Company` nadal odwołują się do tej
+etykiety. Nie tworzy nowych tabel, rekordów ani ekranów. Usunięto pusty admin,
+a testy braku modułu przeniesiono do `core.test_contact_retirement`.
+
+Bieżące przełączanie Workspace nie wykonuje już backfillu `Company`, `Contact`
+ani `UserContact`. Routing Django w `DEBUG` zwraca 404 dla
+`/media/company_photos/...`; zachowane pliki
+nie są kasowane. Z `contacts.css` usunięto 1551 linii stylów dawnych ekranów.
+Pozostałe 460 linii wspólnych menu profilu, selectów i kadrowania przeniesiono
+do `shared-controls.css`, z zachowaniem selektorów i kolejności kaskady.
+Adres wspólnego arkusza ma nową wersję cache. Generator indeksu obsługuje
+jawne konfiguracje Django i pakiety w przestrzeni nazw `legacy`.
+
+Regresje sprawdzają stałą etykietę/tabele, ładowanie dawnych migracji,
+relacje firm, brak endpointów i wyników wyszukiwania, brak backfillu po
+przełączaniu Workspace oraz zamknięcie publicznego dostępu do zdjęć firm.
+
+Przeszło **1139/1139 testów** w pełnym przebiegu `--parallel 4` (87 s)
+oraz 208 testów ukierunkowanych (20 s), na osobnych bazach PostgreSQL
+i tymczasowym storage. Kontrola migracji w trybie tylko do odczytu nie
+wykazała zmian modeli ani oczekujących operacji; wszystkie dziewięć plików
+migracji Kontaktów, łącznie z `__init__.py`, zachowało identyczną zawartość
+i Git ich nie ignoruje. Przeszły kontrola Django, parsowanie
+444 plików Pythona, kompilacja 186 szablonów, linki i kotwice dokumentacji,
+aktualność indeksu oraz `git diff --check`.
+
+Playwright 1.62.1 z Chrome sprawdził menu profilu, picker awatara, upload
+syntetycznego obrazu do okna kadrowania, Escape i ponowne wejście na profil,
+przy 1440×1000 oraz 390×844. Referencjami były Tagi i Zasoby. Porównanie
+obliczonych stylów kontrolek z pierwotnym arkuszem, w tym samym miejscu
+kaskady i po wyłączeniu przejść CSS, potwierdziło identyczny wygląd.
+Nie było błędów konsoli ani nieudanych żądań. Wtyczka Browser była niedostępna;
+użyto lokalnego Playwrighta bez instalowania zależności. Nie zmieniano źródeł
+React ani zależności, nie wykonywano wdrożenia ani migracji bazy użytkownika.
+Nie sprawdzano innych przeglądarek; skrypty i zrzuty QA pozostają w `/tmp`.
+
+## Usunięcie nieużywanego kodu (18.10.2026)
+
+Po sprawdzeniu routingu, importów i przechodnich zależności szablonów usunięto
+stare widoki, formularze i ekrany Projektów, Grup, Zadań, Kanbana oraz Kontaktów.
+Usunięto także helpery dawnych katalogów, szablonów projektów i udostępniania,
+`project-templates.js`, dawny serwis `dashboard.overview`, nieużywane ilustracje
+gadżetów oraz puste pliki Core. Bieżący katalog tagów używa teraz
+`tasks.tag_directory`; `tasks.forms` zawiera wyłącznie `TaskTagForm`.
+
+Pozostawiono historyczne modele, wszystkie migracje, mapowania importu,
+chronione pliki i przekierowania z aktualnym ACL Przestrzeni. Sygnały czyszczące
+stare granty po odebraniu członkostwa pozostają aktywne. Usunięto nieużywane
+endpointy/helpery obserwowania i receiver dawnych komentarzy; zapisane
+`ObjectFollow`, `ActivityInterest` i `NotificationState` pozostają w bazie.
+Współdzielone include'y Tasks, CSS (obecnie `shared-controls.css`), adaptery JS oraz
+pierwszy render Django są nadal używane przez aktualną aplikację.
+
+Regresje dotyczą aktualnych endpointów i zachowania danych historycznych.
+Usunięto osiem testów wywołujących wyłącznie nieużywane helpery starego pulpitu
+i katalogów; testy bieżącej strony głównej zachowano w `dashboard.test_home`.
+Pozostałe testy dawnych formularzy sprawdzają odrzucenie zapisów przez routing.
+Test czasu pracy mockuje teraz zegar rzeczywistej implementacji `core.work_logs`.
+Zachowano wcześniejsze zmiany robocze, bez wdrożenia ani migracji bazy użytkownika.
+
+Zakres usunięcia: **79 plików** (33 Python, 42 szablony HTML, jeden JS,
+dwie ilustracje SVG i ich opis); bieżące testy strony głównej przeniesiono
+do `test_home.py`, a katalog tagów wydzielono do `tag_directory.py`.
+Trzy historyczne pliki modeli i wszystkie 178 plików migracji, łącznie
+z `__init__.py`, są identyczne z wersjonowanym stanem sprzed porządkowania.
+
+Weryfikacja: **1137/1137 testów** w pełnym przebiegu `--parallel 4` (90 s),
+bez pominięć, oraz 98 testów ukierunkowanych sekwencyjnie (121 s).
+Każdy przebieg używał osobnej bazy PostgreSQL i tymczasowego storage.
+Przeszły kontrola Django, TypeScript i build Reacta, parsowanie 444 plików
+Pythona, kompilacja 186 szablonów, linki i kotwice dokumentacji,
+aktualność indeksu oraz `git diff --check`. Kontrola migracji w trybie
+tylko do odczytu nie wykazała zmian modeli ani oczekujących operacji.
+
+Playwright 1.62.1 ze zainstalowanym Chrome, na osobnej bazie QA, sprawdził
+1440×1000 i 390×844: katalog tagów, walidację duplikatu, zapis, pusty wynik
+i przywrócenie wyszukiwania, sortowanie, przejście do listy i Wstecz
+w tym samym dokumencie, szczegóły zadania, zakładki, modal czasu i Escape.
+Ekranami referencyjnymi były Zasoby i pulpit domyślny. Nie było przepełnienia
+całej strony ani nieoczekiwanych błędów konsoli/HTTP; 400 przy duplikacie tagu
+było oczekiwaną walidacją. Wtyczka Browser nie była dostępna; użyto lokalnego
+Playwrighta, bez instalowania zależności. Zrzuty i skrypty QA pozostają w `/tmp`,
+poza repozytorium. Nie sprawdzano wszystkich ekranów ani innych przeglądarek.
+
+## Utrzymanie zestawu regresji (18.10.2026)
+
+Zestaw sprawdza aktywną aplikację oraz zachowanie historycznych danych.
+Dawne scenariusze tworzenia/edycji Projektów, Grup, katalogów Tasks,
+szablonów i ich udostępniania usunięto po wycofaniu tych ekranów. Ich
+kontrakt zastępują `tasks.test_retirement` i `kanban.test_retirement`:
+404 dla usuniętych endpointów, 409 dla dawnych zapisów, przekierowania
+zgodności z aktualnym ACL i zachowanie danych. Nie zmieniono wykrywania
+testów i nie dodano `skip`, `expectedFailure` ani filtrowania błędów.
+
+Regresje nadal używanych mechanizmów przeniesiono na aktualne modele:
+
+| Mechanizm | Bieżące testy |
+| --- | --- |
+| Komentarze, załączniki, rollback i prywatne pobieranie | `core.test_comment_images`, `spaces.test_task_detail_parity` |
+| Status, zakończenie, historia i równoczesny zapis | `core.test_status_updates`, `spaces.test_write_access` |
+| Stałe klucze zadań i granice Workspace | `core.test_task_integrity`, `workplaces.test_team` |
+| Wyszukiwanie i ostatnio oglądane | `dashboard.test_search_regressions`, `dashboard.tests` |
+| Wzmianki, inbox, paginacja i operacje zbiorcze | `dashboard.test_collaboration`, `dashboard.test_notifications` |
+| Osobiste przypomnienia | `dashboard.test_reminders` na `SpaceTaskReminder` |
+| Dziennik pracy, DST, walidacja i transakcje | `spaces.test_work_logs` (przeniesione z `tasks.test_work_logs`) |
+
+Zachowano testy migracji, numeracji i przechowywanych modeli Tasks, w tym
+prywatności, członkostw, historycznych szablonów i czasu pracy. Test migracji
+identyfikatorów Workspace buduje teraz dane ze stanu rzeczywiście
+zastosowanych migracji; cofnięcie `workplaces.0010` cofa także zależne
+migracje innych aplikacji. Dzięki temu historyczny model nie żąda kolumny
+`legacy_slug`, której cofnięty schemat jeszcze nie zawiera. Nie wymagało to
+zmiany migracji ani modeli produkcyjnych.
+
+Testy zapisu AJAX oczekują JSON 200 i sprawdzają zapis, historię oraz ponowny
+odczyt. Testy Workspace używają Przestrzeni i bieżącej powłoki; testy
+wycofanych Kontaktów/Dokumentów potwierdzają brak dawnych wyników
+wyszukiwania. `spaces.testing.make_task` tworzy jawne fixture'y bieżących
+zadań, z kontrolą właściciela i Workspace.
+
+Pełny, izolowany przebieg uruchamiaj z katalogu repozytorium:
+
+```sh
+.venv/bin/python scripts/run_tests.py
+# Opcjonalnie wybrane etykiety i standardowe flagi Django:
+.venv/bin/python scripts/run_tests.py core.test_status_updates spaces.test_work_logs --verbosity 2
+```
+
+[Skrypt](../scripts/run_tests.py) używa standardowego polecenia Django `test` i istniejącego
+`BackendDiscoverRunner`. Nadaje bazie testowej unikatową nazwę, ustawia
+MEDIA/PRIVATE/STATIC_ROOT w katalogu tymczasowym i sprząta storage po
+zakończeniu. Tylko połączenia tego procesu dostają wyłączony PostgreSQL JIT
+i limit zapytania 60 s (można nadpisać przez `PGOPTIONS`). Nie uruchamia
+migracji na bazie z danymi użytkownika. Tak jak `manage.py test`, wymaga
+uprawnień PostgreSQL do utworzenia i usunięcia bazy testowej oraz zbudowanego
+bundla `frontend/app`.
+
+Test otwarcia edytorów Dysku (`documents.test_drive_office`) sprawdza
+ścieżkę źródła i ważność podpisanego tokenu. Nie porównuje dwóch osobno
+wygenerowanych podpisów: ich znacznik czasu może zmienić się pomiędzy
+wywołaniami. Usuwa to losową porażkę na granicy sekundy, bez zmiany
+mechanizmu podpisywania lub czasu ważności adresów.
+
+Pełny przebieg ujawnił również timeout grupowania obciążenia w podsumowaniu
+Przestrzeni dla 106 zadań. `spaces.summary.materialized_summary_items`
+oddziela istniejący zakres ACL/filtrów od agregacji przez PostgreSQL
+`MATERIALIZED` CTE, zachowując ten sam snapshot i kontrolę widoczności.
+`spaces.test_summary` sprawdza pełne sumy z podzadaniami przy limicie 2 s
+na zapytanie oraz obciążenie przed nadaniem i po odebraniu dostępu.
+Nie zmieniono limitu 60 s całego runnera ani ustawień serwera PostgreSQL.
+
+Końcowa weryfikacja na Pythonie 3.15/Django 6.1.2: **1145/1145 testów**
+przeszło sekwencyjnie (397 s) oraz równolegle, `--parallel 4` (87 s),
+bez pominięć i oczekiwanych porażek. Liczba zmalała z 1407 po usunięciu
+scenariuszy wycofanych ekranów i przeniesieniu bieżących regresji; żaden
+test nie jest wyłączony w runnerze. Każdy przebieg używał odrębnej bazy
+PostgreSQL i tymczasowego storage, usuniętych po zakończeniu.
+Przeszły kontrola Django, `pip check`, parsowanie zmienionych źródeł,
+lokalne linki dokumentacji, aktualność indeksu oraz `git diff --check`.
+Nie zmieniono UI, modeli, migracji ani zależności. Nie uruchamiano przeglądarki,
+nie wykonano wdrożenia ani migracji bazy z danymi użytkownika.
+
+Poniższe zapisy aktualizacji zachowują wyniki historycznych przebiegów,
+w tym wcześniejsze 395 nieudanych przypadków spośród 1407 testów.
+
 ## Aktualizacja zależności (17.10.2026)
 
 W `requirements.txt` oraz lokalnym `.venv` zaktualizowano trzy pakiety:
@@ -197,8 +368,8 @@ na tej samej kopii; pominięto je w końcowym zestawie:
 | Testy z wcześniejszym problemem | Obserwacja na kodzie przed i po przeniesieniu |
 | --- | --- |
 | `spaces.test_issue_types.IssueTypeTests.test_detail_edit_and_reopen_keep_type_and_history` oraz `test_other_detail_edits_do_not_reset_type` | Oczekiwane 302, odpowiedź 200 |
-| `contacts.tests.RetiredContactDirectoryTests.test_legacy_favorites_do_not_restore_retired_directories` | Oczekiwana usunięta sekcja „Starsze widoki” |
-| `contacts.tests.RetiredContactDirectoryTests.test_search_omits_retired_records_and_navigation` | Oczekiwana usunięta grupa wyników `projects` |
+| `core.test_contact_retirement.RetiredContactDirectoryTests.test_legacy_favorites_do_not_restore_retired_directories` | Oczekiwana usunięta sekcja „Starsze widoki” |
+| `core.test_contact_retirement.RetiredContactDirectoryTests.test_search_omits_retired_records_and_navigation` | Oczekiwana usunięta grupa wyników `projects` |
 | `documents.tests.DocumentLibraryTests.test_workspace_view_search_tag_pagination_and_actions_keep_workspace_scope` | Oczekiwana usunięta grupa wyników `tags` |
 
 Pierwszy przebieg przerwano na
@@ -569,7 +740,7 @@ bieżącą stronę, CSRF, Kanban, zwykłe/scoped adresy, pełne agregacje po fil
 zero i brak estymacji, tworzenie w sekcji, edycję i cykl sprintu oraz przydział
 kolejności nowych zadań po planowaniu. Sprawdzaj razem z
 `spaces.test_backlog_drag`, `spaces.test_backlog_ordering` i całym `spaces`.
-Powiązane aktywne moduły: `dashboard.test_overview`, `dashboard.test_for_you`
+Powiązane aktywne moduły: `dashboard.test_home`, `dashboard.test_for_you`
 i `planner.test_task_calendar`. Nie ma nowych migracji ani zależności.
 
 Weryfikacja: przeszło 196 testów Przestrzeni i 43 testy wskazanych aktywnych
@@ -840,26 +1011,17 @@ indeksu oraz `git diff --check` przeszły. Serwer i baza QA zostały usunięte.
 Nie uruchamiano całego repozytorium, historycznych testów ekranów Tasks,
 Safari ani Firefox. Kod nie wymaga migracji i nie kasuje danych użytkowników.
 
-## Historyczne regresje zapisu i numeracji
+## Regresje zapisu i numeracji
 
-`tasks.test_task_moves` sprawdza wycofanie przenoszenia zadań: ignorowanie
-starych pól miejsca w zwykłych/scoped adresach i AJAX, zachowanie grupy,
-numeracji i metadanych całego drzewa, edycję przy ukrytych/obserwowanych
-potomkach, walidację tagów/typu w zapisanej przestrzeni, wybór rodzica
-tylko z tej samej grupy oraz odmowę zapisu obserwatorowi. Sprawdzaj również
-`tasks.test_unassigned_creation`, `spaces.test_issue_types`, `spaces.test_tags`
-i `core.test_status_updates`. Browser QA obejmuje tekst obecnej przestrzeni/grupy,
-brak wyboru grupy w edycji, zapis pozostałych pól, zadanie nieprzypisane,
-błąd walidacji, ponowne wejście oraz desktop/telefon.
-`tasks.test_write_locking` uruchamia równocześnie tworzenie projektu
-z szablonu i POST szczegółów zadania. `spaces.test_write_access` zmienia rolę lub
-członkostwo z drugiego połączenia przed uzyskaniem blokady; zapis musi zostać
-odrzucony. `spaces.test_backlog_ordering` obejmuje kolejność, filtry, zadania na
-tablicy/zamknięte oraz menu członka i obserwatora. Sprawdzaj także
-`accounts.test_email_identity`, `core.test_task_integrity`, `spaces` i istniejące
-testy prywatności Zadań. Kontrola przeglądarkowa: logowanie e-mailem zapisanym z
-inną wielkością liter, menu backlogu → „Przesuń niżej”, zachowanie filtra i
-kolejności po powrocie/przeładowaniu, pusty wynik oraz desktop/telefon.
+`tasks.test_task_moves` zachowuje kontrolę blokady zmiany historycznej
+lokalizacji i edycję aktualnego zadania bez pól dawnego projektu/grupy.
+Bieżące operacje sprawdzają `spaces.test_independent_tasks`,
+`spaces.test_issue_types`, `spaces.test_tags` i `core.test_task_integrity`.
+`core.test_status_updates` sprawdza współbieżną zmianę statusu, trwałość daty
+zakończenia i rollback razem z historią. `spaces.test_write_access` zmienia
+rolę/członkostwo z drugiego połączenia przed uzyskaniem blokady; zapis musi
+zostać odrzucony. `spaces.test_backlog_ordering` obejmuje kolejność, filtry,
+zadania na tablicy/zamknięte oraz menu członka i obserwatora.
 
 Weryfikacja wyglądu backlogu (9.10.2026): 44 testy `spaces.tests.SpaceTests`,
 `spaces.test_backlog_ordering` i `spaces.test_write_access` przeszły.
@@ -919,7 +1081,7 @@ Migracja `spaces.0005_space_slugs` wymaga backupu i `manage.py migrate`.
 
 Weryfikacja adresów Przestrzeni (10.10.2026): 194 testy `spaces`,
 `dashboard.tests.DashboardViewTests`, `dashboard.test_for_you`,
-`dashboard.test_overview` i `dashboard.test_search_regressions` przeszły.
+`dashboard.test_home` i `dashboard.test_search_regressions` przeszły.
 W dodatkowym zestawie `kanban.test_retirement` przeszło 5 z 6 testów;
 błąd `dashboard_totals` w historycznym teście odtworzono na niezmienionym HEAD.
 Playwright/Chrome (plugin Browser niedostępny) na izolowanej bazie QA przy
@@ -1014,7 +1176,7 @@ Katalog i zarządzanie Przestrzeniami sprawdzaj także pod kątem braku bocznych
 odstępów tabeli, porównując je z Workspace i Projektami na desktopie, tablecie
 i telefonie, również po paginacji i przeładowaniu.
 Uruchamiaj `spaces.tests.SpaceTests`, `spaces.test_navigation`,
-`spaces.test_management` i regresje katalogu Projektów `tasks.test_directory_tabs`.
+`spaces.test_management`, `core.test_navigation_frontend` i `core.test_workspace_frontend`.
 
 `spaces.test_navigation` sprawdza osobiste gwiazdki, kolejność odwiedzin,
 limit i brak duplikatów, zwykłe/scoped adresy, cofnięcie dostępu, granice
@@ -1286,7 +1448,7 @@ z możliwością utworzenia bazy testowej. Runner Django tworzy osobną bazę te
 .venv/bin/python manage.py check
 .venv/bin/python manage.py test tasks
 .venv/bin/python manage.py test kanban
-.venv/bin/python manage.py test contacts accounts workplaces
+.venv/bin/python manage.py test core.test_contact_retirement accounts workplaces
 .venv/bin/python manage.py test planner dashboard core
 .venv/bin/python manage.py test documents
 ```
@@ -1301,14 +1463,10 @@ Testy migracji mogą przebudowywać schemat bazy testowej. Nie uruchamiaj ich
 ręcznie na bazie z danymi użytkownika. Samo `manage.py check` nie potwierdza
 stanu migracji, poprawnego połączenia z bazą ani działania UI.
 
-Zakładki katalogów i osobiste ulubione wymagają migracji Tasks
-`0061_directory_favorites`, dodającej dwie relacje many-to-many bez zmiany
-dotychczasowych rekordów i dostępu. `0062_task_favorites` dodaje analogiczną
-relację `Task.favorited_by`. Testy `tasks.test_directory_tabs` obejmują
-kategorie, dziedziczenie grup i zadań, oba warianty URL, filtry/paginację, osobiste ulubione,
-obserwatorów, cofnięcie dostępu, obcy Workspace i CSRF. Dawne testy katalogów
-z publicznymi danymi wybierają jawnie `tab=public`, ponieważ domyślną zakładką
-jest teraz „Prywatne”.
+Historyczne migracje Tasks `0061_directory_favorites` i `0062_task_favorites`
+zachowują osobiste ulubione Projektów, Grup i Zadań. Nie przywracają ich
+katalogów. `tasks.test_retirement` sprawdza zachowanie danych i brak dawnych
+operacji; `spaces.test_navigation` sprawdza bieżące gwiazdki i nawigację.
 
 Historyczne migracje Kanbana `0038_directory_favorites` i `0039_sharing`
 zachowują dawne ulubione, prywatność i członkostwa. Test migracji pozostaje
@@ -1400,12 +1558,12 @@ i `accounts.tests`. W przeglądarce sprawdź nowe konto → pierwsze logowanie �
 losową nazwę w przełączniku i katalogu Workspace → przeładowanie/powrót,
 desktop/telefon oraz edycję nazwy przez istniejący formularz.
 
-`tasks.test_unassigned_creation` sprawdza puste powiązania nowego zadania,
-tworzenie bez projektu/grupy (także w pustym Workspace), oba warianty URL,
-autora historii, prywatność, wykonawcę, zakończenie, edycję i późniejsze przypisanie
-grupy oraz odrzucanie obcych, prywatnych i niespójnych grup.
-Regresje katalogu i paginacji są w `tasks.test_directory_tabs`
-i `tasks.test_status_pagination`; wspólny skrypt wymaga też sprawdzenia Kanbana w przeglądarce.
+Tworzenie samodzielnych zadań Przestrzeni sprawdzają
+`spaces.test_independent_tasks`, `spaces.test_issue_types`,
+`spaces.test_task_detail_parity` i `workplaces.test_team`. Katalog,
+filtrowanie i paginację sprawdzają `spaces`, `dashboard.test_filters`
+oraz `core.test_frontend`. Dawne testy katalogów Tasks zastąpił kontrakt
+`tasks.test_retirement`.
 
 ## 5. Dobór zakresu sprawdzenia
 
@@ -1471,7 +1629,8 @@ To obserwacje stanu na 15.09.2026, nie lista wdrożonych poprawek.
   Obecne reguły nie wykluczają migracji; są one wersjonowane w `backend/`.
 - Ówczesny `requirements.txt` nie przypinał dokładnych wersji. Obecnie
   zależności backendu są przypięte do wersji lokalnie zweryfikowanych.
-- `backend/tasks/views.py` jest pustą pozostałością; routing używa pakietu `backend/tasks/views/`.
+- Dawny `tasks/views.py` był pustą pozostałością obok pakietu widoków.
+  Obie implementacje usunięto podczas porządkowania 18.10.2026.
 - Nazwy części plików/bloków/klas są historyczne. Decydują aktywne importy,
   trasy i wywołania, nie nazwa.
 - Uprawnienia udostępniania są wyłączone mimo pozostałych modeli/helperów.
@@ -1734,8 +1893,9 @@ Tasks `0055_project_sharing` dodaje relację odbiorców, a
 „Członek” i dodaje zaproszenia. Migracja zachowuje dostęp w obu kierunkach.
 Dashboard `0005_project_invitations` rozszerza osobisty stan powiadomień.
 Tasks `0057_project_observer` dodaje rolę tylko do odczytu do obu pól `role`,
-bez migracji istniejących wartości. Testy `tasks.test_project_observer` obejmują
-blokady zapisu, odczyt, relacje formularzy, role zespołu i mieszane operacje zbiorcze.
+bez migracji istniejących wartości. Są to historyczne dane: obecne testy
+`tasks.test_retirement` sprawdzają wyłączenie operacji, a `spaces.test_write_access`
+i `spaces.test_task_detail_parity` bieżące role i granice odczytu/zapisu.
 Uruchom `manage.py migrate`; sprawdź obecność wszystkich plików migracji
 w repozytorium. UI korzysta z `project-team.js`, istniejącego pickera
 `workplace-team.js`, tabel Workspace oraz stylów `workplace-team.css`.
@@ -1817,7 +1977,7 @@ oraz bezpośrednie adresy tworzenia i edycji zasobów.
 Zmiana nie wymaga migracji. Modele i dane historyczne pozostają, natomiast
 routing, pozycje menu, globalne wyniki wyszukiwania i Django admin są wyłączone.
 Stare ulubione są pomijane przez katalog dozwolonych skrótów.
-Testy: `manage.py test contacts dashboard.tests dashboard.test_search_regressions
+Testy: `manage.py test core.test_contact_retirement dashboard.tests dashboard.test_search_regressions
 workplaces.test_team workplaces.test_invitation_candidates accounts.tests`.
 Browser QA: pozostałe Starsze widoki i Przestrzenie, wyszukiwanie bez wycofanych
 modułów, 404 starego adresu, desktop/telefon, zwinięte menu i ponowne wejście.
@@ -1877,7 +2037,7 @@ Przed zastosowaniem wykonaj backup bazy; migracja odwrotna odtwarza puste tabele
 nie odzyskuje usuniętych grup. Wszystkie migracje są źródłami aplikacji
 i muszą być wersjonowane.
 
-Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_editor`, `dashboard.test_pulpit_catalog`, `dashboard.test_pulpit_navigation`, `dashboard.test_pulpit_group_retirement`, `dashboard.test_pulpit_management`, `spaces.test_management`, `spaces.test_navigation`, `dashboard.test_overview`,
+Testy: `dashboard.test_pulpits`, `dashboard.test_pulpit_editor`, `dashboard.test_pulpit_catalog`, `dashboard.test_pulpit_navigation`, `dashboard.test_pulpit_group_retirement`, `dashboard.test_pulpit_management`, `spaces.test_management`, `spaces.test_navigation`, `dashboard.test_home`,
 `dashboard.test_for_you`, `dashboard.test_search_regressions`,
 `core.test_task_integrity`, `planner.test_task_calendar` oraz `workplaces`.
 Nowe testy obejmują właściciela/twórcę, dwa Workspace, prywatność rodziców,
@@ -2103,7 +2263,7 @@ kategorię/przypomnienie, widoczność i prywatnych potomków, modal podzadania,
 zbiorcze usuwanie, modal czasu z dodawaniem/edycją/usuwaniem, paginację,
 udostępnianie/role, granice administratora, nieprawidłowe ID i powiadomienia.
 Wspólna walidacja czasu jest w `backend/core/work_logs.py`; testuj także starsze
-`tasks.test_work_logs`, `dashboard.test_notifications`, `test_reminders`,
+`spaces.test_work_logs`, `dashboard.test_notifications`, `test_reminders`,
 `test_collaboration` i `core.test_file_lifecycle`.
 
 Browser QA musi obejmować wszystkie pięć zakładek, puste i wypełnione panele,

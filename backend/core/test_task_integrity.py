@@ -9,7 +9,7 @@ from django.db.models.query import QuerySet
 from django.test import TestCase, TransactionTestCase
 
 from dashboard.views import _dashboard_notifications
-from kanban.models import Kanban, KanbanBoardColumn, KanbanProject, KanbanSection
+from kanban.models import Kanban, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
 from tasks.models import Task, TaskProject, TaskSection
 from workplaces.models import create_workplace_for_user
@@ -33,107 +33,6 @@ class TaskIdentityTests(TestCase):
     def post_json(self, url, data):
         return self.client.post(url, json.dumps(data), content_type='application/json')
 
-    def test_repeated_deletion_uses_pk_after_renumbering_and_is_idempotent(self):
-        for app, model in [('tasks', Task)]:
-            with self.subTest(app=app):
-                a, b, c = [model.objects.create(user=self.user, workplace=self.first, title=title) for title in 'ABC']
-                url = scoped_workplace_app_path(self.first, app, 'delete/')
-                for key in [a.pk, a.pk, b.pk]:
-                    self.assertEqual(self.post_json(url, {'task_pks': [key]}).status_code, 200)
-                self.assertEqual(list(model.objects.values_list('pk', flat=True)), [c.pk])
-                c.refresh_from_db()
-                self.assertEqual(c.task_id, 1)
-
-    def test_bulk_delete_counts_only_tasks_including_descendants(self):
-        project = TaskProject.objects.create(user=self.user, workplace=self.first, name='Delete count')
-        section = TaskSection.objects.create(project=project, title='Group')
-        root = Task.objects.create(user=self.user, section=section, title='Root')
-        child = Task.objects.create(user=self.user, section=section, parent=root, title='Child')
-        child.activities.create(actor=self.user, message='Additional history')
-        elsewhere = Task.objects.create(user=self.user, workplace=self.second, title='Elsewhere')
-        url = scoped_workplace_app_path(self.first, 'tasks', 'delete/')
-        response = self.post_json(url, {'task_pks': [root.pk, elsewhere.pk]})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['deleted_count'], 2)
-        self.assertTrue(Task.objects.filter(pk=elsewhere.pk).exists())
-        self.assertEqual(self.post_json(url, {'task_pks': [root.pk]}).json()['deleted_count'], 0)
-
-    def test_bulk_delete_one_task_does_not_count_metadata_or_history(self):
-        task = Task.objects.create(user=self.user, workplace=self.first, title='Single')
-        response = self.post_json(scoped_workplace_app_path(self.first, 'tasks', 'delete/'), {'task_pks': [task.pk]})
-        self.assertEqual(response.json()['deleted_count'], 1)
-
-    def test_scoped_actions_stay_in_first_tab_after_opening_second_workspace(self):
-        for app, model in [('tasks', Task)]:
-            with self.subTest(app=app):
-                a = model.objects.create(user=self.user, workplace=self.first, title='A')
-                b = model.objects.create(user=self.user, workplace=self.second, title='B')
-                self.client.get(scoped_workplace_app_path(self.second, 'calendar'))
-                response = self.post_json(scoped_workplace_app_path(self.first, app, 'delete/'), {'task_pks': [a.pk, b.pk]})
-                self.assertEqual(response.status_code, 200)
-                self.assertFalse(model.objects.filter(pk=a.pk).exists())
-                self.assertTrue(model.objects.filter(pk=b.pk).exists())
-
-    def test_mutations_reject_display_numbers_and_malformed_identities(self):
-        for app, model in [('tasks', Task)]:
-            item = model.objects.create(user=self.user, workplace=self.first, title='Protected')
-            for suffix in ['delete/', 'bulk-update-status/']:
-                for data in [{'task_ids': [item.task_id]}, {'task_pks': []}, {'task_pks': [True]}, {'task_pks': ['1']}, []]:
-                    with self.subTest(app=app, suffix=suffix, data=data):
-                        self.assertEqual(self.post_json(scoped_workplace_app_path(self.first, app, suffix), data).status_code, 400)
-            for suffix in [f'delete/{item.task_id}/', f'update/{item.task_id}/']:
-                self.assertEqual(self.post_json(scoped_workplace_app_path(self.first, app, suffix), {}).status_code, 400)
-            self.assertTrue(model.objects.filter(pk=item.pk, status='new').exists())
-
-    def test_single_and_bulk_status_changes_preserve_scope_and_completion(self):
-        for app, model in [('tasks', Task)]:
-            item = model.objects.create(user=self.user, workplace=self.first, title='Target')
-            other = model.objects.create(user=self.other, workplace=self.first, title='Foreign owner')
-            elsewhere = model.objects.create(user=self.user, workplace=self.second, title='Foreign workspace')
-            base = scoped_workplace_app_path(self.first, app)
-            response = self.post_json(base + 'update/999/', {'task_pk': item.pk, 'status': 'closed'})
-            self.assertEqual(response.status_code, 200)
-            item.refresh_from_db()
-            self.assertTrue(item.is_completed)
-            self.assertIsNotNone(item.completion_date)
-            for forbidden in [other, elsewhere]:
-                self.assertEqual(self.post_json(base + 'update/999/', {'task_pk': forbidden.pk, 'status': 'closed'}).status_code, 404)
-                self.assertEqual(self.post_json(base + 'delete/999/', {'task_pk': forbidden.pk}).status_code, 404)
-            response = self.post_json(base + 'bulk-update-status/', {'task_pks': [item.pk, other.pk, elsewhere.pk], 'status': 'reopened'})
-            self.assertEqual(response.json()['updated_count'], 1)
-            item.refresh_from_db()
-            self.assertFalse(item.is_completed)
-            self.assertIsNone(item.completion_date)
-            self.assertEqual(model.objects.get(pk=other.pk).status, 'new')
-            self.assertEqual(model.objects.get(pk=elsewhere.pk).status, 'new')
-
-    def test_stale_detail_link_uses_pk_and_does_not_open_reassigned_number(self):
-        for app, model in [('tasks', Task)]:
-            a, b, c = [model.objects.create(user=self.user, workplace=self.first, title=title) for title in 'ABC']
-            old_number = b.task_id
-            a.delete()
-            url = scoped_workplace_app_path(self.first, app, f'view-task/{old_number}/')
-            response = self.client.get(url, {'task_pk': b.pk})
-            self.assertEqual(response.context['task'].pk, b.pk)
-            self.assertContains(response, f'name="task_pk" value="{b.pk}"')
-            self.assertEqual(self.client.get(url, {'task_pk': 'invalid'}).status_code, 404)
-            foreign = model.objects.create(user=self.user, workplace=self.second, title='Foreign')
-            self.assertEqual(self.client.get(url, {'task_pk': foreign.pk}).status_code, 404)
-
-    def test_legacy_and_scoped_pages_render_workspace_and_pk_contract(self):
-        for app, model, project_model, section_model in [('tasks', Task, TaskProject, TaskSection)]:
-            project = project_model.objects.create(user=self.user, workplace=self.first, name=app)
-            section = section_model.objects.create(project=project, title='Group')
-            item = model.objects.create(user=self.user, section=section, title='Item')
-            base = scoped_workplace_app_path(self.first, app)
-            self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
-            for path in [base + f'groups/{section.pk}/', f'/{app}/groups/{section.pk}/']:
-                page = self.client.get(path, follow=True)
-                self.assertContains(page, f'data-task-app="{app}"')
-                self.assertContains(page, f'data-task-base-url="{base}"')
-                self.assertContains(page, f'data-task-pk="{item.pk}"')
-                self.assertContains(page, f'{base}view-task/{item.task_id}/?task_pk={item.pk}')
-
     def test_calendar_urls_preserve_workspace_for_all_operations(self):
         page = self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
         urls = page.context['calendar_config']['urls']
@@ -149,22 +48,6 @@ class TaskIdentityTests(TestCase):
         self.client.get(scoped_workplace_app_path(self.second, 'calendar'))
         self.assertEqual(self.client.post(urls['delete'].replace('__ID__', str(event.pk))).status_code, 200)
         self.assertFalse(CalendarEvent.objects.exists())
-
-    def test_notifications_open_the_workspace_of_each_task_or_card(self):
-        expected = {}
-        for app, model in [('tasks', Task)]:
-            for workspace in [self.first, self.second]:
-                item = model.objects.create(user=self.user, workplace=workspace, title=f'{app}-{workspace.pk}')
-                item.activities.create(actor=self.user, kind='comment', action='commented', message='Komentarz')
-                expected[item.title] = (item.pk, workspace)
-        notifications = _dashboard_notifications(self.user)
-        self.assertEqual(len(notifications), len(expected))
-        for notification in notifications:
-            key, workspace = expected[notification['title']]
-            self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
-            response = self.client.get(notification['url'], follow=True)
-            self.assertEqual(response.context['task'].pk, key)
-            self.assertEqual(response.context['task'].workplace_id, workspace.pk)
 
     def test_legacy_backfill_compacts_numbers_without_collisions(self):
         for app, model in MODULES:
@@ -235,3 +118,94 @@ class ConcurrentTaskNumberTests(TransactionTestCase):
                 model.objects.filter(pk=b.pk).update(task_id=a.task_id)
             other = model.objects.create(user=user, workplace=second, title='Other workspace')
             self.assertEqual(other.task_id, 1)
+
+
+class SpaceTaskIdentityTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        from spaces.testing import make_space
+        cls.user = get_user_model().objects.create_user(username='space-identity', email='space-identity@example.test')
+        cls.first = create_workplace_for_user(cls.user, 'First')
+        cls.second = create_workplace_for_user(cls.user, 'Second')
+        cls.space = make_space(user=cls.user, workplace=cls.first, name='Stable keys', key='STABLE')
+        cls.other_space = make_space(user=cls.user, workplace=cls.second, name='Elsewhere')
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def task(self, title, space=None, **values):
+        from spaces.models import SpaceTask
+        return SpaceTask.objects.create(space=space or self.space, created_by=self.user, title=title, **values)
+
+    def url(self, task, suffix='', workplace=None):
+        return scoped_workplace_app_path(workplace or task.space.workplace, 'space',
+            f'{task.space.slug}/tasks/{task.work_item.key}/{suffix}')
+
+    def test_deletion_never_reassigns_surviving_or_new_task_keys(self):
+        first, target, later = [self.task(title) for title in ('First', 'Target', 'Later')]
+        key, url = target.work_item.key, self.url(target)
+        first.delete()
+        self.assertEqual(self.client.get(url).context['task'].pk, target.pk)
+        self.assertEqual(target.work_item.key, key)
+        target.delete()
+        newest = self.task('Newest')
+        self.assertGreater(newest.work_item.number, later.work_item.number)
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_url_identity_overrides_forged_posted_pk(self):
+        target, other = self.task('Target'), self.task('Other')
+        response = self.client.post(self.url(target, 'action/'),
+            {'action': 'status', 'status': 'closed', 'task_pk': other.pk}, HTTP_X_WORK_ACTION='true')
+        self.assertEqual(response.status_code, 200)
+        target.refresh_from_db()
+        other.refresh_from_db()
+        self.assertTrue(target.is_completed)
+        self.assertEqual(other.status, 'new')
+
+    def test_scoped_actions_keep_original_workspace_after_another_tab_is_opened(self):
+        target = self.task('Target')
+        elsewhere = self.task('Elsewhere', space=self.other_space)
+        self.client.get(scoped_workplace_app_path(self.second, 'calendar'))
+        response = self.client.post(self.url(target, 'action/'), {'action': 'status', 'status': 'closed'}, HTTP_X_WORK_ACTION='true')
+        self.assertEqual(response.status_code, 200)
+        target.refresh_from_db()
+        elsewhere.refresh_from_db()
+        self.assertTrue(target.is_completed)
+        self.assertEqual(elsewhere.status, 'new')
+        self.assertEqual(self.client.post(self.url(elsewhere, 'action/', workplace=self.first), {'action': 'status', 'status': 'closed'}).status_code, 404)
+
+    def test_base_and_scoped_links_use_the_same_current_task(self):
+        target = self.task('Target')
+        self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
+        for url in [self.url(target), f'/space/{self.space.slug}/tasks/{target.work_item.key}/']:
+            with self.subTest(url=url):
+                response = self.client.get(url, follow=True)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context['task'].pk, target.pk)
+                self.assertContains(response, target.work_item.key)
+
+    def test_notifications_link_to_each_task_workspace_and_stable_key(self):
+        expected = {}
+        for space in (self.space, self.other_space):
+            task = self.task(space.name, space=space)
+            task.activities.create(actor=self.user, kind='comment', action='commented', message='Komentarz')
+            expected[task.title] = task
+        notifications = _dashboard_notifications(self.user)
+        self.assertEqual(len(notifications), 2)
+        for notification in notifications:
+            task = expected[notification['title']]
+            self.assertEqual(notification['url'], self.url(task) + '?view=list')
+            self.client.get(scoped_workplace_app_path(self.first, 'calendar'))
+            response = self.client.get(notification['url'])
+            self.assertEqual(response.context['task'].pk, task.pk)
+            self.assertEqual(response.context['task'].space.workplace_id, task.space.workplace_id)
+
+    def test_deletion_cascades_descendants_and_preserves_other_workspace(self):
+        from spaces.models import SpaceTask
+        root = self.task('Root')
+        child = self.task('Child', parent=root)
+        elsewhere = self.task('Elsewhere', space=self.other_space)
+        response = self.client.post(self.url(root), {'action': 'delete', 'task_pk': elsewhere.pk})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(SpaceTask.objects.filter(pk__in=[root.pk, child.pk]).exists())
+        self.assertTrue(SpaceTask.objects.filter(pk=elsewhere.pk).exists())

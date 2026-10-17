@@ -193,57 +193,30 @@ użyteczności danego ekranu, a nie przypadkowym dodatkiem URL.
 
 ## 4. Dostęp i historyczne udostępnianie
 
-Aktywne zapytania Tasks/Planner/Documents ograniczają rekordy
-do właściciela Workspace i odpowiedniego kontekstu. `workspace_owner(request)`
-weryfikuje rzeczywiste członkostwo przed przekazaniem właściciela danych do
-istniejących helperów Tasks/Kanban. Komentarze i historia zachowują rzeczywistego autora.
+Bieżące moduły ograniczają dane do `workspace_owner(request)` i aktywnego
+`request.workplace`; autorem operacji pozostaje `request.user`.
+Przestrzenie, zadania i ich zawartość przechodzą przez `spaces.access`.
+`SpaceMembership` i `SpaceTaskMembership` określają niezależne role;
+prywatne przestrzenie i całe drzewo rodziców ograniczają dostęp.
+Rola obserwatora daje wyłącznie odczyt. Szczegóły: [TEAMWORK.md](TEAMWORK.md).
 
-W `backend/tasks/views/tasks.py` są starsze funkcje udostępniania i linków, ale:
+`tasks.access.visible_to` deleguje modele Przestrzeni do aktualnego ACL,
+a historyczne modele pracy Tasks/Kanbana wyklucza z odczytu.
+`TaskTag` i `TaskTagNote` pozostają wspólnymi modelami; widoki tagów
+nakładają dodatkowo zakres dostępnej Przestrzeni, właściciela i Workspace.
+Zwykłe menedżery modeli zachowują dane dla migracji i utrzymania.
 
-- `_received_share_permission()` i `_direct_share_permission()` zwracają pusty tekst;
-- `_task_shared_ids()` zwraca pustą listę, a współdzielone querysety są puste;
-- flagi widoków współdzielonych są wyłączone;
-- aktywny `backend/tasks/urls.py` nie rejestruje endpointów tworzenia/akceptacji linków.
+Historyczne członkostwa, `SharedItem` i `SharedItemLink` nie nadają dostępu.
+Dawne widoki i helpery udostępniania usunięto; endpointy tworzenia,
+akceptacji linków, zespołów i obserwowania nie są rejestrowane.
+Sygnały `tasks.sharing_signals` i `kanban.sharing_signals` nadal czyszczą
+historyczne udostępnienia po cofnięciu członkostwa Workspace.
 
-Samo istnienie `SharedItem`, `SharedItemLink`, `CompanyMembership`,
-`assignee` czy `responsible_user` nie daje dostępu. Aktywne członkostwo
-`WorkplaceMembership` nadaje dostęp do wspólnych danych Workspace zgodnie z [TEAMWORK.md](TEAMWORK.md).
-Projekty Zadań mogą mieć `visibility=private`: `tasks.access.visible_to(queryset, viewer)`
-wymaga wtedy zgodności `private_owner` z faktycznym odbiorcą albo wpisu w `shared_with`,
-istniejącego prywatnego właściciela oraz nadal aktywnego
-dostępu do Workspace. Widoki i formularze przekazują `request.user` osobno od
-właściciela danych. Zwykłe managery modeli pozostają nieograniczone na potrzeby
-migracji, numeracji i operacji utrzymaniowych; nowe odczyty użytkownika muszą
-korzystać z jawnego filtra widoczności. Dotyczy to również powiązanych grup, zadań,
-plików, szablonów i integracji Dashboard/Kalendarza.
-Grupy mają dodatkowy filtr `visibility` / `private_owner` / `shared_with`;
-prywatność grupy nie omija projektu nadrzędnego. `editable_to` uwzględnia rolę
-obserwatora na poziomie projektu, grupy i zadania, także dla potomków w starszych drzewach.
-Prywatność `Task` zawęża dostęp odziedziczony po wszystkich rodzicach.
-Szablon kopiuje tylko edytowalne grupy i zadania; obecność prywatnej grupy lub zadania
-wymusza prywatny snapshot dla autora. Udostępnienia nie przechodzą do szablonu.
-Formularz projektu zmienia widoczność wyłącznie dla prywatnego właściciela.
-Zespół obsługują osobne endpointy `projects/<id>/team/` (GET/POST),
-`projects/<id>/team/candidates/` (GET), także pod scoped URL. POST `action=share`
-od razu tworzy `TaskProjectMembership` dla aktywnego członka Workspace.
-Analogiczne `groups/<id>/team/` i `groups/<id>/team/candidates/` obsługują grupy
-przez `TaskSectionMembership`, z zachowaniem dostępu do projektu nadrzędnego.
-Zadania używają `items/<pk>/team/`, `items/<pk>/team/candidates/` i `TaskMembership`.
-Nie ma zaproszeń ani endpointów akceptacji dla projektu/grupy/zadania.
-Zapisy zespołu blokują Workspace i odpowiedni projekt, grupę lub zadanie; nie zapisują pól głównego formularza.
-Zapis zadania i operacje planowania w Przestrzeniach blokują najpierw właściciela
-numeracji, potem Workspace i ponownie sprawdzają `editable_to`. Zmiana roli lub
-odebranie członkostwa podczas oczekiwania na blokadę nie pozwala zapisać danych.
-Rola `observer` zachowuje `visible_to`, ale jest wykluczona z zapisu przez
-`tasks.access.editable_to(queryset, viewer)`. Ten filtr obejmuje projekt, grupy,
-notatki i całe drzewa zadań wraz z plikami. Relacje formularzy edycji korzystają
-z tego samego zakresu; formularz podglądu zachowuje widoczne bieżące wartości.
-`require_editable` odrzuca całą mieszaną operację zbiorczą przed zapisem,
-a `require_deletable_tasks` chroni również obserwowane podzadania przy kaskadzie.
-Widoki szczegółów blokują każdy POST obserwatora, również komentarze i pliki.
-Role projektu oraz cofnięcie dostępu opisuje [TEAMWORK.md](TEAMWORK.md).
-Przy zmianie uprawnień trzeba świadomie przeanalizować całą ścieżkę,
-łącznie z formularzami, wyszukiwaniem, plikami i akcjami zbiorczymi.
+Zapisy zadań oraz planowania blokują właściciela numeracji, Workspace
+i odpowiednie bieżące obiekty, po czym ponownie sprawdzają uprawnienia.
+`spaces.access.require_editable` odrzuca mieszaną niedozwoloną operację;
+usuwanie sprawdza również potomków. Relacje formularzy stosują ten sam zakres.
+Przypisanie wykonawcy ani wzmianka nie nadają dostępu.
 
 ## 5. Identyfikatory i numeracja
 
@@ -347,65 +320,24 @@ w `Task` nie są synchronizowane z dziennikiem.
 
 ## 7. Katalogi, filtry i wydajność
 
-Katalogi projektów, wszystkich grup i wszystkich zadań używają `backend/tasks/directory.py` do
-wyboru `tab=private|shared|public|favorites` (domyślnie `private`). Filtr zakładki
-jest nakładany po `visible_to` i ograniczeniu Workspace, przed sortowaniem,
-licznikami i paginacją. Publiczne grupy dziedziczą kategorię projektu; własna
-prywatna grupa trafia do „Prywatne” także w projekcie udostępnionym odbiorcy.
-Katalog zadań nadal filtruje `parent__isnull=True`. Własne prywatne zadanie
-trafia do „Prywatne”, publiczne dziedziczy kategorię grupy/projektu, a publiczne
-bez grupy jest „Publiczne”. Filtr obejmuje dane przed liczeniem i stronicowaniem
-każdego statusu. Zakładka „Nieprzydzielone” nie stosuje podziału według widoczności.
-Dawny „Moje zadania” i lista konkretnej grupy nie stosują filtrów zakładek.
-Stan ulubionych jest adnotacją `Exists` względem relacji `favorited_by` aktualnego
-odbiorcy, bez osobnego zapytania dla każdego wiersza. Endpoint POST
-`/tasks/favorites/<project|section|task>/<pk>/` i jego wariant scoped przyjmują
-`favorite_action=add|remove`; operacje są idempotentne i wymagają aktualnego
-dostępu do obiektu, ale nie uprawnienia edycji. Ulubione nie nadają dostępu.
-Pole `user` nadal wskazuje właściciela Workspace; relacja ulubionych wskazuje
-faktycznego odbiorcę `request.user`.
-Wariant `task` obsługuje zadania główne; podzadania nie należą do katalogu ulubionych.
+Dawne katalogi Projektów, Grup, Zadań, Kontaktów i Kanbana oraz ich helpery
+okien wyników usunięto. Bieżące listy Przestrzeni, Filtry i Dashboard
+korzystają z `SpaceTask`; zakres ACL i Workspace jest nakładany przed
+licznikami, filtrowaniem, sortowaniem i paginacją.
 
-Historyczny Kanban jest wycofany: `tasks.access` deleguje jego modele do
-`kanban.access`, które zwraca pusty queryset także dla właściciela.
-Dashboard, „Dla ciebie” i postęp pulpitów korzystają z `SpaceTask`.
-Wyszukiwanie i kalendarz uwzględniają nowe zadania oraz dostępne starsze dane.
-Powiadomienia zachowują pusty typ `kanban`, żeby historyczny identyfikator nie
-mógł zmienić stanu archiwalnej aktywności. Endpointy zespołu, ulubionych,
-obserwowania i operacji Kanbana nie są routowane. `LegacyKanbanMiddleware`
-obsługuje tylko adresy zgodności, z aktualną kontrolą dostępu przestrzeni.
+`tasks.tag_directory.tag_window_for_request()` obsługuje zakładkę tagów
+Przestrzeni: wyszukiwanie etykiet, filtry, sortowanie i paginację serwerową.
+Licznik użycia uwzględnia tylko widoczne zadania główne. Tagi bez Przestrzeni
+nie trafiają do katalogu, pickerów ani wyszukiwania zadań.
+Historyczne nazwy `data-project-*` i klasy `tasks-*` pozostają kontraktem
+współdzielonych kontrolek, także w React.
 
-Tasks oraz archiwalny kod Kanbana mają rozbudowane funkcje `*_window_for_request()`, które
-filtrują, sortują i wycinają okno wyników po stronie serwera. Widoki używają
-`select_related`, `prefetch_related`, agregacji i adnotacji do liczników.
-Tasks ma osobne mechanizmy katalogów projektów, grup i zadań oraz
-grupowania/paginacji po statusach. Wspólne funkcje katalogu tagów obsługują
-wyłącznie zakładkę przestrzeni; tagi bez przestrzeni nie trafiają do wyników,
-pickerów ani indeksów wyszukiwania zadań.
+Powiadomienia zachowują puste źródła `tasks` i `kanban`, aby stare tokeny
+nie mogły zmieniać stanu archiwalnych aktywności. Zgodność adresów obsługuje
+`LegacyKanbanMiddleware`, z aktualnym dostępem Przestrzeni.
 
-W `_task_window_for_request()` liczności statusów są liczone jednym agregatem
-na identyfikatorach przefiltrowanego zbioru. Katalogi zadań, nieprzydzielonych oraz dawny widok Moje zadania
-pobierają następnie najwyżej `page_size` rekordów z każdego stanu, z tym samym
-offsetem strony. Liczba stron zależy od największej liczności statusu.
-Krótsze sekcje nie powtarzają ostatnich rekordów na dalszych stronach.
-Zakładka „Nieprzydzielone” zachowuje URL `view=unassigned-tasks` i nakłada
-`section__isnull=True` po `visible_to`,
-a przed filtrami i paginacją. Parametry `task_project` i `task_section` są w nim
-ignorowane, a `task_assignee` filtruje wykonawcę. Projekt zadania wynika z grupy.
-Tworzenie bez grupy zapisuje właściciela przez `workspace_owner(request)`,
-aktywny Workspace oraz faktycznego autora historii; nie tworzy zastępczego projektu/grupy.
-Historyczny klucz preferencji sidebaru `tasks-my` pozostaje zachowany, ale wskazuje
-zakładkę nieprzydzielonych. Linki `directory_tabs(..., include_unassigned=True)`
-łączą ją z czterema kategoriami `view=all-tasks`, zachowują wspólne filtry
-i zerują stronę; wejście do nieprzydzielonych usuwa filtry projektu i grupy.
-Menu boczne oznacza „Zadania” jako aktywne w obu widokach.
-Stary URL `my-tasks` zachowuje swój filtr osoby.
-Zakres właściciela, Workspace, wykonawcy i zadań głównych jest ustalany przed
-filtrowaniem, agregacją i paginacją.
-
-Wycofane widoki Kontaktów i Firm zachowują historyczny kod okien wyników. Dysk używa `Paginator`;
-na jednej stronie najpierw rozlicza foldery, potem pliki, aby nie
-powielać i nie pomijać pozycji przy przechodzeniu między stronami.
+Dysk używa `Paginator`; na stronie najpierw rozlicza foldery, potem pliki,
+aby nie powielać i nie pomijać pozycji między stronami.
 
 `backend/documents/query.py` normalizuje dozwolone filtry i pola sortowania przed
 wykonaniem zapytań. Warunki są nakładane na zbiory ograniczone właścicielem
@@ -431,27 +363,20 @@ Przed zmianą zapytań sprawdź testy liczby zapytań i renderowania tylko bież
 
 ## 8. Pola i terminy projektów
 
-Źródła: [modele Tasks](../backend/tasks/models.py), [formularze](../backend/tasks/forms.py),
-`_project_choices()` i `_decorate_project_dates()` w głównych widokach.
+[Modele Tasks](../backend/tasks/models.py) zachowują historyczne statusy,
+etapy, kondycję, tekst źródła i terminy projektów. Dawne formularze i helpery
+list projektów są usunięte; `/settings/project-fields/` nadal zwraca 404.
+Migracja `tasks.0063` usuwa konfigurację słowników i progów kolorów,
+bez zmiany danych projektów. Wcześniejsze migracje pozostają w łańcuchu.
 
-Status/etap/kondycja mają stałe opcje. Lista i formularze uwzględniają także
-historyczne wartości zapisane w widocznych projektach właściciela/Workspace.
-Nie można dodać nowej własnej opcji przez dawne formularze konfiguracji;
-`/settings/project-fields/` jest usunięty. Źródło jest tekstem, a formularz
-podpowiada źródła z dostępnych projektów i przyjmuje ręcznie wpisaną wartość.
-
-Opisy terminu i `due_highlight` pozostają wyliczane z daty. Nie ma modeli
-słowników ani reguł progów/kolorów. Migracja `tasks/0063` usuwa konfigurację,
-bez zmiany pól statusu, etapu, kondycji, źródła lub dat istniejących projektów.
-Historyczne migracje tworzące słowniki pozostają częścią łańcucha migracji.
-`Task.due_urgency` jest osobne: czerwony przy ≤24 h (także po terminie),
-żółty przy ≤3 dniach, zielony dalej, `none` bez terminu.
+Bieżące zadania i terminy należą do Przestrzeni; ich formularze i konfigurację
+opisuje [SPACES.md](SPACES.md).
 
 ## 9. Upload, obrazy i pobieranie
 
 Źródło: [core/upload_validation.py](../backend/core/upload_validation.py).
 
-- Zdjęcia kont/firm/Workspace: JPEG, PNG, WebP, domyślnie 5 MB.
+- Zdjęcia kont/Workspace: JPEG, PNG, WebP, domyślnie 5 MB.
 - Załączniki: lista rozszerzeń w `ATTACHMENT_ALLOWED_EXTENSIONS`, domyślnie 10 MB.
 - Walidacja obejmuje pusty plik, rozmiar, rozszerzenie i rozpoznawaną sygnaturę.
   To walidacja formatu, nie skaner antywirusowy ani pełne parsowanie zawartości.
@@ -652,7 +577,8 @@ w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszu
 
 ## 11. Historia a powiadomienia
 
-`TaskActivity`, `KanbanActivity` i `ContactActivity` są historią obiektów.
+`TaskActivity`, `KanbanActivity` i archiwalne `legacy.contacts.ContactActivity`
+są historią obiektów.
 Centrum powiadomień (`backend/dashboard/notification_service.py`) odczytuje wyłącznie
 komentarze (`kind='comment'`) Zadań, ważne oczekujące zaproszenia
 oraz osobiste przypomnienia. Wpisy historii (`kind='system'`), np. utworzenie,
@@ -745,52 +671,25 @@ bez przeładowania niezapisanego formularza zadania. Zwykły POST nadal działa;
 po błędzie zachowuje tekst i wzmianki, a pliki trzeba wybrać ponownie.
 
 ### Wzmianki i obserwowanie
-Komentarze zadań, podzadań, kart i podkart wstawiają `@Imię Nazwisko` po
-wyborze osoby z podpowiedzi. `mention_choices()` przekazuje nazwę, e-mail oraz ID
-osoby. E-mail służy rozróżnianiu i wyszukiwaniu osób na liście. Przy braku
-imienia i nazwiska tekstem wzmianki pozostaje login z pojedynczym `@`.
 
-`activity_mentions` przesyła ID i zakres każdej wybranej wzmianki w punktach
-kodowych Unicode. JavaScript przesuwa zakres przy dopisywaniu tekstu przed
-wzmianką i usuwa powiązanie przy jej edycji/usunięciu. `comment_mention_metadata()`
-normalizuje nowe linie i białe znaki, weryfikuje zakres, widoczny tekst, aktywne
-konto i członkostwo; zapisuje zatwierdzone wpisy w `Activity.metadata.mentions`.
-Dwie osoby o tym samym imieniu i nazwisku pozostają osobnymi odbiorcami.
-Zmiana nazwy wybranej osoby przed wysłaniem wymaga ponownego wyboru.
+Komentarze Przestrzeni wstawiają `@Imię Nazwisko` po wyborze osoby z listy.
+`dashboard.collaboration.mention_choices()` udostępnia nazwę, e-mail i ID
+wyłącznie aktywnych osób Workspace z dostępem do zadania i jego rodziców.
+Przy braku imienia i nazwiska etykieta korzysta z loginu z pojedynczym `@`.
 
-Dostawa ponownie sprawdza odbiorcę i zakres. Widoczna nazwa wybranej osoby nie
-jest interpretowana jako login innego konta. Ręcznie wpisane `@login` nadal są
-obsługiwane dla zgodności; dokładny login uwzględnia wielkość liter, Unicode,
-kropki oraz starsze loginy e-mail. Zwykły adres e-mail nie jest wzmianką.
-Samo wpisanie imienia i nazwiska bez wyboru z listy nie określa odbiorcy.
-Osoby bez dostępu i autor komentarza nie otrzymują wzmianki. Wzmianka
-nie przyznaje dostępu. Istniejąca treść komentarzy pozostaje zachowana.
+`activity_mentions` przesyła ID i zakres wybranej wzmianki w punktach
+kodowych Unicode. `comment_mention_metadata()` normalizuje nowe linie,
+białe znaki, zakres, widoczny tekst i aktualny dostęp osoby.
+Zatwierdzone wzmianki są zapisane w `SpaceTaskActivity.metadata.mentions`.
+Zmiana nazwy osoby przed wysłaniem wymaga ponownego wyboru; dwie osoby
+z tą samą nazwą pozostają różnymi odbiorcami. Wzmianka nie nadaje dostępu.
 
-`dashboard.ObjectFollow` zapisuje osobistą subskrypcję dokładnie jednego
-zadania, karty, projektu Zadań lub przestrzeni Kanbana. Przycisk „Obserwuj”
-w szczegółach albo nagłówku projektu wysyła POST pod
-`/<moduł>/follow/<task|project>/<pk>/`, również w scoped URL. Wymaga CSRF,
-aktywnego Workspace i prawidłowego właściciela danych. Stan `following`
-jest jawny, więc ponowienie żądania nie odwraca subskrypcji.
-
-`backend/dashboard/collaboration.py` odbiera utworzenie `TaskActivity` i `KanbanActivity`.
-Nowe komentarze obserwowanego elementu oraz zadań/kart w obserwowanym projekcie
-otrzymują `ActivityInterest` z odbiorcą i flagami `mentioned`/`followed`.
-Dotyczy to także komentarzy do nowo tworzonych zadań i podzadań projektu.
-Samo utworzenie, edycja i operacje zbiorcze nie tworzą dostaw historii do
-obserwujących. Zmiany metadanych projektu również nie generują powiadomień.
-Własne działania są pomijane.
-Zapis komentarza i jego dostaw odbywa się w jednej transakcji.
-
-Nie powstaje drugi wpis w centrum: filtry „Wzmianki” i „Obserwowane” wybierają
-istniejące aktywności, zachowując wspólny odczyt, archiwum, usunięcie, paginację
-i snapshoty operacji zbiorczych. „Wszystkie” zawierają komentarze ze wszystkich
-dostępnych Workspace. Rozpoczęcie obserwowania nie dostarcza wstecz komentarzy;
-wyłączenie zatrzymuje nowe dostawy, zachowując wcześniej dostarczone wpisy.
-Obserwowanie projektu działa niezależnie od obserwowania pojedynczego zadania.
-Cofnięcie członkostwa odcina odczyt i nowe dostawy, nawet gdy subskrypcja
-pozostaje w bazie. FK i unikalność w bazie zapobiegają duplikatom i sprzątają
-powiązania po usunięciu źródła. Powiadomienia działają wewnątrz aplikacji.
+Centrum powiadomień ponownie sprawdza widoczność aktywności. Własne komentarze
+są pomijane. Model `ObjectFollow` i historyczne `ActivityInterest` zachowują
+dawne subskrypcje i dostawy Tasks/Kanbana, lecz nie tworzą nowych dostarczeń.
+Nieużywane endpointy obserwowania i receiver dawnych aktywności usunięto.
+Stan odczytu, archiwum i usunięcia nadal należy do `NotificationState`;
+źródła historyczne pozostają wyłączone.
 
 ### Przypomnienia zadań
 

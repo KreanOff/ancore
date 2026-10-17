@@ -305,6 +305,11 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   otwierają listę z odpowiednimi filtrami; epiki i aktywność prowadzą do
   szczegółów pod trwałym kluczem przestrzeni. Lista zachowuje filtry przy szukaniu i paginacji,
   a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
+  `backend/spaces/summary.py` wyznacza identyfikatory z istniejącego querysetu
+  ACL i filtrów w PostgreSQL `MATERIALIZED` CTE przed agregacją. Zapobiega to
+  rozwijaniu wielokrotnie zagnieżdżonych kontroli dostępu do wolnego planu
+  grupowania po wykonawcy. Zakres jest obliczany na nowo w tym samym zapytaniu
+  co licznik/wykres; nie ma cache ani utrwalenia uprawnień między żądaniami.
 - Scrum: backlog, epiki, punkty, planowanie i rozpoczęcie sprintu, jeden aktywny
   sprint, zakończenie z powrotem niezakończonych zadań do backlogu.
   Backlog i sprinty mają zwarte sekcje Listy zadań ze zwijaniem, licznikami,

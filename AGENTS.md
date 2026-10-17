@@ -31,6 +31,9 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `PYTHONPATH` wskazującego `backend/`. `BASE_DIR` nadal oznacza katalog główny.
   Szablony, migracje i testy pozostają przy aplikacjach. Nie zmieniaj etykiet
   aplikacji ani nazw tabel przy porządkowaniu struktury.
+- Dawny system Kontaktów jest usunięty. `backend/legacy/contacts` zawiera
+  wyłącznie zgodność schematu i migracji; zachowuj etykietę Django `contacts`
+  i nazwy tabel, bez przywracania katalogów, backfillu ani publicznych zdjęć firm.
 - Backend to Django i PostgreSQL. Frontend aktywnej aplikacji i wspólna powłoka
   korzystają z Reacta i TypeScriptu (`frontend/app`) oraz JSON API Django.
   `docs/FRONTEND.md` opisuje zakres i cykl życia. Szablony Django zachowują
@@ -39,7 +42,7 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
 - Bieżące zadania należą do Przestrzeni: `spaces.SpaceTask`, `backend/spaces/views.py`
   i `backend/spaces/task_views.py`. Projekty, Grupy, starsze Zadania, Ulubione projekty
   i Szablony projektów są wycofane, podobnie Kanban. Nie przywracaj ich tras
-  ani historycznych widoków z `backend/tasks/views/tasks.py` i `backend/kanban/views/tasks.py`.
+  ani usuniętych implementacji historycznych widoków Tasks/Kanbana.
 - `tasks.Task` i `kanban.Kanban` pozostają osobnymi modelami historycznymi
   dla zachowania danych, migracji, plików i zgodności linków. Przestrzenie
   współdzielą `tasks.TaskTag`, część szablonów oraz `static/js/tasks.js`.

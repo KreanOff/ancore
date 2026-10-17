@@ -2,6 +2,7 @@
 import json
 import tempfile
 from urllib.error import URLError
+from urllib.parse import parse_qs, urlsplit
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -72,7 +73,13 @@ class DriveOfficeTests(TestCase):
             page = self.client.get(editor_url)
             config = page.context['editor_config']
             self.assertEqual(config['documentType'], kind)
-            self.assertEqual(config['document']['url'], service.service_url(item, 'source'))
+            # Timestamped signatures can differ across a second boundary.
+            # Verify the editor URL and its capability instead of minting a
+            # second token and comparing the two serialized signatures.
+            source = urlsplit(config['document']['url'])
+            self.assertEqual((source.scheme, source.netloc), ('http', 'ancore.test'))
+            self.assertEqual(source.path, reverse('drive-office-service-source', args=[item.pk]))
+            self.assertTrue(service.check_capability(item, parse_qs(source.query)['token'][0], 'source'))
             self.assertIn('/drive-office-service/', config['editorConfig']['callbackUrl'])
             self.assertEqual(service.verify(config['token'])['document']['key'], service.document_key(item))
             self.assertContains(page, 'office-editor-window')

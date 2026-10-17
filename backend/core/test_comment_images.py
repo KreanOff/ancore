@@ -10,9 +10,9 @@ from django.db import transaction
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from dashboard.models import ActivityInterest
-from kanban.models import Kanban, KanbanCommentImage
-from tasks.models import Task, TaskCommentImage
+from dashboard.notification_service import notification_sources
+from spaces.models import SpaceTask, SpaceTaskFile
+from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 
 
@@ -30,7 +30,7 @@ class CommentImageTests(TestCase):
         self.settings_override = override_settings(PRIVATE_DOCUMENT_ROOT=self.directory.name)
         self.settings_override.enable()
         self.addCleanup(self.settings_override.disable)
-        for model in (TaskCommentImage, KanbanCommentImage):
+        for model in (SpaceTaskFile,):
             field = model._meta.get_field('file')
             self.addCleanup(setattr, field, 'storage', field.storage)
             field.storage = FileSystemStorage(self.directory.name)
@@ -41,9 +41,9 @@ class CommentImageTests(TestCase):
         self.workspace = create_workplace_for_user(self.owner, 'Wspólny')
         self.other = create_workplace_for_user(self.owner, 'Inny')
         self.membership = WorkplaceMembership.objects.create(workplace=self.workspace, user=self.member, role='member')
-        self.task = Task.objects.create(user=self.owner, workplace=self.workspace, title='Zadanie')
-        self.card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Karta')
-        self.cases = [('tasks', self.task, TaskCommentImage)]
+        self.space = make_space(user=self.owner, workplace=self.workspace, name='Komentarze')
+        self.task = SpaceTask.objects.create(space=self.space, created_by=self.owner, title='Zadanie')
+        self.cases = [('spaces', self.task, SpaceTaskFile)]
         self.login(self.member)
 
     def login(self, user, workspace=None):
@@ -53,21 +53,20 @@ class CommentImageTests(TestCase):
         session.save()
 
     def url(self, app, task, scoped=True):
-        route = 'view-subtask' if task.parent_id else 'view-task'
-        url = reverse(f'{app}:{route}', args=[task.task_id])
+        url = reverse('spaces:task_detail', args=[task.space.slug, task.work_item.key])
         if scoped:
             url = f'/workplaces/{self.workspace.slug}' + url
         return url
 
     def post(self, app, task, files=(), text='', ajax=True, scoped=True):
         return self.client.post(self.url(app, task, scoped), {
-            'task_pk': task.pk, 'action': 'add_activity_comment',
+            'task_pk': task.pk, 'action': 'comment',
             'activity_comment': text, 'comment_attachments': list(files),
         }, headers={'X-Requested-With': 'XMLHttpRequest'} if ajax else {})
 
-    def test_images_with_and_without_text_persist_for_tasks_subtasks_and_cards(self):
+    def test_images_with_and_without_text_persist_for_tasks_and_subtasks(self):
         for app, parent, model in self.cases:
-            child = type(parent).objects.create(user=self.owner, workplace=self.workspace, parent=parent, title='Podzadanie')
+            child = SpaceTask.objects.create(space=self.space, created_by=self.owner, parent=parent, title='Podzadanie')
             for task in [parent, child]:
                 for scoped in [False, True]:
                     with self.subTest(app=app, child=bool(task.parent_id), scoped=scoped):
@@ -75,9 +74,9 @@ class CommentImageTests(TestCase):
                         self.assertEqual(response.status_code, 200)
                         activity = task.activities.filter(kind='comment').latest('pk')
                         self.assertEqual(activity.actor, self.member)
-                        self.assertEqual(activity.message, '')
+                        self.assertEqual(activity.message, 'dodał załączniki')
                         self.assertEqual(activity.images.count(), 2)
-                        self.assertFalse(task.attachments.exists())
+                        self.assertFalse(task.attachments.filter(activity__isnull=True).exists())
                         self.assertIn('tasks-comment-image', response.json()['activity_html'])
                         page = self.client.get(self.url(app, task, scoped), {'task_pk': task.pk}, follow=True)
                         self.assertContains(page, activity.images.first().get_url())
@@ -85,8 +84,8 @@ class CommentImageTests(TestCase):
             self.assertEqual(response.status_code, 200)
             activity = parent.activities.filter(kind='comment').latest('pk')
             self.assertEqual(activity.message, 'Opis zdjęcia @owner')
-            activity_field = 'task_activity' if app == 'tasks' else 'kanban_activity'
-            self.assertTrue(ActivityInterest.objects.filter(**{activity_field: activity}, user=self.owner, mentioned=True).exists())
+            self.assertEqual(activity.metadata.get('mentions', []), [])
+            self.assertTrue(notification_sources(self.owner)['spaces'].filter(pk=activity.pk).exists())
 
     def test_text_only_and_native_post_still_work(self):
         for app, task, _ in self.cases:
@@ -114,18 +113,18 @@ class CommentImageTests(TestCase):
                 self.assertEqual(self.post(app, task, [photo()]).status_code, 400)
             self.assertFalse(task.activities.filter(kind='comment').exists())
 
-    def test_native_validation_keeps_text_and_mentions(self):
+    def test_native_validation_keeps_comment_draft(self):
         for app, task, _ in self.cases:
             response = self.post(app, task, [photo('bad.png', b'bad')], text='Mój szkic', ajax=False)
-            self.assertEqual(response.status_code, 200)
-            self.assertContains(response, 'Mój szkic</textarea>')
-            self.assertContains(response, 'Załącznik ma nieprawidłową zawartość.')
+            self.assertEqual(response.status_code, 400)
+            self.assertContains(response, 'Mój szkic</textarea>', status_code=400)
+            self.assertContains(response, 'Załącznik ma nieprawidłową zawartość.', status_code=400)
 
     def test_private_content_headers_and_missing_file(self):
         for app, task, model in self.cases:
             self.post(app, task, [photo()])
             image = model.objects.get()
-            for url in [image.get_url(), reverse(f'{app}:comment_image', args=[image.pk])]:
+            for url in [image.get_url(), reverse('spaces:task_file', args=[image.task.space.slug, image.task.work_item.key, image.pk])]:
                 response = self.client.get(url, follow=True)
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response['Content-Type'], 'image/png')
@@ -145,7 +144,7 @@ class CommentImageTests(TestCase):
             images.append((app, model.objects.get()))
         self.login(self.owner, self.other)
         for app, image in images:
-            self.assertEqual(self.client.get(reverse(f'{app}:comment_image', args=[image.pk]), follow=True).status_code, 404)
+            self.assertEqual(self.client.get(reverse('spaces:task_file', args=[image.task.space.slug, image.task.work_item.key, image.pk]), follow=True).status_code, 404)
             wrong_scope = image.get_url().replace(self.workspace.slug, self.other.slug)
             self.assertEqual(self.client.get(wrong_scope).status_code, 404)
         # Assignment does not grant workspace membership.
@@ -170,7 +169,7 @@ class CommentImageTests(TestCase):
         client = Client(enforce_csrf_checks=True)
         client.force_login(self.member)
         for app, task, _ in self.cases:
-            response = client.post(self.url(app, task), {'task_pk': task.pk, 'action': 'add_activity_comment', 'comment_attachments': photo()})
+            response = client.post(self.url(app, task), {'task_pk': task.pk, 'action': 'comment', 'comment_attachments': photo()})
             self.assertEqual(response.status_code, 403)
             self.assertFalse(task.activities.filter(kind='comment').exists())
 
@@ -180,7 +179,7 @@ class CommentImageTests(TestCase):
                 with self.assertRaises(RuntimeError):
                     self.post(app, task, [photo()], text='@owner')
             self.assertFalse(task.activities.filter(kind='comment').exists())
-            self.assertFalse(ActivityInterest.objects.exists())
+            self.assertFalse(notification_sources(self.owner)['spaces'].exists())
             self.assertFalse(any(Path(self.directory.name).rglob('*.png')))
 
     def test_partial_batch_failure_removes_previously_saved_files(self):
@@ -244,7 +243,7 @@ class CommentImageTests(TestCase):
             self.assertIn('tasks-comment-file', response.json()['activity_html'])
             page = self.client.get(self.url(app, task), {'task_pk': task.pk})
             self.assertContains(page, 'notatka.txt')
-            self.assertFalse(task.attachments.exists())
+            self.assertFalse(task.attachments.filter(activity__isnull=True).exists())
 
     def test_file_download_and_upload_keep_workspace_boundaries(self):
         for app, task, model in self.cases:
@@ -261,14 +260,14 @@ class CommentImageTests(TestCase):
         for _, _, model in self.cases:
             self.assertRedirects(self.client.get(model.objects.latest('pk').get_url()), reverse('workplaces:workplaces'), fetch_redirect_response=False)
 
-    def test_legacy_image_field_and_combined_limit(self):
+    def test_attachment_fields_share_one_count_limit(self):
         for app, task, model in self.cases:
-            payload = {'task_pk': task.pk, 'action': 'add_activity_comment', 'comment_images': photo()}
+            payload = {'task_pk': task.pk, 'action': 'comment', 'files': photo()}
             response = self.client.post(self.url(app, task), payload)
             self.assertEqual(response.status_code, 302)
             saved = model.objects.get()
             self.assertTrue(saved.is_image())
-            payload['comment_images'] = [photo() for _ in range(6)]
+            payload['files'] = [photo() for _ in range(6)]
             payload['comment_attachments'] = [SimpleUploadedFile('n.txt', b'n') for _ in range(5)]
             response = self.client.post(self.url(app, task), payload, headers={'X-Requested-With': 'XMLHttpRequest'})
             self.assertEqual(response.status_code, 400)

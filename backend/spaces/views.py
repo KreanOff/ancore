@@ -300,9 +300,9 @@ def detail(request, pk):
     if request.GET.get('view') == 'tags':
         from tasks.forms import TaskTagForm
         from tasks.tagging import tag_action
-        from tasks.views.tasks import _tag_window_for_request, TAG_SORT_OPTIONS, TAG_DEFAULT_SORT
+        from tasks.tag_directory import tag_window_for_request, TAG_SORT_OPTIONS, TAG_DEFAULT_SORT
         context = detail_context(request, space, 'tags')
-        window = _tag_window_for_request(request, space=space)
+        window = tag_window_for_request(request, space=space)
         context.update({
             'active_view': 'tags', 'tag_window': window, 'tags': window['tags'],
             'can_edit_tags': context['can_edit'], 'tag_query': window['query'],

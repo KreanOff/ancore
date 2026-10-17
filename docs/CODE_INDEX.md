@@ -17,23 +17,19 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 34 | 0 | 20 | 161 |
+| [backend/core](../backend/core) | 30 | 0 | 19 | 166 |
 | [backend/accounts](../backend/accounts) | 24 | 7 | 9 | 74 |
 | [backend/workplaces](../backend/workplaces) | 23 | 10 | 13 | 116 |
-| [backend/tasks](../backend/tasks) | 42 | 66 | 46 | 332 |
-| [backend/kanban](../backend/kanban) | 18 | 39 | 10 | 9 |
-| [backend/contacts](../backend/contacts) | 10 | 8 | 11 | 6 |
-| [backend/dashboard](../backend/dashboard) | 45 | 14 | 43 | 237 |
+| [backend/tasks](../backend/tasks) | 23 | 66 | 26 | 56 |
+| [backend/kanban](../backend/kanban) | 10 | 39 | 0 | 9 |
+| [backend/legacy/contacts](../backend/legacy/contacts) | 3 | 8 | 0 | 0 |
+| [backend/dashboard](../backend/dashboard) | 44 | 14 | 43 | 225 |
 | [backend/planner](../backend/planner) | 10 | 2 | 2 | 7 |
 | [backend/documents](../backend/documents) | 38 | 11 | 31 | 203 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 43 | 9 | 39 | 227 |
+| [backend/spaces](../backend/spaces) | 44 | 9 | 39 | 248 |
 
 ## 2. Modele i relacje
-
-## Modele: core
-
-Brak zadeklarowanych modeli domenowych w tym pliku.
 
 ## Modele: accounts
 
@@ -461,11 +457,11 @@ Pola zadeklarowane tutaj: `section` (ForeignKey), `user` (ForeignKey), `role` (C
 | `section` | `KanbanSection` | on_delete=models.CASCADE; related_name='memberships' |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 
-## Modele: contacts
+## Modele: legacy/contacts
 
 ### `Company`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `name` (CharField), `website` (URLField), `email` (EmailField), `phone` (CharField), `address` (CharField), `notes` (TextField), `company_photo` (FileField), `owner` (ForeignKey), `workplace` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
@@ -479,7 +475,7 @@ Metody/properties: `__str__`, `initials`.
 
 ### `CompanyMembership`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `company` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
 
@@ -492,7 +488,7 @@ Metody/properties: `__str__`.
 
 ### `Contact`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `company` (CharField), `company_record` (ForeignKey), `role` (CharField), `email` (EmailField), `phone` (CharField), `source` (CharField), `status` (CharField), `notes` (TextField), `last_contacted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField), `user` (ForeignKey), `workplace` (ForeignKey).
 
@@ -506,7 +502,7 @@ Metody/properties: `__str__`, `display_name`, `initials`.
 
 ### `UserContact`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `target_user` (ForeignKey), `linked_contact` (ForeignKey), `note` (CharField), `created_at` (DateTimeField).
 
@@ -521,7 +517,7 @@ Metody/properties: `__str__`.
 
 ### `ContactActivity`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `contact` (ForeignKey), `actor` (ForeignKey), `kind` (CharField), `action` (CharField), `message` (TextField), `metadata` (JSONField), `created_at` (DateTimeField).
 
@@ -534,7 +530,7 @@ Metody/properties: `__str__`.
 
 ### `SharedItem`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `content_type` (ForeignKey), `object_id` (PositiveBigIntegerField), `content_object` (GenericForeignKey), `shared_by` (ForeignKey), `shared_with` (ForeignKey), `permission` (CharField), `note` (CharField), `created_at` (DateTimeField).
 
@@ -549,7 +545,7 @@ Metody/properties: `__str__`.
 
 ### `SharedItemLink`
 
-Źródło: [backend/contacts/models.py](../backend/contacts/models.py).
+Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
 
 Pola zadeklarowane tutaj: `content_type` (ForeignKey), `object_id` (PositiveBigIntegerField), `content_object` (GenericForeignKey), `created_by` (ForeignKey), `token` (CharField), `permission` (CharField), `is_active` (BooleanField), `created_at` (DateTimeField), `deactivated_at` (DateTimeField).
 
@@ -994,11 +990,6 @@ Pola zadeklarowane tutaj: `kind` (CharField), `source_id` (PositiveBigIntegerFie
 
 Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
-### core
-
-Źródło: [backend/core/forms.py](../backend/core/forms.py).
-
-
 ### accounts
 
 Źródło: [backend/accounts/forms.py](../backend/accounts/forms.py).
@@ -1016,54 +1007,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 Źródło: [backend/tasks/forms.py](../backend/tasks/forms.py).
 
-- `LenientModelChoiceField`
-- `DateTimeLocalInput`
-- `MultipleFileInput`
-- `ProjectVisibilitySelect`
-- `TaskAccessForm`
-- `TaskForm` — Meta.fields: `['title', 'visibility', 'parent', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
-- `TaskWorkLogForm`
-- `TaskProjectBaseForm`
-- `TaskProjectTemplateNameForm` — Meta.fields: `('template_name',)`
-- `TaskProjectForm` — Meta.fields: `['name', 'visibility', 'template', 'code', 'section_title', 'section_code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
-- `TaskProjectRenameForm` — Meta.fields: `['name', 'visibility', 'code', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'source']`
-- `TaskSectionAccessForm`
-- `TaskSectionForm` — Meta.fields: `['visibility', 'title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
-- `TaskSectionRenameForm` — Meta.fields: `['visibility', 'title', 'code', 'description', 'kind', 'status', 'owner', 'priority', 'due_at', 'wip_limit']`
 - `TaskTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
-- `QuickTaskForm` — Meta.fields: `['title']`
-- `TaskModalForm` — Meta.fields: `['title', 'visibility', 'section', 'tags', 'description', 'task_type', 'assignee', 'priority', 'status', 'due_at', 'reminder_at']`
-- `SubTaskModalForm` — Meta.fields: `['title', 'visibility', 'description', 'status', 'due_at']`
-
-### kanban
-
-Źródło: [backend/kanban/forms.py](../backend/kanban/forms.py).
-
-- `LenientModelChoiceField`
-- `TwoDigitNumberInput`
-- `DynamicStatusFormMixin`
-- `MultipleFileInput`
-- `KanbanForm` — Meta.fields: `['title', 'parent', 'section', 'tags', 'description', 'priority', 'status', 'due_at', 'time_spent_hours', 'time_spent_minutes']`
-- `KanbanAccessForm`
-- `KanbanProjectBaseForm`
-- `KanbanProjectForm` — Meta.fields: `['visibility', 'name', 'section_title', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
-- `KanbanProjectRenameForm` — Meta.fields: `['visibility', 'name', 'description', 'company', 'responsible_user', 'status', 'stage', 'health', 'priority', 'start_at', 'due_at', 'budget_amount', 'currency', 'source']`
-- `KanbanSectionForm` — Meta.fields: `['visibility', 'title', 'description']`
-- `KanbanSectionRenameForm` — Meta.fields: `['visibility', 'title', 'description']`
-- `KanbanTagForm` — Meta.fields: `['name', 'description', 'category', 'color', 'icon', 'priority', 'scope', 'owner_label', 'status', 'usage_notes', 'automation_rules', 'related_tags']`
-- `KanbanBoardColumnForm` — Meta.fields: `['title']`
-- `QuickKanbanForm` — Meta.fields: `['title']`
-- `KanbanModalForm` — Meta.fields: `['title', 'section', 'tags', 'description', 'priority', 'status', 'due_at']`
-- `SubKanbanModalForm` — Meta.fields: `['title', 'description', 'status']`
-
-### contacts
-
-Źródło: [backend/contacts/forms.py](../backend/contacts/forms.py).
-
-- `ContactForm` — Meta.fields: `['first_name', 'middle_name', 'last_name', 'company', 'company_record', 'role', 'email', 'phone', 'source', 'last_contacted_at', 'notes']`
-- `ContactModalForm`
-- `CompanyForm` — Meta.fields: `['company_photo', 'name', 'website', 'email', 'phone', 'address', 'notes']`
-- `CompanyModalForm`
 
 ### planner
 
@@ -1215,13 +1159,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'attachments/<int:attachment_id>/download/'` | `retired_kanban` | 'download_attachment' |
 | `'comment-images/<int:image_id>/'` | `retired_kanban` | 'comment_image' |
 
-### backend/contacts/urls.py
-
-Źródło: [backend/contacts/urls.py](../backend/contacts/urls.py).
-
-| Ścieżka / regex | Widok / include | Nazwa |
-| --- | --- | --- |
-
 ### backend/dashboard/urls.py
 
 Źródło: [backend/dashboard/urls.py](../backend/dashboard/urls.py).
@@ -1365,23 +1302,18 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### core
 
 - [backend/core/__init__.py](../backend/core/__init__.py)
-- [backend/core/admin.py](../backend/core/admin.py)
 - [backend/core/api.py](../backend/core/api.py) — `is_api_request`, `api_error`, `api_view`, `json_object`, `csrf_failure`
 - [backend/core/apps.py](../backend/core/apps.py) — `CoreConfig`
 - [backend/core/avatars.py](../backend/core/avatars.py) — `preset_avatar`
 - [backend/core/comment_images.py](../backend/core/comment_images.py) — `comment_image_storage`, `comment_image_path`, `AttachmentPresentation`, `CommentImage`, `delete_comment_image_file`, `save_comment`, `comment_image_response`
-- [backend/core/forms.py](../backend/core/forms.py)
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
 - [backend/core/media.py](../backend/core/media.py) — `public_media`
-- [backend/core/models.py](../backend/core/models.py)
 - [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `page_styles`, `navigation_response`
 - [backend/core/task_files.py](../backend/core/task_files.py) — `delete_after_commit`
 - [backend/core/task_numbering.py](../backend/core/task_numbering.py) — `lock_task_numbers`, `renumber_tasks`
-- [backend/core/task_requests.py](../backend/core/task_requests.py) — `task_detail_lookup`, `task_primary_keys`
 - [backend/core/templatetags/__init__.py](../backend/core/templatetags/__init__.py)
 - [backend/core/templatetags/frontend.py](../backend/core/templatetags/frontend.py) — `global_panels_bootstrap`, `react_bundle`
 - [backend/core/upload_validation.py](../backend/core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
-- [backend/core/views/__init__.py](../backend/core/views/__init__.py)
 - [backend/core/widgets.py](../backend/core/widgets.py) — `VisualSelect`, `VisualSelectMultiple`
 - [backend/core/work_logs.py](../backend/core/work_logs.py) — `DateTimeLocalInput`, `TimeLogForm`
 
@@ -1428,64 +1360,38 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### tasks
 
 - [backend/tasks/__init__.py](../backend/tasks/__init__.py)
-- [backend/tasks/access.py](../backend/tasks/access.py) — `task_tree_ids`, `require_deletable_tasks`, `editable_to`, `require_editable`, `visible_to`
+- [backend/tasks/access.py](../backend/tasks/access.py) — `task_tree_ids`, `editable_to`, `visible_to`
 - [backend/tasks/admin.py](../backend/tasks/admin.py)
 - [backend/tasks/apps.py](../backend/tasks/apps.py) — `TasksConfig`
-- [backend/tasks/directory.py](../backend/tasks/directory.py) — `directory_tab`, `directory_queryset`, `directory_tabs`, `decorate_favorites`
-- [backend/tasks/forms.py](../backend/tasks/forms.py) — `LenientModelChoiceField`, `DateTimeLocalInput`, `MultipleFileInput`, `ProjectVisibilitySelect`, `TaskAccessForm`, `TaskForm`, `TaskWorkLogForm`, `TaskProjectBaseForm`, `TaskProjectTemplateNameForm`, `TaskProjectForm`, `TaskProjectRenameForm`, `TaskSectionAccessForm`, `TaskSectionForm`, `TaskSectionRenameForm`, `TaskTagForm`, `QuickTaskForm`, `TaskModalForm`, `SubTaskModalForm`
-- [backend/tasks/hierarchy.py](../backend/tasks/hierarchy.py) — `save_task_edit`
+- [backend/tasks/forms.py](../backend/tasks/forms.py) — `TaskTagForm`
 - [backend/tasks/models.py](../backend/tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskMembership`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
-- [backend/tasks/project_template_forms.py](../backend/tasks/project_template_forms.py) — `style_fields`, `TemplateDetailsForm`, `TemplateSectionForm`, `TemplateTaskForm`
-- [backend/tasks/project_templates.py](../backend/tasks/project_templates.py) — `template_descendants`, `update_template_item`, `delete_template_item`, `save_project_template`, `populate_project_from_template`
-- [backend/tasks/sharing.py](../backend/tasks/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`, `task_candidates`, `task_role`
 - [backend/tasks/sharing_signals.py](../backend/tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`, `section_member_deleted`, `task_member_deleted`
-- [backend/tasks/tagging.py](../backend/tasks/tagging.py) — `tags_in_scope`, `visible_tags`, `form_tags`, `tag_action`
+- [backend/tasks/tag_directory.py](../backend/tasks/tag_directory.py) — `tag_window_for_request`
+- [backend/tasks/tagging.py](../backend/tasks/tagging.py) — `tags_in_scope`, `visible_tags`, `tag_action`
 - [backend/tasks/urls.py](../backend/tasks/urls.py) — `retired_tasks`
-- [backend/tasks/views/__init__.py](../backend/tasks/views/__init__.py)
-- [backend/tasks/views/directory.py](../backend/tasks/views/directory.py) — `directory_favorite`
-- [backend/tasks/views/project_team.py](../backend/tasks/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
-- [backend/tasks/views/project_templates.py](../backend/tasks/views/project_templates.py) — `project_templates`, `edit_project_template`
-- [backend/tasks/views/section_team.py](../backend/tasks/views/section_team.py) — `SectionShareForm`, `team_payload`, `section_team`, `section_candidates`
-- [backend/tasks/views/task_team.py](../backend/tasks/views/task_team.py) — `TaskShareForm`, `team_payload`, `task_team`, `task_candidates`
-- [backend/tasks/views/tasks.py](../backend/tasks/views/tasks.py) — `tasks`, `task_group`, `create_share_link`, `revoke_share_link`, `accept_share_link`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
-- [backend/tasks/views.py](../backend/tasks/views.py)
 
 ### kanban
 
 - [backend/kanban/__init__.py](../backend/kanban/__init__.py)
-- [backend/kanban/access.py](../backend/kanban/access.py) — `card_tree_ids`, `visible_to`, `editable_to`, `require_editable`, `require_deletable`
+- [backend/kanban/access.py](../backend/kanban/access.py) — `visible_to`
 - [backend/kanban/admin.py](../backend/kanban/admin.py)
 - [backend/kanban/apps.py](../backend/kanban/apps.py) — `KanbanConfig`
-- [backend/kanban/directory.py](../backend/kanban/directory.py) — `directory_tab`, `directory_queryset`, `decorate_favorites`
-- [backend/kanban/forms.py](../backend/kanban/forms.py) — `LenientModelChoiceField`, `TwoDigitNumberInput`, `board_column_status_choices`, `DynamicStatusFormMixin`, `MultipleFileInput`, `KanbanForm`, `KanbanAccessForm`, `KanbanProjectBaseForm`, `KanbanProjectForm`, `KanbanProjectRenameForm`, `KanbanSectionForm`, `KanbanSectionRenameForm`, `KanbanTagForm`, `KanbanBoardColumnForm`, `QuickKanbanForm`, `KanbanModalForm`, `SubKanbanModalForm`
 - [backend/kanban/models.py](../backend/kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `KanbanCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`, `KanbanProjectMembership`, `KanbanSectionMembership`
-- [backend/kanban/sharing.py](../backend/kanban/sharing.py) — `share_candidates`, `project_role`, `project_access_data`, `section_candidates`, `section_role`, `section_access_data`
 - [backend/kanban/sharing_signals.py](../backend/kanban/sharing_signals.py) — `revoke_workspace_shares`, `workspace_member_deleted`, `workspace_member_disabled`, `project_member_deleted`
 - [backend/kanban/urls.py](../backend/kanban/urls.py) — `retired_kanban`
-- [backend/kanban/views/__init__.py](../backend/kanban/views/__init__.py)
-- [backend/kanban/views/directory.py](../backend/kanban/views/directory.py) — `directory_favorite`
-- [backend/kanban/views/project_team.py](../backend/kanban/views/project_team.py) — `ProjectShareForm`, `team_payload`, `project_team`, `project_candidates`
-- [backend/kanban/views/section_team.py](../backend/kanban/views/section_team.py) — `SectionShareForm`, `team_payload`, `section_team`, `section_candidates`
-- [backend/kanban/views/tasks.py](../backend/kanban/views/tasks.py) — `tasks`, `task_group`, `reorder_board_columns`, `update_task_status`, `delete_task`, `delete_attachment`, `download_attachment`, `delete_tasks`, `bulk_update_status`, `view_task`, `view_subtask`, `comment_image`
 
-### contacts
+### legacy/contacts
 
-- [backend/contacts/__init__.py](../backend/contacts/__init__.py)
-- [backend/contacts/admin.py](../backend/contacts/admin.py)
-- [backend/contacts/apps.py](../backend/contacts/apps.py) — `ContactsConfig`
-- [backend/contacts/forms.py](../backend/contacts/forms.py) — `ContactForm`, `ContactModalForm`, `CompanyForm`, `CompanyModalForm`
-- [backend/contacts/models.py](../backend/contacts/models.py) — `Company`, `CompanyMembership`, `Contact`, `UserContact`, `ContactActivity`, `SharedItem`, `SharedItemLink`
-- [backend/contacts/templatetags/__init__.py](../backend/contacts/templatetags/__init__.py)
-- [backend/contacts/templatetags/company_avatar.py](../backend/contacts/templatetags/company_avatar.py) — `company_avatar_seed`, `company_avatar`
-- [backend/contacts/urls.py](../backend/contacts/urls.py)
-- [backend/contacts/views.py](../backend/contacts/views.py) — `lookup_ancore_login`, `contacts`, `guest_contacts`, `view_contact`, `edit_contact`, `delete_contact`, `user_directory`, `add_user_contact`, `companies`, `view_company`, `edit_company`, `delete_company`
+- [backend/legacy/contacts/__init__.py](../backend/legacy/contacts/__init__.py)
+- [backend/legacy/contacts/apps.py](../backend/legacy/contacts/apps.py) — `LegacyContactsConfig`
+- [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py) — `Company`, `CompanyMembership`, `Contact`, `UserContact`, `ContactActivity`, `SharedItem`, `SharedItemLink`
 
 ### dashboard
 
 - [backend/dashboard/__init__.py](../backend/dashboard/__init__.py)
 - [backend/dashboard/admin.py](../backend/dashboard/admin.py)
 - [backend/dashboard/apps.py](../backend/dashboard/apps.py) — `DashboardConfig`
-- [backend/dashboard/collaboration.py](../backend/dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`, `follow_context`, `follow_object`, `deliver_activity_interest`
+- [backend/dashboard/collaboration.py](../backend/dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`
 - [backend/dashboard/filter_forms.py](../backend/dashboard/filter_forms.py) — `BasicTaskSearchForm`, `SavedTaskFilterForm`
 - [backend/dashboard/filter_frontend.py](../backend/dashboard/filter_frontend.py) — `filter_payload`, `modal_payload`, `catalog_page`, `search_page`
 - [backend/dashboard/filter_search.py](../backend/dashboard/filter_search.py) — `QueryError`, `quote`, `SearchQuery`, `Parser`, `parse_query`, `date_value`, `Compiler`, `apply_query`, `basic_query`
@@ -1498,7 +1404,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardGadget`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
 - [backend/dashboard/notification_frontend.py](../backend/dashboard/notification_frontend.py) — `notification_payload`
 - [backend/dashboard/notification_service.py](../backend/dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
-- [backend/dashboard/overview.py](../backend/dashboard/overview.py) — `dashboard_overview`
 - [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [backend/dashboard/pulpit_frontend.py](../backend/dashboard/pulpit_frontend.py) — `dashboard_payload`, `gadget_payload`, `pulpit_form_payload`, `modal_payload`, `directory_page`, `detail_page`, `edit_page`
 - [backend/dashboard/pulpit_navigation.py](../backend/dashboard/pulpit_navigation.py) — `sidebar_dashboards`
@@ -1574,7 +1479,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
-- [backend/spaces/summary.py](../backend/spaces/summary.py) — `summary_scope`, `filter_summary_items`, `space_summary`
+- [backend/spaces/summary.py](../backend/spaces/summary.py) — `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
 - [backend/spaces/task_views.py](../backend/spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `detail_post_data`, `work_log_context`, `detail`, `members`, `download`
@@ -1582,7 +1487,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/teams.py](../backend/spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
 - [backend/spaces/templatetags/__init__.py](../backend/spaces/templatetags/__init__.py)
 - [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
-- [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`
+- [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
 - [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `TeamSelect`
@@ -1593,7 +1498,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [backend/core/templates/core/base.html](../backend/core/templates/core/base.html)
 - [backend/core/templates/core/includes/attachment_icon.html](../backend/core/templates/core/includes/attachment_icon.html)
-- [backend/core/templates/core/includes/attachment_upload_icon.html](../backend/core/templates/core/includes/attachment_upload_icon.html)
 - [backend/core/templates/core/includes/avatar_picker.html](../backend/core/templates/core/includes/avatar_picker.html)
 - [backend/core/templates/core/includes/avatar_presets.html](../backend/core/templates/core/includes/avatar_presets.html)
 - [backend/core/templates/core/includes/bootstrap.html](../backend/core/templates/core/includes/bootstrap.html)
@@ -1642,33 +1546,22 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### tasks
 
-- [backend/tasks/templates/tasks/edit_task.html](../backend/tasks/templates/tasks/edit_task.html)
 - [backend/tasks/templates/tasks/includes/comment_composer.html](../backend/tasks/templates/tasks/includes/comment_composer.html)
 - [backend/tasks/templates/tasks/includes/comment_images.html](../backend/tasks/templates/tasks/includes/comment_images.html)
 - [backend/tasks/templates/tasks/includes/directory_actions_menu.html](../backend/tasks/templates/tasks/includes/directory_actions_menu.html)
 - [backend/tasks/templates/tasks/includes/directory_column_manager.html](../backend/tasks/templates/tasks/includes/directory_column_manager.html)
-- [backend/tasks/templates/tasks/includes/directory_empty_copy.html](../backend/tasks/templates/tasks/includes/directory_empty_copy.html)
 - [backend/tasks/templates/tasks/includes/directory_filter_aggregate.html](../backend/tasks/templates/tasks/includes/directory_filter_aggregate.html)
-- [backend/tasks/templates/tasks/includes/directory_members.html](../backend/tasks/templates/tasks/includes/directory_members.html)
 - [backend/tasks/templates/tasks/includes/directory_menu_header.html](../backend/tasks/templates/tasks/includes/directory_menu_header.html)
 - [backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html](../backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html)
 - [backend/tasks/templates/tasks/includes/directory_row_menu.html](../backend/tasks/templates/tasks/includes/directory_row_menu.html)
 - [backend/tasks/templates/tasks/includes/directory_sort_builder.html](../backend/tasks/templates/tasks/includes/directory_sort_builder.html)
-- [backend/tasks/templates/tasks/includes/follow_button.html](../backend/tasks/templates/tasks/includes/follow_button.html)
-- [backend/tasks/templates/tasks/includes/group_directory_filter_builder.html](../backend/tasks/templates/tasks/includes/group_directory_filter_builder.html)
 - [backend/tasks/templates/tasks/includes/issue_group_header.html](../backend/tasks/templates/tasks/includes/issue_group_header.html)
-- [backend/tasks/templates/tasks/includes/project_access_panel.html](../backend/tasks/templates/tasks/includes/project_access_panel.html)
-- [backend/tasks/templates/tasks/includes/project_access_tabs.html](../backend/tasks/templates/tasks/includes/project_access_tabs.html)
 - [backend/tasks/templates/tasks/includes/project_choice_filter_detail.html](../backend/tasks/templates/tasks/includes/project_choice_filter_detail.html)
-- [backend/tasks/templates/tasks/includes/project_directory_filter_sort.html](../backend/tasks/templates/tasks/includes/project_directory_filter_sort.html)
 - [backend/tasks/templates/tasks/includes/project_info_modal.html](../backend/tasks/templates/tasks/includes/project_info_modal.html)
 - [backend/tasks/templates/tasks/includes/project_members_panel.html](../backend/tasks/templates/tasks/includes/project_members_panel.html)
-- [backend/tasks/templates/tasks/includes/project_note_item.html](../backend/tasks/templates/tasks/includes/project_note_item.html)
 - [backend/tasks/templates/tasks/includes/project_team_modals.html](../backend/tasks/templates/tasks/includes/project_team_modals.html)
 - [backend/tasks/templates/tasks/includes/project_text_filter_detail.html](../backend/tasks/templates/tasks/includes/project_text_filter_detail.html)
-- [backend/tasks/templates/tasks/includes/section_notes_thread.html](../backend/tasks/templates/tasks/includes/section_notes_thread.html)
 - [backend/tasks/templates/tasks/includes/status_group_header.html](../backend/tasks/templates/tasks/includes/status_group_header.html)
-- [backend/tasks/templates/tasks/includes/status_pagination.html](../backend/tasks/templates/tasks/includes/status_pagination.html)
 - [backend/tasks/templates/tasks/includes/tag_directory.html](../backend/tasks/templates/tasks/includes/tag_directory.html)
 - [backend/tasks/templates/tasks/includes/tag_filters.html](../backend/tasks/templates/tasks/includes/tag_filters.html)
 - [backend/tasks/templates/tasks/includes/tag_modal.html](../backend/tasks/templates/tasks/includes/tag_modal.html)
@@ -1676,45 +1569,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/tasks/templates/tasks/includes/tag_notes_thread.html](../backend/tasks/templates/tasks/includes/tag_notes_thread.html)
 - [backend/tasks/templates/tasks/includes/tag_sort.html](../backend/tasks/templates/tasks/includes/tag_sort.html)
 - [backend/tasks/templates/tasks/includes/task_activity_item.html](../backend/tasks/templates/tasks/includes/task_activity_item.html)
-- [backend/tasks/templates/tasks/includes/task_display_manager.html](../backend/tasks/templates/tasks/includes/task_display_manager.html)
-- [backend/tasks/templates/tasks/includes/task_issue_row.html](../backend/tasks/templates/tasks/includes/task_issue_row.html)
-- [backend/tasks/templates/tasks/includes/tasks_project_tree_initial_state.html](../backend/tasks/templates/tasks/includes/tasks_project_tree_initial_state.html)
-- [backend/tasks/templates/tasks/includes/tasks_secondary_menu.html](../backend/tasks/templates/tasks/includes/tasks_secondary_menu.html)
-- [backend/tasks/templates/tasks/includes/template_item_menu.html](../backend/tasks/templates/tasks/includes/template_item_menu.html)
 - [backend/tasks/templates/tasks/includes/work_log_fields.html](../backend/tasks/templates/tasks/includes/work_log_fields.html)
 - [backend/tasks/templates/tasks/includes/work_log_list.html](../backend/tasks/templates/tasks/includes/work_log_list.html)
 - [backend/tasks/templates/tasks/includes/work_log_modal.html](../backend/tasks/templates/tasks/includes/work_log_modal.html)
-- [backend/tasks/templates/tasks/project_template_edit.html](../backend/tasks/templates/tasks/project_template_edit.html)
-- [backend/tasks/templates/tasks/project_templates.html](../backend/tasks/templates/tasks/project_templates.html)
-- [backend/tasks/templates/tasks/tasks.html](../backend/tasks/templates/tasks/tasks.html)
-- [backend/tasks/templates/tasks/view_task.html](../backend/tasks/templates/tasks/view_task.html)
-
-### kanban
-
-- [backend/kanban/templates/kanban/edit_task.html](../backend/kanban/templates/kanban/edit_task.html)
-- [backend/kanban/templates/kanban/includes/board_display_manager.html](../backend/kanban/templates/kanban/includes/board_display_manager.html)
-- [backend/kanban/templates/kanban/includes/directory_empty_copy.html](../backend/kanban/templates/kanban/includes/directory_empty_copy.html)
-- [backend/kanban/templates/kanban/includes/task_board_card.html](../backend/kanban/templates/kanban/includes/task_board_card.html)
-- [backend/kanban/templates/kanban/includes/task_issue_row.html](../backend/kanban/templates/kanban/includes/task_issue_row.html)
-- [backend/kanban/templates/kanban/includes/tasks_project_tree_initial_state.html](../backend/kanban/templates/kanban/includes/tasks_project_tree_initial_state.html)
-- [backend/kanban/templates/kanban/includes/tasks_secondary_menu.html](../backend/kanban/templates/kanban/includes/tasks_secondary_menu.html)
-- [backend/kanban/templates/kanban/includes/tasks_section_actions.html](../backend/kanban/templates/kanban/includes/tasks_section_actions.html)
-- [backend/kanban/templates/kanban/tasks.html](../backend/kanban/templates/kanban/tasks.html)
-- [backend/kanban/templates/kanban/view_task.html](../backend/kanban/templates/kanban/view_task.html)
-
-### contacts
-
-- [backend/contacts/templates/contacts/companies.html](../backend/contacts/templates/contacts/companies.html)
-- [backend/contacts/templates/contacts/contacts.html](../backend/contacts/templates/contacts/contacts.html)
-- [backend/contacts/templates/contacts/includes/company_avatar.html](../backend/contacts/templates/contacts/includes/company_avatar.html)
-- [backend/contacts/templates/contacts/includes/company_avatar_icon.html](../backend/contacts/templates/contacts/includes/company_avatar_icon.html)
-- [backend/contacts/templates/contacts/includes/company_photo_editor.html](../backend/contacts/templates/contacts/includes/company_photo_editor.html)
-- [backend/contacts/templates/contacts/includes/contact_create_modals.html](../backend/contacts/templates/contacts/includes/contact_create_modals.html)
-- [backend/contacts/templates/contacts/includes/contact_status_badge.html](../backend/contacts/templates/contacts/includes/contact_status_badge.html)
-- [backend/contacts/templates/contacts/includes/contacts_secondary_menu.html](../backend/contacts/templates/contacts/includes/contacts_secondary_menu.html)
-- [backend/contacts/templates/contacts/user_directory.html](../backend/contacts/templates/contacts/user_directory.html)
-- [backend/contacts/templates/contacts/view_company.html](../backend/contacts/templates/contacts/view_company.html)
-- [backend/contacts/templates/contacts/view_contact.html](../backend/contacts/templates/contacts/view_contact.html)
 
 ### dashboard
 
@@ -1864,7 +1721,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/buttons.css](../static/css/components/buttons.css)
 - [static/css/components/cards.css](../static/css/components/cards.css)
 - [static/css/components/checkboxes.css](../static/css/components/checkboxes.css)
-- [static/css/components/contacts.css](../static/css/components/contacts.css)
 - [static/css/components/dashboard.css](../static/css/components/dashboard.css)
 - [static/css/components/dialogs.css](../static/css/components/dialogs.css)
 - [static/css/components/documents.css](../static/css/components/documents.css)
@@ -1882,6 +1738,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/react.css](../static/css/components/react.css)
 - [static/css/components/resources.css](../static/css/components/resources.css)
 - [static/css/components/settings.css](../static/css/components/settings.css)
+- [static/css/components/shared-controls.css](../static/css/components/shared-controls.css)
 - [static/css/components/space-avatars.css](../static/css/components/space-avatars.css)
 - [static/css/components/spaces.css](../static/css/components/spaces.css)
 - [static/css/components/sticky-note.css](../static/css/components/sticky-note.css)
@@ -1922,7 +1779,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/presence.js](../static/js/presence.js)
 - [static/js/profile.js](../static/js/profile.js)
 - [static/js/project-team.js](../static/js/project-team.js)
-- [static/js/project-templates.js](../static/js/project-templates.js)
 - [static/js/pulpit-navigation.js](../static/js/pulpit-navigation.js)
 - [static/js/pulpits.js](../static/js/pulpits.js)
 - [static/js/resources.js](../static/js/resources.js)
@@ -1952,9 +1808,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/img/empty-states/spaces-empty.webp](../static/img/empty-states/spaces-empty.webp)
 - [static/img/favicon-ancore-large.png](../static/img/favicon-ancore-large.png)
 - [static/img/logo-ancore.png](../static/img/logo-ancore.png)
-- [static/img/pulpits/README.md](../static/img/pulpits/README.md)
-- [static/img/pulpits/assigned.svg](../static/img/pulpits/assigned.svg)
-- [static/img/pulpits/statistics.svg](../static/img/pulpits/statistics.svg)
 - [static/img/space-avatars/PROMPT-extra.txt](../static/img/space-avatars/PROMPT-extra.txt)
 - [static/img/space-avatars/PROMPT.txt](../static/img/space-avatars/PROMPT.txt)
 - [static/img/space-avatars/illustrations-extra-v1.png](../static/img/space-avatars/illustrations-extra-v1.png)
@@ -2091,6 +1944,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `CommentImageTests`: 16 metod testowych.
 
+### backend/core/test_contact_retirement.py
+
+Źródło: [backend/core/test_contact_retirement.py](../backend/core/test_contact_retirement.py).
+
+- `RetiredContactRoutesTests`: 2 metod testowych.
+- `RetiredContactDirectoryTests`: 5 metod testowych.
+
 ### backend/core/test_document_frontend.py
 
 Źródło: [backend/core/test_document_frontend.py](../backend/core/test_document_frontend.py).
@@ -2126,7 +1986,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_project_layout.py](../backend/core/test_project_layout.py).
 
-- `ProjectLayoutTests`: 4 metod testowych.
+- `ProjectLayoutTests`: 5 metod testowych.
 
 ### backend/core/test_pulpit_frontend.py
 
@@ -2151,8 +2011,9 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_task_integrity.py](../backend/core/test_task_integrity.py).
 
-- `TaskIdentityTests`: 12 metod testowych.
+- `TaskIdentityTests`: 3 metod testowych.
 - `ConcurrentTaskNumberTests`: 2 metod testowych.
+- `SpaceTaskIdentityTests`: 6 metod testowych.
 
 ### backend/core/test_task_number_migrations.py
 
@@ -2264,18 +2125,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DirectSharingMigrationTests`: 1 metod testowych.
 
-### backend/tasks/test_directory_tabs.py
-
-Źródło: [backend/tasks/test_directory_tabs.py](../backend/tasks/test_directory_tabs.py).
-
-- `DirectoryTabsTests`: 21 metod testowych.
-
-### backend/tasks/test_group_directory.py
-
-Źródło: [backend/tasks/test_group_directory.py](../backend/tasks/test_group_directory.py).
-
-- `ProjectGroupDirectoryTests`: 3 metod testowych.
-
 ### backend/tasks/test_legacy_time_migration.py
 
 Źródło: [backend/tasks/test_legacy_time_migration.py](../backend/tasks/test_legacy_time_migration.py).
@@ -2293,52 +2142,38 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/tasks/test_project_invitations.py](../backend/tasks/test_project_invitations.py).
 
-- `ProjectTeamTests`: 10 metod testowych.
 - `ProjectMembershipMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_project_observer.py
-
-Źródło: [backend/tasks/test_project_observer.py](../backend/tasks/test_project_observer.py).
-
-- `ProjectObserverTests`: 11 metod testowych.
 
 ### backend/tasks/test_project_sharing.py
 
 Źródło: [backend/tasks/test_project_sharing.py](../backend/tasks/test_project_sharing.py).
 
-- `ProjectSharingTests`: 12 metod testowych.
+- `ProjectSharingTests`: 3 metod testowych.
 
 ### backend/tasks/test_project_templates.py
 
 Źródło: [backend/tasks/test_project_templates.py](../backend/tasks/test_project_templates.py).
 
-- `ProjectTemplateTests`: 29 metod testowych.
+- `ProjectTemplateTests`: 3 metod testowych.
 
 ### backend/tasks/test_project_visibility.py
 
 Źródło: [backend/tasks/test_project_visibility.py](../backend/tasks/test_project_visibility.py).
 
-- `ProjectVisibilityTests`: 18 metod testowych.
+- `ProjectVisibilityTests`: 3 metod testowych.
 - `ProjectVisibilityMigrationTests`: 1 metod testowych.
 
 ### backend/tasks/test_retirement.py
 
 Źródło: [backend/tasks/test_retirement.py](../backend/tasks/test_retirement.py).
 
-- `RetiredTasksTests`: 8 metod testowych.
+- `RetiredTasksTests`: 9 metod testowych.
 
 ### backend/tasks/test_section_sharing.py
 
 Źródło: [backend/tasks/test_section_sharing.py](../backend/tasks/test_section_sharing.py).
 
-- `SectionSharingTests`: 17 metod testowych.
 - `SectionSharingMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_status_pagination.py
-
-Źródło: [backend/tasks/test_status_pagination.py](../backend/tasks/test_status_pagination.py).
-
-- `TaskStatusPaginationTests`: 7 metod testowych.
 
 ### backend/tasks/test_tag_retirement.py
 
@@ -2350,39 +2185,20 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/tasks/test_task_moves.py](../backend/tasks/test_task_moves.py).
 
-- `TaskLocationEditTests`: 10 metod testowych.
+- `TaskLocationEditTests`: 2 metod testowych.
 
 ### backend/tasks/test_task_sharing.py
 
 Źródło: [backend/tasks/test_task_sharing.py](../backend/tasks/test_task_sharing.py).
 
-- `TaskSharingTests`: 17 metod testowych.
 - `TaskSharingMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_unassigned_creation.py
-
-Źródło: [backend/tasks/test_unassigned_creation.py](../backend/tasks/test_unassigned_creation.py).
-
-- `UnassignedTaskCreationTests`: 8 metod testowych.
-
-### backend/tasks/test_work_logs.py
-
-Źródło: [backend/tasks/test_work_logs.py](../backend/tasks/test_work_logs.py).
-
-- `TaskWorkLogTests`: 21 metod testowych.
-
-### backend/tasks/test_write_locking.py
-
-Źródło: [backend/tasks/test_write_locking.py](../backend/tasks/test_write_locking.py).
-
-- `ProjectTemplateWriteLockTests`: 1 metod testowych.
 
 ### backend/tasks/tests.py
 
 Źródło: [backend/tasks/tests.py](../backend/tasks/tests.py).
 
-- `TaskProjectControlStyleTests`: 19 metod testowych.
-- `TaskProjectCreationTests`: 101 metod testowych.
+- `SharedTaskStyleTests`: 12 metod testowych.
+- `LegacyTaskModelTests`: 5 metod testowych.
 
 ### backend/kanban/test_retirement.py
 
@@ -2402,18 +2218,11 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `LegacyKanbanModelTests`: 2 metod testowych.
 
-### backend/contacts/tests.py
-
-Źródło: [backend/contacts/tests.py](../backend/contacts/tests.py).
-
-- `RetiredContactRoutesTests`: 2 metod testowych.
-- `RetiredContactDirectoryTests`: 4 metod testowych.
-
 ### backend/dashboard/test_collaboration.py
 
 Źródło: [backend/dashboard/test_collaboration.py](../backend/dashboard/test_collaboration.py).
 
-- `CollaborationTests`: 20 metod testowych.
+- `CollaborationTests`: 14 metod testowych.
 
 ### backend/dashboard/test_default_pulpit.py
 
@@ -2433,17 +2242,17 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ForYouTests`: 29 metod testowych.
 
+### backend/dashboard/test_home.py
+
+Źródło: [backend/dashboard/test_home.py](../backend/dashboard/test_home.py).
+
+- `DashboardHomeTests`: 4 metod testowych.
+
 ### backend/dashboard/test_notifications.py
 
 Źródło: [backend/dashboard/test_notifications.py](../backend/dashboard/test_notifications.py).
 
 - `NotificationCenterTests`: 26 metod testowych.
-
-### backend/dashboard/test_overview.py
-
-Źródło: [backend/dashboard/test_overview.py](../backend/dashboard/test_overview.py).
-
-- `DashboardOverviewTests`: 10 metod testowych.
 
 ### backend/dashboard/test_pulpit_catalog.py
 
@@ -2494,7 +2303,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_reminders.py](../backend/dashboard/test_reminders.py).
 
-- `TaskReminderTests`: 8 metod testowych.
+- `SpaceTaskReminderTests`: 8 metod testowych.
 
 ### backend/dashboard/test_search_regressions.py
 
@@ -2735,6 +2544,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `ConcurrentSpaceSlugTests`: 1 metod testowych.
 - `SpaceSlugMigrationTests`: 1 metod testowych.
 
+### backend/spaces/test_work_logs.py
+
+Źródło: [backend/spaces/test_work_logs.py](../backend/spaces/test_work_logs.py).
+
+- `SpaceTaskWorkLogTests`: 21 metod testowych.
+
 ### backend/spaces/test_write_access.py
 
 Źródło: [backend/spaces/test_write_access.py](../backend/spaces/test_write_access.py).
@@ -2886,16 +2701,16 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/kanban/migrations/0038_directory_favorites.py](../backend/kanban/migrations/0038_directory_favorites.py)
 - [backend/kanban/migrations/0039_sharing.py](../backend/kanban/migrations/0039_sharing.py)
 
-### contacts
+### legacy/contacts
 
-- [backend/contacts/migrations/0001_initial.py](../backend/contacts/migrations/0001_initial.py)
-- [backend/contacts/migrations/0002_contactactivity.py](../backend/contacts/migrations/0002_contactactivity.py)
-- [backend/contacts/migrations/0003_company_contact_company_record_companymembership_and_more.py](../backend/contacts/migrations/0003_company_contact_company_record_companymembership_and_more.py)
-- [backend/contacts/migrations/0004_alter_contact_options_contact_middle_name.py](../backend/contacts/migrations/0004_alter_contact_options_contact_middle_name.py)
-- [backend/contacts/migrations/0005_company_company_photo.py](../backend/contacts/migrations/0005_company_company_photo.py)
-- [backend/contacts/migrations/0006_shareditemlink.py](../backend/contacts/migrations/0006_shareditemlink.py)
-- [backend/contacts/migrations/0007_alter_shareditem_permission_and_more.py](../backend/contacts/migrations/0007_alter_shareditem_permission_and_more.py)
-- [backend/contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py](../backend/contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py)
+- [backend/legacy/contacts/migrations/0001_initial.py](../backend/legacy/contacts/migrations/0001_initial.py)
+- [backend/legacy/contacts/migrations/0002_contactactivity.py](../backend/legacy/contacts/migrations/0002_contactactivity.py)
+- [backend/legacy/contacts/migrations/0003_company_contact_company_record_companymembership_and_more.py](../backend/legacy/contacts/migrations/0003_company_contact_company_record_companymembership_and_more.py)
+- [backend/legacy/contacts/migrations/0004_alter_contact_options_contact_middle_name.py](../backend/legacy/contacts/migrations/0004_alter_contact_options_contact_middle_name.py)
+- [backend/legacy/contacts/migrations/0005_company_company_photo.py](../backend/legacy/contacts/migrations/0005_company_company_photo.py)
+- [backend/legacy/contacts/migrations/0006_shareditemlink.py](../backend/legacy/contacts/migrations/0006_shareditemlink.py)
+- [backend/legacy/contacts/migrations/0007_alter_shareditem_permission_and_more.py](../backend/legacy/contacts/migrations/0007_alter_shareditem_permission_and_more.py)
+- [backend/legacy/contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py](../backend/legacy/contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py)
 
 ### dashboard
 

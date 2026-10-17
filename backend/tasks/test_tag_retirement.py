@@ -3,7 +3,6 @@ from django.test import TestCase
 from django.urls import reverse
 
 from spaces.testing import make_space
-from tasks.forms import TaskForm, TaskModalForm
 from tasks.models import Task, TaskProject, TaskSection, TaskTag, TaskTagNote
 from workplaces.models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
@@ -60,10 +59,12 @@ class LegacyTagRetirementTests(TestCase):
         for prefix in self.prefixes():
             for suffix in ['', '?view=unassigned-tasks', f'groups/{self.section.pk}/',
                            f'view-task/{self.task.task_id}/?task_pk={self.task.pk}']:
-                response = self.client.get(prefix + suffix)
+                response = self.client.get(prefix + suffix, follow=True)
+                if suffix.startswith(('groups/', 'view-task/')):
+                    self.assertEqual(response.status_code, 404)
+                    continue
                 self.assertEqual(response.status_code, 200)
-                if suffix == '?view=unassigned-tasks':
-                    self.assertContains(response, self.task.title)
+                self.assertNotContains(response, self.task.title)
                 for marker in ['?view=tags', 'data-open-tag', 'id="tag-modal"', 'id="tag-notes-modal"',
                                'data-sidebar-favorite-item="tags"', 'LegacyTagProbe']:
                     self.assertNotContains(response, marker)
@@ -78,16 +79,11 @@ class LegacyTagRetirementTests(TestCase):
             if query != 'Tagi':
                 self.assertEqual(payload['total'], 0)
 
-    def test_unassigned_forms_cannot_select_or_assign_legacy_tags(self):
+    def test_retired_creation_cannot_assign_legacy_tags(self):
         self.login(self.owner)
-        for form_class in [TaskForm, TaskModalForm]:
-            form = form_class(user=self.owner, workplace=self.workspace, viewer=self.owner)
-            self.assertFalse(form.fields['tags'].queryset.exists())
-            self.assertNotIn('LegacyTagProbe', form.fields['tags'].widget.attrs['data-tag-project-options'])
         response = self.client.post('/tasks/', {'action': 'create_task_modal', 'title': 'Nie zapisuj',
                                                'priority': 'medium', 'status': 'new', 'tags': [self.legacy.pk]})
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['task_modal_form'].errors.get('tags'))
+        self.assertEqual(response.status_code, 409)
         self.assertFalse(Task.objects.filter(title='Nie zapisuj').exists())
 
     def test_retired_favorite_cannot_be_added(self):
@@ -101,7 +97,7 @@ class LegacyTagRetirementTests(TestCase):
     def test_opening_workspace_does_not_backfill_historical_tags(self):
         old = TaskTag.objects.create(user=self.owner, name='Tag sprzed Workspace')
         self.login(self.owner)
-        self.assertEqual(self.client.get(self.prefixes()[1]).status_code, 200)
+        self.assertEqual(self.client.get(self.prefixes()[1]).status_code, 302)
         old.refresh_from_db()
         self.assertIsNone(old.workplace_id)
         self.assertIsNone(old.space_id)
@@ -117,11 +113,11 @@ class LegacyTagRetirementTests(TestCase):
             self.assertEqual(self.client.post(url, {'action': 'create_tag', 'name': 'Wydanie'}).status_code, 302)
             TaskTag.objects.filter(space=self.space, name='Wydanie').delete()
 
-    def test_old_admin_directory_is_removed_and_task_choices_exclude_legacy_tags(self):
+    def test_old_tag_and_task_admin_directories_remain_removed(self):
         self.owner.is_staff = self.owner.is_superuser = True
         self.owner.save(update_fields=['is_staff', 'is_superuser'])
         self.login(self.owner)
         for suffix in ['', 'add/', f'{self.legacy.pk}/change/', f'{self.legacy.pk}/delete/']:
             self.assertEqual(self.client.get('/admin/tasks/tasktag/' + suffix).status_code, 404)
-        response = self.client.get(reverse('admin:tasks_task_change', args=[self.task.pk]))
-        self.assertEqual(list(response.context['adminform'].form.fields['tags'].queryset), [])
+        response = self.client.get(f'/admin/tasks/task/{self.task.pk}/change/')
+        self.assertEqual(response.status_code, 404)
