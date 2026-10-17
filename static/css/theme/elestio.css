@@ -246,7 +246,7 @@ body {
 }
 
 .tasks-search-field:focus-within {
-    border-color: #888c95;
+    border-color: #848891;
     box-shadow: var(--focus-ring);
 }
 
@@ -403,7 +403,7 @@ body.auth-page,
 .auth-visual {
     background: #fbfcfd;
     color: var(--text-main);
-    border-right: 1px solid #e2e6eb;
+    border-right: 1px solid #dbdfe4;
 }
 
 .auth-visual::before {
@@ -439,7 +439,7 @@ body.auth-page,
 }
 
 .auth-workspace-preview {
-    border-color: #e0e4ea;
+    border-color: #d9dde3;
     background: rgba(255, 255, 255, 0.78);
     box-shadow: 0 18px 46px rgba(31, 36, 43, 0.08);
 }
@@ -464,7 +464,7 @@ body.auth-page,
 .auth-back-link,
 .auth-switch-link,
 .auth-card {
-    border-color: #dbe0e7;
+    border-color: #d4d9e0;
     background: var(--card-bg);
     color: var(--text-main);
 }
@@ -497,7 +497,7 @@ body.auth-page,
 }
 
 .auth-card .form-input {
-    border-color: #d4cec8;
+    border-color: #cec8c2;
     color: var(--text-main);
 }
 
@@ -554,18 +554,18 @@ body.auth-page,
 
 .tasks-status-block,
 .tasks-status-subgroup {
-    border-color: rgb(202, 203, 209);
+    border-color: rgb(196, 197, 203);
     background: #ffffff;
 }
 
 .tasks-issue-group:not(.tasks-status-block) {
-    border-color: rgb(202, 203, 209);
+    border-color: rgb(196, 197, 203);
     background: #ffffff;
 }
 
 .tasks-issue-group-header:not(.tasks-status-block-header),
 .tasks-group-row td {
-    border-color: rgb(202, 203, 209);
+    border-color: rgb(196, 197, 203);
     background: rgb(211, 214, 220);
     color: rgb(84, 95, 109);
 }
@@ -586,7 +586,7 @@ body.auth-page,
 }
 
 .tasks-issue-row {
-    border-top-color: rgb(227, 227, 227);
+    border-top-color: rgb(220, 220, 220);
     background: #ffffff;
     color: rgb(18, 18, 18);
 }
@@ -595,13 +595,13 @@ body.auth-page,
 .tasks-project-row:hover,
 .tasks-section-row:hover {
     background: rgb(240, 240, 242);
-    border-color: rgb(227, 227, 227);
+    border-color: rgb(220, 220, 220);
 }
 
 .tasks-project-row,
 .tasks-section-row:not(.tasks-section-card),
 .tasks-all-groups-row {
-    border-top-color: rgb(227, 227, 227);
+    border-top-color: rgb(220, 220, 220);
     background: rgb(246, 246, 247);
     color: rgb(18, 18, 18);
 }
@@ -650,18 +650,18 @@ body.auth-page,
 .tasks-section-row:hover,
 .tasks-all-groups-row:hover {
     background: rgb(240, 240, 242);
-    border-color: rgb(227, 227, 227);
+    border-color: rgb(220, 220, 220);
 }
 
 .tasks-issue-row:hover {
     background: #ffffff;
-    border-color: rgb(227, 227, 227);
+    border-color: rgb(220, 220, 220);
 }
 
 .tasks-project-row:focus-visible,
 .tasks-section-row:focus-visible {
     background: rgb(240, 240, 242);
-    outline: 2px solid rgb(206, 207, 213);
+    outline: 2px solid rgb(200, 201, 207);
     outline-offset: -2px;
 }
 
@@ -686,7 +686,7 @@ body.auth-page,
 .tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked,
 .tasks-issue-group:not(.tasks-status-block) .tasks-all-groups-row.checked:hover {
     background: #e9ebef;
-    border-color: #d2d5db;
+    border-color: #cccfd4;
 }
 
 .tasks-issue-row.checked:not(.tasks-directory-row),
@@ -696,7 +696,7 @@ body.auth-page,
 .tasks-issue-row:not(.tasks-directory-row):has(.tasks-row-checkbox:checked),
 .tasks-issue-row:not(.tasks-directory-row):has(.tasks-row-checkbox:checked):hover {
     background: #e9ebef;
-    border-color: #d2d5db;
+    border-color: #cccfd4;
 }
 
 /* Use the same opaque fill on every layer, including the checkbox gutter.
@@ -710,8 +710,8 @@ body.auth-page,
 .tasks-directory-board:is(.tasks-project-sheet, .tasks-tag-sheet, .contacts-project-sheet) .tasks-directory-list .tasks-directory-row:is(:hover, :focus-visible) > [data-column]:not([data-column="select"]) {
     background: color-mix(in srgb, var(--system-accent) 8%, #ffffff);
     background-clip: padding-box;
-    border-color: var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #e8ebee));
-    border-bottom-color: var(--tasks-directory-row-separator, var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #e8ebee)));
+    border-color: var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #e1e4e7));
+    border-bottom-color: var(--tasks-directory-row-separator, var(--contacts-directory-column-separator, var(--tasks-directory-column-separator, #e1e4e7)));
     outline: none;
 }
 
@@ -730,7 +730,7 @@ body.auth-page,
 }
 
 .tasks-issue-group-header.tasks-status-block-header {
-    border-color: rgb(202, 203, 209);
+    border-color: rgb(196, 197, 203);
 }
 
 .tasks-issue-group-header.tasks-status-block-header--new {

@@ -318,13 +318,13 @@ body.secondary-menu-collapsed {
 .nav-link:hover {
     color: var(--sidebar-active);
     background-color: #f5f7f9;
-    border-color: #dde2e8;
+    border-color: #d6dbe1;
 }
 
 .nav-link.active {
     color: var(--sidebar-active);
     background-color: #f0f3f6;
-    border-color: #d9dde4;
+    border-color: #d2d6dd;
 }
 
 .nav-link.active .nav-icon,

@@ -129,7 +129,7 @@
 
 .dashboard-action:hover,
 .dashboard-panel-link:hover {
-    border-color: #c3c9d2;
+    border-color: #bdc3cc;
     background: var(--dashboard-soft);
     color: var(--dashboard-ink);
 }
@@ -697,7 +697,7 @@ a.settings-option:hover,
     flex-direction: column;
     gap: 0.25rem;
     padding: 0 0 0 0.75rem;
-    border-left: 3px solid #abb1bb;
+    border-left: 3px solid #a6acb5;
 }
 
 .dashboard-event--red {

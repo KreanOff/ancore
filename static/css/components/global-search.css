@@ -23,7 +23,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border-right: 1px solid #dfe1e4;
+    border-right: 1px solid #d8dadd;
     border-left: 1px solid var(--border-color);
     background: var(--sidebar-bg);
 }
@@ -39,7 +39,7 @@ body.global-search-open .sidebar-header-action--search {
     justify-content: space-between;
     gap: 1rem;
     padding: 0.9rem 1.1rem 0.85rem 1.25rem;
-    border-bottom: 1px solid #e7e9ec;
+    border-bottom: 1px solid #e0e2e5;
     background: var(--sidebar-bg);
 }
 
@@ -101,7 +101,7 @@ body.global-search-open .sidebar-header-action--search {
 .global-search-form__clear:focus-visible,
 .global-search-state__retry:focus-visible,
 .global-search-result:focus-visible {
-    outline: 2px solid #777d87;
+    outline: 2px solid #737983;
     outline-offset: 1px;
     box-shadow: none;
 }
@@ -116,13 +116,13 @@ body.global-search-open .sidebar-header-action--search {
     align-items: center;
     gap: 0.7rem;
     padding: 0 0.75rem 0 0.9rem;
-    border: 1px solid #d4d7dc;
+    border: 1px solid #ced1d5;
     border-radius: 6px;
     background: #ffffff;
 }
 
 .global-search-form label:focus-within {
-    border-color: #abaeb5;
+    border-color: #a6a9b0;
 }
 
 .global-search-form label > svg {
@@ -232,7 +232,7 @@ body.global-search-open .sidebar-header-action--search {
     appearance: none;
     margin-top: 1rem;
     padding: 0.48rem 0.75rem;
-    border: 1px solid #d5d8dc;
+    border: 1px solid #cfd2d5;
     border-radius: 5px;
     background: #ffffff;
     color: #40444c;
@@ -391,7 +391,7 @@ body.global-search-open .sidebar-header-action--search {
 
     margin: 1rem 0.55rem 0;
     padding-top: 0.8rem;
-    border-top: 1px solid #e1e3e6;
+    border-top: 1px solid #dadcdf;
     font-size: 10px;
     text-align: center;
 }

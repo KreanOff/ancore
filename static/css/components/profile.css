@@ -3,7 +3,7 @@
 }
 
 .profile-rail .tasks-rail-nav {
-    border-bottom: 1px solid #e1e3e7;
+    border-bottom: 1px solid #dadce0;
 }
 
 .profile-rail-actions {
@@ -12,7 +12,7 @@
     gap: 0.125rem;
     margin-top: auto;
     padding: 0.625rem 0 0;
-    border-top: 1px solid #e1e3e7;
+    border-top: 1px solid #dadce0;
 }
 
 .profile-rail-action-form {
@@ -260,7 +260,7 @@
     min-height: 28px;
     width: 68px;
     padding: 0 0.55rem;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 6px;
     background: #ffffff;
     color: #4b5360;
@@ -272,7 +272,7 @@
 }
 
 .profile-photo-button:hover {
-    border-color: #cbd1da;
+    border-color: #c5cbd3;
     background: #f7f8fa;
     color: #242830;
 }
@@ -306,7 +306,7 @@
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 8px;
     background: #eef1f4;
     cursor: grab;
@@ -346,7 +346,7 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 6px;
     background: #ffffff;
     color: #4b5360;
@@ -355,7 +355,7 @@
 
 .profile-photo-zoom-button:hover,
 .profile-photo-zoom-button:focus-visible {
-    border-color: #cbd1da;
+    border-color: #c5cbd3;
     background: #f7f8fa;
     color: #242830;
     outline: none;
@@ -483,7 +483,7 @@
     align-items: center;
     gap: 0.45rem;
     padding: 0 0.55rem;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 6px;
     background: #ffffff;
     color: #3f444d;
@@ -497,7 +497,7 @@
 
 .profile-status-button:hover,
 .profile-status-dropdown.is-open .profile-status-button {
-    border-color: #cbd1da;
+    border-color: #c5cbd3;
     background: #f7f8fa;
 }
 
@@ -544,7 +544,7 @@
     z-index: 70;
     width: min(18rem, calc(var(--app-viewport-width) - 2rem));
     padding: 0.3rem;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 14px 34px rgba(20, 24, 31, 0.16);
@@ -618,7 +618,7 @@
     min-height: 36px;
     padding: 0.45rem 0.65rem;
     border-radius: 6px;
-    border-color: #dbdee4;
+    border-color: #d4d7dd;
     box-sizing: border-box;
     color: #343941;
     font-size: var(--font-size-sm);
@@ -724,7 +724,7 @@
 .profile-account-feed-item {
     grid-template-columns: 38px minmax(0, 1fr);
     padding: 0.9rem 0;
-    border-bottom: 1px solid #e3e6ea;
+    border-bottom: 1px solid #dcdfe3;
 }
 
 .profile-account-feed-item:first-child {
@@ -934,7 +934,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 8px;
     background: #ffffff;
     box-shadow: 0 22px 55px rgba(20, 24, 31, 0.22);
@@ -946,7 +946,7 @@
     justify-content: space-between;
     gap: 1rem;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid #e3e6ea;
+    border-bottom: 1px solid #dcdfe3;
 }
 
 .profile-edit-header h2,
@@ -1042,7 +1042,7 @@
 .profile-edit-form .profile-email-field .form-input {
     min-height: 40px;
     padding: 0.5rem 0.65rem;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     border-radius: 6px;
     background: #ffffff;
     color: #343941;
@@ -1073,13 +1073,13 @@
     justify-content: flex-end;
     gap: 0.5rem;
     padding: 1rem 1.25rem;
-    border-top: 1px solid #e3e6ea;
+    border-top: 1px solid #dcdfe3;
     background: #fafafa;
 }
 
 .profile-edit-cancel {
     min-height: 34px;
-    border: 1px solid #dbdee4;
+    border: 1px solid #d4d7dd;
     background: #ffffff;
     color: #4c5565;
 }
@@ -1135,7 +1135,7 @@
     height: 30px;
     margin-right: 0.35rem;
     padding: 0 0.95rem 0 0;
-    border-right: 1px solid #e7eaee;
+    border-right: 1px solid #e0e3e7;
     border-radius: 6px 0 0 6px;
     color: #4e535d;
     box-sizing: content-box;

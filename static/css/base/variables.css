@@ -6,7 +6,7 @@
     --bg-main: #ffffff;
     --chrome-bg: #f7f6f4;
     --chrome-bg-soft: #faf9f7;
-    --chrome-border: #e4e1dd;
+    --chrome-border: #dddad6;
     --secondary-menu-bg: #FBFBFC;
     --sidebar-bg: var(--secondary-menu-bg);
     --text-primary: #40444C;
@@ -39,7 +39,7 @@
     --text-main: var(--text-primary);
     --text-strong: var(--text-primary);
     --text-muted: var(--text-primary);
-    --border-color: #e7e4e0;
+    --border-color: #e0ddd9;
     --card-bg: #ffffff;
     --panel-bg: #f7f6f4;
     --surface-hover: #f2efeb;
@@ -58,6 +58,7 @@
     --secondary-menu-constrained-width: clamp(var(--secondary-menu-min-width), var(--secondary-menu-width), var(--secondary-menu-max-width));
     --app-sidebar-total-width: var(--sidebar-width);
     --page-max-width: 1200px;
+    --app-page-padding-x: 15px;
     --bp-sm: 480px;
     --bp-md: 768px;
     --bp-lg: 1024px;
@@ -66,8 +67,8 @@
     --control-height: 32px;
     --checkbox-size: 18px;
     --checkbox-bg: #ffffff;
-    --checkbox-border-color: #cbc6c0;
-    --checkbox-hover-border-color: #a69c94;
+    --checkbox-border-color: #c5c0ba;
+    --checkbox-hover-border-color: #a19790;
     --checkbox-checked-color: var(--system-accent);
     --checkbox-focus-ring: none;
     --icon-check-white: url("../../vendor/flaticon/check-white.svg");

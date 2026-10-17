@@ -1,6 +1,6 @@
 /* Workspace overview: existing dashboard panels and Ancore controls. */
 .dashboard-overview {
-    --dashboard-inline-padding: 22px;
+    --dashboard-inline-padding: var(--app-page-padding-x);
     --dashboard-ink: var(--text-primary);
     --dashboard-muted: var(--text-primary);
     --dashboard-line: var(--border-color);

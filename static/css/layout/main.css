@@ -393,7 +393,7 @@ body.app-page-loading .app-loading-overlay {
     justify-content: center;
     gap: 0.65rem;
     padding: 0.75rem 1rem;
-    border: 1px solid #e2e3e7;
+    border: 1px solid #dbdce0;
     border-radius: 8px;
     background: #ffffff;
     color: var(--text-strong);
@@ -404,7 +404,7 @@ body.app-page-loading .app-loading-overlay {
     width: 18px;
     height: 18px;
     flex: 0 0 18px;
-    border: 2px solid #dddfe3;
+    border: 2px solid #d6d8dc;
     border-top-color: #14b8bd;
     border-radius: 50%;
     animation: app-loading-spin 0.8s linear infinite;

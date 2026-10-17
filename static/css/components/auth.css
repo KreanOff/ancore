@@ -4,13 +4,13 @@ body.auth-page {
     --auth-bg: #ffffff;
     --auth-ink: #11181f;
     --auth-muted: #626d7c;
-    --auth-border: #b7c1cc;
-    --auth-border-soft: #d2dade;
+    --auth-border: #b2bbc6;
+    --auth-border-soft: #ccd3d7;
     --auth-teal: var(--system-accent);
     --auth-teal-dark: var(--system-accent-hover);
     --auth-input-bg: #fcfdfd;
     --auth-focus-bg: #f3f4f6;
-    --auth-focus-border: #69707d;
+    --auth-focus-border: #666d79;
     --auth-placeholder: #8690a1;
     --auth-icon: #727d8d;
     --auth-step-line: #86b3bb;

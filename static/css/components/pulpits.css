@@ -41,7 +41,7 @@
 .pulpit-gadget-preview > div { display: flex; align-items: center; gap: 14px; padding: 12px; }
 .pulpit-gadget-preview img { width: 108px; height: 70px; object-fit: contain; flex-shrink: 0; }
 .pulpit-gadget-preview p { margin: 6px 0 0; font-size: var(--font-size-sm); line-height: 1.5; }
-.pulpit-edit-page { --work-space-inline-padding: 22px; }
+.pulpit-edit-page { --work-space-inline-padding: var(--app-page-padding-x); }
 .pulpit-edit-page > .tasks-workspace > .tasks-topbar { padding-inline: var(--work-space-inline-padding); }
 .pulpit-edit-page .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
 .pulpit-edit-form { max-width: 640px; }

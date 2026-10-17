@@ -1,5 +1,5 @@
 /* Filters use the shared directory sheet, controls and modal shell. */
-.task-filters-page > .tasks-workspace > .tasks-topbar { padding-inline: var(--work-space-inline-padding, 22px); }
+.task-filters-page > .tasks-workspace > .tasks-topbar { padding-inline: var(--work-space-inline-padding, var(--app-page-padding-x)); }
 .task-filters-page .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
 .task-filters-page .tasks-titlebar-left { min-width: 0; flex-wrap: wrap; gap: 8px; }
 .task-filters-page .tasks-topbar-title { overflow-wrap: anywhere; }

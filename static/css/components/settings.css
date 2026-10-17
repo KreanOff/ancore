@@ -13,7 +13,7 @@
     min-height: 0;
     overflow: auto;
     scrollbar-gutter: stable;
-    padding: 28px 28px 30px;
+    padding: 28px var(--app-page-padding-x) 30px;
 }
 
 .settings-layout {
@@ -68,7 +68,7 @@
     min-height: 34px;
     padding: 7px 13px;
     flex: 0 0 auto;
-    border: 1px solid #c9ccd2;
+    border: 1px solid #c3c6cc;
     border-radius: 5px;
     background: #fff;
     font: inherit;
@@ -189,7 +189,7 @@
 
 @media (max-width: 1100px) {
     .settings-scroll-area {
-        padding-inline: 22px;
+        padding-inline: var(--app-page-padding-x);
     }
     .settings-row {
         padding-inline: 8px;
@@ -203,7 +203,7 @@
         min-height: 56px;
     }
     .settings-scroll-area {
-        padding: 22px 18px 28px;
+        padding: 22px var(--app-page-padding-x) 28px;
     }
     .settings-account-summary {
         gap: 12px;

@@ -429,13 +429,13 @@ Nagłówek otwartej przestrzeni pokazuje awatar i nazwę, bez strzałki powrotu
 i klucza obok niej. Nazwa ma rozmiar 17px i grubość 700 (`work-space-title`).
 Ten sam nagłówek obowiązuje we wszystkich jej zakładkach.
 Tytuł „Przestrzenie” w katalogu również ma rozmiar 17px i grubość 700.
-Nagłówek otwartej przestrzeni, pasek zakładek i treść podsumowania mają po 22px
+Nagłówek otwartej przestrzeni, pasek zakładek i treść podsumowania mają po 15px
 odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
 `--work-space-inline-padding` obejmuje też katalog Przestrzeni: jego nagłówek,
 zakładki i filtry. Tabele katalogu oraz zarządzania w `work-content--directory`
 dochodzą do obu krawędzi kontenera, jak tabele Workspace i Projektów, również
 na telefonie. Lista zadań i tablica wewnątrz przestrzeni nadal korzystają
-z pełnej szerokości; katalog Zespołów zachowuje własne odstępy.
+z pełnej szerokości; katalog Zespołów używa wspólnego odstępu 15px.
 Awatar ma 32px w nagłówku, 24px w katalogu, 20px w codziennym menu bocznym
 i 21px w panelu zwiniętego paska.
 Przycisk zmiany awatara (`space-avatar-trigger`) nie dodaje natywnej ramki,
@@ -807,11 +807,21 @@ od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń
 
 ## 2. Powłoka aplikacji
 
+Domyślny odstęp poziomy treści stron wynosi **15px z obu stron**. Wspólny
+token `--app-page-padding-x` w `base/variables.css` określa padding nagłówków,
+pasków narzędzi i paginacji oraz treści Przestrzeni, Zespołów, Filtrów,
+Pulpitów, Dla ciebie, Ustawień i siatek Dysku/Dokumentów. Zmienne modułów
+`--work-space-inline-padding`, `--dashboard-inline-padding` i
+`--documents-index-padding-x` odwołują się do tego tokenu. Reguła obowiązuje
+także na telefonie; nagłówki rezerwują dodatkowe miejsce na przycisk menu.
+Tabele i tablice o pełnej szerokości oraz wewnętrzne odstępy kart, modali
+i szczegółów zadania zachowują własną geometrię.
+
 „Dla ciebie” jest osobną pozycją nad Dashboardem, z ikoną `user-round-check`
 i obsługą ulubionych menu. Widok rozszerza `core/base.html` i komponenty
 Dashboardu: nagłówek katalogu, panele, wiersze i podkreślane zakładki.
 Górny pasek zawiera tylko tytuł „Dla ciebie”, bez przycisku „Moje zadania”.
-Nagłówek strony i główna treść mają po 22px odstępu z lewej i prawej strony,
+Nagłówek strony i główna treść mają po 15px odstępu z lewej i prawej strony,
 także na telefonie, zgodnie ze wspólnym wariantem `.dashboard-overview`.
 Treść zaczyna się od nagłówka „Rekomendowane przestrzenie” i kart, bez powitania
 oraz dodatkowego opisu. Po prawej pozostaje link do wszystkich przestrzeni.
@@ -841,7 +851,7 @@ tekstu 13,5px/400, ikon 18px, odstępu ikona–tekst 8px, wysokości i podkreśl
 Ikony zakładek to `sparkles`, `user-round-check`, `star`, `clock` i `eye`.
 Licznik przypisanych zachowuje szare tło; nieaktywne zakładki pokazują szare
 podkreślenie przy najechaniu, a aktywna — fioletowe. Wewnętrzny odstęp paska
-wynosi 22px również na telefonie, zgodnie z Przestrzeniami.
+wynosi 15px również na telefonie, zgodnie z Przestrzeniami.
 Lista zaczyna się bezpośrednio pod zakładkami, bez paska filtrów/wyszukiwarki
 i paska opisu aktywnej zakładki. Brak wyników dla parametrów w adresie ma osobny
 pusty stan z akcją „Wyczyść filtry”. Linki korzystają ze wspólnej nawigacji
@@ -1174,12 +1184,13 @@ zmiennej zamiast powielania wartości liczbowej.
 | Główna powierzchnia | `--bg-main: #ffffff`, `--card-bg: #ffffff` |
 | Nawigacja pomocnicza | `--secondary-menu-bg: #FBFBFC` |
 | Tło panelu | `--panel-bg: #f7f6f4` |
-| Delikatna ramka | `--border-color: #e7e4e0` |
+| Delikatna ramka | `--border-color: #e0ddd9` |
 | Standardowa kontrolka | `--control-height: 32px` |
 | Dropdown | kontrolka 36px, radius 6px; menu radius 7px, element 32px |
 | Checkbox | `--checkbox-size: 18px` |
 | Standardowe zaokrąglenie | `--radius: var(--radius-max)`, bazowo 8px |
 | Pasek narzędzi | `--toolbar-height: 52px` |
+| Odstęp treści stron od lewej i prawej krawędzi | `--app-page-padding-x: 15px` |
 | Sidebar | bazowo 272px; zwinięty 64px; JS pozwala regulować 220–420px |
 | Skala UI | `--app-ui-scale: 0.98`, stosowana przez `zoom` w resecie |
 
@@ -1189,9 +1200,10 @@ przycisków korzystają z `--system-accent` oraz jego wariantu RGB.
 Interakcje neutralne zachowują szarości; kolory danych i ilustracji
 pozostają niezależne od akcentu aplikacji.
 
-Neutralne obramowania i separatory są przyciemnione o 2% względem wcześniejszej
-palety (kanały sRGB × 0,98, zaokrąglone do liczb całkowitych). Dotyczy to wspólnych
-tokenów oraz lokalnych odcieni ramek i tabel w komponentach. Grubości linii,
+Neutralne obramowania i separatory są przyciemnione o kolejne 3% względem
+palety po wcześniejszej korekcie 2% (kanały sRGB × 0,97, zaokrąglone do liczb
+całkowitych). Dotyczy to wspólnych tokenów oraz lokalnych odcieni ramek
+i tabel w komponentach. Grubości linii,
 przezroczystość, białe obwódki i kolory stanów/akcentów pozostają bez zmian.
 
 Ważne wyjątki:
@@ -1528,8 +1540,9 @@ strzałki, Home/End, Escape i powrót fokusu. Aktywny widok ma `aria-current`;
 liczniki zachowują zakres Workspace i nie zależą od filtrów.
 Indeks nie powtarza listy dysków w panelu bocznym.
 Pasek narzędzi i siatka dysków mają wspólny
-odstęp boczny `--documents-index-padding-x: 0.95rem`, zgodny z paskiem narzędzi
-katalogów. Lista używa `tasks-directory-sheet tasks-project-sheet` z „Wszystkich
+odstęp boczny `--documents-index-padding-x: var(--app-page-padding-x)` (15px),
+zgodny z paskiem narzędzi katalogów. Lista używa
+`tasks-directory-sheet tasks-project-sheet` z „Wszystkich
 projektów” oraz wariantu `documents-library-sheet` w `documents.css`.
 Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz fioletowe
 podświetlenie z paskiem po lewej pochodzą ze wspólnego komponentu.
@@ -2690,7 +2703,7 @@ Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
 kolumny zaznaczenia, menu, nazwy, twórcy, widoczności, liczby gadżetów i opisu
 oraz ikonę pulpitu 24px. Tabela dochodzi do krawędzi kontenera i zachowuje
 wspólne wysokości wierszy, separatory, podświetlenia oraz przewijanie.
-Nagłówek oraz toolbar mają 22px odstępu. Katalog nie ma zakładek
+Nagłówek oraz toolbar mają 15px odstępu. Katalog nie ma zakładek
 Wszystkie, Ulubione i Moje; pokazuje wszystkie dostępne pulpity.
 Filtr widoczności i przycisk „Filtruj”
 są po lewej, wyszukiwarka i paginacja po 30 pozycji po prawej.
@@ -2872,7 +2885,7 @@ Używają powłoki `work-page--management` i menu wybranego pulpitu. Linki w kat
 menu akcji i bocznej nawigacji korzystają ze wspólnej częściowej nawigacji.
 Nagłówek zawiera nazwę sekcji i pulpitu oraz „Wyświetl pulpit”. Ustawienia
 zawierają nazwę/opis, dostępy widoczność/osoby. Pola mają maksymalną szerokość 640px,
-odstęp 22px od krawędzi oraz wspólne przyciski „Anuluj” i „Zapisz”.
+odstęp 15px od krawędzi oraz wspólne przyciski „Anuluj” i „Zapisz”.
 Include `dashboard/pulpits/fields.html` współdzieli pola i błędy z modalami.
 Zapis przez POST wraca do pulpitu albo katalogu zarządzania z jego filtrami;
 błąd pozostaje na stronie ze szkicem i fokusem nieprawidłowego pola.
