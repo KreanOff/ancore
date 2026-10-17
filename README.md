@@ -28,15 +28,19 @@ Pliki nadal istnieją na dysku; reguły widoczności można zmienić w
 
 ## Uruchomienie lokalne
 
-Wymagane są Python zgodny z zainstalowanym Django, PostgreSQL, Node.js 22+
-i pnpm 11. Komendy wykonuj w katalogu głównym repozytorium.
+Projekt jest skonfigurowany dla Pythona **3.15.0**. Pozostałe wymagania to Django 6.1.2,
+PostgreSQL 15+, Node.js 22+ i pnpm 11. Komendy wykonuj w katalogu głównym
+repozytorium. Przed utworzeniem środowiska sprawdź, czy `python3.15 --version`
+wskazuje wybraną wersję.
+Django 6.1 deklaruje oficjalne wsparcie dla Pythona 3.12–3.14; stan weryfikacji
+na 3.15 i ograniczenia opisuje [instrukcja developerska](docs/DEVELOPMENT.md#aktualizacja-do-pythona-315-17102026).
 
 1. Utwórz własną bazę PostgreSQL. Jeśli nie masz `.env`, skopiuj
    [.env.example](.env.example) do `.env` i uzupełnij dane połączenia.
 2. Przygotuj zależności i zbuduj frontend:
 
    ```sh
-   python3 -m venv .venv
+   python3.15 -m venv .venv
    .venv/bin/python -m pip install -r requirements.txt
    pnpm --dir frontend/app install --frozen-lockfile
    pnpm --dir frontend/app build
@@ -50,7 +54,8 @@ i pnpm 11. Komendy wykonuj w katalogu głównym repozytorium.
    .venv/bin/python manage.py runserver 127.0.0.1:8000
    ```
 
-Jeżeli `.venv` już istnieje, korzystaj z obecnego środowiska.
+Jeżeli `.venv` już istnieje, sprawdź `.venv/bin/python --version`.
+Zmianę interpretera opisuje [instrukcja developerska](docs/DEVELOPMENT.md#3-start-nowego-środowiska).
 Pełne edytory Dokumentów wymagają osobnego buildu tablicy i ONLYOFFICE;
 instrukcja znajduje się w [OFFICE.md](docs/OFFICE.md).
 

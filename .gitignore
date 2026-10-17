@@ -31,12 +31,17 @@ local_settings.py
 /staticfiles/
 *.sqlite3
 *.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 *.log
 
 # Migracje Django są kodem źródłowym i muszą być wersjonowane.
 
 # Frontend: zależności i generowane bundle
 node_modules/
+.pnpm-store/
+*.tsbuildinfo
+pnpm-debug.log*
 /static/frontend/
 /static/vendor/board/
 
@@ -44,8 +49,11 @@ node_modules/
 .coverage
 .coverage.*
 coverage.xml
+coverage/
 htmlcov/
 coverage_html_report/
+playwright-report/
+test-results/
 *.cover
 *.py,cover
 nosetests.xml

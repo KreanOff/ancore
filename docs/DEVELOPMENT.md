@@ -18,6 +18,154 @@ Zasady formatu plików zapisuje `.editorconfig`. Wersjonowane
 `.vscode/settings.json` ustawia katalog importów i ukrywa cache, zależności,
 bundle oraz lokalne dane w Explorerze, bez usuwania ich z dysku.
 
+## Aktualizacja zależności (17.10.2026)
+
+W `requirements.txt` oraz lokalnym `.venv` zaktualizowano trzy pakiety:
+
+- `python-dotenv`: 1.2.2 → **1.2.4** ([zmiany](https://github.com/theskumar/python-dotenv/blob/main/CHANGELOG.md#124---2026-10-01));
+- PyJWT: 2.14.0 → **2.15.1** ([zmiany](https://pyjwt.readthedocs.io/en/stable/changelog.html#v2-15-1));
+- `sqlparse`: 0.5.5 → **0.6.0** ([zmiany](https://sqlparse.readthedocs.io/en/latest/changes.html#release-0-6-0-aug-13-2026)).
+
+PyJWT 2.15 dodaje obsługę Pythona 3.15. Django 6.1.2, `asgiref` 3.12.1
+i `psycopg2-binary` 2.9.13 zachowano. Wersje sześciu zależności pozostają
+przypięte operatorem `==`. Dodatkowe lokalne narzędzia nie są zależnościami
+aplikacji; `fonttools` pozostaje osobną zależnością skryptu regenerowania ikon.
+Docelową wersję Pythona opisują instrukcja startu i komentarz
+w `requirements.txt`; projekt nie zawiera pliku `.python-version`.
+
+Instalację sprawdzono w czystym środowisku Python 3.15, zawierającym wyłącznie
+`requirements.txt` i pip. Przeszły `pip check`, kontrola Django oraz wszystkie
+**137 testów**: `core.test_project_layout`, `accounts.test_frontend`,
+`accounts.test_email_identity.EmailIdentityTests`, `documents.test_suite`,
+`documents.test_drive_office`, `documents.test_office_extras`,
+`documents.test_office`, `core.test_document_frontend`,
+`core.tests.UploadValidationTests` i `spaces.test_tags`. Testy korzystały
+z osobnej bazy PostgreSQL i storage w `/tmp`.
+
+Przeszły również kontrola istniejącej bazy w trybie tylko do odczytu,
+`makemigrations --check --dry-run`, `migrate --plan`,
+`collectstatic --dry-run --noinput`, kompilacja 228 szablonów, parsowanie
+485 plików Pythona, linki dokumentacji, indeks oraz `git diff --check`.
+Pełnego zestawu 1407 testów po tej aktualizacji zależności nie ponawiano.
+
+## Aktualizacja do Pythona 3.15 (17.10.2026)
+
+Docelowa wersja interpretera to [**Python 3.15.0**](https://www.python.org/downloads/release/python-3150/),
+opisana w `requirements.txt` i instrukcji startu. Odtworzono `.venv` na zainstalowanym interpreterze
+3.15.0 z python.org. Zastane środowisko miało zerwane odwołania do usuniętej
+instalacji Homebrew 3.14; jego kopia pozostała w `venv.bak/` poza Git.
+Ponownie zainstalowano zależności projektu i dziesięć dodatkowych pakietów
+lokalnych z poprzedniego środowiska, bez kopiowania `site-packages`.
+Środowisko nadal zawiera 17 pakietów; pip pochodzi z nowego interpretera
+i ma wersję 26.2.1 (wcześniej 26.1.2).
+
+`psycopg2-binary` podniesiono z **2.9.12** do **2.9.13**, które jako pierwsze
+[dodaje obsługę Pythona 3.15](https://www.psycopg.org/docs/news.html#what-s-new-in-psycopg-2-9-13).
+Zainstalowano gotowy wheel dla CPython 3.15 i macOS arm64. Pozostałe wersje
+z `requirements.txt` zachowano. Nie zmieniają się modele ani migracje.
+
+Django pozostaje w wersji **6.1.2**. Jego [oficjalna macierz zgodności](https://docs.djangoproject.com/en/6.1/faq/install/#what-python-version-can-i-use-with-django)
+obejmuje Python 3.12–3.14, więc lokalna weryfikacja na 3.15 nie oznacza
+oficjalnego wsparcia tej konfiguracji przez Django.
+
+Pełny przebieg na Pythonie 3.15 wykonał **1407 testów** na osobnej bazie
+PostgreSQL i storage w `/tmp`, z wyłączonym JIT PostgreSQL oraz limitem
+60 sekund na zapytanie. Wynik to **499 nieudanych asercji i 138 błędów
+w 395 przypadkach testowych**. Porównanie z zachowanym raportem wcześniejszego
+przebiegu na Pythonie 3.14.8 wykazało tę samą listę nieudanych przypadków
+i te same liczby. Różnice komunikatów wynikały z losowych identyfikatorów, tokenów, kodów
+Przestrzeni i tagów, domyślnych nazw Workspace oraz czasu utworzenia danych
+testowych. Pełny zestaw nadal nie jest zielony.
+W tym zadaniu nie uruchamiano ponownie testów na 3.14: ten interpreter
+nie był już zainstalowany.
+
+Na Pythonie 3.15 przeszły cztery testy `core.test_project_layout`, aktywacja
+środowiska, `pip check`, kontrola Django z PostgreSQL 18.6,
+`makemigrations --check --dry-run`, `migrate --plan`,
+`collectstatic --dry-run --noinput`, kompilacja 228 szablonów i parsowanie
+485 plików Pythona. Przeszedł również build Reacta z kontrolą TypeScriptu;
+użyto Node.js z runtime Codex, ponieważ `node` nie był dostępny w `PATH`.
+Kontrole istniejącej bazy wykonano w trybie tylko do odczytu. Sprawdzono
+lokalne linki i kotwice dokumentacji, aktualność indeksu oraz `git diff --check`.
+
+Nie wykonywano wdrożenia, migracji bazy użytkownika ani weryfikacji
+w przeglądarce; aktualizacja nie zmienia kodu interfejsu.
+
+## Poprzednia aktualizacja Pythona 3.14 (17.10.2026)
+
+Poniższy zapis przedstawia stan sprzed przejścia na 3.15.
+
+Lokalny interpreter projektu podniesiono z **3.14.6** do
+[**3.14.8**](https://www.python.org/downloads/release/python-3148/), najnowszego
+wydania serii wspieranej przez Django 6.1.2. Python 3.15.0 jest nowszy,
+ale nie figuruje jeszcze w [macierzy zgodności Django 6.1](https://docs.djangoproject.com/en/6.1/faq/install/#what-python-version-can-i-use-with-django).
+Wybraną wersję zapisuje `.python-version`.
+
+Python 3.14.8 został zainstalowany przez Homebrew, a `.venv` odtworzono
+z zachowaniem wersji wszystkich **17** wcześniejszych pakietów, także narzędzi
+lokalnych spoza `requirements.txt`. Poprzednie środowisko zachowano lokalnie
+w `venv.bak/python-3.14.6` (poza Git). Instalacja frameworka Python 3.14.6
+pozostaje dostępna pod pełną ścieżką. Lokalna konfiguracja `~/.zprofile`
+i `~/.zshrc` nadaje pierwszeństwo Pythonowi Homebrew dla `python3`, `python3.14`
+i `pip3`, zachowując aktywne środowiska wirtualne. Wcześniejszy wpis instalatora
+python.org w `~/.zprofile` wskazywał nadal 3.14.6 mimo aktualizacji `.venv`.
+Po korekcie sprawdzono wersję 3.14.8 w powłokach login i non-login, także ze
+starym odziedziczonym `PATH`, oraz zachowanie interpretera aktywnego `.venv`.
+Otwarte wcześniej terminale wymagają przeładowania powłoki (`exec zsh -l`)
+albo otwarcia nowej sesji.
+
+Na obu interpreterach wykonano po **1407 testów** na osobnych bazach PostgreSQL
+i storage w `/tmp`, z wyłączonym JIT oraz limitem 60 sekund na zapytanie.
+Na 3.14.6 runner zgłosił 499 nieudanych asercji i 139 błędów w 396 testach;
+na 3.14.8 — 499 asercji i 138 błędów w 395 testach. Nie pojawiły się nowe
+nieudane przypadki; istniejące problemy zachowały miejsca i przyczyny po
+pominięciu losowych identyfikatorów, tokenów i danych odpowiedzi.
+Dodatkowy błąd starego interpretera to timeout
+`spaces.test_summary.SpaceSummaryTests.test_priority_type_and_workload_totals_include_all_pages_and_subtasks`;
+na nowym interpreterze ten test przeszedł. Pełny zestaw nadal nie jest zielony.
+
+W końcowym `.venv` przeszły cztery testy `core.test_project_layout`, aktywacja
+środowiska, `pip check`, kontrola Django z bazą, `makemigrations --check --dry-run`,
+`migrate --plan`, `collectstatic --dry-run --noinput`, kompilacja 228 szablonów
+oraz parsowanie 485 plików Pythona. Sprawdzono też lokalne linki dokumentacji,
+aktualność indeksu i `git diff --check`. Nie ma nowych ani oczekujących migracji.
+Nie wykonywano wdrożenia, migracji bazy użytkownika ani kontroli w przeglądarce;
+aktualizacja nie zmienia UI.
+
+## Aktualizacja Django (17.10.2026)
+
+Django podniesiono z **6.0.7** do **6.1.2** w `requirements.txt` i lokalnym
+`.venv`, zgodnie z [oficjalnym stabilnym wydaniem](https://www.djangoproject.com/download/).
+Pozostałe przypięte zależności zachowano; `pip check` potwierdził ich zgodność.
+Wymagania uruchomienia to Python 3.12–3.14 i PostgreSQL 15+; lokalnie sprawdzono
+Python 3.14.6 i PostgreSQL 18.6.
+
+Przeszły kontrola Django z bazą, `makemigrations --check --dry-run`,
+`migrate --plan`, `collectstatic --dry-run --noinput`, kompilacja wszystkich
+228 szablonów, lokalne linki dokumentacji, aktualność indeksu i `git diff --check`.
+Nie ma zmian modeli ani nowych/oczekujących migracji. Kontrole istniejącej
+bazy wykonano w trybie tylko do odczytu; testy używały osobnych baz PostgreSQL
+i storage w `/tmp`, z wyłączonym JIT oraz limitem 60 sekund na zapytanie.
+
+Pełne przebiegi wykonały po **1407 testów** na Django 6.0.7 i 6.1.2.
+Na obu wersjach odtworzono te same **395 nieudanych testów** (wiele zawiera
+nieudane podprzypadki): 275 w Tasks, 58 w Dashboard, 29 w Workspace,
+28 w Core, dwa w Contacts, dwa w Spaces i jeden w Documents. Większość
+dotyczy wycofanych modułów; aktualizacja nie przywraca ich operacji.
+Runner zgłosił na starej wersji 499 nieudanych asercji i 138 błędów,
+na nowej 499 asercji i 139 błędów. Wynik nie oznacza zielonego zestawu regresji.
+
+Jedyna dodatkowa różnica to przekroczenie limitu zapytania w
+`spaces.test_backlog_planning.BacklogPlanningTests.test_totals_include_all_pages_and_closed_sprint_is_not_planned`.
+Ten test przeszedł osobno na obu wersjach w mniej niż sekundę, a cały moduł
+`spaces.test_backlog_planning` na 6.1.2 przeszedł **22/22** w 2,5 sekundy.
+Porównanie SQL wykazało zgodność po pominięciu nowego cytowania aliasów.
+Timeoutu nie odtworzono na czystych bazach; stabilność czasu tego zapytania
+w pełnym przebiegu pozostaje ograniczeniem weryfikacji.
+
+Nie wykonywano wdrożenia, migracji bazy użytkownika ani sprawdzenia
+w przeglądarce; aktualizacja nie zmienia kodu interfejsu.
+
 ## Weryfikacja przeniesienia backendu (17.10.2026)
 
 Porównanie sum kontrolnych zachowało wszystkie 712 plików źródłowych obecnych
@@ -937,12 +1085,22 @@ Escape, powrót po częściowej nawigacji oraz desktop i 390px.
 
 Źródła: [requirements.txt](../requirements.txt), [settings.py](../backend/ancore/settings.py).
 
-- Python zgodny z używaną wersją Django.
-- PostgreSQL; migracje Tasks korzystają z `TrigramExtension` (`pg_trgm`) i GIN.
-- Zależności: `django>=5.0`, `psycopg2-binary`, `python-dotenv`, `PyJWT>=2.10,<3`.
-- Lokalnie podczas pierwszego przeglądu odczytano Python **3.14.6** i Django
-  **6.0.7** z `.venv`. Są to wersje tego środowiska, nie ścisłe wymagania zapisane
-  w repozytorium. Zależności nie są przypięte lockfile'em.
+- Python **3.15.0**, opisany w [requirements.txt](../requirements.txt).
+  Django 6.1.2 oficjalnie wspiera Python 3.12–3.14; zakres lokalnej weryfikacji
+  na 3.15 i ograniczenia opisuje [aktualizacja interpretera](#aktualizacja-do-pythona-315-17102026).
+- PostgreSQL **15+**, zgodnie z [wymaganiami Django 6.1](https://docs.djangoproject.com/en/6.1/ref/databases/#postgresql-notes);
+  migracje Tasks korzystają z `TrigramExtension` (`pg_trgm`) i GIN.
+- `requirements.txt` przypina dokładne wersje Django, `asgiref`,
+  `psycopg2-binary`, `python-dotenv`, PyJWT i `sqlparse` operatorem `==`.
+  `asgiref` jest również bezpośrednio używany przez backend uwierzytelniania;
+  `sqlparse` jest zależnością Django.
+- Django zaktualizowano z **6.0.7** do **6.1.2** w `requirements.txt`
+  i lokalnym `.venv` (obecnie Python **3.15.0**). Sterownik PostgreSQL to
+  `psycopg2-binary==2.9.13`; pozostałe przypięte pakiety zachowują
+  dotychczasowe wersje. W innych środowiskach aktualizację wykonuje
+  `.venv/bin/python -m pip install -r requirements.txt`; sama zmiana pliku
+  nie aktualizuje zainstalowanych pakietów.
+  Zależności warunkowe innych systemów (np. `tzdata` na Windows) rozwiązuje pip.
 
 Brak aktywnego fallbacku SQLite: blok SQLite w settings jest komentarzem.
 Nie zastępuj PostgreSQL przy testowaniu funkcji zależnych od jego indeksów/migracji.
@@ -983,6 +1141,10 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 Nie nadpisuj istniejącego `.env` podczas wykonywania zwykłego zadania.
 Nowe środowisko skonfiguruj na podstawie [.env.example](../.env.example).
 `.gitignore` pomija `.env` i jego lokalne warianty, zachowując ten przykład.
+Pomija również zależności i cache pnpm, cache kompilacji TypeScript,
+generowane bundle Reacta i tablicy, raporty coverage/Playwright oraz lokalne
+dane aplikacji i pliki pomocnicze SQLite. Źródła, migracje, lockfile pnpm
+i wspólne `.vscode/settings.json` pozostają wersjonowane.
 
 ## 3. Start nowego środowiska
 
@@ -990,7 +1152,8 @@ Komendy wykonuj w katalogu repozytorium. Najpierw skonfiguruj oddzielną bazę
 developerską oraz zmienne z poprzedniej sekcji.
 
 ```sh
-python3 -m venv .venv
+python3.15 --version  # oczekiwane: Python 3.15.0
+python3.15 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python manage.py check
 .venv/bin/python manage.py migrate --plan
@@ -998,7 +1161,20 @@ python3 -m venv .venv
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
-Jeśli `.venv` już istnieje, użyj go. Konto można założyć przez rejestrację;
+Jeśli `.venv` już istnieje, sprawdź `.venv/bin/python --version`.
+Po zmianie interpretera odtwórz `.venv` i zainstaluj zależności ponownie;
+wcześniej zachowaj kopię środowiska i listę lokalnych pakietów z
+`.venv/bin/python -m pip freeze --all`, jeśli zawiera ono dodatkowe narzędzia.
+Nie przenoś `site-packages` pomiędzy wersjami Pythona.
+
+Na macOS lokalna instalacja z python.org udostępnia interpreter pod ścieżką
+`/Library/Frameworks/Python.framework/Versions/3.15/bin/python3.15`.
+Jeśli `PATH` wskazuje inny interpreter, użyj pełnej ścieżki przy tworzeniu
+środowiska. Sprawdź wersję przed utworzeniem `.venv`, a następnie
+`.venv/bin/python --version` i `.venv/bin/python -m pip check`.
+Otwarte terminale mogą wymagać nowej sesji lub `exec zsh -l` po zmianie `PATH`.
+
+Konto można założyć przez rejestrację;
 do panelu `/admin/` służy opcjonalnie `manage.py createsuperuser`.
 Przy DEBUG=false konfiguracja wymaga prawidłowego klucza/hostów i domyślnie
 włącza bezpieczne ciasteczka/HTTPS, co nie pasuje automatycznie do lokalnego HTTP.
@@ -1290,10 +1466,11 @@ To obserwacje stanu na 15.09.2026, nie lista wdrożonych poprawek.
 
 - Drzewo robocze miało zmiany aplikacji przed utworzeniem dokumentacji,
   m.in. cały moduł Documents i jego integrację. Dokumentacja obejmuje ten stan.
-- `.gitignore` ignoruje `**/migrations/*.py` z wyjątkami. Odczyt lokalnych
-  katalogów wykazał migracje nieśledzone także w starszych modułach.
-  Sam `rg --files` respektujący ignore może ich nie pokazać.
-- `requirements.txt` nie przypina dokładnych wersji.
+- Ówczesny `.gitignore` ignorował `**/migrations/*.py` z wyjątkami. Odczyt
+  lokalnych katalogów wykazał migracje nieśledzone także w starszych modułach.
+  Obecne reguły nie wykluczają migracji; są one wersjonowane w `backend/`.
+- Ówczesny `requirements.txt` nie przypinał dokładnych wersji. Obecnie
+  zależności backendu są przypięte do wersji lokalnie zweryfikowanych.
 - `backend/tasks/views.py` jest pustą pozostałością; routing używa pakietu `backend/tasks/views/`.
 - Nazwy części plików/bloków/klas są historyczne. Decydują aktywne importy,
   trasy i wywołania, nie nazwa.

@@ -1,4 +1,9 @@
-django>=5.0
-psycopg2-binary
-python-dotenv
-PyJWT>=2.10,<3
+# Backend: Python 3.15.0; ograniczenia Django: docs/DEVELOPMENT.md.
+Django==6.1.2
+asgiref==3.12.1
+psycopg2-binary==2.9.13
+python-dotenv==1.2.4
+PyJWT==2.15.1
+
+# Zależność Django, przypięta dla powtarzalnych instalacji.
+sqlparse==0.6.0
