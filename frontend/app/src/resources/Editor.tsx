@@ -240,7 +240,7 @@ export function ResourceEditor({
       setPending(false);
     }
   }
-  const host = document.querySelector('[data-resource-modal-host]');
+  const host = document.getElementById('app-page-modals');
   if (!host) return null;
   return createPortal(
     <div

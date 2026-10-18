@@ -368,6 +368,9 @@ widokami HTML a API. Każdy obiekt jest ograniczony jednocześnie przez
 waliduje osobę, typ, status, daty i unikalny numer ewidencyjny. Pola właściciela,
 Workspace i autora nie są edytowalne przez klienta; autorem pozostaje faktyczny
 `request.user`. Nie zmieniono modeli ani migracji.
+Formularz Zasobów używa wspólnego `app-page-modals`, obecnego zarówno przy
+pierwszym renderze Django, jak i po nawigacji JSON. Kontener starego formularza
+HTML pozostaje wyłącznie fallbackiem pierwszego renderu.
 
 ## Powłoka i nawigacja JSON
 
