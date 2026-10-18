@@ -325,6 +325,10 @@ i `next_cursor`; serializer `backend/dashboard/notification_frontend.py` nie ren
 fragmentów HTML. Starszy endpoint XHR zachowuje kontrakt HTML dla zgodności.
 Wszystkie filtry, osobisty odczyt, archiwum, usunięcie i operacje zbiorcze używają
 oryginalnego `notification_service`. Każdy odczyt/zapis ponawia kontrolę dostępu.
+Oczekujące zaproszenia nie mają akcji usuwania ani archiwizacji; zbiorcze
+usuwanie je pomija. `deletable_count` podaje liczbę usuwalnych wpisów wszystkich
+stron bieżącego filtra i steruje przyciskiem oraz potwierdzeniem usunięcia.
+Starszy stan `is_deleted` nie ukrywa nadal ważnego zaproszenia.
 
 React obsługuje stan paneli, anulowanie pobrań i limit czasu, menu kart,
 potwierdzenia oraz ponowienie błędu. Dzwonek odpytuje serwer co 30 sekund

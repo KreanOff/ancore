@@ -176,19 +176,47 @@ class NotificationCenterTests(TestCase):
         self.assertIn(f'data-notification-key="spaces:{self.activity.pk}"', self.feed().json()['html'])
         self.assertFalse(NotificationState.objects.filter(user=self.owner).exists())
 
-    def test_deleted_invitation_remains_available_in_workspace(self):
+    def test_pending_invitation_cannot_be_deleted_and_remains_reachable(self):
         invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        self.assertEqual(self.act('delete', f'workplace:{invitation.pk}').status_code, 200)
-        self.assertEqual(self.feed(view='invitations').json()['total'], 0)
-        self.assertEqual(self.summary()['pending_invitation_count'], 0)
+        self.assertEqual(self.act('delete', f'workplace:{invitation.pk}').status_code, 400)
+        payload = self.feed(view='invitations').json()
+        self.assertEqual(payload['total'], 1)
+        self.assertEqual(payload['deletable_count'], 0)
+        self.assertNotIn('data-notification-action="delete"', payload['html'])
+        self.assertEqual(self.summary()['pending_invitation_count'], 1)
         page = self.client.get(reverse('home'))
         self.assertEqual(page.context['pending_workspace_invitation_count'], 1)
-        self.assertEqual(page.context['pending_notification_invitation_count'], 0)
+        self.assertEqual(page.context['pending_notification_invitation_count'], 1)
         invitation.refresh_from_db()
         self.assertEqual(invitation.status, 'pending')
         self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.other_workspace, user=self.member).exists())
         response = self.client.get(reverse('workplaces:workplaces'), {'invitation': invitation.pk})
         self.assertEqual(response.context['response_invitation'], invitation)
+
+    def test_previously_deleted_invitation_reappears_until_decision_or_expiry(self):
+        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
+        state = NotificationState.objects.create(user=self.member, invitation=invitation, is_read=True, is_deleted=True)
+        payload = self.feed(view='invitations').json()
+        self.assertIn(f'?invitation={invitation.pk}', payload['html'])
+        self.assertEqual(self.summary()['pending_invitation_count'], 1)
+        self.assertEqual(self.act('unread', f'workplace:{invitation.pk}').status_code, 200)
+        self.assertEqual(self.summary()['unread_count'], 2)
+        invitation.status = 'declined'
+        invitation.save(update_fields=['status'])
+        self.assertEqual(self.feed(view='invitations').json()['total'], 0)
+        self.assertEqual(self.summary()['pending_invitation_count'], 0)
+        state.refresh_from_db()
+        self.assertFalse(state.is_read)
+
+    def test_bulk_delete_preserves_invitation_and_counts_only_deletable_items(self):
+        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
+        payload = self.feed().json()
+        self.assertEqual((payload['total'], payload['deletable_count']), (2, 1))
+        self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertEqual(self.feed().json()['total'], 1)
+        self.assertEqual(self.summary()['pending_invitation_count'], 1)
+        self.assertFalse(NotificationState.objects.filter(user=self.member, invitation=invitation).exists())
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_activity=self.activity).is_deleted)
 
     def test_delete_rechecks_access_and_rejects_foreign_keys(self):
         foreign = make_task(user=self.owner, workplace=self.other_workspace, title='Prywatne')

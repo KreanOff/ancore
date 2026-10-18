@@ -63,6 +63,7 @@ export interface Inbox extends Summary {
   count: number;
   total: number;
   filtered_unread_count: number;
+  deletable_count: number;
   snapshot: string;
   next_cursor: string;
   filters: { view: string; workspace: string };

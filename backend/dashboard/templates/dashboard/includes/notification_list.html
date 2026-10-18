@@ -26,7 +26,7 @@
                     <div id="notification-actions-{{ notification.key }}" class="tasks-section-menu notification-card__menu" popover="auto" role="menu" aria-label="Działania powiadomienia: {{ notification.title }}" data-row-actions-panel>
                         <button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="{% if notification.is_read %}unread{% else %}read{% endif %}"><i data-icon="{% if notification.is_read %}mail{% else %}check{% endif %}" aria-hidden="true"></i><span>{% if notification.is_read %}Oznacz jako nieprzeczytane{% else %}Oznacz jako przeczytane{% endif %}</span></button>
                         {% if not notification.is_invitation %}<button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="{% if notification.is_archived %}restore{% else %}archive{% endif %}"><i data-icon="{% if notification.is_archived %}rotate-ccw{% else %}archive{% endif %}" aria-hidden="true"></i><span>{% if notification.is_archived %}Przywróć z archiwum{% else %}Archiwizuj{% endif %}</span></button>{% endif %}
-                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="delete"><i data-icon="trash-2" aria-hidden="true"></i><span>Usuń powiadomienie</span></button>
+                        {% if not notification.is_invitation %}<button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="delete"><i data-icon="trash-2" aria-hidden="true"></i><span>Usuń powiadomienie</span></button>{% endif %}
                     </div>
                 </div>
             </div>

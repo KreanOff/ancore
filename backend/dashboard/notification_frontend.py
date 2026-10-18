@@ -27,6 +27,7 @@ def notification_payload(user, context):
     return {
         'items': items, 'count': len(items), 'total': context['dashboard_notification_count'],
         'filtered_unread_count': context['filtered_unread_count'],
+        'deletable_count': context['deletable_count'],
         'snapshot': context['snapshot'], 'next_cursor': context['next_cursor'],
         'filters': context['notification_filters'],
         'workplaces': [{'id': str(workplace.pk), 'name': workplace.name, 'avatar': workplace_avatar(workplace)}

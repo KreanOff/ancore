@@ -193,9 +193,9 @@ export default function NotificationPanel({
       title: kind === 'delete_all' ? 'Usunąć wszystkie powiadomienia?' : 'Usunąć powiadomienie?',
       message:
         (kind === 'delete_all'
-          ? `Usuniesz wszystkie powiadomienia z wybranego widoku (${payload?.total || 0}), również ze starszych stron. `
+          ? `Usuniesz powiadomienia z wybranego widoku (${payload?.deletable_count || 0}), również ze starszych stron. `
           : 'Usuniesz to powiadomienie ze swojej listy. ') +
-        'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian, a zaproszenia nadal znajdziesz w Workspace.',
+        'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian. Oczekujące zaproszenia pozostaną w powiadomieniach do czasu podjęcia decyzji lub wygaśnięcia.',
       confirmText: kind === 'delete_all' ? 'Usuń wszystkie' : 'Usuń',
       cancelText: 'Anuluj',
       onConfirm: () => void action(kind, key, '', snapshot),
@@ -290,7 +290,7 @@ export default function NotificationPanel({
             <button
               type="button"
               className="tasks-icon-button"
-              disabled={loading || mutating || !payload?.total}
+              disabled={loading || mutating || !payload?.deletable_count}
               title="Usuń wszystkie powiadomienia z wybranego filtra"
               aria-label="Usuń wszystkie powiadomienia z wybranego filtra"
               onClick={() => confirm('delete_all')}
@@ -461,18 +461,20 @@ export default function NotificationPanel({
                                     </span>
                                   </button>
                                 ) : null}
-                                <button
-                                  type="button"
-                                  className="tasks-project-menu-button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    close();
-                                    confirm('delete', item.key);
-                                  }}
-                                >
-                                  <Icon name="trash-2" />
-                                  <span>Usuń powiadomienie</span>
-                                </button>
+                                {!item.is_invitation ? (
+                                  <button
+                                    type="button"
+                                    className="tasks-project-menu-button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                      close();
+                                      confirm('delete', item.key);
+                                    }}
+                                  >
+                                    <Icon name="trash-2" />
+                                    <span>Usuń powiadomienie</span>
+                                  </button>
+                                ) : null}
                               </>
                             )}
                           </Dropdown>

@@ -361,6 +361,7 @@ def notifications(request):
         'count': len(context['dashboard_notifications']),
         'total': context['dashboard_notification_count'],
         'filtered_unread_count': context['filtered_unread_count'],
+        'deletable_count': context['deletable_count'],
         'snapshot': context['snapshot'],
         'next_cursor': context['next_cursor'],
         'html': render_to_string(

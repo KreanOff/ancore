@@ -161,10 +161,14 @@ class GlobalPanelsApiTests(TestCase):
         for key in (f'spaces:{self.secret.pk}', f'spaces:{self.task.activities.filter(kind="system").first().pk}'):
             self.assertEqual(self.action('read', key=key).status_code, 404)
 
-    def test_invitation_cannot_be_archived_and_delete_keeps_invitation(self):
+    def test_invitation_cannot_be_archived_or_deleted(self):
         key = f'workplace:{self.invitation.pk}'
         self.assertEqual(self.action('archive', key=key).status_code, 400)
-        self.assertEqual(self.action('delete', key=key).json()['pending_invitation_count'], 0)
+        self.assertEqual(self.action('delete', key=key).status_code, 400)
+        payload = self.api(params={'view': 'invitations'}).json()
+        self.assertEqual(payload['pending_invitation_count'], 1)
+        self.assertEqual(payload['deletable_count'], 0)
+        self.assertEqual(payload['items'][0]['key'], key)
         self.assertTrue(WorkplaceInvitation.objects.filter(pk=self.invitation.pk, status='pending').exists())
 
     def test_bulk_read_snapshot_excludes_newer_items(self):
@@ -178,7 +182,7 @@ class GlobalPanelsApiTests(TestCase):
         self.assertEqual(self.action('delete_all', snapshot='bad').status_code, 400)
         snapshot = self.api(params={'view': 'invitations'}).json()['snapshot']
         self.assertEqual(self.action('delete_all', snapshot=snapshot).status_code, 200)
-        self.assertEqual(self.api().json()['total'], 1)
+        self.assertEqual(self.api().json()['total'], 2)
         self.assertTrue(SpaceTaskActivity.objects.filter(pk=self.comment.pk).exists())
         self.assertTrue(WorkplaceInvitation.objects.filter(pk=self.invitation.pk).exists())
 

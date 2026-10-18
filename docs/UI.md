@@ -2559,7 +2559,7 @@ Puste stany „Wszystkie” i „Obserwowane” opisują komentarze i pozostałe
 typy powiadomień, bez zapowiadania historii zmian.
 Na każdej karcie jest jeden stale widoczny przycisk z trzema paskami (`menu`).
 Otwiera wspólny React `Dropdown` z akcją odczytu, archiwizacji/przywrócenia
-i usunięcia; zaproszenia nie mają akcji archiwizacji. Menu korzysta z
+i usunięcia; zaproszenia nie mają akcji archiwizacji ani usunięcia. Menu korzysta z
 `tasks-section-menu`, `tasks-project-menu-button` i wspólnej warstwy dropdownu,
 więc nie jest przycinane przez przewijaną listę. Ma szare stany interakcji,
 obsługuje strzałki, Home/End i Escape z powrotem fokusu na przycisk.
@@ -2568,9 +2568,11 @@ Odświeżenie listy lub zamknięcie panelu zamyka
 otwarte menu; zapis blokuje przyciski i przywraca fokus na widoczny przycisk karty.
 „Oznacz wszystkie jako przeczytane” obejmuje bieżący filtr, również starsze strony;
 przycisk jest nieaktywny, gdy wszystkie wpisy w tym widoku są przeczytane.
-Kosz w pasku usuwa wszystkie powiadomienia z bieżącego filtra, także ze starszych
-stron. „Usuń powiadomienie” w menu karty usuwa tylko ten wpis. Obie akcje otwierają `showConfirmModal`
-z informacją o osobistym zakresie oraz zachowaniu historii i zaproszeń w Workspace.
+Kosz w pasku usuwa powiadomienia z bieżącego filtra, także ze starszych
+stron, z pominięciem oczekujących zaproszeń. Jest nieaktywny, gdy filtr nie ma
+usuwalnych wpisów. „Usuń powiadomienie” w menu karty usuwa tylko ten wpis.
+Obie akcje otwierają `showConfirmModal` z informacją o osobistym zakresie,
+zachowaniu historii i pozostawieniu zaproszeń w powiadomieniach.
 Potwierdzenie zbiorcze pokazuje liczbę wpisów i zachowuje snapshot z chwili otwarcia.
 Tab i Escape dotyczą wtedy potwierdzenia, bez zamykania panelu pod spodem.
 Zapis blokuje ponowne wysłanie; błąd zachowuje wpis i umożliwia ponowienie.

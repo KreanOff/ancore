@@ -72,7 +72,10 @@ Wejście z Ustawień pokazuje „Wróć do ustawień” i zachowuje kategorię o
 przewinięcie. Wejście z menu bieżącego Workspace wraca do wcześniej otwartego
 widoku. Bez źródłowego widoku domyślnym powrotem pozostaje Dashboard.
 
-Otrzymane zaproszenia są dostępne przez panel powiadomień; jego link
+Otrzymane zaproszenia są dostępne przez panel powiadomień, także po dawnym
+usunięciu powiadomienia. Oczekujących
+zaproszeń nie można usuwać ani archiwizować w centrum powiadomień;
+zbiorcze usuwanie je pomija. Link zaproszenia
 otwiera okno decyzji nad katalogiem Workspace. Dawny adres `view=received`
 pokazuje katalog bez tabeli ani licznika otrzymanych zaproszeń. Wysłane zaproszenia są
 w trzeciej zakładce okna miejsca pracy i są dostępne wyłącznie właścicielowi

@@ -122,7 +122,8 @@ def notification_sources(user, workspace='', *, include_deleted=False):
             inbox_archived=Coalesce(Subquery(state.values('is_archived')[:1]), Value(False)),
             inbox_deleted=Coalesce(Subquery(state.values('is_deleted')[:1]), Value(False)),
         )
-        if not include_deleted:
+        # Pending invitations remain reachable, including receipts hidden by older clients.
+        if not include_deleted and source not in INVITATION_SOURCES:
             sources[source] = sources[source].filter(inbox_deleted=False)
     return sources
 
@@ -230,9 +231,12 @@ def notification_page(user, filters, cursor=''):
         anchor = decoded.get('anchor')
     asof = datetime.fromisoformat(data['asof'])
     candidates = []
-    total = unread = 0
+    total = unread = deletable = 0
     for source, queryset in filtered_sources(user, filters, asof, sources=sources):
-        total += queryset.count()
+        count = queryset.count()
+        total += count
+        if source not in INVITATION_SOURCES:
+            deletable += count
         unread += queryset.filter(inbox_read=False).count()
         if anchor:
             rank = 0 if source in INVITATION_SOURCES else 1
@@ -259,7 +263,7 @@ def notification_page(user, filters, cursor=''):
         next_cursor = signing.dumps(data, salt=SIGNING_SALT, compress=True)
     items = [_serialize(source, row) for source, row in visible]
     return {'dashboard_notifications': items, 'dashboard_notification_count': total,
-            'filtered_unread_count': unread, 'notification_filters': filters,
+            'filtered_unread_count': unread, 'deletable_count': deletable, 'notification_filters': filters,
             'snapshot': snapshot, 'next_cursor': next_cursor}
 
 
@@ -276,6 +280,8 @@ def change_notification_state(user, params):
         if action == 'delete_all':
             values['is_deleted'] = True
         for source, queryset in filtered_sources(user, data['filters'], data['asof']):
+            if action == 'delete_all' and source in INVITATION_SOURCES:
+                continue
             field = SOURCES[source]
             if action == 'read_all':
                 queryset = queryset.filter(inbox_read=False)
@@ -294,7 +300,7 @@ def change_notification_state(user, params):
     row = notification_sources(user, include_deleted=(action == 'delete'))[source].filter(pk=int(pk)).first()
     if row is None:
         raise Http404
-    if source in INVITATION_SOURCES and action in {'archive', 'restore'}:
+    if source in INVITATION_SOURCES and action in {'archive', 'restore', 'delete'}:
         raise ValueError('Oczekujące zaproszenie wymaga przyjęcia lub odrzucenia.')
     values = {'is_read': action == 'read'} if action in {'read', 'unread'} else {'is_archived': action == 'archive'}
     if action == 'archive':

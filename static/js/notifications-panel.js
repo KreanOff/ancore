@@ -86,7 +86,7 @@
         const deleteAll = root.querySelector('[data-notification-delete-all]');
         let request = null;
         let mutating = false;
-        let total = 0;
+        let deletable = 0;
         let cursor = root.dataset.nextCursor || '';
         let snapshot = root.dataset.snapshot || '';
         let view = root.querySelector('[data-notification-filter][aria-pressed="true"]')?.dataset.notificationFilter || 'all';
@@ -147,12 +147,12 @@
                 cursor = payload.next_cursor;
                 snapshot = payload.snapshot;
                 controller.loaded = true;
-                total = payload.total;
+                deletable = payload.deletable_count;
                 readAll.disabled = payload.filtered_unread_count === 0;
                 readAll.title = payload.filtered_unread_count === 0
                     ? 'Wszystkie powiadomienia w tym widoku są przeczytane'
                     : 'Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze';
-                deleteAll.disabled = total === 0;
+                deleteAll.disabled = deletable === 0;
                 pagination.hidden = !cursor;
                 root.querySelector('[data-notification-progress]').textContent = `${content.querySelectorAll('[data-notification-item]').length} z ${payload.total}`;
                 root.querySelector('[data-notification-new-items]').hidden = true;
@@ -236,9 +236,9 @@
             window.showConfirmModal({
                 title: action === 'delete_all' ? 'Usunąć wszystkie powiadomienia?' : 'Usunąć powiadomienie?',
                 message: (action === 'delete_all'
-                    ? `Usuniesz wszystkie powiadomienia z wybranego widoku (${total}), również ze starszych stron. `
+                    ? `Usuniesz powiadomienia z wybranego widoku (${deletable}), również ze starszych stron. `
                     : 'Usuniesz to powiadomienie ze swojej listy. ')
-                    + 'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian, a zaproszenia nadal znajdziesz w Workspace.',
+                    + 'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian. Oczekujące zaproszenia pozostaną w powiadomieniach do czasu podjęcia decyzji lub wygaśnięcia.',
                 confirmText: action === 'delete_all' ? 'Usuń wszystkie' : 'Usuń',
                 onConfirm: () => mutate(action, key, null, actionSnapshot),
             });

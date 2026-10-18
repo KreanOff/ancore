@@ -489,7 +489,11 @@ Tasks/Kanbana, projektów i grup ani modeli subskrypcji.
 
 `dashboard.notification_service` sprawdza bieżące ACL przy liście, licznikach
 i każdej akcji. Odczyt, archiwum i usunięcie są osobiste i nie kasują źródła.
-Zaproszenia wymagają przyjęcia lub odrzucenia, bez archiwizacji.
+Zaproszenia wymagają przyjęcia lub odrzucenia; do wygaśnięcia nie można ich
+ukryć przez archiwizację ani usunięcie powiadomienia. Usuwanie zbiorcze pomija
+zaproszenia, także dla wcześniej podpisanych snapshotów. Dawny `is_deleted`
+nie ukrywa nadal oczekującego zaproszenia. `deletable_count` liczy usuwalne
+wpisy wszystkich stron aktualnego filtra.
 Lista ma stronicowanie kursorem i podpisany snapshot; operacje zbiorcze obejmują
 wszystkie strony aktualnego filtra do czasu snapshotu, bez późniejszych wpisów.
 Kursor i snapshot są związane z użytkownikiem, czasem i filtrem Workspace.
