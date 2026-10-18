@@ -644,6 +644,9 @@ czas oraz przypomnienia. Usunięcie zadania obejmuje podzadania i wymaga prawa
 edycji wszystkich potomków. Fizyczne pliki są sprzątane po zatwierdzeniu transakcji
 i ostatnim odwołaniu. Rollback zachowuje pliki. Usuwanie Workspace kaskaduje dane
 należące do jego modeli. W Dysku kosz ustawia `deleted_at`, bez fizycznego usunięcia.
+Usuwanie Workspace blokuje wiersz właściciela przed sprawdzeniem zastępstwa
+i kaskadą, w jednej transakcji. Równoczesne żądania zachowują co najmniej jeden
+własny Workspace wraz z jego danymi.
 Ograniczenia `RESTRICT` chronią m.in. używane konfiguracje i lokalizacje Dokumentów.
 
 ## 15. Ewidencja zasobów

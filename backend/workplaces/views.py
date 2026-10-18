@@ -1,6 +1,7 @@
 import json
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.core.exceptions import PermissionDenied
@@ -306,7 +307,10 @@ def update_workplace(request, workplace_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def delete_workplace(request, workplace_id):
+    # Lock a row shared by all of this owner's deletions before choosing a replacement.
+    get_user_model().objects.select_for_update().get(pk=request.user.pk)
     workplaces = workplaces_for_user(request.user).filter(owner=request.user)
     workplace = get_object_or_404(workplaces, pk=workplace_id)
     replacement = workplaces.exclude(pk=workplace.pk).first()

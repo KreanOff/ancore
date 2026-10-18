@@ -30,6 +30,8 @@ nie omija prywatności Przestrzeni ani zadania. Nie ma roli gościa Workspace.
 Właściciel wynika z `Workplace.owner`; nie można go usunąć z zespołu ani
 zmienić tą ścieżką. Przenoszenie własności i usuwanie kont właścicieli nie
 wchodzą w zakres tej wersji.
+Usunięcie Workspace blokuje właściciela przed wyborem zastępczego miejsca
+pracy. Ochrona ostatniego własnego Workspace obejmuje równoczesne żądania.
 
 Zasoby są wspólne dla właściciela i aktywnych członków Workspace. Obowiązuje
 ten sam zakres tworzenia, edycji i usuwania co dla innych wspólnych danych.
