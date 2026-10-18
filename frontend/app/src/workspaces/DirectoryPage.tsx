@@ -1,3 +1,4 @@
+import { EmptyState } from '../shared/EmptyState';
 import { setPageLocation } from '../shared/page';
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
@@ -286,303 +287,295 @@ export default function DirectoryPage(props: PageProps) {
             </div>
           ) : null}
           <div className="workplaces-console__body">
-            <section className="workplaces-directory" aria-label="Lista miejsc pracy">
-              <div className="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplaces-project-sheet">
-                <section
-                  className="tasks-issue-group tasks-directory-group"
-                  role="table"
-                  aria-label="Workspace"
-                >
-                  <div
-                    className="workplaces-directory__head tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
-                    role="row"
+            {filtered.length ? (
+              <section className="workplaces-directory" aria-label="Lista miejsc pracy">
+                <div className="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplaces-project-sheet">
+                  <section
+                    className="tasks-issue-group tasks-directory-group"
+                    role="table"
+                    aria-label="Workspace"
                   >
-                    <span
-                      className="workplaces-directory__cell tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell"
-                      data-column="select"
-                      role="columnheader"
-                      onClick={(e) => {
-                        if (e.target === e.currentTarget) all.current?.click();
-                      }}
+                    <div
+                      className="workplaces-directory__head tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
+                      role="row"
                     >
-                      <input
-                        ref={all}
-                        type="checkbox"
-                        className="tasks-row-checkbox"
-                        aria-label="Zaznacz wszystkie miejsca pracy"
-                        checked={!!visible.length && count === visible.length}
-                        disabled={!visible.length}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setSelected((current) => {
-                            const next = new Set(current);
-                            visible.forEach((row) =>
-                              checked ? next.add(row.id) : next.delete(row.id),
-                            );
-                            return next;
-                          });
-                        }}
-                      />
-                    </span>
-                    <span
-                      className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
-                      data-column="action"
-                      role="columnheader"
-                      aria-label="Przełącz miejsce pracy"
-                    >
-                      <Icon name="arrow-up-right" />
-                    </span>
-                    <span
-                      className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
-                      data-column="menu"
-                      role="columnheader"
-                      aria-label="Działania"
-                    />
-                    {columns.map(([key, label, icon]) => (
                       <span
-                        key={key}
-                        className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
-                        data-column={key}
+                        className="workplaces-directory__cell tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell"
+                        data-column="select"
                         role="columnheader"
-                      >
-                        {label}
-                        <Icon name={icon} />
-                      </span>
-                    ))}
-                  </div>
-                  <div
-                    className="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list"
-                    role="rowgroup"
-                  >
-                    {visible.map((row) => (
-                      <article
-                        key={row.id}
-                        className={
-                          'workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ' +
-                          (row.active ? 'is-active ' : '') +
-                          (selected.has(row.id) ? 'checked' : '')
-                        }
-                        role="row"
-                        tabIndex={0}
-                        aria-label={'Zarządzaj ' + row.name}
-                        aria-current={row.active ? 'true' : undefined}
                         onClick={(e) => {
-                          if (
-                            !e.defaultPrevented &&
-                            e.button === 0 &&
-                            !e.ctrlKey &&
-                            !e.metaKey &&
-                            !e.altKey &&
-                            !e.shiftKey &&
-                            !(e.target as Element).closest(
-                              'a,button,input,select,textarea,label,[data-column=select],[data-column=action],[data-column=menu]',
-                            ) &&
-                            !getSelection()?.toString()
-                          )
-                            void open(row, 'main');
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.target === e.currentTarget && ['Enter', ' '].includes(e.key)) {
-                            e.preventDefault();
-                            void open(row, 'main');
-                          }
+                          if (e.target === e.currentTarget) all.current?.click();
                         }}
                       >
+                        <input
+                          ref={all}
+                          type="checkbox"
+                          className="tasks-row-checkbox"
+                          aria-label="Zaznacz wszystkie miejsca pracy"
+                          checked={!!visible.length && count === visible.length}
+                          disabled={!visible.length}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setSelected((current) => {
+                              const next = new Set(current);
+                              visible.forEach((row) =>
+                                checked ? next.add(row.id) : next.delete(row.id),
+                              );
+                              return next;
+                            });
+                          }}
+                        />
+                      </span>
+                      <span
+                        className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
+                        data-column="action"
+                        role="columnheader"
+                        aria-label="Przełącz miejsce pracy"
+                      >
+                        <Icon name="arrow-up-right" />
+                      </span>
+                      <span
+                        className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
+                        data-column="menu"
+                        role="columnheader"
+                        aria-label="Działania"
+                      />
+                      {columns.map(([key, label, icon]) => (
                         <span
-                          className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="select"
-                          role="cell"
+                          key={key}
+                          className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
+                          data-column={key}
+                          role="columnheader"
+                        >
+                          {label}
+                          <Icon name={icon} />
+                        </span>
+                      ))}
+                    </div>
+                    <div
+                      className="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list"
+                      role="rowgroup"
+                    >
+                      {visible.map((row) => (
+                        <article
+                          key={row.id}
+                          className={
+                            'workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ' +
+                            (row.active ? 'is-active ' : '') +
+                            (selected.has(row.id) ? 'checked' : '')
+                          }
+                          role="row"
+                          tabIndex={0}
+                          aria-label={'Zarządzaj ' + row.name}
+                          aria-current={row.active ? 'true' : undefined}
                           onClick={(e) => {
-                            if (e.target === e.currentTarget) toggle(row.id);
+                            if (
+                              !e.defaultPrevented &&
+                              e.button === 0 &&
+                              !e.ctrlKey &&
+                              !e.metaKey &&
+                              !e.altKey &&
+                              !e.shiftKey &&
+                              !(e.target as Element).closest(
+                                'a,button,input,select,textarea,label,[data-column=select],[data-column=action],[data-column=menu]',
+                              ) &&
+                              !getSelection()?.toString()
+                            )
+                              void open(row, 'main');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.target === e.currentTarget && ['Enter', ' '].includes(e.key)) {
+                              e.preventDefault();
+                              void open(row, 'main');
+                            }
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            className="tasks-row-checkbox"
-                            aria-label={'Zaznacz miejsce pracy ' + row.name}
-                            checked={selected.has(row.id)}
-                            onChange={() => toggle(row.id)}
-                          />
-                        </span>
-                        <div
-                          className="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="action"
-                          role="cell"
-                        >
-                          <button
-                            type="button"
-                            className={
-                              'tasks-project-sheet__edit-button workplace-table-icon-button ' +
-                              (row.active ? 'workplace-table-icon-button--current' : '')
-                            }
-                            disabled={row.active || busy}
-                            aria-label={
-                              row.active
-                                ? row.name + ' — bieżący workspace'
-                                : 'Przełącz na ' + row.name
-                            }
-                            onClick={() => void switchTo(row)}
+                          <span
+                            className="tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="select"
+                            role="cell"
+                            onClick={(e) => {
+                              if (e.target === e.currentTarget) toggle(row.id);
+                            }}
                           >
-                            <Icon name={row.active ? 'check' : 'arrow-up-right'} />
-                          </button>
-                        </div>
-                        <div
-                          className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="menu"
-                          role="cell"
-                        >
-                          <Dropdown
-                            label={'Działania: ' + row.name}
-                            triggerClassName="tasks-project-sheet__edit-button"
-                            menuClass="tasks-section-menu documents-item-menu"
-                            trigger={<Icon name="menu" />}
-                          >
-                            {(close) => (
-                              <div className="documents-menu-actions">
-                                {(
-                                  [
-                                    'main',
-                                    'members',
-                                    ...(row.can_manage ? ['invitations'] : []),
-                                  ] as Tab[]
-                                ).map((key) => (
-                                  <button
-                                    key={key}
-                                    type="button"
-                                    className="tasks-project-menu-button"
-                                    role="menuitem"
-                                    disabled={busy}
-                                    onClick={() => {
-                                      close();
-                                      void open(row, key);
-                                    }}
-                                  >
-                                    <Icon
-                                      name={
-                                        key === 'main'
-                                          ? row.can_manage
-                                            ? 'pencil'
-                                            : 'info'
-                                          : key === 'members'
-                                            ? 'users'
-                                            : 'mail'
-                                      }
-                                    />
-                                    <span>
-                                      {key === 'main'
-                                        ? row.can_manage
-                                          ? 'Edytuj miejsce pracy'
-                                          : 'Informacje'
-                                        : key === 'members'
-                                          ? 'Członkowie'
-                                          : 'Wysłane zaproszenia'}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </Dropdown>
-                        </div>
-                        <span
-                          className="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="name"
-                          role="cell"
-                        >
-                          <Avatar
-                            space
-                            data={row.avatar}
-                            className="profile-avatar--workplace workplace-row__avatar"
-                          />
-                          <span className="tasks-row-title-main">
-                            <a
-                              className="tasks-row-title-text workplaces-management__select"
-                              href={data.base_url + '?workspace=' + row.id + '&tab=main'}
-                              aria-label={'Zarządzaj ' + row.name}
-                              aria-haspopup="dialog"
-                              onClick={(e) => link(e, row, 'main')}
-                            >
-                              {row.name}
-                            </a>
-                            {row.active ? (
-                              <span className="workplace-row__current-badge">Bieżący</span>
-                            ) : null}
+                            <input
+                              type="checkbox"
+                              className="tasks-row-checkbox"
+                              aria-label={'Zaznacz miejsce pracy ' + row.name}
+                              checked={selected.has(row.id)}
+                              onChange={() => toggle(row.id)}
+                            />
                           </span>
-                        </span>
-                        <span
-                          className="workplaces-directory__cell workplace-row__code tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="code"
-                          role="cell"
-                          title={row.code}
-                        >
-                          {row.code || '—'}
-                        </span>
-                        <span
-                          className="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="description"
-                          role="cell"
-                        >
-                          {row.description || '—'}
-                        </span>
-                        <span
-                          className="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="members"
-                          role="cell"
-                        >
-                          <Icon name="users" />
-                          <a
-                            href={data.base_url + '?workspace=' + row.id}
-                            aria-label={'Zespół ' + row.name}
-                            onClick={(e) => link(e, row, 'members')}
+                          <div
+                            className="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="action"
+                            role="cell"
                           >
-                            {row.members} {row.members === 1 ? 'członek' : 'członków'}
-                          </a>
-                        </span>
-                        <span
-                          className="workplaces-directory__cell workplace-row__context tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell"
-                          data-column="context"
-                          role="cell"
-                        >
-                          {row.role}
-                        </span>
-                        <span
-                          className={
-                            'workplaces-directory__cell workplace-row__status tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell ' +
-                            (row.active ? 'is-active' : '')
-                          }
-                          data-column="status"
-                          role="cell"
-                        >
-                          <span aria-hidden="true" />
-                          {row.active ? 'Aktywny' : 'Dostępny'}
-                        </span>
-                      </article>
-                    ))}
-                  </div>
-                  {!data.rows.length ? (
-                    <div className="workplaces-empty workplaces-empty--console">
-                      <h2>Nie masz jeszcze miejsca pracy.</h2>
-                      <p>Dodaj pierwsze miejsce pracy.</p>
+                            <button
+                              type="button"
+                              className={
+                                'tasks-project-sheet__edit-button workplace-table-icon-button ' +
+                                (row.active ? 'workplace-table-icon-button--current' : '')
+                              }
+                              disabled={row.active || busy}
+                              aria-label={
+                                row.active
+                                  ? row.name + ' — bieżący workspace'
+                                  : 'Przełącz na ' + row.name
+                              }
+                              onClick={() => void switchTo(row)}
+                            >
+                              <Icon name={row.active ? 'check' : 'arrow-up-right'} />
+                            </button>
+                          </div>
+                          <div
+                            className="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="menu"
+                            role="cell"
+                          >
+                            <Dropdown
+                              label={'Działania: ' + row.name}
+                              triggerClassName="tasks-project-sheet__edit-button"
+                              menuClass="tasks-section-menu documents-item-menu"
+                              trigger={<Icon name="menu" />}
+                            >
+                              {(close) => (
+                                <div className="documents-menu-actions">
+                                  {(
+                                    [
+                                      'main',
+                                      'members',
+                                      ...(row.can_manage ? ['invitations'] : []),
+                                    ] as Tab[]
+                                  ).map((key) => (
+                                    <button
+                                      key={key}
+                                      type="button"
+                                      className="tasks-project-menu-button"
+                                      role="menuitem"
+                                      disabled={busy}
+                                      onClick={() => {
+                                        close();
+                                        void open(row, key);
+                                      }}
+                                    >
+                                      <Icon
+                                        name={
+                                          key === 'main'
+                                            ? row.can_manage
+                                              ? 'pencil'
+                                              : 'info'
+                                            : key === 'members'
+                                              ? 'users'
+                                              : 'mail'
+                                        }
+                                      />
+                                      <span>
+                                        {key === 'main'
+                                          ? row.can_manage
+                                            ? 'Edytuj miejsce pracy'
+                                            : 'Informacje'
+                                          : key === 'members'
+                                            ? 'Członkowie'
+                                            : 'Wysłane zaproszenia'}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </Dropdown>
+                          </div>
+                          <span
+                            className="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="name"
+                            role="cell"
+                          >
+                            <Avatar
+                              space
+                              data={row.avatar}
+                              className="profile-avatar--workplace workplace-row__avatar"
+                            />
+                            <span className="tasks-row-title-main">
+                              <a
+                                className="tasks-row-title-text workplaces-management__select"
+                                href={data.base_url + '?workspace=' + row.id + '&tab=main'}
+                                aria-label={'Zarządzaj ' + row.name}
+                                aria-haspopup="dialog"
+                                onClick={(e) => link(e, row, 'main')}
+                              >
+                                {row.name}
+                              </a>
+                              {row.active ? (
+                                <span className="workplace-row__current-badge">Bieżący</span>
+                              ) : null}
+                            </span>
+                          </span>
+                          <span
+                            className="workplaces-directory__cell workplace-row__code tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="code"
+                            role="cell"
+                            title={row.code}
+                          >
+                            {row.code || '—'}
+                          </span>
+                          <span
+                            className="workplaces-directory__cell workplace-row__description tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="description"
+                            role="cell"
+                          >
+                            {row.description || '—'}
+                          </span>
+                          <span
+                            className="workplaces-directory__cell workplace-row__members tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="members"
+                            role="cell"
+                          >
+                            <Icon name="users" />
+                            <a
+                              href={data.base_url + '?workspace=' + row.id}
+                              aria-label={'Zespół ' + row.name}
+                              onClick={(e) => link(e, row, 'members')}
+                            >
+                              {row.members} {row.members === 1 ? 'członek' : 'członków'}
+                            </a>
+                          </span>
+                          <span
+                            className="workplaces-directory__cell workplace-row__context tasks-project-sheet__company tasks-directory-sheet__cell tasks-project-sheet__cell"
+                            data-column="context"
+                            role="cell"
+                          >
+                            {row.role}
+                          </span>
+                          <span
+                            className={
+                              'workplaces-directory__cell workplace-row__status tasks-project-sheet__status tasks-directory-sheet__cell tasks-project-sheet__cell ' +
+                              (row.active ? 'is-active' : '')
+                            }
+                            data-column="status"
+                            role="cell"
+                          >
+                            <span aria-hidden="true" />
+                            {row.active ? 'Aktywny' : 'Dostępny'}
+                          </span>
+                        </article>
+                      ))}
                     </div>
-                  ) : null}
-                </section>
-              </div>
-            </section>
-            {data.rows.length && !filtered.length ? (
-              <div className="workplaces-empty workplaces-management__no-results">
-                <p>Nie znaleziono Workspace.</p>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setQuery('');
-                    setPage(1);
-                    search.current?.focus();
-                  }}
-                >
-                  Wyczyść wyszukiwanie
-                </button>
-              </div>
-            ) : null}
+                  </section>
+                </div>
+              </section>
+            ) : (
+              <EmptyState
+                illustration="spaces"
+                title={
+                  data.rows.length ? 'Nie znaleziono Workspace.' : 'Nie masz jeszcze miejsca pracy.'
+                }
+                description={
+                  data.rows.length
+                    ? 'Zmień wyszukiwaną nazwę lub wyczyść wyszukiwanie.'
+                    : 'Dodaj pierwsze miejsce pracy.'
+                }
+              />
+            )}
           </div>
         </section>
       </main>

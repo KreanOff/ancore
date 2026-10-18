@@ -39,7 +39,6 @@
         <div class="tasks-empty-state__copy">
         <h2>{% if query or kind or management and management_filter %}Brak pasujących przestrzeni{% elif management %}Brak przestrzeni do zarządzania{% elif tab == 'favorites' %}Brak ulubionych przestrzeni{% elif tab == 'private' %}Brak prywatnych przestrzeni{% else %}Brak przestrzeni{% endif %}</h2>
         <p>{% if query or kind or management and management_filter %}Zmień wyszukiwanie lub filtry.{% elif management %}Utwórz przestrzeń, aby skonfigurować pracę zespołu.{% elif tab == 'favorites' %}Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.{% else %}Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.{% endif %}</p>
-        {% if query or kind or management and management_filter %}<a class="tasks-filter-button" href="{% if management %}{{ spaces_manage_url }}{% else %}{{ spaces_url }}?tab={{ tab|urlencode }}{% endif %}">Wyczyść filtry</a>{% elif not management and tab == 'favorites' %}<a class="tasks-filter-button" href="{{ spaces_url }}">Przeglądaj przestrzenie</a>{% else %}<a class="tasks-filter-button" href="{{ create_url }}" data-work-open>Utwórz przestrzeń</a>{% endif %}
     </div></div>
     {% endif %}
 </div>

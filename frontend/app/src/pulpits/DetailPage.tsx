@@ -318,15 +318,6 @@ export default function DetailPage(props: PageProps) {
                     draggable={false}
                   />
                   <span>Przeciągnij gadżet do tej kolumny</span>
-                  <button
-                    type="button"
-                    className="tasks-filter-button"
-                    aria-controls="pulpit-catalog"
-                    aria-expanded={catalog.open}
-                    onClick={(event) => toggleCatalog(event.currentTarget)}
-                  >
-                    Dodaj nowy gadżet
-                  </button>
                 </div>
               ) : null}
             </section>

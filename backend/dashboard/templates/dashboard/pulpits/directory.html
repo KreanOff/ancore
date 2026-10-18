@@ -31,7 +31,6 @@
         <div class="tasks-empty-state__copy">
             <h2>{% if query or visibility_filter or favorite_filter %}Brak pasujących pulpitów{% elif management %}Brak pulpitów do zarządzania{% else %}Brak pulpitów{% endif %}</h2>
             <p>{% if query or visibility_filter or favorite_filter %}Zmień wyszukiwanie lub filtry.{% else %}Utwórz pulpit z własnymi gadżetami.{% endif %}</p>
-            {% if query or visibility_filter or favorite_filter %}<a class="tasks-filter-button" href="{% if management %}{{ management_url }}{% else %}{{ dashboards_url }}{% endif %}">Wyczyść filtry</a>{% else %}<a class="tasks-filter-button" href="{{ create_url }}" data-pulpit-open>Utwórz pulpit</a>{% endif %}
         </div>
     </div>
     {% endif %}

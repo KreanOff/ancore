@@ -86,10 +86,8 @@
                     <span class="tasks-directory-spacer-cell tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="spacer" aria-hidden="true"></span>
                 </article>
                 {% empty %}
-                <div class="tasks-empty-state tasks-empty-state--centered tasks-tag-empty-state" role="status" aria-live="polite">
-                    <span class="tasks-empty-state__icon" aria-hidden="true">
-                        <i data-icon="tag" aria-hidden="true"></i>
-                    </span>
+                <div class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated tasks-tag-empty-state" role="status" aria-live="polite">
+                    <span class="tasks-empty-state__illustration tasks-empty-state__illustration--tasks" aria-hidden="true"></span>
                     <div class="tasks-empty-state__copy">
                         <h2>{% if tag_query or tag_priority_filter or tag_status_filter or tag_category_filter or tag_scope_filter or tag_owner_filter %}Nie znaleziono tagów.{% else %}Nie ma jeszcze tagów.{% endif %}</h2>
                         <p>{% if tag_query or tag_priority_filter or tag_status_filter or tag_category_filter or tag_scope_filter or tag_owner_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz pierwszy tag, aby łatwiej porządkować zadania.{% endif %}</p>

@@ -1,5 +1,6 @@
 import { FormDialog } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import { Pagination, type PaginationData } from '../shared/Pagination';
 import { StatusGroup } from '../shared/StatusGroup';
 import { usePageActions } from '../shared/usePageActions';
@@ -134,22 +135,15 @@ export default function TeamsPage(props: PageProps) {
                     </article>
                   ))
                 ) : (
-                  <div className="work-empty">
-                    <Icon name="users" />
-                    <h2>Brak zespołów</h2>
-                    <p>
-                      {d.query
+                  <EmptyState
+                    illustration="people"
+                    title="Brak zespołów"
+                    description={
+                      d.query
                         ? 'Zmień wyszukiwaną nazwę.'
-                        : 'Utwórz zespół, dodaj osoby i powiąż przestrzenie.'}
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => void a.open(d.create_url)}
-                    >
-                      Utwórz zespół
-                    </button>
-                  </div>
+                        : 'Utwórz zespół, dodaj osoby i powiąż przestrzenie.'
+                    }
+                  />
                 )}
               </div>
             </>
@@ -260,15 +254,11 @@ export default function TeamsPage(props: PageProps) {
                       </StatusGroup>
                     ))
                   ) : (
-                    <div className="tasks-empty-state tasks-empty-state--centered" role="status">
-                      <span className="tasks-empty-state__icon">
-                        <Icon name="list-checks" />
-                      </span>
-                      <div className="tasks-empty-state__copy">
-                        <h2>Nie ma jeszcze zadań.</h2>
-                        <p>Nowe zadania pojawią się tutaj po ich utworzeniu.</p>
-                      </div>
-                    </div>
+                    <EmptyState
+                      illustration="tasks"
+                      title="Nie ma jeszcze zadań."
+                      description="Nowe zadania pojawią się tutaj po ich utworzeniu."
+                    />
                   )}
                 </div>
               </section>

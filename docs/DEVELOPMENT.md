@@ -4,6 +4,78 @@
 Poniższe datowane zapisy zachowują historię wcześniejszych prac i wyników;
 opisy zachowania starych modeli oraz ich migracji nie są instrukcją obecnego uruchomienia.
 
+## Usunięcie akcji z pustych stanów (18.10.2026)
+
+Puste strony i panele pokazują wyłącznie ilustrację, nagłówek i opis.
+Usunięto przyciski i linki z Reacta oraz szablonów, w tym z obu pustych sekcji
+„Dla ciebie”, kolumn gadżetów i pustego katalogu gadżetów. `EmptyState` nie
+przyjmuje już dodatkowych dzieci. Akcje nagłówków i toolbarów pozostają dostępne.
+
+Przeszło 158 testów tego samego zestawu co poniżej, build z TypeScriptem,
+formatowanie, kompilacja 21 zmienionych szablonów i kontrola indeksu.
+Chrome/Playwright na osobnej bazie potwierdził brak interaktywnych kontrolek
+w 28 pustych widokach przy 1440×1000 i 390×844 (56 przypadków), działanie
+tworzenia z nagłówków, Escape, wyszukiwania Workspace i katalogu gadżetów,
+pustych kolumn oraz przeładowania. Nie było błędów JavaScript ani konsoli.
+Nie sprawdzano innych przeglądarek; wtyczka Browser była niedostępna.
+
+## Wspólny wygląd pustych stron (18.10.2026)
+
+Pełne puste widoki korzystają z typografii i odstępów pustego pulpitu oraz
+istniejących ilustracji. Wariant `tasks-empty-state--illustrated` jest wspólnym
+źródłem stylu, a `shared/EmptyState.tsx` obsługuje pozostałe ekrany React.
+Szablony Django zachowują ten sam kontrakt. [Zakres i parametry](UI.md#wspólny-wzorzec-pustej-strony).
+
+Przeszło **158/158 testów** (`core.test_frontend`, `core.test_filter_frontend`,
+`core.test_pulpit_frontend`, `core.test_document_frontend`,
+`core.test_workspace_frontend`, `resources`, `dashboard.test_for_you`,
+`spaces.test_tags`, `spaces.test_management`), build z TypeScriptem,
+pięć testów nawigacji oraz kontrola formatu i kompilacja zmienionych szablonów.
+
+Chrome/Playwright na osobnej bazie QA porównał 23 widoki przy 1440×1000,
+1024×800 i 390×844: te same rozmiary tekstu, wagi, interlinie i odstępy
+co na pustym pulpicie, poprawne grafiki oraz brak przepełnień poziomych.
+Sprawdzono tworzenie filtrów, zasobów, zespołów i dokumentów, okno uploadu,
+Escape, czyszczenie filtrów, nawigację bez przeładowania, reload,
+pusty wynik Workspace, zaproszenia i listę z istniejącym zadaniem.
+Przy 390×568 potwierdzono dostępność tekstu i akcji przez przewijanie w siedmiu
+widokach; puste Dokumenty przewijają cały obszar wraz z kafelkami tworzenia.
+Nie było błędów JavaScript ani HTTP 5xx. Wtyczka Browser była niedostępna;
+użyto istniejącego Playwrighta. Nie sprawdzano innych przeglądarek ani wdrożenia.
+Skrypty i zrzuty QA pozostają w `/tmp`; bazę i sesję QA usunięto po sprawdzeniu.
+
+## Poprawki po code review (18.10.2026)
+
+Formularz Zasobów używa wspólnego `app-page-modals`, dzięki czemu dodawanie
+i edycja działają po nawigacji JSON i ponownym wejściu. Pola dodatkowe zadania
+są dostępne w panelu właściwości; odpowiedź walidacji potrafi dodać pole nowej
+konfiguracji bez odtwarzania istniejących kontrolek. Uzupełnienie pola zachowuje
+i ponawia wcześniejszy szkic autosave. Nie dodano CSS ani nowego komponentu kontrolek.
+
+Usuwanie Workspace blokuje właściciela w transakcji przed wyborem zastępstwa,
+więc równoczesne żądania zachowują ostatnie własne miejsce pracy i jego dane.
+Zaproszeń oczekujących nie można ukryć przez usunięcie lub archiwizację
+powiadomienia; usuwanie zbiorcze je pomija. Starsze stany `is_deleted` nie
+ukrywają ważnych zaproszeń. API HTML i React zwracają `deletable_count`
+dla całego bieżącego filtra, używany przez przycisk i potwierdzenie usuwania.
+
+Regresje: `workplaces.test_deletions`, `spaces.test_task_autosave`,
+`dashboard.test_notifications` i `core.test_shell_frontend`. Przeszło
+**1064/1064 testów** w pełnym przebiegu `scripts/run_tests.py --parallel 4`
+na osobnych bazach PostgreSQL i tymczasowym storage, TypeScript, build Reacta
+oraz pięć testów nawigacji. Modele i migracje pozostały zgodne, bez zmian schematu.
+
+Playwright 1.62.1 z Chrome, na osobnej bazie QA i syntetycznych danych, sprawdził
+1440×1000 i 390×844: dodawanie/edycję Zasobów po częściowej nawigacji,
+walidację duplikatu, Escape i ponowne wejście, pusty wynik, wymagane pole
+dodane podczas edycji zadania, zachowanie szkicu i zapis wartości zero,
+odczyt obserwatora oraz odzyskanie wcześniej ukrytego zaproszenia i pominięcie
+go w usuwaniu zbiorczym. Referencją był widok „Dla ciebie”. Nie było błędów
+wykonania JavaScript ani odpowiedzi HTTP 5xx; 400 przy walidacji były oczekiwane.
+Wtyczka Browser nie była dostępna; użyto lokalnego Playwrighta. Skrypty QA
+i zrzuty pozostają w `/tmp`, poza repozytorium. Nie sprawdzano innych przeglądarek
+ani wdrożenia na serwerze.
+
 ## Czysta baza i usunięcie dawnych systemów (18.10.2026)
 
 Zastąpiono dawną historię migracji 11 migracjami początkowymi ośmiu aplikacji.

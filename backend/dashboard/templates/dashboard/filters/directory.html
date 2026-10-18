@@ -1,3 +1,4 @@
+{% load static %}
 <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet task-filter-directory{% if management %} task-filter-directory--management tasks-project-sheet--selectable{% endif %}">
     {% if filters %}
     <section class="tasks-directory-group" role="table" aria-label="{% if management %}Zarządzanie filtrami{% else %}Lista filtrów{% endif %}">
@@ -23,6 +24,9 @@
         </div>
     </section>
     {% else %}
-    <div class="tasks-empty-state tasks-empty-state--centered" role="status"><span class="tasks-empty-state__icon"><i data-icon="filter" aria-hidden="true"></i></span><div class="tasks-empty-state__copy"><h2>{% if query or management and visibility_filter or management and favorite_filter %}Brak pasujących filtrów{% elif management %}Brak filtrów do zarządzania{% else %}Brak filtrów{% endif %}</h2><p>{% if query or management and visibility_filter or management and favorite_filter %}Zmień wyszukiwanie lub wyczyść jego warunki.{% elif management %}Utwórz filtr, aby wracać do aktualnych wyników.{% elif tab == 'favorites' %}Oznacz filtr gwiazdką, aby mieć go pod ręką.{% elif tab == 'shared' %}Filtry udostępnione przez inne osoby pojawią się tutaj.{% else %}Zapisz wyszukiwanie, aby wracać do aktualnych wyników.{% endif %}</p>{% if management %}{% if query or visibility_filter or favorite_filter %}<a href="{{ management_url }}" class="tasks-filter-button">Wyczyść filtry</a>{% else %}<a href="{{ create_url }}" class="tasks-filter-button" data-filter-open>Utwórz filtr</a>{% endif %}{% else %}<a href="{{ search_url }}" class="tasks-filter-button">Wyszukaj zadania</a>{% endif %}{% if not management and tab == 'favorites' %}<a href="{{ filters_url }}?tab=all" class="tasks-filter-button">Przeglądaj filtry</a>{% endif %}</div></div>
+    <div class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated" role="status">
+        <img class="tasks-empty-state__illustration" src="{% static 'img/empty-states/filters-empty.webp' %}" alt="" width="720" height="540" draggable="false">
+        <div class="tasks-empty-state__copy"><h2>{% if query or management and visibility_filter or management and favorite_filter %}Brak pasujących filtrów{% elif management %}Brak filtrów do zarządzania{% else %}Brak filtrów{% endif %}</h2><p>{% if query or management and visibility_filter or management and favorite_filter %}Zmień wyszukiwanie lub wyczyść jego warunki.{% elif management %}Utwórz filtr, aby wracać do aktualnych wyników.{% elif tab == 'favorites' %}Oznacz filtr gwiazdką, aby mieć go pod ręką.{% elif tab == 'shared' %}Filtry udostępnione przez inne osoby pojawią się tutaj.{% else %}Zapisz wyszukiwanie, aby wracać do aktualnych wyników.{% endif %}</p></div>
+    </div>
     {% endif %}
 </div>

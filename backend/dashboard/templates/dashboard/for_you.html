@@ -6,12 +6,12 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
 <link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261017-page-padding-15px">
+<link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261018-empty-fit-viewport">
 <script src="{% static 'js/for-you.js' %}?v=20261016-react-migration" defer></script>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-page dashboard-overview for-you-page">
+<div class="dashboard-page dashboard-overview for-you-page{% if not for_you_projects and not for_you_groups %} for-you-page--empty{% endif %}">
     <header class="tasks-topbar tasks-topbar--project-directory">
         <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Dla ciebie</h1></div>
     </header>
@@ -30,11 +30,11 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="dashboard-panel for-you-spaces-empty for-you-empty-state" role="status">
-                <img class="for-you-empty-state__illustration" src="{% static 'img/empty-states/spaces-empty.webp' %}" alt="" width="720" height="540" draggable="false">
+            <div class="tasks-empty-state tasks-empty-state--illustrated for-you-spaces-empty" role="status">
+                <img class="tasks-empty-state__illustration" src="{% static 'img/empty-states/spaces-empty.webp' %}" alt="" width="720" height="540" draggable="false">
                 <div class="tasks-empty-state__copy">
+                    <h2>Brak rekomendowanych przestrzeni</h2>
                     <p>Otwórz przestrzeń lub dodaj ją do ulubionych, aby mieć ją pod ręką.</p>
-                    <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Przeglądaj przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>
                 </div>
             </div>
             {% endif %}
@@ -85,12 +85,12 @@
                 </a>
                 {% endfor %}
                 {% empty %}
-                <div class="dashboard-overview-empty for-you-empty-state" role="status">
-                    <img class="for-you-empty-state__illustration" src="{% static for_you_empty_illustration %}" alt="" width="720" height="540" draggable="false">
+                <div class="tasks-empty-state tasks-empty-state--illustrated" role="status">
+                    <img class="tasks-empty-state__illustration" src="{% static for_you_empty_illustration %}" alt="" width="720" height="540" draggable="false">
                     <div class="tasks-empty-state__copy">
-                        {% if for_you_filtered %}<h3>Brak pasujących wyników</h3><p>Wyczyść filtry, aby wrócić do pełnej listy tej zakładki.</p><a class="dashboard-panel-link" href="{{ for_you_clear_url }}">Wyczyść filtry<i data-icon="arrow-right" aria-hidden="true"></i></a>
+                        {% if for_you_filtered %}<h3>Brak pasujących wyników</h3><p>Wyczyść filtry, aby wrócić do pełnej listy tej zakładki.</p>
                         {% else %}<h3>{{ for_you_empty.0 }}</h3><p>{{ for_you_empty.1 }}</p>
-                        <a class="dashboard-panel-link" href="{{ for_you_projects_url }}">Otwórz przestrzenie<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

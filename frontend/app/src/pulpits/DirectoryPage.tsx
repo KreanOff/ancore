@@ -344,19 +344,6 @@ export default function DirectoryPage(props: PageProps) {
                       ? 'Zmień wyszukiwanie lub filtry.'
                       : 'Utwórz pulpit z własnymi gadżetami.'}
                   </p>
-                  {filtered ? (
-                    <a className="tasks-filter-button" href={data.base_url}>
-                      Wyczyść filtry
-                    </a>
-                  ) : (
-                    <button
-                      className="tasks-filter-button"
-                      disabled={actions.busy}
-                      onClick={() => void actions.open(data.create_url)}
-                    >
-                      Utwórz pulpit
-                    </button>
-                  )}
                 </div>
               </div>
             )}

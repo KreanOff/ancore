@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { errorMessage, request } from '../shared/api';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import { Select } from '../shared/Select';
 import { ColumnManager, useColumns } from './columns';
 import { ResourceEditor } from './Editor';
@@ -390,33 +391,16 @@ export default function ResourcesApp({
             busy={busy}
           />
         ) : (
-          <section
-            className="tasks-empty-state tasks-empty-state--centered resources-empty"
-            role="status"
-          >
-            <div className="tasks-empty-state__icon">
-              <Icon name="package" />
-            </div>
-            <div className="tasks-empty-state__copy">
-              <h2>{data.has_filters ? 'Nie znaleziono zasobów.' : 'Nie ma jeszcze zasobów.'}</h2>
-              <p>
-                {data.has_filters
-                  ? 'Zmień wyszukiwanie lub filtry, aby zobaczyć inne wyniki.'
-                  : 'Dodaj sprzęt, licencje i narzędzia, aby uporządkować zasoby Workspace.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              className={`btn ${data.has_filters ? 'btn-secondary' : 'btn-primary'}`}
-              disabled={busy}
-              onClick={() => {
-                if (data.has_filters) void load(data.base_url);
-                else void open(null);
-              }}
-            >
-              {data.has_filters ? 'Wyczyść filtry' : 'Dodaj zasób'}
-            </button>
-          </section>
+          <EmptyState
+            className="resources-empty"
+            illustration="spaces"
+            title={data.has_filters ? 'Nie znaleziono zasobów.' : 'Nie ma jeszcze zasobów.'}
+            description={
+              data.has_filters
+                ? 'Zmień wyszukiwanie lub filtry, aby zobaczyć inne wyniki.'
+                : 'Dodaj sprzęt, licencje i narzędzia, aby uporządkować zasoby Workspace.'
+            }
+          />
         )}
       </section>
       {editor ? (

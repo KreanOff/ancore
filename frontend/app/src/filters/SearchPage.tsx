@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { FieldControl, FormDialog } from '../forms/FormDialog';
 import { ForYouTaskRow } from '../dashboard/ForYouPage';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import { Pagination } from '../shared/Pagination';
 import { type PageProps, navigate } from '../shared/page';
 import { StatusGroup } from '../shared/StatusGroup';
@@ -256,21 +257,15 @@ export default function SearchPage(props: PageProps) {
                 </StatusGroup>
               ))
             ) : (
-              <div className="tasks-empty-state tasks-empty-state--centered" role="status">
-                <span className="tasks-empty-state__icon">
-                  <Icon name="search" />
-                </span>
-                <div className="tasks-empty-state__copy">
-                  <h2>
-                    {data.search_error ? 'Popraw warunki wyszukiwania' : 'Nie znaleziono zadań'}
-                  </h2>
-                  <p>
-                    {data.search_error
-                      ? 'Po poprawieniu zapytania wybierz „Szukaj”.'
-                      : 'Zmień warunki lub wyczyść filtry, aby zobaczyć inne wyniki.'}
-                  </p>
-                </div>
-              </div>
+              <EmptyState
+                illustration="tasks"
+                title={data.search_error ? 'Popraw warunki wyszukiwania' : 'Nie znaleziono zadań'}
+                description={
+                  data.search_error
+                    ? 'Po poprawieniu zapytania wybierz „Szukaj”.'
+                    : 'Zmień warunki lub wyczyść filtry, aby zobaczyć inne wyniki.'
+                }
+              />
             )}
           </div>
         </div>

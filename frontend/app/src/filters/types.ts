@@ -31,6 +31,7 @@ export interface DirectoryData {
   list_url: string;
   results: SavedFilter[];
   pagination: PaginationData;
+  illustration: string;
   modal: FormDialogData | null;
 }
 export interface SearchData {

@@ -1,4 +1,6 @@
 """Explicit data contracts for the existing saved-filter views and forms."""
+from django.templatetags.static import static
+
 from core.frontend import form_payload, pagination_payload
 from spaces.frontend import item_payload
 
@@ -29,6 +31,7 @@ def catalog_page(request, context):
             'management_url', 'visibility_filter', 'favorite_filter', 'visibility_choices', 'create_url', 'list_url')},
         'results': [filter_payload(item) for item in context['filters']],
         'pagination': pagination_payload(request, context['page'], context['management_url'] if context['management'] else context['filters_url']),
+        'illustration': static('img/empty-states/filters-empty.webp'),
         'modal': modal_payload(context),
     }}
 

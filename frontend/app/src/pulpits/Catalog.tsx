@@ -173,16 +173,6 @@ export default function Catalog({
           <div className="pulpit-catalog-empty">
             <Icon name="search" />
             <p>Brak pasujących gadżetów.</p>
-            <button
-              type="button"
-              className="tasks-filter-button"
-              onClick={() => {
-                change({ ...state, query: '', category: 'all' });
-                search.current?.focus();
-              }}
-            >
-              Wyczyść wyszukiwanie i filtry
-            </button>
           </div>
         ) : null}
       </div>

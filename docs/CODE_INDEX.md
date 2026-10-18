@@ -19,13 +19,13 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
 | [backend/core](../backend/core) | 28 | 0 | 19 | 160 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
-| [backend/workplaces](../backend/workplaces) | 23 | 1 | 13 | 111 |
+| [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 43 | 2 | 43 | 220 |
+| [backend/dashboard](../backend/dashboard) | 43 | 2 | 43 | 222 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
 | [backend/documents](../backend/documents) | 37 | 2 | 31 | 199 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 44 | 2 | 39 | 242 |
+| [backend/spaces](../backend/spaces) | 44 | 2 | 39 | 243 |
 
 ## 2. Modele i relacje
 
@@ -1259,6 +1259,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 - [static/img/empty-states/README.md](../static/img/empty-states/README.md)
 - [static/img/empty-states/dashboard-empty.webp](../static/img/empty-states/dashboard-empty.webp)
+- [static/img/empty-states/filters-empty.webp](../static/img/empty-states/filters-empty.webp)
 - [static/img/empty-states/for-you-assigned-empty.webp](../static/img/empty-states/for-you-assigned-empty.webp)
 - [static/img/empty-states/for-you-starred-empty.webp](../static/img/empty-states/for-you-starred-empty.webp)
 - [static/img/empty-states/for-you-tasks-empty.webp](../static/img/empty-states/for-you-tasks-empty.webp)
@@ -1338,6 +1339,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
 - [frontend/app/src/shared/DirectoryColumns.tsx](../frontend/app/src/shared/DirectoryColumns.tsx)
 - [frontend/app/src/shared/Dropdown.tsx](../frontend/app/src/shared/Dropdown.tsx)
+- [frontend/app/src/shared/EmptyState.tsx](../frontend/app/src/shared/EmptyState.tsx)
 - [frontend/app/src/shared/Icon.tsx](../frontend/app/src/shared/Icon.tsx)
 - [frontend/app/src/shared/Members.tsx](../frontend/app/src/shared/Members.tsx)
 - [frontend/app/src/shared/Modal.tsx](../frontend/app/src/shared/Modal.tsx)
@@ -1541,6 +1543,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `DefaultWorkplaceTests`: 6 metod testowych.
 - `ConcurrentDefaultWorkplaceTests`: 1 metod testowych.
 
+### backend/workplaces/test_deletions.py
+
+Źródło: [backend/workplaces/test_deletions.py](../backend/workplaces/test_deletions.py).
+
+- `ConcurrentWorkplaceDeletionTests`: 2 metod testowych.
+
 ### backend/workplaces/test_identifiers.py
 
 Źródło: [backend/workplaces/test_identifiers.py](../backend/workplaces/test_identifiers.py).
@@ -1611,7 +1619,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_notifications.py](../backend/dashboard/test_notifications.py).
 
-- `NotificationCenterTests`: 26 metod testowych.
+- `NotificationCenterTests`: 28 metod testowych.
 
 ### backend/dashboard/test_pulpit_catalog.py
 
@@ -1877,7 +1885,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_task_autosave.py](../backend/spaces/test_task_autosave.py).
 
-- `TaskAutosaveTests`: 14 metod testowych.
+- `TaskAutosaveTests`: 15 metod testowych.
 
 ### backend/spaces/test_task_detail_parity.py
 

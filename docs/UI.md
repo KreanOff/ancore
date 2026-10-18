@@ -76,6 +76,37 @@ backlog, tablica, oś czasu, Zespoły oraz katalog/wyniki Filtrów.
 Podsumowanie, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
 Tagi przestrzeni zachowują osobny mechanizm `directory_pagination_toolbar.html`.
 
+## Wspólny wzorzec pustej strony
+
+Puste strony używają wyglądu pustego pulpitu. Wspólny wariant
+`tasks-empty-state--illustrated` w `components/tasks.css` określa ilustrację
+w polu 440×330px, odstęp 20px przed tekstem, nagłówek 28px/700 (24px do 767px),
+opis 16px z interlinią 1.6 oraz odstępy 16px w bloku tekstu o maksymalnej
+szerokości 640px. Całość jest wyśrodkowana w dostępnej treści, z paddingiem
+24px; obraz maleje do szerokości kontenera, a niskie widoki pozwalają przewijać
+cały komunikat. Typografia pulpitu pochodzi z tego samego wariantu.
+
+`frontend/app/src/shared/EmptyState.tsx` udostępnia nagłówek i opis,
+z dekoracyjnym obrazem `src` lub istniejącą ilustracją wskazaną wariantem
+CSS (`spaces`, `tasks`, `people`, `work`). Tło ilustracji jest przezroczyste,
+a element jest pomijany przez czytnik ekranu; kontener ma `role="status"`.
+Adresy grafik w CSS pozostają względne wobec arkusza zasobów statycznych.
+Szablony Django zachowują ten sam kontrakt klas i grafik.
+
+Wzorzec obejmuje katalogi i zarządzanie Przestrzeniami, Pulpitami i Filtrami,
+pusty pulpit, Zasoby, Tagi przestrzeni, listy i wyszukiwanie zadań, oś czasu,
+Zespoły, Dysk (dyski, foldery, kosz, ulubione), Dokumenty (także szablony),
+katalog Workspace i puste tabele członków/zaproszeń. Puste rekomendowane
+przestrzenie oraz główny pusty wynik zakładki „Dla ciebie” korzystają z niego
+z własną ilustracją. Puste stany nie zawierają
+przycisków ani linków akcji, również w rekomendowanych przestrzeniach,
+kolumnach gadżetów i pustym katalogu gadżetów. Tworzenie, przeglądanie
+i filtrowanie pozostają dostępne w nagłówkach, nawigacji i toolbarach;
+przyciski ponowienia po błędzie zachowują swoje działanie. Małe sekcje
+podsumowań, kolumny tablic, listy powiadomień i pickerów oraz stany wczytywania
+zachowują kompaktowy układ. Puste Dokumenty przewijają również kafelki tworzenia,
+aby opis pozostał dostępny na niskim ekranie.
+
 ## Filtry zadań
 
 Szablony dashboard/filters rozszerzają spaces/base i core/base.
@@ -98,6 +129,15 @@ na checkboxy i przenosi gwiazdki do menu wiersza. Nazwa otwiera modal edycji.
 `tasks.js` obsługuje zaznaczanie bieżącej strony, stan częściowy i osobny
 klucz szerokości `task-filters-management`, wspólny dla zwykłego/scoped URL.
 Toolbar i przycisk tworzenia korzystają z wzorca zarządzania Przestrzeniami.
+
+Pusty katalog i zarządzanie filtrami, również przy braku pasujących wyników,
+używają wspólnego wariantu `tasks-empty-state--illustrated` z dekoracyjną
+ilustracją `static/img/empty-states/filters-empty.webp`: pastelowym lejkiem,
+kolorowymi znacznikami i kartami wyszukiwania. Obraz ma przezroczyste tło,
+pole 440×330px i skaluje się do szerokości kontenera. Cały pusty stan jest
+wyśrodkowany w dostępnej treści. React otrzymuje adres przez Django `static`,
+a szablon zgodności korzysta z tej samej ilustracji. Teksty zależne
+od zakładki lub kryteriów pozostają zachowane; akcje są poza pustym stanem.
 
 Podstawowe pola korzystają z AncoreCustomSelect, tekstowego wyszukiwania
 i istniejących przycisków. Zaawansowany tryb ma pole zapytania i pomoc
@@ -207,11 +247,11 @@ i pokazuje komunikat zależny od filtrów/zakładki.
 Puste katalogi przestrzeni i zarządzania używają wariantu `work-space-empty-state`
 wspólnego `tasks-empty-state`: kolorowej ilustracji 3D
 `static/img/empty-states/spaces-empty.webp`, tekstu `tasks-empty-state__copy`
-oraz dotychczasowych przycisków tworzenia, przeglądania lub czyszczenia filtrów.
+bez przycisków i linków akcji w pustym stanie.
 Ilustracja przedstawia warstwy projektów i kolorowe karty zadań, ma przezroczyste
 tło, maksymalną szerokość 440px i skaluje się do kontenera na telefonie.
 Jest dekoracyjna (`alt=""`, `draggable="false"`), a pusty stan ma `role="status"`.
-Katalogi Przestrzeni i Pulpitów (także zarządzanie) oraz przegląd pustego pulpitu
+Katalogi Przestrzeni, Pulpitów i Filtrów (także zarządzanie) oraz przegląd pustego pulpitu
 współdzielą `tasks-empty-state--illustrated` i `tasks-empty-state__illustration`:
 obraz zajmuje pole 440×330px, z proporcjami 4:3 i `object-fit: contain`.
 Cały pusty stan jest wyśrodkowany poziomo i pionowo w dostępnej treści pod
@@ -837,8 +877,17 @@ i rodzaj 13px/400. Kafelek ma minimum 120px wysokości, padding 16px i odstęp
 Cała powierzchnia linku otwiera przestrzeń; nie ma oznaczenia gwiazdką,
 dolnych skrótów do przypisanych zadań i tablicy/aktywnego sprintu ani licznika.
 Ulubione nadal decydują o kolejności. Siatka ma 4, 2 lub 1 kolumnę zależnie od
-szerokości. Brak skrótów pokazuje instrukcję i link do katalogu Przestrzeni
-w pustym stanie bez obramowania (`for-you-spaces-empty`).
+szerokości. Brak skrótów pokazuje wspólny `EmptyState` bez obramowania
+(`for-you-spaces-empty`): ilustrację 440×330px, nagłówek „Brak rekomendowanych
+przestrzeni” i opis, z typografią i odstępami pustego pulpitu, bez przycisków.
+Gdy rekomendacje i aktywna zakładka są jednocześnie puste, React i szablon
+dodają `for-you-page--empty`. Dwa panele dzielą dostępną wysokość treści
+na równe wiersze; ilustracje maleją do wolnego miejsca (maksymalnie 320px
+szerokości i 200px wysokości, z limitem zależnym od wysokości kontenera).
+Nagłówki mają wtedy 24px (20px na telefonie), opisy 14px, a odstępy są
+mniejsze. Całe komunikaty mieszczą się bez przewijania przy typowych wysokościach
+okna. Widoki z rzeczywistymi rekomendacjami lub wynikami zachowują swój układ
+i przewijanie list; pozostałe puste strony używają standardowego rozmiaru.
 Pięć zakładek jest linkami z `aria-current`; adresy zachowują kategorię,
 Workspace oraz parametry wyszukiwania i przestrzeni z istniejących adresów.
 „Polecane”, „Przypisane do mnie”, „Ulubione” i „Ostatnia praca” pokazują
@@ -857,15 +906,15 @@ podkreślenie przy najechaniu, a aktywna — fioletowe. Wewnętrzny odstęp pask
 wynosi 15px również na telefonie, zgodnie z Przestrzeniami.
 Lista zaczyna się bezpośrednio pod zakładkami, bez paska filtrów/wyszukiwarki
 i paska opisu aktywnej zakładki. Brak wyników dla parametrów w adresie ma osobny
-pusty stan z akcją „Wyczyść filtry”. Linki korzystają ze wspólnej nawigacji
+pusty stan z podpowiedzią o wyczyszczeniu filtrów. Linki poza pustym stanem korzystają ze wspólnej nawigacji
 `AncoreApp`, także przy Wstecz/Dalej i ponownym wejściu.
 Panel „Twoja praca” używa wariantu `for-you-work-panel` bez zewnętrznego
 obramowania; grupy zadań/przestrzeni i poziome separatory zachowują swoje ramki.
 `for-you.js` utrzymuje aktywną zakładkę w widocznej części paska po wejściu,
 częściowej nawigacji i zmianie szerokości. Przewija wyłącznie zakładki, bez
 przesuwania strony lub fokusu; odłącza obserwator rozmiaru przy opuszczeniu widoku.
-Puste stany wyjaśniają źródło danych każdej zakładki. Wariant `for-you-empty-state`
-pokazuje kolorowe ilustracje 3D: `spaces-empty.webp` przy braku rekomendowanych
+Puste stany wyjaśniają źródło danych każdej zakładki. Wspólny komponent `EmptyState`
+pokazuje `spaces-empty.webp` przy braku rekomendowanych
 przestrzeni, a każda zakładka ma własny obrazek: Polecane — lista z zielonym
 znacznikiem (`for-you-tasks-empty.webp`), Przypisane do mnie — karty z symbolem
 osoby (`for-you-assigned-empty.webp`), Ulubione — folder z gwiazdką
@@ -873,10 +922,11 @@ osoby (`for-you-assigned-empty.webp`), Ulubione — folder z gwiazdką
 (`for-you-worked-empty.webp`), Ostatnio oglądane — dokumenty z symbolem oka
 (`for-you-viewed-empty.webp`). `EMPTY_ILLUSTRATIONS` w `backend/dashboard/for_you.py`
 wybiera ilustrację aktywnej zakładki, również przy braku wyników filtrów.
-Obrazki z `static/img/empty-states/` mają przezroczyste tło, maksymalną
-szerokość 240px i skalują się do kontenera. Są dekoracyjne (`alt=""`,
-`draggable="false"`); kontener ma `role="status"`, a tekst i dotychczasowa akcja
-korzystają ze wspólnego `tasks-empty-state__copy`.
+Obrazki z `static/img/empty-states/` mają przezroczyste tło i skalują się do
+kontenera: do 440px zarówno w sekcji rekomendowanych przestrzeni, jak i w głównym
+pustym wyniku zakładki. Oba korzystają ze wspólnego `EmptyState`. Są dekoracyjne (`alt=""`,
+`draggable="false"`); kontener ma `role="status"`, a tekst
+korzysta ze wspólnego `tasks-empty-state__copy`. Puste stany nie pokazują linków akcji.
 Zakładki pozostają w jednym wierszu i przewijają się poziomo,
 gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
 Zadania we wszystkich pięciu zakładkach używają wspólnego `spaces/row.html`,

@@ -19,6 +19,8 @@
 .office-document-sheet .documents-file-icon svg { width: 32px; height: 32px; flex-basis: 32px; }
 .office-document-sheet [data-column="size"] { justify-content: flex-end; padding-right: 0.75rem; font-variant-numeric: tabular-nums; }
 .office-document-empty { padding: 70px 20px; text-align: center; }
+.office-page:has(.tasks-empty-state--illustrated) { overflow-y: auto; }
+.office-page:has(.tasks-empty-state--illustrated) > .documents-main { flex: 1 0 auto; }
 
 .office-quick-create { container: office-quick-create / inline-size; flex: 0 0 auto; min-width: 0; padding: 8px var(--documents-index-padding-x); border-bottom: 1px solid var(--border-color); }
 .office-quick-create-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 184px), 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }

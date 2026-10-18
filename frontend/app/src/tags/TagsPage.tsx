@@ -10,6 +10,7 @@ import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
 import { DirectoryColumnManager, useDirectoryColumns } from '../shared/DirectoryColumns';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import { Modal } from '../shared/Modal';
 import { type PageProps, navigate } from '../shared/page';
 import { Resize } from '../shared/table';
@@ -627,26 +628,20 @@ export default function TagsPage(props: PageProps) {
                   </article>
                 ))}
                 {!data.tags.length ? (
-                  <div
-                    className="tasks-empty-state tasks-empty-state--centered tasks-tag-empty-state"
-                    role="status"
-                  >
-                    <span className="tasks-empty-state__icon">
-                      <Icon name="tag" />
-                    </span>
-                    <div className="tasks-empty-state__copy">
-                      <h2>
-                        {data.query || activeFilters
-                          ? 'Nie znaleziono tagów.'
-                          : 'Nie ma jeszcze tagów.'}
-                      </h2>
-                      <p>
-                        {data.query || activeFilters
-                          ? 'Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.'
-                          : 'Utwórz pierwszy tag, aby łatwiej porządkować zadania.'}
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    className="tasks-tag-empty-state"
+                    illustration="tasks"
+                    title={
+                      data.query || activeFilters
+                        ? 'Nie znaleziono tagów.'
+                        : 'Nie ma jeszcze tagów.'
+                    }
+                    description={
+                      data.query || activeFilters
+                        ? 'Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.'
+                        : 'Utwórz pierwszy tag, aby łatwiej porządkować zadania.'
+                    }
+                  />
                 ) : null}
               </div>
             </section>

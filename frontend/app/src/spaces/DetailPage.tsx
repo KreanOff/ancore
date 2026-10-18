@@ -2,6 +2,7 @@ import { setPageLocation } from '../shared/page';
 import { type DragEvent, useEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import { Pagination } from '../shared/Pagination';
 import { Select } from '../shared/Select';
 import { StatusGroup } from '../shared/StatusGroup';
@@ -443,19 +444,15 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                     </StatusGroup>
                   ))
               ) : (
-                <div className="tasks-empty-state tasks-empty-state--centered" role="status">
-                  <span className="tasks-empty-state__icon">
-                    <Icon name="list-checks" />
-                  </span>
-                  <div className="tasks-empty-state__copy">
-                    <h2>{filtered ? 'Nie znaleziono zadań.' : 'Nie ma jeszcze zadań.'}</h2>
-                    <p>
-                      {filtered
-                        ? 'Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.'
-                        : 'Nowe zadania pojawią się tutaj po ich utworzeniu.'}
-                    </p>
-                  </div>
-                </div>
+                <EmptyState
+                  illustration="tasks"
+                  title={filtered ? 'Nie znaleziono zadań.' : 'Nie ma jeszcze zadań.'}
+                  description={
+                    filtered
+                      ? 'Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.'
+                      : 'Nowe zadania pojawią się tutaj po ich utworzeniu.'
+                  }
+                />
               )}
             </div>
           ) : null}
@@ -645,11 +642,11 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                   </div>
                 ))
               ) : (
-                <div className="work-empty">
-                  <Icon name="calendar-days" />
-                  <h2>Brak zaplanowanych terminów</h2>
-                  <p>Ustaw datę rozpoczęcia lub termin w edycji zadania.</p>
-                </div>
+                <EmptyState
+                  illustration="work"
+                  title="Brak zaplanowanych terminów"
+                  description="Ustaw datę rozpoczęcia lub termin w edycji zadania."
+                />
               )}
             </section>
           ) : null}

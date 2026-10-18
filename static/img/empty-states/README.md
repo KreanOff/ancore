@@ -1,9 +1,42 @@
 # Ilustracje pustych stanów
 
+Pełne puste strony współdzielą obecnie pole ilustracji 440 × 330px i styl
+pustego pulpitu (`tasks-empty-state--illustrated`). Opisane niżej prompty
+zachowują pierwotne założenia generowania. `EmptyState.tsx` ponownie używa
+`spaces-empty.webp` dla katalogów, Dysku i Dokumentów, `for-you-tasks-empty.webp`
+dla list zadań i tagów, `for-you-assigned-empty.webp` dla Zespołów i osób oraz
+`for-you-worked-empty.webp` dla osi czasu. Kompaktowe sekcje zachowują mniejsze obrazy.
+
+## Pusty katalog filtrów
+
+`filters-empty.webp` jest dekoracyjną ilustracją pustego katalogu i zarządzania
+filtrami, także przy braku wyników wyszukiwania. Ma rozmiar 720 × 540 px,
+przezroczystość RGBA i wyświetla się do szerokości 440px we wspólnym wariancie
+`tasks-empty-state--illustrated`. Powstała 18 października 2026 przez wbudowane
+narzędzie imagegen z `spaces-empty.webp` jako referencją stylu. PNG zmniejszono
+i zapisano jako WebP (quality=90, method=6), zachowując kanał alfa.
+
+Prompt użyty do wygenerowania:
+
+```text
+Use case: stylized-concept.
+Asset type: decorative empty-state illustration for the saved-filter directory and filter management page of a Polish productivity app, displayed at 440px wide.
+Input image: spaces-empty.webp is a STYLE REFERENCE only. Create a companion illustration in the same premium soft 3D matte clay style, gently rounded forms, calm cheerful pastel colors and soft studio lighting.
+Primary request: a beautiful multicolored picture for an empty saved-filters page, inviting the user to create their first filter.
+Subject: one friendly lavender and violet filtering funnel hovering above two small warm ivory saved-search cards with rounded corners. A few coral, mint, sky-blue and warm yellow rounded chips float above the funnel; one neatly selected mint chip appears below its opening. The cards have only simple raised pastel bars and dots, no text. A small sky-blue magnifying glass rests beside the cards. Clear recognizable filtering motif with restrained details.
+Composition: one compact balanced centered composition, slight three-quarter perspective, landscape 4:3 proportions, all objects completely visible with generous transparent margins, strong clean silhouettes readable at 440px.
+Materials and lighting: tactile matte clay and soft paper surfaces, rounded beveled edges, subtle ambient contact shadows, refined polished render.
+Color palette: lavender and violet, sky blue, mint green, coral pink and warm yellow, matching the reference illustration.
+Background: genuinely transparent alpha, including surrounding margins.
+Constraints: illustration alone; no words, letters, numbers, logos, people, screenshot, entire website layout, visible checkerboard, opaque backdrop or border.
+```
+
+## Puste pulpity
+
 `dashboard-empty.webp` jest dekoracyjną ilustracją wyświetlaną
 na pulpitach bez gadżetów oraz w pustych stanach katalogu i zarządzania pulpitami.
 Ma rozmiar 1448 × 1086 px i przezroczystość RGBA. Przegląd pulpitu wyświetla ją
-do szerokości 440px, a katalog i zarządzanie do 320px.
+do szerokości 440px, tak samo katalog i zarządzanie.
 Powstała 6 października 2026 przez wbudowane narzędzie imagegen,
 a PNG przekonwertowano na WebP z zachowaniem kanału alfa (quality=90).
 
@@ -48,7 +81,7 @@ Constraints: illustration only; no text, no letters, no numbers, no logos, no pe
 
 `spaces-empty.webp` jest dekoracyjną ilustracją pustego katalogu i zarządzania
 przestrzeniami. Ma rozmiar 720 × 540 px, przezroczystość RGBA i wyświetla się
-maksymalnie w szerokości 320px. Powstała 7 października 2026 przez wbudowane
+maksymalnie w szerokości 440px. Powstała 7 października 2026 przez wbudowane
 narzędzie imagegen z `dashboard-empty.webp` jako referencją stylu. PNG zmniejszono
 i zapisano jako WebP (quality=90, method=6), zachowując kanał alfa.
 
@@ -71,11 +104,11 @@ Constraints: the illustration alone; no text, letters, numbers, logos, people, s
 
 `for-you-tasks-empty.webp` jest dekoracyjną ilustracją pustej zakładki
 „Polecane”, także przy braku wyników filtrowania. Ma rozmiar 720 × 540 px,
-przezroczystość RGBA i wyświetla się maksymalnie w szerokości 240px.
+przezroczystość RGBA i wyświetla się maksymalnie w szerokości 440px.
 Powstała 8 października 2026 przez wbudowane narzędzie imagegen z
 `spaces-empty.webp` jako referencją stylu. PNG zmniejszono i zapisano jako
 WebP (quality=90, method=6), zachowując kanał alfa. Puste rekomendowane
-przestrzenie korzystają z istniejącego `spaces-empty.webp`, również do 240px.
+przestrzenie korzystają z istniejącego `spaces-empty.webp`, również do 440px.
 
 Prompt użyty do wygenerowania:
 
@@ -102,7 +135,7 @@ Pozostałe cztery ilustracje powstały 8 października 2026 przez wbudowane
 narzędzie imagegen, z `for-you-tasks-empty.webp` jako referencją stylu.
 Każdą wygenerowano osobno; PNG zmniejszono do 720 × 540 px i zapisano
 jako WebP (quality=90, method=6) z zachowaniem kanału alfa RGBA.
-Wspólny wariant UI wyświetla je maksymalnie w szerokości 240px.
+Wspólny wariant UI wyświetla je maksymalnie w szerokości 440px.
 
 | Zakładka | Plik | Motyw |
 | --- | --- | --- |

@@ -111,16 +111,16 @@
                                 </article>
                                 {% endwith %}
                                 {% empty %}
-                                <div class="workplaces-empty workplaces-empty--console">
+                                <div class="tasks-empty-state tasks-empty-state--illustrated" role="status"><span class="tasks-empty-state__illustration tasks-empty-state__illustration--spaces" aria-hidden="true"></span><div class="tasks-empty-state__copy">
                                     <h2>Nie masz jeszcze miejsca pracy.</h2>
-                                    <p>Dodaj pierwsze miejsce pracy.</p>
+                                    <p>Dodaj pierwsze miejsce pracy.</p></div>
                                 </div>
                                 {% endfor %}
                             </div>
                         </section>
                     </div>
                 </section>
-                <div class="workplaces-empty workplaces-management__no-results" data-workplaces-no-results hidden><p>Nie znaleziono Workspace.</p><button type="button" class="btn btn-secondary" data-workplaces-clear-search>Wyczyść wyszukiwanie</button></div>
+                <div class="tasks-empty-state tasks-empty-state--illustrated" role="status" data-workplaces-no-results hidden><span class="tasks-empty-state__illustration tasks-empty-state__illustration--spaces" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>Nie znaleziono Workspace.</h2><p>Zmień wyszukiwaną nazwę lub wyczyść wyszukiwanie.</p></div></div>
 
             </div>
         </section>

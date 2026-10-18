@@ -14,9 +14,6 @@
 .pulpit-intro { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
 .pulpits-page .dashboard-main:has(> .pulpit-empty-state) { padding: 0; gap: 0; scrollbar-gutter: auto; }
 .pulpits-page .dashboard-main:has(> .pulpit-empty-state) > .pulpit-intro { padding: 24px var(--dashboard-inline-padding) 0; }
-.pulpit-empty-state .tasks-empty-state__copy { max-width: 640px; gap: 16px; }
-.pulpit-empty-state h2 { font-size: 28px; font-weight: 700 !important; line-height: 1.25; }
-.pulpit-empty-state p { font-size: 16px; line-height: 1.6; }
 .pulpit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; flex-shrink: 0; }
 .pulpit-grid--single { grid-template-columns: minmax(0, 1fr); }
 .pulpit-grid--left { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
@@ -122,7 +119,6 @@
     .pulpit-gadget-preview img { width: 80px; height: 60px; }
     .pulpit-layout-control { width: auto; flex-wrap: wrap; }
     .pulpit-layout-control > .ancore-custom-select { flex: 1; min-width: 180px; }
-    .pulpit-empty-state h2 { font-size: 24px; }
     .pulpit-grid, .pulpit-grid--left, .pulpit-grid--right, .pulpit-grid--three { grid-template-columns: minmax(0, 1fr); }
     .pulpit-column:empty { min-height: 30px; }
     .pulpit-topbar { flex-wrap: wrap; }

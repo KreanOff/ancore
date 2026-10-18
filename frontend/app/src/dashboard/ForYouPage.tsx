@@ -1,3 +1,4 @@
+import { EmptyState } from '../shared/EmptyState';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
@@ -203,7 +204,10 @@ export default function ForYouPage({ initial }: PageProps) {
     return () => observer.disconnect();
   }, [data.tab]);
   return (
-    <div className="dashboard-page dashboard-overview for-you-page" data-react-screen="for-you">
+    <div
+      className={`dashboard-page dashboard-overview for-you-page ${!data.projects.length && !data.groups.length ? 'for-you-page--empty' : ''}`}
+      data-react-screen="for-you"
+    >
       <header className="tasks-topbar tasks-topbar--project-directory">
         <div className="tasks-titlebar-left">
           <h1 className="tasks-topbar-title">Dla ciebie</h1>
@@ -237,23 +241,12 @@ export default function ForYouPage({ initial }: PageProps) {
               ))}
             </div>
           ) : (
-            <div className="dashboard-panel for-you-spaces-empty for-you-empty-state" role="status">
-              <img
-                className="for-you-empty-state__illustration"
-                src={data.spaces_illustration}
-                alt=""
-                width={720}
-                height={540}
-                draggable={false}
-              />
-              <div className="tasks-empty-state__copy">
-                <p>Otwórz przestrzeń lub dodaj ją do ulubionych, aby mieć ją pod ręką.</p>
-                <a className="dashboard-panel-link" href={data.projects_url}>
-                  Przeglądaj przestrzenie
-                  <Icon name="arrow-right" />
-                </a>
-              </div>
-            </div>
+            <EmptyState
+              className="for-you-spaces-empty"
+              src={data.spaces_illustration}
+              title="Brak rekomendowanych przestrzeni"
+              description="Otwórz przestrzeń lub dodaj ją do ulubionych, aby mieć ją pod ręką."
+            />
           )}
         </section>
         <section className="dashboard-panel for-you-work-panel" aria-label="Twoja praca">
@@ -336,31 +329,15 @@ export default function ForYouPage({ initial }: PageProps) {
                 </div>
               ))
             ) : (
-              <div className="dashboard-overview-empty for-you-empty-state" role="status">
-                <img
-                  className="for-you-empty-state__illustration"
-                  src={data.illustration}
-                  alt=""
-                  width={720}
-                  height={540}
-                  draggable={false}
-                />
-                <div className="tasks-empty-state__copy">
-                  <h3>{data.filtered ? 'Brak pasujących wyników' : data.empty[0]}</h3>
-                  <p>
-                    {data.filtered
-                      ? 'Wyczyść filtry, aby wrócić do pełnej listy tej zakładki.'
-                      : data.empty[1]}
-                  </p>
-                  <a
-                    className="dashboard-panel-link"
-                    href={data.filtered ? data.clear_url : data.projects_url}
-                  >
-                    {data.filtered ? 'Wyczyść filtry' : 'Otwórz przestrzenie'}
-                    <Icon name="arrow-right" />
-                  </a>
-                </div>
-              </div>
+              <EmptyState
+                src={data.illustration}
+                title={data.filtered ? 'Brak pasujących wyników' : data.empty[0]}
+                description={
+                  data.filtered
+                    ? 'Wyczyść filtry, aby wrócić do pełnej listy tej zakładki.'
+                    : data.empty[1]
+                }
+              />
             )}
           </div>
           {data.previous || data.next ? (

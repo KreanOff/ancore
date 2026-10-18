@@ -457,20 +457,6 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                         ? 'Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.'
                         : 'Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.'}
                   </p>
-                  {filtered || data.tab === 'favorites' ? (
-                    <a className="tasks-filter-button" href={data.base_url}>
-                      {filtered ? 'Wyczyść filtry' : 'Przeglądaj przestrzenie'}
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      className="tasks-filter-button"
-                      disabled={busy}
-                      onClick={() => void openForm(data.create_url)}
-                    >
-                      Utwórz przestrzeń
-                    </button>
-                  )}
                 </div>
               </div>
             )}

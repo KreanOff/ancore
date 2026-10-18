@@ -8,8 +8,8 @@
         </div>
     </section>
     {% empty %}
-    <div class="tasks-empty-state tasks-empty-state--centered" role="status">
-        <span class="tasks-empty-state__icon" aria-hidden="true"><i data-icon="list-checks" aria-hidden="true"></i></span>
+    <div class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated" role="status">
+        <span class="tasks-empty-state__illustration tasks-empty-state__illustration--tasks" aria-hidden="true"></span>
         <div class="tasks-empty-state__copy"><h2>{% if query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Nie znaleziono zadań.{% else %}Nie ma jeszcze zadań.{% endif %}</h2><p>{% if query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Nowe zadania pojawią się tutaj po ich utworzeniu.{% endif %}</p></div>
     </div>
     {% endfor %}

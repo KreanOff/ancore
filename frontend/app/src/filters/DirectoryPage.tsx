@@ -391,10 +391,18 @@ export default function DirectoryPage(props: PageProps) {
                 </div>
               </section>
             ) : (
-              <div className="tasks-empty-state tasks-empty-state--centered" role="status">
-                <span className="tasks-empty-state__icon">
-                  <Icon name="filter" />
-                </span>
+              <div
+                className="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated"
+                role="status"
+              >
+                <img
+                  className="tasks-empty-state__illustration"
+                  src={data.illustration}
+                  alt=""
+                  width={720}
+                  height={540}
+                  draggable={false}
+                />
                 <div className="tasks-empty-state__copy">
                   <h2>
                     {filtered
@@ -414,29 +422,6 @@ export default function DirectoryPage(props: PageProps) {
                             ? 'Filtry udostępnione przez inne osoby pojawią się tutaj.'
                             : 'Zapisz wyszukiwanie, aby wracać do aktualnych wyników.'}
                   </p>
-                  {data.management ? (
-                    filtered ? (
-                      <a href={data.management_url} className="tasks-filter-button">
-                        Wyczyść filtry
-                      </a>
-                    ) : (
-                      <button
-                        className="tasks-filter-button"
-                        onClick={() => void actions.open(data.create_url)}
-                      >
-                        Utwórz filtr
-                      </button>
-                    )
-                  ) : (
-                    <a className="tasks-filter-button" href={data.search_url}>
-                      Wyszukaj zadania
-                    </a>
-                  )}
-                  {!data.management && data.tab === 'favorites' ? (
-                    <a className="tasks-filter-button" href={`${data.filters_url}?tab=all`}>
-                      Przeglądaj filtry
-                    </a>
-                  ) : null}
                 </div>
               </div>
             )}

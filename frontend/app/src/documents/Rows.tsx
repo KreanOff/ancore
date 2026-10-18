@@ -1,3 +1,4 @@
+import { EmptyState } from '../shared/EmptyState';
 import type { MouseEvent, ReactNode } from 'react';
 import { Icon } from '../shared/Icon';
 import { RowActions } from './Actions';
@@ -95,85 +96,49 @@ export default function Rows({
     <RowActions row={row} data={data} sheet={isSheet} busy={busy} open={open} act={act} />
   );
   const empty = (
-    <div
-      className={`documents-empty ${data.office ? 'office-document-empty' : 'documents-grid-empty'}`}
-    >
-      <div>
-        <Icon
-          name={
-            data.libraries
-              ? 'hard-drive'
-              : data.view === 'trash'
-                ? 'trash-2'
-                : data.query || data.active_filters
-                  ? 'search'
+    <EmptyState
+      illustration="spaces"
+      title={
+        data.query || data.active_filters
+          ? data.libraries
+            ? 'Nie znaleziono dysków'
+            : data.office
+              ? 'Brak pasujących dokumentów'
+              : 'Brak wyników'
+          : data.libraries
+            ? 'Utwórz pierwszy dysk'
+            : data.view === 'trash'
+              ? 'Kosz jest pusty'
+              : data.view === 'starred'
+                ? data.office
+                  ? 'Brak oznaczonych dokumentów'
+                  : 'Brak oznaczonych plików i folderów'
+                : data.view === 'templates'
+                  ? 'Brak szablonów'
                   : data.office
-                    ? 'file-text'
-                    : 'folder-open'
-          }
-        />
-        <h3>
-          {data.query || data.active_filters
-            ? data.libraries
-              ? 'Nie znaleziono dysków'
-              : data.office
-                ? 'Brak pasujących dokumentów'
-                : 'Brak wyników'
-            : data.libraries
-              ? 'Utwórz pierwszy dysk'
-              : data.view === 'trash'
-                ? 'Kosz jest pusty'
-                : data.view === 'starred'
-                  ? data.office
-                    ? 'Brak oznaczonych dokumentów'
-                    : 'Brak oznaczonych plików i folderów'
-                  : data.view === 'templates'
-                    ? 'Brak szablonów'
-                    : data.office
-                      ? 'Twoje dokumenty w jednym miejscu'
-                      : data.folder
-                        ? 'Ten folder jest pusty'
-                        : data.library
-                          ? 'Ten dysk jest pusty'
-                          : 'Brak plików'}
-        </h3>
-        <p>
-          {data.query || data.active_filters
-            ? 'Zmień wyszukiwanie lub wybrane filtry.'
-            : data.libraries
-              ? 'Dysk to osobne miejsce na foldery i pliki, np. dla projektu lub działu.'
-              : data.view === 'trash'
-                ? 'Tutaj znajdziesz usunięte pliki, które możesz przywrócić.'
-                : data.view === 'starred'
-                  ? 'Oznacz plik lub folder gwiazdką, aby mieć go pod ręką.'
-                  : data.view === 'templates'
-                    ? 'W menu dokumentu wybierz „Używaj jako szablonu”. Potem wybierz „Utwórz kopię szablonu”.'
-                    : data.office
-                      ? 'Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.'
-                      : 'Prześlij pliki lub utwórz folder, aby uporządkować pracę.'}
-        </p>
-        {data.query || data.active_filters ? (
-          <a className="btn btn-secondary btn-sm" href={data.clear_url}>
-            Wyczyść wyszukiwanie i filtry
-          </a>
-        ) : data.view === 'trash' ||
-          data.view === 'starred' ||
-          data.view === 'templates' ? null : data.libraries || data.library || data.office ? (
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            disabled={busy}
-            onClick={() =>
-              open(
-                data.libraries ? data.create_url : data.office ? data.create_url : data.upload_url,
-              )
-            }
-          >
-            {data.libraries ? 'Nowy dysk' : data.office ? 'Utwórz dokument' : 'Prześlij pliki'}
-          </button>
-        ) : null}
-      </div>
-    </div>
+                    ? 'Twoje dokumenty w jednym miejscu'
+                    : data.folder
+                      ? 'Ten folder jest pusty'
+                      : data.library
+                        ? 'Ten dysk jest pusty'
+                        : 'Brak plików'
+      }
+      description={
+        data.query || data.active_filters
+          ? 'Zmień wyszukiwanie lub wybrane filtry.'
+          : data.libraries
+            ? 'Dysk to osobne miejsce na foldery i pliki, np. dla projektu lub działu.'
+            : data.view === 'trash'
+              ? 'Tutaj znajdziesz usunięte pliki, które możesz przywrócić.'
+              : data.view === 'starred'
+                ? 'Oznacz plik lub folder gwiazdką, aby mieć go pod ręką.'
+                : data.view === 'templates'
+                  ? 'W menu dokumentu wybierz „Używaj jako szablonu”. Potem wybierz „Utwórz kopię szablonu”.'
+                  : data.office
+                    ? 'Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.'
+                    : 'Prześlij pliki lub utwórz folder, aby uporządkować pracę.'
+      }
+    />
   );
   if (!data.rows.length) return <div className="documents-table-scroll">{empty}</div>;
   if (grid)

@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import type { Person } from './types';
 export default function TeamTable({
   rows,
@@ -33,22 +34,13 @@ export default function TeamTable({
   }
   if (!rows.length)
     return invitations ? (
-      <div className="documents-empty documents-grid-empty" role="status">
-        <div>
-          <Icon name="mail" />
-          <h3>Brak oczekujących zaproszeń.</h3>
-          <p>Nowe osoby możesz dodać przyciskiem „Zaproś osobę”.</p>
-        </div>
-      </div>
+      <EmptyState
+        illustration="people"
+        title="Brak oczekujących zaproszeń."
+        description="Nowe osoby możesz dodać przyciskiem „Zaproś osobę”."
+      />
     ) : (
-      <div className="tasks-empty-state" role="status">
-        <span className="tasks-empty-state__icon">
-          <Icon name="users" />
-        </span>
-        <div className="tasks-empty-state__copy">
-          <h3>Brak członków.</h3>
-        </div>
-      </div>
+      <EmptyState illustration="people" title="Brak członków." />
     );
   return (
     <div

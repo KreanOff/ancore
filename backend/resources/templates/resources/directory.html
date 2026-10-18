@@ -77,10 +77,9 @@
             </section>
         </div>
         {% if not resources %}
-        <section class="tasks-empty-state tasks-empty-state--centered resources-empty" role="status">
-            <div class="tasks-empty-state__icon"><i data-icon="package" aria-hidden="true"></i></div>
+        <section class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated resources-empty" role="status">
+            <span class="tasks-empty-state__illustration tasks-empty-state__illustration--spaces" aria-hidden="true"></span>
             <div class="tasks-empty-state__copy"><h2>{% if has_filters %}Nie znaleziono zasobów.{% else %}Nie ma jeszcze zasobów.{% endif %}</h2><p>{% if has_filters %}Zmień wyszukiwanie lub filtry, aby zobaczyć inne wyniki.{% else %}Dodaj sprzęt, licencje i narzędzia, aby uporządkować zasoby Workspace.{% endif %}</p></div>
-            {% if has_filters %}<a class="btn btn-secondary" href="{{ resources_url }}">Wyczyść filtry</a>{% else %}<a class="btn btn-primary" href="{{ create_url }}" data-resource-open>Dodaj zasób</a>{% endif %}
         </section>
         {% endif %}
     </section>
