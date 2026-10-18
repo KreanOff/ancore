@@ -359,6 +359,10 @@ zachowuje widok i filtry. Wszystkie pięć zakładek używa układu starszego ek
 Zadań i wspólnych tabel, modali oraz strumienia historii. Kategoria i
 przypomnienie są polami `SpaceTask`; planowanie pozostaje w istniejącej edycji
 przestrzeni i jest zachowane przy zapisie szczegółów.
+Pola dodatkowe konfiguracji są dostępne w panelu właściwości zadania.
+Wymagane pole można uzupełnić po błędzie autosave bez opuszczania szczegółów
+i utraty wcześniejszego szkicu. Odpowiedź walidacji może dodać nowe pola
+konfiguracji do już otwartego formularza. Obserwator zachowuje tylko odczyt.
 Szczegóły automatycznie zapisują tytuł i opis po 700 ms przerwy w pisaniu;
 zmiana pola wyboru, daty lub dodanie załącznika uruchamia zapis od razu.
 Żądania do tego samego endpointu `action=save` są wykonywane kolejno, bez

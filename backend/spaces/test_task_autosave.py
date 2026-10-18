@@ -193,6 +193,30 @@ class TaskAutosaveTests(TestCase):
         self.assertIn('due_at', response.json()['errors'])
         self.assertFalse(self.task.activities.filter(action='updated').exists())
 
+    def test_required_custom_field_can_be_completed_with_pending_autosave_fields(self):
+        from urllib.parse import urlencode
+        from workplaces.services import scoped_workplace_app_path
+        self.config.settings['fields'] = [{'key': 'cost', 'label': 'Koszt', 'type': 'number', 'required': True}]
+        self.config.save()
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') + '?' + urlencode({'url': self.task_url()})
+        response = self.client.post(api, {'action': 'save', 'autosave_fields': '["title"]', 'title': 'Szkic tytułu'})
+        self.assertEqual(response.status_code, 400)
+        fields = {field['name']: field for field in response.json()['data']['form']['fields']}
+        self.assertEqual(fields['title']['value'], 'Szkic tytułu')
+        self.assertTrue(fields['custom_cost']['required'])
+        self.assertTrue(fields['custom_cost']['errors'])
+        self.assertFalse(fields['custom_cost']['disabled'])
+        response = self.client.post(api, {'action': 'save', 'autosave_fields': '["title", "custom_cost"]',
+                                          'title': 'Szkic tytułu', 'custom_cost': '0'})
+        self.assertEqual(response.status_code, 200)
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.title, 'Szkic tytułu')
+        self.assertEqual(self.task.work_item.custom_values, {'cost': '0'})
+        self.login(self.observer)
+        payload = self.client.get(api).json()['data']
+        self.assertTrue(next(field for field in payload['form']['fields'] if field['name'] == 'custom_cost')['disabled'])
+        self.assertEqual(self.client.post(api, {'action': 'save', 'autosave_fields': '["custom_cost"]', 'custom_cost': '1'}).status_code, 403)
+
     def test_attachments_return_saved_cards_and_invalid_upload_rolls_back(self):
         with TemporaryDirectory() as root, patch.object(SpaceTaskFile._meta.get_field('file'), 'storage', FileSystemStorage(location=root)):
             response = self.save(['title', 'files'], title='Szkic', files=SimpleUploadedFile('blocked.exe', b'bad'))

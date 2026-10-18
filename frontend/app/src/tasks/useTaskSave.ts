@@ -2,18 +2,29 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { type Page, type PageProps, pageRequest, PageError } from '../shared/page';
 import { errorMessage } from '../shared/api';
 import type { TaskData } from './types';
+import type { FormSchema } from '../forms/FormDialog';
 export function useTaskSave(
   form: RefObject<HTMLFormElement>,
   props: PageProps,
   refresh: (data: TaskData) => void,
+  validate: (schema: FormSchema) => void,
 ) {
   const initial = props.initial.data as TaskData;
   const [pending, setPending] = useState(false),
     [dirty, setDirty] = useState(false),
     [error, setError] = useState(initial.error),
-    [errors, setErrors] = useState<Record<string, string[]>>({}),
+    [errors, setErrors] = useState<Record<string, string[]>>(() =>
+      Object.fromEntries(
+        initial.form.fields
+          .filter((field) => field.errors.length)
+          .map((field) => [field.name, field.errors]),
+      ),
+    ),
     [notice, setNotice] = useState('');
-  const changed = useRef(new Map<string, number>()),
+  const fieldNames = useRef(
+      new Set([...initial.form.fields.map((field) => field.name), 'status', 'files']),
+    ),
+    changed = useRef(new Map<string, number>()),
     version = useRef(0),
     timer = useRef<ReturnType<typeof setTimeout>>(),
     request = useRef<Promise<boolean> | null>(null),
@@ -70,7 +81,9 @@ export function useTaskSave(
         if (life.current.signal.aborted) return false;
         if (exception instanceof PageError) {
           const data = exception.data.data as TaskData | undefined;
-          if (data?.form)
+          if (data?.form) {
+            data.form.fields.forEach((field) => fieldNames.current.add(field.name));
+            validate(data.form);
             setErrors(
               Object.fromEntries(
                 data.form.fields
@@ -78,6 +91,7 @@ export function useTaskSave(
                   .map((field) => [field.name, field.errors]),
               ),
             );
+          }
         }
         setError(errorMessage(exception));
         setNotice('Nie zapisano zmian.');
@@ -104,11 +118,7 @@ export function useTaskSave(
         !input.name
       )
         return;
-      if (
-        !initial.can_edit ||
-        ![...initial.form.fields.map((field) => field.name), 'status', 'files'].includes(input.name)
-      )
-        return;
+      if (!initial.can_edit || !fieldNames.current.has(input.name)) return;
       changed.current.set(input.name, ++version.current);
       setDirty(true);
       setNotice('Oczekiwanie na zapis…');

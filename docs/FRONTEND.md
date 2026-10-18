@@ -170,6 +170,11 @@ kontrolowanymi adresami domenowymi, z dotychczasowym prywatnym storage.
 Automatyczny zapis zadania wysyła `autosave_fields`, łączy je po stronie
 Django z aktualnymi pozostałymi wartościami i szereguje kolejne zapisy.
 Nawigacja aplikacji czeka na zakończenie zapisu; błąd zachowuje wpisane dane.
+Pola dodatkowe zadania są edytowalne w panelu właściwości. Błędy pozostałych
+pól planowania odsłaniają odpowiednią kontrolkę w tym panelu. Jeśli konfiguracja
+doda pole podczas edycji, odpowiedź walidacji uzupełnia schemat bez odtwarzania
+istniejących kontrolek i kasowania szkicu. Uzupełnienie pola ponawia również
+wcześniej odrzucone zmiany.
 Niezmieniane relacje zachowują wartości również po odebraniu dostępu do epika
 lub usunięciu wykonawcy z Workspace, bez dodawania ich do dostępnych wyborów.
 Niewysłany tekst komentarza albo wybrane pliki uruchamiają wspólne ostrzeżenie

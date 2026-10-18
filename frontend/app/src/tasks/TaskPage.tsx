@@ -29,7 +29,10 @@ const SIDE = [
 export default function TaskPage(props: PageProps) {
   const { initial, csrfToken } = props;
   const [data, setData] = useState(initial.data as TaskData),
-    [schema] = useState((initial.data as TaskData).form),
+    [schema, setSchema] = useState(() => ({
+      ...(initial.data as TaskData).form,
+      fields: (initial.data as TaskData).form.fields.map((field) => ({ ...field, errors: [] })),
+    })),
     [tab, setTab] = useState((initial.data as TaskData).tab),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
@@ -42,7 +45,20 @@ export default function TaskPage(props: PageProps) {
     files = useRef<HTMLInputElement>(null),
     life = useRef(new AbortController()),
     actionPending = useRef(false);
-  const auto = useTaskSave(form, props, setData);
+  const auto = useTaskSave(form, props, setData, (validation) => {
+    // New configuration fields may appear while this editor has an unsaved draft.
+    // Keep existing control objects stable so their values and focus survive errors.
+    setSchema((current) => {
+      const names = new Set(current.fields.map((field) => field.name));
+      const added = validation.fields.filter((field) => !names.has(field.name));
+      return added.length
+        ? {
+            ...current,
+            fields: [...current.fields, ...added.map((field) => ({ ...field, errors: [] }))],
+          }
+        : current;
+    });
+  });
   useEffect(() => {
     if (!auto.dirty && !auto.pending) setUploads([]);
   }, [auto.dirty, auto.pending]);
@@ -137,7 +153,12 @@ export default function TaskPage(props: PageProps) {
     });
   }
   const title = schema.fields.find((field) => field.name === 'title')!,
-    description = schema.fields.find((field) => field.name === 'description')!;
+    description = schema.fields.find((field) => field.name === 'description')!,
+    planningFields = schema.fields.filter(
+      (field) => !['title', 'description', ...SIDE].includes(field.name),
+    );
+  const visiblePlanningField = (value: Field) =>
+    value.name.startsWith('custom_') || !!auto.errors[value.name]?.length;
   function field(name: string) {
     const value = schema.fields.find((field) => field.name === name);
     if (!value) return null;
@@ -219,13 +240,6 @@ export default function TaskPage(props: PageProps) {
             void auto.save();
           }}
         >
-          {schema.fields
-            .filter((field) => !['title', 'description', ...SIDE].includes(field.name))
-            .map((value) => (
-              <div hidden key={value.name}>
-                <FieldControl field={{ ...value, hidden: true }} />
-              </div>
-            ))}
           <div className="tasks-issue-main">
             <main className="tasks-issue-primary">
               <div className="tasks-issue-tabbar">
@@ -900,6 +914,17 @@ export default function TaskPage(props: PageProps) {
                     )}
                   </strong>
                 </div>
+              </section>
+              <section
+                className="tasks-issue-side-section"
+                aria-label="Pola dodatkowe i planowanie"
+                hidden={!planningFields.some(visiblePlanningField)}
+              >
+                {planningFields.map((value) => (
+                  <div hidden={!visiblePlanningField(value)} key={value.name}>
+                    {field(value.name)}
+                  </div>
+                ))}
               </section>
               <section className="tasks-issue-side-section">
                 <div className="tasks-issue-field">

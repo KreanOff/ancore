@@ -141,6 +141,9 @@ tytuł. Adres i nawigacja zachowują przestrzeń, a powrót `view`
 i filtry. Panel po prawej zawiera widoczność, status, priorytet, tagi,
 typ zgłoszenia, kategorię zadania, wykonawcę, trwały klucz z kopiowaniem,
 autora oraz daty utworzenia, zamknięcia, wykonania i przypomnienia.
+Pola dodatkowe konfiguracji są widoczne w osobnej sekcji tego samego panelu,
+z istniejącymi klasami `tasks-issue-side-section` i `tasks-issue-field`.
+Błąd ukrytego pola planowania odsłania jego kontrolkę i komunikat w tej sekcji.
 Widoczność jest polem tego samego formularza; właściciel prywatnego zadania
 zarządza jego widocznością. Planowanie jest dostępne przez dotychczasową
 edycję w przestrzeni; jego wartości są zachowane przy zapisie szczegółów.
