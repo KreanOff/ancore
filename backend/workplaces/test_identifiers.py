@@ -1,12 +1,10 @@
-from importlib import import_module
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.backends.db import SessionStore
-from django.db import IntegrityError, connection, transaction
-from django.db.migrations.executor import MigrationExecutor
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse
-from django.test import RequestFactory, TestCase, TransactionTestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from .forms import WorkplaceForm
@@ -90,7 +88,7 @@ class WorkspaceIdentifierTests(TestCase):
                     self.assertEqual(self.client.session['active_workplace_id'], self.workspace.pk)
 
     def test_old_post_keeps_body_and_workspace_context(self):
-        request = RequestFactory().post('/workplaces/stary-workspace/tasks/', {'title': 'Zachowany POST'})
+        request = RequestFactory().post('/workplaces/stary-workspace/spaces/', {'title': 'Zachowany POST'})
         request.user, request.session = self.member, SessionStore()
         received = []
 
@@ -111,50 +109,9 @@ class WorkspaceIdentifierTests(TestCase):
     def test_alias_and_random_code_do_not_bypass_membership(self):
         self.client.force_login(self.other)
         for identifier in [self.workspace.slug, self.workspace.legacy_slug]:
-            response = self.client.get(f'/workplaces/{identifier}/tasks/')
+            response = self.client.get(f'/workplaces/{identifier}/spaces/')
             self.assertRedirects(response, reverse('workplaces:workplaces'), fetch_redirect_response=False)
             self.assertEqual(self.client.get(f'/workplaces/{identifier}/').status_code, 404)
         WorkplaceMembership.objects.filter(workplace=self.workspace, user=self.member).update(is_active=False)
         self.client.force_login(self.member)
-        self.assertRedirects(self.client.get('/workplaces/stary-workspace/tasks/'), reverse('workplaces:workplaces'), fetch_redirect_response=False)
-
-
-class WorkspaceIdentifierMigrationTests(TransactionTestCase):
-    def test_existing_data_and_old_links_are_preserved(self):
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        previous = [node for node in latest if node[0] != 'workplaces'] + [('workplaces', '0009_workplace_avatar')]
-        executor.migrate(previous)
-        try:
-            # Other apps' leaf nodes can depend on 0010. The rollback also
-            # unapplies those dependants; build fixtures from the actual schema.
-            loader = MigrationExecutor(connection).loader
-            state = loader.project_state(list(loader.applied_migrations)).apps
-            User = state.get_model('accounts', 'User')
-            OldWorkplace = state.get_model('workplaces', 'Workplace')
-            owner = User.objects.create(username='old-id-owner', email='old-id-owner@example.test')
-            member = User.objects.create(username='old-id-member', email='old-id-member@example.test')
-            reserved = 'w_' + 'a' * 26
-            first = OldWorkplace.objects.create(owner=owner, name='Studio', code='STUDIO', slug=reserved, description='Zachowany opis', avatar='book')
-            second = OldWorkplace.objects.create(owner=member, name='Studio', code='STUDIO', slug='studio-member')
-            membership = state.get_model('workplaces', 'WorkplaceMembership').objects.create(workplace=first, user=member, role='admin')
-            task = state.get_model('tasks', 'Task').objects.create(user=owner, workplace=first, title='Zachowane zadanie', task_id=1)
-            # First candidate collides with an old URL; second Workspace then
-            # collides with the identifier already assigned to the first.
-            migration = import_module('workplaces.migrations.0010_random_workspace_identifiers')
-            with patch.object(migration.secrets, 'choice', side_effect=list('a' * 26 + 'b' * 26 + 'b' * 26 + 'c' * 26)):
-                MigrationExecutor(connection).migrate(latest)
-            first = Workplace.objects.get(pk=first.pk)
-            second = Workplace.objects.get(pk=second.pk)
-            self.assertEqual(first.code, 'w_' + 'b' * 26)
-            self.assertEqual(second.code, 'w_' + 'c' * 26)
-            self.assertEqual(first.slug, first.code)
-            self.assertEqual(first.legacy_slug, reserved)
-            self.assertEqual(second.legacy_slug, 'studio-member')
-            self.assertEqual((first.name, first.description, first.avatar, first.owner_id), ('Studio', 'Zachowany opis', 'book', owner.pk))
-            self.assertTrue(WorkplaceMembership.objects.filter(pk=membership.pk, workplace=first, user_id=member.pk, role='admin', is_active=True).exists())
-            from tasks.models import Task
-            self.assertEqual(Task.objects.get(pk=task.pk).workplace_id, first.pk)
-            create_workplace_for_user(get_user_model().objects.get(pk=owner.pk), 'Studio')
-        finally:
-            MigrationExecutor(connection).migrate(latest)
+        self.assertRedirects(self.client.get('/workplaces/stary-workspace/spaces/'), reverse('workplaces:workplaces'), fetch_redirect_response=False)

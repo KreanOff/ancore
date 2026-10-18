@@ -751,22 +751,6 @@ class WorkplaceSelectionTests(TestCase):
         self.assertNotContains(response, 'Projekt w pierwszym')
         self.assertEqual(self.client.session['active_workplace_id'], self.second_workplace.pk)
 
-    def test_scoped_tasks_compatibility_url_redirects_to_current_spaces(self):
-        self.client.force_login(self.user)
-        space = make_space(user=self.user, workplace=self.second_workplace, name='Przestrzeń w drugim')
-        response = self.client.get(scoped_workplace_app_path(self.second_workplace, 'tasks'), {'tab': 'public'}, follow=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.wsgi_request.path, scoped_workplace_app_path(self.second_workplace, 'spaces'))
-        self.assertContains(response, f'/space/{space.slug}/')
-        self.assertNotContains(response, '/workplaces/-/tasks/')
-
-    def test_legacy_tasks_url_redirects_after_workplace_flow(self):
-        self.client.force_login(self.user)
-        self._activate(self.second_workplace)
-        self.client.get(reverse('workplaces:workplaces'))
-        response = self.client.get(reverse('tasks:tasks'), follow=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.wsgi_request.path, scoped_workplace_app_path(self.second_workplace, 'spaces'))
 
     def test_owner_can_rename_workplace_from_settings(self):
         self.client.force_login(self.user)

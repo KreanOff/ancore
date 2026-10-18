@@ -21,8 +21,7 @@ class SpaceConfiguration(models.Model):
 
 
 class Space(models.Model):
-    """Independent workspace space; project is only a historical import link."""
-    project = models.OneToOneField('tasks.TaskProject', on_delete=models.SET_NULL, related_name='space', null=True, blank=True, editable=False)
+    """Independent workspace space."""
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_spaces')
@@ -164,8 +163,6 @@ class SpaceTaskFile(AttachmentPresentation, models.Model):
     file = models.FileField(upload_to='space_task_files/', storage=comment_image_storage)
     filename = models.CharField(max_length=255)
     file_size = models.PositiveIntegerField(default=0)
-    # Imports keep the original storage reference; new files use private storage.
-    legacy_storage = models.BooleanField(default=False, editable=False)
 
 
     def get_url(self):
@@ -254,7 +251,6 @@ class Sprint(models.Model):
 class WorkItem(models.Model):
     """Planning and stable space key for an independent SpaceTask."""
     task = models.OneToOneField(SpaceTask, on_delete=models.CASCADE, related_name='work_item', null=True, blank=True)
-    legacy_task = models.OneToOneField('tasks.Task', on_delete=models.SET_NULL, related_name='work_item', null=True, blank=True, editable=False)
     space = models.ForeignKey(Space, on_delete=models.CASCADE, null=True, blank=True, related_name='items')
     key = models.CharField(max_length=32)
     number = models.PositiveIntegerField(default=0)
@@ -290,13 +286,3 @@ class WorkItem(models.Model):
     class Meta:
         ordering = ['rank', 'pk']
         constraints = [models.UniqueConstraint(fields=['space', 'number'], name='space_item_number_unique')]
-
-
-class LegacyKanbanLink(models.Model):
-    kind = models.CharField(max_length=20)
-    source_id = models.PositiveBigIntegerField()
-    target_id = models.PositiveBigIntegerField()
-    space = models.ForeignKey(Space, on_delete=models.SET_NULL, null=True)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['kind', 'source_id'], name='space_legacy_kanban_unique')]

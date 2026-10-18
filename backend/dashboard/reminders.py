@@ -2,13 +2,6 @@
 from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
-from .models import TaskReminder
-
-
-def reminders_for_user(user):
-    """Historical deliveries are retained but never delivered or shown."""
-    return TaskReminder.objects.none()
-
 
 def space_reminders_for_user(user):
     from spaces.access import visible_to as space_visible_to

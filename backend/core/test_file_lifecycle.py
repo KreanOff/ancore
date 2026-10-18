@@ -10,10 +10,8 @@ from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import clear_url_caches
 
 from documents.models import Document, DocumentLibrary, Folder
-from kanban.models import Kanban, KanbanAttachment
-from spaces.models import SpaceTask, SpaceTaskFile
-from spaces.testing import make_space
-from tasks.models import Task, TaskAttachment
+from spaces.models import SpaceTaskFile
+from spaces.testing import make_task
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -28,24 +26,21 @@ class FileLifecycleTests(TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.storage = FileSystemStorage(directory.name)
-        for model in (TaskAttachment, KanbanAttachment, Document):
+        for model in (SpaceTaskFile, Document):
             field = model._meta.get_field('file')
             self.addCleanup(setattr, field, 'storage', field.storage)
             field.storage = self.storage
 
     def files(self):
-        attachments = []
-        for model, attachment in ((Task, TaskAttachment), (Kanban, KanbanAttachment)):
-            task = model.objects.create(user=self.owner, workplace=self.workspace, title='Test file')
-            item = attachment(task=task)
-            item.file.save('attachment.txt', ContentFile(b'Private attachment'))
-            attachments.append(item)
+        task = make_task(user=self.owner, workplace=self.workspace, title='Test file')
+        attachment = SpaceTaskFile(task=task, filename='attachment.txt')
+        attachment.file.save('attachment.txt', ContentFile(b'Private attachment'))
         library = DocumentLibrary.objects.create(owner=self.owner, workplace=self.workspace, name='Test drive')
         folder = Folder.objects.create(owner=self.owner, workplace=self.workspace, library=library, name='Folder')
         item = Document(owner=self.owner, workplace=self.workspace, library=library, folder=folder,
                         title='Test file', filename='document.txt')
         item.file.save('document.txt', ContentFile(b'Private document'))
-        return [*attachments, item]
+        return [attachment, item]
 
     def test_deletion_removes_files_only_after_commit(self):
         for item in self.files():
@@ -87,28 +82,27 @@ class FileLifecycleTests(TestCase):
             self.assertTrue(self.storage.exists(item.file.name))
 
     def test_attachment_download_still_requires_owner_and_workspace(self):
-        items = self.files()[:2]
+        item = self.files()[0]
         self.client.force_login(self.owner)
         other_workspace = create_workplace_for_user(self.owner, 'Other files')
-        for app, item in zip(('tasks', 'kanban'), items):
-            suffix = f'attachments/{item.pk}/download/'
-            response = self.client.get(scoped_workplace_app_path(self.workspace, app, suffix))
-            self.assertEqual(response.status_code, 404)
-            if app == 'kanban':
-                continue
-            space = make_space(user=self.owner, workplace=self.workspace, name='Imported files')
-            task = SpaceTask.objects.create(space=space, created_by=self.owner, title='Imported task')
-            work_item = task.work_item
-            work_item.legacy_task = item.task
-            work_item.save()
-            SpaceTaskFile.objects.create(task=task, file=item.file.name, filename=item.filename, legacy_storage=True)
-            with override_settings(MEDIA_ROOT=self.storage.location):
-                response = self.client.get(scoped_workplace_app_path(self.workspace, app, suffix), follow=True)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response['Cache-Control'], 'private, no-store')
-            self.assertEqual(b''.join(response.streaming_content), b'Private attachment')
-            self.assertEqual(self.client.get(scoped_workplace_app_path(other_workspace, app, suffix)).status_code, 404)
-            self.assertEqual(Client().get(scoped_workplace_app_path(self.workspace, app, suffix)).status_code, 302)
+        suffix = f'{item.task.space.slug}/tasks/{item.task.work_item.key}/files/{item.pk}/'
+        url = scoped_workplace_app_path(self.workspace, 'space', suffix)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Cache-Control'], 'private, no-store')
+        self.assertEqual(b''.join(response.streaming_content), b'Private attachment')
+        self.assertEqual(self.client.get(scoped_workplace_app_path(other_workspace, 'space', suffix)).status_code, 404)
+        self.assertEqual(Client().get(url).status_code, 302)
+
+    def test_shared_file_is_removed_after_its_final_reference(self):
+        first = self.files()[0]
+        second = SpaceTaskFile.objects.create(task=first.task, file=first.file.name, filename=first.filename)
+        with self.captureOnCommitCallbacks(execute=True):
+            first.delete()
+        self.assertTrue(self.storage.exists(second.file.name))
+        with self.captureOnCommitCallbacks(execute=True):
+            second.delete()
+        self.assertFalse(self.storage.exists(second.file.name))
 
 
 class PublicMediaTests(SimpleTestCase):

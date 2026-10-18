@@ -1,22 +1,54 @@
 import json
 from concurrent.futures import ThreadPoolExecutor
-from threading import Event
-from unittest.mock import patch
+from threading import Barrier
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, close_old_connections, transaction
-from django.db.models.query import QuerySet
 from django.test import TestCase, TransactionTestCase
 
 from dashboard.views import _dashboard_notifications
-from kanban.models import Kanban, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
-from tasks.models import Task, TaskProject, TaskSection
 from workplaces.models import create_workplace_for_user
-from workplaces.services import backfill_legacy_records_for_workplace, scoped_workplace_app_path
+from workplaces.services import scoped_workplace_app_path
 
 
-MODULES = [('tasks', Task), ('kanban', Kanban)]
+class ConcurrentSpaceTaskNumberTests(TransactionTestCase):
+    def test_simultaneous_creation_allocates_distinct_stable_keys(self):
+        from spaces.models import SpaceTask
+        from spaces.testing import make_space
+
+        owner = get_user_model().objects.create_user(username='number-owner', email='numbers@example.test')
+        workplace = create_workplace_for_user(owner, 'Numeracja')
+        space = make_space(user=owner, workplace=workplace, name='Praca', key='KEY')
+        barrier = Barrier(2)
+
+        def create(index):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=10)
+                task = SpaceTask.objects.create(space_id=space.pk, created_by_id=owner.pk, title=f'Zadanie {index}')
+                return task.work_item.key
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            keys = list(pool.map(create, (1, 2)))
+        self.assertEqual(set(keys), {'KEY-1', 'KEY-2'})
+        space.refresh_from_db()
+        self.assertEqual(space.next_number, 3)
+
+    def test_database_rejects_duplicate_numbers_within_a_space(self):
+        from spaces.models import WorkItem
+        from spaces.testing import make_task
+
+        owner = get_user_model().objects.create_user(username='number-constraint', email='constraint@example.test')
+        workplace = create_workplace_for_user(owner, 'Ograniczenia')
+        first = make_task(user=owner, workplace=workplace, title='Pierwsze')
+        second = make_task(user=owner, workplace=workplace, space=first.space, title='Drugie')
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            WorkItem.objects.filter(task=second).update(number=first.work_item.number)
+        elsewhere = make_task(user=owner, workplace=workplace, title='Inna przestrzeń')
+        self.assertEqual(elsewhere.work_item.number, first.work_item.number)
 
 
 class TaskIdentityTests(TestCase):
@@ -48,76 +80,6 @@ class TaskIdentityTests(TestCase):
         self.client.get(scoped_workplace_app_path(self.second, 'calendar'))
         self.assertEqual(self.client.post(urls['delete'].replace('__ID__', str(event.pk))).status_code, 200)
         self.assertFalse(CalendarEvent.objects.exists())
-
-    def test_legacy_backfill_compacts_numbers_without_collisions(self):
-        for app, model in MODULES:
-            model.objects.create(user=self.user, workplace=self.first, title='Existing')
-            model.objects.create(user=self.user, title='Legacy')
-            backfill_legacy_records_for_workplace(self.user, self.first)
-            self.assertEqual(list(model.objects.filter(workplace=self.first).order_by('task_id').values_list('task_id', flat=True)), [1, 2])
-
-    def test_saving_stale_instance_does_not_restore_old_number(self):
-        for app, model in MODULES:
-            a, b = [model.objects.create(user=self.user, workplace=self.first, title=title) for title in 'AB']
-            a.delete()
-            b.title = 'Updated'
-            b.save()
-            b.refresh_from_db()
-            self.assertEqual(b.task_id, 1)
-
-
-class ConcurrentTaskNumberTests(TransactionTestCase):
-    def test_simultaneous_creates_in_the_same_section_receive_distinct_numbers(self):
-        user = get_user_model().objects.create_user(username='race-owner', email='race@example.test')
-        workplace = create_workplace_for_user(user, 'Race')
-        for model, project_model, section_model in [(Task, TaskProject, TaskSection), (Kanban, KanbanProject, KanbanSection)]:
-            project = project_model.objects.create(user=user, workplace=workplace, name=model.__name__)
-            section = section_model.objects.create(project=project, title='Section')
-            first_read, release, second_started, second_finished = Event(), Event(), Event(), Event()
-            original = QuerySet.aggregate
-
-            def paused_first_read(queryset, *args, **kwargs):
-                result = original(queryset, *args, **kwargs)
-                if queryset.model is model and 'task_id__max' in result and not first_read.is_set():
-                    first_read.set()
-                    if not release.wait(10):
-                        raise TimeoutError('Concurrent creation did not finish')
-                return result
-
-            def create(index):
-                close_old_connections()
-                if index == 2:
-                    second_started.set()
-                try:
-                    return model.objects.create(user_id=user.pk, section_id=section.pk, title=f'Item {index}').task_id
-                finally:
-                    if index == 2:
-                        second_finished.set()
-                    close_old_connections()
-
-            with patch.object(QuerySet, 'aggregate', paused_first_read), ThreadPoolExecutor(max_workers=2) as executor:
-                first = executor.submit(create, 1)
-                try:
-                    self.assertTrue(first_read.wait(10))
-                    second = executor.submit(create, 2)
-                    self.assertTrue(second_started.wait(10))
-                    blocked = not second_finished.wait(0.5)
-                finally:
-                    release.set()
-                numbers = [first.result(timeout=10), second.result(timeout=10)]
-            self.assertTrue(blocked)
-            self.assertEqual(numbers, [1, 2])
-
-    def test_database_rejects_duplicate_numbers_and_allows_other_scopes(self):
-        user = get_user_model().objects.create_user(username='constraint-owner', email='constraint@example.test')
-        first = create_workplace_for_user(user, 'First')
-        second = create_workplace_for_user(user, 'Second')
-        for app, model in MODULES:
-            a, b = [model.objects.create(user=user, workplace=first, title=title) for title in 'AB']
-            with self.assertRaises(IntegrityError), transaction.atomic():
-                model.objects.filter(pk=b.pk).update(task_id=a.task_id)
-            other = model.objects.create(user=user, workplace=second, title='Other workspace')
-            self.assertEqual(other.task_id, 1)
 
 
 class SpaceTaskIdentityTests(TestCase):

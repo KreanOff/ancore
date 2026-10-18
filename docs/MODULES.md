@@ -13,7 +13,7 @@ zadania Przestrzeni. [Przepływ, składnia i źródła](FILTERS.md).
 Przestrzenie mają własne modele `Space`, `SpaceTask`, członkostwa, historię,
 pliki i dziennik pracy. Szczegóły zadań są pod `/space/<slug>/tasks/<klucz>/`,
 bez przejścia do starszych projektów, grup lub zadań. Nowe rekordy nie tworzą
-rekordów w starszym module; import i zgodność starych linków są jednokierunkowe.
+rekordów w innym module. Schemat dawnych systemów został usunięty.
 Szczegóły automatycznie zapisują pola i załączniki bez przeładowania;
 błąd zachowuje szkic i udostępnia ponowienie. Komentarze są wysyłane osobno.
 [Zasady zapisu](SPACES.md#pozostałe-funkcje).
@@ -123,54 +123,17 @@ tagów i wyszukiwania. Samo przypisanie wykonawcy nie nadaje dostępu; wymagane 
 
 ## 3. Projekty, grupy i zadania — Tasks
 
-Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony
-projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
-w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
-pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
-
-`backend/tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
-odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
-wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
-a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
-Workspace i bieżący dostęp Przestrzeni. Obiekt bez mapowania, usunięty albo
-niedostępny zwraca 404. POST pod zachowany adres zwraca 409; usunięte endpointy
-szablonów, statusów, usuwania, zespołów, ulubionych i obserwowania zwracają 404.
-
-`tasks.access` zwraca pusty wynik dla historycznych modeli pracy. Menedżery
-modeli nadal widzą zapisane dane dla migracji i utrzymania. `TaskTag` i
-`TaskTagNote`, wspólne szablony oraz `static/js/tasks.js` pozostają używane
-przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
-Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
-historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
-powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
-`tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
-zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
-lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.
-
-Źródła: [modele historyczne](../backend/tasks/models.py), [routing zgodności](../backend/tasks/urls.py),
-[przekierowania](../backend/spaces/middleware.py), [testy wycofania](../backend/tasks/test_retirement.py).
+Dawne projekty, grupy, zadania i szablony usunięto wraz z modelami,
+relacjami i migracjami. Pakiet `tasks` obsługuje wyłącznie tagi Przestrzeni
+oraz wspólne szablony. `/tasks/` i scoped odpowiednik zwracają 404.
+Bieżących zadań szuka się przez „Filtry → Wyszukaj zadania”.
+[Nowa baza](DATABASE.md).
 
 ## 4. Wycofany moduł Tablice Kanban
 
-Stary system `kanban` nie udostępnia już katalogów, tablic, kart, formularzy,
-operacji zespołu ani ekranów Django admin. Menu „Starsze widoki” nie zawiera
-Kanbana. Wyszukiwarka, Dashboard, „Dla ciebie”, powiadomienia i kalendarz
-pomijają wszystkie historyczne rekordy, również niezaimportowane.
-
-Modele i migracje pozostają dla historycznych danych, mapowań importu,
-wspólnych tagów i referencji plików. Wycofanie nie kasuje rekordów ani plików
-i nie wymaga nowej migracji. Archiwalne widoki i szablony nie są routowane.
-
-Zwykły i scoped katalog `/kanban/` przekierowują do Przestrzeni, także bez
-mapowań importu. Stare szczegóły, grupy i pliki przekierowują wyłącznie do
-zaimportowanych odpowiedników, po sprawdzeniu bieżącego Workspace i uprawnień
-Zadań; brak mapowania/dostępu daje 404. POST pod zachowany adres zgodności
-zwraca 409, a usunięte endpointy operacji 404. Zapisane skróty `kanban-spaces`
-i `kanban-boards` wskazują Przestrzenie. Obecna tablica Kanban w Przestrzeniach
-nadal działa na `tasks.Task`. [Migracja i zgodność](SPACES.md#historyczny-import-kanbana-3102026).
-
-Źródła: [adresy zgodności](../backend/kanban/urls.py), [przekierowania](../backend/spaces/middleware.py),
-[modele historyczne](../backend/kanban/models.py).
+Pakiet `backend/kanban`, wszystkie jego modele, migracje i trasy usunięto.
+Tablice Kanban i Scrum są częścią Przestrzeni i używają `SpaceTask`/`WorkItem`.
+Dawne `/kanban/`, także scoped, zwraca 404. [Przestrzenie](SPACES.md).
 
 ## 5. Tagi przestrzeni
 
@@ -189,38 +152,20 @@ w adminie nie udostępnia dawnych tagów. Rekordy bez przestrzeni i ich notatki
 pozostają wyłącznie historyczne; nie można ich wybierać także w zadaniach
 bez przestrzeni ani automatycznie przypisywać do Workspace przy wejściu.
 Dostęp i edycja dziedziczą uprawnienia projektu przestrzeni. Globalne wyszukiwanie
-respektuje prywatność i otwiera właściwą zakładkę przestrzeni. Kanban zachowuje
-historyczne przypisania tego samego modelu. Dysk i Dokumenty nie obsługują tagów;
+respektuje prywatność i otwiera właściwą zakładkę przestrzeni. Dysk i Dokumenty nie obsługują tagów;
 ich dawne relacje pozostają wyłącznie jako dane historyczne.
 
 `scope` jest zapisaną klasyfikacją; nie jest samoistnym systemem uprawnień.
 `automation_rules` jest tekstem. Nie znaleziono silnika wykonującego te reguły.
-Przy zmianie/usunięciu tagu sprawdź Zadania, Kanban, wyszukiwanie i historyczne
+Przy zmianie/usunięciu tagu sprawdź zadania Przestrzeni, wyszukiwanie i historyczne
 powiązania w Dysku oraz Dokumentach.
 
 ## 6. Wycofane katalogi Kontaktów, Firm, Użytkowników i Gości
 
-Od 4.10.2026 cztery katalogi są usunięte z dostępnych funkcji aplikacji.
-Nie występują w menu, ulubionych ani globalnym wyszukiwaniu. Dawne adresy
-`/contacts/...` i `/workplaces/<slug>/contacts/...`, w tym tworzenie, edycja,
-usuwanie i wyszukiwanie kont Ancore, zwracają 404. Modele nie są udostępniane
-w panelu administracyjnym Django.
-
-[Modele](../backend/legacy/contacts/models.py) i migracje pozostają dla zgodności danych:
-`Company` zachowuje powiązania z projektami Tasks/Kanban, a `Contact`,
-`UserContact` i `ContactActivity` historyczne wpisy i powiązania.
-Relacje firm pozostają wyłącznie w historycznych projektach Tasks/Kanbana.
-Nie wykonano migracji kasującej dane ani usuwania kont użytkowników.
-Logowanie, profil, członkostwa i zaproszenia Workspace oraz zespoły działają
-przez Accounts/Workplaces/Spaces niezależnie od dawnych katalogów.
-
-Historyczne widoki, formularze, szablony, tag awatara firmy i pusty routing
-Kontaktów usunięto. Pakiet `backend/contacts` nie istnieje; minimalna zgodność
-schematu jest wydzielona do `backend/legacy/contacts` z zachowaną etykietą Django.
-Dawne rekordy nie są przypisywane przy przełączeniu Workspace, a zdjęcia firm
-nie mają publicznej trasy. Wspólne style profilu, selectów i kadrowania awatarów
-pozostają w `shared-controls.css`; style dawnych katalogów usunięto.
-`SharedItem` i `SharedItemLink` nadal pozostają wyłączone.
+Pakiety Kontaktów i `legacy` usunięto całkowicie, łącznie z ich modelami,
+relacjami firm, członkostwami i dawnym udostępnianiem. Adresy `/contacts/`
+i scoped odpowiedniki zwracają 404. Konta, profile i członkostwa są obsługiwane
+przez Accounts, Workplaces i Spaces. [Nowa baza](DATABASE.md).
 
 ## 7. Kalendarz — Planner
 

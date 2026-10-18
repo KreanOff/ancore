@@ -9,20 +9,17 @@ filtra nie zmienia dostępu do zadań. Zapisy używają blokady wiersza i rewizj
 a currentUser() jest ustalany dla osoby otwierającej wynik.
 [Szczegóły](FILTERS.md).
 
-Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
-szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
-aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `SpaceTask`.
-[Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
+Dawne systemy pracy usunięto ze schematu. [Czysta baza i migracje](DATABASE.md).
 
 ## Wspólne zadania przestrzeni
 
 Listy, tablice, backlog i szczegóły korzystają z `spaces.SpaceTask`
 i metadanych `WorkItem`. Numer klucza przestrzeni jest trwały; nie używa
-renumerowanego `tasks.Task.task_id`. Dostęp wyznaczają `SpaceMembership`,
+dawnego numeru `task_id`. Dostęp wyznaczają `SpaceMembership`,
 `SpaceTaskMembership` i `spaces.access`, w aktywnym Workspace i całym drzewie
 rodziców. Zapisy statusu blokują Workspace, przestrzeń, zadanie i WorkItem;
-zachowują zakończenie i autora historii. Cykl statusu starszych Tasks jest wyłącznie historyczny; endpointy zapisu są wycofane.
-Stare pliki współdzielone po imporcie są usuwane dopiero po ostatnim odwołaniu
+zachowują zakończenie i autora historii.
+Prywatne pliki zadań są usuwane dopiero po ostatnim odwołaniu
 i zatwierdzeniu transakcji. [Modele, adresy, migracja i granice](SPACES.md).
 
 Automatyczny zapis szczegółów wykonuje kolejno żądania AJAX `action=save`.
@@ -126,8 +123,7 @@ scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
 2. Wyszukuje Workspace w zbiorze właściciela i członkostw bieżącego użytkownika.
 3. Ustawia sesję oraz `request.workplace`, albo wraca do wyboru Workspace.
 4. Dla zwykłych adresów korzysta z sesji; jeśli potrzeba, wybiera/tworzy domyślny.
-5. Wybrane modele ze starym `workplace=NULL` mogą zostać przypisane do aktywnego
-   Workspace przez `backfill_legacy_records_for_workplace()`.
+5. Zmiana Workspace nie przypisuje ani nie przenosi rekordów między katalogami.
 
 `ensure_default_workplace()` tworzy Workspace tylko wtedy, gdy użytkownik nie
 ma żadnego dostępnego miejsca (własnego ani przez aktywne członkostwo).
@@ -193,130 +189,44 @@ użyteczności danego ekranu, a nie przypadkowym dodatkiem URL.
 
 ## 4. Dostęp i historyczne udostępnianie
 
-Bieżące moduły ograniczają dane do `workspace_owner(request)` i aktywnego
-`request.workplace`; autorem operacji pozostaje `request.user`.
-Przestrzenie, zadania i ich zawartość przechodzą przez `spaces.access`.
-`SpaceMembership` i `SpaceTaskMembership` określają niezależne role;
-prywatne przestrzenie i całe drzewo rodziców ograniczają dostęp.
-Rola obserwatora daje wyłącznie odczyt. Szczegóły: [TEAMWORK.md](TEAMWORK.md).
-
-`tasks.access.visible_to` deleguje modele Przestrzeni do aktualnego ACL,
-a historyczne modele pracy Tasks/Kanbana wyklucza z odczytu.
-`TaskTag` i `TaskTagNote` pozostają wspólnymi modelami; widoki tagów
-nakładają dodatkowo zakres dostępnej Przestrzeni, właściciela i Workspace.
-Zwykłe menedżery modeli zachowują dane dla migracji i utrzymania.
-
-Historyczne członkostwa, `SharedItem` i `SharedItemLink` nie nadają dostępu.
-Dawne widoki i helpery udostępniania usunięto; endpointy tworzenia,
-akceptacji linków, zespołów i obserwowania nie są rejestrowane.
-Sygnały `tasks.sharing_signals` i `kanban.sharing_signals` nadal czyszczą
-historyczne udostępnienia po cofnięciu członkostwa Workspace.
-
-Zapisy zadań oraz planowania blokują właściciela numeracji, Workspace
-i odpowiednie bieżące obiekty, po czym ponownie sprawdzają uprawnienia.
-`spaces.access.require_editable` odrzuca mieszaną niedozwoloną operację;
-usuwanie sprawdza również potomków. Relacje formularzy stosują ten sam zakres.
-Przypisanie wykonawcy ani wzmianka nie nadają dostępu.
+Przestrzenie, zadania, historię, pliki i dzienniki ogranicza `spaces.access`.
+Właściciel danych pochodzi z `workspace_owner(request)`, kontekst z `request.workplace`.
+`SpaceMembership` i `SpaceTaskMembership` wyznaczają niezależne role,
+z uwzględnieniem prywatnych rodziców. Wykonawca i zespół nie nadają dostępu.
+Formularze relacji stosują ten sam zakres. Usunięcie lub dezaktywacja członka
+Workspace czyści powiązane członkostwa Przestrzeni, zadań i zespołów.
+Dawne modele udostępniania i ich sygnały usunięto. [Role](TEAMWORK.md).
 
 ## 5. Identyfikatory i numeracja
 
-| Identyfikator | Znaczenie |
-| --- | --- |
-| `pk`/`id` modelu | Klucz bazy; dokument ma UUID, większość innych obiektów liczbowy klucz |
-| `Task.task_id`, `Kanban.task_id` | Numer widoczny w danym module, użytkowniku i Workspace; używany w trasach szczegółów |
-| Kod projektu | Domyślnie `P-` + 8 znaków base36; sprawdzane są projekty Tasks i Kanban |
-| Kod tagu | Domyślnie `T-` + 8 znaków base36; osobny od PK i nazwy |
-| Kod grupy Tasks | Licznik w projekcie, domyślny format z prefiksem `G`; może być wpisany ręcznie |
-| `code_number` zadania | Licznik wewnątrz grupy; nie jest tym samym co `task_id` |
+`pk` jest technicznym kluczem rekordu. Trwały klucz zadania, np. `PRO-7`,
+przechowuje `WorkItem.key`; licznik `Space.next_number` jest zwiększany
+pod blokadą przestrzeni w transakcji. Usunięcie nie renumeruje pozostałych zadań
+ani nie przydziela ponownie ich kluczy. Baza wymusza unikalność `(space, number)`.
+`SpaceTask.save()` blokuje przestrzeń, odrzuca przeniesienie i rodzica z innej
+przestrzeni oraz cykle. `WorkItem.save()` chroni tożsamość zadania i klucza.
 
-`Task.code` i `Task.full_code` zwracają obecnie tekst numeru `task_id`.
-Liczniki grup/zadań korzystają z blokady `select_for_update()` i transakcji.
-Numer `task_id` powstaje z maksimum w zakresie właściciela/Workspace.
-`backend/core/task_numbering.py` blokuje wiersz właściciela przed zapisem, usuwaniem
-i renumeracją; blokada poprzedza blokadę Workspace i blokady grup/zadań,
-również podczas tworzenia projektu z szablonu. Odroczone ograniczenie
-unikalności w PostgreSQL chroni kombinację użytkownika, Workspace i numeru.
-Migracje Tasks 0047 i Kanban 0034 porządkują istniejące numery przed dodaniem
-ograniczeń, zachowując PK i relacje. Backfill starych rekordów bez Workspace
-również porządkuje numery w tej samej transakcji.
-Po usuwaniu numery są porządkowane. Nie traktuj starego numeru zadania jako
-trwałego klucza dla zewnętrznej integracji.
-
-Operacje JSON wymagają stabilnego `task_pk` (pojedynczy zapis/usunięcie) albo
-listy `task_pks` (akcja zbiorcza). Brak PK lub dawne `task_ids` daje HTTP 400.
-Numer w ścieżce aktualizacji/usuwania nie wyznacza tożsamości rekordu.
-Wiersze, karty i wyniki globalnego wyszukiwania przekazują PK także w parametrze linku `?task_pk=`, a formularze
-szczegółów w ukrytym polu. Szczegóły bez tego parametru zachowują historyczne
-wyszukiwanie po numerze. W każdym wariancie obowiązuje właściciel i Workspace.
-Po usunięciu lista jest przeładowywana, aby pokazać aktualną numerację.
-`deleted_count` z usuwania zbiorczego liczy wyłącznie rekordy `Task`, w tym
-usunięte podzadania; nie obejmuje historii, plików ani metadanych `WorkItem`.
-
-Formularze edycji zadania oraz edycji w Przestrzeni nie przyjmują zmiany miejsca:
-dawne pola `project` i `section` są ignorowane. `tasks.hierarchy.save_task_edit`
-blokuje zapis rekordu i sprawdza, że jego grupa nie została zmieniona; odrzuca
-też nowego rodzica z innej grupy. Nie przenosi ani nie zapisuje potomków.
-Tagi i typ zgłoszenia są walidowane według zapisanej przestrzeni, niezależnie
-od przesłanych pól miejsca. Zwykła edycja nie wymaga dostępu do prywatnych
-podzadań. Tworzenie zachowuje wybór grupy i dziedziczenie miejsca przez podzadania.
-
-Model zachowuje techniczną obsługę zmiany grupy dla integralności danych
-i operacji wewnętrznych; formularze aplikacji nie udostępniają przenoszenia.
-Kontrola właściciela nadal należy również do widoku/formularza.
+Adres zadania używa slugu przestrzeni i klucza WorkItem, także w scoped URL.
+Workspace ma losowy stały kod `w_` + 26 znaków, przestrzenie i pulpity osobne slugi.
+Tag ma losowy, globalnie unikatowy kod `T-` + 8 znaków base36.
+Nie ma dawnych liczników `Task.task_id`, kodów projektów i grup ani mapowań importu.
 
 ## 6. Zapis zadania, status i historia
 
-Główna ścieżka tworzenia/edycji przechodzi przez formularz Django. Widok
-ustawia właściciela i Workspace. Szczegóły zadania zapisują zmiany jawnie;
-odpowiedź AJAX może zawierać zaktualizowane dane i wyrenderowaną historię.
-
-`Task.save()` oraz `Kanban.save()` reagują na przejście do/z `closed`,
-ustawiając `is_completed` i `completion_date`. Aktywności początkowe powstają
-przez `post_save`; zmiany pól i komentarze zapisują także helpery widoków.
-Notatki projektów/grup/tagów mają osobne modele i kontrolę autora przy edycji.
-
-Pojedyncza i zbiorcza zmiana statusu w Tasks blokuje numerację właściciela
-przed odczytem i blokadą wiersza zadania. Odczyt, zapis modelu i historia należą
-do jednej transakcji. Zapis statusu obejmuje tylko `status`, `is_completed`
-i `completion_date`, zachowując pozostałe pola. Powtórne zamknięcie zachowuje
-datę zakończenia; tylko faktyczna zmiana dodaje historię z autorem `request.user`.
-Błąd zapisu historii wycofuje również status. Archiwalny, nieroutowany endpoint Kanbana
-stosował tę samą blokadę także przy zmianie kolumny.
-
-W historycznym modelu Kanbana kolumna jest oddzielona od statusu. `_set_task_column()` sprawdza,
-czy kolumna należy do tablicy karty i właściciela, a następnie zapisuje relację.
-Dawny endpoint przestawiania kolumn jest wyłączony.
+Zapis bieżących zadań obsługuje `spaces.task_views`, planowanie i statusy
+`spaces.services` oraz `spaces.backlog`. Statusy pochodzą z konfiguracji
+przestrzeni; przejścia są walidowane. Zapis blokuje Workspace, przestrzeń,
+zadanie i WorkItem. `SpaceTask.save()` ustala `is_completed` i `completion_date`.
+Historia `SpaceTaskActivity` zachowuje rzeczywistego autora operacji.
+Zmiana zbiorcza używa tych samych reguł zakończenia i historii.
 
 ### Dziennik pracy zadania
 
-`TaskWorkLog` jest powiązany z trwałym PK `Task`. Osobne akcje POST
-`add_work_log`, `edit_work_log` i `delete_work_log` w widoku szczegółów wymagają
-`task_pk`. Widok ogranicza zadanie do właściciela aktywnego Workspace;
-identyfikator edytowanego/usuwanego wpisu jest dodatkowo ograniczony do tego
-zadania. Formularz nie udostępnia autora ani zadania. Dodanie ustawia autora
-na `request.user`, edycja go zachowuje; historia rejestruje aktualnego aktora.
-Zmiana wpisu i zapis Aktywności są jedną transakcją, edycja/usunięcie blokują
-wiersz wpisu. Usunięcie zadania usuwa wpisy, usunięcie autora zachowuje je
-z etykietą „Usunięte konto”. Autor Aktywności bez konta ma etykietę „System”.
-
-Daty są świadome strefy czasowej. Formularz wymaga pełnych minut, dodatniego
-przedziału i opisu; baza dodatkowo wymusza `ended_at > started_at`.
-Czas wynika z różnicy chwil UTC. `TaskWorkLogForm` przyjmuje pomocnicze
-`hours`, `minutes` (0–59) i `calculation_mode`. Przy `interval` (także przy
-braku trybu w starszym POST) ignoruje przesłane godziny/minuty i oblicza je
-z dat. Przy `duration` ignoruje przesłany początek, wymaga dodatniej sumy
-godzin/minut i oblicza początek jako zakończenie minus czas. Pusty koniec
-oznacza bieżącą chwilę zaokrągloną do minuty. Obliczenia po stronie serwera
-odbywają się w UTC również podczas zmiany czasu. Błędne części czasu,
-przepełnienie daty i nieprawidłowy koniec nie zapisują wpisu. Przy błędzie
-opisu formularz zachowuje wpisany czas, wyliczone daty oraz kierunek obliczeń.
-Pola pomocnicze nie są osobno przechowywane w modelu.
-Agregat SQL liczy sumę całego zadania, paginacja pobiera po 25 wpisów
-z autorami. Zakresy nakładające się nie są blokowane; każdy wpis wchodzi do sumy.
-Warianty zwykły i scoped korzystają z tej samej walidacji. Formularz, paginacja
-i przekierowanie po zapisie używają scoped URL z PK, aby inna karta przeglądarki
-ani renumeracja zadania nie zmieniły celu operacji. Stare pola łącznego czasu
-w `Task` nie są synchronizowane z dziennikiem.
+`SpaceTaskWorkLog` należy do zadania i autora. `SpaceTaskWorkLogForm` waliduje
+przedział oraz czas; baza wymaga dodatniej liczby sekund. Czas wynika z chwil UTC,
+a formularz i wyświetlanie korzystają z lokalnej strefy. Edycja i usunięcie
+ponownie sprawdzają widoczność oraz autora. Operacje czasu i wpis historii
+należą do tej samej transakcji. Szczegóły oraz automatyczny zapis opisuje [SPACES.md](SPACES.md).
 
 ## 7. Katalogi, filtry i wydajność
 
@@ -334,7 +244,7 @@ współdzielonych kontrolek, także w React.
 
 Powiadomienia zachowują puste źródła `tasks` i `kanban`, aby stare tokeny
 nie mogły zmieniać stanu archiwalnych aktywności. Zgodność adresów obsługuje
-`LegacyKanbanMiddleware`, z aktualnym dostępem Przestrzeni.
+bieżący routing Przestrzeni.
 
 Dysk używa `Paginator`; na stronie najpierw rozlicza foldery, potem pliki,
 aby nie powielać i nie pomijać pozycji między stronami.
@@ -363,14 +273,9 @@ Przed zmianą zapytań sprawdź testy liczby zapytań i renderowania tylko bież
 
 ## 8. Pola i terminy projektów
 
-[Modele Tasks](../backend/tasks/models.py) zachowują historyczne statusy,
-etapy, kondycję, tekst źródła i terminy projektów. Dawne formularze i helpery
-list projektów są usunięte; `/settings/project-fields/` nadal zwraca 404.
-Migracja `tasks.0063` usuwa konfigurację słowników i progów kolorów,
-bez zmiany danych projektów. Wcześniejsze migracje pozostają w łańcuchu.
-
-Bieżące zadania i terminy należą do Przestrzeni; ich formularze i konfigurację
-opisuje [SPACES.md](SPACES.md).
+Dawne projekty oraz system ich pól usunięto. Bieżące typy, statusy i pola
+pochodzą z `SpaceConfiguration`; planowanie zapisuje `WorkItem`.
+Szczegóły walidacji i wspólnej konfiguracji opisuje [SPACES.md](SPACES.md).
 
 ## 9. Upload, obrazy i pobieranie
 
@@ -388,8 +293,8 @@ opisuje [SPACES.md](SPACES.md).
 
 | Rodzaj danych | Przechowywanie |
 | --- | --- |
-| Zdjęcia i załączniki Tasks/Kanban | Standardowy `MEDIA_ROOT`, podkatalog zależny od modelu |
-| Pliki i zdjęcia komentarzy Tasks/Kanban | `PRIVATE_DOCUMENT_ROOT/comment_images/<moduł>/`, losowe nazwy, kontrolowane pobieranie/podgląd |
+| Pliki zadań Przestrzeni | `PRIVATE_DOCUMENT_ROOT/space_task_files/`, kontrolowane pobieranie |
+| Pliki i zdjęcia komentarzy Przestrzeni | Prywatny `SpaceTaskFile`, powiązanie z aktywnością |
 | Historyczne zdjęcia dysków (upload wyłączony) | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
 | Pliki Documents | `FileSystemStorage` w `PRIVATE_DOCUMENT_ROOT`; losowa nazwa pod katalogiem Workspace |
 | Metadane, foldery, gwiazdki, kosz | PostgreSQL |
@@ -453,7 +358,7 @@ przenoszeniu i zapisaniu pliku ze starym dyskiem w właśnie przeniesionym folde
 Frontend przesyła dedykowany typ drag-data, sprawdza zgodność modułu/Workspace
 i korzysta z istniejącego uploadu oraz częściowego odświeżenia katalogu.
 
-Sygnały `post_delete` załączników Tasks/Kanban usuwają powiązany plik.
+Sygnał `post_delete` plików zadań rejestruje sprzątanie po zatwierdzeniu transakcji.
 Historyczne zdjęcia dysków pozostają w prywatnym storage i polu `photo`;
 interfejs ich nie wyświetla. Formularz dysku przyjmuje tylko nazwę i opis,
 a przesłane pola `photo`, `photo_crop` i `photo_remove` są ignorowane,
@@ -465,7 +370,7 @@ właściciela i aktywny Workspace, zwraca obraz z `nosniff` oraz
 Model `Document` usuwa fizyczny plik po zatwierdzeniu usunięcia rekordu,
 także przy kaskadowym usuwaniu Workspace. Wycofanie transakcji zachowuje plik.
 Kosz ustawia tylko `deleted_at` i pozostawia plik do przywrócenia.
-Załączniki Tasks i Kanbana korzystają z tej samej zasady: sygnał `post_delete`
+Załączniki zadań Przestrzeni korzystają z tej samej zasady: sygnał `post_delete`
 rejestruje `storage.delete()` przez `transaction.on_commit` na właściwej bazie.
 Błąd storage jest logowany i nie przerywa kolejnych callbacków sprzątania.
 
@@ -572,94 +477,33 @@ usunięte elementy oraz te, do których cofnięto dostęp, nie trafiają do odpo
 Otwarcie bieżącej Przestrzeni zapisuje jej własny identyfikator w tej historii,
 po sprawdzeniu uprawnień i wyrenderowaniu widoku. Tytuły i numery są pobierane
 z aktualnych rekordów. Nowe zadania używają adresu przestrzeni i klucza;
-`task_pk` pozostaje wyłącznie w linkach zgodności starszych Tasks. Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
+Odpowiedź ma `Cache-Control: no-store`; frontend nie zapisuje wyników
 w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszukiwania.
 
 ## 11. Historia a powiadomienia
 
-`TaskActivity`, `KanbanActivity` i archiwalne `legacy.contacts.ContactActivity`
-są historią obiektów.
-Centrum powiadomień (`backend/dashboard/notification_service.py`) odczytuje wyłącznie
-komentarze (`kind='comment'`) Zadań, ważne oczekujące zaproszenia
-oraz osobiste przypomnienia. Wpisy historii (`kind='system'`), np. utworzenie,
-edycja lub zmiana statusu, pozostają tylko w historii obiektu. Nie trafiają
-do żadnej zakładki powiadomień, liczników ani akcji osobistych i zbiorczych,
-również gdy mają wcześniejszy `NotificationState` lub `ActivityInterest`.
-Zmiana nie usuwa historii ani dawnych stanów i nie wymaga migracji.
-GET może utworzyć brakujące dostawy osiągniętych przypomnień.
-`dashboard.NotificationState` przechowuje osobisty stan odczytu, archiwum i usunięcia,
-z FK do dokładnie jednego źródła oraz unikalnością użytkownik + źródło.
-Usunięcie źródła usuwa jego stan przez CASCADE.
+`SpaceTaskActivity` przechowuje komentarze i historię; do inbox trafiają
+wyłącznie dostępne komentarze. `NotificationState` wskazuje dokładnie jedno źródło:
+komentarz, `SpaceTaskReminder` albo `WorkplaceInvitation`. Nie ma dawnych dostaw
+Tasks/Kanbana, projektów i grup ani modeli subskrypcji.
 
-Domyślny zakres obejmuje wszystkie dostępne Workspace oraz własne starsze rekordy
-bez Workspace; filtr pozwala wybrać pojedynczą dostępną przestrzeń.
-Każde pobranie i każda akcja ponownie sprawdzają członkostwo oraz właściciela
-rekordu zgodnego z właścicielem Workspace. Sam wpis `NotificationState` nie daje
-dostępu. Zaproszenia do Workspace korzystają z `pending_invitations_for_user()`
-i są widoczne przed dołączeniem tylko dla odbiorcy. Filtr zaproszeń i licznik
-dzwonka obejmują wyłącznie te zaproszenia; zakończone i wygasłe znikają.
-Projekt i grupa nadają dostęp bezpośrednio przez członkostwo, bez wpisu
-w powiadomieniach wymagającego decyzji odbiorcy.
+`dashboard.notification_service` sprawdza bieżące ACL przy liście, licznikach
+i każdej akcji. Odczyt, archiwum i usunięcie są osobiste i nie kasują źródła.
+Zaproszenia wymagają przyjęcia lub odrzucenia, bez archiwizacji.
+Lista ma stronicowanie kursorem i podpisany snapshot; operacje zbiorcze obejmują
+wszystkie strony aktualnego filtra do czasu snapshotu, bez późniejszych wpisów.
+Kursor i snapshot są związane z użytkownikiem, czasem i filtrem Workspace.
 
-Własna aktywność jest domyślnie przeczytana; działania innych osób i zaproszenia
-są nieprzeczytane. Można ręcznie zmienić ten stan. Archiwizacja oznacza wpis jako
-przeczytany i ukrywa go w głównej liście; przywrócenie zachowuje odczyt.
-Oczekujących zaproszeń nie można archiwizować. Ich odczyt nie zastępuje decyzji.
-Usuwanie ustawia `is_deleted=True` i `is_read=True` wyłącznie dla odbiorcy.
-Lista, archiwum, liczniki i polling pomijają te wpisy; ponowna dostawa tego samego
-przypomnienia ich nie odtwarza. Nowy termin przypomnienia tworzy odrębny wpis.
-Źródłowe aktywności, zadania i zaproszenia pozostają w bazie. Zaproszenie nadal
-można obsłużyć w Workspace, choć znika z panelu i jego licznika.
-Stan początkowego dzwonka również pomija usunięte powiadomienia o zaproszeniach;
-licznik zaproszeń w zarządzaniu Workspace nadal obejmuje wszystkie oczekujące decyzje.
-Ponowne usunięcie jest idempotentne; odczyt, archiwizacja i przywrócenie usuniętego
-wpisu są odrzucane. Każda operacja ponownie sprawdza dostęp do źródła.
-Link `/workplaces/?invitation=<pk>` otwiera istniejący modal „Przyjmij / Odrzuć”.
-Udostępnienia projektów i grup nie tworzą zaproszeń w powiadomieniach;
-historyczne rekordy tych zaproszeń są pomijane przez listę, liczniki i akcje.
-Link zadania/karty określa Workspace, aktualny numer i stabilne `task_pk`.
-
-Lista ma filtry wszystkie / nieprzeczytane / zaproszenia / przypomnienia / wzmianki / obserwowane / archiwum, grupy dat
-oraz po 12 wpisów na stronę. Zaproszenia poprzedzają aktywność. Podpisany kursor
-wiąże użytkownika, filtry, czas otwarcia i ostatni wpis; sortowanie rozstrzyga
-remisy dat przez PK i źródło. Nowe wpisy nie przesuwają już doczytywanych stron.
-`POST /notifications/action/` wymaga sesji i CSRF. Akcja zbiorczego odczytu
-obejmuje cały wybrany filtr do podpisanego czasu otwarcia, także dalsze strony;
-nie oznacza nowszych zdarzeń. Tokeny wygasają po 24 godzinach.
-`delete` usuwa osobisty wpis według klucza, a `delete_all` korzysta z tego samego
-podpisanego snapshotu i zakresu co `read_all`. Zbiorcze akcje przetwarzają po 500
-rekordów w jednej transakcji i nie zmieniają wpisów spoza filtra ani nowszych zdarzeń.
-
-`GET /notifications/` zwraca listę panelu jako JSON dla `X-Requested-With:
-XMLHttpRequest` bez `Accept: text/html`. Wejście przeglądarką oraz dawna częściowa
-nawigacja HTML przekierowują do Dashboardu; osobny pełny widok nie jest renderowany.
-Endpoint `?summary=1` zwraca globalny licznik nieprzeczytanych, oczekujących
-zaproszeń i identyfikatory najnowszych dostępnych zdarzeń. Odpowiedzi mają
-`Cache-Control: no-store`. Dzwonek odświeża stan po uruchomieniu, po powrocie
-do karty, po `ancore:content-loaded` i co 30 sekund w widocznej karcie.
-Otwarta lista sygnalizuje zmianę przyciskiem odświeżenia, bez przestawiania
-czytanej treści. Błędy sieci zachowują ostatni licznik; panel udostępnia ponowienie.
-To powiadomienia wewnątrz aplikacji przez HTTP, bez push, e-maila i workera.
-
-Interfejs React wywołuje te same operacje przez jawny rejestr API ekranów.
-`notifications` w tym trybie zwraca `items` z `notification_frontend.py`,
-bez HTML, wraz z aktualnie dostępnymi Workspace, tokenami i licznikami.
-Wyszukiwanie korzysta ze scoped adresu API, więc cel zapytania jest odporny
-na zmianę aktywnego Workspace w innej karcie. Korzeń paneli nie jest usuwany
-przy częściowej nawigacji; wyszukiwarka i modal zamykają się przed podmianą,
-a osobista treść Stickera trwa. Zmiana konta/Workspace nadal wymaga pełnego
-przeładowania. [Cykl życia i kontrakt](FRONTEND.md#globalne-wyszukiwanie-powiadomienia-i-sticker).
 
 ### Pliki i zdjęcia w komentarzach
-`TaskCommentImage` i `KanbanCommentImage` zachowują historyczne nazwy, ale przechowują
-wszystkie załączniki komentarzy. Mają rozmiar `file_size` i FK do aktywności (`images`),
+`SpaceTaskFile` przechowuje załączniki komentarzy i zadania. Mają rozmiar `file_size` i FK do aktywności (`images`),
 nie do ogólnych załączników zadania. Wspólny `backend/core/comment_images.py` waliduje
 całą partię przez `validate_comment_attachments()` w `backend/core/upload_validation.py`
 (wspólna lista `ATTACHMENT_ALLOWED_EXTENSIONS`, łącznie 10 plików i `MAX_ATTACHMENT_SIZE`). Dopiero potem zapisuje komentarz,
 wzmianki i pliki w jednej transakcji. Przy rollbacku usuwa nowe pliki;
 usunięcie aktywności/zadania usuwa pliki dopiero po zatwierdzeniu transakcji.
 
-`/<moduł>/comment-images/<pk>/` i scoped odpowiednik wymagają zalogowania,
+`/space/<slug>/tasks/<klucz>/files/<pk>/` i scoped odpowiednik wymagają zalogowania,
 właściciela danych oraz aktywnego Workspace. Zdjęcia zwracają inline, a pozostałe
 pliki jako attachment. Wszystkie odpowiedzi mają `nosniff` i `private, no-store`; publiczne `/media/` nie obsługuje tych plików.
 Link załącznika zawiera Workspace, a identyfikatorem jest PK pliku.
@@ -685,11 +529,8 @@ Zmiana nazwy osoby przed wysłaniem wymaga ponownego wyboru; dwie osoby
 z tą samą nazwą pozostają różnymi odbiorcami. Wzmianka nie nadaje dostępu.
 
 Centrum powiadomień ponownie sprawdza widoczność aktywności. Własne komentarze
-są pomijane. Model `ObjectFollow` i historyczne `ActivityInterest` zachowują
-dawne subskrypcje i dostawy Tasks/Kanbana, lecz nie tworzą nowych dostarczeń.
-Nieużywane endpointy obserwowania i receiver dawnych aktywności usunięto.
-Stan odczytu, archiwum i usunięcia nadal należy do `NotificationState`;
-źródła historyczne pozostają wyłączone.
+są pomijane. Stan odczytu, archiwum i usunięcia należy do `NotificationState`.
+Dawne modele obserwowania i dostaw usunięto.
 
 ### Przypomnienia zadań
 
@@ -699,7 +540,7 @@ przy jego braku, właściciel zadania/Workspace. Wymagany jest aktualny dostęp
 do przestrzeni; samo przypisanie wykonawcy go nie nadaje. Zapytania ponownie
 sprawdzają właściciela danych, Workspace i odbiorcę także przy zmianie odczytu.
 
-`TaskReminder` ma unikalność zadanie–odbiorca–zaplanowany termin; powtórne
+`SpaceTaskReminder` ma unikalność zadanie–odbiorca–zaplanowany termin; powtórne
 odpytywanie nie powiela dostawy. Czas utworzenia oznacza faktyczny moment
 dostarczenia, więc późniejsza dostawa nie jest obejmowana starszym snapshotem
 „Przeczytaj wszystkie”. Odczyt i archiwum korzystają z `NotificationState`.
@@ -798,19 +639,12 @@ przed podwójnymi listenerami na tym samym elemencie.
 
 ## 14. Usuwanie i zależności
 
-- Usunięcie projektu Tasks kasuje jego grupy i zadania; widoki porządkują numery.
-- Grupa Tasks ma kaskadowe zadania; relacja karty Kanban do sekcji w modelu
-  jest `SET_NULL`. Kanban blokuje usuwanie przestrzeni/tablicy zawierającej
-  prywatne karty: najpierw trzeba usunąć karty, aby nie ujawnić ich jako osieroconych.
-  Usunięcie publicznej przestrzeni/tablicy zachowuje dawne przeniesienie kart poza tablicę.
-- Usunięcie kolumny Kanban w aktywnym widoku usuwa jej karty.
-- Podzadania/podkarty mają rodzica z `CASCADE`.
-- Pliki/foldery/dyski używają `RESTRICT` dla ochrony niepustych
-  kontenerów. Workspace ma relacje kaskadowe; jego usuwanie jest osobnym
-  scenariuszem od usuwania niepustego folderu/dysku.
-
-Przed zmianą usuwania czytaj zarówno model, jak i akcję widoku oraz test.
-Nie wyciągaj zachowania całego scenariusza tylko z jednej deklaracji `on_delete`.
+Usunięcie przestrzeni usuwa jej zadania i powiązaną historię, członkostwa,
+czas oraz przypomnienia. Usunięcie zadania obejmuje podzadania i wymaga prawa
+edycji wszystkich potomków. Fizyczne pliki są sprzątane po zatwierdzeniu transakcji
+i ostatnim odwołaniu. Rollback zachowuje pliki. Usuwanie Workspace kaskaduje dane
+należące do jego modeli. W Dysku kosz ustawia `deleted_at`, bez fizycznego usunięcia.
+Ograniczenia `RESTRICT` chronią m.in. używane konfiguracje i lokalizacje Dokumentów.
 
 ## 15. Ewidencja zasobów
 
@@ -956,29 +790,9 @@ niezmienione; pulpit nie kopiuje danych biznesowych ani historii.
 
 ## Wycofanie starszych systemów pracy (10.10.2026)
 
-Starsze systemy **Projekty, Grupy, Zadania, Ulubione projekty i Szablony
-projektów** są wycofane. Nie mają ekranów, operacji zapisu ani rejestracji
-w Django admin. Sekcja „Starsze widoki” jest usunięta z menu. Historyczne dane,
-pliki i szablony pozostają w bazie; nie jest wymagana nowa migracja.
-
-`backend/tasks/urls.py` zachowuje tylko adresy zgodności. GET/HEAD `/tasks/` oraz scoped
-odpowiednik przekierowuje do Przestrzeni. Link projektu lub grupy działa
-wyłącznie po mapowaniu `Space.project`; szczegóły zadań przez `WorkItem.legacy_task`,
-a pliki przez `SpaceTaskFile`. Wszystkie przekierowania sprawdzają aktywny
-Workspace i bieżący dostęp Przestrzeni. Obiekt bez mapowania, usunięty albo
-niedostępny zwraca 404. POST pod zachowany adres zwraca 409; usunięte endpointy
-szablonów, statusów, usuwania, zespołów, ulubionych i obserwowania zwracają 404.
-
-`tasks.access` zwraca pusty wynik dla historycznych modeli pracy. Menedżery
-modeli nadal widzą zapisane dane dla migracji i utrzymania. `TaskTag` i
-`TaskTagNote`, wspólne szablony oraz `static/js/tasks.js` pozostają używane
-przez aktywne moduły. Tagi sprawdzają dostęp przez Przestrzeń.
-Wyszukiwarka, ostatnio oglądane, kalendarz i powiadomienia nie pokazują
-historycznych projektów, grup ani zadań. Stare przypomnienia i subskrypcje nie
-powodują nowych dostarczeń; zapisane stany pozostają zachowane. Osobiste skróty
-`tasks-projects` prowadzi do Przestrzeni; skróty `tasks-all`, grup i „moich
-zadań” pozostają ukryte. Samodzielny ekran „Wszystkie zadania” jest wycofany;
-lista zadań jest dostępna przez „Filtry → Wyszukaj zadania”.
+Po resecie z 18.10.2026 usunięto również historyczne modele, tabele,
+mapowania importu i trasy zgodności. Pozostał katalog tagów i wspólne komponenty.
+Nowe migracje wymagają pustej bazy. [Zakres i uruchomienie](DATABASE.md).
 
 ## Adapter ekranów React
 

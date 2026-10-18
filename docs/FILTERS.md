@@ -168,5 +168,6 @@ do tych samych widoków i formularzy, zachowując ACL, rewizje i transakcje.
 Globalny pasek boczny i jego picker nadal korzystają z dotychczasowych skryptów.
 Budowanie oraz granice migracji: [FRONTEND.md](FRONTEND.md).
 
-Schemat dodaje [migracja 0014](../backend/dashboard/migrations/0014_savedtaskfilter.py).
+Schemat tworzą [migracje początkowe](../backend/dashboard/migrations/0001_initial.py).
+Wymagają pustej bazy; [zasady uruchomienia](DATABASE.md).
 Przed uruchomieniem kodu na innym środowisku należy wykonać manage.py migrate.

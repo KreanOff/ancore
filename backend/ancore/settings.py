@@ -101,8 +101,6 @@ INSTALLED_APPS = [
     'accounts',
     'workplaces',
     'tasks',
-    'kanban',
-    'legacy.contacts.apps.LegacyContactsConfig',
     'dashboard',
     'planner',
     'documents',
@@ -118,7 +116,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'accounts.middleware.UserPresenceMiddleware',
     'workplaces.middleware.ActiveWorkplaceMiddleware',
-    'spaces.middleware.LegacyKanbanMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

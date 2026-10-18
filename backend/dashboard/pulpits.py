@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 
 from spaces.services import visible_spaces
-from tasks.access import visible_to
+from spaces.access import visible_to
 from spaces.models import SpaceTask
 from workplaces.services import scoped_workplace_app_path, workspace_owner
 from .models import Dashboard, DashboardGadget

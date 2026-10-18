@@ -103,7 +103,9 @@ def work_log_context(request, task):
     total = int(duration.total_seconds() // 60)
     page = Paginator(entries, 25).get_page(request.POST.get('work_log_page') or request.GET.get('work_log_page'))
     for entry in page:
+        hours, minutes = divmod(entry.duration_minutes, 60)
         entry.form_values = json.dumps({'id': entry.pk, 'duration_minutes': entry.duration_minutes,
+            'hours': hours, 'minutes': minutes,
             'started_at': timezone.localtime(entry.started_at).strftime('%Y-%m-%dT%H:%M'),
             'ended_at': timezone.localtime(entry.ended_at).strftime('%Y-%m-%dT%H:%M'), 'description': entry.description})
     def url(number):
@@ -143,6 +145,7 @@ def detail(request, space_pk, key):
             with transaction.atomic():
                 Workplace.objects.select_for_update().get(pk=request.workplace.pk)
                 Space.objects.select_for_update().get(pk=space.pk)
+                space = space_object(request, space.pk)
                 task = SpaceTask.objects.select_for_update().get(pk=task.pk)
                 require_editable(SpaceTask.objects.filter(pk=task.pk), request.user)
                 item = task_item(request, space_pk, key)
@@ -397,9 +400,6 @@ def members(request, space_pk, key):
 def download(request, space_pk, key, file_pk):
     item = task_item(request, space_pk, key)
     file = get_object_or_404(SpaceTaskFile, task=item.task, pk=file_pk)
-    if file.legacy_storage:
-        from django.core.files.storage import default_storage
-        file.file.storage = default_storage
     try:
         response = attachment_download_response(file, inline=bool(file.activity_id and file.is_image()))
     except FileNotFoundError:

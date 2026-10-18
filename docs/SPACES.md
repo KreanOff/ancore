@@ -185,37 +185,18 @@ blokują zmianę epika z przypisanymi zadaniami oraz zagnieżdżenie epika w epi
 
 ## Model pracy
 
-Od 3.10.2026 główna nawigacja prowadzi do katalogu Przestrzeni, Wszystkich
-zadań i Zespołów. Przestrzeń organizuje pracę; zespół grupuje osoby. Workspace
-pozostaje nadrzędną granicą danych i członkostwa. Pod Zasobami zwijana sekcja
-„Starsze widoki” udostępnia dawne katalogi Projektów (także Ulubione), Grup,
-Zadań, Szablonów projektów i Kanbana. Globalny katalog Tagów jest wycofany. Katalogi Kontaktów, Firm, Użytkowników
-i Gości są wycofane z menu i routingu. Skróty używają aktywnego Workspace
-i zachowują istniejące przekierowania
-Kanbana; nie przywracają edycji przeniesionych rekordów źródłowych.
+`Space` ma własną nazwę, opis, właściciela, widoczność, ulubione i role
+`SpaceMembership`. `SpaceTask` przechowuje treść, terminy, wykonawcę,
+hierarchię i stan zakończenia. `WorkItem` przechowuje trwały klucz oraz
+planowanie: status przestrzeni, typ zgłoszenia, sprint, epik, zespół, punkty i kolejność.
+Historia, pliki, czas i dostęp mają modele `SpaceTaskActivity`, `SpaceTaskFile`,
+`SpaceTaskWorkLog` i `SpaceTaskMembership`. Nie ma mapowań do dawnych systemów.
 
-Od 10.10.2026 `Space` ma własną nazwę, opis, właściciela, widoczność,
-ulubione i role `SpaceMembership`. `SpaceTask` przechowuje treść, terminy,
-wykonawcę, hierarchię i stan zakończenia. `WorkItem.task` wskazuje wyłącznie
-`SpaceTask`; nadal przechowuje klucz oraz planowanie: status przestrzeni,
-typ zgłoszenia, sprint, epik, zespół, punkty i kolejność.
-Komentarze/historia, pliki, czas i dostęp do zadania mają własne modele
-`SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskWorkLog`, `SpaceTaskMembership`.
-Nowe przestrzenie i zadania nie tworzą projektów, grup ani `tasks.Task`.
-Tworzenie starszych obiektów również nie tworzy przestrzeni.
-
-`Space.project` i `WorkItem.legacy_task` są opcjonalnymi, historycznymi
-mapowaniami importu. Nie wyznaczają bieżącej treści ani uprawnień i nie
-synchronizują zmian. Wspólne konto, Workspace, słownik tagów `TaskTag`,
-walidatory plików i komponenty UI pozostają mechanizmami całej aplikacji.
-
-Punkty wejścia: `backend/spaces/views.py`, `task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`,
-`signals.py`, `middleware.py`, `templates/spaces/`, `static/js/spaces.js`.
-Trasy `/spaces/` i `/teams/` mają również warianty scoped
-`/workplaces/<slug>/spaces/` i `/workplaces/<slug>/teams/`.
-Dawne `/spaces/items/` oraz scoped odpowiednik przekierowują do
-„Filtry → Wyszukaj zadania”, zachowując tekst, typ, przypisanie do mnie
-i stronę. Osobny ekran Wszystkich zadań i skrót `tasks-all` są wycofane.
+Wspólne konto, Workspace, tagi `TaskTag`, walidatory plików i komponenty UI
+pozostają mechanizmami aplikacji. Punkty wejścia: `backend/spaces/views.py`,
+`task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`, `signals.py`.
+Trasy `/spaces/` i `/teams/` mają scoped odpowiedniki. Dawne `/spaces/items/`
+przekierowuje do „Filtry → Wyszukaj zadania”. [Schemat i migracje](DATABASE.md).
 
 ## Dostępne funkcje
 
@@ -398,6 +379,11 @@ z walidacją i wycofaniem całej operacji przy błędzie. „Główna”, „Pod
 Pliki są walidowane i pobierane po ponownej kontroli dostępu. Usunięcie
 zadania wymaga prawa edycji wszystkich kaskadowo usuwanych potomków.
 
+Dane otwarcia edycji dziennika pracy zawierają zarówno `duration_minutes`,
+jak i wyliczone `hours`/`minutes`. Modal Reacta pokazuje zapisany czas od razu;
+zmiana samych minut zachowuje dotychczasowe godziny. Formularz nadal wylicza
+przedział po stronie serwera, bez osobnych kolumn czasu w bazie.
+
 ## Tagi przestrzeni
 
 Zakładka „Tagi” pod `/<pk>/?view=tags` (także scoped) korzysta z istniejącego
@@ -415,16 +401,9 @@ jest odrzucany, również od strony relacji odwrotnej `TaskTag.space_tasks`.
 Starsze formularze Tasks nie edytują nowych zadań i nie przypisują tagów przestrzeni. Globalne wyszukiwanie
 filtruje tagi przez dostęp do przestrzeni i kieruje do jej zakładki.
 
-Migracje Tasks `0064_space_tags` i `0065_space_tag_data` rozdzielają zmianę schematu
-i danych, aby indeks FK powstał przed kopiowaniem rekordów w PostgreSQL.
-Druga tworzy niezależne kopie używanych starszych tagów w przestrzeniach zadań,
-przenosi przypisania, kopiuje notatki z autorami/datami i powiązane tagi.
-Oryginały i historyczne relacje Kanbana/Dokumentów pozostają zachowane.
-Tagi bez przestrzeni pozostają wyłącznie danymi historycznymi. Globalny
-katalog i jego akcje zwracają 404; nie mają pozycji menu, Favorites ani
-wyników wyszukiwania. Formularze zadań bez przestrzeni mają pusty wybór tagów. Migracja odwrotna łączy tagi o tej samej nazwie w starszym
-katalogu i zachowuje przypisania oraz notatki; przed wdrożeniem wykonaj backup.
-Pole „Zakres” nadal jest klasyfikacją, a tekst reguł nie uruchamia automatyzacji.
+Nowe migracje początkowe od razu tworzą relacje tagów z Przestrzeniami.
+Nie ma kopiowania starych tagów ani katalogu globalnego. Pole „Zakres” jest
+klasyfikacją, a tekst reguł nie uruchamia automatyzacji.
 
 ## Uprawnienia i konfiguracje
 
@@ -455,6 +434,11 @@ wybrać `SpaceConfiguration.shared`. Zmiana wspólnej konfiguracji obejmuje
 wszystkie powiązane przestrzenie; edycja wymaga uprawnień administratora
 Workspace. Formularz chroni przed zapisem nieaktualnej wersji. Nie można usunąć
 używanego statusu/typu lub zmienić kategorii statusu z zadaniami.
+Zapis blokuje kolejno Workspace, wszystkie przestrzenie używające konfiguracji
+(także niewidoczne dla edytora) i samą konfigurację, po czym ponawia kontrolę
+dostępu. Walidacja użycia oraz zapis współdzielą blokady z operacjami zadań.
+Szczegóły zadania po uzyskaniu blokady pobierają aktualną konfigurację,
+aby rozpoczęty wcześniej formularz nie zapisał usuniętego statusu lub typu.
 
 Zespół może utworzyć aktywny członek Workspace; staje się jego administratorem.
 Członków wybiera się tylko z aktywnych osób Workspace. Zwykły członek zespołu
@@ -464,61 +448,17 @@ Formularz nie pozwala odebrać ostatniej aktywnej roli administratora zespołu.
 
 ## Oddzielenie od starszych Zadań (10.10.2026)
 
-Migracja `spaces.0006_independent_space_tasks` kopiuje dane i ulubione
-przestrzeni oraz zadania z ich autorami, datami, komentarzami, historią,
-tagami, plikami i dziennikiem pracy. Zachowuje PK importowanych zadań,
-klucze, liczniki, awatary, konfiguracje i planowanie `WorkItem`.
-Prywatność dawnych grup i rodziców składa w przecięcie dostępu do zadania;
-przydział wykonawcy nie rozszerza tego dostępu.
-
-`tasks.0066_task_space_archived_taskproject_space_archived` oraz
-`spaces.0007_archive_import_sources` oznaczają źródła jako archiwalne.
-Starsze systemy projektów, grup i zadań są w całości wycofane, również dla
-rekordów bez importu i po usunięciu nowego zadania lub przestrzeni.
-[Kontrakt zgodności](MODULES.md#3-projekty-grupy-i-zadania--tasks). GET/HEAD starego linku szczegółów przekierowuje do nowego
-adresu po bieżącej kontroli dostępu; POST tego linku zwraca 409. Pobieranie
-importowanego pliku przekierowuje do chronionego endpointu przestrzeni.
-Usunięcie starego źródła nie usuwa nowego zadania (`SET_NULL`).
-Migracja jest jednokierunkowa; cofnięcie wdrożenia wymaga backupu bazy i storage.
-
-Filtry („Wyszukaj zadania”), „Dla ciebie”, Dashboard, postęp pulpitów i wyszukiwanie
-odczytują nowe zadania przez ich ACL. Kalendarz pokazuje również ich terminy.
-Wspólne listy nie wymagają odwołania do projektu lub grupy.
+Od resetu z 18.10.2026 schemat zawiera wyłącznie bieżące zadania.
+Usunięto historyczne modele, importy i przekierowania; nowe migracje wymagają
+pustej bazy. Filtry, „Dla ciebie”, Dashboard, wyszukiwanie i Kalendarz korzystają
+z `SpaceTask` przez aktualne ACL. [Baza danych](DATABASE.md).
 
 ## Historyczny import Kanbana (3.10.2026)
 
-`spaces/0001_initial.py` tworzy tabele. `0002_unify_work.py` atomowo:
-
-1. Tworzy przestrzenie dla obecnych projektów Zadań i metadane istniejących zadań.
-2. Importuje projekty i grupy Kanbana do projektów/grup Zadań z prywatnością,
-   właścicielami, rolami, ulubionymi i notatkami projektu.
-3. Importuje karty, podkarty, statusy, terminy, czas, tagi, historię i załączniki.
-   Dawna kolumna i niezależny stan karty są reprezentowane razem jako status.
-4. Przenosi odwołania powiadomień, wzmianek i obserwowania do nowych rekordów.
-5. Zapisuje mapowania `LegacyKanbanLink`. Oryginalne rekordy nie są kasowane.
-
-Projekty bez Workspace pozostają wyłącznie w historycznych tabelach, bez ekranów. Nieprzypisane karty
-otrzymują zadania bez przestrzeni. Dane nowego widoku weryfikuje się przez
-mapowania i `Task.work_item`, nie przez obecność dawnego rekordu.
-
-`kanban.access` wyklucza wszystkie historyczne obiekty z bieżącej aplikacji.
-Stary moduł nie ma aktywnych ekranów ani operacji, także bez mapowań importu.
-Katalog `/kanban/` (również scoped) przekierowuje zawsze do Przestrzeni. `LegacyKanbanMiddleware` przekierowuje stare linki szczegółów i plików
-po kontroli aktualnego zakresu oraz ACL; zapisy pod zachowane adresy zgodności
-zwracają 409 i adres nowego modułu, a usunięte endpointy operacji — 404. Mapowania przetrwają usunięcie przestrzeni,
-aby archiwalne dane nie pojawiły się ponownie.
-
-Załączniki wskazują istniejące ścieżki; migracja nie kopiuje plików na dysku.
-`backend/core/task_files.py` usuwa plik dopiero po zatwierdzeniu transakcji i zniknięciu
-ostatniego odwołania w modelach Tasks, Kanbana i SpaceTaskFile. Historyczne źródło zachowuje więc plik.
-Zdjęcia zespołów podlegają wspólnemu walidatorowi i prywatnemu pobieraniu.
-
-Przed wdrożeniem zatrzymaj zapisy, wykonaj backup bazy i storage, zastosuj
-`manage.py migrate`, następnie uruchom nowy kod. Lokalny backup i migrację
-wykonano w ramach tej zmiany. Nie dodano zależności ani usług zewnętrznych.
-Migracja odwrotna nie usuwa importowanych danych ani nie synchronizuje ich
-z powrotem do Kanbana. Powrót do starej wersji wymaga odtworzenia backupu;
-samo `migrate spaces zero` nie jest procedurą cofnięcia wdrożenia.
+Historyczny import i jego mapowania usunięto wraz z dawną historią migracji.
+Nowy schemat nie importuje ani nie odtwarza rekordów starych systemów.
+Wspólne `core.task_files` usuwa prywatny plik po ostatnim odwołaniu
+`SpaceTaskFile` i zatwierdzeniu transakcji. [Baza danych](DATABASE.md).
 
 ## Granice i dalszy rozwój
 
@@ -531,8 +471,7 @@ przestrzeni są zablokowane w formularzu — ich zmiana wymaga osobnej migracji
 czynnych zadań. Nowe szczegóły przestrzeni obsługują pliki, komentarze,
 podzadania, czas, prywatność oraz planowanie. Przypomnienia, wzmianki
 powiadomień i obserwowanie starszych Tasks nie są przeniesione do nowego
-systemu; sam komentarz nie wysyła powiadomienia. Historyczne wpisy tych
-mechanizmów pozostają w starszych tabelach.
+systemu; sam komentarz nie wysyła powiadomienia. Dawne tabele i dostawy usunięto z nowego schematu.
 
 ## Wykonana weryfikacja (3.10.2026)
 

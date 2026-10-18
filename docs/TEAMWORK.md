@@ -1,9 +1,7 @@
 # Praca zespołowa w Workspace
 
-Stary moduł Tablice Kanban jest wycofany. Pozostałe opisy jego modeli,
-szablonów i wspólnych komponentów są referencją historyczną; nie oznaczają
-aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces.SpaceTask`.
-[Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
+Dostęp dotyczy aktualnych Przestrzeni i modułów Workspace.
+[Dawne systemy usunięto ze schematu](DATABASE.md).
 
 ## Zespoły pracy a członkostwo Workspace
 
@@ -14,10 +12,6 @@ przestrzeni oznacza niezależną konfigurację, nie automatyczne udostępnienie
 członkom zespołu. [Pełny opis](SPACES.md).
 
 
-Starsze Projekty, Grupy, Zadania, Ulubione projekty i Szablony projektów są
-wycofane. Opisy ich członkostw poniżej stanowią referencję historycznych danych,
-bez aktywnych ekranów udostępniania. Bieżący dostęp i role opisuje [SPACES.md](SPACES.md).
-
 ## Zakres pierwszej wersji
 
 Workspace obejmuje Przestrzenie i ich zadania, Kalendarz, Dysk,
@@ -25,8 +19,7 @@ Dokumenty oraz Zasoby. Dawne katalogi Kontaktów, Firm, Użytkowników i Gości
 są wycofane; nie zmienia to kont ani członkostw Workspace. Dołączenie udostępnia wspólne dane Workspace.
 Przestrzenie i ich zadania mają własną widoczność oraz role.
 Rola „Obserwator” zapewnia wyłącznie odczyt w swoim zakresie; rola Workspace
-nie omija prywatności Przestrzeni ani zadania. Nie ma roli gościa Workspace. Historyczne `SharedItem` i linki udostępniania
-pozostają wyłączone.
+nie omija prywatności Przestrzeni ani zadania. Nie ma roli gościa Workspace.
 
 | Rola | Dostęp |
 | --- | --- |
@@ -47,26 +40,13 @@ podczas której formularz wymaga wyboru aktywnej osoby lub wyczyszczenia przypis
 
 ## Widoczność projektów Zadań
 
-Historyczne `TaskProject.visibility`, `private_owner`, członkostwa,
-ulubione i zaproszenia pozostają zapisane. Projekty nie mają ekranów,
-formularzy, operacji zapisu ani endpointów zespołu. `tasks.access.visible_to`
-wyklucza je również dla właściciela. Widoki i helpery dawnych operacji usunięto.
-Mapowanie `Space.project` służy importowi i starym linkom; bieżący dostęp
-zawsze sprawdza ACL Przestrzeni, niezależnie od historycznych ról projektu.
+Dawne projekty usunięto. Bieżący zakres wyznaczają `SpaceMembership` i `spaces.access`.
 
 ## Widoczność i udostępnianie grup
 
-`TaskSectionMembership` i dawne prywatne grupy są danymi historycznymi.
-Nie ma aktywnych endpointów `groups/<id>/team/` ani kandydatów grupy.
-Historyczne członkostwo nie daje dostępu do Przestrzeni i jej zadań.
+Dawne grupy i ich członkostwa usunięto. Zadania należą bezpośrednio do Przestrzeni.
 
 ## Widoczność i udostępnianie zadań
-
-`tasks.Task` i `TaskMembership` zachowują historyczne dane oraz powiązania
-plików. Stare formularze, zespoły i operacje zapisu są usunięte.
-Sygnały `tasks.sharing_signals` nadal czyszczą dawne udostępnienia i oczekujące
-zaproszenia po usunięciu/dezaktywacji członka Workspace lub prywatnego rodzica.
-Zapobiega to odtworzeniu dawnych grantów po ponownym dołączeniu.
 
 Bieżące zadania używają `SpaceTaskMembership` oraz `spaces.task_team`.
 Role i ograniczenia rodziców opisuje sekcja
@@ -172,23 +152,11 @@ usunięcie członkostwa nie usuwa rekordów. `request.user` nadal oznacza osobę
 wykonującą operację, autora komentarza i wpisu historii oraz właściciela
 osobistych preferencji widoku.
 
-Nie wystarczy usunąć filtrów właściciela. Formularze relacji korzystają z tego
-samego zakresu danych co widoki. Wykonawcy zadań oraz odpowiedzialni za projekty
-i grupy pochodzą z aktywnych kont zespołu i właściciela; spreparowany wybór
-osoby spoza zespołu jest błędem walidacji. Zakładka „Nieprzydzielone” w katalogu „Zadania”
-filtruje brak projektu i grupy, niezależnie od wykonawcy. Dawny adres `view=my-tasks` nadal filtruje wykonawcę
-według rzeczywiście zalogowanej osoby. Kanban zachowuje swój osobny model;
-nie dodano pola wykonawcy do kart.
-
-Backfill starych rekordów bez Workspace działa wyłącznie przy wejściu właściciela
-do jego własnej przestrzeni. Nie przenosi prywatnych rekordów członka do zespołu.
-Powiadomienia obejmują aktywność dostępnych Workspace, z faktycznym autorem.
-Osobisty odczyt i archiwum zapisuje `dashboard.NotificationState`.
-Wzmianki `@Imię Nazwisko` w komentarzach oraz osobiste obserwowanie zadań i projektów
-korzystają z tego centrum. Dostawy są ograniczone do aktywnych osób zespołu;
-nie nadają dostępu. Nie ma dostarczania push/e-mail.
-Zbiorcza zmiana statusów zachowuje zakończenie, datę i historię każdego zadania
-lub karty oraz blokadę numeracji w kolejności właściciel → rekord.
+Formularze relacji stosują ten sam zakres co widoki. Wykonawcy zadań i osoby
+odpowiedzialne za przestrzeń pochodzą z aktywnych kont Workspace.
+Zmiana Workspace nie wykonuje backfillu rekordów. Powiadomienia, wzmianki
+i przypomnienia ponownie sprawdzają dostęp; nie nadają go. Stan inbox jest osobisty.
+Zmiana statusu zachowuje zakończenie, datę i autora historii.
 
 ONLYOFFICE otrzymuje tożsamość faktycznego edytora. Podpisane URL źródła i callbacku
 zawierają jego identyfikator; serwer ponownie sprawdza aktywność konta i dostęp.
@@ -198,22 +166,12 @@ poza kontrolą aplikacji.
 
 ## Widoczność i udostępnianie Kanbana
 
-Kanban zachowuje modele, migracje, członkostwa oraz pliki historycznych kart.
-`kanban.access.visible_to` zwraca pusty wynik; dawne formularze, widoki,
-szablony oraz helpery udostępniania usunięto. Zgodne stare adresy prowadzą
-wyłącznie do zaimportowanych Przestrzeni po sprawdzeniu ich aktualnego ACL.
-Sygnały `kanban.sharing_signals` nadal czyszczą granty po odebraniu członkostwa.
+Tablice Przestrzeni używają tych samych zadań, członkostw i ACL. Osobny moduł Kanbana usunięto.
 
 ## Migracja i sprawdzenia
 
-Migracja `workplaces/0008_team_invitations.py` tworzy `WorkplaceInvitation`,
-dodaje `WorkplaceMembership.is_active` i wyłącza dawne członkostwa osób innych
-niż właściciel. Te historyczne wpisy nie dawały wcześniej dostępu; ich aktywacja
-wymaga nowego zaproszenia i przyjęcia. Właściciele zachowują dostęp.
-Migracja wprowadza też globalną unikalność slugów. Dotąd slug był unikalny tylko w obrębie
-właściciela, co po przyjęciu zaproszenia mogłoby wskazywać niewłaściwy Workspace.
-Migracja zachowuje pierwsze wystąpienie slugu, a kolejnym dopisuje identyfikator.
-Adresy z takim zmienionym slugiem trzeba odświeżyć; dane i nazwy pozostają zachowane.
+Nowe migracje początkowe od razu tworzą aktualny model Workspace,
+członkostw i zaproszeń. Wymagają pustej bazy; [procedura](DATABASE.md).
 
 Testy `backend/workplaces/test_team.py` obejmują role, zaproszenia, zakres danych,
 przypisania, historię, oba warianty URL, pobieranie plików, odebranie dostępu,

@@ -6,11 +6,9 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from legacy.contacts.models import Company
 from dashboard.views import _dashboard_notifications
-from kanban.models import Kanban
 from planner.models import CalendarEvent
-from tasks.models import Task, TaskProject, TaskSection, TaskTag
+from tasks.models import TaskTag
 from workplaces.models import create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -140,9 +138,6 @@ class DashboardViewTests(TestCase):
         workplace = create_workplace_for_user(user, 'Pulpit')
         task = make_task(user=user, workplace=workplace, title='Zadanie Przestrzeni')
         task.activities.create(actor=user, kind='comment', action='commented', message='Komentarz')
-        for model in (Task, Kanban):
-            historical = model.objects.create(user=user, workplace=workplace, title='Historyczne zadanie')
-            historical.activities.create(actor=user, kind='comment', action='commented', message='Wycofany komentarz')
         foreign = make_task(user=other, workplace=create_workplace_for_user(other, 'Obcy'), title='Niedostępne')
         foreign.activities.create(actor=other, kind='comment', action='commented')
         notifications = _dashboard_notifications(user)
@@ -200,11 +195,6 @@ class GlobalSearchTests(TestCase):
         space = make_space(user=self.user, workplace=self.workplace, name='Apollo space')
         task = make_task(user=self.user, workplace=self.workplace, space=space, title='Przygotuj prezentację Apollo')
         TaskTag.objects.create(user=self.user, workplace=self.workplace, space=space, name='Apollo VIP')
-        project = TaskProject.objects.create(user=self.user, workplace=self.workplace, name='Historyczny Apollo')
-        section = TaskSection.objects.create(project=project, title='Historyczna grupa Apollo')
-        Task.objects.create(user=self.user, workplace=self.workplace, section=section, title='Historyczne zadanie Apollo')
-        Company.objects.create(owner=self.user, workplace=self.workplace, name='Historyczna firma Apollo')
-        Kanban.objects.create(user=self.user, workplace=self.workplace, title='Historyczna karta Apollo')
         event = CalendarEvent.objects.create(user=self.user, workplace=self.workplace, title='Spotkanie Apollo',
             start=timezone.now()+timedelta(days=2), end=timezone.now()+timedelta(days=2, hours=1))
         response = self.client.get(reverse('global_search'), {'q': 'Apollo'})

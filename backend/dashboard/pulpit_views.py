@@ -15,7 +15,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 from workplaces.services import workspace_owner
 from spaces.services import visible_spaces
-from tasks.access import visible_to
+from spaces.access import visible_to
 from spaces.models import SpaceTask
 from .models import Dashboard, DashboardGadget
 from .pulpit_forms import DashboardAccessForm, DashboardForm, DashboardSettingsForm, GadgetForm

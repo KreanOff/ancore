@@ -1,18 +1,15 @@
-"""Delete shared legacy/canonical task files only after their final reference."""
-from django.apps import apps
+"""Delete private task files after the transaction and their final reference."""
 from django.db import transaction
 
 
-def delete_after_commit(instance, using, *, comment=False):
+def delete_after_commit(instance, using):
     if not instance.file:
         return
     storage, name = instance.file.storage, instance.file.name
-    models = [('tasks', 'TaskCommentImage'), ('kanban', 'KanbanCommentImage')] if comment else [('tasks', 'TaskAttachment'), ('kanban', 'KanbanAttachment')]
-
-    models.append(('spaces', 'SpaceTaskFile'))
 
     def cleanup():
-        if not any(apps.get_model(app, model).objects.using(using).filter(file=name).exists() for app, model in models):
+        from spaces.models import SpaceTaskFile
+        if not SpaceTaskFile.objects.using(using).filter(file=name).exists():
             storage.delete(name)
 
     transaction.on_commit(cleanup, using=using, robust=True)

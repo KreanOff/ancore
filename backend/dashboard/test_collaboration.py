@@ -10,7 +10,6 @@ from spaces.models import SpaceTaskActivity
 from spaces.testing import make_task
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
-from .models import ActivityInterest, ObjectFollow
 from .notification_service import change_notification_state, notification_page
 
 
@@ -56,7 +55,6 @@ class CollaborationTests(TestCase):
         self.assertEqual(self.page(user=self.owner)['dashboard_notification_count'], 0)
         self.assertEqual(self.page(user=self.outsider)['dashboard_notification_count'], 0)
         self.assertEqual(sum(item['key'] == f'spaces:{event.pk}' for item in self.page('all')['dashboard_notifications']), 1)
-        self.assertFalse(ActivityInterest.objects.exists())
 
     def test_unselected_handles_and_email_substrings_do_not_create_mentions(self):
         for text in ['@żaneta.kowalska', '@Żaneta', 'mail@żaneta.kowalska', '@żaneta.kowalska.extra']:
@@ -176,4 +174,3 @@ class CollaborationTests(TestCase):
             for scoped in (False, True):
                 prefix = f'/workplaces/{self.workspace.slug}' if scoped else ''
                 self.assertEqual(self.client.post(f'{prefix}/{app}/follow/task/{self.task.pk}/', {'following': 'true'}).status_code, 404)
-        self.assertFalse(ObjectFollow.objects.exists())

@@ -17,17 +17,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 30 | 0 | 19 | 166 |
-| [backend/accounts](../backend/accounts) | 24 | 7 | 9 | 74 |
-| [backend/workplaces](../backend/workplaces) | 23 | 10 | 13 | 116 |
-| [backend/tasks](../backend/tasks) | 23 | 66 | 26 | 56 |
-| [backend/kanban](../backend/kanban) | 10 | 39 | 0 | 9 |
-| [backend/legacy/contacts](../backend/legacy/contacts) | 3 | 8 | 0 | 0 |
-| [backend/dashboard](../backend/dashboard) | 44 | 14 | 43 | 225 |
-| [backend/planner](../backend/planner) | 10 | 2 | 2 | 7 |
-| [backend/documents](../backend/documents) | 38 | 11 | 31 | 203 |
+| [backend/core](../backend/core) | 28 | 0 | 19 | 160 |
+| [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
+| [backend/workplaces](../backend/workplaces) | 23 | 1 | 13 | 111 |
+| [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
+| [backend/dashboard](../backend/dashboard) | 43 | 2 | 43 | 220 |
+| [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
+| [backend/documents](../backend/documents) | 37 | 2 | 31 | 199 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 44 | 9 | 39 | 248 |
+| [backend/spaces](../backend/spaces) | 44 | 2 | 39 | 242 |
 
 ## 2. Modele i relacje
 
@@ -96,126 +94,6 @@ Metody/properties: `__str__`.
 
 ## Modele: tasks
 
-### `TaskProject`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `space_archived` (BooleanField), `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `next_section_code_number` (PositiveIntegerField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_projects'; null=True |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_projects'; through='TaskProjectMembership' |
-| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_task_projects' |
-| `company` | `'contacts.Company'` | on_delete=models.SET_NULL; related_name='task_projects'; null=True |
-| `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_task_projects'; null=True |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='task_projects' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='task_projects'; null=True |
-
-Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`, `get_status_display`, `get_stage_display`, `get_health_display`.
-
-### `TaskProjectMembership`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `project` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `project` | `TaskProject` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
-### `TaskProjectInvitation`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `project` (ForeignKey), `recipient` (ForeignKey), `invited_by` (ForeignKey), `role` (CharField), `status` (CharField), `created_at` (DateTimeField), `expires_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `project` | `TaskProject` | on_delete=models.CASCADE; related_name='invitations' |
-| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='project_invitations' |
-| `invited_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='sent_project_invitations'; null=True |
-
-### `TaskProjectTemplate`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `user` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `template_name` (CharField), `description` (TextField), `structure` (JSONField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_project_templates'; null=True |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; null=True |
-
-Metody/properties: `__str__`.
-
-### `TaskProjectNote`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `project` (ForeignKey), `author` (ForeignKey), `message` (TextField), `created_at` (DateTimeField), `updated_at` (DateTimeField), `edited_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `project` | `TaskProject` | on_delete=models.CASCADE; related_name='project_notes' |
-| `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='task_project_notes'; null=True |
-
-Metody/properties: `__str__`.
-
-### `TaskSection`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `project` (ForeignKey), `title` (CharField), `description` (TextField), `code` (CharField), `code_number` (PositiveIntegerField), `next_task_code_number` (PositiveIntegerField), `priority` (CharField), `status` (CharField), `kind` (CharField), `icon` (CharField), `owner` (ForeignKey), `due_at` (DateField), `wip_limit` (PositiveIntegerField), `order` (PositiveIntegerField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_task_sections'; null=True |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_sections'; through='TaskSectionMembership' |
-| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_task_sections' |
-| `project` | `TaskProject` | on_delete=models.CASCADE; related_name='sections' |
-| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='owned_task_sections'; null=True |
-
-Metody/properties: `_claim_next_code_number`, `save`, `full_code`, `__str__`.
-
-### `TaskSectionMembership`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `section` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `section` | `TaskSection` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
-### `TaskSectionInvitation`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `section` (ForeignKey), `recipient` (ForeignKey), `invited_by` (ForeignKey), `role` (CharField), `status` (CharField), `created_at` (DateTimeField), `expires_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `section` | `TaskSection` | on_delete=models.CASCADE; related_name='invitations' |
-| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='section_invitations' |
-| `invited_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='sent_section_invitations'; null=True |
-
-### `TaskSectionNote`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `section` (ForeignKey), `author` (ForeignKey), `message` (TextField), `created_at` (DateTimeField), `updated_at` (DateTimeField), `edited_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `section` | `TaskSection` | on_delete=models.CASCADE; related_name='section_notes' |
-| `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='task_section_notes'; null=True |
-
-Metody/properties: `__str__`.
-
 ### `TaskTag`
 
 Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
@@ -229,7 +107,7 @@ Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` 
 | `space` | `'spaces.Space'` | on_delete=models.CASCADE; related_name='tags'; null=True |
 | `related_tags` | `'self'` | — |
 
-Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`.
+Metody/properties: `_code_exists`, `_generate_unique_code`, `save`, `__str__`.
 
 ### `TaskTagNote`
 
@@ -243,319 +121,6 @@ Pola zadeklarowane tutaj: `tag` (ForeignKey), `author` (ForeignKey), `message` (
 | `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='task_tag_notes'; null=True |
 
 Metody/properties: `__str__`.
-
-### `Task`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `space_archived` (BooleanField), `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `task_id` (PositiveIntegerField), `code_number` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `reminder_at` (DateTimeField), `estimated_minutes` (PositiveIntegerField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `task_type` (CharField), `blocked_reason` (TextField), `user` (ForeignKey), `workplace` (ForeignKey), `assignee` (ForeignKey), `section` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_tasks'; null=True |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_tasks'; through='TaskMembership' |
-| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_tasks' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='tasks' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='tasks'; null=True |
-| `assignee` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_tasks'; null=True |
-| `section` | `TaskSection` | on_delete=models.CASCADE; related_name='tasks'; null=True |
-| `tags` | `TaskTag` | related_name='tasks' |
-| `parent` | `'self'` | on_delete=models.CASCADE; related_name='subtasks'; null=True |
-
-Metody/properties: `_claim_next_code_number`, `save`, `delete`, `_renumber_user_tasks`, `__str__`, `code`, `full_code`, `_activity_datetime`, `_activity_time_spent`, `has_time_spent`, `time_spent_label`, `due_urgency`, `get_file_extension`.
-
-### `TaskMembership`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `Task` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
-### `TaskWorkLog`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `author` (ForeignKey), `started_at` (DateTimeField), `ended_at` (DateTimeField), `description` (TextField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `Task` | on_delete=models.CASCADE; related_name='work_logs' |
-| `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='task_work_logs'; null=True |
-
-Metody/properties: `duration_minutes`, `__str__`.
-
-### `TaskAttachment`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `file` (FileField), `filename` (CharField), `uploaded_at` (DateTimeField), `file_size` (PositiveIntegerField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `Task` | on_delete=models.CASCADE; related_name='attachments' |
-
-Metody/properties: `save`, `get_file_extension`, `is_image`, `is_pdf`, `get_type_class`, `get_type_label`, `get_formatted_size`, `__str__`.
-
-### `TaskActivity`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `actor` (ForeignKey), `kind` (CharField), `action` (CharField), `message` (TextField), `metadata` (JSONField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `Task` | on_delete=models.CASCADE; related_name='activities' |
-| `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='task_activities'; null=True |
-
-Metody/properties: `__str__`.
-
-### `TaskCommentImage`
-
-Źródło: [backend/tasks/models.py](../backend/tasks/models.py).
-
-Pola zadeklarowane tutaj: `activity` (ForeignKey).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `activity` | `TaskActivity` | on_delete=models.CASCADE; related_name='images' |
-
-## Modele: kanban
-
-### `KanbanProject`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `name` (CharField), `description` (TextField), `code` (CharField), `icon` (CharField), `priority` (CharField), `status` (CharField), `stage` (CharField), `health` (CharField), `start_at` (DateField), `due_at` (DateField), `budget_amount` (DecimalField), `currency` (CharField), `source` (CharField), `company` (ForeignKey), `responsible_user` (ForeignKey), `user` (ForeignKey), `favorited_by` (ManyToManyField), `workplace` (ForeignKey), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_kanban_projects'; null=True |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_kanban_projects'; through='KanbanProjectMembership' |
-| `company` | `'contacts.Company'` | on_delete=models.SET_NULL; related_name='kanban_projects'; null=True |
-| `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_kanban_projects'; null=True |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='kanban_projects' |
-| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_kanban_projects' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='kanban_projects'; null=True |
-
-Metody/properties: `_code_scope_models`, `_code_exists`, `_generate_unique_code`, `save`, `__str__`.
-
-### `KanbanProjectNote`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `project` (ForeignKey), `author` (ForeignKey), `message` (TextField), `created_at` (DateTimeField), `updated_at` (DateTimeField), `edited_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `project` | `KanbanProject` | on_delete=models.CASCADE; related_name='project_notes' |
-| `author` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='kanban_project_notes'; null=True |
-
-Metody/properties: `__str__`.
-
-### `KanbanSection`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `visibility` (CharField), `private_owner` (ForeignKey), `shared_with` (ManyToManyField), `project` (ForeignKey), `favorited_by` (ManyToManyField), `title` (CharField), `description` (TextField), `kind` (CharField), `icon` (CharField), `order` (PositiveIntegerField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_kanban_sections'; null=True |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_kanban_sections'; through='KanbanSectionMembership' |
-| `project` | `KanbanProject` | on_delete=models.CASCADE; related_name='sections' |
-| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_kanban_sections' |
-
-Metody/properties: `__str__`.
-
-### `KanbanBoardColumn`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `section` (ForeignKey), `title` (CharField), `order` (PositiveIntegerField), `is_done` (BooleanField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `section` | `KanbanSection` | on_delete=models.CASCADE; related_name='columns' |
-
-Metody/properties: `ensure_defaults_for_section`, `__str__`.
-
-### `Kanban`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `task_id` (PositiveIntegerField), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `created_at` (DateTimeField), `completion_date` (DateTimeField), `due_at` (DateTimeField), `time_spent_hours` (PositiveIntegerField), `time_spent_minutes` (PositiveIntegerField), `user` (ForeignKey), `workplace` (ForeignKey), `section` (ForeignKey), `column` (ForeignKey), `tags` (ManyToManyField), `parent` (ForeignKey).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='kanban_items' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='kanban_items'; null=True |
-| `section` | `KanbanSection` | on_delete=models.SET_NULL; related_name='tasks'; null=True |
-| `column` | `KanbanBoardColumn` | on_delete=models.SET_NULL; related_name='cards'; null=True |
-| `tags` | `TaskTag` | related_name='kanban_cards' |
-| `parent` | `'self'` | on_delete=models.CASCADE; related_name='subtasks'; null=True |
-
-Metody/properties: `save`, `delete`, `_renumber_user_tasks`, `__str__`, `_activity_datetime`, `_activity_time_spent`, `has_time_spent`, `time_spent_label`, `get_file_extension`.
-
-### `KanbanAttachment`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `file` (FileField), `filename` (CharField), `uploaded_at` (DateTimeField), `file_size` (PositiveIntegerField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `Kanban` | on_delete=models.CASCADE; related_name='attachments' |
-
-Metody/properties: `save`, `get_file_extension`, `is_image`, `is_pdf`, `get_type_class`, `get_type_label`, `get_formatted_size`, `__str__`.
-
-### `KanbanActivity`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `actor` (ForeignKey), `kind` (CharField), `action` (CharField), `message` (TextField), `metadata` (JSONField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `Kanban` | on_delete=models.CASCADE; related_name='activities' |
-| `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='kanban_activities'; null=True |
-
-Metody/properties: `__str__`.
-
-### `KanbanCommentImage`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `activity` (ForeignKey).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `activity` | `KanbanActivity` | on_delete=models.CASCADE; related_name='images' |
-
-### `KanbanProjectMembership`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `project` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `project` | `KanbanProject` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
-### `KanbanSectionMembership`
-
-Źródło: [backend/kanban/models.py](../backend/kanban/models.py).
-
-Pola zadeklarowane tutaj: `section` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `section` | `KanbanSection` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
-## Modele: legacy/contacts
-
-### `Company`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `name` (CharField), `website` (URLField), `email` (EmailField), `phone` (CharField), `address` (CharField), `notes` (TextField), `company_photo` (FileField), `owner` (ForeignKey), `workplace` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='companies' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='companies'; null=True |
-| `members` | `settings.AUTH_USER_MODEL` | related_name='company_memberships'; through='CompanyMembership' |
-
-Metody/properties: `__str__`, `initials`.
-
-### `CompanyMembership`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `company` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `company` | `Company` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='company_membership_rows' |
-
-Metody/properties: `__str__`.
-
-### `Contact`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `company` (CharField), `company_record` (ForeignKey), `role` (CharField), `email` (EmailField), `phone` (CharField), `source` (CharField), `status` (CharField), `notes` (TextField), `last_contacted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField), `user` (ForeignKey), `workplace` (ForeignKey).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `company_record` | `Company` | on_delete=models.SET_NULL; related_name='contacts'; null=True |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='contacts' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='contacts'; null=True |
-
-Metody/properties: `__str__`, `display_name`, `initials`.
-
-### `UserContact`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `target_user` (ForeignKey), `linked_contact` (ForeignKey), `note` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='user_contacts' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='user_contacts'; null=True |
-| `target_user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='added_by_users' |
-| `linked_contact` | `Contact` | on_delete=models.SET_NULL; related_name='linked_user_contacts'; null=True |
-
-Metody/properties: `__str__`.
-
-### `ContactActivity`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `contact` (ForeignKey), `actor` (ForeignKey), `kind` (CharField), `action` (CharField), `message` (TextField), `metadata` (JSONField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `contact` | `Contact` | on_delete=models.CASCADE; related_name='activities' |
-| `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='contact_activities'; null=True |
-
-Metody/properties: `__str__`.
-
-### `SharedItem`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `content_type` (ForeignKey), `object_id` (PositiveBigIntegerField), `content_object` (GenericForeignKey), `shared_by` (ForeignKey), `shared_with` (ForeignKey), `permission` (CharField), `note` (CharField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `content_type` | `ContentType` | on_delete=models.CASCADE |
-| `content_object` | `'content_type'` | — |
-| `shared_by` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='shared_items_sent' |
-| `shared_with` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='shared_items_received' |
-
-Metody/properties: `__str__`.
-
-### `SharedItemLink`
-
-Źródło: [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py).
-
-Pola zadeklarowane tutaj: `content_type` (ForeignKey), `object_id` (PositiveBigIntegerField), `content_object` (GenericForeignKey), `created_by` (ForeignKey), `token` (CharField), `permission` (CharField), `is_active` (BooleanField), `created_at` (DateTimeField), `deactivated_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `content_type` | `ContentType` | on_delete=models.CASCADE |
-| `content_object` | `'content_type'` | — |
-| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='shared_item_links' |
-
-Metody/properties: `save`, `deactivate`, `__str__`.
 
 ## Modele: dashboard
 
@@ -604,60 +169,18 @@ Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `kind` (CharField), `title` 
 
 Metody/properties: `label`.
 
-### `ObjectFollow`
-
-Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
-
-Pola zadeklarowane tutaj: `user` (ForeignKey), `task` (ForeignKey), `kanban` (ForeignKey), `task_project` (ForeignKey), `kanban_project` (ForeignKey), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-| `task` | `'tasks.Task'` | on_delete=models.CASCADE; null=True |
-| `kanban` | `'kanban.Kanban'` | on_delete=models.CASCADE; null=True |
-| `task_project` | `'tasks.TaskProject'` | on_delete=models.CASCADE; null=True |
-| `kanban_project` | `'kanban.KanbanProject'` | on_delete=models.CASCADE; null=True |
-
-### `ActivityInterest`
-
-Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
-
-Pola zadeklarowane tutaj: `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `mentioned` (BooleanField), `followed` (BooleanField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-| `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
-| `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
-
-### `TaskReminder`
-
-Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
-
-Pola zadeklarowane tutaj: `task` (ForeignKey), `recipient` (ForeignKey), `scheduled_at` (DateTimeField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `task` | `'tasks.Task'` | on_delete=models.CASCADE |
-| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
 ### `NotificationState`
 
 Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
 
-Pola zadeklarowane tutaj: `space_activity` (ForeignKey), `space_reminder` (ForeignKey), `user` (ForeignKey), `task_activity` (ForeignKey), `kanban_activity` (ForeignKey), `invitation` (ForeignKey), `section_invitation` (ForeignKey), `project_invitation` (ForeignKey), `reminder` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
+Pola zadeklarowane tutaj: `space_activity` (ForeignKey), `space_reminder` (ForeignKey), `user` (ForeignKey), `invitation` (ForeignKey), `is_read` (BooleanField), `is_archived` (BooleanField), `is_deleted` (BooleanField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `space_activity` | `'spaces.SpaceTaskActivity'` | on_delete=models.CASCADE; null=True |
 | `space_reminder` | `'spaces.SpaceTaskReminder'` | on_delete=models.CASCADE; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-| `task_activity` | `'tasks.TaskActivity'` | on_delete=models.CASCADE; null=True |
-| `kanban_activity` | `'kanban.KanbanActivity'` | on_delete=models.CASCADE; null=True |
 | `invitation` | `'workplaces.WorkplaceInvitation'` | on_delete=models.CASCADE; null=True |
-| `section_invitation` | `'tasks.TaskSectionInvitation'` | on_delete=models.CASCADE; null=True |
-| `project_invitation` | `'tasks.TaskProjectInvitation'` | on_delete=models.CASCADE; null=True |
-| `reminder` | `TaskReminder` | on_delete=models.CASCADE; null=True |
 
 ## Modele: planner
 
@@ -816,11 +339,10 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `project` (OneToOneField), `name` (CharField), `description` (TextField), `user` (ForeignKey), `responsible_user` (ForeignKey), `visibility` (CharField), `private_owner` (ForeignKey), `favorited_by` (ManyToManyField), `workplace` (ForeignKey), `key` (CharField), `slug` (SlugField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `user` (ForeignKey), `responsible_user` (ForeignKey), `visibility` (CharField), `private_owner` (ForeignKey), `favorited_by` (ManyToManyField), `workplace` (ForeignKey), `key` (CharField), `slug` (SlugField), `kind` (CharField), `template` (CharField), `management` (CharField), `configuration` (ForeignKey), `next_number` (PositiveIntegerField), `avatar` (CharField), `avatar_photo` (FileField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
-| `project` | `'tasks.TaskProject'` | on_delete=models.SET_NULL; related_name='space'; null=True |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_spaces' |
 | `responsible_user` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='responsible_spaces'; null=True |
 | `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_spaces'; null=True |
@@ -887,7 +409,7 @@ Metody/properties: `get_action_display`.
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task` (ForeignKey), `activity` (ForeignKey), `file` (FileField), `filename` (CharField), `file_size` (PositiveIntegerField), `legacy_storage` (BooleanField).
+Pola zadeklarowane tutaj: `task` (ForeignKey), `activity` (ForeignKey), `file` (FileField), `filename` (CharField), `file_size` (PositiveIntegerField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -963,28 +485,17 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task` (OneToOneField), `legacy_task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_on` (DateField), `custom_values` (JSONField).
+Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_on` (DateField), `custom_values` (JSONField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='work_item'; null=True |
-| `legacy_task` | `'tasks.Task'` | on_delete=models.SET_NULL; related_name='work_item'; null=True |
 | `space` | `Space` | on_delete=models.CASCADE; related_name='items'; null=True |
 | `team` | `Team` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `sprint` | `Sprint` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `epic` | `'self'` | on_delete=models.SET_NULL; related_name='epic_items'; null=True |
 
 Metody/properties: `save`, `get_work_type_display`, `type_icon`.
-
-### `LegacyKanbanLink`
-
-Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
-
-Pola zadeklarowane tutaj: `kind` (CharField), `source_id` (PositiveBigIntegerField), `target_id` (PositiveBigIntegerField), `space` (ForeignKey).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `space` | `Space` | on_delete=models.SET_NULL; null=True |
 
 ## 3. Formularze
 
@@ -1083,8 +594,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'admin/'` | `admin.site.urls` | — |
 | `''` | `include('dashboard.urls')` | — |
 | `'accounts/'` | `include('accounts.urls')` | — |
-| `'^workplaces/[-a-zA-Z0-9_]+/tasks/'` | `include((tasks_urls.urlpatterns, 'workplace_tasks'), namespace='workplace_tasks')` | — |
-| `'^workplaces/[-a-zA-Z0-9_]+/kanban/'` | `include((kanban_urls.urlpatterns, 'workplace_kanban'), namespace='workplace_kanban')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/calendar/'` | `include((planner_urls.urlpatterns, 'workplace_planner'), namespace='workplace_planner')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/documents/'` | `include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/office/'` | `include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')` | — |
@@ -1093,8 +602,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'resources/'` | `include('resources.urls')` | — |
 | `'documents/'` | `include('documents.urls')` | — |
 | `'office/'` | `include('documents.workspace_urls')` | — |
-| `'tasks/'` | `include('tasks.urls')` | — |
-| `'kanban/'` | `include('kanban.urls')` | — |
 | `'calendar/'` | `include('planner.urls')` | — |
 
 ### backend/accounts/urls.py
@@ -1132,32 +639,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'<int:workplace_id>/settings/'` | `views.update_workplace` | 'update' |
 | `'<int:workplace_id>/delete/'` | `views.delete_workplace` | 'delete' |
 | `'<slug:workplace_slug>/'` | `views.workplace_home` | 'workplace-home' |
-
-### backend/tasks/urls.py
-
-Źródło: [backend/tasks/urls.py](../backend/tasks/urls.py).
-
-| Ścieżka / regex | Widok / include | Nazwa |
-| --- | --- | --- |
-| `''` | `retired_tasks` | 'tasks' |
-| `'groups/<int:section_id>/'` | `retired_tasks` | 'task_group' |
-| `'view-task/<int:task_id>/'` | `retired_tasks` | 'view-task' |
-| `'view-subtask/<int:task_id>/'` | `retired_tasks` | 'view-subtask' |
-| `'attachments/<int:attachment_id>/download/'` | `retired_tasks` | 'download_attachment' |
-| `'comment-images/<int:image_id>/'` | `retired_tasks` | 'comment_image' |
-
-### backend/kanban/urls.py
-
-Źródło: [backend/kanban/urls.py](../backend/kanban/urls.py).
-
-| Ścieżka / regex | Widok / include | Nazwa |
-| --- | --- | --- |
-| `''` | `retired_kanban` | 'tasks' |
-| `'groups/<int:section_id>/'` | `retired_kanban` | 'task_group' |
-| `'view-task/<int:task_id>/'` | `retired_kanban` | 'view-task' |
-| `'view-subtask/<int:task_id>/'` | `retired_kanban` | 'view-subtask' |
-| `'attachments/<int:attachment_id>/download/'` | `retired_kanban` | 'download_attachment' |
-| `'comment-images/<int:image_id>/'` | `retired_kanban` | 'comment_image' |
 
 ### backend/dashboard/urls.py
 
@@ -1305,12 +786,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/api.py](../backend/core/api.py) — `is_api_request`, `api_error`, `api_view`, `json_object`, `csrf_failure`
 - [backend/core/apps.py](../backend/core/apps.py) — `CoreConfig`
 - [backend/core/avatars.py](../backend/core/avatars.py) — `preset_avatar`
-- [backend/core/comment_images.py](../backend/core/comment_images.py) — `comment_image_storage`, `comment_image_path`, `AttachmentPresentation`, `CommentImage`, `delete_comment_image_file`, `save_comment`, `comment_image_response`
+- [backend/core/comment_images.py](../backend/core/comment_images.py) — `comment_image_storage`, `AttachmentPresentation`
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
 - [backend/core/media.py](../backend/core/media.py) — `public_media`
 - [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `page_styles`, `navigation_response`
 - [backend/core/task_files.py](../backend/core/task_files.py) — `delete_after_commit`
-- [backend/core/task_numbering.py](../backend/core/task_numbering.py) — `lock_task_numbers`, `renumber_tasks`
 - [backend/core/templatetags/__init__.py](../backend/core/templatetags/__init__.py)
 - [backend/core/templatetags/frontend.py](../backend/core/templatetags/frontend.py) — `global_panels_bootstrap`, `react_bundle`
 - [backend/core/upload_validation.py](../backend/core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
@@ -1349,7 +829,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/workplaces/middleware.py](../backend/workplaces/middleware.py) — `ActiveWorkplaceMiddleware`
 - [backend/workplaces/models.py](../backend/workplaces/models.py) — `generate_workplace_code`, `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
 - [backend/workplaces/navigation.py](../backend/workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
-- [backend/workplaces/services.py](../backend/workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `backfill_legacy_records_for_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
+- [backend/workplaces/services.py](../backend/workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
 - [backend/workplaces/team_views.py](../backend/workplaces/team_views.py) — `TeamRoleSelect`, `InvitationForm`, `invitation_candidates`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
 - [backend/workplaces/templatetags/__init__.py](../backend/workplaces/templatetags/__init__.py)
 - [backend/workplaces/templatetags/sidebar_favorites.py](../backend/workplaces/templatetags/sidebar_favorites.py) — `sidebar_favorite_toggle`
@@ -1360,31 +840,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### tasks
 
 - [backend/tasks/__init__.py](../backend/tasks/__init__.py)
-- [backend/tasks/access.py](../backend/tasks/access.py) — `task_tree_ids`, `editable_to`, `visible_to`
 - [backend/tasks/admin.py](../backend/tasks/admin.py)
 - [backend/tasks/apps.py](../backend/tasks/apps.py) — `TasksConfig`
 - [backend/tasks/forms.py](../backend/tasks/forms.py) — `TaskTagForm`
-- [backend/tasks/models.py](../backend/tasks/models.py) — `format_base36`, `parse_hierarchy_code_number`, `TaskProject`, `TaskProjectMembership`, `TaskProjectInvitation`, `TaskProjectTemplate`, `TaskProjectNote`, `TaskSection`, `TaskSectionMembership`, `TaskSectionInvitation`, `TaskSectionNote`, `TaskTag`, `TaskTagNote`, `Task`, `TaskMembership`, `TaskWorkLog`, `TaskAttachment`, `TaskActivity`, `TaskCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`
-- [backend/tasks/sharing_signals.py](../backend/tasks/sharing_signals.py) — `revoke_project_shares`, `membership_deleted`, `membership_disabled`, `project_member_deleted`, `section_member_deleted`, `task_member_deleted`
+- [backend/tasks/models.py](../backend/tasks/models.py) — `TaskTag`, `TaskTagNote`
 - [backend/tasks/tag_directory.py](../backend/tasks/tag_directory.py) — `tag_window_for_request`
 - [backend/tasks/tagging.py](../backend/tasks/tagging.py) — `tags_in_scope`, `visible_tags`, `tag_action`
-- [backend/tasks/urls.py](../backend/tasks/urls.py) — `retired_tasks`
-
-### kanban
-
-- [backend/kanban/__init__.py](../backend/kanban/__init__.py)
-- [backend/kanban/access.py](../backend/kanban/access.py) — `visible_to`
-- [backend/kanban/admin.py](../backend/kanban/admin.py)
-- [backend/kanban/apps.py](../backend/kanban/apps.py) — `KanbanConfig`
-- [backend/kanban/models.py](../backend/kanban/models.py) — `KanbanProject`, `KanbanProjectNote`, `KanbanSection`, `KanbanBoardColumn`, `Kanban`, `KanbanAttachment`, `KanbanActivity`, `KanbanCommentImage`, `auto_delete_file_on_delete`, `create_task_activity_on_create`, `KanbanProjectMembership`, `KanbanSectionMembership`
-- [backend/kanban/sharing_signals.py](../backend/kanban/sharing_signals.py) — `revoke_workspace_shares`, `workspace_member_deleted`, `workspace_member_disabled`, `project_member_deleted`
-- [backend/kanban/urls.py](../backend/kanban/urls.py) — `retired_kanban`
-
-### legacy/contacts
-
-- [backend/legacy/contacts/__init__.py](../backend/legacy/contacts/__init__.py)
-- [backend/legacy/contacts/apps.py](../backend/legacy/contacts/apps.py) — `LegacyContactsConfig`
-- [backend/legacy/contacts/models.py](../backend/legacy/contacts/models.py) — `Company`, `CompanyMembership`, `Contact`, `UserContact`, `ContactActivity`, `SharedItem`, `SharedItemLink`
 
 ### dashboard
 
@@ -1401,7 +862,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/for_you.py](../backend/dashboard/for_you.py) — `for_you_context`
 - [backend/dashboard/frontend.py](../backend/dashboard/frontend.py) — `for_you_page`, `settings_page`
 - [backend/dashboard/identifiers.py](../backend/dashboard/identifiers.py) — `DashboardSlugConverter`, `unique_dashboard_slug`
-- [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardGadget`, `ObjectFollow`, `ActivityInterest`, `TaskReminder`, `NotificationState`
+- [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardGadget`, `NotificationState`
 - [backend/dashboard/notification_frontend.py](../backend/dashboard/notification_frontend.py) — `notification_payload`
 - [backend/dashboard/notification_service.py](../backend/dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
@@ -1411,7 +872,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
 - [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `gadget_data`, `detail_context`
 - [backend/dashboard/recent.py](../backend/dashboard/recent.py) — `remember_view`, `recent_views`
-- [backend/dashboard/reminders.py](../backend/dashboard/reminders.py) — `reminders_for_user`, `space_reminders_for_user`
+- [backend/dashboard/reminders.py](../backend/dashboard/reminders.py) — `space_reminders_for_user`
 - [backend/dashboard/urls.py](../backend/dashboard/urls.py)
 - [backend/dashboard/views.py](../backend/dashboard/views.py) — `global_search`, `settings`, `for_you`, `home`, `notifications`, `notification_action`
 
@@ -1474,11 +935,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
-- [backend/spaces/middleware.py](../backend/spaces/middleware.py) — `LegacyKanbanMiddleware`
-- [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`, `LegacyKanbanLink`
+- [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
-- [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_task_tags`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
+- [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [backend/spaces/summary.py](../backend/spaces/summary.py) — `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
@@ -1932,6 +1392,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/TeamTable.tsx](../frontend/app/src/workspaces/TeamTable.tsx)
 - [frontend/app/src/workspaces/WorkspaceForm.tsx](../frontend/app/src/workspaces/WorkspaceForm.tsx)
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
+- [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ## 8. Testy
@@ -1944,13 +1405,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `CommentImageTests`: 16 metod testowych.
 
-### backend/core/test_contact_retirement.py
-
-Źródło: [backend/core/test_contact_retirement.py](../backend/core/test_contact_retirement.py).
-
-- `RetiredContactRoutesTests`: 2 metod testowych.
-- `RetiredContactDirectoryTests`: 5 metod testowych.
-
 ### backend/core/test_document_frontend.py
 
 Źródło: [backend/core/test_document_frontend.py](../backend/core/test_document_frontend.py).
@@ -1961,7 +1415,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_file_lifecycle.py](../backend/core/test_file_lifecycle.py).
 
-- `FileLifecycleTests`: 5 metod testowych.
+- `FileLifecycleTests`: 6 metod testowych.
 - `PublicMediaTests`: 1 metod testowych.
 
 ### backend/core/test_filter_frontend.py
@@ -1986,13 +1440,20 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_project_layout.py](../backend/core/test_project_layout.py).
 
-- `ProjectLayoutTests`: 5 metod testowych.
+- `ProjectLayoutTests`: 4 metod testowych.
 
 ### backend/core/test_pulpit_frontend.py
 
 Źródło: [backend/core/test_pulpit_frontend.py](../backend/core/test_pulpit_frontend.py).
 
 - `ReactPulpitTests`: 13 metod testowych.
+
+### backend/core/test_schema_baseline.py
+
+Źródło: [backend/core/test_schema_baseline.py](../backend/core/test_schema_baseline.py).
+
+- `CleanMigrationGraphTests`: 3 metod testowych.
+- `CleanDatabaseSchemaTests`: 1 metod testowych.
 
 ### backend/core/test_shell_frontend.py
 
@@ -2011,15 +1472,9 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_task_integrity.py](../backend/core/test_task_integrity.py).
 
-- `TaskIdentityTests`: 3 metod testowych.
-- `ConcurrentTaskNumberTests`: 2 metod testowych.
+- `ConcurrentSpaceTaskNumberTests`: 2 metod testowych.
+- `TaskIdentityTests`: 1 metod testowych.
 - `SpaceTaskIdentityTests`: 6 metod testowych.
-
-### backend/core/test_task_number_migrations.py
-
-Źródło: [backend/core/test_task_number_migrations.py](../backend/core/test_task_number_migrations.py).
-
-- `TaskNumberMigrationTests`: 1 metod testowych.
 
 ### backend/core/test_workspace_frontend.py
 
@@ -2045,7 +1500,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/accounts/test_email_identity.py](../backend/accounts/test_email_identity.py).
 
 - `EmailIdentityTests`: 9 metod testowych.
-- `EmailIdentityMigrationTests`: 1 metod testowych.
 
 ### backend/accounts/test_frontend.py
 
@@ -2092,7 +1546,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/workplaces/test_identifiers.py](../backend/workplaces/test_identifiers.py).
 
 - `WorkspaceIdentifierTests`: 10 metod testowych.
-- `WorkspaceIdentifierMigrationTests`: 1 metod testowych.
 
 ### backend/workplaces/test_invitation_candidates.py
 
@@ -2110,113 +1563,19 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/workplaces/test_team.py](../backend/workplaces/test_team.py).
 
-- `TeamAccessTests`: 21 metod testowych.
-- `TeamSlugMigrationTests`: 1 metod testowych.
+- `TeamAccessTests`: 20 metod testowych.
 
 ### backend/workplaces/tests.py
 
 Źródło: [backend/workplaces/tests.py](../backend/workplaces/tests.py).
 
-- `WorkplaceSelectionTests`: 43 metod testowych.
-
-### backend/tasks/test_direct_sharing_migration.py
-
-Źródło: [backend/tasks/test_direct_sharing_migration.py](../backend/tasks/test_direct_sharing_migration.py).
-
-- `DirectSharingMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_legacy_time_migration.py
-
-Źródło: [backend/tasks/test_legacy_time_migration.py](../backend/tasks/test_legacy_time_migration.py).
-
-- `LegacyTaskTimeMigrationTests`: 2 metod testowych.
-
-### backend/tasks/test_project_field_retirement.py
-
-Źródło: [backend/tasks/test_project_field_retirement.py](../backend/tasks/test_project_field_retirement.py).
-
-- `ProjectFieldRetirementTests`: 3 metod testowych.
-- `ProjectFieldRemovalMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_project_invitations.py
-
-Źródło: [backend/tasks/test_project_invitations.py](../backend/tasks/test_project_invitations.py).
-
-- `ProjectMembershipMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_project_sharing.py
-
-Źródło: [backend/tasks/test_project_sharing.py](../backend/tasks/test_project_sharing.py).
-
-- `ProjectSharingTests`: 3 metod testowych.
-
-### backend/tasks/test_project_templates.py
-
-Źródło: [backend/tasks/test_project_templates.py](../backend/tasks/test_project_templates.py).
-
-- `ProjectTemplateTests`: 3 metod testowych.
-
-### backend/tasks/test_project_visibility.py
-
-Źródło: [backend/tasks/test_project_visibility.py](../backend/tasks/test_project_visibility.py).
-
-- `ProjectVisibilityTests`: 3 metod testowych.
-- `ProjectVisibilityMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_retirement.py
-
-Źródło: [backend/tasks/test_retirement.py](../backend/tasks/test_retirement.py).
-
-- `RetiredTasksTests`: 9 metod testowych.
-
-### backend/tasks/test_section_sharing.py
-
-Źródło: [backend/tasks/test_section_sharing.py](../backend/tasks/test_section_sharing.py).
-
-- `SectionSharingMigrationTests`: 1 metod testowych.
-
-### backend/tasks/test_tag_retirement.py
-
-Źródło: [backend/tasks/test_tag_retirement.py](../backend/tasks/test_tag_retirement.py).
-
-- `LegacyTagRetirementTests`: 8 metod testowych.
-
-### backend/tasks/test_task_moves.py
-
-Źródło: [backend/tasks/test_task_moves.py](../backend/tasks/test_task_moves.py).
-
-- `TaskLocationEditTests`: 2 metod testowych.
-
-### backend/tasks/test_task_sharing.py
-
-Źródło: [backend/tasks/test_task_sharing.py](../backend/tasks/test_task_sharing.py).
-
-- `TaskSharingMigrationTests`: 1 metod testowych.
+- `WorkplaceSelectionTests`: 41 metod testowych.
 
 ### backend/tasks/tests.py
 
 Źródło: [backend/tasks/tests.py](../backend/tasks/tests.py).
 
 - `SharedTaskStyleTests`: 12 metod testowych.
-- `LegacyTaskModelTests`: 5 metod testowych.
-
-### backend/kanban/test_retirement.py
-
-Źródło: [backend/kanban/test_retirement.py](../backend/kanban/test_retirement.py).
-
-- `RetiredKanbanTests`: 6 metod testowych.
-
-### backend/kanban/test_sharing.py
-
-Źródło: [backend/kanban/test_sharing.py](../backend/kanban/test_sharing.py).
-
-- `KanbanSharingMigrationTests`: 1 metod testowych.
-
-### backend/kanban/tests.py
-
-Źródło: [backend/kanban/tests.py](../backend/kanban/tests.py).
-
-- `LegacyKanbanModelTests`: 2 metod testowych.
 
 ### backend/dashboard/test_collaboration.py
 
@@ -2240,7 +1599,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_for_you.py](../backend/dashboard/test_for_you.py).
 
-- `ForYouTests`: 29 metod testowych.
+- `ForYouTests`: 28 metod testowych.
 
 ### backend/dashboard/test_home.py
 
@@ -2271,7 +1630,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/dashboard/test_pulpit_group_retirement.py](../backend/dashboard/test_pulpit_group_retirement.py).
 
 - `PulpitGroupRetirementTests`: 3 metod testowych.
-- `PulpitGroupRemovalMigrationTests`: 1 metod testowych.
 
 ### backend/dashboard/test_pulpit_management.py
 
@@ -2291,7 +1649,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `PulpitUrlTests`: 6 metod testowych.
 - `PulpitSlugConcurrencyTests`: 1 metod testowych.
-- `PulpitSlugMigrationTests`: 1 metod testowych.
 
 ### backend/dashboard/test_pulpits.py
 
@@ -2309,13 +1666,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_search_regressions.py](../backend/dashboard/test_search_regressions.py).
 
-- `GlobalSearchRegressionTests`: 13 metod testowych.
-
-### backend/dashboard/test_work_progress_migration.py
-
-Źródło: [backend/dashboard/test_work_progress_migration.py](../backend/dashboard/test_work_progress_migration.py).
-
-- `WorkProgressMigrationTests`: 1 metod testowych.
+- `GlobalSearchRegressionTests`: 12 metod testowych.
 
 ### backend/dashboard/test_workspace_invitations.py
 
@@ -2372,12 +1723,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/documents/test_library_photos.py](../backend/documents/test_library_photos.py).
 
 - `LibraryPhotoTests`: 8 metod testowych.
-
-### backend/documents/test_migrations.py
-
-Źródło: [backend/documents/test_migrations.py](../backend/documents/test_migrations.py).
-
-- `LibraryMigrationTests`: 4 metod testowych.
 
 ### backend/documents/test_moves.py
 
@@ -2486,18 +1831,23 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `BoardOrderTests`: 17 metod testowych.
 
+### backend/spaces/test_configuration_writes.py
+
+Źródło: [backend/spaces/test_configuration_writes.py](../backend/spaces/test_configuration_writes.py).
+
+- `ConfigurationWriteTests`: 3 metod testowych.
+
 ### backend/spaces/test_independent_tasks.py
 
 Źródło: [backend/spaces/test_independent_tasks.py](../backend/spaces/test_independent_tasks.py).
 
-- `IndependentTaskTests`: 23 metod testowych.
-- `IndependentMigrationTests`: 1 metod testowych.
+- `IndependentTaskTests`: 21 metod testowych.
 
 ### backend/spaces/test_issue_types.py
 
 Źródło: [backend/spaces/test_issue_types.py](../backend/spaces/test_issue_types.py).
 
-- `IssueTypeTests`: 10 metod testowych.
+- `IssueTypeTests`: 9 metod testowych.
 
 ### backend/spaces/test_management.py
 
@@ -2522,7 +1872,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_tags.py](../backend/spaces/test_tags.py).
 
 - `SpaceTagTests`: 14 metod testowych.
-- `SpaceTagMigrationTests`: 1 metod testowych.
 
 ### backend/spaces/test_task_autosave.py
 
@@ -2542,13 +1891,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceUrlTests`: 8 metod testowych.
 - `ConcurrentSpaceSlugTests`: 1 metod testowych.
-- `SpaceSlugMigrationTests`: 1 metod testowych.
 
 ### backend/spaces/test_work_logs.py
 
 Źródło: [backend/spaces/test_work_logs.py](../backend/spaces/test_work_logs.py).
 
-- `SpaceTaskWorkLogTests`: 21 metod testowych.
+- `SpaceTaskWorkLogTests`: 22 metod testowych.
 
 ### backend/spaces/test_write_access.py
 
@@ -2560,8 +1908,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/tests.py](../backend/spaces/tests.py).
 
-- `SpaceTests`: 33 metod testowych.
-- `ImportTests`: 1 metod testowych.
+- `SpaceTests`: 30 metod testowych.
 
 ## 9. Migracje obecne lokalnie
 
@@ -2570,183 +1917,28 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### accounts
 
 - [backend/accounts/migrations/0001_initial.py](../backend/accounts/migrations/0001_initial.py)
-- [backend/accounts/migrations/0005_backfill_public_usernames.py](../backend/accounts/migrations/0005_backfill_public_usernames.py)
-- [backend/accounts/migrations/0006_user_last_seen_auto_presence.py](../backend/accounts/migrations/0006_user_last_seen_auto_presence.py)
-- [backend/accounts/migrations/0007_alter_user_profile_photo.py](../backend/accounts/migrations/0007_alter_user_profile_photo.py)
-- [backend/accounts/migrations/0008_user_email_case_insensitive.py](../backend/accounts/migrations/0008_user_email_case_insensitive.py)
-- [backend/accounts/migrations/0009_user_avatar.py](../backend/accounts/migrations/0009_user_avatar.py)
-- [backend/accounts/migrations/0010_user_avatar_thirty.py](../backend/accounts/migrations/0010_user_avatar_thirty.py)
 
 ### workplaces
 
 - [backend/workplaces/migrations/0001_initial.py](../backend/workplaces/migrations/0001_initial.py)
-- [backend/workplaces/migrations/0002_backfill_default_workplaces.py](../backend/workplaces/migrations/0002_backfill_default_workplaces.py)
-- [backend/workplaces/migrations/0003_workplace_workplace_photo.py](../backend/workplaces/migrations/0003_workplace_workplace_photo.py)
-- [backend/workplaces/migrations/0004_workplace_code_workplace_description_and_more.py](../backend/workplaces/migrations/0004_workplace_code_workplace_description_and_more.py)
-- [backend/workplaces/migrations/0005_backfill_workplace_codes.py](../backend/workplaces/migrations/0005_backfill_workplace_codes.py)
-- [backend/workplaces/migrations/0006_sidebarfavorite.py](../backend/workplaces/migrations/0006_sidebarfavorite.py)
-- [backend/workplaces/migrations/0007_sidebarfavorite_position.py](../backend/workplaces/migrations/0007_sidebarfavorite_position.py)
-- [backend/workplaces/migrations/0008_team_invitations.py](../backend/workplaces/migrations/0008_team_invitations.py)
-- [backend/workplaces/migrations/0009_workplace_avatar.py](../backend/workplaces/migrations/0009_workplace_avatar.py)
-- [backend/workplaces/migrations/0010_random_workspace_identifiers.py](../backend/workplaces/migrations/0010_random_workspace_identifiers.py)
 
 ### tasks
 
 - [backend/tasks/migrations/0001_initial.py](../backend/tasks/migrations/0001_initial.py)
-- [backend/tasks/migrations/0002_taskproject_tasksection_task_section.py](../backend/tasks/migrations/0002_taskproject_tasksection_task_section.py)
-- [backend/tasks/migrations/0003_alter_taskproject_code.py](../backend/tasks/migrations/0003_alter_taskproject_code.py)
-- [backend/tasks/migrations/0004_taskproject_icon.py](../backend/tasks/migrations/0004_taskproject_icon.py)
-- [backend/tasks/migrations/0005_taskproject_description.py](../backend/tasks/migrations/0005_taskproject_description.py)
-- [backend/tasks/migrations/0006_tasksection_icon.py](../backend/tasks/migrations/0006_tasksection_icon.py)
-- [backend/tasks/migrations/0007_allow_blank_task_icons.py](../backend/tasks/migrations/0007_allow_blank_task_icons.py)
-- [backend/tasks/migrations/0008_extend_task_priority_choices.py](../backend/tasks/migrations/0008_extend_task_priority_choices.py)
-- [backend/tasks/migrations/0009_tasksection_description.py](../backend/tasks/migrations/0009_tasksection_description.py)
-- [backend/tasks/migrations/0010_tasktag_task_tags_tasktag_unique_task_tag_per_user.py](../backend/tasks/migrations/0010_tasktag_task_tags_tasktag_unique_task_tag_per_user.py)
-- [backend/tasks/migrations/0011_tasktag_description.py](../backend/tasks/migrations/0011_tasktag_description.py)
-- [backend/tasks/migrations/0012_unique_task_project_code_per_user.py](../backend/tasks/migrations/0012_unique_task_project_code_per_user.py)
-- [backend/tasks/migrations/0013_task_time_spent.py](../backend/tasks/migrations/0013_task_time_spent.py)
-- [backend/tasks/migrations/0014_ensure_time_spent_columns.py](../backend/tasks/migrations/0014_ensure_time_spent_columns.py)
-- [backend/tasks/migrations/0015_task_parent.py](../backend/tasks/migrations/0015_task_parent.py)
-- [backend/tasks/migrations/0016_relax_legacy_time_spent.py](../backend/tasks/migrations/0016_relax_legacy_time_spent.py)
-- [backend/tasks/migrations/0017_taskactivity.py](../backend/tasks/migrations/0017_taskactivity.py)
-- [backend/tasks/migrations/0018_project_code_numbering.py](../backend/tasks/migrations/0018_project_code_numbering.py)
-- [backend/tasks/migrations/0019_tasktag_code.py](../backend/tasks/migrations/0019_tasktag_code.py)
-- [backend/tasks/migrations/0020_global_project_codes.py](../backend/tasks/migrations/0020_global_project_codes.py)
-- [backend/tasks/migrations/0021_random_project_codes.py](../backend/tasks/migrations/0021_random_project_codes.py)
-- [backend/tasks/migrations/0022_task_due_at.py](../backend/tasks/migrations/0022_task_due_at.py)
-- [backend/tasks/migrations/0023_alter_task_section_cascade.py](../backend/tasks/migrations/0023_alter_task_section_cascade.py)
-- [backend/tasks/migrations/0024_extend_lucide_icon_names.py](../backend/tasks/migrations/0024_extend_lucide_icon_names.py)
-- [backend/tasks/migrations/0025_taskproject_priority_due_at_company.py](../backend/tasks/migrations/0025_taskproject_priority_due_at_company.py)
-- [backend/tasks/migrations/0026_extend_taskproject_priority_choices.py](../backend/tasks/migrations/0026_extend_taskproject_priority_choices.py)
-- [backend/tasks/migrations/0027_tasksection_priority.py](../backend/tasks/migrations/0027_tasksection_priority.py)
-- [backend/tasks/migrations/0028_taskproject_responsible_user.py](../backend/tasks/migrations/0028_taskproject_responsible_user.py)
-- [backend/tasks/migrations/0029_task_task_section_parent_idx_and_more.py](../backend/tasks/migrations/0029_task_task_section_parent_idx_and_more.py)
-- [backend/tasks/migrations/0030_base36_hierarchy_codes.py](../backend/tasks/migrations/0030_base36_hierarchy_codes.py)
-- [backend/tasks/migrations/0031_base36_tag_codes.py](../backend/tasks/migrations/0031_base36_tag_codes.py)
-- [backend/tasks/migrations/0032_task_crm_fields.py](../backend/tasks/migrations/0032_task_crm_fields.py)
-- [backend/tasks/migrations/0033_taskproject_budget_amount_taskproject_currency_and_more.py](../backend/tasks/migrations/0033_taskproject_budget_amount_taskproject_currency_and_more.py)
-- [backend/tasks/migrations/0034_remove_tasktag_unique_task_tag_per_user_and_more.py](../backend/tasks/migrations/0034_remove_tasktag_unique_task_tag_per_user_and_more.py)
-- [backend/tasks/migrations/0035_tasktag_automation_rules_tasktag_category_and_more.py](../backend/tasks/migrations/0035_tasktag_automation_rules_tasktag_category_and_more.py)
-- [backend/tasks/migrations/0036_taskprojectnote.py](../backend/tasks/migrations/0036_taskprojectnote.py)
-- [backend/tasks/migrations/0037_tasksectionnote.py](../backend/tasks/migrations/0037_tasksectionnote.py)
-- [backend/tasks/migrations/0038_tasktagnote.py](../backend/tasks/migrations/0038_tasktagnote.py)
-- [backend/tasks/migrations/0039_remove_taskproject_unique_task_project_code_and_more.py](../backend/tasks/migrations/0039_remove_taskproject_unique_task_project_code_and_more.py)
-- [backend/tasks/migrations/0040_note_edited_at.py](../backend/tasks/migrations/0040_note_edited_at.py)
-- [backend/tasks/migrations/0041_taskprojectfieldoption.py](../backend/tasks/migrations/0041_taskprojectfieldoption.py)
-- [backend/tasks/migrations/0042_remove_task_task_user_company_status_idx_and_more.py](../backend/tasks/migrations/0042_remove_task_task_user_company_status_idx_and_more.py)
-- [backend/tasks/migrations/0043_retire_entity_icons.py](../backend/tasks/migrations/0043_retire_entity_icons.py)
-- [backend/tasks/migrations/0044_taskprojectdeadlinerule.py](../backend/tasks/migrations/0044_taskprojectdeadlinerule.py)
-- [backend/tasks/migrations/0045_project_specific_deadline_rules.py](../backend/tasks/migrations/0045_project_specific_deadline_rules.py)
-- [backend/tasks/migrations/0046_project_source_options.py](../backend/tasks/migrations/0046_project_source_options.py)
-- [backend/tasks/migrations/0047_task_unique_tasks_number_per_workspace.py](../backend/tasks/migrations/0047_task_unique_tasks_number_per_workspace.py)
-- [backend/tasks/migrations/0048_taskprojecttemplate.py](../backend/tasks/migrations/0048_taskprojecttemplate.py)
-- [backend/tasks/migrations/0049_taskprojecttemplate_template_name.py](../backend/tasks/migrations/0049_taskprojecttemplate_template_name.py)
-- [backend/tasks/migrations/0050_task_work_log.py](../backend/tasks/migrations/0050_task_work_log.py)
-- [backend/tasks/migrations/0051_legacy_logged_seconds_default.py](../backend/tasks/migrations/0051_legacy_logged_seconds_default.py)
-- [backend/tasks/migrations/0052_comment_images.py](../backend/tasks/migrations/0052_comment_images.py)
-- [backend/tasks/migrations/0053_comment_attachment_size.py](../backend/tasks/migrations/0053_comment_attachment_size.py)
-- [backend/tasks/migrations/0054_project_visibility.py](../backend/tasks/migrations/0054_project_visibility.py)
-- [backend/tasks/migrations/0055_project_sharing.py](../backend/tasks/migrations/0055_project_sharing.py)
-- [backend/tasks/migrations/0056_project_invitations.py](../backend/tasks/migrations/0056_project_invitations.py)
-- [backend/tasks/migrations/0057_project_observer.py](../backend/tasks/migrations/0057_project_observer.py)
-- [backend/tasks/migrations/0058_section_sharing.py](../backend/tasks/migrations/0058_section_sharing.py)
-- [backend/tasks/migrations/0059_direct_sharing.py](../backend/tasks/migrations/0059_direct_sharing.py)
-- [backend/tasks/migrations/0060_task_sharing.py](../backend/tasks/migrations/0060_task_sharing.py)
-- [backend/tasks/migrations/0061_directory_favorites.py](../backend/tasks/migrations/0061_directory_favorites.py)
-- [backend/tasks/migrations/0062_task_favorites.py](../backend/tasks/migrations/0062_task_favorites.py)
-- [backend/tasks/migrations/0063_remove_project_field_settings.py](../backend/tasks/migrations/0063_remove_project_field_settings.py)
-- [backend/tasks/migrations/0064_space_tags.py](../backend/tasks/migrations/0064_space_tags.py)
-- [backend/tasks/migrations/0065_space_tag_data.py](../backend/tasks/migrations/0065_space_tag_data.py)
-- [backend/tasks/migrations/0066_task_space_archived_taskproject_space_archived.py](../backend/tasks/migrations/0066_task_space_archived_taskproject_space_archived.py)
-
-### kanban
-
-- [backend/kanban/migrations/0001_initial.py](../backend/kanban/migrations/0001_initial.py)
-- [backend/kanban/migrations/0002_taskproject_tasksection_task_section.py](../backend/kanban/migrations/0002_taskproject_tasksection_task_section.py)
-- [backend/kanban/migrations/0003_alter_taskproject_code.py](../backend/kanban/migrations/0003_alter_taskproject_code.py)
-- [backend/kanban/migrations/0004_taskproject_icon.py](../backend/kanban/migrations/0004_taskproject_icon.py)
-- [backend/kanban/migrations/0005_taskproject_description.py](../backend/kanban/migrations/0005_taskproject_description.py)
-- [backend/kanban/migrations/0006_tasksection_icon.py](../backend/kanban/migrations/0006_tasksection_icon.py)
-- [backend/kanban/migrations/0007_allow_blank_task_icons.py](../backend/kanban/migrations/0007_allow_blank_task_icons.py)
-- [backend/kanban/migrations/0008_extend_task_priority_choices.py](../backend/kanban/migrations/0008_extend_task_priority_choices.py)
-- [backend/kanban/migrations/0009_tasksection_description.py](../backend/kanban/migrations/0009_tasksection_description.py)
-- [backend/kanban/migrations/0010_tasktag_task_tags_tasktag_unique_task_tag_per_user.py](../backend/kanban/migrations/0010_tasktag_task_tags_tasktag_unique_task_tag_per_user.py)
-- [backend/kanban/migrations/0011_tasktag_description.py](../backend/kanban/migrations/0011_tasktag_description.py)
-- [backend/kanban/migrations/0012_unique_task_project_code_per_user.py](../backend/kanban/migrations/0012_unique_task_project_code_per_user.py)
-- [backend/kanban/migrations/0013_task_time_spent.py](../backend/kanban/migrations/0013_task_time_spent.py)
-- [backend/kanban/migrations/0014_ensure_time_spent_columns.py](../backend/kanban/migrations/0014_ensure_time_spent_columns.py)
-- [backend/kanban/migrations/0015_task_parent.py](../backend/kanban/migrations/0015_task_parent.py)
-- [backend/kanban/migrations/0016_relax_legacy_time_spent.py](../backend/kanban/migrations/0016_relax_legacy_time_spent.py)
-- [backend/kanban/migrations/0017_taskactivity.py](../backend/kanban/migrations/0017_taskactivity.py)
-- [backend/kanban/migrations/0018_project_code_numbering.py](../backend/kanban/migrations/0018_project_code_numbering.py)
-- [backend/kanban/migrations/0019_tasktag_code.py](../backend/kanban/migrations/0019_tasktag_code.py)
-- [backend/kanban/migrations/0020_kanbanboardcolumn_alter_kanban_status.py](../backend/kanban/migrations/0020_kanbanboardcolumn_alter_kanban_status.py)
-- [backend/kanban/migrations/0021_board_columns_belong_to_sections.py](../backend/kanban/migrations/0021_board_columns_belong_to_sections.py)
-- [backend/kanban/migrations/0022_alter_kanbanactivity_action.py](../backend/kanban/migrations/0022_alter_kanbanactivity_action.py)
-- [backend/kanban/migrations/0023_global_project_codes.py](../backend/kanban/migrations/0023_global_project_codes.py)
-- [backend/kanban/migrations/0024_random_workspace_codes.py](../backend/kanban/migrations/0024_random_workspace_codes.py)
-- [backend/kanban/migrations/0025_extend_lucide_icon_names.py](../backend/kanban/migrations/0025_extend_lucide_icon_names.py)
-- [backend/kanban/migrations/0026_base36_tag_codes.py](../backend/kanban/migrations/0026_base36_tag_codes.py)
-- [backend/kanban/migrations/0027_remove_kanbantag_unique_kanban_tag_per_user_and_more.py](../backend/kanban/migrations/0027_remove_kanbantag_unique_kanban_tag_per_user_and_more.py)
-- [backend/kanban/migrations/0028_prepare_shared_task_tags.py](../backend/kanban/migrations/0028_prepare_shared_task_tags.py)
-- [backend/kanban/migrations/0029_use_shared_task_tags.py](../backend/kanban/migrations/0029_use_shared_task_tags.py)
-- [backend/kanban/migrations/0030_kanbanprojectnote.py](../backend/kanban/migrations/0030_kanbanprojectnote.py)
-- [backend/kanban/migrations/0031_remove_kanbantag_unique_kanban_tag_code_and_more.py](../backend/kanban/migrations/0031_remove_kanbantag_unique_kanban_tag_code_and_more.py)
-- [backend/kanban/migrations/0032_kanbanprojectnote_edited_at.py](../backend/kanban/migrations/0032_kanbanprojectnote_edited_at.py)
-- [backend/kanban/migrations/0033_retire_entity_icons.py](../backend/kanban/migrations/0033_retire_entity_icons.py)
-- [backend/kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py](../backend/kanban/migrations/0034_kanban_unique_kanban_number_per_workspace.py)
-- [backend/kanban/migrations/0035_kanban_due_at.py](../backend/kanban/migrations/0035_kanban_due_at.py)
-- [backend/kanban/migrations/0036_comment_images.py](../backend/kanban/migrations/0036_comment_images.py)
-- [backend/kanban/migrations/0037_comment_attachment_size.py](../backend/kanban/migrations/0037_comment_attachment_size.py)
-- [backend/kanban/migrations/0038_directory_favorites.py](../backend/kanban/migrations/0038_directory_favorites.py)
-- [backend/kanban/migrations/0039_sharing.py](../backend/kanban/migrations/0039_sharing.py)
-
-### legacy/contacts
-
-- [backend/legacy/contacts/migrations/0001_initial.py](../backend/legacy/contacts/migrations/0001_initial.py)
-- [backend/legacy/contacts/migrations/0002_contactactivity.py](../backend/legacy/contacts/migrations/0002_contactactivity.py)
-- [backend/legacy/contacts/migrations/0003_company_contact_company_record_companymembership_and_more.py](../backend/legacy/contacts/migrations/0003_company_contact_company_record_companymembership_and_more.py)
-- [backend/legacy/contacts/migrations/0004_alter_contact_options_contact_middle_name.py](../backend/legacy/contacts/migrations/0004_alter_contact_options_contact_middle_name.py)
-- [backend/legacy/contacts/migrations/0005_company_company_photo.py](../backend/legacy/contacts/migrations/0005_company_company_photo.py)
-- [backend/legacy/contacts/migrations/0006_shareditemlink.py](../backend/legacy/contacts/migrations/0006_shareditemlink.py)
-- [backend/legacy/contacts/migrations/0007_alter_shareditem_permission_and_more.py](../backend/legacy/contacts/migrations/0007_alter_shareditem_permission_and_more.py)
-- [backend/legacy/contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py](../backend/legacy/contacts/migrations/0008_remove_company_unique_company_name_per_owner_and_more.py)
 
 ### dashboard
 
 - [backend/dashboard/migrations/0001_initial.py](../backend/dashboard/migrations/0001_initial.py)
-- [backend/dashboard/migrations/0002_taskreminder_and_more.py](../backend/dashboard/migrations/0002_taskreminder_and_more.py)
-- [backend/dashboard/migrations/0003_notificationstate_is_deleted.py](../backend/dashboard/migrations/0003_notificationstate_is_deleted.py)
-- [backend/dashboard/migrations/0004_mentions_and_following.py](../backend/dashboard/migrations/0004_mentions_and_following.py)
-- [backend/dashboard/migrations/0005_project_invitations.py](../backend/dashboard/migrations/0005_project_invitations.py)
-- [backend/dashboard/migrations/0006_section_sharing.py](../backend/dashboard/migrations/0006_section_sharing.py)
-- [backend/dashboard/migrations/0007_dashboard_dashboardgadget_and_more.py](../backend/dashboard/migrations/0007_dashboard_dashboardgadget_and_more.py)
-- [backend/dashboard/migrations/0008_dashboardgroup.py](../backend/dashboard/migrations/0008_dashboardgroup.py)
-- [backend/dashboard/migrations/0009_remove_dashboard_groups.py](../backend/dashboard/migrations/0009_remove_dashboard_groups.py)
-- [backend/dashboard/migrations/0010_work_progress_gadget.py](../backend/dashboard/migrations/0010_work_progress_gadget.py)
-- [backend/dashboard/migrations/0011_default_dashboard.py](../backend/dashboard/migrations/0011_default_dashboard.py)
-- [backend/dashboard/migrations/0012_dashboard_slugs.py](../backend/dashboard/migrations/0012_dashboard_slugs.py)
-- [backend/dashboard/migrations/0013_remove_notificationstate_notification_exactly_one_source_and_more.py](../backend/dashboard/migrations/0013_remove_notificationstate_notification_exactly_one_source_and_more.py)
-- [backend/dashboard/migrations/0014_savedtaskfilter.py](../backend/dashboard/migrations/0014_savedtaskfilter.py)
+- [backend/dashboard/migrations/0002_initial.py](../backend/dashboard/migrations/0002_initial.py)
 
 ### planner
 
 - [backend/planner/migrations/0001_initial.py](../backend/planner/migrations/0001_initial.py)
-- [backend/planner/migrations/0002_calendarevent_workplace.py](../backend/planner/migrations/0002_calendarevent_workplace.py)
 
 ### documents
 
 - [backend/documents/migrations/0001_initial.py](../backend/documents/migrations/0001_initial.py)
-- [backend/documents/migrations/0002_documentlibrary_and_more.py](../backend/documents/migrations/0002_documentlibrary_and_more.py)
-- [backend/documents/migrations/0003_documentlibrary_photo.py](../backend/documents/migrations/0003_documentlibrary_photo.py)
-- [backend/documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py](../backend/documents/migrations/0004_workspacedocumentfolder_workspacedocument_and_more.py)
-- [backend/documents/migrations/0005_workspacedocument_office_key_and_more.py](../backend/documents/migrations/0005_workspacedocument_office_key_and_more.py)
-- [backend/documents/migrations/0006_workspacedocument_tags.py](../backend/documents/migrations/0006_workspacedocument_tags.py)
-- [backend/documents/migrations/0007_workspacedocumentfolder_is_starred.py](../backend/documents/migrations/0007_workspacedocumentfolder_is_starred.py)
-- [backend/documents/migrations/0008_folder_is_starred.py](../backend/documents/migrations/0008_folder_is_starred.py)
-- [backend/documents/migrations/0009_drive_office_editor.py](../backend/documents/migrations/0009_drive_office_editor.py)
-- [backend/documents/migrations/0010_icon_colors.py](../backend/documents/migrations/0010_icon_colors.py)
-- [backend/documents/migrations/0011_workspacedocument_is_pdf_form_and_more.py](../backend/documents/migrations/0011_workspacedocument_is_pdf_form_and_more.py)
+- [backend/documents/migrations/0002_initial.py](../backend/documents/migrations/0002_initial.py)
 
 ### resources
 
@@ -2755,11 +1947,4 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### spaces
 
 - [backend/spaces/migrations/0001_initial.py](../backend/spaces/migrations/0001_initial.py)
-- [backend/spaces/migrations/0002_unify_work.py](../backend/spaces/migrations/0002_unify_work.py)
-- [backend/spaces/migrations/0003_space_avatar_space_avatar_photo.py](../backend/spaces/migrations/0003_space_avatar_space_avatar_photo.py)
-- [backend/spaces/migrations/0004_issue_types.py](../backend/spaces/migrations/0004_issue_types.py)
-- [backend/spaces/migrations/0005_space_slugs.py](../backend/spaces/migrations/0005_space_slugs.py)
-- [backend/spaces/migrations/0006_independent_space_tasks.py](../backend/spaces/migrations/0006_independent_space_tasks.py)
-- [backend/spaces/migrations/0007_archive_import_sources.py](../backend/spaces/migrations/0007_archive_import_sources.py)
-- [backend/spaces/migrations/0008_spacetask_reminder_at_spacetask_task_type_and_more.py](../backend/spaces/migrations/0008_spacetask_reminder_at_spacetask_task_type_and_more.py)
-- [backend/spaces/migrations/0009_import_task_membership_dates.py](../backend/spaces/migrations/0009_import_task_membership_dates.py)
+- [backend/spaces/migrations/0002_initial.py](../backend/spaces/migrations/0002_initial.py)

@@ -205,6 +205,26 @@ class SpaceTaskWorkLogTests(TestCase):
         self.assertEqual(entry.author, self.member)
         self.assertEqual(entry.started_at, datetime(2026, 9, 24, 10, 50, tzinfo=UTC))
 
+    def test_react_edit_values_preserve_hours_when_only_minutes_change(self):
+        self.post()
+        entry = self.task.work_logs.get()
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                api = scoped_workplace_app_path(self.team, 'api', 'v1/page/')
+                response = self.client.get(api, {'url': self.url(scoped=scoped)})
+                values = response.json()['data']['work_log']['results'][0]['form_values']
+                self.assertEqual((values['hours'], values['minutes']), (1, 30))
+                self.assertEqual(values['duration_minutes'], 90)
+        response = self.client.post(api + '?url=' + self.url(), {
+            'action': 'edit_work_log', 'work_log_id': entry.pk,
+            **{'worklog-' + name: value for name, value in values.items()},
+            'worklog-minutes': '45', 'worklog-calculation_mode': 'duration',
+        })
+        self.assertEqual(response.status_code, 200)
+        entry.refresh_from_db()
+        self.assertEqual(entry.duration_minutes, 105)
+        self.assertEqual(entry.author, self.member)
+
     def test_scope_rejects_foreign_task_owner_workspace_and_entry(self):
         elsewhere = make_task(user=self.owner, workplace=self.other_team, title='Elsewhere')
         foreign = make_task(user=self.outsider, workplace=self.team, title='Foreign')

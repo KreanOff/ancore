@@ -31,9 +31,10 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `PYTHONPATH` wskazującego `backend/`. `BASE_DIR` nadal oznacza katalog główny.
   Szablony, migracje i testy pozostają przy aplikacjach. Nie zmieniaj etykiet
   aplikacji ani nazw tabel przy porządkowaniu struktury.
-- Dawny system Kontaktów jest usunięty. `backend/legacy/contacts` zawiera
-  wyłącznie zgodność schematu i migracji; zachowuj etykietę Django `contacts`
-  i nazwy tabel, bez przywracania katalogów, backfillu ani publicznych zdjęć firm.
+- Dawne systemy Kontaktów, Tasks i osobnego Kanbana są całkowicie usunięte,
+  łącznie z modelami, relacjami, migracjami i trasami. Nie przywracaj ich.
+  Projekt używa nowego zestawu migracji początkowych na pustej bazie:
+  [Baza danych](docs/DATABASE.md).
 - Backend to Django i PostgreSQL. Frontend aktywnej aplikacji i wspólna powłoka
   korzystają z Reacta i TypeScriptu (`frontend/app`) oraz JSON API Django.
   `docs/FRONTEND.md` opisuje zakres i cykl życia. Szablony Django zachowują
@@ -43,34 +44,28 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   i `backend/spaces/task_views.py`. Projekty, Grupy, starsze Zadania, Ulubione projekty
   i Szablony projektów są wycofane, podobnie Kanban. Nie przywracaj ich tras
   ani usuniętych implementacji historycznych widoków Tasks/Kanbana.
-- `tasks.Task` i `kanban.Kanban` pozostają osobnymi modelami historycznymi
-  dla zachowania danych, migracji, plików i zgodności linków. Przestrzenie
-  współdzielą `tasks.TaskTag`, część szablonów oraz `static/js/tasks.js`.
+- Pakiet `tasks` zawiera wyłącznie bieżące `TaskTag` i `TaskTagNote`, obsługę
+  tagów oraz współdzielone szablony. Przestrzenie i pozostałe moduły nadal
+  korzystają z `static/js/tasks.js` oraz wspólnych komponentów CSS.
 - Dane biznesowe ograniczaj do właściciela Workspace wyznaczonego przez
   `workplaces.services.workspace_owner(request)` i aktywnego `request.workplace`.
   Członkostwo daje dostęp do wspólnych danych Workspace; Przestrzenie, zadania
   i ich zawartość filtruj przez `spaces.access.visible_to(queryset, request.user)`.
-  `tasks.access.visible_to` deleguje bieżące modele do Przestrzeni, a dla
-  historycznych modeli pracy zwraca pusty wynik.
   Formularze także ograniczają relacje.
   `request.user` pozostaje faktycznym autorem operacji, komentarzy i historii.
   Samo przypisanie wykonawcy nie daje dostępu. Zasady ról: `docs/TEAMWORK.md`.
 - Korzystaj z mechanizmów `workplaces.services` do ustalania Workspace
   i budowania adresów. Sprawdź zwykłe oraz scoped adresy aplikacji.
 - Bieżące zadania mają trwały `WorkItem.key` w obrębie Przestrzeni, oddzielony
-  od klucza bazy `pk`. Historyczny `tasks.Task.task_id` jest numerowany
-  w zakresie użytkownika i Workspace oraz może się zmienić po usunięciu rekordu.
-  Linki zgodności muszą rozróżniać `pk`, `task_id` i kody projektu/grupy/tagu.
+  od klucza bazy `pk`. Usuwanie nie renumeruje kluczy; nie odtwarzaj dawnego
+  mechanizmu `task_id` ani mapowań importu.
 - Przy zmianie statusu zachowaj logikę zakończenia, historii i operacji zbiorczych.
   Bezpośrednie `QuerySet.update()` omija `save()` i sygnały modelu.
 - Zachowaj walidację plików w `backend/core/upload_validation.py`, kontrolowane
   pobieranie i prywatny storage Dokumentów.
 - Dostęp Przestrzeni i ich zadań wyznaczają `SpaceMembership` oraz
-  `SpaceTaskMembership`, z ograniczeniami prywatnych rodziców. Historyczne
-  członkostwa projektów, grup i zadań Tasks pozostają zapisane bez aktywnych
-  operacji udostępniania. Stare linki używają wyłącznie aktualnych ACL Przestrzeni.
+  `SpaceTaskMembership`, z ograniczeniami prywatnych rodziców.
   Role Przestrzeni są niezależne od ról Workspace.
-  Historyczne `SharedItem` i linki są nadal wyłączone. Nie przywracaj ich przy okazji innego zadania.
 - Nie traktuj `reminder_at`, `automation_rules`, `wip_limit` lub `is_done`
   jako dowodu istnienia automatyzacji. Sprawdź ich faktycznych odbiorców.
 

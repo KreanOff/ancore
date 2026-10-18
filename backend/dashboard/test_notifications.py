@@ -6,10 +6,8 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from dashboard.models import ActivityInterest, NotificationState
+from dashboard.models import NotificationState
 from dashboard.notification_service import DASHBOARD_NOTIFICATION_LIMIT, notification_page
-from kanban.models import Kanban, KanbanActivity
-from tasks.models import Task
 from spaces.models import SpaceTaskActivity
 from spaces.testing import make_task
 from workplaces.models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
@@ -26,8 +24,6 @@ class NotificationCenterTests(TestCase):
         self.membership = WorkplaceMembership.objects.create(workplace=self.workspace, user=self.member, role='member')
         self.task = make_task(user=self.owner, workplace=self.workspace, title='Wdrożenie')
         self.activity = SpaceTaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Gotowe do sprawdzenia')
-        self.card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Karta')
-        self.kanban_activity = KanbanActivity.objects.create(task=self.card, actor=self.owner, kind='comment', action='commented', message='Komentarz do karty')
         self.client.force_login(self.member)
         session = self.client.session
         session['active_workplace_id'] = self.workspace.pk
@@ -42,18 +38,9 @@ class NotificationCenterTests(TestCase):
     def summary(self):
         return self.client.get(reverse('notifications'), {'summary': '1'}).json()
 
-    def test_history_is_excluded_from_every_view_and_summary_even_with_old_deliveries(self):
+    def test_history_is_excluded_from_every_view_and_summary(self):
         before = self.summary()
-        legacy = Task.objects.create(user=self.owner, workplace=self.workspace, title='Historyczne zadanie')
         keys = []
-        for source, task, field in [('tasks', legacy, 'task_activity'), ('kanban', self.card, 'kanban_activity')]:
-            for index, action in enumerate(['created', 'updated', 'status_changed', 'attachments_added']):
-                activity = task.activities.create(actor=self.owner, kind='system', action=action,
-                                                  message='Historia nie jest powiadomieniem')
-                keys.append(f'{source}:{activity.pk}')
-                ActivityInterest.objects.create(user=self.member, **{field: activity}, followed=True, mentioned=True)
-                NotificationState.objects.create(user=self.member, **{field: activity},
-                                                 is_read=False, is_archived=bool(index % 2))
         history = self.task.activities.create(actor=self.owner, kind='system', action='updated', message='Bieżąca historia')
         keys.append(f'spaces:{history.pk}')
         NotificationState.objects.create(user=self.member, space_activity=history, is_read=False)
@@ -65,15 +52,13 @@ class NotificationCenterTests(TestCase):
                     for key in keys:
                         self.assertNotIn(f'data-notification-key="{key}"', payload['html'])
         self.assertEqual(self.summary(), before)
-        self.assertEqual(legacy.activities.filter(message='Historia nie jest powiadomieniem').count(), 4)
-        self.assertEqual(self.card.activities.filter(message='Historia nie jest powiadomieniem').count(), 4)
         self.assertTrue(self.task.activities.filter(pk=history.pk).exists())
 
     def test_history_cannot_be_changed_through_inbox_actions_or_bulk_snapshots(self):
         receipts = []
-        for source, task in [('spaces', self.task), ('kanban', self.card)]:
+        for source, task in [('spaces', self.task)]:
             activity = task.activities.create(actor=self.owner, kind='system', action='updated')
-            field = 'space_activity' if source == 'spaces' else 'kanban_activity'
+            field = 'space_activity'
             receipt = NotificationState.objects.create(user=self.member, **{field: activity}, is_read=False)
             receipts.append(receipt)
             for action in ['read', 'unread', 'archive', 'restore', 'delete']:
@@ -90,10 +75,8 @@ class NotificationCenterTests(TestCase):
 
     def test_history_only_renders_empty_state_and_preserves_object_history(self):
         self.activity.delete()
-        self.kanban_activity.delete()
         self.task.activities.create(actor=self.owner, kind='system', action='updated')
         self.assertTrue(self.task.activities.filter(kind='system').exists())
-        self.assertTrue(self.card.activities.filter(kind='system').exists())
         for user in [self.member, self.owner]:
             self.client.force_login(user)
             payload = self.feed().json()
@@ -189,7 +172,6 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.feed(view='archived').json()['total'], 0)
         self.assertEqual(self.summary()['unread_count'], 0)
         self.assertTrue(SpaceTaskActivity.objects.filter(pk=self.activity.pk).exists())
-        self.assertTrue(KanbanActivity.objects.filter(pk=self.kanban_activity.pk).exists())
         self.client.force_login(self.owner)
         self.assertIn(f'data-notification-key="spaces:{self.activity.pk}"', self.feed().json()['html'])
         self.assertFalse(NotificationState.objects.filter(user=self.owner).exists())
@@ -298,7 +280,6 @@ class NotificationCenterTests(TestCase):
         SpaceTaskActivity.objects.bulk_create([SpaceTaskActivity(task=self.task, actor=self.owner, kind='system', message=f'Historia {i}') for i in range(30)])
         moment = timezone.now() - timedelta(days=1)
         SpaceTaskActivity.objects.filter(task=self.task).update(created_at=moment)
-        KanbanActivity.objects.filter(task=self.card).update(created_at=moment)
         filters = {'view': 'all', 'workspace': ''}
         first = notification_page(self.member, filters)
         new = SpaceTaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Po otwarciu')
@@ -331,7 +312,8 @@ class NotificationCenterTests(TestCase):
         self.assertFalse(NotificationState.objects.exists())
 
     def test_receipt_constraints_require_one_unique_source(self):
-        for values in ({}, {'space_activity': self.activity, 'kanban_activity': self.kanban_activity}):
+        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
+        for values in ({}, {'space_activity': self.activity, 'invitation': invitation}):
             with self.assertRaises(IntegrityError), transaction.atomic():
                 NotificationState.objects.create(user=self.member, **values)
         self.act('read')

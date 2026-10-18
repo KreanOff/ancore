@@ -1,10 +1,8 @@
-from unittest.mock import patch
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth import SESSION_KEY, aauthenticate, authenticate, get_user_model
-from django.db import IntegrityError, connection, transaction
-from django.db.migrations.executor import MigrationExecutor
-from django.test import TestCase, TransactionTestCase
+from django.db import IntegrityError, transaction
+from django.test import TestCase
 from django.urls import reverse
 
 from workplaces.models import create_workplace_for_user
@@ -97,34 +95,3 @@ class EmailIdentityTests(TestCase):
     def test_existing_model_backend_session_remains_authenticated(self):
         self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.get(reverse('profile')).status_code, 200)
-
-
-class EmailIdentityMigrationTests(TransactionTestCase):
-    def test_legacy_duplicates_block_migration_and_invitation_without_changing_accounts(self):
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        previous = [node for node in latest if node[0] != 'accounts'] + [('accounts', '0007_alter_user_profile_photo')]
-        executor.migrate(previous)
-        duplicate = None
-        try:
-            # Use the model matching the historical schema (before later profile fields).
-            apps = executor.loader.project_state(previous).apps
-            User = apps.get_model('accounts', 'User')
-            Workplace = apps.get_model('workplaces', 'Workplace')
-            owner = User.objects.create_user(username='migration-owner', email='owner@example.test')
-            first = User.objects.create_user(username='first-email', email='same@example.test')
-            duplicate = User.objects.create_user(username='second-email', email='SAME@example.test')
-            workspace = Workplace.objects.create(owner=owner, name='Legacy email', slug='legacy-email')
-            form = InvitationForm(data={'email': duplicate.email, 'role': 'member'}, workplace=workspace, actor=owner)
-            with patch('workplaces.team_views.get_user_model', return_value=User):
-                self.assertFalse(form.is_valid())
-            self.assertIn('email', form.errors)
-            self.assertFalse(workspace.invitations.exists())
-            with self.assertRaisesMessage(RuntimeError, 'Żadne konto nie zostało zmienione'):
-                MigrationExecutor(connection).migrate(latest)
-            self.assertEqual(User.objects.get(pk=first.pk).email, 'same@example.test')
-            self.assertEqual(User.objects.get(pk=duplicate.pk).email, 'SAME@example.test')
-        finally:
-            if duplicate:
-                duplicate.delete()
-            MigrationExecutor(connection).migrate(latest)

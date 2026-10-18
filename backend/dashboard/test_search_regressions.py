@@ -8,10 +8,8 @@ from django.utils import timezone
 
 from dashboard.recent import RECENT_SESSION_KEY
 from dashboard.views import GLOBAL_SEARCH_GROUP_LIMIT, GLOBAL_SEARCH_RECENT_LIMIT
-from kanban.models import Kanban
 from spaces.models import SpaceTask
 from spaces.testing import make_space, make_task
-from tasks.models import Task, TaskProject, TaskSection
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 
 
@@ -152,8 +150,7 @@ class GlobalSearchRegressionTests(TestCase):
         task = make_task(user=self.owner, workplace=self.team, space=self.space, title='Recent task')
         parent = make_task(user=self.owner, workplace=self.team, space=self.space, title='Private parent', visibility='private', private_owner=self.owner)
         child = make_task(user=self.owner, workplace=self.team, space=self.space, parent=parent, title='Hidden child')
-        card = Kanban.objects.create(user=self.owner, workplace=self.team, title='Retired card')
-        self.remember(self.space, task, child, card)
+        self.remember(self.space, task, child)
         self.assertEqual(self.recent()['total'], 2)
         self.space.visibility, self.space.private_owner = 'private', self.owner
         self.space.save()
@@ -174,19 +171,6 @@ class GlobalSearchRegressionTests(TestCase):
         session.save()
         self.assertEqual(self.recent()['groups'], [])
 
-    def test_recent_task_metadata_does_not_expose_foreign_legacy_group(self):
-        project = TaskProject.objects.create(user=self.owner, workplace=self.private, name='Foreign project')
-        section = TaskSection.objects.create(project=project, title='Foreign group')
-        legacy = Task.objects.create(user=self.owner, workplace=self.private, section=section, title='Legacy link')
-        task = make_task(user=self.owner, workplace=self.team, space=self.space, title='Current task')
-        item = task.work_item
-        item.legacy_task = legacy
-        item.save()
-        self.remember(task, legacy, section, project)
-        payload = self.recent()
-        self.assertEqual(payload['total'], 1)
-        self.assertEqual(payload['groups'][0]['results'][0]['meta'], f'{item.key} · {self.space.name}')
-        self.assertNotIn('Foreign', str(payload))
 
     def test_recent_records_current_space_views_and_rechecks_revoked_access(self):
         project = make_space(user=self.owner, workplace=self.team, name='Opened space')

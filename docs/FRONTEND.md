@@ -67,6 +67,10 @@ Podczas pracy można uruchomić `pnpm --dir frontend/app dev` w drugim terminalu
 Polecenie obserwuje źródła i przebudowuje bundle; po zmianie odśwież przeglądarkę.
 Nie uruchamia osobnego serwera HTTP ani HMR. Sprawdzanie typów wykonuje
 `pnpm --dir frontend/app typecheck`; produkcyjny `build` też je uruchamia.
+`pnpm --dir frontend/app test` uruchamia testy kontrolera nawigacji w Node.js,
+z rzeczywistym kodem TypeScript bundlowanym przez esbuild i zastąpionymi
+granicami HTTP/renderowania. Obejmują zmianę Workspace, przekierowania,
+oczekiwanie na zapis i odrzucenie wyjścia po błędzie zapisu.
 `pnpm --dir frontend/app format:check` sprawdza format źródeł;
 `pnpm --dir frontend/app format` go poprawia.
 
@@ -387,6 +391,10 @@ HTML ani nie wykonuje skryptów z odpowiedzi. Błąd pozostawia aktualny ekran
 z komunikatem i możliwością ponowienia. Konto, Workspace lub inny hash bundla
 w odpowiedzi wymagają pełnego przeładowania. Logowanie, przełączanie tożsamości,
 pliki, nowe karty i pełne edytory zachowują własne przepływy.
+Adres z innym segmentem Workspace (również z globalnych powiadomień)
+otwiera się w pełni już przed żądaniem API bieżącego Workspace. Nadal czeka
+na zapis i respektuje odrzucenie wyjścia; tę samą kontrolę stosuje do przekierowań.
+Backend docelowej strony ponownie sprawdza członkostwo i dostęp do obiektu.
 
 Wstecz/Dalej odtwarza ekran oraz przewinięcie. `setPageLocation()` łączy lokalne
 zmiany query/hash (np. Zasoby, Dokumenty, zakładki zadania i zarządzanie Workspace)
@@ -412,6 +420,6 @@ Błąd zapisu zachowuje potwierdzoną kolejność. Brak localStorage nie blokuje
 
 `layout.js`, `space-navigation.js`, `filter-navigation.js`, `pulpit-navigation.js`,
 `space-picker.js` i `notifications.js` nie są ładowane z powłoką Reacta.
-Pozostają tylko dla szablonów zgodności. Historyczne Tasks/Kanban nie otrzymały
-nowych tras ani operacji. Nowe funkcje rozwijaj w istniejących komponentach
+Pozostają tylko dla szablonów zgodności. Historyczne systemy Tasks/Kanban
+usunięto również z modeli, migracji i routingu. Nowe funkcje rozwijaj w istniejących komponentach
 React i usługach Django, z aktualnym ACL oraz wspólnym systemem UI.

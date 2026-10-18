@@ -1,21 +1,18 @@
 from datetime import timedelta
-from importlib import import_module
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.storage import FileSystemStorage
-from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
-from django.test import TestCase, TransactionTestCase, override_settings
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from tasks.models import Task, TaskProject, TaskSection, TaskTag
+from tasks.models import TaskTag
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
 from .defaults import template_settings
-from .models import Space, SpaceConfiguration, SpaceMembership, SpaceTask, SpaceTaskActivity, SpaceTaskMembership, SpaceTaskFile, Sprint, WorkItem
+from .models import Space, SpaceConfiguration, SpaceMembership, SpaceTask, SpaceTaskActivity, SpaceTaskMembership, SpaceTaskFile, WorkItem
 
 
 class IndependentTaskTests(TestCase):
@@ -66,24 +63,13 @@ class IndependentTaskTests(TestCase):
                 self.assertContains(response, 'view=backlog')
                 self.assertNotContains(response, 'Planowanie i zespół')
 
-    def test_creation_is_independent_of_legacy_projects_groups_and_tasks(self):
-        old_counts = (TaskProject.objects.count(), TaskSection.objects.count(), Task.objects.count())
+    def test_creation_assigns_a_stable_space_key(self):
         response = self.client.post(self.url('items/create/'), self.data(title='Drugie zadanie'))
         self.assertEqual(response.status_code, 302)
         self.assertTrue(SpaceTask.objects.filter(title='Drugie zadanie', space=self.space).exists())
-        self.assertEqual(old_counts, (TaskProject.objects.count(), TaskSection.objects.count(), Task.objects.count()))
         task = SpaceTask.objects.get(title='Drugie zadanie')
         self.assertEqual(task.work_item.key, 'SZ-2')
-        self.assertIsNone(task.work_item.legacy_task_id)
 
-    def test_legacy_creation_does_not_create_new_space_or_item(self):
-        old = TaskProject.objects.create(user=self.owner, workplace=self.workspace, name='Starszy projekt')
-        section = TaskSection.objects.create(project=old, title='Starsza grupa')
-        task = Task.objects.create(user=self.owner, workplace=self.workspace, section=section, title='Starsze zadanie')
-        self.assertFalse(Space.objects.filter(project=old).exists())
-        self.assertFalse(WorkItem.objects.filter(legacy_task=task).exists())
-        self.assertNotContains(self.client.get(self.url('?view=list')), 'Starsze zadanie')
-        self.assertEqual(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks', f'view-task/{task.task_id}/?task_pk={task.pk}')).status_code, 404)
 
     def test_save_status_completion_history_and_reopen(self):
         response = self.client.post(self.task_url('?view=list'), self.data(status='closed'))
@@ -112,7 +98,6 @@ class IndependentTaskTests(TestCase):
             file = self.task.attachments.get(activity__isnull=True)
             response = self.client.get(self.task_url(f'files/{file.pk}/'))
             self.assertEqual(b''.join(response.streaming_content), b'Opis pracy')
-            self.assertFalse(Task.objects.filter(title=self.task.title).exists())
             self.assertTrue(self.task.activities.filter(action='attachments_added', actor=self.owner).exists())
 
     def test_invalid_detail_upload_and_fields_do_not_partially_save(self):
@@ -268,28 +253,10 @@ class IndependentTaskTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(self.task.tags.exists())
 
-    def test_new_space_does_not_create_project(self):
-        counts = TaskProject.objects.count()
+    def test_new_space_is_created_with_its_configuration(self):
         response = self.client.post(scoped_workplace_app_path(self.workspace, 'spaces', 'create/'), {'name': 'Nowa', 'key': 'NW', 'kind': 'business', 'template': 'tasks', 'management': 'team', 'visibility': 'public'})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(TaskProject.objects.count(), counts)
-        self.assertIsNone(Space.objects.get(key='NW').project_id)
 
-    def test_legacy_link_redirect_and_imported_content_no_longer_synchronize(self):
-        legacy = Task.objects.create(user=self.owner, workplace=self.workspace, title='Archiwalna treść', space_archived=True)
-        item = self.task.work_item
-        item.legacy_task = legacy
-        item.save()
-        old = scoped_workplace_app_path(self.workspace, 'tasks', f'view-task/{legacy.task_id}/?task_pk={legacy.pk}')
-        self.assertRedirects(self.client.get(old), self.task_url('?view=list'))
-        self.assertEqual(self.client.post(old, self.data()).status_code, 409)
-        self.client.post(self.task_url(), self.data(title='Niezależna treść'))
-        legacy.refresh_from_db()
-        self.assertEqual(legacy.title, 'Archiwalna treść')
-        self.assertNotContains(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks'), follow=True), 'Archiwalna treść')
-        self.client.post(self.task_url(), {'action': 'delete'})
-        self.assertTrue(Task.objects.filter(pk=legacy.pk, space_archived=True).exists())
-        self.assertEqual(self.client.get(old).status_code, 404)
 
     def test_delete_refuses_a_hidden_or_observed_descendant(self):
         child = SpaceTask.objects.create(space=self.space, parent=self.task, title='Tylko dla właściciela', visibility='private', private_owner=self.owner, created_by=self.owner)
@@ -351,44 +318,3 @@ class IndependentTaskTests(TestCase):
         self.assertFalse(visible_to(SpaceTask.objects.all(), self.member).filter(pk=self.task.pk).exists())
         self.login(self.member)
         self.assertEqual(self.client.get(self.task_url()).status_code, 404)
-
-
-
-class IndependentMigrationTests(TransactionTestCase):
-    def test_import_preserves_keys_content_history_and_private_group_acl(self):
-        executor = MigrationExecutor(connection)
-        leaves = executor.loader.graph.leaf_nodes()
-        executor.migrate([('spaces', '0005_space_slugs')])
-        executor = MigrationExecutor(connection)
-        old = executor.loader.project_state(list(executor.loader.applied_migrations)).apps
-        try:
-            User = old.get_model('accounts', 'User')
-            owner = User.objects.create(username='migration-independent', email='migration@example.test')
-            member = User.objects.create(username='migration-member', email='migration-member@example.test')
-            workspace = old.get_model('workplaces', 'Workplace').objects.create(owner_id=owner.pk, name='Migracja', slug='w_independent')
-            project = old.get_model('tasks', 'TaskProject').objects.create(user_id=owner.pk, workplace_id=workspace.pk, name='Przeniesiona', code='OLD')
-            group = old.get_model('tasks', 'TaskSection').objects.create(project_id=project.pk, title='Prywatna grupa', code='GR', visibility='private', private_owner_id=owner.pk)
-            old.get_model('tasks', 'TaskSectionMembership').objects.create(section_id=group.pk, user_id=member.pk, role='observer')
-            config = old.get_model('spaces', 'SpaceConfiguration').objects.create(workplace_id=workspace.pk, name='Konfiguracja', settings=template_settings())
-            space = old.get_model('spaces', 'Space').objects.create(project_id=project.pk, workplace_id=workspace.pk, key='IMP', slug='przeniesiona', configuration_id=config.pk, next_number=8)
-            source = old.get_model('tasks', 'Task').objects.create(user_id=owner.pk, workplace_id=workspace.pk, section_id=group.pk, title='Zachowaj', task_id=7, description='Treść', priority='high', task_type='meeting', reminder_at=timezone.now().replace(second=0, microsecond=0))
-            old_member = old.get_model('tasks', 'TaskMembership').objects.create(task_id=source.pk, user_id=member.pk)
-            item = old.get_model('spaces', 'WorkItem').objects.create(task_id=source.pk, space_id=space.pk, key='IMP-7', number=7, rank=700)
-            old.get_model('tasks', 'TaskActivity').objects.create(task_id=source.pk, actor_id=member.pk, kind='comment', action='commented', message='Historia')
-            executor = MigrationExecutor(connection)
-            executor.migrate(leaves)
-            result = WorkItem.objects.get(pk=item.pk)
-            self.assertEqual(result.key, 'IMP-7')
-            self.assertEqual(result.task.title, 'Zachowaj')
-            self.assertEqual(result.task.description, 'Treść')
-            self.assertEqual(result.task.task_type, 'meeting')
-            self.assertEqual(result.task.reminder_at, source.reminder_at)
-            self.assertEqual(result.task.activities.get().actor_id, member.pk)
-            self.assertEqual(result.task.memberships.get(user_id=member.pk).role, 'observer')
-            self.assertEqual(result.task.memberships.get(user_id=member.pk).created_at, old_member.created_at)
-            self.assertEqual(result.task.visibility, 'private')
-            self.assertEqual(result.space.name, 'Przeniesiona')
-            self.assertTrue(Task.objects.filter(pk=source.pk).exists())
-            self.assertEqual(result.legacy_task_id, source.pk)
-        finally:
-            MigrationExecutor(connection).migrate(leaves)

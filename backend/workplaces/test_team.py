@@ -6,18 +6,15 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.storage import FileSystemStorage
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from legacy.contacts.models import Company, Contact
 from documents.models import Document, DocumentLibrary, WorkspaceDocument
 from documents import office_service
-from kanban.models import Kanban, KanbanProject, KanbanSection
 from planner.models import CalendarEvent
 from spaces.models import SpaceTask, SpaceTaskFile
 from spaces.testing import make_task
-from tasks.models import Task, TaskProject, TaskSection
 from .models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
 from .services import workplaces_for_user, scoped_workplace_app_path
 
@@ -35,17 +32,10 @@ class TeamAccessTests(TestCase):
         cls.personal = create_workplace_for_user(cls.member, 'Prywatne członka')
         cls.membership = WorkplaceMembership.objects.create(workplace=cls.team, user=cls.member, role='member')
         cls.admin_membership = WorkplaceMembership.objects.create(workplace=cls.team, user=cls.admin, role='admin')
-        cls.project = TaskProject.objects.create(user=cls.owner, workplace=cls.team, name='Wspólny projekt')
-        cls.section = TaskSection.objects.create(project=cls.project, title='Realizacja')
         cls.task = make_task(user=cls.owner, workplace=cls.team, title='Zespołowe wdrożenie', assignee=cls.member)
         cls.other_task = make_task(user=cls.owner, workplace=cls.private, title='Tajne prywatne zadanie')
         cls.task_space = cls.task.space
         cls.space_task = cls.task
-        cls.space = KanbanProject.objects.create(user=cls.owner, workplace=cls.team, name='Zespołowa tablica')
-        cls.board = KanbanSection.objects.create(project=cls.space, title='Realizacja')
-        cls.card = Kanban.objects.create(user=cls.owner, workplace=cls.team, section=cls.board, title='Zespołowa karta')
-        cls.company = Company.objects.create(owner=cls.owner, workplace=cls.team, name='Zespołowa firma')
-        cls.contact = Contact.objects.create(user=cls.owner, workplace=cls.team, first_name='Zespołowy', last_name='Kontakt')
         cls.event = CalendarEvent.objects.create(user=cls.owner, workplace=cls.team, title='Zespołowe spotkanie', start=timezone.now(), end=timezone.now()+timedelta(hours=1))
         cls.library = DocumentLibrary.objects.create(owner=cls.owner, workplace=cls.team, name='Zespołowy dysk')
         cls.document = Document.objects.create(owner=cls.owner, workplace=cls.team, library=cls.library, title='Zespołowy plik', filename='team.txt')
@@ -143,11 +133,7 @@ class TeamAccessTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertFalse(SpaceTask.objects.filter(title='Niedozwolone przypisanie').exists())
 
-    def test_member_calendar_and_kanban_writes(self):
-        response = self.post_json(self.url('kanban', f'update/{self.card.task_id}/'), {'task_pk': self.card.pk, 'status': 'closed'})
-        self.assertEqual(response.status_code, 404)
-        self.card.refresh_from_db()
-        self.assertEqual(self.card.status, 'new')
+    def test_member_calendar_writes_preserve_owner(self):
         response = self.client.post(self.url('calendar', f'events/{self.event.pk}/update/'), {'title': 'Zmienione spotkanie',
             'start': '2026-09-24T10:00', 'end': '2026-09-24T11:00', 'color': 'blue'})
         self.assertEqual(response.status_code, 200)
@@ -254,11 +240,6 @@ class TeamAccessTests(TestCase):
         self.assertEqual(self.client.post(url, {'action': 'remove'}).status_code, 302)
         self.assertTrue(SpaceTask.objects.filter(pk=self.task.pk).exists())
 
-    def test_joining_never_backfills_personal_legacy_data_into_team(self):
-        legacy = Task.objects.create(user=self.member, title='Moje stare dane')
-        self.client.get(self.url())
-        legacy.refresh_from_db()
-        self.assertIsNone(legacy.workplace_id)
 
     def test_workspace_slugs_are_unique_across_owners(self):
         other = create_workplace_for_user(self.member, self.team.name)
@@ -297,41 +278,3 @@ class TeamAccessTests(TestCase):
         self.membership.refresh_from_db()
         self.assertTrue(self.membership.is_active)
         self.assertEqual(self.client.get(self.url()).status_code, 200)
-
-
-class TeamSlugMigrationTests(TransactionTestCase):
-    def test_duplicate_slugs_are_resolved_without_changing_team_data(self):
-        from django.conf import settings
-        from django.db import connection
-        from django.db.migrations.executor import MigrationExecutor
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        # Inbox state and project templates depend on Workspace 0008. Roll
-        # both back so the historical app state agrees with the database.
-        previous = [node for node in latest if node[0] not in {'workplaces', 'dashboard', 'tasks', 'spaces'}] + [
-            ('workplaces', '0007_sidebarfavorite_position'), ('dashboard', None),
-            ('spaces', None),
-            ('tasks', '0047_task_unique_tasks_number_per_workspace'),
-        ]
-        executor.migrate(previous)
-        try:
-            loader = MigrationExecutor(connection).loader
-            state = loader.project_state(list(loader.applied_migrations)).apps
-            users = state.get_model(settings.AUTH_USER_MODEL)
-            owner = users.objects.create(username='slug-owner', email='slug-owner@example.test')
-            other = users.objects.create(username='slug-other', email='slug-other@example.test')
-            spaces = state.get_model('workplaces', 'Workplace')
-            first = spaces.objects.create(owner=owner, name='Studio', slug='studio')
-            second = spaces.objects.create(owner=other, name='Studio', slug='studio')
-            membership = state.get_model('workplaces', 'WorkplaceMembership').objects.create(workplace=second, user=owner, role='member')
-            task = state.get_model('tasks', 'Task').objects.create(user=other, workplace=second, title='Zachowane zadanie', task_id=1)
-            executor = MigrationExecutor(connection)
-            executor.migrate(latest)
-            state = executor.loader.project_state(latest).apps
-            spaces = state.get_model('workplaces', 'Workplace')
-            self.assertEqual(spaces.objects.get(pk=first.pk).legacy_slug, 'studio')
-            self.assertNotEqual(spaces.objects.get(pk=second.pk).legacy_slug, 'studio')
-            self.assertEqual(state.get_model('tasks', 'Task').objects.get(pk=task.pk).workplace_id, second.pk)
-            self.assertTrue(state.get_model('workplaces', 'WorkplaceMembership').objects.filter(pk=membership.pk, workplace_id=second.pk, user_id=owner.pk, is_active=False).exists())
-        finally:
-            MigrationExecutor(connection).migrate(latest)

@@ -4,7 +4,6 @@ from datetime import timedelta
 from django.test import TestCase
 from django.utils import timezone
 from dashboard.notification_service import notification_filters, notification_page, notification_sources, change_notification_state
-from tasks.models import Task
 from . import test_independent_tasks as fixtures
 from .models import SpaceTask, SpaceTaskWorkLog, SpaceTaskMembership, SpaceTaskReminder
 
@@ -37,7 +36,6 @@ class DetailParityTests(TestCase):
             self.assertContains(response, 'workplace-team-sheet')
             self.assertContains(response, 'tasks-issue-feed-item')
             self.assertNotContains(response, '<summary>Planowanie</summary>')
-        self.assertFalse(Task.objects.filter(title=self.task.title).exists())
 
     def test_category_reminder_and_history_save_in_own_domain(self):
         reminder = timezone.now().replace(second=0, microsecond=0) + timedelta(hours=1)
@@ -82,7 +80,6 @@ class DetailParityTests(TestCase):
         self.assertEqual(child.work_item.status, 'in_progress')
         self.assertEqual(child.description, 'Opis')
         self.assertEqual(response.url, self.task_url('?tab=subtasks&view=backlog'))
-        self.assertFalse(Task.objects.filter(title=child.title).exists())
 
     def test_invalid_subtask_preserves_draft_and_opens_modal(self):
         response = self.client.post(self.task_url('?tab=subtasks'), {'action': 'create_subtask_modal', 'subtask-title': '', 'subtask-description': 'Szkic', 'subtask-status': 'bad', 'subtask-visibility': 'public'})

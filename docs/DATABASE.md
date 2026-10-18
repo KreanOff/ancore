@@ -1,0 +1,59 @@
+# Czysty schemat bazy danych
+
+Od 18.10.2026 projekt ma nowy zestaw migracji początkowych, generowany
+z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikacji.
+Migracje wbudowanych aplikacji Django pozostają standardowe.
+
+## Zakres
+
+Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele
+pracy z `tasks`, ich członkostwa, zaproszenia, szablony, pliki i historię,
+a także dawne subskrypcje i dostawy powiadomień w `dashboard`.
+Zniknęły mapowania `Space.project`, `WorkItem.legacy_task`, `LegacyKanbanLink`
+oraz wybór starego storage plików. Dawne adresy `/tasks/`, `/kanban/`
+i `/contacts/`, także scoped, nie są rejestrowane.
+
+`tasks` zawiera obecnie wyłącznie `TaskTag`, `TaskTagNote`, formularz,
+obsługę katalogu tagów i współdzielone szablony. Tagi nadal należą do Przestrzeni.
+`static/js/tasks.js` oraz wspólne CSS pozostają używane przez bieżące moduły.
+Tablice Kanban i Scrum w Przestrzeniach działają na `SpaceTask`/`WorkItem`.
+
+`NotificationState` wskazuje dokładnie jedno źródło: komentarz Przestrzeni,
+przypomnienie Przestrzeni albo zaproszenie Workspace. Dostęp i edycja
+korzystają bezpośrednio z `spaces.access`. Zmiana Workspace nie wykonuje
+backfillu dawnych danych.
+
+Pozostałe aplikacje zachowują swój aktualny schemat. Ten reset nie dodaje
+nowych funkcji ani nie zmienia wyglądu interfejsu. Pliki uploadów nie należą
+do resetu PostgreSQL i nie są kasowane przez zastosowanie migracji.
+
+## Uruchomienie
+
+Utwórz pustą, dedykowaną bazę PostgreSQL i ustaw jej nazwę w `DB_NAME`
+w lokalnym `.env` (pozostałe zmienne: `DB_HOST`, `DB_PORT`, `DB_USER`,
+`DB_PASSWORD`). Następnie:
+
+```sh
+.venv/bin/python manage.py check
+.venv/bin/python manage.py migrate --plan
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py makemigrations --check --dry-run
+```
+
+Nowa baza ma puste katalogi biznesowe i nie zawiera kont. Pierwsze konto
+utwórz przez rejestrację; administratora opcjonalnie przez
+`.venv/bin/python manage.py createsuperuser`.
+
+Nowych migracji nie stosuj do poprzedniej bazy z dawną historią
+`django_migrations` ani przez `--fake`. Przejście wymaga pustej bazy;
+przed resetem zachowaj kopię PostgreSQL i potrzebnych uploadów.
+Odtworzenie kopii starej bazy wymaga również kodu sprzed zmiany schematu.
+Kopie lokalne trzymaj poza Git, np. w `.cache/database-backups/`.
+
+## Weryfikacja
+
+Pełny runner `.venv/bin/python scripts/run_tests.py` tworzy osobną pustą
+bazę, stosuje nowe migracje i testuje aktywne moduły. Regresje schematu
+znajdują się w `core.test_schema_baseline`; testy dawnych przejść migracyjnych
+zastąpiono czystym startem. Nie są już wspierane importy historycznych danych
+Tasks/Kanbana przez usunięte migracje.

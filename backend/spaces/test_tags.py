@@ -1,18 +1,14 @@
 from .testing import make_space
-from importlib import import_module
-import json
 
-from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import connection, IntegrityError, transaction
-from django.db.migrations.executor import MigrationExecutor
-from django.test import Client, TestCase, TransactionTestCase
+from django.db import IntegrityError, transaction
+from django.test import Client, TestCase
 
 from .forms import ItemForm
 from django.test import RequestFactory
 from tasks.models import TaskTag, TaskTagNote
-from .models import SpaceTask, Space, SpaceMembership
+from .models import SpaceTask, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -63,7 +59,7 @@ class SpaceTagTests(TestCase):
             self.assertContains(response, 'aria-current="page"><i data-icon="tag"', html=False)
             for value in ('Poufny tag', 'Poufny dział', 'Obcy tag', 'Stary tag'):
                 self.assertNotContains(response, value)
-        self.assertEqual(self.client.get(scoped_workplace_app_path(self.workspace, 'tasks', '?view=tags')).status_code, 404)
+        self.assertEqual(self.client.get(f'/workplaces/{self.workspace.slug}/tasks/?view=tags').status_code, 404)
 
     def test_create_duplicate_edit_and_related_scope(self):
         self.client.force_login(self.member)
@@ -192,7 +188,7 @@ class SpaceTagTests(TestCase):
         self.assertEqual(response.json()['total'], 0)
 
     def test_legacy_endpoint_cannot_edit_space_tags(self):
-        url = scoped_workplace_app_path(self.workspace, 'tasks', '?view=tags')
+        url = f'/workplaces/{self.workspace.slug}/tasks/?view=tags'
         for action in ('edit_tag', 'delete_tag', 'add_tag_note'):
             self.assertEqual(self.client.post(url, {'action': action, 'tag_id': self.tag.pk, 'name': 'Brak', 'message': 'Brak'}).status_code, 404)
 
@@ -211,48 +207,3 @@ class SpaceTagTests(TestCase):
         self.assertEqual(self.tag.related_tags.get(), linked)
         self.assertEqual(self.tag.tag_notes.get(), note)
         self.assertTrue(TaskTag.objects.filter(pk=self.legacy_tag.pk, space__isnull=True).exists())
-
-
-class SpaceTagMigrationTests(TransactionTestCase):
-    def test_upgrade_and_rollback_on_populated_schema(self):
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        before = [node for node in latest if node[0] not in {'tasks', 'spaces', 'dashboard'}] + [('tasks', '0063_remove_project_field_settings'), ('spaces', '0005_space_slugs')]
-        try:
-            executor.migrate(before)
-            old = MigrationExecutor(connection).loader.project_state(list(MigrationExecutor(connection).loader.applied_migrations)).apps
-            User = old.get_model('accounts', 'User')
-            Workplace = old.get_model('workplaces', 'Workplace')
-            Project = old.get_model('tasks', 'TaskProject')
-            Section = old.get_model('tasks', 'TaskSection')
-            OldTask = old.get_model('tasks', 'Task')
-            Tag = old.get_model('tasks', 'TaskTag')
-            Space = old.get_model('spaces', 'Space')
-            Configuration = old.get_model('spaces', 'SpaceConfiguration')
-            user = User.objects.create(username='migration-tags', email='migration-tags@example.test')
-            workplace = Workplace.objects.create(owner=user, name='Migracja', slug='migration-tags')
-            config = Configuration.objects.create(workplace=workplace, name='Migracja')
-            tag = Tag.objects.create(user=user, workplace=workplace, name='Wspólny', code='T-OLDSCOPE')
-            task_ids, space_ids = [], []
-            for number in (1, 2):
-                project = Project.objects.create(user=user, workplace=workplace, name=f'Projekt {number}', code=f'M{number}')
-                space = Space.objects.create(project=project, workplace=workplace, configuration=config, key=f'M{number}', slug=f'projekt-{number}')
-                task = OldTask.objects.create(user=user, workplace=workplace, section=Section.objects.create(project=project, title='Praca'), title='Migracja', task_id=number)
-                task.tags.add(tag)
-                task_ids.append(task.pk)
-                space_ids.append(space.pk)
-            executor = MigrationExecutor(connection)
-            executor.migrate(latest)
-            current = executor.loader.project_state(latest).apps
-            NewTag = current.get_model('tasks', 'TaskTag')
-            NewTask = current.get_model('tasks', 'Task')
-            self.assertEqual(NewTag.objects.filter(space_id__in=space_ids, name='Wspólny').count(), 2)
-            for task_id, space_id in zip(task_ids, space_ids):
-                self.assertEqual(NewTask.objects.get(pk=task_id).tags.get().space_id, space_id)
-            executor = MigrationExecutor(connection)
-            executor.migrate(before)
-            old = MigrationExecutor(connection).loader.project_state(list(MigrationExecutor(connection).loader.applied_migrations)).apps
-            for task_id in task_ids:
-                self.assertEqual(old.get_model('tasks', 'Task').objects.get(pk=task_id).tags.get().pk, tag.pk)
-        finally:
-            MigrationExecutor(connection).migrate(latest)

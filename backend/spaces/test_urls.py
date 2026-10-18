@@ -4,8 +4,7 @@ from threading import Barrier
 from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, close_old_connections, connection, transaction
-from django.db.migrations.executor import MigrationExecutor
+from django.db import IntegrityError, close_old_connections, transaction
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 
@@ -171,36 +170,3 @@ class ConcurrentSpaceSlugTests(TransactionTestCase):
         with ThreadPoolExecutor(max_workers=2) as pool:
             slugs = list(pool.map(lambda _: create(), range(2)))
         self.assertEqual(set(slugs), {'wspolna-nazwa', 'wspolna-nazwa-2'})
-
-
-class SpaceSlugMigrationTests(TransactionTestCase):
-    def test_migration_preserves_space_data_and_related_work(self):
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        previous = [node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('tasks', '0065_space_tag_data')] + [('spaces', '0004_issue_types')]
-        owner = get_user_model().objects.create_user(username='space-migration-slug', email='space-migration-slug@example.test')
-        workspace = create_workplace_for_user(owner, 'Migracja adresów')
-        other = create_workplace_for_user(owner, 'Drugi Workspace')
-        try:
-            executor.migrate(previous)
-            apps = MigrationExecutor(connection).loader.project_state(list(MigrationExecutor(connection).loader.applied_migrations)).apps
-            Project = apps.get_model('tasks', 'TaskProject')
-            Configuration = apps.get_model('spaces', 'SpaceConfiguration')
-            OldSpace = apps.get_model('spaces', 'Space')
-            rows = []
-            for number, (wp, name) in enumerate([(workspace, 'Żółć'), (workspace, 'Żółć'), (workspace, '15'), (workspace, '😀'), (other, 'Żółć')]):
-                project = Project.objects.create(user_id=owner.pk, workplace_id=wp.pk, name=name)
-                config = Configuration.objects.create(workplace_id=wp.pk, name=name)
-                rows.append(OldSpace.objects.create(project=project, workplace_id=wp.pk, key=f'M{number}', configuration=config, avatar='rocket'))
-            rows[0].project.favorited_by.add(owner.pk)
-            before = list(OldSpace.objects.order_by('pk').values())
-            target = [node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('tasks', '0065_space_tag_data')] + [('spaces', '0005_space_slugs')]
-            executor = MigrationExecutor(connection)
-            executor.migrate(target)
-            NewSpace = executor.loader.project_state(target).apps.get_model('spaces', 'Space')
-            after = list(NewSpace.objects.order_by('pk').values())
-            self.assertEqual([row.pop('slug') for row in after], ['zolc', 'zolc-2', 'przestrzen-15', 'przestrzen', 'zolc'])
-            self.assertEqual(after, before)
-            self.assertEqual(list(NewSpace.objects.get(pk=rows[0].pk).project.favorited_by.values_list('pk', flat=True)), [owner.pk])
-        finally:
-            MigrationExecutor(connection).migrate(latest)

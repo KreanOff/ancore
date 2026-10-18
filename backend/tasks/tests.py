@@ -1,16 +1,8 @@
-import importlib
 import re
-from datetime import timedelta
 from pathlib import Path
-from unittest.mock import patch
 
-from django.apps import apps as django_apps
-from django.contrib.auth import get_user_model
 from django.contrib.staticfiles import finders
-from django.test import SimpleTestCase, TestCase
-from django.utils import timezone
-
-from .models import Task, TaskActivity, TaskProject, TaskSection, TaskTag
+from django.test import SimpleTestCase
 
 
 class SharedTaskStyleTests(SimpleTestCase):
@@ -323,93 +315,3 @@ class SharedTaskStyleTests(SimpleTestCase):
         self.assertIsNotNone(header_rule)
         self.assertIn('height: 45px;', header_rule.group('body'))
         self.assertIn('min-height: 45px;', header_rule.group('body'))
-
-
-class LegacyTaskModelTests(TestCase):
-    def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username='task-user',
-            email='task-user@example.com',
-            first_name='Task',
-            last_name='User',
-            password='test-pass-123',
-        )
-        self.client.force_login(self.user)
-
-    def test_group_codes_keep_hierarchy_and_task_codes_use_task_id(self):
-        project = TaskProject.objects.create(user=self.user, name='Projekt', code='P-8K3FQ2A9')
-        first_section = TaskSection.objects.create(project=project, title='Frontend', code='FE')
-        second_section = TaskSection.objects.create(project=project, title='Backend', code='BE')
-        first_task = Task.objects.create(user=self.user, section=first_section, title='Pierwsze zadanie')
-        second_task = Task.objects.create(user=self.user, section=first_section, title='Drugie zadanie')
-        other_group_task = Task.objects.create(user=self.user, section=second_section, title='Zadanie backendowe')
-
-        self.assertEqual(first_section.code, 'FE')
-        self.assertEqual(second_section.code, 'BE')
-        self.assertEqual(first_section.full_code, f'{project.code}/FE')
-        self.assertEqual(first_task.code, '1')
-        self.assertEqual(second_task.code, '2')
-        self.assertEqual(other_group_task.code, '3')
-        self.assertEqual(first_task.full_code, '1')
-        self.assertEqual(other_group_task.full_code, '3')
-
-    def test_legacy_entity_icons_are_not_editable(self):
-        for model in (TaskProject, TaskSection):
-            with self.subTest(model=model.__name__):
-                self.assertFalse(model._meta.get_field('icon').editable)
-
-    def test_create_tag_avoids_existing_base36_tag_code(self):
-        TaskTag.objects.create(user=self.user, name='Design', code='T-COLLIDE1')
-        with patch('tasks.models.secrets.choice', side_effect=list('COLLIDE1BACKEND1')):
-            tag = TaskTag.objects.create(user=self.user, name='Backend')
-        self.assertEqual(tag.code, 'T-BACKEND1')
-
-    def test_task_due_urgency_uses_time_remaining(self):
-        now = timezone.now()
-
-        self.assertEqual(Task(due_at=None).due_urgency, 'none')
-        self.assertEqual(Task(due_at=now + timedelta(days=8)).due_urgency, 'green')
-        self.assertEqual(Task(due_at=now + timedelta(days=5)).due_urgency, 'green')
-        self.assertEqual(Task(due_at=now + timedelta(days=2)).due_urgency, 'yellow')
-        self.assertEqual(Task(due_at=now + timedelta(hours=2)).due_urgency, 'red')
-        self.assertEqual(Task(due_at=now - timedelta(minutes=1)).due_urgency, 'red')
-
-    def test_removed_task_field_migration_scrubs_activity_history(self):
-        task = Task.objects.create(user=self.user, title='Zadanie')
-        mixed_activity = TaskActivity.objects.create(
-            task=task,
-            actor=self.user,
-            action='updated',
-            message='zaktualizował zadanie',
-            metadata={
-                'fields': ['firma', 'status'],
-                'changes': [
-                    {'field': 'firma', 'from_label': 'A', 'to_label': 'B'},
-                    {'field': 'status', 'from_label': 'Nowe', 'to_label': 'Zamknięte'},
-                ],
-            },
-        )
-        removed_only_activity = TaskActivity.objects.create(
-            task=task,
-            actor=self.user,
-            action='updated',
-            message='zaktualizował zadanie',
-            metadata={
-                'fields': ['fakturowalne'],
-                'changes': [
-                    {'field': 'fakturowalne', 'from_label': 'Nie', 'to_label': 'Tak'},
-                ],
-            },
-        )
-        migration = importlib.import_module(
-            'tasks.migrations.0042_remove_task_task_user_company_status_idx_and_more'
-        )
-
-        migration.scrub_removed_task_fields_from_activity(django_apps, None)
-
-        mixed_activity.refresh_from_db()
-        self.assertEqual(mixed_activity.metadata['fields'], ['status'])
-        self.assertEqual(mixed_activity.metadata['changes'], [
-            {'field': 'status', 'from_label': 'Nowe', 'to_label': 'Zamknięte'},
-        ])
-        self.assertFalse(TaskActivity.objects.filter(pk=removed_only_activity.pk).exists())

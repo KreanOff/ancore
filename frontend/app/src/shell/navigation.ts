@@ -223,6 +223,14 @@ export function startNavigation(
     try {
       let envelope: NavigationEnvelope | undefined;
       for (let redirects = 0; redirects < 6; redirects++) {
+        const workspace = /^\/workplaces\/([^/]+)\//.exec(url.pathname)?.[1];
+        const current = /^\/workplaces\/([^/]+)\//.exec(
+          new URL(data.navigation_url, location.origin).pathname,
+        )?.[1];
+        if (workspace && workspace !== current) {
+          location.assign(url.href);
+          return true;
+        }
         const response = await request<NavigationEnvelope & { redirect?: string }>(
           `${data.navigation_url}?url=${encodeURIComponent(url.pathname + url.search)}`,
           token,

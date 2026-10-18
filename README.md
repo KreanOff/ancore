@@ -1,5 +1,8 @@
 # Ancore
 
+Nowe migracje początkowe wymagają pustej bazy PostgreSQL.
+[Zakres resetu i uruchomienie](docs/DATABASE.md).
+
 Aplikacja do pracy zespołowej: Workspace, Przestrzenie i zadania, kalendarz,
 pulpity, zasoby oraz Dysk i Dokumenty. Backend korzysta z Django i PostgreSQL,
 a interfejs z Reacta i TypeScriptu.
@@ -8,7 +11,6 @@ a interfejs z Reacta i TypeScriptu.
 
 ```text
 backend/           konfiguracja Django i aplikacje domenowe z testami i szablonami
-backend/legacy/   wyłącznie zgodność dawnych schematów i migracji, bez modułów UI
 frontend/app/      interfejs React i TypeScript
 frontend/board/    odizolowany edytor tablicy Excalidraw
 static/            wspólne style, skrypty, obrazy i lokalne biblioteki
@@ -70,8 +72,7 @@ pnpm --dir frontend/app build
 ```
 
 Testy Django wymagające bazy tworzą osobną bazę testową. Dobieraj zakres
-zgodnie z [instrukcją developerską](docs/DEVELOPMENT.md); część historycznych
-testów opisuje wycofane moduły. Można nadal wskazać moduł, np.
+zgodnie z [instrukcją developerską](docs/DEVELOPMENT.md). Można wskazać moduł, np.
 `manage.py test spaces.test_navigation`.
 
 ## Dokumentacja i wdrażanie

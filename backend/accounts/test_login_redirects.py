@@ -59,7 +59,7 @@ class LoginRedirectTests(TestCase):
 
     def test_get_and_post_next_cannot_change_login_destination(self):
         for next_url in (
-            reverse('workplaces:workplaces'), reverse('home'), reverse('tasks:tasks'),
+            reverse('workplaces:workplaces'), reverse('home'), '/tasks/',
             'https://example.test/elsewhere/', '//example.test/elsewhere/',
         ):
             for source in ('get', 'post'):

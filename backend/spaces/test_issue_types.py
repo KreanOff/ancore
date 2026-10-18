@@ -1,19 +1,14 @@
 from .testing import make_space
-from copy import deepcopy
-from importlib import import_module
-from types import SimpleNamespace
 from unittest.mock import patch
 
-from django.apps import apps
 from django.contrib.auth import get_user_model
-from django.db import connection
 from django.test import TestCase
 
 from .models import SpaceTask, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .defaults import TEMPLATES, template_settings
-from .models import SpaceConfiguration, WorkItem
+from .models import WorkItem
 
 
 class IssueTypeTests(TestCase):
@@ -174,20 +169,3 @@ class IssueTypeTests(TestCase):
             with self.assertRaises(RuntimeError):
                 self.client.post(self.detail_url(), self.detail_data(), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')
-
-    def test_migration_adds_only_missing_keys_and_is_idempotent(self):
-        original = {'types': [{'key': 'bug', 'label': 'Defekt'}, {'key': 'campaign', 'label': 'Kampania'}],
-                    'statuses': [{'key': 'custom', 'label': 'Weryfikacja'}], 'fields': [{'key': 'channel'}]}
-        config = SpaceConfiguration.objects.create(workplace=self.workspace, name='Własna wspólna konfiguracja', shared=True, settings=deepcopy(original))
-        migrate = import_module('spaces.migrations.0004_issue_types').add_issue_types
-        schema_editor = SimpleNamespace(connection=connection)
-        migrate(apps, schema_editor)
-        config.refresh_from_db()
-        self.assertEqual(config.settings['types'][:2], original['types'])
-        self.assertEqual(config.settings['statuses'], original['statuses'])
-        self.assertEqual(config.settings['fields'], original['fields'])
-        self.assertTrue(config.shared)
-        first = deepcopy(config.settings)
-        migrate(apps, schema_editor)
-        config.refresh_from_db()
-        self.assertEqual(config.settings, first)

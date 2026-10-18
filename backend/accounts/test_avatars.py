@@ -85,12 +85,13 @@ class UserAvatarTests(TestCase):
 
     def test_comment_and_team_render_the_saved_personal_preset(self):
         from django.template.loader import render_to_string
-        from tasks.models import Task, TaskActivity
 
         self.post(avatar='owl')
         self.user.refresh_from_db()
-        task = Task.objects.create(user=self.user, workplace=self.workspace, title='Awatar autora')
-        activity = TaskActivity.objects.create(task=task, actor=self.user, action='commented', message='Komentarz autora')
+        from spaces.testing import make_task
+        from spaces.models import SpaceTaskActivity
+        task = make_task(user=self.user, workplace=self.workspace, title='Awatar autora')
+        activity = SpaceTaskActivity.objects.create(task=task, actor=self.user, action='commented', message='Komentarz autora')
         html = render_to_string('tasks/includes/task_activity_item.html', {'item': activity})
         self.assertIn('user-avatar-art--owl', html)
         html = render_to_string('workplaces/includes/invitation_person.html', {'person': self.user})

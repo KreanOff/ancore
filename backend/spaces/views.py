@@ -800,6 +800,13 @@ def configuration(request, pk):
             if any(key not in keys for key in row['transitions']):
                 errors.append('Usuń przejścia prowadzące do usuniętego statusu.')
         with transaction.atomic():
+            # Match task writes: Workspace -> every affected Space -> configuration.
+            # Shared configurations also govern spaces outside the editor's ACL.
+            Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+            list(Space.objects.filter(configuration=config).order_by('pk').select_for_update().values_list('pk', flat=True))
+            space = space_object(request, pk)
+            if not manage_configuration(request, space):
+                raise PermissionDenied
             config = SpaceConfiguration.objects.select_for_update().get(pk=config.pk)
             current_revision = hashlib.sha256(json.dumps(config.settings, sort_keys=True).encode()).hexdigest()
             if request.POST.get('revision') != current_revision:

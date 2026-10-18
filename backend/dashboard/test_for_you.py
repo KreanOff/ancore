@@ -6,7 +6,6 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from kanban.models import Kanban, KanbanActivity, KanbanProject, KanbanSection
 from tasks.models import TaskTag
 from spaces.models import SpaceTask, SpaceTaskActivity, SpaceTaskFile, Space, WorkItem
 from spaces.testing import make_space
@@ -111,14 +110,12 @@ class ForYouTests(TestCase):
         self.assertEqual(self.objects(self.page('recommended')), [urgent, soon, overdue])
         self.assertContains(self.page('recommended'), 'Po terminie')
 
-    def test_worked_uses_personal_activity_and_omits_legacy_cards(self):
+    def test_worked_uses_personal_activity(self):
         task = self.task()
         someone_elses = self.task('Czyjaś praca')
         SpaceTaskActivity.objects.create(task=someone_elses, actor=self.owner)
         SpaceTaskActivity.objects.create(task=task, actor=self.member)
         SpaceTaskActivity.objects.create(task=task, actor=self.member, kind='comment')
-        card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Moja karta')
-        KanbanActivity.objects.create(task=card, actor=self.member)
         SpaceTaskActivity.objects.create(task=task, actor=self.owner)
         self.assertEqual(self.objects(self.page('worked')), [task])
 
@@ -126,9 +123,7 @@ class ForYouTests(TestCase):
         task = self.task()
         other = self.task('Cudze ulubione')
         other.favorited_by.add(self.owner)
-        project = KanbanProject.objects.create(user=self.owner, workplace=self.workspace, name='Kanban')
-        board = KanbanSection.objects.create(project=project, title='Tablica')
-        favorites = [task, self.project, self.section, project, board]
+        favorites = [task, self.project, self.section]
         for obj in favorites:
             obj.favorited_by.add(self.member)
         self.assertEqual(set(self.objects(self.page('starred'))), set([task, self.project, self.section]))
@@ -136,16 +131,13 @@ class ForYouTests(TestCase):
 
     def test_viewed_records_successful_views_deduplicates_and_rechecks_access(self):
         task = self.task()
-        card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Oglądana karta')
         self.visit(task)
-        self.assertEqual(self.client.get(scoped_workplace_app_path(self.workspace, 'kanban', f'view-task/{card.task_id}/?task_pk={card.pk}')).status_code, 404)
         self.visit(task)
         self.assertEqual(self.objects(self.page('viewed')), [task])
         self.assertEqual(len(self.client.session[RECENT_SESSION_KEY]), 1)
         task.visibility, task.private_owner = 'private', self.owner
         task.save()
         self.assertEqual(self.objects(self.page('viewed')), [])
-        card.delete()
         self.assertEqual(self.objects(self.page('viewed')), [])
 
     def test_viewed_projects_groups_and_session_user_scope(self):
@@ -282,20 +274,6 @@ class ForYouTests(TestCase):
         self.assertEqual(self.objects(response), [])
         self.assertNotContains(response, foreign.name)
 
-    def test_retired_kanban_stays_hidden_even_with_membership_and_favorites(self):
-        project = KanbanProject.objects.create(user=self.owner, workplace=self.workspace, name='Prywatny Kanban', visibility='private', private_owner=self.owner)
-        project.shared_with.add(self.member)
-        board = KanbanSection.objects.create(project=project, title='Tablica')
-        card = Kanban.objects.create(user=self.owner, workplace=self.workspace, section=board, title='Karta')
-        project.favorited_by.add(self.member)
-        board.favorited_by.add(self.member)
-        KanbanActivity.objects.create(task=card, actor=self.member)
-        self.assertEqual(self.client.get(scoped_workplace_app_path(self.workspace, 'kanban', f'view-task/{card.task_id}/?task_pk={card.pk}')).status_code, 404)
-        self.assertEqual(self.objects(self.page('worked')), [])
-        self.assertEqual(self.objects(self.page('viewed')), [])
-        project.shared_with.remove(self.member)
-        for tab in ('worked', 'viewed', 'starred'):
-            self.assertEqual(self.objects(self.page(tab)), [])
 
     def test_sidebar_favorite_uses_scoped_for_you_url(self):
         response = self.client.post(reverse('workplaces:toggle-sidebar-favorite', args=[self.workspace.pk]),

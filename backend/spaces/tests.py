@@ -1,17 +1,14 @@
 from .testing import make_space
 from datetime import date
-from importlib import import_module
 
 from django.contrib.auth import get_user_model
-from django.db import connection
-from django.db.migrations.executor import MigrationExecutor
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, TestCase
 
-from .models import SpaceTask, SpaceTaskActivity, Space, SpaceMembership
+from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .defaults import TEMPLATES, template_settings
-from .models import LegacyKanbanLink, Space, SpaceTaskFile, SpaceTaskMembership, Sprint, Team, TeamMembership, WorkItem
+from .models import Space, SpaceTaskMembership, Sprint, Team, TeamMembership, WorkItem
 
 
 class SpaceTests(TestCase):
@@ -113,7 +110,6 @@ class SpaceTests(TestCase):
         space = Space.objects.get(key='NOW')
         self.assertTrue(space.configuration.shared)
         self.assertEqual(space.private_owner, self.owner)
-        self.assertIsNone(space.project_id)
         self.assertEqual(self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true').status_code, 400)
         payload.update(key='BAD', kind='business')
         self.assertEqual(self.client.post(self.url('create/'), payload, HTTP_X_WORK_MODAL='true').status_code, 400)
@@ -361,54 +357,6 @@ class SpaceTests(TestCase):
         workspace.delete()
         self.assertFalse(Space.objects.filter(pk=self.space.pk).exists())
 
-    def test_legacy_links_do_not_revive_deleted_imports(self):
-        from kanban.models import Kanban, KanbanProject
-        from kanban.access import visible_to as visible_kanban
-        source_project = KanbanProject.objects.create(user=self.owner, workplace=self.workspace, name='Archiwum')
-        source = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Archiwalna karta')
-        source_task = Task.objects.create(user=self.owner, workplace=self.workspace, title='Importowana karta', space_archived=True)
-        self.item.legacy_task = source_task
-        self.item.save(update_fields=['legacy_task'])
-        LegacyKanbanLink.objects.create(kind='project', source_id=source_project.pk, target_id=self.project.pk, space=self.space)
-        LegacyKanbanLink.objects.create(kind='task', source_id=source.pk, target_id=source_task.pk, space=self.space)
-        url = self.url(f'view-task/{source.task_id}/?task_pk={source.pk}', 'kanban')
-        self.assertRedirects(self.client.get(url), self.space_url(f'tasks/{self.item.key}/?view=list'), fetch_redirect_response=False)
-        self.project.delete()
-        self.assertEqual(self.client.get(url).status_code, 404)
-        self.assertFalse(visible_kanban(KanbanProject.objects.all(), self.owner).filter(pk=source_project.pk).exists())
-        self.assertEqual(self.client.post(self.url('', 'kanban'), {}).status_code, 409)
-
-    def test_imported_files_survive_deleting_only_one_reference(self):
-        from unittest.mock import patch
-        from kanban.models import Kanban, KanbanAttachment
-        from tasks.models import TaskAttachment
-        card = Kanban.objects.create(user=self.owner, workplace=self.workspace, title='Source')
-        attachment = SpaceTaskFile.objects.bulk_create([SpaceTaskFile(task=self.task, legacy_storage=True, file='kanban_attachments/shared.txt', filename='shared.txt', file_size=1)])[0]
-        legacy = KanbanAttachment.objects.bulk_create([KanbanAttachment(task=card, file=attachment.file.name, filename='shared.txt', file_size=1)])[0]
-        from django.core.files.storage import default_storage
-        with patch.object(default_storage, 'delete') as delete:
-            with self.captureOnCommitCallbacks(execute=True):
-                attachment.delete()
-            delete.assert_not_called()
-            with self.captureOnCommitCallbacks(execute=True):
-                legacy.delete()
-            delete.assert_called_once_with('kanban_attachments/shared.txt')
-
-
-    def test_legacy_status_endpoints_cannot_modify_independent_tasks(self):
-        import json
-        source = Task.objects.create(user=self.owner, workplace=self.workspace, title='Archiwum', space_archived=True)
-        self.item.legacy_task = source
-        self.item.save(update_fields=['legacy_task'])
-        other = Task.objects.create(user=self.owner, workplace=self.workspace, title='Starsze zadanie')
-        single = self.client.post(self.url(f'update/{source.task_id}/', 'tasks'), json.dumps({'task_pk': source.pk, 'status': 'closed'}), content_type='application/json')
-        self.assertEqual(single.status_code, 404)
-        bulk = self.client.post(self.url('bulk-update-status/', 'tasks'), json.dumps({'task_pks': [source.pk, other.pk], 'status': 'closed'}), content_type='application/json')
-        self.assertEqual(bulk.status_code, 404)
-        other.refresh_from_db()
-        self.task.refresh_from_db()
-        self.assertEqual((self.task.status, other.status), ('new', 'new'))
-
 
     def test_edit_date_and_completed_sprint_are_preserved_in_form(self):
         sprint = Sprint.objects.create(space=self.space, name='Zamknięty', start_on=date(2026, 10, 1), end_on=date(2026, 10, 14), state='closed')
@@ -448,52 +396,3 @@ class SpaceTests(TestCase):
         with self.captureOnCommitCallbacks(execute=True):
             team.delete()
         self.assertFalse(field.storage.exists(name))
-
-
-from tasks.models import Task, TaskProject, TaskActivity
-
-class ImportTests(TransactionTestCase):
-    def test_import_preserves_acl_content_history_and_files(self):
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        try:
-            previous = [node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('dashboard', '0006_section_sharing'), ('tasks', '0063_remove_project_field_settings'), ('spaces', '0001_initial')]
-            executor.migrate(previous)
-            apps = executor.loader.project_state(previous).apps
-            User = apps.get_model('accounts', 'User')
-            owner = User.objects.create(username='import-owner', email='import-owner@example.test')
-            viewer = User.objects.create(username='import-viewer', email='import-viewer@example.test')
-            workplace = apps.get_model('workplaces', 'Workplace').objects.create(owner=owner, name='Import', slug='import')
-            project = apps.get_model('kanban', 'KanbanProject').objects.create(user=owner, workplace=workplace, name='Dawna przestrzeń', visibility='private', private_owner=owner)
-            apps.get_model('kanban', 'KanbanProjectMembership').objects.create(project=project, user=viewer, role='observer')
-            section = apps.get_model('kanban', 'KanbanSection').objects.create(project=project, title='Tablica', visibility='private', private_owner=owner)
-            apps.get_model('kanban', 'KanbanSectionMembership').objects.create(section=section, user=viewer, role='observer')
-            column = apps.get_model('kanban', 'KanbanBoardColumn').objects.create(section=section, title='W toku')
-            card = apps.get_model('kanban', 'Kanban').objects.create(user=owner, workplace=workplace, section=section, column=column, title='Dawna karta', task_id=1, status='in_progress')
-            child = apps.get_model('kanban', 'Kanban').objects.create(user=owner, workplace=workplace, section=section, parent=card, title='Podkarta', task_id=2)
-            activity = apps.get_model('kanban', 'KanbanActivity').objects.create(task=card, actor=viewer, kind='comment', action='commented', message='Komentarz')
-            apps.get_model('kanban', 'KanbanAttachment').objects.create(task=card, file='kanban_attachments/test.pdf', filename='test.pdf', file_size=42)
-            apps.get_model('kanban', 'KanbanCommentImage').objects.create(activity=activity, file='comment_images/kanban/test.png', filename='test.png', file_size=20)
-            apps.get_model('dashboard', 'NotificationState').objects.create(user=viewer, kanban_activity=activity, is_read=True)
-            apps.get_model('dashboard', 'ObjectFollow').objects.create(user=viewer, kanban=card)
-            executor = MigrationExecutor(connection)
-            executor.migrate([node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('dashboard', '0006_section_sharing'), ('tasks', '0063_remove_project_field_settings'), ('spaces', '0002_unify_work')])
-            state = executor.loader.project_state([node for node in latest if node[0] not in {'spaces', 'tasks', 'dashboard'}] + [('dashboard', '0006_section_sharing'), ('tasks', '0063_remove_project_field_settings'), ('spaces', '0002_unify_work')]).apps
-            Task = state.get_model('tasks', 'Task')
-            imported = Task.objects.get(title='Dawna karta')
-            self.assertEqual(imported.status, 'in_progress')
-            self.assertEqual(imported.attachments.get().file.name, 'kanban_attachments/test.pdf')
-            self.assertEqual(imported.activities.get().actor_id, viewer.pk)
-            self.assertEqual(imported.activities.get().images.get().file.name, 'comment_images/kanban/test.png')
-            self.assertEqual(Task.objects.get(title='Podkarta').parent, imported)
-            self.assertEqual(imported.section.visibility, 'private')
-            self.assertEqual(imported.section.memberships.get().role, 'observer')
-            self.assertEqual(imported.section.project.memberships.get().role, 'observer')
-            NotificationState = state.get_model('dashboard', 'NotificationState')
-            ObjectFollow = state.get_model('dashboard', 'ObjectFollow')
-            self.assertEqual(NotificationState.objects.get().task_activity.task, imported)
-            self.assertIsNone(NotificationState.objects.get().kanban_activity_id)
-            self.assertEqual(ObjectFollow.objects.get().task, imported)
-            self.assertTrue(LegacyKanbanLink.objects.filter(kind='task', source_id=card.pk, target_id=imported.pk).exists())
-        finally:
-            MigrationExecutor(connection).migrate(latest)

@@ -1,5 +1,33 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+**Aktualny schemat od 18.10.2026:** [czysta baza i nowe migracje](DATABASE.md).
+Poniższe datowane zapisy zachowują historię wcześniejszych prac i wyników;
+opisy zachowania starych modeli oraz ich migracji nie są instrukcją obecnego uruchomienia.
+
+## Czysta baza i usunięcie dawnych systemów (18.10.2026)
+
+Zastąpiono dawną historię migracji 11 migracjami początkowymi ośmiu aplikacji.
+Usunięto modele Kontaktów, Tasks i osobnego Kanbana, mapowania importu,
+trasy zgodności oraz dawne źródła powiadomień. Pozostały tagi Przestrzeni
+oraz wspólne komponenty. [Zakres i start](DATABASE.md).
+
+Nowe migracje zastosowano na pustej lokalnej bazie PostgreSQL `ancore`.
+Przed resetem wykonano kopię poprzedniej bazy i potwierdzono jej pełne
+odtworzenie w tymczasowej bazie. Aplikację przełączono na nową bazę;
+poprzednie tabele usunięto. Uploadów na dysku nie kasowano.
+
+Weryfikacja: **1059/1059 testów** w pełnym przebiegu `--parallel 4` (33 s)
+i 88 testów ukierunkowanych (24 s), na odrębnych bazach i tymczasowym storage.
+Przeszły kontrola Django, brak oczekujących migracji, zgodność modeli,
+parsowanie źródeł, aktualność indeksu i `git diff --check`. Nowe migracje
+nie są ignorowane przez Git. Sprawdzono linki zmienionych dokumentów.
+
+Lokalny serwer zrestartowano na dotychczasowym porcie. Odczyt HTTP potwierdził
+strony logowania i rejestracji oraz przekierowanie anonimowego wejścia do
+Przestrzeni. Aktywna baza ma puste konta, przestrzenie i zadania.
+Nie zmieniano UI i nie wykonywano kontroli wizualnej w przeglądarce ani wdrożenia.
+Zachowano wcześniejsze, niezwiązane zmiany robocze.
+
 ## Układ repozytorium
 
 Kod i konfiguracja Django znajdują się w `backend/`. Polecenia poniżej nadal
@@ -1343,9 +1371,8 @@ włącza bezpieczne ciasteczka/HTTPS, co nie pasuje automatycznie do lokalnego H
 
 Migracje są wersjonowane w Git; `.gitignore` nie wyklucza nowych migracji.
 Przed wdrożeniem sprawdź `makemigrations --check --dry-run` i `migrate --plan`.
-Migracje Tasks 0047 i Kanban 0034 naprawiają istniejącą numerację oraz dodają
-unikalność numerów w Workspace. Na czas tej operacji blokują zapisy w tabeli;
-uwzględnij to w oknie wdrożenia dla dużej bazy.
+Nowy zestaw migracji początkowych wymaga pustej bazy; nie aktualizuje dawnego
+schematu. Procedura i zakres resetu: [Baza danych](DATABASE.md).
 
 Pełne edytory Dokumentów wymagają dodatkowej konfiguracji opisanej w
 [OFFICE.md](OFFICE.md): lokalnego ONLYOFFICE oraz zbudowania zasobów tablicy.
@@ -1353,6 +1380,22 @@ Pełne edytory Dokumentów wymagają dodatkowej konfiguracji opisanej w
 Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
+
+Regresje poprawek czasu pracy, konfiguracji i nawigacji między Workspace:
+
+```sh
+.venv/bin/python scripts/run_tests.py spaces.test_configuration_writes spaces.test_work_logs core.test_navigation_frontend
+pnpm --dir frontend/app test
+```
+
+Testy konfiguracji używają osobnych połączeń PostgreSQL oraz lokalnego
+`lock_timeout`, sprawdzając blokadę podczas zapisu statusu i tworzenia zadania
+w prywatnej przestrzeni współdzielącej konfigurację. Obejmują także formularze
+zadania rozpoczęte przed usunięciem statusu/typu. Test czasu sprawdza dane
+Reacta w zwykłym i scoped adresie oraz zachowanie godzin przy edycji minut.
+Testy kontrolera nawigacji nie zastępują próby w przeglądarce: edycja 90 min
+→ zmiana minut na 45 → 105 min, a następnie globalne powiadomienie → zadanie
+w innym dostępnym Workspace; sprawdź też błąd zapisu, ponowne wejście i telefon.
 
 Losowe identyfikatory Workspace wymagają migracji
 `workplaces.0010_random_workspace_identifiers`. Migracja usuwa unikalność nazwy

@@ -6,9 +6,8 @@ from django.http import QueryDict
 
 from .access import editable_to, visible_to
 from .models import SpaceTask, SpaceTaskActivity
-from workplaces.services import can_manage_team, scoped_workplace_app_path, workplace_people, workspace_owner
-from .defaults import template_settings
-from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
+from workplaces.services import can_manage_team, scoped_workplace_app_path, workspace_owner
+from .models import Space, Sprint, Team, WorkItem
 
 
 def app_url(request, suffix='', app='spaces'):
@@ -88,13 +87,7 @@ def manage_team(request, team):
 
 
 def task_url(request, task):
-    if isinstance(task, SpaceTask):
-        item = task.work_item
-    else:
-        item = WorkItem.objects.filter(legacy_task=task, task__isnull=False).select_related('space').first()
-        if item is None:
-            name = 'view-subtask' if task.parent_id else 'view-task'
-            return app_url(request, f'{name}/{task.task_id}/?task_pk={task.pk}', 'tasks')
+    item = task.work_item
     match = getattr(request, 'resolver_match', None)
     params = request.GET.copy() if match and match.app_name in {'spaces', 'workplace_spaces'} else QueryDict(mutable=True)
     params.pop('task_pk', None)

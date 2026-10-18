@@ -1,5 +1,7 @@
 # Mapa dokumentacji Ancore
 
+Aktualny schemat po usunięciu starych systemów: [Baza danych](DATABASE.md).
+
 Pierwszy przegląd źródeł: **15 września 2026**. Opis obejmuje lokalne drzewo
 robocze, w tym moduł Dysku i jego integracje. Stan wdrożenia na serwerze
 nie był ustalany. Przy zmianie zachowania aktualizuj odpowiedni rozdział.
@@ -40,9 +42,9 @@ Wyszukiwanie zadań, zapisane filtry i udostępnianie: [Filtry](FILTERS.md).
 | Zadanie | Opis i punkty wejścia |
 | --- | --- |
 | Nowe pole zadania | [Przestrzenie](SPACES.md); `backend/spaces/models.py`, `backend/spaces/forms.py`, `backend/spaces/task_views.py` |
-| Wycofane Projekty, Grupy, Zadania, Ulubione projekty i Szablony | Moduły: historyczne Tasks; `backend/tasks/urls.py`, `backend/tasks/test_retirement.py`, `backend/spaces/middleware.py` |
+| Wycofane Projekty, Grupy, Zadania, Ulubione projekty i Szablony | Moduły: historyczne Tasks; `backend/tasks/models.py`, `backend/core/test_schema_baseline.py` |
 | Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `backend/spaces/`, `static/js/spaces.js` |
-| Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `backend/kanban/urls.py`, `backend/spaces/middleware.py` |
+| Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `backend/core/test_schema_baseline.py`, [Baza danych](DATABASE.md) |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
 | Logowanie i profil | Moduły: Accounts; Mechanizmy: tożsamość, dostęp, obrazy; [API kont React](FRONTEND.md#api-i-interfejs-kont) |
 | Zasoby, ewidencja sprzętu i licencji | Moduły: Zasoby; `backend/resources/`, wspólne filtry/paginacja w `static/js/tasks.js`, modale w `static/js/resources.js` |

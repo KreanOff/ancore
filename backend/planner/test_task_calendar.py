@@ -4,8 +4,6 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils import timezone
 
-from kanban.models import Kanban
-from tasks.models import Task
 from spaces.models import SpaceTask
 from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
@@ -31,8 +29,6 @@ class TaskCalendarTests(TestCase):
         event = CalendarEvent.objects.create(user=self.owner, workplace=self.workspace, title='Spotkanie', start=self.due, end=self.due + timedelta(hours=1))
         parent = SpaceTask.objects.create(space=self.space, created_by=self.owner, title='Praca', due_at=self.due)
         child = SpaceTask.objects.create(space=self.space, created_by=self.owner, title='Część', due_at=self.due, parent=parent)
-        for model in (Task, Kanban):
-            model.objects.create(user=self.owner, workplace=self.workspace, title='Archiwalne', due_at=self.due)
         payload = self.client.get(self.url, self.params).json()['events']
         by_id = {item['id']: item for item in payload}
         self.assertCountEqual(by_id, [event.pk, f'space_tasks:{parent.pk}', f'space_tasks:{child.pk}'])

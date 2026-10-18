@@ -1,13 +1,11 @@
 from random import choice
 
-from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.urls import reverse
-from core.task_numbering import lock_task_numbers, renumber_tasks
 
 from .models import SidebarFavorite, Workplace, WorkplaceInvitation, WorkplaceMembership
 
@@ -40,7 +38,7 @@ DEFAULT_WORKPLACE_NAMES = (
     'Klub Wędrujących Kubków',
     'Bunkier Zapomnianych Haseł',
 )
-SCOPED_WORKPLACE_APPS = {'tasks', 'kanban', 'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'space', 'teams', 'dashboards', 'filters', 'api'}
+SCOPED_WORKPLACE_APPS = {'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'space', 'teams', 'dashboards', 'filters', 'api'}
 
 
 def workplace_management_url(workplace, view='members'):
@@ -154,37 +152,7 @@ def set_active_workplace(request, workplace):
     request.session[ACTIVE_WORKPLACE_SESSION_KEY] = workplace.pk
     request.session.modified = True
     request.workplace = workplace
-    backfill_legacy_records_for_workplace(request.user, workplace)
     return workplace
-
-
-def backfill_legacy_records_for_workplace(user, workplace):
-    if not user or not getattr(user, 'is_authenticated', False) or workplace is None:
-        return
-    # A member's old personal records must never move into another team's space.
-    if workplace.owner_id != user.pk:
-        return
-
-    models_by_owner_field = [
-        ('tasks', 'TaskProject', 'user'),
-        ('tasks', 'Task', 'user'),
-        ('kanban', 'KanbanProject', 'user'),
-        ('kanban', 'Kanban', 'user'),
-        ('planner', 'CalendarEvent', 'user'),
-    ]
-
-    for app_label, model_name, owner_field in models_by_owner_field:
-        model = apps.get_model(app_label, model_name)
-        legacy = model.objects.filter(
-            **{f'{owner_field}_id': user.pk, 'workplace__isnull': True},
-        )
-        if model_name in {'Task', 'Kanban'}:
-            if legacy.exists():
-                with lock_task_numbers(user.pk):
-                    if legacy.update(workplace_id=workplace.pk):
-                        renumber_tasks(model, user, workplace)
-        else:
-            legacy.update(workplace_id=workplace.pk)
 
 
 def enable_workspace_url_scope(request):
@@ -196,8 +164,8 @@ def workspace_url_scope_enabled(request):
     return bool(request.session.get(WORKPLACE_URL_SCOPE_SESSION_KEY))
 
 
-def scoped_workplace_app_path(workplace, app_label='tasks', suffix='', query_string=''):
-    app_label = app_label if app_label in SCOPED_WORKPLACE_APPS else 'tasks'
+def scoped_workplace_app_path(workplace, app_label='spaces', suffix='', query_string=''):
+    app_label = app_label if app_label in SCOPED_WORKPLACE_APPS else 'spaces'
     clean_suffix = (suffix or '').lstrip('/')
     path = f'/workplaces/{workplace.slug}/{app_label}/'
     if clean_suffix:
@@ -225,7 +193,6 @@ def get_active_workplace(request):
         workplace = workplaces_for_user(user).filter(pk=workplace_id).first()
         if workplace:
             request.workplace = workplace
-            backfill_legacy_records_for_workplace(user, workplace)
             return workplace
 
     workplace = ensure_default_workplace(user)

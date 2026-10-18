@@ -2,8 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, close_old_connections, connection, transaction
-from django.db.migrations.executor import MigrationExecutor
+from django.db import IntegrityError, close_old_connections, transaction
 from django.test import Client, TestCase, TransactionTestCase
 from django.urls import reverse
 
@@ -143,40 +142,3 @@ class PulpitSlugConcurrencyTests(TransactionTestCase):
             futures = [executor.submit(create_dashboard) for _ in range(2)]
             slugs = {future.result(timeout=20) for future in futures}
         self.assertEqual(slugs, {'ten-sam-pulpit', 'ten-sam-pulpit-2'})
-
-
-class PulpitSlugMigrationTests(TransactionTestCase):
-    def test_existing_dashboards_receive_slugs_without_other_data_changes(self):
-        executor = MigrationExecutor(connection)
-        latest = executor.loader.graph.leaf_nodes()
-        previous = [('dashboard', '0011_default_dashboard')]
-        owner = get_user_model().objects.create_user(username='slug-migration', email='slug-migration@example.test')
-        workspace = create_workplace_for_user(owner, 'Migracja adresów')
-        other = create_workplace_for_user(owner, 'Drugi Workspace')
-        try:
-            executor.migrate(previous)
-            apps = executor.loader.project_state(previous).apps
-            OldDashboard = apps.get_model('dashboard', 'Dashboard')
-            OldGadget = apps.get_model('dashboard', 'DashboardGadget')
-            items = [OldDashboard.objects.create(owner_id=owner.pk, created_by_id=owner.pk, workplace_id=wp.pk,
-                                                 name=name, description='Zachowany opis', revision=4)
-                     for wp, name in [(workspace, 'Żółć'), (workspace, 'Żółć'), (workspace, 'manage'),
-                                      (workspace, '15'), (workspace, '😀'), (other, 'Żółć')]]
-            items[0].favorited_by.add(owner.pk)
-            items[0].shared_with.add(owner.pk)
-            gadget = OldGadget.objects.create(dashboard=items[0], kind='progress', column=1)
-            before = list(OldDashboard.objects.order_by('pk').values())
-            target = [('dashboard', '0012_dashboard_slugs')]
-            executor = MigrationExecutor(connection)
-            executor.migrate(target)
-            apps = executor.loader.project_state(target).apps
-            NewDashboard = apps.get_model('dashboard', 'Dashboard')
-            after = list(NewDashboard.objects.order_by('pk').values())
-            self.assertEqual([row.pop('slug') for row in after], ['zolc', 'zolc-2', 'pulpit-manage', 'pulpit-15', 'pulpit', 'zolc'])
-            self.assertEqual(after, before)
-            saved = NewDashboard.objects.get(pk=items[0].pk)
-            self.assertEqual(list(saved.favorited_by.values_list('pk', flat=True)), [owner.pk])
-            self.assertEqual(list(saved.shared_with.values_list('pk', flat=True)), [owner.pk])
-            self.assertEqual(saved.gadgets.get().pk, gadget.pk)
-        finally:
-            MigrationExecutor(connection).migrate(latest)
