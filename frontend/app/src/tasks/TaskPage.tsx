@@ -8,6 +8,7 @@ import { Members } from '../shared/Members';
 import { StatusGroup } from '../shared/StatusGroup';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
+import { copyText } from '../shared/clipboard';
 import { Priority, ItemType } from '../spaces/Item';
 import { dateLabel, type Item } from '../spaces/types';
 import { ActivityItem, Attachments } from './Activity';
@@ -888,8 +889,7 @@ export default function TaskPage(props: PageProps) {
                         className="tasks-issue-code__button"
                         aria-label="Kopiuj ID zadania"
                         onClick={() => {
-                          void navigator.clipboard
-                            .writeText(data.item.key)
+                          void copyText(data.item.key)
                             .then(() =>
                               window.showNotification?.('Skopiowano ID zadania.', 'success'),
                             )

@@ -101,6 +101,9 @@ Wdrożenie wymaga `pnpm install --frozen-lockfile`, `pnpm build`, a następnie
 `manage.py collectstatic` i standardowego wdrożenia Django. Zachowaj poprzednie
 chunki podczas wymiany wersji, aby otwarte karty mogły dokończyć ich pobieranie.
 Node i pnpm są potrzebne podczas budowania; nie są procesami aplikacji w produkcji.
+Kopiowanie ID zadania używa `shared/clipboard.ts`: przy braku Clipboard API
+korzysta z istniejącego wzorca `execCommand('copy')`, usuwa pole tymczasowe
+i przywraca fokus; niepowodzenie pokazuje dotychczasowy komunikat błędu.
 Pakiet tablicy nadal buduje się osobno według [OFFICE.md](OFFICE.md).
 
 ## Podział źródeł i cykl życia

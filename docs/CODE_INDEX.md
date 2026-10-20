@@ -1348,6 +1348,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/Select.tsx](../frontend/app/src/shared/Select.tsx)
 - [frontend/app/src/shared/StatusGroup.tsx](../frontend/app/src/shared/StatusGroup.tsx)
 - [frontend/app/src/shared/api.ts](../frontend/app/src/shared/api.ts)
+- [frontend/app/src/shared/clipboard.ts](../frontend/app/src/shared/clipboard.ts)
 - [frontend/app/src/shared/globals.d.ts](../frontend/app/src/shared/globals.d.ts)
 - [frontend/app/src/shared/page.ts](../frontend/app/src/shared/page.ts)
 - [frontend/app/src/shared/table.tsx](../frontend/app/src/shared/table.tsx)
