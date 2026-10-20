@@ -94,8 +94,11 @@ brew install colima docker docker-compose
 Skrypt tworzy `.env.office` z losowym kluczem i prawami 0600 tylko, jeśli pliku
 jeszcze nie ma. Nie zmienia głównego `.env` ani istniejących sekretów.
 `settings.py` ładuje dodatkowy plik bez nadpisywania istniejących zmiennych.
-Obraz w [Compose](../deploy/office.compose.yml) jest przypięty wersją 9.4.0
-oraz digestem; port 8088 jest związany wyłącznie z 127.0.0.1.
+Ten starszy skrypt oczekuje lokalnego `deploy/office.compose.yml`, którego
+nie ma w bieżącym drzewie repozytorium. Poniższe polecenia wymagają tego
+pliku. Kompletny wersjonowany zestaw z ONLYOFFICE znajduje się w
+[produkcyjnym Compose](../deploy/compose.yaml); jego uruchomienie opisuje
+[instrukcja instalacji](PRODUCTION.md).
 
 Ancore musi być dostępne z VM pod `host.lima.internal:8000`, np. przez
 `manage.py runserver 0.0.0.0:8000`. Host `host.lima.internal` musi być dozwolony
@@ -139,15 +142,24 @@ osobnym trwałym katalogiem Ancore — elementy dodane do sceny są zapisywane.
 
 ## Konfiguracja na innym serwerze
 
+Gotowy wariant produkcyjny z osobnym kontenerem ONLYOFFICE, proxy pod
+`/onlyoffice/`, prywatnymi callbackami i trwałymi wolumenami opisuje
+[Produkcja Docker Compose](PRODUCTION.md). Poniższe uwagi o pojedynczym Macu
+dotyczą starszego skryptu `scripts/start_office.sh`.
+
 | Zmienna | Znaczenie |
 | --- | --- |
-| `ONLYOFFICE_URL` | Adres ONLYOFFICE dostępny w przeglądarce użytkownika |
+| `ONLYOFFICE_URL` | Adres ONLYOFFICE dostępny w przeglądarce; produkcyjny Compose używa względnego `/onlyoffice` |
 | `ONLYOFFICE_INTERNAL_URL` | Adres tego samego ONLYOFFICE osiągalny z Django; domyślnie powyższy |
 | `ONLYOFFICE_ANCORE_URL` | Bazowy adres Ancore osiągalny z serwera dokumentów |
 | `ONLYOFFICE_JWT_SECRET` | Wspólny losowy sekret, minimum 32 znaki, taki sam jak `JWT_SECRET` serwera |
 
-Compose jest konfiguracją dla jednego Maca. Dostęp z innych komputerów wymaga
-osiągalnych nazw/HTTPS, poprawnych hostów Django i reverse proxy z WebSocketami.
+Starszy lokalny Compose jest konfiguracją dla jednego Maca. Produkcyjny
+`install.sh` działa domyślnie przez HTTP i IP serwera na porcie 8080;
+HTTPS można włączyć opcjonalnie. Względny publiczny prefiks `/onlyoffice`
+działa pod adresem i protokołem użytym do otwarcia Ancore, także bez domeny.
+`ONLYOFFICE_INTERNAL_URL=http://onlyoffice` i `ONLYOFFICE_ANCORE_URL=http://web:8081`
+pozostają adresami wewnątrz sieci Docker; port callbacków nie jest publikowany.
 Nie używaj `127.0.0.1` jako adresu edytora dla klientów na innych komputerach.
 Nie publikuj prywatnego storage przez serwer WWW. Nie włączaj publicznego
 serwera demonstracyjnego ONLYOFFICE ani wyłączania JWT.

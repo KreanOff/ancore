@@ -1,5 +1,97 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Produkcja Docker Compose (20.10.2026)
+
+Dodano [pakiet produkcyjny](PRODUCTION.md) z pięcioma usługami: Nginx,
+Django/Gunicorn, PostgreSQL 17, harmonogram backupów oraz ONLYOFFICE 10.0.0.1.
+Instalator `sh install.sh` potrzebuje na hoście wyłącznie Dockera z Compose:
+konfigurator Pythona działa w tymczasowym kontenerze i automatycznie tworzy
+`deploy/.env` (0600) z losowymi sekretami. Domyślnie Ancore działa przez HTTP,
+bez domeny, na `0.0.0.0:8080`; `ALLOW_IP_HOSTS` sprawdza adresy IP i localhost.
+Podanie `--url` włącza konkretną nazwę hosta. Opcjonalne HTTPS może kończyć
+Nginx Ancore albo istniejący zewnętrzny proxy. `--reconfigure` zmienia transport
+bez wymiany sekretów i wolumenów. Ponowny instalator robi backup przed buildem.
+Nie instaluje Dockera ani nie pozyskuje certyfikatów. Dane i archiwa pozostają
+nieszyfrowane. Dodatkowy `scripts/production.py` udostępnia utrzymanie i restore;
+użycie go bezpośrednio wymaga Pythona na hoście.
+
+Ścieżki storage i katalogu tymczasowego można wskazać środowiskiem;
+domyślne ścieżki developmentu są zachowane. Django działa jako UID 10001,
+z rolą PostgreSQL bez superuser/CREATEDB. Nginx udostępnia jedynie static
+i dozwolone awatary; dokumenty i załączniki zachowują kontrolę Django.
+Prywatne źródła/callbacki ONLYOFFICE przechodzą przez wewnętrzny listener.
+Proxy odświeża adresy usług przez DNS Dockera po wymianie kontenerów.
+
+Middleware `core.maintenance` synchronizuje żądania wszystkich workerów
+z zadaniem backupu. Nowe żądania dostają 503, istniejące operacje i odpowiedzi
+strumieniowe kończą się przed `pg_dump` i archiwizacją plików. Backup jest
+nieszyfrowanym `.tar.gz` z sumą SHA-256; odtwarzanie zatrzymuje zapisujące
+usługi, weryfikuje archiwum i odtwarza bazę oraz pliki. Przerwa obejmuje
+przygotowanie całego archiwum, więc duże instalacje wymagają osobnego okna
+serwisowego lub rozbudowy mechanizmu. Kopie obejmują dane zapisane w Ancore,
+bez niezapisanych edycji i roboczych baz/cache ONLYOFFICE.
+
+Weryfikacja na osobnym projekcie i nowych wolumenach `ancore-prod-qa`, bez
+korzystania z bazy ani uploadów lokalnej aplikacji:
+
+- zbudowano obrazy backendu, Nginx, PostgreSQL i backupu, wraz z oboma
+  frontendami; do etapu zależności kopiowane są istniejące konfiguracje
+  pnpm obu pakietów, dopuszczające skrypt esbuild;
+- uruchomiono pięć zdrowych usług, w tym rzeczywisty ONLYOFFICE 10.0.0.1;
+- przeszło 13 testów konfiguracji, blokad i struktury na lokalnym Pythonie 3.15
+  oraz 87 testów produkcji, plików, dostępu i Dokumentów na Pythonie 3.14
+  i osobnej bazie PostgreSQL w kontenerach;
+- sprawdzono przez HTTP oraz HTTPS logowanie dwóch kont, zasoby Reacta,
+  prywatne pobieranie, awatar, odmowę dostępu obcego konta, niedostępność
+  prywatnych katalogów mediów oraz zasoby/powłokę ONLYOFFICE;
+- wykonano rzeczywistą konwersję TXT → DOCX w ONLYOFFICE, pobranie przez
+  podpisane źródło i zapis przez podpisany callback ze wzrostem rewizji;
+- wykonano backup, sprawdzono SHA-256, format `pg_dump` i zawartość pliku,
+  zmieniono dane testowe, odtworzono kopię i potwierdzono powrót oryginalnej
+  treści, dokumentu Office oraz usunięcie danych utworzonych po kopii;
+- sprawdzono wymianę/restart usług z zachowaniem danych, wariant Nginx
+  z lokalnym certyfikatem testowym oraz kontrolę wdrożeniową Django.
+
+Dodatkowa weryfikacja domyślnego HTTP i instalatora Docker-only na osobnym
+projekcie `ancore-http-qa`:
+
+- `sh install.sh` uruchomiono z linuksowego środowiska Docker CLI bez Pythona
+  na hoście; wygenerował prywatny `deploy/.env` i pięć zdrowych usług na 8080;
+- sprawdzono HTTP przez IP i localhost, poprawny nagłówek IP Host, odmowę dla
+  obcej nazwy DNS oraz publiczny skrypt ONLYOFFICE pod względnym prefiksem;
+- przeszło 20 lokalnych testów konfiguracji, struktury i walidacji edytora
+  oraz 92 testy kontenerowe konfiguracji, plików, uprawnień i Dokumentów;
+- ponowny instalator wykonał backup i zachował cały plik konfiguracji;
+  sprawdzono SHA-256 archiwum, obecność `pg_dump`, plików i flagi braku szyfrowania;
+  następnie `--reconfigure` włączyło HTTPS na testowym certyfikacie dla IP,
+  zachowując wszystkie cztery sekrety, konto, zadanie i zapisaną rewizję;
+  potwierdzono przekierowanie 308 z HTTP, logowanie i zasoby ONLYOFFICE
+  przez HTTPS. Pięć usług pozostało zdrowych;
+- rzeczywisty ONLYOFFICE pobrał prywatne źródło, przekonwertował TXT → DOCX
+  i zapisał rewizję 2 przez podpisany callback z publiczną ścieżką IP;
+  pobieranie wyniku połączyło się wyłącznie z wewnętrznym ONLYOFFICE;
+- Chrome/Playwright sprawdził logowanie, zadanie, profil referencyjny i ponowne
+  wejście przy 1366×900 oraz ekran zadania przy 390×844. Wymuszono brak
+  Clipboard API (localhost jest przez przeglądarkę traktowany jako bezpieczny
+  kontekst): fallback skopiował ID, pokazał sukces i przywrócił fokus;
+  odmowa `execCommand` pokazała istniejący komunikat błędu. Zrzuty potwierdziły
+  renderowanie; brak błędów JavaScript, ostrzeżeń konsoli i nakładek błędów.
+  Powtórzono logowanie, kopiowanie i stan błędu przez HTTPS;
+- `makemigrations --check --dry-run` nie wykazał zmian. Kompilacja i TypeScript
+  przeszły w Dockerze, Prettier zaakceptował zmienione pliki React.
+  Wyłączono nieużywany socket sterujący Gunicorna, eliminując błąd uprawnień
+  do nieistniejącego katalogu domowego; start backendu nie zgłasza tego błędu.
+
+Wtyczka Browser była niedostępna (`Browser plugin not available`); użyto
+istniejącego Playwright i Chrome bez instalowania zależności. Skrypty i zrzuty
+pozostały w katalogu tymczasowym poza repozytorium. Po weryfikacji usunięto
+kontenery, wolumeny, konfigurację, backupy i certyfikat tej instalacji QA.
+Poprawka interfejsu obejmuje
+wyłącznie fallback kopiowania ID na HTTP; nie zmienia układu ani stylów.
+Nie wykonano wdrożenia na docelowym serwerze, testu publicznego certyfikatu CA,
+fizycznego klienta z innego komputera, pełnej regresji, testu obciążenia ani
+Safari/Firefox. Pakiet nie zmienia modeli i nie dodaje migracji.
+
 **Aktualny schemat od 18.10.2026:** [czysta baza i nowe migracje](DATABASE.md).
 Poniższe datowane zapisy zachowują historię wcześniejszych prac i wyników;
 opisy zachowania starych modeli oraz ich migracji nie są instrukcją obecnego uruchomienia.
@@ -1452,15 +1544,19 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 | `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE` | Ciasteczko sesji |
 | `CSRF_COOKIE_SECURE`, `CSRF_COOKIE_HTTPONLY`, `CSRF_COOKIE_SAMESITE` | Ciasteczko CSRF |
 | `SECURE_REFERRER_POLICY` | Domyślnie same-origin |
+| `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT` | Opcjonalne ścieżki trwałych danych i zasobów; domyślnie katalogi repozytorium |
+| `FILE_UPLOAD_TEMP_DIR` | Opcjonalny katalog uploadów tymczasowych |
+| `BACKUP_CONTROL_ROOT` | Katalog blokad i znacznika przerwy backupu; pusty wyłącza mechanizm w developmencie |
+| `TRUST_PROXY_HEADERS` | Zaufanie do `X-Forwarded-Proto` wyłącznie za kontrolowanym proxy |
 | `MAX_PROFILE_PHOTO_SIZE` | Limit zdjęcia, domyślnie 5 MiB |
 | `MAX_ATTACHMENT_SIZE` | Limit załącznika, domyślnie 10 MiB |
 | `FILE_UPLOAD_MAX_MEMORY_SIZE` | Próg uploadu w pamięci, domyślnie 5 MiB |
 | `DATA_UPLOAD_MAX_MEMORY_SIZE` | Limit danych żądania Django, domyślnie 20 MiB |
 
 `TIME_ZONE` to `Europe/Warsaw`, język `pl-pl`, `USE_TZ=True`.
-`MEDIA_ROOT` wskazuje `media/`, a `PRIVATE_DOCUMENT_ROOT` wskazuje
-`private_documents/`. Te ścieżki są ustawiane w Pythonie, nie przez zmienne
-środowiskowe o tych samych nazwach.
+`MEDIA_ROOT` domyślnie wskazuje `media/`, a `PRIVATE_DOCUMENT_ROOT` wskazuje
+`private_documents/`. Produkcja może nadpisać te ścieżki zmiennymi
+środowiskowymi o tych samych nazwach.
 
 Nie nadpisuj istniejącego `.env` podczas wykonywania zwykłego zadania.
 Nowe środowisko skonfiguruj na podstawie [.env.example](../.env.example).
@@ -1828,6 +1924,12 @@ osobnego runnera frontendowych testów ani serwisu zadań w tle. Nie oznacza to,
 
 ## 8. Wdrożenie
 
+Gotowy wariant jednego serwera z pięcioma usługami, instalatorem, trwałymi
+wolumenami i backupem opisuje [Produkcja Docker Compose](PRODUCTION.md).
+`deploy/compose.yaml` rozdziela Nginx, Django/Gunicorn, PostgreSQL, backup
+i ONLYOFFICE. Dane na dysku i archiwa nie są szyfrowane. Poniżej pozostają
+zasady ścieżek dla wdrożeń ręcznych.
+
 Po przeniesieniu źródeł dodaj katalog `backend/` do ścieżki importów procesu
 serwera. Przykład zmiennej środowiskowej (podstaw rzeczywistą ścieżkę):
 
@@ -1842,20 +1944,20 @@ Alternatywnie użyj opcji serwera wskazującej katalog importów. Nie importuj
 repozytorium, więc nie trzeba przenosić `.env`, mediów, prywatnych dokumentów,
 zasobów ani plików zbieranych przez `collectstatic`.
 
-Projekt ma wejścia WSGI i ASGI. Repozytorium nie dokumentuje konkretnego
-serwera wdrożenia, domeny, pipeline'u ani backupów; ten opis nie zakłada ich
-konfiguracji. `STATIC_ROOT` wskazuje `BASE_DIR / 'staticfiles'` (katalog ignorowany
+Projekt ma wejścia WSGI i ASGI. Pakiet Compose używa Gunicorna; rzeczywistą
+domenę, certyfikaty i katalog kopii ustala administrator przy instalacji.
+Domyślnie `STATIC_ROOT` wskazuje `BASE_DIR / 'staticfiles'` (katalog ignorowany
 przez Git). `manage.py collectstatic --noinput` zbiera tam zasoby do serwowania
 przez serwer produkcyjny; `--dry-run` pozwala sprawdzić zbieranie bez zapisu.
 
-Publiczne media ogranicz do `profile_photos/`, `company_photos/` i
-`workplace_photos/` oraz rozszerzeń JPG/JPEG/PNG/WebP. Nie konfiguruj publicznego
+Publiczne media ogranicz do `profile_photos/` i `workplace_photos/`
+oraz rozszerzeń JPG/JPEG/PNG/WebP. Nie konfiguruj publicznego
 aliasu całego `MEDIA_ROOT`: `task_attachments/` i `kanban_attachments/` są
 prywatne i wymagają pobierania przez widoki aplikacji. Wbudowany routing DEBUG
 egzekwuje tę listę w `backend/core/media.py`. Dysk/Dokumenty pozostają poza publicznym
 storage. Konfiguracja zewnętrznego serwera nie jest częścią repozytorium.
 
-Przy osobnym zadaniu wdrożeniowym ustal konfigurację procesu, statycznych
+Przy wdrożeniu ręcznym ustal konfigurację procesu, statycznych
 zasobów, HTTPS, bazy, migracji oraz publicznych/prywatnych plików. Nie zapisuj
 sekretów ani danych połączenia do tej dokumentacji.
 

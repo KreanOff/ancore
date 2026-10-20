@@ -29,6 +29,8 @@ local_settings.py
 /media/
 /private_documents/
 /staticfiles/
+/deploy/backups/
+/deploy/certs/
 *.sqlite3
 *.sqlite3-journal
 *.sqlite3-wal

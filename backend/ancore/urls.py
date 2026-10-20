@@ -11,8 +11,10 @@ from spaces import urls as spaces_urls, team_urls
 from dashboard import filter_urls, pulpit_urls
 from core.media import public_media
 from core.frontend import page_api, navigation_api, shell_api
+from core.health import readiness
 
 urlpatterns = [
+    path('health/ready/', readiness, name='health-ready'),
     path('api/v1/navigation/', navigation_api, name='react-navigation'),
     path('api/v1/shell/', shell_api, name='react-shell'),
     re_path(r'^workplaces/[-a-zA-Z0-9_]+/api/v1/navigation/$', navigation_api, name='workplace-react-navigation'),

@@ -7,6 +7,22 @@ Aplikacja do pracy zespołowej: Workspace, Przestrzenie i zadania, kalendarz,
 pulpity, zasoby oraz Dysk i Dokumenty. Backend korzysta z Django i PostgreSQL,
 a interfejs z Reacta i TypeScriptu.
 
+## Instalacja na serwerze (Docker)
+
+Instalacja produkcyjna z pięcioma usługami Docker Compose, lokalnymi trwałymi
+wolumenami i nieszyfrowanymi backupami: [Produkcja](docs/PRODUCTION.md).
+Po zainstalowaniu Dockera z Compose pobierz projekt na serwer i wykonaj:
+
+```sh
+cd ancore
+sh install.sh
+```
+
+Instalator sam generuje `deploy/.env` z losowymi sekretami, buduje obrazy
+i uruchamia pięć usług. Domyślny adres to `http://IP_SERWERA:8080` — domena
+i Python na hoście nie są wymagane. Opcjonalne HTTPS, w tym włączenie go
+w istniejącej instalacji bez zmiany danych i kluczy, opisuje instrukcja.
+
 ## Struktura projektu
 
 ```text
@@ -14,7 +30,7 @@ backend/           konfiguracja Django i aplikacje domenowe z testami i szablona
 frontend/app/      interfejs React i TypeScript
 frontend/board/    odizolowany edytor tablicy Excalidraw
 static/            wspólne style, skrypty, obrazy i lokalne biblioteki
-deploy/            konfiguracja usług pomocniczych (ONLYOFFICE)
+deploy/            produkcyjny Docker Compose: WWW, Django, PostgreSQL, backup, ONLYOFFICE
 scripts/           narzędzia do budowania i utrzymania projektu
 docs/              dokumentacja i generowany indeks kodu
 manage.py          główne wejście do poleceń Django

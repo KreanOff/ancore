@@ -17,7 +17,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 28 | 0 | 19 | 160 |
+| [backend/core](../backend/core) | 32 | 0 | 19 | 173 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -573,6 +573,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'health/ready/'` | `readiness` | 'health-ready' |
 | `'api/v1/navigation/'` | `navigation_api` | 'react-navigation' |
 | `'api/v1/shell/'` | `shell_api` | 'react-shell' |
 | `'^workplaces/[-a-zA-Z0-9_]+/api/v1/navigation/$'` | `navigation_api` | 'workplace-react-navigation' |
@@ -788,6 +789,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/avatars.py](../backend/core/avatars.py) — `preset_avatar`
 - [backend/core/comment_images.py](../backend/core/comment_images.py) — `comment_image_storage`, `AttachmentPresentation`
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
+- [backend/core/health.py](../backend/core/health.py) — `readiness`
+- [backend/core/hosts.py](../backend/core/hosts.py) — `ServerAddressMiddleware`
+- [backend/core/maintenance.py](../backend/core/maintenance.py) — `BackupMaintenanceMiddleware`
 - [backend/core/media.py](../backend/core/media.py) — `public_media`
 - [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `page_styles`, `navigation_response`
 - [backend/core/task_files.py](../backend/core/task_files.py) — `delete_after_commit`
@@ -1442,6 +1446,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/core/test_navigation_frontend.py](../backend/core/test_navigation_frontend.py).
 
 - `ReactNavigationTests`: 14 metod testowych.
+
+### backend/core/test_production.py
+
+Źródło: [backend/core/test_production.py](../backend/core/test_production.py).
+
+- `BackupMaintenanceTests`: 5 metod testowych.
+- `ProductionConfigurationTests`: 6 metod testowych.
+- `ServerAddressTests`: 2 metod testowych.
 
 ### backend/core/test_project_layout.py
 

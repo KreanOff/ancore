@@ -45,7 +45,7 @@ backend/                katalog źródeł Pythona, dodawany do ścieżki import�
   core/                 wspólna powłoka aplikacji, JSON API i walidacja uploadu
 frontend/board/         izolowany bundle Excalidraw/React i lockfile
 frontend/app/           frontend React/TypeScript aktywnych modułów
-deploy/                 lokalny serwer ONLYOFFICE (Compose)
+deploy/                 produkcyjny Compose, obrazy, proxy, backup i ONLYOFFICE
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
 static/frontend/        generowany bundle React z manifestem, poza Git
@@ -54,7 +54,8 @@ static/vendor/          lokalne biblioteki, ikony i generowany bundle tablicy
 media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
 private_documents/      prywatne pliki Dysku, Dokumentów i komentarzy
 docs/                   opisy projektu i generowany indeks kodu
-scripts/                narzędzia dokumentacji, ikon i lokalnego ONLYOFFICE
+scripts/                narzędzia dokumentacji, utrzymania i lokalnego ONLYOFFICE
+install.sh              instalator produkcji wymagający tylko Dockera
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
@@ -64,6 +65,7 @@ AGENTS.md               instrukcje pracy agenta
 ```
 
 `.env` zawiera lokalną konfigurację; `.venv` lokalne środowisko Python.
+Osobny `deploy/.env` generuje instalator produkcji, z losowymi sekretami.
 Treść uploadów i sekrety nie należą do dokumentacji.
 Pełny indeks źródeł znajduje się w [CODE_INDEX.md](CODE_INDEX.md).
 
@@ -78,7 +80,20 @@ Główny `manage.py` ustawia ścieżkę importów niezależnie od katalogu roboc
 WSGI/ASGI i inne bezpośrednie procesy wymagają dodania `backend/` do `PYTHONPATH`;
 szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).
 `BASE_DIR` nadal oznacza katalog główny repozytorium, a `BACKEND_DIR` katalog
-źródeł Django. Lokalizacje `.env`, uploadów i zasobów pozostają takie same.
+źródeł Django. Domyślne lokalizacje `.env`, uploadów i zasobów pozostają takie same.
+Produkcja może wskazać `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT`
+i katalog uploadów tymczasowych przez środowisko. [Instalacja pięciu usług](PRODUCTION.md)
+rozdziela WWW, backend, PostgreSQL, backup i ONLYOFFICE; pliki mają trwałe lokalne
+wolumeny bez szyfrowania. Middleware `core.maintenance` synchronizuje żądania
+z backupem bazy i plików. `/health/ready/` sprawdza gotowość bazy bez ujawniania
+danych użytkowników. Healthchecki usług nie zastępują zewnętrznego monitoringu.
+`sh install.sh` uruchamia konfigurator w Dockerze: domyślnie HTTP na
+`0.0.0.0:8080`, bez stałej domeny. `core.hosts.ServerAddressMiddleware`
+przy `ALLOW_IP_HOSTS=true` ogranicza hosty do IP i localhost. Opcjonalne HTTPS
+z certyfikatem Nginx albo zewnętrznym proxy zachowuje sekrety i wolumeny przy
+`--reconfigure`. Publiczny prefiks ONLYOFFICE jest względny (`/onlyoffice`),
+więc edytor używa adresu wybranego przez przeglądarkę. Wyniki callbacków są
+pobierane ze stałego wewnętrznego serwera po walidacji ścieżki cache.
 
 ## 3. Warstwy i odpowiedzialności
 

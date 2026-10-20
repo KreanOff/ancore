@@ -1,0 +1,6 @@
+services:
+  web:
+    ports:
+      - '${ANCORE_BIND:-0.0.0.0}:${ANCORE_HTTPS_PORT:-443}:443'
+    volumes:
+      - ${ANCORE_TLS_DIR:?Wskaż katalog certyfikatu}:/etc/nginx/tls:ro

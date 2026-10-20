@@ -25,6 +25,9 @@ w `static/`. Główne instrukcje startu i mapa repozytorium są w
 6. [Pełne edytory Dokumentów](OFFICE.md) — ONLYOFFICE, tablica, zapis i uruchomienie.
 7. [Indeks kodu](CODE_INDEX.md) — generowany katalog modeli, relacji,
    formularzy, tras URL, szablonów, zasobów i testów.
+8. [Produkcja Docker Compose](PRODUCTION.md) — instalacja przez Docker, HTTP bez
+   domeny na 8080, opcjonalne HTTPS, pięć usług, lokalne wolumeny oraz backup
+   i odtwarzanie bez szyfrowania danych na dysku.
 
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.

@@ -70,6 +70,10 @@ elif not DEBUG and not ALLOWED_HOSTS:
     raise ImproperlyConfigured('ALLOWED_HOSTS must be set when DEBUG is disabled.')
 
 CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
+ALLOW_IP_HOSTS = env_bool('ALLOW_IP_HOSTS')
+# Enable only behind a trusted proxy which overwrites this header.
+if env_bool('TRUST_PROXY_HEADERS'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=not DEBUG)
 SECURE_HSTS_SECONDS = env_int('SECURE_HSTS_SECONDS', 0 if DEBUG else 31536000)
@@ -109,6 +113,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.maintenance.BackupMaintenanceMiddleware',
+    'core.hosts.ServerAddressMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -205,12 +211,15 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = Path(os.getenv('STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
 
 # Media files (uploaded attachments)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-PRIVATE_DOCUMENT_ROOT = BASE_DIR / 'private_documents'
+MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
+PRIVATE_DOCUMENT_ROOT = Path(os.getenv('PRIVATE_DOCUMENT_ROOT', str(BASE_DIR / 'private_documents')))
+BACKUP_CONTROL_ROOT = os.getenv('BACKUP_CONTROL_ROOT', '')
+if os.getenv('FILE_UPLOAD_TEMP_DIR'):
+    FILE_UPLOAD_TEMP_DIR = os.environ['FILE_UPLOAD_TEMP_DIR']
 MAX_PROFILE_PHOTO_SIZE = env_int('MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)
 MAX_ATTACHMENT_SIZE = env_int('MAX_ATTACHMENT_SIZE', 10 * 1024 * 1024)
 FILE_UPLOAD_MAX_MEMORY_SIZE = env_int('FILE_UPLOAD_MAX_MEMORY_SIZE', 5 * 1024 * 1024)
