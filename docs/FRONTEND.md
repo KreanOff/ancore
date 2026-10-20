@@ -49,6 +49,23 @@ walidację, ORM i PostgreSQL. React obsługuje stan i renderowanie przeniesioneg
 modułu oraz komunikuje się z JSON API. Wspólny origin pozwala zachować obecną
 sesję bez nowego systemu tokenów ani konfiguracji CORS.
 
+## Animacje zadań Przestrzeni
+
+Wszystkie sześć szablonów tablic Przestrzeni korzysta z jednego `ItemCard`
+i `StatusGroup` w `spaces/DetailPage.tsx`. Wspólny wariant `work-sprint-board`
+zachowuje wygląd aktywnego sprintu: kolorowe, zwijane kolumny, zwarte karty
+i obramowane puste stany. Django używa tego samego układu przez
+`spaces/card.html`; `spaces/sprint_card.html` pozostaje aliasem.
+
+`spaces/useItemMotion.ts` łączy natywne przeciąganie z podglądem karty,
+animowanym miejscem wstawienia i FLIP po zmianie danych Reacta. `DetailPage`
+pokazuje lokalnie nową kolejność po upuszczeniu, zapisuje ją przez dotychczasowe
+API i cofa po odrzuceniu zapisu. Autoryzacja, status/zakończenie i historia
+nadal należą do Django. Kopie wizualne nie mają ID ani hooków aplikacji,
+a `data-icon*` zachowuje właściwy wygląd ikon. Hook sprząta kopie, listenery,
+klatki przewijania i animacje przy odmontowaniu. `prefers-reduced-motion`
+wyłącza ruch. Nie dodano zależności; szczegóły interakcji: [UI](UI.md#przestrzenie-i-zespoły).
+
 ## Budowanie i uruchamianie
 
 Wymagania frontendu: Node.js 22 lub nowszy oraz pnpm 11. Repozytorium przypina

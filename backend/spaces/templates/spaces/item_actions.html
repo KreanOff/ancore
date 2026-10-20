@@ -7,11 +7,11 @@
             {% for status in item.transitions %}
             <form method="post" action="{{ item.action_url }}" data-work-action>{% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="status" value="{{ status.key }}"><input type="hidden" name="return_view" value="{{ view|default:'list' }}"><button class="tasks-project-menu-button" type="submit"><span class="status-indicator status-{{ status.category }}" aria-hidden="true"></span><span>Zmień na: {{ status.label }}</span></button></form>
             {% endfor %}
-            {% if view == 'board' %}
+            {% if view == 'board' and can_reorder %}
             {% include 'spaces/board_order_form.html' with direction='up' icon='arrow-up' label='Przesuń wyżej' %}
             {% include 'spaces/board_order_form.html' with direction='down' icon='arrow-down' label='Przesuń niżej' %}
             {% endif %}
-            {% if view == 'backlog' %}
+            {% if view == 'backlog' and can_reorder %}
             <form method="post" action="{{ item.action_url }}" data-work-action>{% csrf_token %}<input type="hidden" name="action" value="up"><input type="hidden" name="return_view" value="backlog"><button class="tasks-project-menu-button" type="submit"><i data-icon="arrow-up" aria-hidden="true"></i><span>Przesuń wyżej</span></button></form>
             <form method="post" action="{{ item.action_url }}" data-work-action>{% csrf_token %}<input type="hidden" name="action" value="down"><input type="hidden" name="return_view" value="backlog"><button class="tasks-project-menu-button" type="submit"><i data-icon="arrow-down" aria-hidden="true"></i><span>Przesuń niżej</span></button></form>
             {% if space.template == 'scrum' %}

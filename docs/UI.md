@@ -174,6 +174,25 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
+Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
+„Sortowanie” i „Filtrowanie”. Nie ma osobnego pola wyszukiwania zadań.
+`spaces/ItemToolbar.tsx` używa wspólnego `Dropdown` oraz klas
+`tasks-project-query-*`, tak jak Dysk i Zasoby. Sortowanie ma wybór pola,
+kierunku i powrót do domyślnej kolejności. Filtrowanie zawiera typ zgłoszenia,
+wykonawcę, status, priorytet i zespół, wyszukiwanie opcji, licznik aktywnych
+warunków oraz czyszczenie. Wybór od razu odświeża wyniki, zachowuje pozostałe
+warunki i usuwa numer strony. Escape zamyka panel i przywraca fokus.
+Pierwszy render Django używa dwóch `details` i tych samych klas;
+formularz filtrów oraz linki kolejności działają także bez JavaScriptu.
+
+Nagłówek otwartej Przestrzeni łączy awatar, nazwę, działania i zakładki widoków
+w jeden `work-space-header`, również w Tagach. React współdzieli
+`src/spaces/SpaceHeader.tsx`; pierwszy render Django zachowuje tę samą powłokę
+w `spaces/detail.html`. Nazwa i działania pozostają w górnym wierszu, zakładki
+poniżej. Jedna dolna ramka oddziela cały nagłówek od treści; między wierszami
+nie ma separatora. Podkreślenie aktywnej zakładki, polskie etykiety, wspólne
+kontrolki i poziome przewijanie zakładek na telefonie pozostają zachowane.
+
 Szczegóły nowego zadania (`spaces/task_detail.html`) zachowują powłokę,
 kontrolki i współdzielone include'y dawnego ekranu Tasks przez
 `spaces/base.html` oraz `core/base.html`. Nagłówek ma strzałkę powrotu,
@@ -310,87 +329,74 @@ i dotychczasową akcję rozpoczęcia/zakończenia. Na wąskim ekranie nagłówek
 zawija metadane i przyciski, a wiersze przewijają się poziomo wewnątrz sekcji.
 Cel sprintu pojawia się tylko, gdy został podany, i zwija się razem z listą.
 Puste sekcje używają `tasks-empty-section` z `role="status"`; brak wyników
-backlogu po filtrach ma osobny komunikat. Zwijanie obsługuje istniejący `tasks.js`,
-również po częściowej nawigacji. Kolejność planowania i menu wierszy są zachowane.
+backlogu po filtrach ma osobny komunikat. Zwijanie aktywnych grup obsługuje
+React `StatusGroup`; `tasks.js` zachowuje obsługę pierwszego renderu zgodności.
+Kolejność planowania i menu wierszy są zachowane.
 
-Wiersze backlogu z prawem edycji mogą być przeciągane w sekcji, pomiędzy
-otwartymi sprintami oraz do/z backlogu. Nie pokazują osobnego uchwytu ani
-kolumny przeciągania; pierwszym elementem wiersza pozostaje checkbox.
-Dotyk korzysta z istniejącej ikony priorytetu i Pointer Events; gest poza nią
-nadal przewija listę. Fioletowy obrys wskazuje sekcję docelową, a linia miejsce wstawienia.
-Zwinięty nagłówek i pusta sekcja przyjmują zadanie na końcu swojej dostępnej
-grupy. Escape anuluje przeciąganie, a dotyk obsługuje przewijanie pionowe
-przy krawędzi treści. Zapis korzysta z `X-Work-Action` i istniejącego endpointu
-zadania z akcją `plan`; po potwierdzeniu odświeża treść, liczniki i menu,
-zachowując filtry oraz URL. Podczas zapisu blokowane jest kolejne
-przeciąganie; `aria-busy` i region live informują o stanie oraz wyniku. Błąd nie przestawia wiersza
-w DOM i wyświetla komunikat. Obserwator nie ma `draggable` ani obsługi przeciągania dotykiem.
-Menu sprintu/backlogu udostępnia te same przeniesienia klawiaturą;
-„Przesuń wyżej/niżej” pozostaje alternatywą dla zmiany kolejności.
-`tasks.js` pomija własną obsługę drag tych wierszy, które mają
-`data-work-backlog-row`; obsługuje je delegacja w `spaces.js`, odnawiana
-po `ancore:content-loaded`. Tablica obsługuje osobny gest zmiany statusu i kolejności.
+W aktywnym ekranie React tablicę i backlog renderują
+`spaces/DetailPage.tsx`, `spaces/Item.tsx` oraz wspólny `StatusGroup`.
+Szablony `spaces/card.html` i `spaces/row.html` zachowują pierwszy render;
+`spaces/sprint_card.html` jest aliasem wspólnej karty. Starsze kontrolery
+`spaces.js`/`tasks.js` nie obsługują interakcji korzenia Reacta. Zwijanie grup
+należy do `StatusGroup`.
 
-„Aktywny sprint” używa wariantu `work-sprint-board`: kolumny rozszerzają
-`tasks-issue-group tasks-status-block` i wspólny `issue_group_header.html`
-z Listy zadań. Mają te same kolory kategorii, wysokość 40px, ikony statusów,
-liczniki oraz zwijanie klawiaturą i nagłówkiem. `spaces/sprint_card.html`
-rozszerza `tasks-issue-row work-issue-row` o zwarty układ w kolumnie: priorytet,
-status, klucz i zawijany tytuł, menu działań, wspólny typ zgłoszenia oraz
-liczniki tagów/załączników i oznaczenie terminu. Punkty i awatar wykonawcy
-znajdują się w metadanych, po typie zadania, jak w backlogu; opcjonalny zespół
-pozostaje opisem karty. Białe powierzchnie i podświetlenie zadania
-pochodzą z listy. Każde zadanie jest osobnym kafelkiem z pełnym obramowaniem
-`--border-color` i zaokrągleniem jak nagłówek kolumny Kanbana. Kafelki mają
-odstęp `0.55rem`, a nagłówek statusu jest oddzielony od pierwszej karty
-odstępem `0.65rem`, jak w istniejącej tablicy. Kolumna nie ma wspólnej ramki;
-pusty stan zachowuje własną ramkę. Karty mają `flex: 0 0 auto`, dzięki czemu długa lista
-przewija się pionowo bez ściskania kart i nakładania metadanych. Powłoka
-sprintu ogranicza tablicę do miejsca między opisem a dolną paginacją;
-lista w kolumnie wypełnia tę wysokość bez stałego offsetu od viewportu.
-Każda kolumna sprintu zajmuje pełną dostępną wysokość tablicy, również
-gdy jest pusta albo zawiera tylko jeden kafelek; cały ten obszar przyjmuje
-upuszczenie zadania do danego statusu.
-Kolumny przewijają się poziomo na wąskim ekranie, a opis
-sprintu zawija się do dostępnej szerokości. Przeciąganie nadal obsługuje
-`spaces.js` przez `data-work-card`; `tasks.js` pomija dla niego własne
-listenery przeciągania wierszy. Podczas inicjalizacji tablicy linki i zdjęcia
-wewnątrz kart otrzymują `draggable=false`, więc przeciąganie od tytułu,
-klucza, awatara i metadanych uruchamia kartę z jej ID i podglądem całego
-kafelka. Zwykłe kliknięcie tytułu nadal otwiera zadanie. Menu i kontrolki
-nie rozpoczynają gestu; obserwator nie może przeciągać. Podświetlenie celu
-obejmuje jedną kolumnę. Podgląd `work-board-drag-preview` jest czytelną,
-nieinteraktywną kopią kafelka nad interfejsem: korzysta z istniejących cieni,
-lekkiego przechylenia i skali, śledzi kursor z uwzględnieniem zoomu UI
-i pozostaje w granicach okna. Nie zawiera ID ani aktywnych hooków menu/form;
-ma `inert` oraz `aria-hidden`. Przezroczysty obraz natywnego gestu zapobiega
-wyświetleniu drugiego podglądu przez przeglądarkę.
-Źródłowy kafelek zachowuje rozmiar, ma przygaszoną zawartość i przerywaną
-ramkę. Cel sprintu ma lekko zaakcentowane tło i przerywaną ramkę w nakładce
-nad kafelkami, więc linia jest widoczna na całej wysokości. Dodatkowa pozioma,
-przerywana linia `work-board-drop-marker` wskazuje miejsce przed lub po
-konkretnym zadaniu. Uwzględnia środek kafelka, przewinięcie kolumny i zoom UI;
-zwinięta lub pusta kolumna przyjmuje zadanie na końcu. Nakładki nie
-przechwytują myszy; kolor pochodzi z `--system-accent`. Przy krawędzi listy
-gest przewija pionowo kolumnę, a przy krawędzi tablicy także poziomo.
-Obsługa `dragenter` podtrzymuje natywny cel przy zmianie kafelka pod kursorem
-podczas przewijania.
-Escape, zakończenie gestu i podmiana treści czyszczą
-stan przeciągania oraz zatrzymują przewijanie. Można zmienić kolejność
-w tej samej kolumnie oraz wybrać dokładne miejsce w innym statusie.
-Tylko niezmieniona pozycja nie wysyła zapisu. Akcja `position` zapisuje
-`rank` przez istniejący endpoint zadania, z pozycją źródła i obu sąsiadów;
-kolejność pozostaje po odświeżeniu i jest współdzielona z listą/backlogiem.
-Kolejny gest podczas zapisu jest blokowany; `aria-busy` i region live
-informują o zapisie. Błąd lub konflikt zachowuje zadanie w poprzednim
-położeniu i pokazuje komunikat. Menu z trzema paskami udostępnia również
-„Przesuń wyżej/niżej” jako alternatywę klawiaturową w bieżącej kolumnie.
-Po potwierdzeniu zapisu i odświeżeniu treści `is-board-arriving` krótko
-podświetla przeniesiony kafelek oraz przewija go do widocznego obszaru.
-Efekt znika automatycznie. `prefers-reduced-motion` wyłącza przechylenie,
-skalowanie, animację i płynne przewijanie; zachowuje przerywane ramki oraz
-krótkie statyczne potwierdzenie.
-Tablica Kanbana zachowuje `spaces/card.html` i współdzieli obsługę gestu.
+Wszystkie tablice Przestrzeni używają wariantu `work-sprint-board`, wspólnego
+z „Aktywnym sprintem”. Dotyczy to Kanbana, Scrum, Zarządzania zadaniami,
+Marketingu, Rekrutacji i Obsługi zgłoszeń. Kolumny rozszerzają
+`tasks-issue-group tasks-status-block` z Listy zadań. Mają te same kolory
+kategorii, wysokość nagłówka 40px, ikony statusów, liczniki i przyciski zwijania.
+Karta `tasks-issue-row work-issue-row work-sprint-card` zawiera priorytet,
+status, klucz i zawijany tytuł w pierwszym wierszu, menu działań po prawej
+oraz metadane poniżej: typ, wykonawcę, tagi, załączniki i oznaczenie terminu.
+Punkty są widoczne tylko w Scrum, zgodnie z formularzami planowania.
+Opcjonalny zespół pozostaje opisem. Każdy kafelek ma białą powierzchnię, pełne obramowanie
+`--border-color` i zaokrąglenie nagłówka Kanbana. Odstęp kart wynosi `0.55rem`,
+a odstęp nagłówka od listy `0.65rem`. Karty mają `flex: 0 0 auto`, dzięki
+czemu długa lista przewija się bez ściskania metadanych. Pusty stan ma własną
+ramkę, a cała wysokość kolumny przyjmuje upuszczenie. Powłoka ogranicza tablicę
+do miejsca między opisem sprintu a dolną paginacją. Na wąskim ekranie kolumny
+przewijają się poziomo, a opis sprintu zawija się do dostępnej szerokości.
+React renderuje jeden `ItemCard` i jeden `StatusGroup` dla każdego szablonu,
+bez osobnej karty i szarego nagłówka Kanbana. Pierwszy render Django używa
+`spaces/card.html` oraz wspólnego `issue_group_header.html`. Historyczne nazwy
+klas z prefiksem `work-sprint-` oznaczają teraz wspólny wzorzec tablic.
+Przeciąganie, animacje, zwijanie, menu i pola docelowe mają to samo zachowanie.
+
+`spaces/useItemMotion.ts` obsługuje efekty natywnego przeciągania kart i wierszy
+backlogu. Elementy mają `data-work-motion-item`, a sekcje docelowe
+`data-work-drop-group`. Linki i obrazy wewnątrz nie uruchamiają osobnego drag;
+kliknięcie tytułu nadal otwiera zadanie. Kontrolki i menu nie rozpoczynają gestu.
+Obserwator i widok sortowany inaczej niż rosnąca kolejność ręczna nie
+udostępniają przeciągania. W backlogu pierwszą kontrolką pozostaje checkbox;
+nie dodano osobnego uchwytu. Menu „Przesuń wyżej/niżej” i przeniesienia między
+sprintami pozostają alternatywą klawiaturową.
+
+Podgląd `work-board-drag-preview` jest nieinteraktywną kopią całej karty lub
+wiersza, z istniejącymi cieniami, lekkim przechyleniem i powiększeniem.
+Śledzi kursor z uwzględnieniem zoomu UI i pozostaje w granicach okna.
+Kopia zachowuje dekoracyjne atrybuty ikon, ale nie zawiera ID ani aktywnych
+hooków aplikacji; ma `inert` i `aria-hidden`. Przezroczysty obraz natywnego drag
+usuwa drugi podgląd przeglądarki. Źródło zachowuje rozmiar i jest przygaszone.
+Cel ma fioletowy obrys i delikatne tło. `work-item-drop-slot` tworzy miejsce
+w wysokości zadania; sąsiednie karty płynnie przesuwają się, gdy zmienia się
+miejsce wstawienia. Pusta i zwinięta sekcja przyjmują zadanie na końcu.
+Przy krawędziach gest przewija kolumnę lub backlog pionowo i tablicę poziomo.
+
+Po upuszczeniu React od razu pokazuje nową kolejność/status i blokuje kolejną
+operację na czas zapisu. Animacja FLIP (320ms) przesuwa sąsiadów; przy przenoszeniu
+między sekcjami kopia ponad interfejsem dolatuje do celu (360ms), dzięki czemu
+nie jest obcinana przez przewijane listy. Zmiany z menu również animują układ
+po odpowiedzi serwera. Zapis nadal używa JSON API i istniejących akcji
+`position`/`plan`, z pozycją źródła i sąsiadów. Po potwierdzeniu odświeża
+liczniki, metadane i uprawnienia, zachowując URL i filtry. Odrzucony zapis
+przywraca poprzedni układ i pokazuje błąd. Błąd samego odczytu po przyjętym
+zapisie zachowuje przeniesienie i pozwala odświeżyć widok. Upuszczenie bez
+zmiany pozycji nie wysyła zapisu. `aria-busy` oraz region live opisują stan.
+
+Escape, zakończenie gestu, utrata fokusu okna i odmontowanie ekranu usuwają
+podgląd, cel oraz przewijanie. Hook usuwa również listenery i animacje przy
+częściowej nawigacji. `prefers-reduced-motion` wyłącza przechylenie,
+powiększenie i animacje ruchu; pozostawia czytelny podgląd i obrys celu.
 
 Zakładka „Tagi” zachowuje nagłówek i nawigację otwartej przestrzeni.
 `spaces/tags.html` korzysta ze wspólnych include'ów `tag_directory`,

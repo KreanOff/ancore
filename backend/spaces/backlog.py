@@ -8,6 +8,7 @@ from .access import editable_to
 from .models import SpaceTask
 from .models import Sprint, WorkItem
 from .services import record
+from .item_query import order_items
 
 
 MAX_RANK = 2147483647
@@ -40,7 +41,7 @@ def bulk_plan_items(request, space, scope):
     ids = {int(value) for value in selected}
     if len(ids) != len(selected):
         raise ValidationError('Nieprawidłowe zaznaczenie zadań.')
-    rows = list(Paginator(scope.order_by('rank', 'pk'), 100).get_page(request.GET.get('page')).object_list)
+    rows = list(Paginator(order_items(request, scope, 'backlog'), 100).get_page(request.GET.get('page')).object_list)
     items = [item for item in rows if item.pk in ids]
     if len(items) != len(ids):
         raise ValidationError('Zaznaczone zadania nie są już dostępne na tej stronie. Odśwież backlog.')

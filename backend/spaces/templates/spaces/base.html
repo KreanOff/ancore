@@ -5,17 +5,19 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
 <link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261017-layout-parity">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261017-page-padding-15px">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261018-unified-space-header">
 <script src="{% static 'js/spaces.js' %}?v=20261016-react-migration" defer></script>
 {% endblock %}
 {% block content %}
 <div class="tasks-page tasks-list-page work-page{% block work_page_class %}{% endblock %}" data-work-page>
     <section class="tasks-workspace">
+        {% block work_header %}
         <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
             <div class="tasks-titlebar-left">{% block work_heading %}<h1 class="tasks-topbar-title">Przestrzenie</h1>{% endblock %}</div>
             <div class="tasks-titlebar-actions">{% block work_actions %}{% endblock %}</div>
         </header>
         {% block work_navigation %}{% endblock %}
+        {% endblock %}
         {% block work_toolbar %}{% endblock %}
         <div class="work-content{% block work_content_class %}{% endblock %}">{% block work_content %}{% endblock %}</div>
         {% block work_pagination %}{% include 'spaces/pagination.html' %}{% endblock %}

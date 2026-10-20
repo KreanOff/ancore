@@ -10,15 +10,11 @@ import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
 import { ItemCard, ItemRow } from './Item';
+import { ItemToolbar } from './ItemToolbar';
 import Summary from './Summary';
+import { SpaceHeader } from './SpaceHeader';
 import { dateLabel, type DetailData, type Item, type Sprint } from './types';
-const LABELS: Record<string, string> = {
-  work_type: 'Typ zgłoszenia',
-  assignee: 'Wykonawca',
-  status: 'Status',
-  priority: 'Priorytet',
-  team: 'Zespół',
-};
+import { useItemMotion } from './useItemMotion';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
     [modal, setModal] = useState<FormDialogData | null>((initial.data as DetailData).modal),
@@ -27,8 +23,11 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     [notice, setNotice] = useState(''),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [destination, setDestination] = useState(''),
-    [dragged, setDragged] = useState<Item | null>(null),
-    [filters, setFilters] = useState((initial.data as DetailData).filters);
+    [dragged, setDragged] = useState<Item | null>(null);
+  const motion = useItemMotion(data, () => {
+    setDragged(null);
+    setNotice('Anulowano przeciąganie zadania.');
+  });
   const life = useRef(new AbortController()),
     pending = useRef(false);
   useEffect(() => () => life.current.abort(), []);
@@ -48,28 +47,47 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       setBusy(false);
     }
   }
-  async function act(url: string, values: Record<string, string> | FormData) {
+  async function act(
+    url: string,
+    values: Record<string, string> | FormData,
+    optimistic?: DetailData,
+  ) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
     setError('');
-    setNotice('');
+    setNotice(optimistic ? 'Zapisuję położenie zadania.' : '');
     const form = values instanceof FormData ? values : new FormData();
     if (!(values instanceof FormData))
       Object.entries(values).forEach(([key, value]) => form.set(key, value));
+    const previous = data;
+    let saved = false;
+    if (optimistic) {
+      motion.prepareDrop();
+      setData(optimistic);
+      setDragged(null);
+    }
     try {
       await pageRequest(initial.api_url, url, csrfToken, life.current.signal, form);
+      saved = true;
       const page = await pageRequest<Page>(
         initial.api_url,
         initial.url,
         csrfToken,
         life.current.signal,
       );
+      motion.capture();
       setData(page.data as DetailData);
       setSelected(new Set());
       setNotice('Zmiany zostały zapisane.');
     } catch (exception) {
-      if (!life.current.signal.aborted) setError(errorMessage(exception));
+      if (!life.current.signal.aborted) {
+        if (optimistic && !saved) {
+          motion.capture();
+          setData(previous);
+        }
+        setError(errorMessage(exception));
+      }
     } finally {
       pending.current = false;
       setBusy(false);
@@ -98,18 +116,30 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     void act(data.bulk_plan_url, form);
   }
   function dragStart(event: DragEvent, item: Item) {
-    if (busy || !item.editable) {
+    if (busy || !item.editable || !data.sort.manual) {
       event.preventDefault();
       return;
     }
+    if (!motion.start(event)) return;
     setDragged(item);
+    setNotice(`Przenoszenie ${item.key}. Wybierz miejsce docelowe. Escape anuluje.`);
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', item.key);
   }
   function drop(event: DragEvent, group: string | number | null, before?: Item) {
     event.preventDefault();
     event.stopPropagation();
-    if (!dragged || busy || before?.id === dragged.id) return;
+    if (!dragged || busy) return;
+    if (before?.id === dragged.id) {
+      motion.clearDrag();
+      setDragged(null);
+      setNotice('Położenie zadania nie zmieniło się.');
+      return;
+    }
+    const target = motion.target();
+    if (target && target.group === String(group ?? '')) {
+      before = data.items.find((item) => item.id === target.before);
+    }
     const board = data.view === 'board',
       rows = data.items.filter(
         (item) =>
@@ -117,11 +147,53 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       );
     const bounds = before ? event.currentTarget.getBoundingClientRect() : null,
       afterHalf = !!bounds && event.clientY > bounds.top + bounds.height / 2;
-    const index = before
-      ? rows.findIndex((item) => item.id === before.id) + (afterHalf ? 1 : 0)
-      : rows.length;
+    const index =
+      target && target.group === String(group ?? '')
+        ? target.before === null
+          ? rows.length
+          : rows.findIndex((item) => item.id === target.before)
+        : before
+          ? rows.findIndex((item) => item.id === before.id) + (afterHalf ? 1 : 0)
+          : rows.length;
     const previous = rows[index - 1],
       next = rows[index];
+    const sourceGroup = board ? dragged.status : dragged.sprint_id;
+    const original = data.items.filter((item) =>
+      board ? item.status === sourceGroup : item.sprint_id === sourceGroup,
+    );
+    if (sourceGroup === group && original.findIndex((item) => item.id === dragged.id) === index) {
+      motion.clearDrag();
+      setDragged(null);
+      setNotice('Położenie zadania nie zmieniło się.');
+      return;
+    }
+    const column = data.columns.find((column) => column.key === group);
+    const moved = board
+      ? {
+          ...dragged,
+          status: String(group),
+          status_label: column?.label || dragged.status_label,
+          category: column?.category || dragged.category,
+        }
+      : { ...dragged, sprint_id: group as number | null, in_backlog: group === null };
+    const items = data.items.filter((item) => item.id !== dragged.id);
+    const insertion = next
+      ? items.findIndex((item) => item.id === next.id)
+      : previous
+        ? items.findIndex((item) => item.id === previous.id) + 1
+        : items.length;
+    items.splice(insertion, 0, moved);
+    const optimistic = {
+      ...data,
+      items,
+      columns: data.columns.map((column) => ({
+        ...column,
+        count:
+          column.count +
+          (board && column.key === group ? 1 : 0) -
+          (board && column.key === dragged.status ? 1 : 0),
+      })),
+    };
     const snapshot = {
       space: String(data.space.id),
       source_sprint: String(dragged.sprint_id ?? ''),
@@ -142,6 +214,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             after_rank: String(previous?.rank ?? ''),
           }
         : { ...snapshot, action: 'plan', sprint: String(group ?? '') },
+      optimistic,
     );
   }
   const actionProps = {
@@ -150,8 +223,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     openForm: (url: string) => void openForm(url),
     act: (url: string, values: Record<string, string>) => void act(url, values),
   };
-  const filterKeys = Object.keys(LABELS),
-    tableView = ['list', 'board', 'backlog', 'timeline'].includes(data.view),
+  const tableView = ['list', 'board', 'backlog', 'timeline'].includes(data.view),
     filtered = Object.values(data.filters).some(Boolean);
   function row(item: Item) {
     return (
@@ -163,7 +235,10 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
         select={(checked) => toggle(item, checked)}
         dragging={!!dragged}
         onDragStart={(event) => dragStart(event, item)}
-        onDragEnd={() => setDragged(null)}
+        onDragEnd={() => {
+          motion.clearDrag();
+          setDragged(null);
+        }}
         onDrop={(event) => drop(event, item.sprint_id, item)}
       />
     );
@@ -222,6 +297,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     return (
       <StatusGroup
         key={sprint?.id ?? 'backlog'}
+        dropGroup={String(sprint?.id ?? '')}
         onDragOver={dragged ? (event) => event.preventDefault() : undefined}
         onDrop={(event) => drop(event, sprint?.id ?? null)}
         label={sprint?.name || 'Backlog'}
@@ -295,25 +371,29 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
   return (
     <div className="tasks-page tasks-list-page work-page" data-react-screen="space-detail">
       <section className="tasks-workspace" aria-busy={busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            {data.can_manage ? (
-              <button
-                type="button"
-                className="space-avatar-trigger"
-                aria-label={`Zmień awatar przestrzeni ${data.space.name}`}
-                disabled={busy}
-                onClick={() => void openForm(data.space.url + 'avatar/')}
-              >
+        <SpaceHeader
+          navigation={data.navigation}
+          currentView={data.view}
+          heading={
+            <>
+              {data.can_manage ? (
+                <button
+                  type="button"
+                  className="space-avatar-trigger"
+                  aria-label={`Zmień awatar przestrzeni ${data.space.name}`}
+                  disabled={busy}
+                  onClick={() => void openForm(data.space.url + 'avatar/')}
+                >
+                  <Avatar space data={data.space.avatar} className="space-avatar--heading" />
+                </button>
+              ) : (
                 <Avatar space data={data.space.avatar} className="space-avatar--heading" />
-              </button>
-            ) : (
-              <Avatar space data={data.space.avatar} className="space-avatar--heading" />
-            )}
-            <h1 className="tasks-topbar-title work-space-title">{data.space.name}</h1>
-          </div>
-          <div className="tasks-titlebar-actions">
-            {data.can_edit ? (
+              )}
+              <h1 className="tasks-topbar-title work-space-title">{data.space.name}</h1>
+            </>
+          }
+          actions={
+            data.can_edit ? (
               <button
                 type="button"
                 className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
@@ -323,66 +403,12 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                 <Icon name="plus" />
                 Utwórz zadanie
               </button>
-            ) : null}
-          </div>
-        </header>
-        <nav
-          className="notifications-tabs work-tabs work-tabs--views"
-          aria-label="Widoki przestrzeni"
-        >
-          {data.navigation.map((nav) => (
-            <a
-              key={nav.key}
-              href={nav.url}
-              aria-current={data.view === nav.key ? 'page' : undefined}
-            >
-              <Icon name={nav.icon} />
-              {nav.label}
-            </a>
-          ))}
-        </nav>
+            ) : null
+          }
+        />
         {tableView ? (
           <>
-            <form
-              className="tasks-filterbar tasks-filterbar--directory work-item-toolbar"
-              method="get"
-              action={data.space.url}
-            >
-              <input type="hidden" name="view" value={data.view} />
-              {data.filters.summary ? (
-                <input type="hidden" name="summary" value={data.filters.summary} />
-              ) : null}
-              <div className="tasks-filterbar-left">
-                {filterKeys.map((key) => (
-                  <Select
-                    key={key}
-                    name={key}
-                    hideLabel
-                    label={LABELS[key]}
-                    value={filters[key] || ''}
-                    options={data.filter_options[key]}
-                    onChange={(value) => setFilters((current) => ({ ...current, [key]: value }))}
-                  />
-                ))}
-                <button className="tasks-filter-button" type="submit">
-                  <Icon name="filter" />
-                  <span>Filtruj</span>
-                </button>
-              </div>
-              <div className="tasks-filterbar-right">
-                <label className="tasks-search-field tasks-project-search">
-                  <Icon name="search" />
-                  <input
-                    type="search"
-                    name="q"
-                    defaultValue={data.filters.q}
-                    placeholder="Szukaj zadań"
-                    aria-label="Szukaj zadania lub oznaczenia"
-                    maxLength={120}
-                  />
-                </label>
-              </div>
-            </form>
+            <ItemToolbar data={data} url={initial.url} />
             {data.filters.summary ? (
               <div className="work-summary-filter" role="status">
                 <span>{data.summary_filter_label}</span>
@@ -419,6 +445,10 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           {notice}
         </span>
         <div
+          ref={motion.root}
+          onPointerDownCapture={motion.pointerDown}
+          onDragOverCapture={motion.over}
+          onDragEnterCapture={motion.over}
           className={`work-content ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''}`}
         >
           {data.view === 'overview' && data.summary ? (
@@ -478,9 +508,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                   )}
                 </div>
               ) : null}
-              <div
-                className={`tasks-table-wrap tasks-board tasks-kanban-board ${data.space.template === 'scrum' ? 'work-sprint-board' : ''}`}
-              >
+              <div className="tasks-table-wrap tasks-board tasks-kanban-board work-sprint-board">
                 {data.columns.map((column) => {
                   const rows = data.items.filter((item) => item.status === column.key);
                   const cards = (
@@ -493,7 +521,10 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                             {...actionProps}
                             dragging={!!dragged}
                             onDragStart={(event) => dragStart(event, item)}
-                            onDragEnd={() => setDragged(null)}
+                            onDragEnd={() => {
+                              motion.clearDrag();
+                              setDragged(null);
+                            }}
                             onDrop={(event) => drop(event, column.key, item)}
                           />
                         ))
@@ -504,37 +535,19 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       )}
                     </div>
                   );
-                  if (data.space.template === 'scrum')
-                    return (
-                      <StatusGroup
-                        key={column.key}
-                        className="tasks-kanban-column"
-                        category={column.category}
-                        label={column.label}
-                        count={column.count}
-                        onDragOver={dragged ? (event) => event.preventDefault() : undefined}
-                        onDrop={(event) => drop(event, column.key)}
-                      >
-                        {cards}
-                      </StatusGroup>
-                    );
                   return (
-                    <section
+                    <StatusGroup
                       key={column.key}
-                      className={`tasks-kanban-column ${column.category === 'closed' ? 'tasks-kanban-column--done' : ''}`}
-                      data-work-column={column.key}
-                      aria-label={column.label}
+                      dropGroup={column.key}
+                      className="tasks-kanban-column"
+                      category={column.category}
+                      label={column.label}
+                      count={column.count}
                       onDragOver={dragged ? (event) => event.preventDefault() : undefined}
                       onDrop={(event) => drop(event, column.key)}
                     >
-                      <header className="tasks-kanban-column__header">
-                        <span className={`status-indicator status-${column.category}`}>
-                          {column.label}
-                        </span>
-                        <span className="tasks-rail-count">{column.count}</span>
-                      </header>
                       {cards}
-                    </section>
+                    </StatusGroup>
                   );
                 })}
               </div>

@@ -1,4 +1,4 @@
-import { type DragEvent, type ReactNode } from 'react';
+import { type DragEvent } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
@@ -133,7 +133,7 @@ export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
               <span>Zmień na: {status.label}</span>
             </button>
           ))}
-          {['board', 'backlog'].includes(data.view)
+          {data.sort.manual && ['board', 'backlog'].includes(data.view)
             ? ['up', 'down'].map((direction, index) => (
                 <button
                   key={direction}
@@ -165,6 +165,14 @@ export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
                     disabled={busy}
                     onClick={() => {
                       close();
+                      if (!data.sort.manual) {
+                        act(data.bulk_plan_url, {
+                          item_ids: String(item.id),
+                          destination: String(sprint.id ?? ''),
+                          positions: JSON.stringify({ [item.id]: [item.sprint_id, item.rank] }),
+                        });
+                        return;
+                      }
                       const target = data.items.filter(
                         (row) => row.sprint_id === sprint.id && row.id !== item.id,
                       );
@@ -219,8 +227,9 @@ export function ItemRow(props: RowProps) {
     planning = data.view === 'backlog';
   return (
     <article
-      className={`tasks-issue-row work-issue-row work-issue-row--planning ${item.editable ? 'work-issue-row--actions' : ''} ${planning && item.editable ? 'work-issue-row--draggable' : ''} ${item.category === 'closed' ? 'completed' : ''} ${selected ? 'checked' : ''}`}
-      draggable={planning && item.editable && !props.busy}
+      data-work-motion-item={item.id}
+      className={`tasks-issue-row work-issue-row work-issue-row--planning ${item.editable ? 'work-issue-row--actions' : ''} ${planning && item.editable && data.sort.manual ? 'work-issue-row--draggable' : ''} ${item.category === 'closed' ? 'completed' : ''} ${selected ? 'checked' : ''}`}
+      draggable={planning && item.editable && data.sort.manual && !props.busy}
       onDragStart={props.onDragStart}
       onDragEnd={props.onDragEnd}
       onDragOver={
@@ -277,7 +286,8 @@ export function ItemCard(
   const { item, data } = props,
     scrum = data.space.template === 'scrum';
   const drag = {
-    draggable: item.editable && !props.busy,
+    'data-work-motion-item': item.id,
+    draggable: item.editable && data.sort.manual && !props.busy,
     onDragStart: props.onDragStart,
     onDragEnd: props.onDragEnd,
     onDragOver: props.dragging
@@ -288,75 +298,27 @@ export function ItemCard(
       : undefined,
     onDrop: props.onDrop,
   };
-  if (scrum)
-    return (
-      <article
-        className={`tasks-issue-row work-issue-row work-sprint-card ${item.category === 'closed' ? 'completed' : ''}`}
-        {...drag}
-      >
-        <Priority value={item.priority} label={item.priority_label} />
-        <span className={`status-indicator status-${item.category}`} title={item.status_label} />
-        <a href={item.url} className="tasks-row-title">
-          <span className="work-item-key">{item.key}</span> {item.title}
-        </a>
-        <ItemActions {...props} />
-        <div className="work-sprint-card-meta" aria-label="Metadane zadania">
-          <ItemType item={item} />
-          <Planning item={item} scrum />
-          <Counts item={item} />
-        </div>
-        {item.team ? (
-          <div className="work-kanban-context work-sprint-card-context">
-            <span>{item.team}</span>
-          </div>
-        ) : null}
-      </article>
-    );
-  const pill = (content: ReactNode, extra = '') => (
-    <span className={`tasks-kanban-card__pill ${extra}`}>{content}</span>
-  );
   return (
     <article
-      className={`tasks-kanban-card work-kanban-card ${item.category === 'closed' ? 'completed' : ''}`}
+      className={`tasks-issue-row work-issue-row work-sprint-card ${item.category === 'closed' ? 'completed' : ''}`}
       {...drag}
     >
-      <div className="tasks-kanban-card__header">
-        <a className="tasks-kanban-card__title" href={item.url}>
-          {item.title}
-        </a>
-        <ItemActions {...props} />
+      <Priority value={item.priority} label={item.priority_label} />
+      <span className={`status-indicator status-${item.category}`} title={item.status_label} />
+      <a href={item.url} className="tasks-row-title">
+        <span className="work-item-key">{item.key}</span> {item.title}
+      </a>
+      <ItemActions {...props} />
+      <div className="work-sprint-card-meta" aria-label="Metadane zadania">
+        <ItemType item={item} />
+        <Planning item={item} scrum={scrum} />
+        <Counts item={item} />
       </div>
-      <div className="work-kanban-context">
-        <span title={item.type_label}>{item.key}</span>
-        <span>{item.team || item.assignee?.label}</span>
-        {item.points !== null ? <span>{item.points} pkt</span> : null}
-      </div>
-      <div className="tasks-kanban-card__meta" aria-label="Metadane karty">
-        {pill(<ItemType item={item} />)}
-        {pill(
-          <span className={`status-indicator status-${item.category}`}>{item.status_label}</span>,
-          'tasks-kanban-card__pill--status',
-        )}
-        {pill(<Priority value={item.priority} label={item.priority_label} />)}
-        {pill(
-          <>
-            <span className="tasks-kanban-card__tag-icon">
-              <Icon name="tag" />
-            </span>
-            <span className="tasks-kanban-card__count">{item.tags_count}</span>
-          </>,
-          'tasks-kanban-card__pill--tags',
-        )}
-        {pill(
-          <>
-            <span className="tasks-kanban-card__attachment-icon">
-              <Icon name="paperclip" />
-            </span>
-            <span className="tasks-kanban-card__count">{item.attachments_count}</span>
-          </>,
-          'tasks-kanban-card__pill--attachments',
-        )}
-      </div>
+      {item.team ? (
+        <div className="work-kanban-context work-sprint-card-context">
+          <span>{item.team}</span>
+        </div>
+      ) : null}
     </article>
   );
 }

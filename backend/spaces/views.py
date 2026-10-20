@@ -35,6 +35,7 @@ from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, Space
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manageable_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
+from .item_query import item_sort, order_items
 
 
 def space_object(request, pk):
@@ -239,9 +240,8 @@ def detail_context(request, space, view):
     all_items = items
     items = items_for_view(space, items, view, active_sprint)
     if view == 'timeline':
-        items = items.filter(Q(start_on__isnull=False) | Q(task__due_at__isnull=False)).order_by('start_on', 'task__due_at', 'pk')
-    else:
-        items = items.order_by('rank', 'pk')
+        items = items.filter(Q(start_on__isnull=False) | Q(task__due_at__isnull=False))
+    items = order_items(request, items, view)
     page = Paginator(items, 100).get_page(request.GET.get('page'))
     rows = decorate_items(request, page.object_list)
     timeline = None
@@ -285,8 +285,11 @@ def detail_context(request, space, view):
     backlog_context = {'backlog_totals': planning_totals(items.filter(sprint__isnull=True)),
                        'bulk_plan_url': backlog_url(request, space, 'backlog/plan/'),
                        'backlog_create_url': backlog_url(request, space, 'items/create/')} if view == 'backlog' else {}
+    sort = item_sort(request, view)
+    toolbar_context = {'item_sort': sort, 'can_reorder': sort['manual'],
+                       'item_filter_count': sum(bool(value) for value in (type_filter, team, *[summary_filters[key] for key in ('assignee_filter', 'status_filter', 'priority_filter', 'summary_filter')]))}
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
-    return {**base_context(request), **summary_filters, **backlog_context, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': backlog_url(request, space, 'items/create/') if view == 'backlog' else base + 'items/create/', 'sprint_create_url': backlog_url(request, space, 'sprints/create/'), 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': space_teams, 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
+    return {**base_context(request), **summary_filters, **backlog_context, **toolbar_context, 'assignee_options': assignee_options, 'priority_options': SpaceTask.PRIORITY_CHOICES, 'space': space, 'space_url': base, 'timeline': timeline, 'view': view, 'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation], 'page': page, 'items': rows, 'columns': columns, 'query': query, 'stats': stats, 'status_counts': [{**s, 'count': counts.get(s['key'], 0)} for s in space.statuses], 'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [i for i in rows if not i.sprint_id], 'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space), 'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(), 'create_item_url': backlog_url(request, space, 'items/create/') if view == 'backlog' else base + 'items/create/', 'sprint_create_url': backlog_url(request, space, 'sprints/create/'), 'edit_url': base + 'edit/', 'configuration_url': base + 'configuration/', 'member_url': base + 'members/', 'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user'), 'space_teams': space_teams, 'team_filter': team, 'type_options': type_options, 'type_filter': type_filter}
 
 
 @login_required
@@ -587,6 +590,8 @@ def item_action(request, pk=None, space_pk=None, key=None):
             item = WorkItem.objects.select_for_update().get(pk=item.pk)
             require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
             action = request.POST.get('action')
+            if action in {'position', 'plan', 'up', 'down'} and not item_sort(request)['manual']:
+                raise ValidationError('Wybierz rosnącą kolejność ręczną, aby przestawiać zadania.')
             if action == 'status':
                 set_status(request, item, request.POST.get('status'))
             elif action == 'position':

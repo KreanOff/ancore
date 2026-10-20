@@ -256,14 +256,30 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Szablony: Kanban, Scrum, zarządzanie zadaniami, marketing, rekrutacja,
   obsługa zgłoszeń. Szablon określa początkowe statusy, typy i pola.
 - Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty, tagi i ustawienia.
-  Lista i aktywny sprint współdzielą kolorowe, zwijane nagłówki statusów
+  Lista i wszystkie tablice współdzielą kolorowe, zwijane nagłówki statusów
   oraz styl zadań. Tak jak backlog pokazują punkty w Scrum, awatar wykonawcy
-  i menu z trzema paskami dla zadań z prawem edycji. Sprint zachowuje osobne
-  kafelki w kolumnach i zawijane tytuły, a tablica
-  Kanbana dotychczasowy wygląd kart. Przeciąganie zapisuje kolejność w kolumnie
-  oraz miejsce wstawienia w innym statusie; przerywana linia wskazuje pozycję.
+  i menu z trzema paskami dla zadań z prawem edycji. Wszystkie szablony używają
+  osobnych, zwartych kafelków w kolumnach, według wzorca aktywnego sprintu: priorytet, status,
+  klucz i zawijany tytuł u góry, metadane poniżej oraz menu po prawej.
+  Puste kolumny mają obramowany komunikat „Brak zadań”. Przeciąganie zapisuje
+  kolejność w kolumnie oraz miejsce wstawienia w innym statusie. Podgląd śledzi kursor, a przerywane
+  pole wskazuje miejsce wstawienia i płynnie rozsuwa sąsiadów. Po upuszczeniu
+  karta od razu przemieszcza się do celu; odrzucony zapis przywraca poprzedni
+  układ. Backlog współdzieli te animacje, także przy przenoszeniu między sprintami.
+  Efekty respektują ustawienie ograniczonego ruchu.
   Status i kolejność można zmienić również przez menu działań,
-  dostępne również klawiaturą. Filtry są w standardowym pasku Zadań.
+  dostępne również klawiaturą. Pasek ma dwa menu: „Sortowanie” i „Filtrowanie”,
+  bez osobnej wyszukiwarki. Filtry obejmują typ, wykonawcę, status, priorytet i zespół;
+  można je łączyć, przeszukiwać opcje i wyczyścić warunki.
+  `spaces/item_query.py` sortuje dostępne wyniki przed paginacją po kolejności
+  ręcznej, numerze klucza, tytule, priorytecie, terminie, dacie utworzenia,
+  rozpoczęcia lub punktach, rosnąco albo malejąco. Puste wartości są na końcu,
+  remisy rozstrzyga `pk`. URL zachowuje warunki i sortowanie przy zmianie
+  strony. Domyślnie obowiązuje kolejność ręczna, a na osi czasu
+  data rozpoczęcia i termin. Ręczne przestawianie i przeciąganie wymagają
+  rosnącej kolejności ręcznej; zmiana statusu oraz planowanie zbiorcze
+  pozostają dostępne przy innym sortowaniu. Walidacja planowania zbiorczego
+  korzysta z tej samej posortowanej, widocznej strony co odczyt.
   Lista, backlog, tablica i oś czasu mają wspólny dolny pasek z zakresem
   wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
   treścią, zachowuje filtry i działa również dla jednej strony/pustego wyniku.

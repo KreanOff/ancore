@@ -25,7 +25,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
 | [backend/documents](../backend/documents) | 37 | 2 | 31 | 199 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 44 | 2 | 39 | 243 |
+| [backend/spaces](../backend/spaces) | 46 | 2 | 39 | 248 |
 
 ## 2. Modele i relacje
 
@@ -935,6 +935,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
+- [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
 - [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
@@ -1374,9 +1375,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/DetailPage.tsx](../frontend/app/src/spaces/DetailPage.tsx)
 - [frontend/app/src/spaces/DirectoryPage.tsx](../frontend/app/src/spaces/DirectoryPage.tsx)
 - [frontend/app/src/spaces/Item.tsx](../frontend/app/src/spaces/Item.tsx)
+- [frontend/app/src/spaces/ItemToolbar.tsx](../frontend/app/src/spaces/ItemToolbar.tsx)
+- [frontend/app/src/spaces/SpaceHeader.tsx](../frontend/app/src/spaces/SpaceHeader.tsx)
 - [frontend/app/src/spaces/Summary.tsx](../frontend/app/src/spaces/Summary.tsx)
 - [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
 - [frontend/app/src/spaces/types.ts](../frontend/app/src/spaces/types.ts)
+- [frontend/app/src/spaces/useItemMotion.ts](../frontend/app/src/spaces/useItemMotion.ts)
 - [frontend/app/src/tags/NotesDialog.tsx](../frontend/app/src/tags/NotesDialog.tsx)
 - [frontend/app/src/tags/TagsPage.tsx](../frontend/app/src/tags/TagsPage.tsx)
 - [frontend/app/src/tags/types.ts](../frontend/app/src/tags/types.ts)
@@ -1856,6 +1860,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_issue_types.py](../backend/spaces/test_issue_types.py).
 
 - `IssueTypeTests`: 9 metod testowych.
+
+### backend/spaces/test_item_query.py
+
+Źródło: [backend/spaces/test_item_query.py](../backend/spaces/test_item_query.py).
+
+- `ItemQueryTests`: 5 metod testowych.
 
 ### backend/spaces/test_management.py
 

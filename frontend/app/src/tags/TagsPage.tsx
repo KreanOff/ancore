@@ -17,6 +17,7 @@ import { Resize } from '../shared/table';
 import { usePageActions } from '../shared/usePageActions';
 import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 import { dateLabel } from '../spaces/types';
+import { SpaceHeader } from '../spaces/SpaceHeader';
 import NotesDialog from './NotesDialog';
 import type { Tag, TagsData } from './types';
 
@@ -303,13 +304,17 @@ export default function TagsPage(props: PageProps) {
   return (
     <div className="tasks-page tasks-list-page work-page" data-react-screen="space-tags">
       <section className="tasks-workspace" aria-busy={actions.busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            <Avatar space data={data.space.avatar} className="space-avatar--heading" />
-            <h1 className="tasks-topbar-title work-space-title">{data.space.name}</h1>
-          </div>
-          <div className="tasks-titlebar-actions">
-            {data.can_edit ? (
+        <SpaceHeader
+          navigation={data.navigation}
+          currentView="tags"
+          heading={
+            <>
+              <Avatar space data={data.space.avatar} className="space-avatar--heading" />
+              <h1 className="tasks-topbar-title work-space-title">{data.space.name}</h1>
+            </>
+          }
+          actions={
+            data.can_edit ? (
               <>
                 <button
                   className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
@@ -354,20 +359,9 @@ export default function TagsPage(props: PageProps) {
                   )}
                 </Dropdown>
               </>
-            ) : null}
-          </div>
-        </header>
-        <nav
-          className="notifications-tabs work-tabs work-tabs--views"
-          aria-label="Widoki przestrzeni"
-        >
-          {data.navigation.map((nav) => (
-            <a key={nav.key} href={nav.url} aria-current={nav.key === 'tags' ? 'page' : undefined}>
-              <Icon name={nav.icon} />
-              {nav.label}
-            </a>
-          ))}
-        </nav>
+            ) : null
+          }
+        />
         <div className="tasks-filterbar tasks-filterbar--directory">
           <div className="tasks-filterbar-left">
             <DirectoryColumnManager

@@ -1,5 +1,6 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}{{ space.name }}{% endblock %}
+{% block work_header %}<div class="work-space-header">{{ block.super }}</div>{% endblock %}
 {% block work_heading %}{% if can_manage %}<a class="space-avatar-trigger" href="{{ space_url }}avatar/" data-work-open aria-haspopup="dialog" aria-label="Zmień awatar przestrzeni {{ space.name }}" title="Zmień awatar">{% include 'spaces/avatar.html' with avatar_class='space-avatar--heading' %}</a>{% else %}{% include 'spaces/avatar.html' with avatar_class='space-avatar--heading' %}{% endif %}<h1 class="tasks-topbar-title work-space-title">{{ space.name }}</h1>{% endblock %}
 {% block work_actions %}{% if can_edit %}<a href="{{ create_item_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie</a>{% endif %}{% endblock %}
 {% block work_navigation %}
@@ -29,12 +30,12 @@
         {% if space.template == 'scrum' %}<div class="work-panel-heading">{% if active_sprint %}<h2>{{ active_sprint.name }}</h2><span>{{ active_sprint.start_on|date:'d.m' }}–{{ active_sprint.end_on|date:'d.m.Y' }} · {{ active_sprint.goal }}</span>{% else %}<p>Brak aktywnego sprintu. Przygotuj i rozpocznij sprint w backlogu.</p><a class="btn btn-secondary" href="{{ space_url }}?view=backlog">Otwórz backlog</a>{% endif %}</div>{% endif %}
         <form hidden data-board-csrf>{% csrf_token %}</form>
         <span class="u-sr-only" role="status" aria-live="polite" data-board-status></span>
-        <div class="tasks-table-wrap tasks-board tasks-kanban-board{% if space.template == 'scrum' %} work-sprint-board{% endif %}" data-work-board data-space-id="{{ space.pk }}">
+        <div class="tasks-table-wrap tasks-board tasks-kanban-board work-sprint-board" data-work-board data-space-id="{{ space.pk }}">
             {% for column in columns %}
-            <section class="tasks-kanban-column{% if space.template == 'scrum' %} tasks-issue-group tasks-status-block{% elif column.category == 'closed' %} tasks-kanban-column--done{% endif %}" data-work-column="{{ column.key }}" aria-label="{{ column.label }}">
-                {% if space.template == 'scrum' %}{% include 'tasks/includes/issue_group_header.html' with category=column.category label=column.label count=column.count only %}{% else %}<header class="tasks-kanban-column__header"><span class="status-indicator status-{{ column.category }}">{{ column.label }}</span><span class="tasks-rail-count">{{ column.count }}</span></header>{% endif %}
+            <section class="tasks-kanban-column tasks-issue-group tasks-status-block" data-work-column="{{ column.key }}" aria-label="{{ column.label }}">
+                {% include 'tasks/includes/issue_group_header.html' with category=column.category label=column.label count=column.count only %}
                 <div class="tasks-issue-list tasks-kanban-column__list">
-                    {% for item in column.items %}{% if space.template == 'scrum' %}{% include 'spaces/sprint_card.html' %}{% else %}{% include 'spaces/card.html' %}{% endif %}{% empty %}<div class="tasks-empty-section" role="status">Brak zadań</div>{% endfor %}
+                    {% for item in column.items %}{% include 'spaces/card.html' %}{% empty %}<div class="tasks-empty-section" role="status">Brak zadań</div>{% endfor %}
                 </div>
             </section>
             {% endfor %}

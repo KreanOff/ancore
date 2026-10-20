@@ -11,6 +11,7 @@ export function StatusGroup({
   labelSuffix,
   onDragOver,
   onDrop,
+  dropGroup,
 }: {
   label: string;
   category?: string;
@@ -22,12 +23,14 @@ export function StatusGroup({
   labelSuffix?: string;
   onDragOver?: DragEventHandler<HTMLElement>;
   onDrop?: DragEventHandler<HTMLElement>;
+  dropGroup?: string;
 }) {
   const [open, setOpen] = useState(true);
   return (
     <section
       className={`tasks-issue-group tasks-status-block ${className}`}
       aria-label={label}
+      data-work-drop-group={dropGroup}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >

@@ -129,6 +129,15 @@ export interface DetailData {
   timeline: { start: string; end: string } | null;
   pagination: PaginationData;
   filters: Record<string, string>;
+  sort: {
+    value: string;
+    field: string;
+    direction: string;
+    label: string;
+    manual: boolean;
+    default: string;
+    fields: { value: string; label: string; icon: string }[];
+  };
   summary_filter_label: string;
   filter_options: Record<string, [string, string][]>;
   members: { id: number; name: string; avatar: AvatarData; role: string; remove_url: string }[];

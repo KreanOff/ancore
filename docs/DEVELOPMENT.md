@@ -4,6 +4,68 @@
 Poniższe datowane zapisy zachowują historię wcześniejszych prac i wyników;
 opisy zachowania starych modeli oraz ich migracji nie są instrukcją obecnego uruchomienia.
 
+## Wspólny wygląd wszystkich tablic Przestrzeni (18.10.2026)
+
+Kanban, Scrum, Zarządzanie zadaniami, Marketing, Rekrutacja i Obsługa zgłoszeń
+używają teraz jednego `ItemCard` oraz `StatusGroup` według wzorca aktywnego
+sprintu. Kolumny mają kolorowe, zwijane nagłówki z licznikami, karty wspólny
+zwarty układ i metadane, a puste kolumny obramowany komunikat. Pierwszy render
+Django używa `spaces/card.html`; `spaces/sprint_card.html` jest aliasem.
+Współdzielony wariant CSS zachowuje nazwę `work-sprint-board`. Estymacja
+pozostaje polem Scrum. Zachowano animacje i akcje planowania/statusów;
+nie zmieniono modeli, migracji, uprawnień ani zależności.
+
+Przeszło **55 testów** `spaces.test_board_order`, `spaces.test_backlog_drag`
+i `core.test_frontend` na osobnej bazie PostgreSQL, produkcyjny build
+z TypeScriptem, 5 testów kontrolera nawigacji, Prettier, kontrola Django,
+lokalne linki dokumentacji, indeks i diff.
+
+Chrome/Playwright porównał kolory, wysokości i odstępy nagłówków wszystkich
+sześciu szablonów oraz ich karty, metadane, puste stany i pełną wysokość kolumn.
+Sprawdzono zgodność pierwszego HTML z Reactem, zwijanie klawiaturą, referencyjną
+listę i ponowne wejście bez reloadu, długie tytuły i awatary. Zrzuty przy
+1920×1000, 1024×900 i 390×900 potwierdziły wygląd sprintu i Kanbana oraz
+poziome przewijanie bez przepełnienia strony. Powtórzony zestaw interakcji
+z rozdziału o animacjach przeszedł, w tym błąd zapisu, Escape, ograniczenie
+ruchu, obserwator, zwykłe/scoped adresy i sprzątanie po nawigacji w trakcie gestu.
+Nie było nieoczekiwanych błędów JavaScript ani konsoli.
+
+Wtyczka Browser była niedostępna; użyto istniejącego Playwright/Chrome
+i tymczasowej bazy QA. Skrypty i zrzuty pozostały poza repozytorium.
+Nie sprawdzano Safari/Firefox, fizycznego dotyku ani całego zestawu repozytorium;
+nie wykonano wdrożenia produkcyjnego.
+
+## Animacje tablicy i backlogu React (18.10.2026)
+
+`spaces/useItemMotion.ts` podłącza efekty do aktywnego ekranu React:
+podgląd śledzący kursor, animowane miejsce wstawienia, przesuwanie sąsiadów
+i dolot do nowej sekcji. `DetailPage` pokazuje przeniesienie od razu i cofa je
+po odrzuconym zapisie. Akcje `position`/`plan`, autoryzacja i historia nadal
+korzystają z istniejącego backendu. Początek gestu na kontrolce jest wykluczony
+na podstawie `pointerdown`, ponieważ natywne `dragstart` wskazuje cały artykuł.
+Nie zmieniono modeli, migracji ani zależności. [Zachowanie i styl](UI.md#przestrzenie-i-zespoły).
+
+Przeszło **55 testów** `spaces.test_board_order`, `spaces.test_backlog_drag`
+i `core.test_frontend` na osobnej, usuniętej po przebiegu bazie PostgreSQL.
+Przeszło również 5 testów kontrolera nawigacji (`pnpm --dir frontend/app test`),
+produkcyjny build z TypeScriptem, Prettier, kontrola Django, indeks i diff.
+
+Chrome/Playwright na osobnej bazie QA sprawdził natywny gest myszy i trwałość
+kolejności po reloadzie, przenoszenie do statusu i planowanego sprintu, backlog
+i Kanban, menu otwierane klawiaturą, natychmiastowy układ przy opóźnionym zapisie,
+cofnięcie przy 409, Escape, brak zapisu bez zmiany pozycji oraz ograniczony ruch.
+Sprawdzono zwinięty status, zwykły/scoped URL, brak gestu od przycisku,
+wyłączony drag przy innym sortowaniu i dla obserwatora, listę referencyjną,
+puste kolumny, ponowną nawigację oraz sprzątanie po opuszczeniu ekranu w trakcie gestu.
+Zrzuty przy 1920×1000, 1024×900 i 390×900, również w świeżym kontekście mobilnym,
+potwierdziły układ po zakończeniu przejść powłoki. Nie było nieoczekiwanych błędów
+JavaScript ani konsoli. Celowy błąd 409 był oczekiwany.
+
+Wtyczka Browser była niedostępna; użyto istniejącego Playwright i Chrome,
+bez instalowania zależności. Skrypty, logi i zrzuty pozostały poza repozytorium.
+Nie sprawdzano Safari/Firefox, gestów na fizycznym ekranie dotykowym ani całego
+zestawu testów repozytorium. Nie wykonano wdrożenia produkcyjnego.
+
 ## Usunięcie akcji z pustych stanów (18.10.2026)
 
 Puste strony i panele pokazują wyłącznie ilustrację, nagłówek i opis.
