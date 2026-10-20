@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
 | [backend/dashboard](../backend/dashboard) | 43 | 2 | 43 | 222 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
-| [backend/documents](../backend/documents) | 37 | 2 | 31 | 199 |
+| [backend/documents](../backend/documents) | 37 | 2 | 31 | 200 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
 | [backend/spaces](../backend/spaces) | 46 | 2 | 39 | 248 |
 
@@ -1793,7 +1793,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/documents/test_suite.py](../backend/documents/test_suite.py).
 
 - `FullEditorTests`: 19 metod testowych.
-- `SceneValidationTests`: 2 metod testowych.
+- `SceneValidationTests`: 3 metod testowych.
 
 ### backend/documents/tests.py
 

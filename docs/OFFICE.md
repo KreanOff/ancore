@@ -179,7 +179,11 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   `payload` są jedynym źródłem statusu, klucza i URL wyniku. Token konfiguracji
   przeglądarki nie uprawnia do zapisu. Własne tokeny JWT wygasają po 5 minutach.
 - Wynik jest pobierany wyłącznie z `/cache/files/` skonfigurowanego ONLYOFFICE,
-  bez przekierowań, z limitem rozmiaru i czasem oczekiwania. Błąd nie podmienia
+  bez przekierowań, z limitem rozmiaru i czasem oczekiwania. Dla względnego
+  publicznego prefiksu `/onlyoffice` dopuszczony wynik musi zawierać ścieżkę
+  `/onlyoffice/cache/files/`; host wyniku nie jest używany do połączenia.
+  Pobranie zawsze trafia do skonfigurowanego wewnętrznego ONLYOFFICE.
+  Niedozwolone ścieżki, schematy i traversal są odrzucane. Błąd nie podmienia
   oryginału. Nowy plik trafia do storage, rekord jest aktualizowany transakcyjnie,
   a poprzedni plik usuwany po commit, chyba że należy do istniejącego archiwum.
 - Status 6 zapisuje plik podczas pracy; status 2 kończy sesję i zmienia jej

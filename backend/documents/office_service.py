@@ -104,10 +104,21 @@ def download_result(url):
     internal = settings.ONLYOFFICE_INTERNAL_URL.rstrip('/') or public
     parsed = urlsplit(url)
     origin = _origin(url)
-    base = next((base for base in (public, internal) if origin == _origin(base)), None)
-    if not base or parsed.fragment:
+    # A same-origin public prefix supports IP access without fixing the hostname.
+    # Only the configured internal server is ever contacted, including for a
+    # signed result whose public hostname differs between browsers.
+    target = urlsplit(internal)
+    internal_origin = _origin(internal)
+    prefixes = []
+    if origin == internal_origin:
+        prefixes.append(target.path.rstrip('/') + '/cache/files/')
+    if public.startswith('/') and not public.startswith('//'):
+        prefixes.append(public + '/cache/files/')
+    elif origin == _origin(public):
+        prefixes.append(urlsplit(public).path.rstrip('/') + '/cache/files/')
+    prefix = next((prefix for prefix in prefixes if parsed.path.startswith(prefix)), None)
+    if not prefix or parsed.fragment:
         raise ValueError('Untrusted office result URL')
-    prefix = urlsplit(base).path.rstrip('/') + '/cache/files/'
     decoded_path = parsed.path
     for _ in range(4):
         decoded_path = unquote(decoded_path, errors='strict')
@@ -115,7 +126,6 @@ def download_result(url):
             or any(part in {'.', '..'} for part in decoded_path.split('/'))
             or '\\' in decoded_path or any(ord(char) < 32 for char in decoded_path)):
         raise ValueError('Untrusted office cache path')
-    target = urlsplit(internal)
     path = target.path.rstrip('/') + '/cache/files/' + parsed.path[len(prefix):]
     url = urlunsplit((target.scheme, target.netloc, path, parsed.query, ''))
     request = Request(url, headers={'Authorization': 'Bearer ' + sign({'payload': {'url': url}})})

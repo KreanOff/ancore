@@ -293,6 +293,26 @@ class FullEditorTests(TestCase):
 
 
 class SceneValidationTests(SimpleTestCase):
+    @override_settings(ONLYOFFICE_URL='/onlyoffice', ONLYOFFICE_INTERNAL_URL='http://office-internal',
+                       ONLYOFFICE_JWT_SECRET='test-only-' * 8)
+    @patch('documents.office_service._open')
+    def test_ip_access_cache_results_always_use_the_internal_office_server(self, open_request):
+        open_request.return_value.__enter__.return_value.read.return_value = b'document'
+        for url in ('http://192.0.2.10:8080/onlyoffice/cache/files/result.docx',
+                    'https://office.example/onlyoffice/cache/files/result.docx',
+                    'http://office-internal/cache/files/result.docx'):
+            self.assertEqual(service.download_result(url), b'document')
+            self.assertEqual(open_request.call_args.args[0].full_url,
+                             'http://office-internal/cache/files/result.docx')
+        open_request.reset_mock()
+        for url in ('http://169.254.169.254/latest/meta-data/', 'http://192.0.2.10:8080/cache/files/result.docx',
+                    'http://192.0.2.10:8080/onlyoffice/cache/files/%2e%2e/private',
+                    'http://user:password@192.0.2.10:8080/onlyoffice/cache/files/a',
+                    'http://192.0.2.10:8080/onlyoffice/cache/files/a#fragment'):
+            with self.assertRaises(ValueError):
+                service.download_result(url)
+        open_request.assert_not_called()
+
     def test_active_embeds_links_and_malformed_images_are_rejected(self):
         for element in ({'id': 'x', 'type': 'iframe'}, {'id': 'x', 'type': 'text', 'link': 'javascript:alert(1)'}):
             with self.assertRaises(ValidationError): clean_scene(json.dumps({**EMPTY_SCENE, 'elements': [element]}))
