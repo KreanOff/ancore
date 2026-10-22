@@ -3,7 +3,8 @@
 Plik generowany przez `python scripts/update_code_index.py`. Nie edytuj ręcznie.
 
 Zakres: lokalne źródła skonfigurowanych aplikacji i konfiguracja Django w `backend/` oraz
-zasoby `static/` i źródła React `frontend/app`. Uwzględnia pliki nieśledzone i ignorowane przez Git, jeśli
+zasoby `static/`, źródła `frontend/app` i `frontend/board` oraz narzędzia `scripts/` i `deploy/`.
+Uwzględnia pliki nieśledzone i ignorowane przez Git, jeśli
 są obecne lokalnie. Pomija sekrety, uploady, środowisko i cache Pythona.
 Generator nie importuje aplikacji ani nie łączy się z bazą.
 
@@ -17,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 32 | 0 | 19 | 173 |
+| [backend/core](../backend/core) | 33 | 0 | 19 | 193 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -1406,6 +1407,16 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
+### React — frontend/board
+
+- [frontend/board/board.css](../frontend/board/board.css)
+- [frontend/board/board.jsx](../frontend/board/board.jsx)
+- [frontend/board/build.mjs](../frontend/board/build.mjs)
+- [frontend/board/entry.js](../frontend/board/entry.js)
+- [frontend/board/package.json](../frontend/board/package.json)
+- [frontend/board/pnpm-lock.yaml](../frontend/board/pnpm-lock.yaml)
+- [frontend/board/pnpm-workspace.yaml](../frontend/board/pnpm-workspace.yaml)
+
 ## 8. Testy
 
 Liczby dotyczą definicji metod, nie uruchomionych przypadków.
@@ -1455,11 +1466,17 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `ProductionConfigurationTests`: 6 metod testowych.
 - `ServerAddressTests`: 2 metod testowych.
 
+### backend/core/test_production_installer.py
+
+Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
+
+- `ProductionInstallerTests`: 18 metod testowych.
+
 ### backend/core/test_project_layout.py
 
 Źródło: [backend/core/test_project_layout.py](../backend/core/test_project_layout.py).
 
-- `ProjectLayoutTests`: 4 metod testowych.
+- `ProjectLayoutTests`: 6 metod testowych.
 
 ### backend/core/test_pulpit_frontend.py
 
@@ -1979,3 +1996,36 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [backend/spaces/migrations/0001_initial.py](../backend/spaces/migrations/0001_initial.py)
 - [backend/spaces/migrations/0002_initial.py](../backend/spaces/migrations/0002_initial.py)
+
+## 10. Narzędzia i wdrożenie
+
+Źródła narzędzi i konfiguracji usług; bez lokalnych ustawień, archiwów i certyfikatów.
+
+### scripts
+
+- [scripts/assets/build_flaticon_icons.py](../scripts/assets/build_flaticon_icons.py)
+- [scripts/assets/flaticon-icon-map.json](../scripts/assets/flaticon-icon-map.json)
+- [scripts/office/configure.py](../scripts/office/configure.py)
+- [scripts/office/start.sh](../scripts/office/start.sh)
+- [scripts/production.py](../scripts/production.py)
+- [scripts/run_tests.py](../scripts/run_tests.py)
+- [scripts/start_office.sh](../scripts/start_office.sh)
+- [scripts/update_code_index.py](../scripts/update_code_index.py)
+
+### deploy
+
+- [deploy/Dockerfile](../deploy/Dockerfile)
+- [deploy/backend/entrypoint.sh](../deploy/backend/entrypoint.sh)
+- [deploy/backend/gunicorn.conf.py](../deploy/backend/gunicorn.conf.py)
+- [deploy/backend/requirements.txt](../deploy/backend/requirements.txt)
+- [deploy/backup/backup.py](../deploy/backup/backup.py)
+- [deploy/cli/configure.py](../deploy/cli/configure.py)
+- [deploy/cli/runtime.sh](../deploy/cli/runtime.sh)
+- [deploy/cli/setup.sh](../deploy/cli/setup.sh)
+- [deploy/compose.restore.yaml](../deploy/compose.restore.yaml)
+- [deploy/compose.tls.yaml](../deploy/compose.tls.yaml)
+- [deploy/compose.yaml](../deploy/compose.yaml)
+- [deploy/postgres/init.sh](../deploy/postgres/init.sh)
+- [deploy/production.env.example](../deploy/production.env.example)
+- [deploy/web/entrypoint.sh](../deploy/web/entrypoint.sh)
+- [deploy/web/nginx.conf.template](../deploy/web/nginx.conf.template)

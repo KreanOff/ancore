@@ -124,7 +124,8 @@ def generate():
         "Plik generowany przez `python scripts/update_code_index.py`. Nie edytuj ręcznie.",
         "",
         "Zakres: lokalne źródła skonfigurowanych aplikacji i konfiguracja Django w `backend/` oraz",
-        "zasoby `static/` i źródła React `frontend/app`. Uwzględnia pliki nieśledzone i ignorowane przez Git, jeśli",
+        "zasoby `static/`, źródła `frontend/app` i `frontend/board` oraz narzędzia `scripts/` i `deploy/`.",
+        "Uwzględnia pliki nieśledzone i ignorowane przez Git, jeśli",
         "są obecne lokalnie. Pomija sekrety, uploady, środowisko i cache Pythona.",
         "Generator nie importuje aplikacji ani nie łączy się z bazą.",
         "",
@@ -196,11 +197,12 @@ def generate():
     for kind in ("css", "js", "img"):
         paths = sorted(p for p in (ROOT / "static" / kind).rglob("*") if p.is_file())
         lines += [f"### {kind}", "", *[f"- {link(path)}" for path in paths], ""]
-    frontend = ROOT / "frontend" / "app"
-    paths = sorted(path for path in frontend.rglob("*") if path.is_file()
-                   and "node_modules" not in path.parts
-                   and path.suffix in {".ts", ".tsx", ".mjs", ".json", ".yaml"})
-    lines += ["### React — frontend/app", "", *[f"- {link(path)}" for path in paths], ""]
+    for package in ("app", "board"):
+        frontend = ROOT / "frontend" / package
+        paths = sorted(path for path in frontend.rglob("*") if path.is_file()
+                       and "node_modules" not in path.parts
+                       and path.suffix in {".ts", ".tsx", ".js", ".jsx", ".css", ".mjs", ".json", ".yaml"})
+        lines += [f"### React — frontend/{package}", "", *[f"- {link(path)}" for path in paths], ""]
 
     lines += ["## 8. Testy", "", "Liczby dotyczą definicji metod, nie uruchomionych przypadków.", ""]
     for files in files_by_root.values():
@@ -219,6 +221,16 @@ def generate():
         migrations = [path for path in files if "migrations" in path.parts and path.name != "__init__.py"]
         if migrations:
             lines += [f"### {name}", "", *[f"- {link(path)}" for path in migrations], ""]
+    lines += ["## 10. Narzędzia i wdrożenie", "",
+              "Źródła narzędzi i konfiguracji usług; bez lokalnych ustawień, archiwów i certyfikatów.", ""]
+    for directory in ("scripts", "deploy"):
+        paths = sorted(path for path in (ROOT / directory).rglob("*")
+                       if path.is_file()
+                       and not any(part.startswith('.') or part in {"backups", "certs", "__pycache__", "node_modules"}
+                                   for part in path.relative_to(ROOT / directory).parts)
+                       and (path.suffix in {".py", ".sh", ".json", ".yaml", ".txt", ".template"}
+                            or path.name in {"Dockerfile", "production.env.example"}))
+        lines += [f"### {directory}", "", *[f"- {link(path)}" for path in paths], ""]
     return "\n".join(lines).rstrip() + "\n"
 
 

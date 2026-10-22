@@ -11,6 +11,7 @@ Nieużywane archiwum starego środowiska
 (`venv.bak/`, następnie `.local/venv-backups/`) usunięto na późniejsze
 polecenie użytkownika; bieżące `.venv/` zachowano. Usunięto również cache
 Pythona ze źródeł i puste katalogi lokalne, odzyskując około 115 MiB.
+Generator indeksu obejmuje teraz również tablicę oraz narzędzia i wdrożenie.
 
 Przeszło **37/37 testów** `core.test_production_installer`,
 `core.test_production` i `core.test_project_layout`. Nowe przypadki sprawdzają
@@ -1980,8 +1981,9 @@ python scripts/update_code_index.py --check
 Nie wymaga zależności aplikacji ani bazy. Uwzględnia wszystkie obecne lokalnie
 źródła w katalogach aplikacji, również nowe pliki przed dodaniem do Git.
 Generuje strukturę, modele/relacje, formularze, routing, definicje widoków,
-szablony, statyczne zasoby i spis testów. Nie analizuje semantycznie, czy
-wszystkie zdefiniowane funkcje są osiągalne.
+szablony, statyczne zasoby, oba pakiety frontendu, spis testów oraz narzędzia
+i konfigurację wdrożenia. Nie analizuje semantycznie, czy wszystkie
+zdefiniowane funkcje są osiągalne.
 
 Tryb `--check` porównuje bieżący indeks z wynikiem generatora i kończy się
 błędem, jeśli indeks wymaga aktualizacji. Nie sprawdza prawdziwości opisów
