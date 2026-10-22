@@ -27,12 +27,14 @@ export default function Picker({
   token,
   value,
   onChange,
+  sharing = false,
 }: {
   api: string;
   url: string;
   token: string;
   value: string;
   onChange: (value: string) => void;
+  sharing?: boolean;
 }) {
   const [people, setPeople] = useState<Candidate[]>([]),
     [selected, setSelected] = useState<Candidate | null>(null),
@@ -59,7 +61,7 @@ export default function Picker({
     wanted.current = person.email;
     onChange(person.email);
     setSelected(person);
-    setStatus('Zapraszasz: ' + person.name + '.');
+    setStatus((sharing ? 'Udostępniasz: ' : 'Zapraszasz: ') + person.name + '.');
     input.current?.focus();
   }
   function search(text: string) {
@@ -96,7 +98,9 @@ export default function Picker({
         setOpen(!!result.results.length);
         setStatus(
           !result.results.length
-            ? 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
+            ? sharing
+              ? 'Brak pasujących osób. Wybierz członka Workspace, który nie ma jeszcze dostępu.'
+              : 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
             : result.has_more
               ? 'Pokazano 10 osób. Doprecyzuj wyszukiwanie lub wybierz osobę.'
               : 'Wybierz osobę z listy.',
@@ -182,7 +186,7 @@ export default function Picker({
         id={id + '-results'}
         className="workplace-invite__results"
         role="listbox"
-        aria-label="Osoby, które możesz zaprosić"
+        aria-label={sharing ? 'Osoby, którym możesz udostępnić' : 'Osoby, które możesz zaprosić'}
         hidden={!open}
       >
         {people.map((person, i) => (

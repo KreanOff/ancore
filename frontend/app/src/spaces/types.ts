@@ -104,6 +104,8 @@ export interface Summary {
   }[];
 }
 export interface DetailData {
+  team: import('../tasks/types').Team;
+  team_url: string;
   space: Space;
   view: string;
   navigation: { key: string; label: string; icon: string; url: string }[];

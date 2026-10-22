@@ -17,22 +17,25 @@ export interface MemberRow {
 export function Members({
   members,
   isOwner,
+  canEditRoles = isOwner,
   busy,
   onRole,
   onRemove,
 }: {
   members: MemberRow[];
   isOwner: boolean;
+  canEditRoles?: boolean;
   busy: boolean;
   onRole: (member: MemberRow) => void;
   onRemove: (member: MemberRow) => void;
 }) {
   const [selected, setSelected] = useState<Set<number | string>>(new Set()),
     all = useRef<HTMLInputElement>(null);
+  const selectedCount = members.filter((member) => selected.has(member.id)).length;
   useLayoutEffect(() => {
     if (all.current)
-      all.current.indeterminate = selected.size > 0 && selected.size < members.length;
-  }, [selected, members.length]);
+      all.current.indeterminate = selectedCount > 0 && selectedCount < members.length;
+  }, [selectedCount, members.length]);
   return (
     <div
       className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet"
@@ -62,7 +65,7 @@ export function Members({
               type="checkbox"
               className="tasks-row-checkbox"
               aria-label="Zaznacz wszystkich członków"
-              checked={members.length > 0 && selected.size === members.length}
+              checked={members.length > 0 && selectedCount === members.length}
               onChange={(event) =>
                 setSelected(
                   event.target.checked ? new Set(members.map((member) => member.id)) : new Set(),
@@ -122,13 +125,14 @@ export function Members({
               >
                 {member.can_change ? (
                   <Dropdown
+                    searchable={false}
                     label={`Działania: ${member.name}`}
                     menuClass="documents-item-menu"
                     trigger={<Icon name="menu" />}
                   >
                     {(close) => (
                       <div className="documents-menu-actions">
-                        {isOwner ? (
+                        {canEditRoles ? (
                           <button
                             type="button"
                             role="menuitem"
@@ -191,7 +195,7 @@ export function Members({
                 data-column="joined"
                 role="cell"
               >
-                {dateLabel(member.created_at)}
+                {dateLabel(member.created_at) || '—'}
               </span>
             </div>
           ))}

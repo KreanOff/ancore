@@ -77,6 +77,7 @@ def sprint_payload(sprint):
 def detail_page(request, context):
     from accounts.avatar import account_avatar
     from .item_query import item_sort
+    from .space_team import payload as space_team_payload
     space = context['space']
     space.url = context['space_url']
     data = {
@@ -106,6 +107,7 @@ def detail_page(request, context):
                      'can_remove': context['can_manage'] and member.user_id != space.private_owner_id and (member.role != 'admin' or space.private_owner_id == request.user.pk),
                      'remove_url': context['member_url'] + f'{member.pk}/remove/'} for member in context.get('members', [])],
         'private_owner': (space.private_owner.get_full_name() or space.private_owner.email) if space.private_owner else '',
+        'team': space_team_payload(request, space), 'team_url': context['space_url'] + 'team/',
         'modal': modal_payload(context['modal']) if context.get('modal') else None,
     }
     return {'type': 'space-detail', 'title': space.name, 'data': data}

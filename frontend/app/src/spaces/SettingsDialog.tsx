@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EmbeddedForm, FormDialog, type FormDialogData } from '../forms/FormDialog';
-import { Avatar } from '../shared/Avatar';
+import { EmbeddedForm, type FormDialogData } from '../forms/FormDialog';
+import { Members, type MemberRow } from '../shared/Members';
+import SharingDialog from '../shared/SharingDialog';
+import type { Team } from '../tasks/types';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { errorMessage } from '../shared/api';
@@ -46,7 +48,8 @@ export default function SettingsDialog({
       : {},
   );
   const [configuration, setConfiguration] = useState(initialConfiguration);
-  const [memberForm, setMemberForm] = useState(initialTab === 'members' ? initialForm : undefined);
+  const [sharing, setSharing] = useState(initialTab === 'members' && !!initialForm);
+  const [roleMember, setRoleMember] = useState<MemberRow>();
   const [states, setStates] = useState<Partial<Record<Tab, { dirty: boolean; pending: boolean }>>>(
     {},
   );
@@ -139,20 +142,24 @@ export default function SettingsDialog({
     const modal = element.closest<HTMLElement>('.tasks-modal');
     if (modal) window.AncoreTaskModals?.close(modal);
   }
-  async function memberAction(url: string, remove = false) {
-    if (action.current || pending) return;
+  function membersSaved(team: Team) {
+    saved.current = true;
+    setData((current) => (current ? { ...current, team } : current));
+    setSharing(false);
+    setRoleMember(undefined);
+    setNotice('Dostęp został zapisany.');
+  }
+  async function removeMember(member: MemberRow) {
+    if (action.current || pending || !data) return;
     action.current = true;
     setActing(true);
     setError('');
     try {
-      if (remove) {
-        await request(url, new FormData());
-        saved.current = true;
-        await refresh();
-      } else {
-        const page = await request(url);
-        if (!life.signal.aborted) setMemberForm(page.data as FormDialogData);
-      }
+      const body = new FormData();
+      body.set('action', 'remove');
+      body.set('member_id', String(member.id));
+      const team = await pageRequest<Team>(api, data.team_url, csrfToken, life.signal, body);
+      if (!life.signal.aborted) membersSaved(team);
     } catch (exception) {
       if (!life.signal.aborted) setError(errorMessage(exception));
     } finally {
@@ -296,56 +303,45 @@ export default function SettingsDialog({
             {t.key === 'members' && data ? (
               <>
                 <div className="tasks-modal__body">
-                  <div className="work-panel-heading">
-                    <h3>Członkowie i role</h3>
-                    {data.can_manage && data.space.visibility === 'private' ? (
+                  <div className="workplace-edit-modal__team-toolbar">
+                    <span className="workplaces-management__count">
+                      {data.space.name} · Członkowie: {data.team.members.length}
+                    </span>
+                    {data.team.can_manage ? (
                       <button
                         type="button"
-                        className="btn btn-secondary"
+                        className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
                         disabled={pending}
-                        onClick={() => void memberAction(data.member_url)}
+                        onClick={() => setSharing(true)}
+                        aria-haspopup="dialog"
                       >
-                        <Icon name="user-round-plus" />
-                        Udostępnij / zmień rolę
+                        <Icon name="plus" />
+                        Udostępnij
                       </button>
                     ) : null}
                   </div>
                   {data.space.visibility === 'public' ? (
-                    <p>Dostęp mają aktywni członkowie Workspace.</p>
-                  ) : (
-                    <>
-                      <p>{data.private_owner} · Właściciel</p>
-                      {data.members.length ? (
-                        data.members.map((member) => (
-                          <div className="work-member" key={member.id}>
-                            <Avatar data={member.avatar} className="tasks-directory-avatar" />
-                            <span>{member.name}</span>
-                            <span>{member.role}</span>
-                            {member.can_remove ? (
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                disabled={pending}
-                                onClick={() =>
-                                  window.showConfirmModal({
-                                    title: 'Odbierz dostęp',
-                                    message: `Odebrać dostęp do przestrzeni osobie ${member.name}?`,
-                                    confirmText: 'Odbierz dostęp',
-                                    cancelText: 'Anuluj',
-                                    onConfirm: () => void memberAction(member.remove_url, true),
-                                  })
-                                }
-                              >
-                                Odbierz dostęp
-                              </button>
-                            ) : null}
-                          </div>
-                        ))
-                      ) : (
-                        <p>Nie udostępniono jeszcze przestrzeni innym osobom.</p>
-                      )}
-                    </>
-                  )}
+                    <p className="workplace-team__hint">
+                      Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom,
+                      zapisz widoczność „Prywatna” w zakładce „Główna”.
+                    </p>
+                  ) : null}
+                  <Members
+                    members={data.team.members}
+                    isOwner={data.team.is_owner}
+                    canEditRoles={data.team.can_manage}
+                    busy={pending}
+                    onRole={setRoleMember}
+                    onRemove={(member) =>
+                      window.showConfirmModal({
+                        title: 'Odbierz dostęp',
+                        message: `Odebrać dostęp do przestrzeni osobie ${member.name}? Utraci też dostęp do jej zadań.`,
+                        confirmText: 'Odbierz dostęp',
+                        cancelText: 'Anuluj',
+                        onConfirm: () => void removeMember(member),
+                      })
+                    }
+                  />
                 </div>
                 <footer className="tasks-modal__footer">
                   <button
@@ -362,19 +358,20 @@ export default function SettingsDialog({
           </section>
         ))}
       </Modal>
-      {memberForm ? (
-        <FormDialog
-          data={{ ...memberForm, space_settings: undefined }}
+      {data && (sharing || roleMember) ? (
+        <SharingDialog<Team>
+          name={data.space.name}
+          schema={data.team.share_form}
+          person={roleMember}
           api={api}
+          url={data.team_url}
           csrfToken={csrfToken}
           hostId={hostId}
-          onClose={() => setMemberForm(undefined)}
-          onSaved={async () => {
-            saved.current = true;
-            await refresh();
-            setMemberForm(undefined);
-            setNotice('Dostęp został zapisany.');
+          onClose={() => {
+            setSharing(false);
+            setRoleMember(undefined);
           }}
+          onSaved={membersSaved}
         />
       ) : null}
     </>
