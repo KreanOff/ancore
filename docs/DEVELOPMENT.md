@@ -1,5 +1,53 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Pełny backup i samodzielne odzyskiwanie (22.10.2026)
+
+Backup ma domyślny interwał 24 godzin i retencję 10 kopii. Format 2 dodaje
+do bazy i zapisanych plików pakiet źródeł, konfigurację produkcji i certyfikaty
+HTTPS Nginx Ancore. Snapshot kodu powstaje podczas budowania obrazu backupu;
+nie wymaga montowania repozytorium ani socketu Dockera w schedulerze.
+Konfigurator i `update` zmieniają poprzednią domyślną retencję 14 na 10,
+zachowując sekrety i inne ustawione wartości retencji.
+
+`restore.sh` jest osobnym, samodzielnym skryptem, który można skopiować bez
+pozostałych źródeł na serwer z Dockerem i Compose. Wyświetla 10 ostatnich kopii,
+po wyborze sprawdza archiwum i zrzut, buduje zapisany kod, odtwarza bazę i pliki
+na nowych wolumenach oraz czeka na healthchecki. Poprzednie wolumeny zachowuje.
+Nie wywołuje instalatora ani jego helperów. Odtworzona instalacja ma osobny
+katalog i `deploy/compose.recovery.yaml`, uwzględniany przez jej polecenia
+utrzymania. [Procedura, zakres kopii i wymagania](PRODUCTION.md#backup-i-odtwarzanie).
+
+Przeszło **50/50 testów** `core.test_backup_recovery`,
+`core.test_production_installer`, `core.test_production` i `core.test_project_layout`.
+Nowe testy obejmują retencję, interwał, zawartość kopii, wybór wersji,
+samodzielne działanie skryptu przy ścieżkach ze spacjami, konfigurację/TLS,
+integralność i ścieżki archiwów, błędy budowania/odtwarzania/startu, blokadę
+równoczesnego odzyskiwania, anulowanie i zgodność starszego odtwarzania danych.
+Testy cyklu skryptu używają kontrolowanego CLI Docker, a testy archiwów
+zastępują wywołania PostgreSQL; same w sobie nie potwierdzają pełnej instalacji.
+
+Wykonano także rzeczywisty test na osobnym projekcie Compose w lokalnym silniku
+Docker Linux, bez bazy ani uploadów użytkownika:
+
+- zapisano konto testowe, prywatny plik i media, wykonano pełny backup, następnie
+  zmieniono rekord i pliki oraz usunięto kontenery i odłączono pierwotne źródła;
+- uruchomiono wyłącznie samodzielny `restore.sh` z archiwum: przebudował cztery
+  obrazy, odtworzył bazę i pliki oraz uruchomił pięć zdrowych usług z ONLYOFFICE;
+- porównano odzyskany rekord i treść plików ze stanem sprzed zmian; stary wolumen
+  nadal zawierał późniejszą treść, co potwierdziło jego zachowanie;
+- polecenie `ancore.sh status` odtworzonej instalacji wskazało właściwe usługi;
+  uszkodzona kopia została odrzucona bez zatrzymania odzyskanej aplikacji;
+- wykonano 11 kolejnych rzeczywistych kopii i potwierdzono dokładnie 10 archiwów
+  oraz 10 odpowiadających plików SHA-256.
+
+Zasoby tej instalacji QA, jej konfigurację, archiwa i wolumeny usunięto po teście.
+Przeszły również `manage.py check`, składnia sh, lokalne linki dokumentacji,
+kontrola indeksu i diffu. Pełny test używał HTTP; konfigurację i certyfikaty HTTPS
+sprawdziły testy archiwizacji oraz kontrolowanego CLI, bez odtwarzania całego
+środowiska HTTPS. Nie wykonywano wdrożenia na docelowym serwerze, testu awarii
+fizycznego dysku ani pełnej regresji modułów aplikacji. Zmiana nie dotyczy UI,
+modeli ani migracji.
+
 ## Porządkowanie repozytorium (22.10.2026)
 
 [Mapa plików i zasady organizacji](REPOSITORY.md) opisują podział usług

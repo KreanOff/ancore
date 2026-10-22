@@ -40,6 +40,7 @@ ancore/
 ├── AGENTS.md                zasady pracy nad projektem
 ├── README.md                start i mapa dokumentacji
 ├── ancore.sh                publiczne polecenia produkcji
+├── restore.sh               samodzielne odzyskiwanie z listy 10 kopii
 ├── manage.py                publiczne polecenia Django
 └── requirements.txt         wspólne zależności Pythona
 ```
@@ -63,7 +64,8 @@ Szablony, testy i migracje pozostają przy swoich aplikacjach.
 | Cache narzędzi | `.cache/`, `__pycache__/` | Lokalne pliki odtwarzalne |
 | Konfiguracja z sekretami | `.env`, `.env.office`, `deploy/.env` | Prywatne pliki lokalne; nie nadpisywać przy porządkowaniu |
 | Uploady | `media/`, `private_documents/` lub skonfigurowane ścieżki | Trwałe dane; wymagają backupu |
-| Archiwa i certyfikaty | `deploy/backups/`, `deploy/certs/` lub skonfigurowane ścieżki | Trwałe dane lokalne |
+| Archiwa i certyfikaty | `deploy/backups/`, `deploy/certs/` lub skonfigurowane ścieżki | Trwałe dane lokalne; nowe kopie zawierają także kod, konfigurację i certyfikaty |
+| Odzyskane instalacje | `.recovery/` lub `restore.sh --target`; `deploy/compose.recovery.yaml` w odzyskanej aplikacji | Prywatne dane poza Git/buildem; katalog `application` pozostaje aktywną instalacją |
 
 Lokalne zależności, cache, archiwa, konfiguracja z sekretami i dane aplikacji
 są wyłączone z Git oraz kontekstu Dockera. Build sam tworzy oba bundle.
@@ -83,6 +85,7 @@ Pliki nadal są na dysku; widoczność reguluje
    `frontend/app/src/`, a wspólne zasoby do `static/`.
 2. Pliki kontenera umieszczaj w odpowiednim podkatalogu `deploy/`.
    Instalacja ma jedną implementację w `deploy/cli/` i wejście `ancore.sh`.
+   Samodzielny `restore.sh` jest osobnym wejściem odzyskiwania, niezależnym od instalatora.
 3. Narzędzia integracji i zasobów umieszczaj w podkatalogach `scripts/`.
    Rozwiązuj ścieżki względem pliku skryptu, aby działał również spoza repozytorium.
 4. Nie twórz katalogów `old/`, `misc/`, `temp/` ani kopii `plik_final_2`.

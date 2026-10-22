@@ -27,7 +27,8 @@ w `static/`. Główne instrukcje startu i mapa repozytorium są w
    formularzy, tras URL, szablonów, zasobów i testów.
 8. [Produkcja Docker Compose](PRODUCTION.md) — konfigurator terminalowy,
    wspólne polecenie `ancore.sh`, lokalne budowanie i obsługa usług, HTTP bez
-   domeny na 8080, opcjonalne HTTPS, wolumeny oraz backup i odtwarzanie.
+   domeny na 8080, opcjonalne HTTPS, wolumeny oraz pełny backup i samodzielny
+   `restore.sh` z wyborem jednej z 10 kopii.
 
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.

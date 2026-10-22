@@ -65,6 +65,7 @@ scripts/                narzędzia dokumentacji, utrzymania i lokalnego ONLYOFFI
 .local/                 opcjonalne pliki lokalne, poza Git i buildem
 .cache/                 odtwarzalny cache narzędzi, poza Git i buildem
 ancore.sh               wspólne polecenia instalacji i utrzymania produkcji
+restore.sh              samodzielny wybór kopii i pełne odzyskiwanie aplikacji
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
@@ -100,7 +101,7 @@ danych użytkowników. Healthchecki usług nie zastępują zewnętrznego monitor
 `ancore.sh` jest wspólnym wejściem instalacji, konfiguracji i utrzymania.
 Budowanie obrazów i obu frontendów odbywa się na tym samym serwerze;
 obrazy bazowe i zależności są pobierane z internetu przy instalacji.
-`deploy/cli/runtime.sh` zawiera jedną implementację operacji Compose i odtwarzania,
+`deploy/cli/runtime.sh` zawiera implementację operacji Compose i starszego odtwarzania danych,
 `deploy/cli/setup.sh` konfigurator terminalowy, a `deploy/cli/configure.py` walidację
 i zapis ustawień w kontenerze Pythona. `scripts/production.py` przekazuje starsze
 polecenia do tych samych implementacji. Domyślna instalacja używa HTTP na
@@ -110,6 +111,17 @@ z certyfikatem Nginx albo zewnętrznym proxy zachowuje sekrety i wolumeny przy
 `--reconfigure`. Publiczny prefiks ONLYOFFICE jest względny (`/onlyoffice`),
 więc edytor używa adresu wybranego przez przeglądarkę. Wyniki callbacków są
 pobierane ze stałego wewnętrznego serwera po walidacji ścieżki cache.
+
+Backup domyślnie powstaje co 24 godziny z retencją 10 kopii. Format 2 dodaje
+do bazy i zapisanych plików snapshot źródeł z obrazu backupu, konfigurację
+produkcji i certyfikaty HTTPS Nginx Ancore. `restore.sh` jest niezależnym,
+samodzielnym skryptem: wyświetla 10 kopii, sprawdza wybraną, odbudowuje jej
+kod, odtwarza dane na nowych wolumenach i czeka na gotowość aplikacji.
+Nie uruchamia instalatora. Odtworzona instalacja działa z osobnego katalogu;
+`deploy/compose.recovery.yaml` utrwala nowe nazwy wolumenów także dla poleceń
+utrzymania. Stare wolumeny pozostają zachowane. Snapshot nie obejmuje
+niezapisanych edycji i cache ONLYOFFICE ani konfiguracji zewnętrznych usług hosta.
+Szczegóły i ograniczenia: [Backup i odtwarzanie](PRODUCTION.md#backup-i-odtwarzanie).
 
 ## 3. Warstwy i odpowiedzialności
 

@@ -37,9 +37,23 @@ ustawień `./ancore.sh configure`.
 
 Polecenie `start` uruchamia już zbudowaną aplikację bez pobierania obrazów.
 Aktualny kod przebudujesz przez `./ancore.sh update`; polecenie wymaga istniejącej
-konfiguracji i wykonuje backup działającej instalacji. Backup, odtwarzanie,
+konfiguracji i wykonuje backup działającej instalacji. Backup,
 przeładowanie Nginx i diagnostykę obsługuje to samo polecenie;
 listę operacji pokazuje `./ancore.sh --help`.
+
+Pełna kopia powstaje domyślnie co 24 godziny; zachowywanych jest 10 ostatnich kopii.
+Zawiera bazę, zapisane pliki, kod, konfigurację i certyfikaty HTTPS Ancore.
+Samodzielny skrypt odzyskiwania działa niezależnie od instalatora:
+
+```sh
+./restore.sh
+```
+
+Wybierz numer kopii z listy. Skrypt sprawdzi kopię, odbuduje zapisaną wersję,
+odtworzy dane na nowych wolumenach i zaczeka na gotowość aplikacji.
+Na nowym serwerze wystarczy Docker z Compose, plik `restore.sh` i katalog kopii:
+`sh restore.sh --backup-dir /srv/ancore-backups --target /srv/ancore-recovered`.
+Szczegóły i obsługa starszych archiwów: [Backup i odtwarzanie](docs/PRODUCTION.md#backup-i-odtwarzanie).
 
 ## Struktura projektu
 
@@ -50,6 +64,7 @@ frontend/board/    odizolowany edytor tablicy Excalidraw
 static/            wspólne style, skrypty, obrazy i lokalne biblioteki
 deploy/            produkcyjny Docker Compose: WWW, Django, PostgreSQL, backup, ONLYOFFICE
 ancore.sh          wspólne polecenia instalacji i utrzymania produkcji
+restore.sh         samodzielne odzyskiwanie wybranej wersji z listy 10 kopii
 scripts/           narzędzia do budowania i utrzymania projektu
 docs/              dokumentacja i generowany indeks kodu
 manage.py          główne wejście do poleceń Django

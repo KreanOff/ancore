@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 33 | 0 | 19 | 193 |
+| [backend/core](../backend/core) | 34 | 0 | 19 | 206 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -1421,6 +1421,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
+### backend/core/test_backup_recovery.py
+
+Źródło: [backend/core/test_backup_recovery.py](../backend/core/test_backup_recovery.py).
+
+- `StandaloneRecoveryTests`: 7 metod testowych.
+- `BackupArchiveTests`: 5 metod testowych.
+
 ### backend/core/test_comment_images.py
 
 Źródło: [backend/core/test_comment_images.py](../backend/core/test_comment_images.py).
@@ -1470,7 +1477,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
 
-- `ProductionInstallerTests`: 18 metod testowych.
+- `ProductionInstallerTests`: 19 metod testowych.
 
 ### backend/core/test_project_layout.py
 

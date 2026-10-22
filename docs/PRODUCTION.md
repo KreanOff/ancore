@@ -10,7 +10,7 @@ ONLYOFFICE oraz zależności Python/JavaScript; nie jest to instalator offline.
 | `web` | Nginx: zasoby, awatary, reverse proxy i opcjonalnie HTTPS |
 | `backend` | Django/Gunicorn: aplikacja, API i kontrolowane pobieranie plików |
 | `postgres` | PostgreSQL 17, bez portu publikowanego na hoście |
-| `backup` | Harmonogram lokalnych kopii bazy i plików |
+| `backup` | Co 24 godziny pełna kopia danych i pakietu odzyskiwania; retencja 10 kopii |
 | `onlyoffice` | Edytor dokumentów z JWT i WebSocketami przez Nginx |
 
 Dane i backupy nie są szyfrowane na dysku. HTTPS szyfruje połączenia użytkowników.
@@ -67,7 +67,8 @@ bez komunikatu o gotowości.
 
 ## Jedno polecenie do obsługi
 
-Wszystkie operacje udostępnia `ancore.sh`; działa także `sh ancore.sh` na Ubuntu.
+Instalację i utrzymanie udostępnia `ancore.sh`; działa także `sh ancore.sh` na Ubuntu.
+Pełne interaktywne odzyskiwanie ma osobny, samodzielny skrypt `restore.sh`.
 
 | Polecenie | Działanie |
 | --- | --- |
@@ -80,8 +81,9 @@ Wszystkie operacje udostępnia `ancore.sh`; działa także `sh ancore.sh` na Ubu
 | `./ancore.sh status` | Stan wszystkich usług |
 | `./ancore.sh logs [USŁUGA]` | Podgląd logów; Ctrl+C kończy podgląd, zachowując usługi |
 | `./ancore.sh doctor` | Kontrola Dockera, konfiguracji, portów oraz tabela stanu usług |
-| `./ancore.sh backup` | Lokalna kopia bazy i plików |
-| `./ancore.sh restore PLIK --yes` | Odtworzenie kopii z zastąpieniem bieżących danych |
+| `./ancore.sh backup` | Pełna lokalna kopia danych i pakietu odzyskiwania |
+| `./restore.sh` | Lista 10 kopii i automatyczne odzyskanie wybranej wersji aplikacji |
+| `./ancore.sh restore PLIK --yes` | Zgodność: odtworzenie samej bazy i plików na istniejących wolumenach |
 | `./ancore.sh unlock` | Usunięcie pozostałej blokady, jeśli kopia nie trwa |
 | `./ancore.sh reload` | Sprawdzenie i przeładowanie Nginx w kontenerze |
 | `./ancore.sh admin` | Interaktywne utworzenie administratora Django |
@@ -188,7 +190,7 @@ Logi mają rotację; standardowe access logi z podpisanymi URL są wyłączone.
 
 ## Backup i odtwarzanie
 
-Scheduler domyślnie wykonuje kopię co 24 godziny i zachowuje 14 poprawnych kopii.
+Scheduler domyślnie wykonuje kopię co 24 godziny i zachowuje 10 poprawnych kopii.
 Wartości zmieniają `BACKUP_INTERVAL_SECONDS` i `BACKUP_KEEP`. Po starcie tworzy
 kopię, jeśli jej brakuje lub upłynął interwał. Ręczne wykonanie:
 
@@ -196,10 +198,28 @@ kopię, jeśli jej brakuje lub upłynął interwał. Ręczne wykonanie:
 ./ancore.sh backup
 ```
 
-Archiwum `.tar.gz` i jego `.sha256` zawierają `database.dump` z `pg_dump --format=custom`,
-media, prywatne pliki i manifest formatu/release. Nie zawierają konfiguracji ani
-certyfikatów; zachowaj ich osobną bezpieczną kopię. Lokalne kopie nie chronią
-przed utratą całego serwera; przechowuj potrzebne archiwa także poza nim.
+Nowe archiwum `.tar.gz` (format 2) zawiera `database.dump` z `pg_dump --format=custom`,
+media, prywatne pliki i manifest formatu/release oraz pakiet `recovery/`:
+
+- `application.tar.gz` — źródła aplikacji z chwili budowania obrazu backupu,
+  migracje, frontendy z lockfile, zasoby, dokumentacja i pliki wdrożenia;
+- `production.env` — faktyczna konfiguracja instalacji, łącznie z sekretami;
+- `tls/fullchain.pem` i `tls/privkey.pem` — certyfikat i klucz przy HTTPS Nginx Ancore.
+
+Obok archiwum zapisywany jest plik `.sha256`. Kopie zawierają sekrety i są
+nieszyfrowane, dostępne z prywatnego katalogu administratorowi serwera.
+Nie obejmują obrazów Docker, odtwarzalnych zależności i cache, logów ani
+niezapisanych edycji ONLYOFFICE. Zapisane dokumenty i tablice są w bazie
+i prywatnym storage. Obrazy oraz bundle można odbudować z pakietu odzyskiwania.
+Zewnętrzny reverse proxy, DNS, zapora i system hosta pozostają poza kopią aplikacji.
+Lokalne kopie nie chronią przed utratą całego serwera; przechowuj archiwa razem
+z `.sha256` oraz samodzielnym `restore.sh` także poza nim.
+
+Po wdrożeniu nowego kodu przez `./ancore.sh update` lub `install` wcześniejsza
+domyślna retencja 14 jest zmieniana na 10 bez wymiany sekretów; inne ustawione
+wartości retencji pozostają zachowane. Stare kopie formatu 1 nie zyskują kodu
+i konfiguracji wstecznie. Pierwsza nowa kopia formatu 2 jest tworzona zgodnie
+z harmonogramem; można ją od razu wywołać przez `./ancore.sh backup`.
 
 Backup ustawia znacznik przerwy, odrzuca nowe żądania kodem 503 i czeka na
 zakończenie wcześniejszych operacji, pobrań i callbacków przez wspólną blokadę
@@ -209,7 +229,67 @@ archiwum; dla dużych instalacji przewidź okno serwisowe lub rozbudowę mechani
 Nie zapisuj w tym czasie danych dodatkowymi skryptami omijającymi HTTP.
 Kopia obejmuje dane zatwierdzone w Ancore, bez niezapisanych edycji i cache ONLYOFFICE.
 
-Po zamknięciu edytorów umieść archiwum i `.sha256` w skonfigurowanym katalogu kopii:
+### Samodzielne odzyskiwanie
+
+Uruchom z katalogu projektu:
+
+```sh
+./restore.sh
+```
+
+Skrypt odczytuje katalog kopii z `deploy/.env` (własny plik przez `--env-file`),
+a bez konfiguracji używa `deploy/backups` obok skryptu. Można skopiować sam
+`restore.sh` na nowy serwer z lokalnym Dockerem Linux i Compose:
+
+```sh
+sh restore.sh --backup-dir /srv/ancore-backups --target /srv/ancore-recovered
+```
+
+Na liście jest maksymalnie 10 najnowszych archiwów z plikami `.sha256`, od
+najnowszego. Niekompletne `.partial` są pomijane. Podaj numer kopii; `0` anuluje.
+Przed wyborem widoczna jest informacja o zastąpieniu działającej instalacji.
+Po wyborze nie ma kolejnych pytań:
+
+1. Skrypt sprawdza SHA-256, format i bezpieczne ścieżki archiwum. Rozpakowuje
+   bazę, pliki, zapisany kod, konfigurację i certyfikaty do osobnego katalogu
+   `restore-XXXXXXXX/application` pod `--target` (domyślnie `.recovery` obok skryptu).
+2. Buduje cztery obrazy z wybranego kodu i w razie potrzeby pobiera zapisany
+   obraz ONLYOFFICE. Sprawdza katalog zrzutu przez `pg_restore --list`.
+   Na tym etapie bieżąca aplikacja nadal działa. Potrzebny jest internet do
+   brakujących obrazów i zależności. Zainstalowany Python na hoście nie jest potrzebny.
+3. Zatrzymuje usługi tego projektu Compose. Tworzy komplet nowych wolumenów,
+   uruchamia świeży PostgreSQL z hasłami z kopii i odtwarza bazę oraz pliki.
+   Poprzednie wolumeny pozostają zachowane; nie są usuwane ani nadpisywane.
+4. Uruchamia wszystkie usługi i czeka na healthchecki. Dopiero ich powodzenie
+   daje komunikat o odzyskaniu, adres aplikacji i katalog odtworzonej instalacji.
+
+Skrypt jest samodzielny: ma własną walidację i cykl odzyskiwania, nie wywołuje
+`ancore.sh`, `setup.sh`, konfiguratora ani `deploy/cli/runtime.sh`.
+Jednoczesne odzyskiwanie tego samego projektu blokuje pomocniczy, zatrzymany
+kontener `<projekt>-recovery-lock`, usuwany po zakończeniu. Po `SIGKILL` trzeba
+sprawdzić brak trwającej operacji przed usunięciem pozostawionego kontenera.
+
+Po sukcesie obsługuj instalację przez `ancore.sh` w pokazanym katalogu
+`application`. Plik `deploy/compose.recovery.yaml` utrwala nazwy nowych wolumenów
+i jest automatycznie uwzględniany przez polecenia utrzymania tej instalacji.
+Nie używaj starego katalogu do jej ponownego uruchamiania. Nowy scheduler
+kontynuuje kopie co 24 godziny z retencją 10; pierwsza kopia po odzyskaniu
+powstanie po 24 godzinach. Rozpakowany pakiet w katalogu `payload` można po
+sprawdzeniu odzyskanej instalacji usunąć, zachowując katalog `application`.
+
+Błąd sprawdzenia lub budowania nie zatrzymuje bieżących usług. Błąd po rozpoczęciu
+odtwarzania zatrzymuje usługi aplikacji i zachowuje pliki diagnostyczne oraz stare
+wolumeny. Można ponownie uruchomić `restore.sh` i wybrać inną kopię. Ustawienia
+adresu i nasłuchu są odtwarzane z kopii; przy zmianie serwera należy zapewnić
+odpowiedni adres, DNS i zewnętrzny proxy. Odzyskiwanie nie instaluje Dockera
+ani nie naprawia systemu operacyjnego hosta.
+
+### Starsze kopie i odtwarzanie samych danych
+
+Dotychczasowe polecenie pozostaje dostępne dla archiwów formatu 1 i 2.
+Wymaga już przygotowanej instalacji z kodem zgodnym z kopią i zachowaną
+konfiguracją. Po zamknięciu edytorów umieść archiwum i `.sha256`
+w skonfigurowanym katalogu kopii:
 
 ```sh
 ./ancore.sh restore /srv/ancore-backups/ancore-NAZWA.tar.gz --yes
@@ -229,6 +309,7 @@ Healthcheck backupu sygnalizuje brak aktualnej kopii; Docker sam nie wysyła pow
 ## Pliki i zgodność
 
 - `ancore.sh` — wspólne publiczne polecenia instalacji i utrzymania.
+- `restore.sh` — samodzielny wybór kopii i pełne odzyskiwanie na nowych wolumenach.
 - `deploy/cli/runtime.sh` — jedna implementacja Compose, konfiguracji, budowania i odtwarzania.
 - `deploy/cli/setup.sh` — pytania i podsumowanie konfiguratora terminalowego.
 - `deploy/cli/configure.py` — walidacja i zapis konfiguracji; instalator uruchamia go w Dockerze.
@@ -247,7 +328,7 @@ Konfigurator rozpoznaje `deploy/.env.production` i przenosi jego ustawienia do
 ## Weryfikacja pakietu
 
 ```sh
-.venv/bin/python manage.py test core.test_production_installer core.test_production core.test_project_layout
+.venv/bin/python manage.py test core.test_backup_recovery core.test_production_installer core.test_production core.test_project_layout
 .venv/bin/python scripts/update_code_index.py --check
 ./ancore.sh doctor
 ```
