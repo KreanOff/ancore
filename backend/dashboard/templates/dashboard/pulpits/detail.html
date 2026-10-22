@@ -5,6 +5,7 @@
 <div class="dashboard-page dashboard-overview pulpits-page" data-pulpits-page data-pulpit-list-url="{{ return_url|default:dashboard.url }}">
     <header class="tasks-topbar tasks-topbar--project-directory pulpit-topbar">
         <div class="tasks-titlebar-left">
+            {% include 'core/emoji.html' with emoji=dashboard.icon_emoji art=dashboard.icon_emoji_art class_name="nav-icon" only %}
             <h1 class="tasks-topbar-title" title="{{ dashboard.name }}">{{ dashboard.name }}</h1>
         </div>
         <div class="tasks-titlebar-actions">

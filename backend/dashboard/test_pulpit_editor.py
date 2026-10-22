@@ -33,11 +33,11 @@ class PulpitEditorTests(TestCase):
     def prefixes(self):
         return ['/dashboards/', scoped_workplace_app_path(self.workspace, 'dashboards')]
 
-    def test_management_name_opens_gadgets_and_each_editor_section_has_its_own_sidebar(self):
+    def test_management_name_opens_settings_and_each_editor_section_has_its_own_sidebar(self):
         scoped = scoped_workplace_app_path(self.workspace, 'dashboards')
         for prefix in self.prefixes():
             response = self.client.get(prefix + 'manage/', {'q': 'Przegląd', 'visibility': 'workspace'})
-            self.assertContains(response, f'href="{scoped}manage/{self.dashboard.slug}/gadgets/?q=Przegl%C4%85d&amp;visibility=workspace" title="{self.dashboard.name}"')
+            self.assertContains(response, f'href="{scoped}manage/{self.dashboard.slug}/edit/?q=Przegl%C4%85d&amp;visibility=workspace" title="{self.dashboard.name}"')
             self.assertFalse(response.context['pulpit_editor_mode'])
             for management in [False, True]:
                 for suffix, key in [('gadgets/', 'gadgets'), ('access/', 'access'), ('edit/', 'settings')]:
@@ -61,7 +61,8 @@ class PulpitEditorTests(TestCase):
             for management in [False, True]:
                 root = prefix + ('manage/' if management else '') + f'{self.dashboard.slug}/'
                 response = self.client.get(root + 'edit/')
-                self.assertEqual(list(response.context['form'].fields), ['name', 'description'])
+                self.assertEqual(list(response.context['form'].fields),
+                                 ['name', 'description', 'icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval'])
                 response = self.client.get(root + 'access/')
                 self.assertEqual(list(response.context['form'].fields), ['visibility', 'shared_with'])
                 self.dashboard.refresh_from_db()

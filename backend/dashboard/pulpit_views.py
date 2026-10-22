@@ -75,7 +75,7 @@ def search(request):
     for dashboard in results:
         dashboard.url = dashboard_url(request, dashboard)
     if getattr(request, '_react_api', False):
-        return JsonResponse({'results': [{'id': str(item.pk), 'name': item.name, 'url': item.url,
+        return JsonResponse({'results': [{'id': str(item.pk), 'name': item.name, 'url': item.url, 'icon': item.icon, 'emoji': item.icon_emoji, 'emoji_art': item.icon_emoji_art,
                                          'detail': item.get_visibility_display()} for item in results],
                              'count': len(results), 'has_more': has_more})
     response = JsonResponse({
@@ -232,8 +232,7 @@ def edit(request, pk=None, management=False):
     item = source if source else Dashboard(owner=workspace_owner(request), workplace=request.workplace, created_by=request.user)
     editing_settings = source is not None
     form_type = DashboardSettingsForm if editing_settings else DashboardForm
-    form = form_type(request.POST if request.method == 'POST' else None, instance=item,
-                     **({} if editing_settings else {'request': request}))
+    form = form_type(request.POST if request.method == 'POST' else None, instance=item, request=request)
     if request.method == 'POST' and form.is_valid():
         dashboard = form.save(commit=False)
         dashboard.revision += 1
@@ -241,7 +240,12 @@ def edit(request, pk=None, management=False):
         form.save_m2m()
         if not editing_settings:
             dashboard.favorited_by.add(request.user)
-        return saved_response(request, management_url(request) if management else dashboard_url(request, dashboard))
+        target = management_url(request) if management else dashboard_url(request, dashboard)
+        if editing_settings and getattr(request, '_react_api', False):
+            from .pulpit_frontend import pulpit_form_payload
+            return JsonResponse({'redirect': target, 'form': pulpit_form_payload(
+                DashboardSettingsForm(instance=dashboard, request=request))})
+        return saved_response(request, target)
     if source:
         return render(request, 'dashboard/pulpits/edit.html', {
             **editor_navigation_context(request, source, 'settings', management),

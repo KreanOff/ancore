@@ -85,7 +85,7 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
         return;
       const url = new URL(link.href, location.href);
       const pulpit =
-        /^\/(?:workplaces\/[^/]+\/)?dashboards\/(?:manage\/)?[-a-zA-Z0-9_]+\/(?:edit|access|gadgets)\/$/.test(
+        /^\/(?:workplaces\/[^/]+\/)?dashboards\/(?:manage\/)?[-a-zA-Z0-9_]+\/(?:edit|access)\/$/.test(
           url.pathname,
         );
       const filter = /^\/(?:workplaces\/[^/]+\/)?filters\/(?:manage\/)?\d+\/edit\/$/.test(

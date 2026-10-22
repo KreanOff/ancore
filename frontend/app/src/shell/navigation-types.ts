@@ -1,4 +1,5 @@
 import type { AvatarData } from '../shared/Avatar';
+import type { EmojiArt } from '../shared/Emoji';
 import type { Page } from '../shared/page';
 export interface Link {
   key: string;
@@ -12,6 +13,9 @@ export interface CollectionRow {
   name: string;
   url: string;
   avatar?: AvatarData;
+  icon?: string;
+  emoji?: string;
+  emoji_art?: EmojiArt;
   active: boolean;
   favorite: boolean;
   favorite_url: string;
@@ -53,6 +57,9 @@ export interface ShellData {
   favorite_reorder_url: string;
   collections: Collection[];
   default_pulpit_url: string;
+  default_pulpit_icon?: string;
+  default_pulpit_emoji?: string;
+  default_pulpit_emoji_art?: EmojiArt;
   default_pulpit_active: boolean;
   filter_search_active: boolean;
   editor: {

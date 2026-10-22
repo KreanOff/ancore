@@ -1,6 +1,7 @@
 import { type DragEvent, useEffect, useRef, useState } from 'react';
 import { FormDialog } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
+import { Emoji } from '../shared/Emoji';
 import { Dropdown } from '../shared/Dropdown';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
@@ -10,27 +11,15 @@ import { DashboardActions, confirmDelete } from './Actions';
 import Catalog, { readCatalog } from './Catalog';
 import GadgetCard, { LayoutPreview } from './Gadget';
 import type { DetailData, Gadget, Layout } from './types';
-import { SettingsPage } from './SettingsDialog';
+import { startAutoRefresh } from './autoRefresh';
 
 export default function DetailPage(props: PageProps) {
-  return (props.initial.data as DetailData).editing ? (
-    <SettingsPage {...props} />
-  ) : (
-    <DashboardView {...props} />
-  );
+  return <DashboardView {...props} />;
 }
 
-export function DashboardView(
-  props: PageProps & {
-    embedded?: boolean;
-    hostId?: string;
-    onStateChange?: (pending: boolean) => void;
-    onChanged?: () => void;
-  },
-) {
+export function DashboardView(props: PageProps) {
   const { initial, csrfToken } = props;
   const [data, setData] = useState(initial.data as DetailData),
-    [dialogReady, setDialogReady] = useState(!props.embedded),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
@@ -48,20 +37,26 @@ export function DashboardView(
   useDirtyGuard(false, busy);
   const locked = busy || actions.busy || !!actions.modal,
     dashboard = data.dashboard;
+  const automaticRefresh = useRef<() => Promise<void>>();
+  automaticRefresh.current = async () => {
+    if (
+      pending.current ||
+      locked ||
+      dragId.current !== null ||
+      document.querySelector('.tasks-modal.is-open') ||
+      !navigator.onLine
+    )
+      return;
+    await refresh(true);
+  };
+  useEffect(() => {
+    if (data.editing) return;
+    return startAutoRefresh(dashboard.refresh_interval, () => automaticRefresh.current!());
+  }, [data.editing, dashboard.refresh_interval]);
   useEffect(() => () => life.current.abort(), []);
-  // On a direct gadget URL, open the child after the settings panel owns focus.
-  useEffect(() => setDialogReady(true), []);
-  useEffect(
-    () => props.onStateChange?.(busy || actions.busy || !!actions.modal),
-    [busy, actions.busy, actions.modal, props.onStateChange],
-  );
   useEffect(() => {
-    if (data.dashboard.revision !== (initial.data as DetailData).dashboard.revision)
-      props.onChanged?.();
-  }, [data.dashboard.revision, initial.data, props.onChanged]);
-  useEffect(() => {
-    if (!props.embedded) document.title = `${data.dashboard.name} | ancore`;
-  }, [data.dashboard.name, props.embedded]);
+    document.title = `${data.dashboard.name} | ancore`;
+  }, [data.dashboard.name]);
   useEffect(() => {
     try {
       sessionStorage.setItem(catalogKey, JSON.stringify(catalog));
@@ -103,14 +98,14 @@ export function DashboardView(
     if (page.type !== 'pulpit-detail') throw new Error('Nie udało się odświeżyć pulpitu.');
     if (!life.current.signal.aborted) setData(page.data as DetailData);
   }
-  async function refresh() {
+  async function refresh(automatic = false) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true);
     setError('');
     try {
       await load(data.list_url);
-      if (!life.current.signal.aborted) setNotice('Pulpit odświeżony.');
+      if (!life.current.signal.aborted && !automatic) setNotice('Pulpit odświeżony.');
     } catch (exception) {
       if (!life.current.signal.aborted) setError(errorMessage(exception));
     } finally {
@@ -231,7 +226,6 @@ export function DashboardView(
         life.current.signal,
         new FormData(),
       );
-      props.onChanged?.();
       await load(result.redirect);
       if (!life.current.signal.aborted) setNotice('Gadżet usunięty.');
     } catch (exception) {
@@ -383,6 +377,7 @@ export function DashboardView(
     >
       <header className="tasks-topbar tasks-topbar--project-directory pulpit-topbar">
         <div className="tasks-titlebar-left">
+          <Emoji value={dashboard.emoji} art={dashboard.emoji_art} className="nav-icon" />
           <h1 className="tasks-topbar-title" title={dashboard.name}>
             {dashboard.name}
           </h1>
@@ -435,17 +430,15 @@ export function DashboardView(
                   }
                 </Dropdown>
               </div>
-              {!props.embedded ? (
-                <a
-                  className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                  href={dashboard.url}
-                  aria-label="Gotowe — wróć do pulpitu"
-                >
-                  <Icon name="check" />
-                  <span>Gotowe</span>
-                  <span className="u-sr-only"> · Wróć do pulpitu</span>
-                </a>
-              ) : null}
+              <a
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                href={dashboard.url}
+                aria-label="Gotowe — wróć do pulpitu"
+              >
+                <Icon name="check" />
+                <span>Gotowe</span>
+                <span className="u-sr-only"> · Wróć do pulpitu</span>
+              </a>
             </>
           ) : (
             <>
@@ -505,22 +498,13 @@ export function DashboardView(
       ) : (
         canvas
       )}
-      {actions.modal && dialogReady ? (
+      {actions.modal ? (
         <FormDialog
           data={actions.modal}
           api={initial.api_url}
           csrfToken={csrfToken}
-          hostId={props.hostId}
           onClose={actions.close}
-          onSaved={
-            props.embedded
-              ? async () => {
-                  props.onChanged?.();
-                  await load(data.editor_url);
-                  actions.close();
-                }
-              : navigate
-          }
+          onSaved={navigate}
         />
       ) : null}
     </div>

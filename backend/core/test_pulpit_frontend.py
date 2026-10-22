@@ -125,7 +125,8 @@ class ReactPulpitTests(TestCase):
     def test_editor_settings_access_and_gadget_forms_are_separate(self):
         prefix = self.path(f'manage/{self.dashboard.slug}/')
         settings = self.get(prefix + 'edit/?q=Plan&page=2').json()['data']
-        self.assertEqual([row['name'] for row in settings['form']['fields']], ['name', 'description'])
+        self.assertEqual([row['name'] for row in settings['form']['fields']],
+                         ['name', 'description', 'icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval'])
         self.assertIn('page=2', settings['return_url'])
         access = self.get(prefix + 'access/').json()['data']
         self.assertEqual([row['name'] for row in access['form']['fields']], ['visibility', 'shared_with'])

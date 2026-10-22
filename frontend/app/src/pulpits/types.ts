@@ -1,5 +1,6 @@
 import type { FormDialogData, FormSchema } from '../forms/FormDialog';
 import type { PaginationData } from '../shared/Pagination';
+import type { EmojiArt } from '../shared/Emoji';
 export type Layout = 'single' | 'equal' | 'left' | 'right' | 'three';
 export type SettingsTab = 'gadgets' | 'access' | 'settings';
 export interface EditorTab {
@@ -14,6 +15,10 @@ export interface Dashboard {
   slug: string;
   name: string;
   description: string;
+  icon: string;
+  emoji: string;
+  emoji_art: EmojiArt;
+  refresh_interval: number;
   author: string;
   visibility: string;
   visibility_label: string;

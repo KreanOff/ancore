@@ -1,5 +1,6 @@
 """Personal dashboard navigation, rebuilt against current access on every page."""
 from django.db.models import Case, Exists, OuterRef, When
+from core.emoji import emoji_payload
 
 from workplaces.services import workspace_owner
 
@@ -35,5 +36,10 @@ def sidebar_dashboards(request, limit=6):
             ).exists())
         ))
     ))
+    default_icon = Dashboard.objects.filter(owner=workspace_owner(request), workplace=request.workplace,
+        created_by=request.user, is_default=True).values_list('icon', flat=True).first() or Dashboard.Icon.DASHBOARD
+    default_emoji = emoji_payload(default_icon)
     return {'navigation_starred_dashboards': starred, 'navigation_recent_dashboards': recent,
+            'default_dashboard_icon': default_icon, 'default_dashboard_emoji': default_emoji['value'],
+            'default_dashboard_emoji_art': default_emoji['art'],
             'default_dashboard_url': app_url(request, 'default/'), 'default_dashboard_is_current': default_is_current}

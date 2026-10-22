@@ -1,10 +1,12 @@
 from django import forms
 
 from accounts.widgets import UserSelectMultiple
+from core.widgets import EmojiPickerInput, VisualSelect
 from spaces.services import visible_spaces
-from spaces.widgets import SpaceSelect
+from spaces.widgets import SpaceSelect, SpaceSelectMultiple
 from workplaces.services import workplace_people
 from .models import Dashboard, DashboardGadget
+from .filters import visible_filters
 from .pulpits import AVAILABLE_GADGET_KINDS, GADGET_CATALOG, GADGET_ICONS
 
 
@@ -59,25 +61,85 @@ class DashboardAccessForm(forms.ModelForm):
         return data
 
 
-class DashboardForm(DashboardAccessForm):
+PREFERENCE_FIELDS = ['icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval']
+PREFERENCE_WIDGETS = {
+    'icon': EmojiPickerInput,
+    'data_scope': VisualSelect(visuals={
+        Dashboard.DataScope.WORKSPACE: {'icon': 'building-2'},
+        Dashboard.DataScope.SPACES: {'icon': 'layers'},
+        Dashboard.DataScope.FILTER: {'icon': 'filter'},
+    }),
+    'scope_spaces': SpaceSelectMultiple(attrs={'data-ancore-custom-select-icon': 'layers'}),
+    'scope_filter': VisualSelect(attrs={'data-ancore-custom-select-icon': 'filter'}, visuals={}),
+    'refresh_interval': VisualSelect(visuals={
+        str(value): {'icon': 'circle-slash' if value == 0 else 'refresh-cw'}
+        for value in Dashboard.RefreshInterval.values
+    }),
+}
+
+
+def configure_preferences(form, request):
+    form.fields['scope_spaces'].queryset = visible_spaces(request)
+    form.fields['scope_spaces'].label_from_instance = lambda space: space.name
+    form.fields['scope_filter'].queryset = visible_filters(request)
+    form.fields['scope_filter'].empty_label = 'Wybierz filtr'
+    form.fields['data_scope'].help_text = 'Domyślne źródło danych dla gadżetów bez własnej Przestrzeni. Dostęp zależy od uprawnień oglądającego.'
+    form.fields['refresh_interval'].help_text = 'Odświeża otwarty podgląd pulpitu. Wstrzymane podczas edycji i w nieaktywnej karcie.'
+    for name in ('icon', 'data_scope', 'refresh_interval'):
+        form.fields[name].required = False
+        if name != 'icon':
+            form.fields[name].choices = type(form.instance)._meta.get_field(name).choices
+    style_fields(form)
+
+
+class DashboardPreferencesMixin:
+    def clean(self):
+        data = super().clean()
+        # Older clients submit only name/description. Keep their existing preferences.
+        for name in ('icon', 'data_scope', 'refresh_interval'):
+            if data.get(name) in (None, '') and name not in self.errors:
+                data[name] = getattr(self.instance, name)
+        if self.instance.pk and 'data_scope' not in self.data:
+            data['scope_spaces'] = self.instance.scope_spaces.all()
+            data['scope_filter'] = self.instance.scope_filter
+        elif data.get('data_scope') == Dashboard.DataScope.SPACES:
+            if not data.get('scope_spaces'):
+                self.add_error('scope_spaces', 'Wybierz co najmniej jedną Przestrzeń.')
+            data['scope_filter'] = None
+        elif data.get('data_scope') == Dashboard.DataScope.FILTER:
+            if not data.get('scope_filter'):
+                self.add_error('scope_filter', 'Wybierz zapisany filtr.')
+            data['scope_spaces'] = self.fields['scope_spaces'].queryset.none()
+        else:
+            data['scope_spaces'] = self.fields['scope_spaces'].queryset.none()
+            data['scope_filter'] = None
+        return data
+
+
+class DashboardForm(DashboardPreferencesMixin, DashboardAccessForm):
     class Meta(DashboardAccessForm.Meta):
-        fields = ['name', 'description', 'visibility', 'shared_with', 'layout']
+        fields = ['name', 'description', *PREFERENCE_FIELDS, 'visibility', 'shared_with', 'layout']
         widgets = {
             **DashboardAccessForm.Meta.widgets,
+            **PREFERENCE_WIDGETS,
             'description': forms.Textarea(attrs={'rows': 3}),
             'layout': DashboardLayoutSelect,
         }
 
+    def __init__(self, *args, request, **kwargs):
+        super().__init__(*args, request=request, **kwargs)
+        configure_preferences(self, request)
 
-class DashboardSettingsForm(forms.ModelForm):
+
+class DashboardSettingsForm(DashboardPreferencesMixin, forms.ModelForm):
     class Meta:
         model = Dashboard
-        fields = ['name', 'description']
-        widgets = {'description': forms.Textarea(attrs={'rows': 3})}
+        fields = ['name', 'description', *PREFERENCE_FIELDS]
+        widgets = {**PREFERENCE_WIDGETS, 'description': forms.Textarea(attrs={'rows': 3})}
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
-        style_fields(self)
+        configure_preferences(self, request)
 
 
 class GadgetKindSelect(forms.Select):
@@ -101,7 +163,8 @@ class GadgetForm(forms.ModelForm):
         self.fields['kind'].choices = [('', '---------'), *[(kind, kind.label) for kind in AVAILABLE_GADGET_KINDS]]
         self.catalog = GADGET_CATALOG
         self.fields['space'].queryset = visible_spaces(request)
-        self.fields['space'].empty_label = 'Wszystkie dostępne przestrzenie'
+        self.fields['space'].empty_label = 'Zakres danych pulpitu'
+        self.fields['space'].help_text = 'Puste pole używa zakresu danych pulpitu. Wybrana Przestrzeń zastępuje ten zakres.'
         self.fields['space'].label_from_instance = lambda space: space.name
         self.fields['title'].help_text = 'Puste pole używa nazwy gadżetu.'
         self.fields['kind'].help_text = 'Postęp pracy pokazuje odsetek zamkniętych zadań i liczby zadań według statusu.'

@@ -47,6 +47,7 @@ def shell_payload(request, context=None):
                 'description': f'Przestrzeń {item.get_kind_display().lower()}', 'detail': item.get_management_display()}
     def pulpit_row(item):
         return {'id': str(item.pk), 'name': item.name, 'url': item.url, 'active': bool(item.is_current),
+                'icon': item.icon, 'emoji': item.icon_emoji, 'emoji_art': item.icon_emoji_art,
                 'favorite': bool(item.is_favorite), 'favorite_url': item.favorite_url,
                 'actions': [{'label': label, 'icon': icon, 'url': getattr(item, field)} for label, icon, field in (
                     ('Gadżety i układ', 'layout-dashboard', 'gadgets_url'), ('Dostępy', 'users', 'access_url'),
@@ -86,6 +87,9 @@ def shell_payload(request, context=None):
         'favorite_toggle_url': reverse('workplaces:toggle-sidebar-favorite', args=[workplace.pk]) if workplace else '',
         'favorite_reorder_url': reverse('workplaces:reorder-sidebar-favorites', args=[workplace.pk]) if workplace else '',
         'collections': collections, 'default_pulpit_url': data.get('default_dashboard_url', reverse('home')),
+        'default_pulpit_icon': data.get('default_dashboard_icon', 'layout-dashboard'),
+        'default_pulpit_emoji': data.get('default_dashboard_emoji', 'layout-dashboard'),
+        'default_pulpit_emoji_art': data.get('default_dashboard_emoji_art'),
         'default_pulpit_active': bool(data.get('default_dashboard_is_current')),
         'filter_search_active': app in {'filters', 'workplace_filters'} and view == 'search',
         'editor': {'title': getattr(data.get('dashboard'), 'name', 'Edycja pulpitu'),

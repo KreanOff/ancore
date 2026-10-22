@@ -7,6 +7,11 @@
         const visibility = root.querySelector('[name="visibility"]');
         const sharing = root.querySelector('[data-pulpit-field="shared_with"]');
         if (sharing && visibility) sharing.hidden = visibility.value !== 'selected';
+        const scope = root.querySelector('[name="data_scope"]')?.value;
+        ['scope_spaces', 'scope_filter'].forEach(name => {
+            const field = root.querySelector(`[data-pulpit-field="${name}"]`);
+            if (field) field.hidden = scope !== (name === 'scope_spaces' ? 'spaces' : 'filter');
+        });
         const kindField = root.querySelector('[name="kind"]');
         if (!kindField) return;
         const kind = kindField.value;

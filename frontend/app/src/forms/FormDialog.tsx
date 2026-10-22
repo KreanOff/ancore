@@ -11,6 +11,7 @@ import {
 import { flushSync } from 'react-dom';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import EmojiPicker, { type EmojiPickerConfig } from '../shared/EmojiPicker';
 import { Modal } from '../shared/Modal';
 import { type PageProps, navigate, PageError, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
@@ -43,6 +44,7 @@ export interface Field {
     priority?: string;
     layout_preview?: string;
   }[];
+  emoji_picker?: EmojiPickerConfig;
 }
 interface Template {
   key: string;
@@ -99,14 +101,17 @@ export function FieldControl({
   field,
   bare = false,
   inline = false,
+  emojiVariant = 'field',
 }: {
   field: Field;
   bare?: boolean;
   inline?: boolean;
+  emojiVariant?: 'field' | 'avatar';
 }) {
   const host = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const root = host.current!;
+    if (field.type === 'emoji') return;
     if (!field.hidden && field.type === 'checkboxes') {
       const group = document.createElement('div');
       group.setAttribute('role', 'group');
@@ -197,8 +202,11 @@ export function FieldControl({
           template.id = `${field.id}_visual_${choice.value}`;
           const avatar = document.createElement('span');
           const data = choice.space_avatar;
-          avatar.className = data ? `space-avatar ${data.preset_class || ''}` : 'work-team-avatar';
           const url = choice.photo_url || data?.photo_url;
+          avatar.className = data
+            ? `profile-avatar space-avatar ${url ? 'has-photo' : `space-avatar-art ${data.preset_class || ''}`}`
+            : 'work-team-avatar';
+          avatar.setAttribute('aria-hidden', 'true');
           if (url) {
             const image = document.createElement('img');
             image.src = url;
@@ -273,7 +281,29 @@ export function FieldControl({
           {(field.label_required ?? field.required) ? <span aria-hidden="true"> *</span> : null}
         </label>
       ) : null}
-      <div ref={host} className="react-field-control" />
+      {field.type === 'emoji' && field.emoji_picker ? (
+        <div className="react-field-control">
+          <EmojiPicker
+            key={String(field.value)}
+            id={field.id}
+            name={field.name}
+            label={field.label}
+            value={String(field.value || '')}
+            config={field.emoji_picker}
+            variant={emojiVariant}
+            disabled={field.disabled}
+            invalid={!!field.errors.length}
+            describedBy={[
+              field.help_text ? `${field.id}_help` : '',
+              field.errors.length ? `${field.id}_error` : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          />
+        </div>
+      ) : (
+        <div ref={host} className="react-field-control" />
+      )}
       {field.help_text && !bare ? <small id={`${field.id}_help`}>{field.help_text}</small> : null}
       {field.errors.length ? (
         <div className="tasks-modal__errors" role="alert" id={`${field.id}_error`}>
@@ -301,55 +331,76 @@ export function PulpitFields({
   schema,
   visibility,
   kind,
+  dataScope,
 }: {
   schema: FormSchema;
   visibility: string;
   kind?: string;
+  dataScope?: string;
 }) {
-  return (
+  const icon = schema.fields.find((field) => field.name === 'icon' && field.type === 'emoji');
+  const fields = (
     <>
-      {schema.fields.map((field) => (
-        <div
-          key={field.name}
-          data-pulpit-field={field.name}
-          hidden={field.name === 'shared_with' && visibility !== 'selected'}
-        >
-          <FieldControl field={field} />
-          {field.name === 'kind' && schema.gadget_catalog ? (
-            <div className="pulpit-gadget-preview">
-              {kind ? (
-                schema.gadget_catalog
-                  .filter((entry) => entry.kind === kind)
-                  .map((entry) => (
-                    <div key={entry.kind}>
-                      <span className="pulpit-catalog-preview" aria-hidden="true">
-                        <Icon name={entry.icon} />
-                        <span className="pulpit-catalog-preview-lines">
-                          <span />
-                          <span />
-                          <span />
+      {schema.fields
+        .filter((field) => field !== icon)
+        .map((field) => (
+          <div
+            key={field.name}
+            data-pulpit-field={field.name}
+            hidden={
+              (field.name === 'shared_with' && visibility !== 'selected') ||
+              (field.name === 'scope_spaces' && dataScope !== 'spaces') ||
+              (field.name === 'scope_filter' && dataScope !== 'filter')
+            }
+          >
+            <FieldControl field={field} />
+            {field.name === 'kind' && schema.gadget_catalog ? (
+              <div className="pulpit-gadget-preview">
+                {kind ? (
+                  schema.gadget_catalog
+                    .filter((entry) => entry.kind === kind)
+                    .map((entry) => (
+                      <div key={entry.kind}>
+                        <span className="pulpit-catalog-preview" aria-hidden="true">
+                          <Icon name={entry.icon} />
+                          <span className="pulpit-catalog-preview-lines">
+                            <span />
+                            <span />
+                            <span />
+                          </span>
                         </span>
-                      </span>
-                      <div>
-                        <span>{entry.name}</span>
-                        <p>{entry.description}</p>
+                        <div>
+                          <span>{entry.name}</span>
+                          <p>{entry.description}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-              ) : (
-                <div>
-                  <img src={schema.illustration} alt="" width={1448} height={1086} />
+                    ))
+                ) : (
                   <div>
-                    <span>Wybierz gadżet</span>
-                    <p>Śledź postęp pracy swojego zespołu.</p>
+                    <img src={schema.illustration} alt="" width={1448} height={1086} />
+                    <div>
+                      <span>Wybierz gadżet</span>
+                      <p>Śledź postęp pracy swojego zespołu.</p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-        </div>
-      ))}
+                )}
+              </div>
+            ) : null}
+          </div>
+        ))}
     </>
+  );
+  return icon ? (
+    <>
+      <div className="profile-photo-control" data-pulpit-field="icon">
+        <FieldControl field={icon} bare emojiVariant="avatar" />
+      </div>
+      <div className="space-settings-fields documents-form resources-form pulpit-settings-fields">
+        {fields}
+      </div>
+    </>
+  ) : (
+    fields
   );
 }
 
@@ -378,6 +429,9 @@ export function EmbeddedForm({
     [pending, setPending] = useState(false),
     [dirty, setDirty] = useState(data.form.bound),
     [error, setError] = useState('');
+  const pulpitAvatar =
+    schema.layout === 'pulpit' &&
+    schema.fields.some((field) => field.name === 'icon' && field.type === 'emoji');
   const form = useRef<HTMLFormElement>(null),
     controller = useRef(new AbortController()),
     sending = useRef(false);
@@ -396,9 +450,12 @@ export function EmbeddedForm({
   const [kind, setKind] = useState(() =>
     String(schema.fields.find((field) => field.name === 'kind')?.value || ''),
   );
+  const [dataScope, setDataScope] = useState(() =>
+    String(schema.fields.find((field) => field.name === 'data_scope')?.value || 'workspace'),
+  );
   useLayoutEffect(() => {
     if (form.current) window.AncoreCustomSelect?.refresh(form.current);
-  }, [visibility, schema]);
+  }, [visibility, dataScope, schema]);
   useEffect(() => {
     const element = form.current!,
       changed = (event: Event) => {
@@ -407,6 +464,8 @@ export function EmbeddedForm({
         if (target instanceof HTMLSelectElement && target.name === 'visibility')
           setVisibility(target.value);
         if (target instanceof HTMLSelectElement && target.name === 'kind') setKind(target.value);
+        if (target instanceof HTMLSelectElement && target.name === 'data_scope')
+          setDataScope(target.value);
       };
     element.addEventListener('input', changed);
     element.addEventListener('change', changed);
@@ -463,6 +522,12 @@ export function EmbeddedForm({
           setKind(
             String(corrected.form.fields.find((field) => field.name === 'kind')?.value || ''),
           );
+          setDataScope(
+            String(
+              corrected.form.fields.find((field) => field.name === 'data_scope')?.value ||
+                'workspace',
+            ),
+          );
           const invalid = corrected.form.fields.find((field) => field.errors.length);
           const section = sections?.find((item) => item.fields.includes(invalid?.name || ''));
           if (section) onInvalidSection?.(section.id);
@@ -509,7 +574,7 @@ export function EmbeddedForm({
         <input type="hidden" key={name} name={name} value={value} />
       ))}
       <div
-        className={`tasks-modal__body ${schema.inline_avatar ? 'profile-edit-body space-settings-main' : schema.layout === 'tag' ? 'tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body' : schema.layout === 'filter' ? 'documents-form task-filter-form' : schema.layout === 'pulpit' ? 'documents-form pulpit-form' : 'documents-form resources-form'}`}
+        className={`tasks-modal__body ${schema.inline_avatar || pulpitAvatar ? 'profile-edit-body space-settings-main' : schema.layout === 'tag' ? 'tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body' : schema.layout === 'filter' ? 'documents-form task-filter-form' : schema.layout === 'pulpit' ? 'documents-form pulpit-form' : 'documents-form resources-form'}${pulpitAvatar ? ' pulpit-profile-form' : ''}`}
       >
         {error ? (
           <div className="tasks-modal__errors resources-form-wide" role="alert">
@@ -582,7 +647,12 @@ export function EmbeddedForm({
           </fieldset>
         ) : schema.layout === 'pulpit' ? (
           <fieldset className="resources-react-fieldset" disabled={pending}>
-            <PulpitFields schema={schema} visibility={visibility} kind={kind} />
+            <PulpitFields
+              schema={schema}
+              visibility={visibility}
+              kind={kind}
+              dataScope={dataScope}
+            />
           </fieldset>
         ) : schema.layout === 'filter' ? (
           <fieldset className="resources-react-fieldset task-filter-form" disabled={pending}>

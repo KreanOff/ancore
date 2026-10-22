@@ -2,11 +2,13 @@
 from django.db import transaction
 from django.db.models import Count, Q
 
-from spaces.services import visible_spaces
+from spaces.services import visible_items, visible_spaces
 from spaces.access import visible_to
 from spaces.models import SpaceTask
 from workplaces.services import scoped_workplace_app_path, workspace_owner
 from .models import Dashboard, DashboardGadget
+from .filters import visible_filters
+from .filter_search import QueryError, apply_query
 
 MAX_GADGETS = 24
 AVAILABLE_GADGET_KINDS = tuple(DashboardGadget.Kind)
@@ -68,7 +70,24 @@ def decorate_gadget(request, gadget):
     return gadget
 
 
-def gadget_data(request, gadget, tasks, spaces):
+def dashboard_data_scope(request, dashboard, tasks, spaces):
+    """Resolve defaults against the current viewer; unavailable sources never widen scope."""
+    if dashboard.data_scope == Dashboard.DataScope.SPACES:
+        selected = set(dashboard.scope_spaces.values_list('pk', flat=True)) & spaces
+        return tasks.filter(space_id__in=selected), 'Zadania w wybranych Przestrzeniach pulpitu', not selected
+    if dashboard.data_scope == Dashboard.DataScope.FILTER:
+        source = visible_filters(request).filter(pk=dashboard.scope_filter_id).first()
+        if source is not None:
+            try:
+                items, _ = apply_query(request, visible_items(request), source.query)
+                return tasks.filter(work_item__in=items.values('pk')), f'Zadania z filtra {source.name}', False
+            except QueryError:
+                pass
+        return tasks.none(), '', True
+    return tasks, 'Zadania we wszystkich przestrzeniach Workspace', False
+
+
+def gadget_data(request, gadget, tasks, spaces, scope=None):
     data = {'gadget': gadget, 'unavailable': False}
     # Match the existing Dashboard's progress card: count main tasks once.
     tasks = tasks.filter(parent__isnull=True)
@@ -79,6 +98,12 @@ def gadget_data(request, gadget, tasks, spaces):
             return data
         tasks = tasks.filter(work_item__space_id=gadget.space_id)
         caption = f'Zadania w przestrzeni {gadget.space.name}'
+    else:
+        tasks, caption, unavailable = scope or dashboard_data_scope(request, gadget.dashboard, tasks, spaces)
+        if unavailable:
+            data['unavailable'] = True
+            return data
+        tasks = tasks.filter(parent__isnull=True)
     if gadget.assignee == 'me':
         tasks = tasks.filter(assignee=request.user)
         caption += ' · Przypisane do oglądającego'
@@ -100,10 +125,11 @@ def detail_context(request, dashboard):
     decorate_dashboard(request, dashboard)
     tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
     spaces = set(visible_spaces(request).values_list('pk', flat=True))
+    scope = dashboard_data_scope(request, dashboard, tasks, spaces)
     columns = [[] for _ in range(dashboard.column_count)]
     for gadget in dashboard.gadgets.select_related('space'):
         decorate_gadget(request, gadget)
-        columns[min(gadget.column, dashboard.column_count - 1)].append(gadget_data(request, gadget, tasks, spaces))
+        columns[min(gadget.column, dashboard.column_count - 1)].append(gadget_data(request, gadget, tasks, spaces, scope))
     return {'dashboard': dashboard, 'columns': columns, 'dashboards_url': app_url(request),
             'layout_choices': Dashboard.Layout.choices,
             'add_gadget_url': app_url(request, f'{dashboard.slug}/gadgets/add/'),

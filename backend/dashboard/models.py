@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models, router, transaction
+from core.emoji import emoji_payload, validate_emoji
 
 from .identifiers import SLUG_MAX_LENGTH, unique_dashboard_slug
 
@@ -32,6 +33,31 @@ class SavedTaskFilter(models.Model):
 
 
 class Dashboard(models.Model):
+    class Icon(models.TextChoices):
+        DASHBOARD = 'layout-dashboard', 'Pulpit'
+        CHART = 'chart-no-axes-combined', 'Wykres'
+        PEOPLE = 'users', 'Zespół'
+        SPACES = 'layers', 'Przestrzenie'
+        CALENDAR = 'calendar-days', 'Kalendarz'
+        FOLDER = 'folder', 'Folder'
+        STAR = 'star', 'Gwiazdka'
+        DOCUMENT = 'file-text', 'Dokument'
+
+        @property
+        def emoji(self):
+            return emoji_payload(self.value)['value']
+
+    class DataScope(models.TextChoices):
+        WORKSPACE = 'workspace', 'Cały Workspace'
+        SPACES = 'spaces', 'Wybrane Przestrzenie'
+        FILTER = 'filter', 'Zapisany filtr'
+
+    class RefreshInterval(models.IntegerChoices):
+        OFF = 0, 'Wyłączone'
+        MINUTE = 60, 'Co minutę'
+        FIVE_MINUTES = 300, 'Co 5 minut'
+        FIFTEEN_MINUTES = 900, 'Co 15 minut'
+
     class Visibility(models.TextChoices):
         PRIVATE = 'private', 'Prywatny'
         SELECTED = 'selected', 'Wybrane osoby'
@@ -50,6 +76,12 @@ class Dashboard(models.Model):
     name = models.CharField('Nazwa', max_length=150)
     slug = models.SlugField(max_length=SLUG_MAX_LENGTH, editable=False)
     description = models.TextField('Opis', blank=True, max_length=2000)
+    icon = models.CharField('Ikona', max_length=32, validators=[validate_emoji], default=Icon.DASHBOARD)
+    data_scope = models.CharField('Zakres danych', max_length=12, choices=DataScope.choices, default=DataScope.WORKSPACE)
+    scope_spaces = models.ManyToManyField('spaces.Space', blank=True, related_name='scoped_dashboards', verbose_name='Przestrzenie')
+    scope_filter = models.ForeignKey(SavedTaskFilter, on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='scoped_dashboards', verbose_name='Zapisany filtr')
+    refresh_interval = models.PositiveSmallIntegerField('Automatyczne odświeżanie', choices=RefreshInterval.choices, default=RefreshInterval.OFF)
     visibility = models.CharField('Widoczność', max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
     shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='shared_dashboards')
     favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_dashboards')
@@ -84,6 +116,14 @@ class Dashboard(models.Model):
             if update_fields is not None:
                 kwargs['update_fields'] = set(update_fields) | {'slug'}
             return super().save(*args, **kwargs)
+
+    @property
+    def icon_emoji(self):
+        return emoji_payload(self.icon)['value']
+
+    @property
+    def icon_emoji_art(self):
+        return emoji_payload(self.icon)['art']
 
     @property
     def column_count(self):

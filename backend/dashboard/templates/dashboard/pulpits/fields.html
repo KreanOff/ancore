@@ -1,6 +1,6 @@
 {% if form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
 {% for field in form %}
-<div class="documents-field tasks-form-field" data-pulpit-field="{{ field.name }}">
+<div class="documents-field tasks-form-field" data-pulpit-field="{{ field.name }}"{% if field.name == 'scope_spaces' and form.data_scope.value != 'spaces' or field.name == 'scope_filter' and form.data_scope.value != 'filter' %} hidden{% endif %}>
     <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
     {% if field.name == 'layout' %}{% for value, label in field.field.choices %}<template id="{{ field.id_for_label }}_preview_{{ value }}">{% include 'dashboard/pulpits/layout_preview.html' with layout=value only %}</template>{% endfor %}{% endif %}
     {{ field }}

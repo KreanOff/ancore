@@ -2,10 +2,20 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import { Emoji, type EmojiArt } from '../shared/Emoji';
 import { pageRequest } from '../shared/page';
 import type { Collection } from './navigation-types';
 interface Results {
-  results: { id: string; name: string; url: string; avatar?: AvatarData; detail?: string }[];
+  results: {
+    id: string;
+    name: string;
+    url: string;
+    avatar?: AvatarData;
+    icon?: string;
+    emoji?: string;
+    emoji_art?: EmojiArt;
+    detail?: string;
+  }[];
   has_more: boolean;
 }
 export default function CollectionPicker({
@@ -192,7 +202,13 @@ export default function CollectionPicker({
             className="sidebar-workspace-option sidebar-space-picker__result"
             title={[row.name, row.detail].filter(Boolean).join(' · ')}
           >
-            {row.avatar ? <Avatar data={row.avatar} space /> : <Icon name={collection.icon} />}
+            {row.avatar ? (
+              <Avatar data={row.avatar} space />
+            ) : row.emoji ? (
+              <Emoji value={row.emoji} art={row.emoji_art} />
+            ) : (
+              <Icon name={row.icon || collection.icon} />
+            )}
             <span>{row.name}</span>
           </a>
         ))}

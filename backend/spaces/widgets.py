@@ -28,6 +28,10 @@ class SpaceSelect(VisualSelect):
         return {'template': 'spaces/avatar.html', 'context': {'space': space}} if space else {'icon': 'layers'}
 
 
+class SpaceSelectMultiple(SpaceSelect, forms.SelectMultiple):
+    """Use the same space avatars for multiple and single selection."""
+
+
 class TeamSelect(VisualSelect):
     def option_visual(self, value):
         team = getattr(value, 'instance', None)

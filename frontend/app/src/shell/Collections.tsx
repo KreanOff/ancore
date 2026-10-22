@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
+import { Emoji } from '../shared/Emoji';
 import type { Collection, CollectionRow, ShellData } from './navigation-types';
 interface Actions {
   openForm: (url: string) => void;
@@ -57,7 +58,11 @@ export function CollectionContents({
                 data-sidebar-source-item={flyout ? undefined : 'dashboard'}
                 draggable={!flyout}
               >
-                <Icon name="layout-dashboard" className="sidebar-subnav-icon" />
+                <Emoji
+                  value={data.default_pulpit_emoji || 'layout-dashboard'}
+                  art={data.default_pulpit_emoji_art}
+                  className="sidebar-subnav-icon"
+                />
                 <span>Pulpit domyślny</span>
               </a>
             ) : null}
@@ -134,8 +139,10 @@ function Row({
       >
         {row.avatar ? (
           <Avatar data={row.avatar} space className="sidebar-subnav-icon" />
+        ) : row.emoji ? (
+          <Emoji value={row.emoji} art={row.emoji_art} className="sidebar-subnav-icon" />
         ) : (
-          <Icon name={group.icon} className="sidebar-subnav-icon" />
+          <Icon name={row.icon || group.icon} className="sidebar-subnav-icon" />
         )}
         <span>{row.name}</span>
       </a>

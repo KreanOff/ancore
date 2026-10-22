@@ -53,6 +53,12 @@
 .pulpit-settings-modal .pulpit-topbar { flex-shrink: 0; }
 .pulpit-settings-modal .pulpit-form { align-content: start; }
 .pulpit-settings-modal .pulpit-form > .resources-react-fieldset { width: 100%; }
+.pulpit-settings-fields { align-content: start; grid-template-columns: minmax(0, 1fr); }
+.pulpit-settings-fields [data-pulpit-field] { min-width: 0; }
+.pulpit-settings-fields :is([data-pulpit-field="name"], [data-pulpit-field="description"]) { grid-column: 1 / -1; }
+@media (min-width: 1100px) {
+    .pulpit-settings-modal .pulpit-settings-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--app-modal-field-gap); }
+}
 .pulpit-layout-control { display: flex; align-items: center; gap: 8px; }
 .pulpit-layout-preview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; width: 44px; height: 32px; padding: 4px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--card-bg); flex-shrink: 0; }
 .pulpit-layout-preview > span { border-radius: 2px; background: rgba(var(--system-accent-rgb), .22); }

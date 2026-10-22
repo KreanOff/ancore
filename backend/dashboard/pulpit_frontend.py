@@ -11,6 +11,7 @@ def dashboard_payload(item):
         'author': item.created_by.get_full_name() or item.created_by.email,
         'visibility': item.visibility, 'visibility_label': item.get_visibility_display(),
         'layout': item.layout, 'revision': item.revision, 'is_default': item.is_default,
+        'icon': item.icon, 'emoji': item.icon_emoji, 'emoji_art': item.icon_emoji_art, 'refresh_interval': item.refresh_interval,
         'editable': item.can_edit, 'favorite': item.is_favorite,
         'gadget_count': getattr(item, 'gadget_count', 0),
         **{key: getattr(item, key) for key in ('url', 'edit_url', 'access_url', 'gadgets_url', 'delete_url', 'favorite_url')},

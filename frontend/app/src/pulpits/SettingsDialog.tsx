@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EmbeddedForm } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
 import { DashboardView } from './DetailPage';
-import type { DetailData, EditData, SettingsTab } from './types';
+import type { EditData, SettingsTab } from './types';
 
 export default function SettingsDialog({
   initial,
@@ -13,10 +13,8 @@ export default function SettingsDialog({
   onClose,
   hostId,
 }: PageProps & { onClose: (changed: boolean) => void; hostId?: string }) {
-  const initialData = initial.data as DetailData | EditData;
-  const [tab, setTab] = useState<SettingsTab>(
-    initial.type === 'pulpit-edit' ? (initialData as EditData).section : 'gadgets',
-  );
+  const initialData = initial.data as EditData;
+  const [tab, setTab] = useState<SettingsTab>(initialData.section);
   const [pages, setPages] = useState<Partial<Record<SettingsTab, Page>>>(() => ({
     [tab]: initial,
   }));
@@ -28,10 +26,10 @@ export default function SettingsDialog({
   const [attempt, setAttempt] = useState(0);
   const [life] = useState(() => new AbortController());
   const changed = useRef(false);
-  const reportChanged = useCallback(() => {
-    changed.current = true;
-  }, []);
-  const tabs = initialData.settings_tabs;
+  const tabs = useMemo(
+    () => initialData.settings_tabs.filter((item) => item.key !== 'gadgets'),
+    [initialData.settings_tabs],
+  );
   const dirty = Object.values(states).some((state) => state?.dirty);
   const pending = Object.values(states).some((state) => state?.pending);
   useEffect(() => () => life.abort(), [life]);
@@ -63,18 +61,9 @@ export default function SettingsDialog({
     setStates((previous) => ({ ...previous, access: { dirty, pending } }));
     if (dirty || pending) setNotice('');
   }, []);
-  const reportGadgets = useCallback((pending: boolean) => {
-    setStates((previous) => ({ ...previous, gadgets: { dirty: false, pending } }));
-  }, []);
   function saved() {
     changed.current = true;
-    // Settings and sharing also increment the dashboard revision used by the canvas.
-    setPages((previous) => ({ ...previous, gadgets: undefined }));
     setNotice('Zmiany zostały zapisane.');
-  }
-  function closeFrom(element: HTMLElement) {
-    const modal = element.closest<HTMLElement>('.tasks-modal');
-    if (modal) window.AncoreTaskModals?.close(modal);
   }
   return (
     <Modal
@@ -164,28 +153,7 @@ export default function SettingsDialog({
             hidden={tab !== item.key}
             className="pulpit-settings-panel"
           >
-            {page && item.key === 'gadgets' ? (
-              <>
-                <DashboardView
-                  initial={page}
-                  csrfToken={csrfToken}
-                  embedded
-                  hostId={hostId}
-                  onStateChange={reportGadgets}
-                  onChanged={reportChanged}
-                />
-                <footer className="tasks-modal__footer">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={pending}
-                    onClick={(event) => closeFrom(event.currentTarget)}
-                  >
-                    Gotowe
-                  </button>
-                </footer>
-              </>
-            ) : page && data ? (
+            {page && data ? (
               <EmbeddedForm
                 data={{
                   title: item.label,
@@ -207,7 +175,7 @@ export default function SettingsDialog({
 }
 
 export function SettingsPage({ initial, csrfToken }: PageProps) {
-  const data = initial.data as DetailData | EditData;
+  const data = initial.data as EditData;
   const [preview, setPreview] = useState<Page>();
   useEffect(() => {
     const controller = new AbortController();

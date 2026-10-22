@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { FormDialog } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
+import { Emoji } from '../shared/Emoji';
 import { Select } from '../shared/Select';
 import { Resize, useTableWidths } from '../shared/table';
 import { type PageProps, navigate } from '../shared/page';
@@ -278,8 +279,12 @@ export default function DirectoryPage(props: PageProps) {
                         data-column="name"
                         role="cell"
                       >
-                        <Icon name="layout-dashboard" className="pulpit-directory-icon" />
-                        <a href={data.management ? item.gadgets_url : item.url} title={item.name}>
+                        <Emoji
+                          value={item.emoji}
+                          art={item.emoji_art}
+                          className="pulpit-directory-icon"
+                        />
+                        <a href={data.management ? item.edit_url : item.url} title={item.name}>
                           {item.name}
                         </a>
                       </span>
