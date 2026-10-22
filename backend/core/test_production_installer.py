@@ -28,8 +28,13 @@ elif args[0] == 'info':
         sys.exit(1)
     print('linux')
 elif args[0] == 'run':
-    index = args.index('deploy/cli/configure.py')
+    index = next(index for index, argument in enumerate(args)
+                 if argument == 'deploy/cli/configure.py' or argument.endswith('/recovery.py'))
     sys.exit(subprocess.call([sys.executable, *args[index:]]))
+elif args[0] == 'create':
+    sys.exit(1 if os.getenv('INSTALLER_LOCKED') else 0)
+elif args[0] == 'rm':
+    pass
 elif args[0] == 'port':
     print(os.getenv('INSTALLER_WEB_PORTS', '80/tcp -> 0.0.0.0:8080'))
 elif args[0] == 'ps':
@@ -40,7 +45,7 @@ elif args[0] == 'compose':
     args.pop(0)
     if args[0] == 'version':
         sys.exit(1 if os.getenv('INSTALLER_STANDALONE') else 0)
-    while args[0] in ('--env-file', '-f'):
+    while args[0] in ('--env-file', '-f', '--project-name'):
         args = args[2:]
     if args[0] == 'up' and '--help' in args:
         print('--wait-timeout' if not os.getenv('INSTALLER_OLD_COMPOSE') else '--detach')
@@ -61,6 +66,10 @@ elif args[0] == 'compose':
         sys.exit(1 if os.getenv('INSTALLER_CONFIG_ERROR') else 0)
     elif args[0] == 'run' and 'restore' in args:
         sys.exit(1 if os.getenv('INSTALLER_RESTORE_ERROR') else 0)
+    elif args[0] == 'run' and 'restore-prepared' in args:
+        sys.exit(1 if os.getenv('INSTALLER_RESTORE_ERROR') else 0)
+    elif args[0] == 'run' and 'pg_restore' in args:
+        sys.exit(1 if os.getenv('INSTALLER_DUMP_ERROR') else 0)
 else:
     raise RuntimeError(args)
 '''
@@ -250,6 +259,15 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8089'")
         self.assertFalse(self.commands('build'))
         self.assertFalse(self.commands('up'))
+
+    def test_update_migrates_previous_default_retention_without_replacing_secrets(self):
+        self.prepare()
+        path = self.root / 'deploy/.env'
+        original = path.read_text()
+        path.write_text(original.replace("BACKUP_KEEP='10'", "BACKUP_KEEP='14'"))
+        result = self.run_script('ancore.sh', 'update')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(path.read_text(), original)
 
     def test_custom_configuration_and_legacy_python_command_use_same_runtime(self):
         custom = self.root.parent / 'custom configuration' / '.env'
