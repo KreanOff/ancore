@@ -1,10 +1,20 @@
-import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  type FormEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { flushSync } from 'react-dom';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { type PageProps, navigate, PageError, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
+import AvatarControl, { type AvatarForm } from '../shared/AvatarControl';
 
 export interface Field {
   name: string;
@@ -44,6 +54,8 @@ interface Template {
 }
 export interface FormSchema {
   layout?: 'filter' | 'tag' | 'pulpit';
+  inline_avatar?: boolean;
+  automatic_avatar?: AvatarData;
   gadget_catalog?: {
     kind: string;
     name: string;
@@ -64,7 +76,10 @@ export interface FormSchema {
   planning_summary?: { total: number; finished: number; points: number; unestimated: number };
   sprint_name?: string;
 }
+const SpaceSettingsDialog = lazy(() => import('../spaces/SettingsDialog'));
+
 export interface FormDialogData {
+  space_settings?: { space_url: string; tab: 'main' | 'members' | 'avatar' };
   title: string;
   action: string;
   return_url: string;
@@ -330,24 +345,24 @@ export function PulpitFields({
   );
 }
 
-export function FormDialog({
+export function EmbeddedForm({
   data,
   api,
   csrfToken,
-  onClose,
   onSaved,
-  hostId,
+  onStateChange,
+  openAvatar = false,
 }: {
+  openAvatar?: boolean;
   data: FormDialogData;
   api: string;
   csrfToken: string;
-  onClose: () => void;
   onSaved: (url: string) => void;
-  hostId?: string;
+  onStateChange: (dirty: boolean, pending: boolean) => void;
 }) {
   const [schema, setSchema] = useState(data.form),
     [pending, setPending] = useState(false),
-    [dirty, setDirty] = useState(false),
+    [dirty, setDirty] = useState(data.form.bound),
     [error, setError] = useState('');
   const form = useRef<HTMLFormElement>(null),
     controller = useRef(new AbortController()),
@@ -393,6 +408,11 @@ export function FormDialog({
     },
     [preview],
   );
+  useEffect(() => onStateChange(dirty, pending), [dirty, pending, onStateChange]);
+  useEffect(() => {
+    if (openAvatar)
+      form.current?.querySelector<HTMLButtonElement>('[data-workplace-avatar-open]')?.click();
+  }, [openAvatar]);
   async function save(event: FormEvent) {
     event.preventDefault();
     if (sending.current) return;
@@ -411,6 +431,7 @@ export function FormDialog({
       flushSync(() => {
         setDirty(false);
         setPending(false);
+        onStateChange(false, false);
       });
       await onSaved(result.redirect || result.url || data.return_url);
     } catch (exception) {
@@ -447,299 +468,354 @@ export function FormDialog({
     if (modal) window.AncoreTaskModals?.close(modal);
   }
   return (
-    <Modal
-      title={data.title}
-      hostId={hostId}
-      className={`work-modal ${schema.compact ? 'app-modal-panel--compact' : ''} ${schema.layout === 'tag' ? 'tasks-project-modal tasks-project-edit-modal' : ''}`}
-      dirty={dirty}
-      pending={pending}
-      onClose={onClose}
+    <form
+      ref={form}
+      id={
+        schema.inline_avatar
+          ? 'space-settings-form'
+          : schema.layout === 'tag'
+            ? 'tag-create-form'
+            : undefined
+      }
+      className="tasks-modal__form"
+      onSubmit={save}
+      encType="multipart/form-data"
+      aria-busy={pending}
     >
-      <form
-        ref={form}
-        id={schema.layout === 'tag' ? 'tag-create-form' : undefined}
-        className="tasks-modal__form"
-        onSubmit={save}
-        encType="multipart/form-data"
-        aria-busy={pending}
+      {Object.entries(data.values || {}).map(([name, value]) => (
+        <input type="hidden" key={name} name={name} value={value} />
+      ))}
+      <div
+        className={`tasks-modal__body ${schema.inline_avatar ? 'profile-edit-body space-settings-main' : schema.layout === 'tag' ? 'tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body' : schema.layout === 'filter' ? 'documents-form task-filter-form' : schema.layout === 'pulpit' ? 'documents-form pulpit-form' : 'documents-form resources-form'}`}
       >
-        {Object.entries(data.values || {}).map(([name, value]) => (
-          <input type="hidden" key={name} name={name} value={value} />
-        ))}
-        <div
-          className={`tasks-modal__body ${schema.layout === 'tag' ? 'tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body' : schema.layout === 'filter' ? 'documents-form task-filter-form' : schema.layout === 'pulpit' ? 'documents-form pulpit-form' : 'documents-form resources-form'}`}
-        >
-          {error ? (
-            <div className="tasks-modal__errors resources-form-wide" role="alert">
-              {error}
-            </div>
-          ) : null}
-          {schema.errors.length ? (
-            <div className="tasks-modal__errors resources-form-wide" role="alert">
-              {schema.errors.map((message, index) => (
-                <p key={index}>{message}</p>
-              ))}
-            </div>
-          ) : null}
-          {schema.planning_summary ? (
-            <div className="work-sprint-preview resources-form-wide">
-              <p>{schema.sprint_name}</p>
-              <span>
-                {schema.planning_summary.total} zadań · {schema.planning_summary.finished}{' '}
-                ukończonych · {schema.planning_summary.points} pkt
-              </span>
-              {schema.planning_summary.unestimated ? (
-                <p>{schema.planning_summary.unestimated} zadań bez estymacji</p>
-              ) : null}
-            </div>
-          ) : null}
-          {schema.layout === 'tag' ? (
-            <fieldset className="resources-react-fieldset" disabled={pending}>
+        {error ? (
+          <div className="tasks-modal__errors resources-form-wide" role="alert">
+            {error}
+          </div>
+        ) : null}
+        {schema.errors.length ? (
+          <div className="tasks-modal__errors resources-form-wide" role="alert">
+            {schema.errors.map((message, index) => (
+              <p key={index}>{message}</p>
+            ))}
+          </div>
+        ) : null}
+        {schema.planning_summary ? (
+          <div className="work-sprint-preview resources-form-wide">
+            <p>{schema.sprint_name}</p>
+            <span>
+              {schema.planning_summary.total} zadań · {schema.planning_summary.finished} ukończonych
+              · {schema.planning_summary.points} pkt
+            </span>
+            {schema.planning_summary.unestimated ? (
+              <p>{schema.planning_summary.unestimated} zadań bez estymacji</p>
+            ) : null}
+          </div>
+        ) : null}
+        {schema.inline_avatar ? (
+          <fieldset className="resources-react-fieldset" disabled={pending}>
+            <AvatarControl schema={schema as AvatarForm} formId="space-settings-form" space />
+            <div className="space-settings-fields documents-form resources-form">
+              <FormFields
+                schema={schema}
+                exclude={['avatar', 'avatar_photo', 'avatar_photo_crop', 'avatar_photo_remove']}
+              />
               {schema.fields
-                .filter((field) => ['name', 'description'].includes(field.name))
-                .map((field) => (
-                  <FieldControl key={field.name} field={field} />
+                .filter((field) => field.name.startsWith('avatar'))
+                .flatMap((field) => field.errors)
+                .map((message, index) => (
+                  <p key={index} className="tasks-modal__errors resources-form-wide" role="alert">
+                    {message}
+                  </p>
                 ))}
-              <section className="tasks-tag-parameters" aria-label="Parametry tagu">
-                <div className="tasks-tag-fields">
-                  {[
-                    ['category', 'status', 'color', 'icon', 'priority', 'scope'],
-                    ['owner_label', 'related_tags'],
-                    ['usage_notes', 'automation_rules'],
-                  ].map((names, index) => (
-                    <div className="tasks-tag-field-group" key={index}>
-                      <div className="tasks-tag-field-grid">
-                        {names
-                          .map((name) => schema.fields.find((field) => field.name === name))
-                          .map((field) =>
-                            field ? <FieldControl key={field.name} field={field} /> : null,
-                          )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </fieldset>
-          ) : schema.layout === 'pulpit' ? (
-            <fieldset className="resources-react-fieldset" disabled={pending}>
-              <PulpitFields schema={schema} visibility={visibility} kind={kind} />
-            </fieldset>
-          ) : schema.layout === 'filter' ? (
-            <fieldset className="resources-react-fieldset task-filter-form" disabled={pending}>
-              {schema.fields.map((field) => (
-                <div
-                  key={field.name}
-                  className="react-field-slot"
-                  hidden={field.name === 'shared_with' && visibility !== 'selected'}
-                >
-                  <FieldControl field={field} />
-                </div>
-              ))}
-            </fieldset>
-          ) : schema.templates ? (
-            <>
-              <input type="hidden" name="kind" value={template?.kind || ''} />
-              <input type="hidden" name="template" value={template?.key || ''} />
-              <section className="work-template-picker resources-form-wide" hidden={!!template}>
-                <p className="work-caption">Krok 1 z 2 · Szablon przestrzeni</p>
-                <h3>Wybierz sposób pracy swojego zespołu</h3>
-                <p className="work-template-intro">
-                  Zacznij od szablonu. W następnym kroku uzupełnisz nazwę i pozostałe dane
-                  przestrzeni.
-                </p>
-                <div className="work-template-grid">
-                  {schema.templates.map((option) => (
-                    <button
-                      key={option.key}
-                      type="button"
-                      className="work-space-card work-template-card"
-                      aria-label={`Wybierz szablon: ${option.label}`}
-                      onClick={() => {
-                        setTemplate(option);
-                        setDirty(true);
-                        requestAnimationFrame(() =>
-                          form.current?.querySelector<HTMLInputElement>('[name="name"]')?.focus(),
-                        );
-                      }}
-                    >
-                      <img
-                        className="work-template-art"
-                        src={option.image}
-                        width={360}
-                        height={200}
-                        alt=""
-                      />
-                      <span className="work-template-copy">
-                        <span className="work-caption">{option.kind_label}</span>
-                        <span className="work-card-title">{option.label}</span>
-                        <span className="work-template-description">{option.description}</span>
-                        <span className="work-template-link">
-                          Wybierz szablon
-                          <Icon name="arrow-right" />
-                        </span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section className="work-space-details resources-form-wide" hidden={!template}>
-                <p className="work-caption">Krok 2 z 2 · Dane przestrzeni</p>
-                <h3>Skonfiguruj swoją przestrzeń</h3>
-                <div className="work-template-summary">
-                  {template ? <img src={template.image} width={108} height={60} alt="" /> : null}
-                  <div>
-                    <span className="work-caption">Wybrany szablon</span>
-                    <span className="work-card-title">{template?.label}</span>
-                    <span className="work-caption">{template?.kind_label}</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setTemplate(undefined)}
-                  >
-                    Zmień szablon
-                  </button>
-                </div>
-                <fieldset
-                  className="documents-form resources-form tasks-project-heading-fields work-space-fields"
-                  disabled={!template || pending}
-                >
-                  <legend className="u-sr-only">Dane nowej przestrzeni</legend>
-                  <FormFields schema={schema} exclude={['template', 'kind']} />
-                </fieldset>
-              </section>
-            </>
-          ) : schema.avatars ? (
-            <div className="space-avatar-picker resources-form-wide">
-              <fieldset className="space-avatar-presets" disabled={pending}>
-                <legend>Wybierz gotowy awatar</legend>
-                <div className="space-avatar-grid">
-                  {schema.avatars.map((option) => (
-                    <label key={option.key} className="space-avatar-option" title={option.label}>
-                      <input
-                        type="radio"
-                        name="avatar"
-                        value={option.key}
-                        checked={avatar === option.key}
-                        onChange={() => {
-                          setAvatar(option.key);
-                          setDirty(true);
-                        }}
-                        className="u-sr-only"
-                      />
-                      <span
-                        className={`profile-avatar space-avatar space-avatar--picker space-avatar-art ${option.preset_class}`}
-                        aria-hidden="true"
-                      />
-                      <span className="u-sr-only">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-                <label className="space-avatar-auto">
-                  <input
-                    type="radio"
-                    name="avatar"
-                    value="auto"
-                    checked={avatar === 'auto'}
-                    onChange={() => {
-                      setAvatar('auto');
-                      setDirty(true);
-                    }}
-                  />
-                  Automatyczny awatar
-                </label>
-              </fieldset>
-              <div
-                className="space-avatar-upload"
-                onDragOver={(event) => {
-                  event.preventDefault();
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (pending) return;
-                  const file = event.dataTransfer.files[0];
-                  const input = form.current?.querySelector<HTMLInputElement>(
-                    'input[name="avatar_photo"]',
-                  );
-                  if (!file || !input) return;
-                  const transfer = new DataTransfer();
-                  transfer.items.add(file);
-                  input.files = transfer.files;
-                  setAvatar('upload');
-                  setPreview(URL.createObjectURL(file));
-                  setDirty(true);
-                }}
-              >
-                <label className="space-avatar-auto">
-                  <input
-                    type="radio"
-                    name="avatar"
-                    value="upload"
-                    checked={avatar === 'upload'}
-                    onChange={() => {
-                      setAvatar('upload');
-                      setDirty(true);
-                    }}
-                  />
-                  Własny obraz
-                </label>
-                <div className="space-avatar-upload__content">
-                  {preview ? (
-                    <Avatar space data={{ photo_url: preview }} className="space-avatar--picker" />
-                  ) : null}
-                  <label className="btn btn-secondary">
-                    Wybierz obraz
-                    <input
-                      type="file"
-                      className="u-sr-only"
-                      name="avatar_photo"
-                      accept="image/png,image/jpeg,image/webp"
-                      disabled={pending}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                          setAvatar('upload');
-                          setPreview(URL.createObjectURL(file));
-                          setDirty(true);
-                        }
-                      }}
-                    />
-                  </label>
-                  <small>PNG, JPG, WebP · do 5 MB</small>
-                </div>
-                {schema.fields
-                  .flatMap((field) => field.errors)
-                  .map((message, index) => (
-                    <p className="tasks-modal__errors" role="alert" key={index}>
-                      {message}
-                    </p>
-                  ))}
-              </div>
             </div>
-          ) : (
-            <fieldset className="resources-react-fieldset" disabled={pending}>
-              <FormFields schema={schema} />
+          </fieldset>
+        ) : schema.layout === 'tag' ? (
+          <fieldset className="resources-react-fieldset" disabled={pending}>
+            {schema.fields
+              .filter((field) => ['name', 'description'].includes(field.name))
+              .map((field) => (
+                <FieldControl key={field.name} field={field} />
+              ))}
+            <section className="tasks-tag-parameters" aria-label="Parametry tagu">
+              <div className="tasks-tag-fields">
+                {[
+                  ['category', 'status', 'color', 'icon', 'priority', 'scope'],
+                  ['owner_label', 'related_tags'],
+                  ['usage_notes', 'automation_rules'],
+                ].map((names, index) => (
+                  <div className="tasks-tag-field-group" key={index}>
+                    <div className="tasks-tag-field-grid">
+                      {names
+                        .map((name) => schema.fields.find((field) => field.name === name))
+                        .map((field) =>
+                          field ? <FieldControl key={field.name} field={field} /> : null,
+                        )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </fieldset>
+        ) : schema.layout === 'pulpit' ? (
+          <fieldset className="resources-react-fieldset" disabled={pending}>
+            <PulpitFields schema={schema} visibility={visibility} kind={kind} />
+          </fieldset>
+        ) : schema.layout === 'filter' ? (
+          <fieldset className="resources-react-fieldset task-filter-form" disabled={pending}>
+            {schema.fields.map((field) => (
+              <div
+                key={field.name}
+                className="react-field-slot"
+                hidden={field.name === 'shared_with' && visibility !== 'selected'}
+              >
+                <FieldControl field={field} />
+              </div>
+            ))}
+          </fieldset>
+        ) : schema.templates ? (
+          <>
+            <input type="hidden" name="kind" value={template?.kind || ''} />
+            <input type="hidden" name="template" value={template?.key || ''} />
+            <section className="work-template-picker resources-form-wide" hidden={!!template}>
+              <p className="work-caption">Krok 1 z 2 · Szablon przestrzeni</p>
+              <h3>Wybierz sposób pracy swojego zespołu</h3>
+              <p className="work-template-intro">
+                Zacznij od szablonu. W następnym kroku uzupełnisz nazwę i pozostałe dane
+                przestrzeni.
+              </p>
+              <div className="work-template-grid">
+                {schema.templates.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className="work-space-card work-template-card"
+                    aria-label={`Wybierz szablon: ${option.label}`}
+                    onClick={() => {
+                      setTemplate(option);
+                      setDirty(true);
+                      requestAnimationFrame(() =>
+                        form.current?.querySelector<HTMLInputElement>('[name="name"]')?.focus(),
+                      );
+                    }}
+                  >
+                    <img
+                      className="work-template-art"
+                      src={option.image}
+                      width={360}
+                      height={200}
+                      alt=""
+                    />
+                    <span className="work-template-copy">
+                      <span className="work-caption">{option.kind_label}</span>
+                      <span className="work-card-title">{option.label}</span>
+                      <span className="work-template-description">{option.description}</span>
+                      <span className="work-template-link">
+                        Wybierz szablon
+                        <Icon name="arrow-right" />
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+            <section className="work-space-details resources-form-wide" hidden={!template}>
+              <p className="work-caption">Krok 2 z 2 · Dane przestrzeni</p>
+              <h3>Skonfiguruj swoją przestrzeń</h3>
+              <div className="work-template-summary">
+                {template ? <img src={template.image} width={108} height={60} alt="" /> : null}
+                <div>
+                  <span className="work-caption">Wybrany szablon</span>
+                  <span className="work-card-title">{template?.label}</span>
+                  <span className="work-caption">{template?.kind_label}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setTemplate(undefined)}
+                >
+                  Zmień szablon
+                </button>
+              </div>
+              <fieldset
+                className="documents-form resources-form tasks-project-heading-fields work-space-fields"
+                disabled={!template || pending}
+              >
+                <legend className="u-sr-only">Dane nowej przestrzeni</legend>
+                <FormFields schema={schema} exclude={['template', 'kind']} />
+              </fieldset>
+            </section>
+          </>
+        ) : schema.avatars ? (
+          <div className="space-avatar-picker resources-form-wide">
+            <fieldset className="space-avatar-presets" disabled={pending}>
+              <legend>Wybierz gotowy awatar</legend>
+              <div className="space-avatar-grid">
+                {schema.avatars.map((option) => (
+                  <label key={option.key} className="space-avatar-option" title={option.label}>
+                    <input
+                      type="radio"
+                      name="avatar"
+                      value={option.key}
+                      checked={avatar === option.key}
+                      onChange={() => {
+                        setAvatar(option.key);
+                        setDirty(true);
+                      }}
+                      className="u-sr-only"
+                    />
+                    <span
+                      className={`profile-avatar space-avatar space-avatar--picker space-avatar-art ${option.preset_class}`}
+                      aria-hidden="true"
+                    />
+                    <span className="u-sr-only">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              <label className="space-avatar-auto">
+                <input
+                  type="radio"
+                  name="avatar"
+                  value="auto"
+                  checked={avatar === 'auto'}
+                  onChange={() => {
+                    setAvatar('auto');
+                    setDirty(true);
+                  }}
+                />
+                Automatyczny awatar
+              </label>
             </fieldset>
-          )}
-        </div>
-        <footer className="tasks-modal__footer">
-          <button type="button" className="btn btn-secondary" disabled={pending} onClick={close}>
-            Anuluj
+            <div
+              className="space-avatar-upload"
+              onDragOver={(event) => {
+                event.preventDefault();
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (pending) return;
+                const file = event.dataTransfer.files[0];
+                const input = form.current?.querySelector<HTMLInputElement>(
+                  'input[name="avatar_photo"]',
+                );
+                if (!file || !input) return;
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                setAvatar('upload');
+                setPreview(URL.createObjectURL(file));
+                setDirty(true);
+              }}
+            >
+              <label className="space-avatar-auto">
+                <input
+                  type="radio"
+                  name="avatar"
+                  value="upload"
+                  checked={avatar === 'upload'}
+                  onChange={() => {
+                    setAvatar('upload');
+                    setDirty(true);
+                  }}
+                />
+                Własny obraz
+              </label>
+              <div className="space-avatar-upload__content">
+                {preview ? (
+                  <Avatar space data={{ photo_url: preview }} className="space-avatar--picker" />
+                ) : null}
+                <label className="btn btn-secondary">
+                  Wybierz obraz
+                  <input
+                    type="file"
+                    className="u-sr-only"
+                    name="avatar_photo"
+                    accept="image/png,image/jpeg,image/webp"
+                    disabled={pending}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        setAvatar('upload');
+                        setPreview(URL.createObjectURL(file));
+                        setDirty(true);
+                      }
+                    }}
+                  />
+                </label>
+                <small>PNG, JPG, WebP · do 5 MB</small>
+              </div>
+              {schema.fields
+                .flatMap((field) => field.errors)
+                .map((message, index) => (
+                  <p className="tasks-modal__errors" role="alert" key={index}>
+                    {message}
+                  </p>
+                ))}
+            </div>
+          </div>
+        ) : (
+          <fieldset className="resources-react-fieldset" disabled={pending}>
+            <FormFields schema={schema} />
+          </fieldset>
+        )}
+      </div>
+      <footer className="tasks-modal__footer">
+        <button type="button" className="btn btn-secondary" disabled={pending} onClick={close}>
+          Anuluj
+        </button>
+        {!schema.templates || template ? (
+          <button type="submit" className="tasks-modal__submit" disabled={pending}>
+            {pending
+              ? 'Zapisywanie…'
+              : schema.templates
+                ? 'Utwórz przestrzeń'
+                : schema.submit_label}
           </button>
-          {!schema.templates || template ? (
-            <button type="submit" className="tasks-modal__submit" disabled={pending}>
-              {pending
-                ? 'Zapisywanie…'
-                : schema.templates
-                  ? 'Utwórz przestrzeń'
-                  : schema.submit_label}
-            </button>
-          ) : null}
-        </footer>
-      </form>
+        ) : null}
+      </footer>
+    </form>
+  );
+}
+
+export function FormDialog(props: {
+  data: FormDialogData;
+  api: string;
+  csrfToken: string;
+  onClose: () => void;
+  onSaved: (url: string) => void;
+  hostId?: string;
+}) {
+  const [state, setState] = useState({ dirty: false, pending: false });
+  const report = useCallback(
+    (dirty: boolean, pending: boolean) => setState({ dirty, pending }),
+    [],
+  );
+  if (props.data.space_settings)
+    return (
+      <Suspense fallback={<div role="status">Wczytywanie ustawień…</div>}>
+        <SpaceSettingsDialog
+          {...props}
+          spaceUrl={props.data.space_settings.space_url}
+          initialTab={props.data.space_settings.tab}
+          initialForm={props.data}
+        />
+      </Suspense>
+    );
+  const schema = props.data.form;
+  return (
+    <Modal
+      title={props.data.title}
+      hostId={props.hostId}
+      className={`work-modal ${schema.compact ? 'app-modal-panel--compact' : ''} ${schema.layout === 'tag' ? 'tasks-project-modal tasks-project-edit-modal' : ''}`}
+      dirty={state.dirty}
+      pending={state.pending}
+      onClose={props.onClose}
+    >
+      <EmbeddedForm {...props} onStateChange={report} />
     </Modal>
   );
 }
+
 export default function FormPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as FormDialogData;
   return (
@@ -748,7 +824,11 @@ export default function FormPage({ initial, csrfToken }: PageProps) {
         data={data}
         api={initial.api_url}
         csrfToken={csrfToken}
-        onClose={() => navigate(data.return_url)}
+        onClose={() =>
+          navigate(
+            data.space_settings ? data.return_url.replace('?view=settings', '') : data.return_url,
+          )
+        }
         onSaved={navigate}
       />
     </div>

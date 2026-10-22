@@ -17,6 +17,10 @@ Pickery Przestrzeni, Pulpitów i Filtrów używają istniejącej powłoki popove
 stanu pustego/błędu/ponowienia, strzałek i Escape z powrotem fokusu.
 Menu mobilne wyłącza treść przez `inert` i ogranicza Tab do swoich kontrolek.
 
+Przyciski menu działań `tasks-filter-button` zawierające wyłącznie ikonę
+`menu` (trzy kreski) mają przezroczystą ramkę. Zachowują dotychczasowy rozmiar,
+obszar kliknięcia oraz obsługę menu i klawiatury.
+
 Akcje oznaczania Przestrzeni, Pulpitów i Filtrów współdzielą
 `tasks-favorite-toggle` oraz stan `aria-pressed`. Oznaczony element ma pełną
 żółtą gwiazdkę `star-filled` (`#e2b203`), także przy hover/fokusie;
@@ -173,6 +177,21 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 [Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
 
 ## Przestrzenie i zespoły
+
+Ustawienia Przestrzeni korzystają ze wspólnego dużego `app-modal-panel` z
+zakładkami `notifications-tabs`: „Główna”, „Członkowie” oraz „Statusy, typy i pola”,
+według uprawnień. W „Główna” wspólny `AvatarControl` pokazuje po lewej awatar
+68px i przycisk „Zmień”, jak w edycji profilu. Wybór ilustracji, upload
+i kadrowanie używają tego samego pickera; zatwierdzony szkic awatara zapisuje
+się dopiero z całym formularzem ustawień. Nie ma osobnej zakładki awatara. `space-settings-panel` dodaje jedynie
+elastyczny kontener dla istniejącej treści i stopki; ukryte panele zachowują
+zamontowane formularze i szkice. Pod zakładkami nie ma poziomej linii rozdzielającej;
+fioletowe podkreślenie wskazuje aktywną zakładkę. Zakładki obsługują strzałki, Home i End.
+Stopka zapisuje bieżącą sekcję, pozostawiając okno otwarte; zamknięcie chroni
+szkice wszystkich zakładek. Konfiguracja zadań przewija się wewnątrz okna,
+a udostępnianie otwiera standardowy zagnieżdżony formularz. Bezpośrednie URL
+ustawień i konfiguracji renderują tę samą powłokę. Szczegóły:
+[Okno ustawień](SPACES.md#okno-ustawień-przestrzeni).
 
 Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
 „Sortowanie” i „Filtrowanie”. Nie ma osobnego pola wyszukiwania zadań.

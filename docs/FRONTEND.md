@@ -49,6 +49,27 @@ walidację, ORM i PostgreSQL. React obsługuje stan i renderowanie przeniesioneg
 modułu oraz komunikuje się z JSON API. Wspólny origin pozwala zachować obecną
 sesję bez nowego systemu tokenów ani konfiguracji CORS.
 
+## Okno ustawień Przestrzeni
+
+`spaces/SettingsDialog.tsx` łączy pola główne, członków, awatar oraz konfigurację
+zadań w jednym `shared/Modal`. Formularze są ładowane przy pierwszym otwarciu
+sekcji, a ukryte panele pozostają zamontowane. `forms/EmbeddedForm` współdzieli
+pola, upload, walidację i zapis z `FormDialog`. `SpaceForm.inline_avatar` udostępnia
+w „Główna” ten sam `shared/AvatarControl` co Profil, z wariantem `space`, nazwami
+pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany awatar
+i kadr należą do formularza głównego także po przeniesieniu pickera nad modal.
+Zapis łączy pola Przestrzeni i awatar w jednej transakcji; `ConfigurationForm` zachowuje
+formsety i rewizję konfiguracji. Rodzic zbiera stan zmian/zapisu wszystkich
+sekcji do wspólnej ochrony zamknięcia. Nie dodaje endpointu zapisu.
+
+Serializer formularza edycji/awatara/członków zwraca opcjonalne `space_settings`
+(`space_url`, `tab`), kierujące wszystkie wejścia do tego samego okna.
+`FormDialog` ładuje okno ustawień dynamicznie wyłącznie dla tego kontraktu;
+pozostali odbiorcy zachowują standardową powłokę. `?view=settings` i bezpośredni
+URL konfiguracji także otwierają to okno. Wejście `avatar/` otwiera picker
+nad „Główna”, zamiast osobnej zakładki. Lista członków zawiera serwerowe
+`can_remove`, odpowiadające regułom właściciela i administratora Przestrzeni.
+
 ## Animacje zadań Przestrzeni
 
 Wszystkie sześć szablonów tablic Przestrzeni korzysta z jednego `ItemCard`

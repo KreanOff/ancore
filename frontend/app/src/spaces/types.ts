@@ -140,7 +140,14 @@ export interface DetailData {
   };
   summary_filter_label: string;
   filter_options: Record<string, [string, string][]>;
-  members: { id: number; name: string; avatar: AvatarData; role: string; remove_url: string }[];
+  members: {
+    id: number;
+    name: string;
+    avatar: AvatarData;
+    role: string;
+    can_remove: boolean;
+    remove_url: string;
+  }[];
   private_owner: string;
   modal: FormDialogData | null;
 }

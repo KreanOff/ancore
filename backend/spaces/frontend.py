@@ -23,7 +23,8 @@ def space_payload(space):
 
 
 def modal_payload(modal):
-    return {'title': modal['title'], 'action': modal['action'], 'return_url': modal['return_url'], 'form': form_payload(modal['form'])}
+    return {'title': modal['title'], 'action': modal['action'], 'return_url': modal['return_url'], 'form': form_payload(modal['form']),
+            **({'space_settings': modal['space_settings']} if modal.get('space_settings') else {})}
 
 
 def form_page(request, context):
@@ -102,6 +103,7 @@ def detail_page(request, context):
         },
         'members': [{'id': member.pk, 'name': member.user.get_full_name() or member.user.email,
                      'avatar': account_avatar(member.user), 'role': member.get_role_display(),
+                     'can_remove': context['can_manage'] and member.user_id != space.private_owner_id and (member.role != 'admin' or space.private_owner_id == request.user.pk),
                      'remove_url': context['member_url'] + f'{member.pk}/remove/'} for member in context.get('members', [])],
         'private_owner': (space.private_owner.get_full_name() or space.private_owner.email) if space.private_owner else '',
         'modal': modal_payload(context['modal']) if context.get('modal') else None,

@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 34 | 0 | 19 | 206 |
+| [backend/core](../backend/core) | 35 | 0 | 19 | 212 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
 | [backend/documents](../backend/documents) | 37 | 2 | 31 | 200 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 46 | 2 | 39 | 248 |
+| [backend/spaces](../backend/spaces) | 46 | 2 | 39 | 253 |
 
 ## 2. Modele i relacje
 
@@ -933,7 +933,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/__init__.py](../backend/spaces/__init__.py)
 - [backend/spaces/access.py](../backend/spaces/access.py) — `spaces_for`, `editable_spaces`, `tree_ids`, `visible_to`, `editable_to`, `require_editable`, `task_people`
 - [backend/spaces/apps.py](../backend/spaces/apps.py) — `SpacesConfig`
-- [backend/spaces/avatars.py](../backend/spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`
+- [backend/spaces/avatars.py](../backend/spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`, `save_space_avatar`
 - [backend/spaces/backlog.py](../backend/spaces/backlog.py) — `append_planned_items`, `bulk_plan_items`, `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `issue_type_icon`, `template_settings`
@@ -1382,6 +1382,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/DirectoryPage.tsx](../frontend/app/src/spaces/DirectoryPage.tsx)
 - [frontend/app/src/spaces/Item.tsx](../frontend/app/src/spaces/Item.tsx)
 - [frontend/app/src/spaces/ItemToolbar.tsx](../frontend/app/src/spaces/ItemToolbar.tsx)
+- [frontend/app/src/spaces/SettingsDialog.tsx](../frontend/app/src/spaces/SettingsDialog.tsx)
 - [frontend/app/src/spaces/SpaceHeader.tsx](../frontend/app/src/spaces/SpaceHeader.tsx)
 - [frontend/app/src/spaces/Summary.tsx](../frontend/app/src/spaces/Summary.tsx)
 - [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
@@ -1503,6 +1504,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/core/test_shell_frontend.py](../backend/core/test_shell_frontend.py).
 
 - `GlobalPanelsApiTests`: 16 metod testowych.
+
+### backend/core/test_space_settings_frontend.py
+
+Źródło: [backend/core/test_space_settings_frontend.py](../backend/core/test_space_settings_frontend.py).
+
+- `SpaceSettingsFrontendTests`: 6 metod testowych.
 
 ### backend/core/test_status_updates.py
 
@@ -1854,7 +1861,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_avatars.py](../backend/spaces/test_avatars.py).
 
-- `SpaceAvatarTests`: 11 metod testowych.
+- `SpaceAvatarTests`: 16 metod testowych.
 
 ### backend/spaces/test_backlog_drag.py
 

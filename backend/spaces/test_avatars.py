@@ -1,6 +1,7 @@
 from .testing import make_space
 import base64
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -193,3 +194,62 @@ class SpaceAvatarTests(TestCase):
         self.assertEqual(client.post(self.url(), {'avatar': 'rocket'}).status_code, 403)
         client.logout()
         self.assertEqual(client.get(self.url()).status_code, 302)
+
+    def test_settings_save_name_and_preset_together_in_plain_and_scoped_urls(self):
+        for url in (self.url('edit/'), f'/spaces/{self.space.pk}/edit/'):
+            response = self.client.post(url, {'name': 'Zmieniona przestrzeń', 'description': '', 'visibility': 'private', 'avatar': 'leaf'}, HTTP_X_WORK_MODAL='true')
+            self.assertEqual(response.status_code, 200)
+            self.space.refresh_from_db()
+            self.assertEqual((self.space.name, self.space.avatar), ('Zmieniona przestrzeń', 'leaf'))
+
+    def test_settings_crop_and_preset_preserve_private_file_lifecycle(self):
+        crop = 'data:image/png;base64,' + base64.b64encode(PNG).decode()
+        response = self.client.post(self.url('edit/'), {'name': 'Przycięty awatar', 'visibility': 'private', 'avatar': 'upload', 'avatar_photo_crop': crop}, HTTP_X_WORK_MODAL='true')
+        self.assertEqual(response.status_code, 200)
+        self.space.refresh_from_db()
+        storage, name = self.space.avatar_photo.storage, self.space.avatar_photo.name
+        with storage.open(name) as image:
+            self.assertEqual(image.read(), PNG)
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(self.url('edit/'), {'name': self.space.name, 'visibility': 'private', 'avatar': 'rocket'}, HTTP_X_WORK_MODAL='true')
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(storage.exists(name))
+        self.assertFalse(storage.exists(name))
+        self.space.refresh_from_db()
+        self.assertEqual(self.space.avatar, 'rocket')
+        self.assertFalse(self.space.avatar_photo)
+
+    def test_settings_invalid_name_or_crop_do_not_write_name_or_photo(self):
+        original_name = self.space.name
+        for payload in (
+            {'name': ' ', 'avatar': 'upload', 'avatar_photo': SimpleUploadedFile('avatar.png', PNG, 'image/png')},
+            {'name': 'Nie zapisuj', 'avatar': 'upload', 'avatar_photo_crop': 'data:image/png;base64,invalid'},
+        ):
+            response = self.client.post(self.url('edit/'), {'visibility': 'private', **payload}, HTTP_X_WORK_MODAL='true')
+            self.assertEqual(response.status_code, 400)
+            self.space.refresh_from_db()
+            self.assertEqual(self.space.name, original_name)
+            self.assertFalse(self.space.avatar_photo)
+            self.assertEqual(list(Path(self.storage.name).rglob('*')), [])
+
+    def test_settings_older_client_preserves_existing_photo(self):
+        self.upload()
+        self.space.refresh_from_db()
+        old_photo = self.space.avatar_photo.name
+        response = self.client.post(self.url('edit/'), {'name': self.space.name, 'visibility': 'private'}, HTTP_X_WORK_MODAL='true')
+        self.assertEqual(response.status_code, 200)
+        self.space.refresh_from_db()
+        self.assertEqual(self.space.avatar_photo.name, old_photo)
+
+    def test_settings_rollback_after_photo_save_cleans_new_file(self):
+        self.upload()
+        self.space.refresh_from_db()
+        old_name, storage = self.space.avatar_photo.name, self.space.avatar_photo.storage
+        queryset_class = type(self.space.memberships.all())
+        with patch.object(queryset_class, 'delete', side_effect=RuntimeError('Membership failure')):
+            with self.assertRaises(RuntimeError):
+                self.client.post(self.url('edit/'), {'name': 'Nie zapisuj', 'visibility': 'public', 'avatar': 'upload', 'avatar_photo': SimpleUploadedFile('new.png', PNG, 'image/png')}, HTTP_X_WORK_MODAL='true')
+        self.space.refresh_from_db()
+        self.assertEqual(self.space.avatar_photo.name, old_name)
+        self.assertEqual(self.space.visibility, 'private')
+        self.assertEqual(storage.listdir('space_avatars')[1], [old_name.split('/')[-1]])

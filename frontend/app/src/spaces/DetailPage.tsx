@@ -12,12 +12,14 @@ import { type Page, type PageProps, navigate, pageRequest } from '../shared/page
 import { ItemCard, ItemRow } from './Item';
 import { ItemToolbar } from './ItemToolbar';
 import Summary from './Summary';
+import SettingsDialog from './SettingsDialog';
 import { SpaceHeader } from './SpaceHeader';
 import { dateLabel, type DetailData, type Item, type Sprint } from './types';
 import { useItemMotion } from './useItemMotion';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
     [modal, setModal] = useState<FormDialogData | null>((initial.data as DetailData).modal),
+    [settingsOpen, setSettingsOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
@@ -374,6 +376,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
         <SpaceHeader
           navigation={data.navigation}
           currentView={data.view}
+          onSettings={() => setSettingsOpen(true)}
           heading={
             <>
               {data.can_manage ? (
@@ -706,91 +709,17 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
               ) : null}
             </div>
           ) : null}
-          {data.view === 'settings' ? (
-            <div className="work-overview">
-              <section className="work-panel">
-                <h2>Ustawienia przestrzeni</h2>
-                <p>
-                  {data.space.kind_label} · {data.space.template_label}
-                </p>
-                <p>{data.space.management_label}</p>
-                <p>
-                  Widoczność:{' '}
-                  {data.space.visibility === 'private'
-                    ? 'prywatna — wybrane osoby'
-                    : 'cały Workspace'}
-                </p>
-                {data.can_manage ? (
-                  <>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={busy}
-                      onClick={() => void openForm(data.edit_url)}
-                    >
-                      Edytuj przestrzeń
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={busy}
-                      onClick={() => void openForm(data.space.url + 'avatar/')}
-                    >
-                      Zmień awatar
-                    </button>
-                  </>
-                ) : null}
-                {data.can_configure ? (
-                  <a className="btn btn-secondary" href={data.configuration_url}>
-                    Statusy, typy i pola
-                  </a>
-                ) : null}
-                {data.configuration.shared ? (
-                  <p>
-                    Konfiguracja „{data.configuration.name}” jest współdzielona. Zmiany obowiązują
-                    we wszystkich korzystających z niej przestrzeniach.
-                  </p>
-                ) : null}
-              </section>
-              <section className="work-panel">
-                <div className="work-panel-heading">
-                  <h2>Członkowie i role</h2>
-                  {data.can_manage && data.space.visibility === 'private' ? (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={busy}
-                      onClick={() => void openForm(data.member_url)}
-                    >
-                      Udostępnij / zmień rolę
-                    </button>
-                  ) : null}
-                </div>
-                {data.space.visibility === 'public' ? (
-                  <p>Dostęp mają aktywni członkowie Workspace.</p>
-                ) : (
-                  <>
-                    <p>{data.private_owner} · Właściciel</p>
-                    {data.members.map((member) => (
-                      <div className="work-member" key={member.id}>
-                        <span>{member.name}</span>
-                        <span>{member.role}</span>
-                        {data.can_manage ? (
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={busy}
-                            onClick={() => void act(member.remove_url, {})}
-                          >
-                            Odbierz dostęp
-                          </button>
-                        ) : null}
-                      </div>
-                    ))}
-                  </>
-                )}
-              </section>
-            </div>
+          {data.view === 'settings' || settingsOpen ? (
+            <SettingsDialog
+              api={initial.api_url}
+              csrfToken={csrfToken}
+              spaceUrl={data.space.url}
+              initialDetail={data.view === 'settings' ? data : undefined}
+              onClose={() =>
+                data.view === 'settings' ? navigate(data.space.url) : setSettingsOpen(false)
+              }
+              onSaved={() => navigate(data.view === 'settings' ? data.space.url : initial.url)}
+            />
           ) : null}
         </div>
         {tableView ? <Pagination data={data.pagination} /> : null}

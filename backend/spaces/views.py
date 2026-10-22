@@ -27,7 +27,7 @@ from .access import editable_to, require_editable, visible_to
 from .models import SpaceTask, SpaceMembership
 from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
-from .avatars import delete_avatar_after_commit
+from .avatars import save_space_avatar
 from .backlog import bulk_plan_items, move_backlog_item
 from .board import move_board_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
@@ -346,12 +346,14 @@ def retired_all_items(request):
     return redirect(target)
 
 
-def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False, background_space=None):
+def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False, background_space=None, settings_space=None, settings_tab='main'):
     if saved:
         if request.headers.get('X-Work-Modal') == 'true':
             return JsonResponse({'saved': True, 'url': return_url})
         return redirect(return_url)
     modal = {'form': form, 'title': title, 'action': request.get_full_path(), 'return_url': return_url}
+    if settings_space:
+        modal['space_settings'] = {'space_url': space_url(request, settings_space), 'tab': settings_tab}
     context = {**base_context(request), 'modal': modal}
     status = 400 if request.method == 'POST' else 200
     if getattr(request, '_react_api', False):
@@ -377,12 +379,15 @@ def edit(request, pk=None, management=False):
     space = space_object(request, pk) if pk else None
     if space and not manage_space(request, space):
         raise PermissionDenied
-    form = SpaceForm(request.POST if request.method == 'POST' else None, request=request, space=space)
+    form = SpaceForm(request.POST if request.method == 'POST' else None, request.FILES or None, request=request, space=space)
     url = app_url(request, 'manage/') if management else space_url(request, space, '?view=settings') if pk else app_url(request)
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
+        saved_file = None
         try:
             with transaction.atomic():
+                if space is not None:
+                    Workplace.objects.select_for_update().get(pk=request.workplace.pk)
                 if space is None:
                     config = data.get('configuration') or SpaceConfiguration.objects.create(
                         workplace=request.workplace, name=data['name'], shared=data['management'] == 'company', settings=template_settings(data['template']))
@@ -399,15 +404,24 @@ def edit(request, pk=None, management=False):
                     space.name, space.description, space.visibility = data['name'], data['description'], data['visibility']
                     if visibility_changed:
                         space.private_owner = request.user if space.visibility == 'private' else None
-                    space.save()
+                    if 'avatar' in request.POST or data.get('avatar_photo') or data.get('avatar_photo_remove'):
+                        saved_file = save_space_avatar(space, data)
+                    else:
+                        space.save()
                     if visibility_changed:
                         space.memberships.all().delete()
                 url = app_url(request, 'manage/') if management else space_url(request, space)
-        except IntegrityError:
+        except ValidationError as error:
+            form.add_error('avatar_photo', error)
+        except Exception as error:
+            if saved_file:
+                saved_file[0].delete(saved_file[1])
+            if not isinstance(error, IntegrityError):
+                raise
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
         else:
             return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None or management, management=management)
+    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None or management, management=management, settings_space=space if pk else None)
 
 
 @login_required
@@ -426,22 +440,9 @@ def avatar_edit(request, pk):
                 space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=space.pk)
                 if not manage_space(request, space):
                     raise PermissionDenied
-                old_photo, storage = space.avatar_photo.name, space.avatar_photo.storage
-                uploaded = form.cleaned_data.get('avatar_photo')
-                choice = form.cleaned_data['avatar']
-                if uploaded:
-                    space.avatar_photo.save(uploaded.name, uploaded, save=False)
-                    saved_file = (storage, space.avatar_photo.name)
-                elif choice != 'upload':
-                    space.avatar_photo = ''
-                elif not old_photo:
-                    form.add_error('avatar_photo', 'Obraz został usunięty. Wybierz go ponownie.')
-                if not form.errors:
-                    if choice != 'upload':
-                        space.avatar = '' if choice == 'auto' else choice
-                    space.save(update_fields=['avatar', 'avatar_photo'])
-                    if old_photo != space.avatar_photo.name:
-                        delete_avatar_after_commit(storage, old_photo)
+                saved_file = save_space_avatar(space, form.cleaned_data)
+        except ValidationError as error:
+            form.add_error('avatar_photo', error)
         except Exception:
             if saved_file:
                 try:
@@ -451,7 +452,7 @@ def avatar_edit(request, pk):
             raise
         if not form.errors:
             return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Wybierz awatar', url)
+    return dialog_response(request, form, 'Wybierz awatar', url, settings_space=space, settings_tab='avatar')
 
 
 @login_required
@@ -757,7 +758,7 @@ def members(request, pk):
             else:
                 SpaceMembership.objects.update_or_create(space=space, user=person, defaults={'role': form.cleaned_data['role']})
                 return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Udostępnij przestrzeń / zmień rolę', url)
+    return dialog_response(request, form, 'Udostępnij przestrzeń / zmień rolę', url, settings_space=space, settings_tab='members')
 
 
 @login_required

@@ -404,3 +404,28 @@
 .work-timeline-scale { display:flex; justify-content:space-between; color:var(--text-secondary); padding:12px 0; }
 .work-timeline-track { position:relative; grid-column:1 / -1; width:100%; height:18px; background:var(--panel-bg); border-radius:var(--radius); }
 .work-timeline-track span { position:absolute; height:100%; min-width:4px; background:var(--system-accent); border-radius:var(--radius); opacity:.65; }
+
+/* Settings share the existing project modal shell and tab controls. */
+.space-settings-tabs { flex-shrink: 0; margin: 0 var(--app-panel-gutter); border-bottom: 0; overflow-x: auto; white-space: nowrap; }
+.space-settings-tabs > button { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.space-settings-tabs svg { width: 18px; height: 18px; }
+.space-settings-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+.space-settings-panel[hidden] { display: none !important; }
+.space-settings-message { margin: 8px var(--app-panel-gutter); }
+.space-settings-modal .work-member > .profile-avatar { width: 30px; height: 30px; flex: 0 0 30px; min-width: 0; }
+.space-settings-modal .work-member > .profile-avatar + span { flex: 1; min-width: 140px; }
+.space-settings-modal .work-configuration .tasks-form-field { display: block; }
+.space-settings-modal .work-configuration-row .react-field-control { display: block; }
+.space-settings-modal .work-configuration .tasks-form-field > label { margin-bottom: 8px; }
+
+.space-settings-main { align-content: start; }
+.space-settings-main .profile-photo-control { align-self: start; align-content: start; }
+.space-settings-main .profile-page-avatar { width: 68px; height: 68px; flex: 0 0 68px; }
+.space-settings-fields { min-width: 0; }
+.space-settings-main > .tasks-modal__errors { grid-column: 1 / -1; }
+@media (min-width: 1100px) {
+    .space-settings-fields .tasks-form-field { display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 24px; align-items: start; }
+    .space-settings-fields .tasks-form-field > label { grid-column: 1; padding-top: 9px; }
+    .space-settings-fields .tasks-form-field > :not(label),
+    .space-settings-fields .tasks-form-field > .react-field-control > * { grid-column: 2; }
+}

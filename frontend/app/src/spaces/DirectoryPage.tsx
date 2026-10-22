@@ -354,7 +354,27 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                                   ) : null}
                                 </>
                               ) : null}
-                              <a href={space.settings_url} className="tasks-project-menu-button">
+                              <a
+                                href={space.settings_url}
+                                className="tasks-project-menu-button"
+                                onClick={
+                                  space.can_manage
+                                    ? (event) => {
+                                        if (
+                                          event.button ||
+                                          event.metaKey ||
+                                          event.ctrlKey ||
+                                          event.shiftKey ||
+                                          event.altKey
+                                        )
+                                          return;
+                                        event.preventDefault();
+                                        closeMenu();
+                                        void openForm(space.edit_url);
+                                      }
+                                    : undefined
+                                }
+                              >
                                 <Icon name="settings" />
                                 <span>
                                   {data.management

@@ -115,6 +115,18 @@ w `ALLOWED_HOSTS`. Lokalny proces uruchomiony tylko na 127.0.0.1 może wymagać
 zmiany bindowania. Serwer Ancore uruchamia się niezależnie od serwera dokumentów.
 Po utworzeniu konfiguracji zrestartuj proces Django, jeśli nie używa autoreload.
 
+Port w `ONLYOFFICE_ANCORE_URL` musi odpowiadać portowi uruchomionego Django.
+Przy `manage.py runserver 0.0.0.0:9000` ustaw w lokalnym `.env.office`
+`ONLYOFFICE_ANCORE_URL=http://host.lima.internal:9000`. Pozostawienie portu 8000
+powoduje „Pobieranie nieudane” oraz błąd zapisu, mimo zdrowego kontenera
+ONLYOFFICE. W logu `documentserver/docservice/out.log` pojawia się wtedy
+`ECONNREFUSED` przy pobieraniu `source/` i wysyłaniu `callback/`.
+Z kontenera sprawdź `/health/ready/` Ancore pod skonfigurowanym adresem;
+sam `/healthcheck` ONLYOFFICE nie sprawdza tego połączenia.
+Po zmianie `.env.office` zatrzymaj i uruchom ponownie całe polecenie
+`runserver`, ponieważ autoreloader może dziedziczyć stare zmienne środowiska.
+Następnie otwórz ponownie edytor, aby otrzymał aktualne adresy źródła i zapisu.
+
 ```sh
 curl -fsS http://127.0.0.1:8088/healthcheck
 DOCKER_CONTEXT=colima-ancore docker-compose --env-file .env.office -f deploy/office.compose.yml ps

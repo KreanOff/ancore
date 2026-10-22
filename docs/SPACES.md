@@ -1,5 +1,29 @@
 # Przestrzenie i zespoły
 
+## Okno ustawień przestrzeni
+
+„Ustawienia przestrzeni” otwiera wspólne duże okno `app-modal-panel`, zgodne
+z dotychczasowym wzorcem Projektów. Zakładki „Główna”, „Członkowie”
+i „Statusy, typy i pola” obejmują wszystkie dotychczasowe ustawienia. Awatar
+znajduje się w „Główna”, po lewej stronie pól, tak jak w edycji profilu.
+Konfiguracja i operacje członkostwa są dostępne zgodnie z istniejącymi uprawnieniami. Osoby bez prawa zarządzania widzą podgląd i członków; publiczna
+przestrzeń pokazuje informację o dostępie przez Workspace.
+
+Zmiana zakładki zachowuje szkice pozostałych formularzy. „Zapisz” dotyczy
+bieżącej sekcji i pozostawia okno otwarte; zamknięcie, Escape i nawigacja
+chronią niezapisane zmiany także w ukrytych zakładkach. Udostępnienie/zmiana
+roli używa zagnieżdżonego standardowego formularza i odświeża listę członków
+bez utraty szkiców. Wiersze pokazują odbieranie dostępu tylko osobom, wobec
+których bieżący użytkownik ma takie uprawnienie.
+
+Wejście z zakładki Przestrzeni oraz menu katalogu zachowuje ekran w tle.
+Bezpośrednie adresy `?view=settings`, `edit/`, `avatar/`, `members/` i
+`configuration/`, również scoped, otwierają to samo okno w odpowiedniej sekcji.
+Zapisy nadal korzystają z istniejących widoków, formularzy i blokad Django;
+walidacja statusów, rewizja konfiguracji i zasady plików pozostają wspólne.
+Implementacja React: `src/spaces/SettingsDialog.tsx`, `ConfigurationForm`
+i współdzielony `EmbeddedForm`; formularze tworzenia zachowują swój kreator.
+
 ## Adresy przestrzeni
 
 Przestrzeń używa adresu `/space/<slug>/` oraz
@@ -128,7 +152,11 @@ awatarów, nie pobiera plików poza kontrolowanym endpointem.
 Każda przestrzeń ma awatar widoczny w menu bocznym, katalogu i nagłówku
 wszystkich jej widoków. Domyślny wariant dobierany jest stabilnie według ID
 przestrzeni z 24 kolorowych ilustracji. Kliknięcie awatara w nagłówku lub
-„Zmień awatar” w ustawieniach otwiera okno wyboru. Zapis wymaga tego samego
+przycisku „Zmień” pod podglądem w głównych ustawieniach otwiera wspólny wybór
+awatara, identyczny jak w edycji profilu użytkownika. Własny obraz używa tego
+samego kadrowania i powiększania. Zatwierdzenie wyboru zmienia podgląd; dopiero
+„Zapisz” w ustawieniach zapisuje nazwę, opis, widoczność i awatar w jednej
+transakcji. Anulowanie wyboru przywraca poprzedni podgląd. Zapis wymaga tego samego
 prawa zarządzania co edycja przestrzeni (`manage_space`); członek i obserwator
 widzą awatar, ale go nie zmieniają.
 
@@ -143,7 +171,11 @@ Wspólny CSS wybiera kwadratowy fragment dla każdego motywu. Pole `Space.avatar
 przechowuje stabilny identyfikator motywu, a `Space.avatar_photo` opcjonalny obraz.
 Zamiana wcześniejszych ikon konturowych na ilustracje zachowuje zapisane wybory
 i automatyczne przypisania; nie wymaga kolejnej migracji.
-Zmiana awatara nie zmienia nazwy, konfiguracji, zadań ani uprawnień przestrzeni.
+Sam wybór awatara nie zmienia konfiguracji, zadań ani uprawnień przestrzeni.
+Bezpośredni adres `avatar/` otwiera wybór nad zakładką „Główna”.
+Przesłany kadr jest walidowany przez `core.upload_validation.validate_image_crop`;
+wybór ilustracji i kadru współdzieli `SpaceAvatarForm` oraz `save_space_avatar`.
+Starszy zapis głównych ustawień bez pól awatara zachowuje dotychczasowy obraz.
 
 Obrazy mają losowe nazwy w prywatnym storage; pobieranie przez
 `/spaces/<pk>/avatar/photo/` i scoped odpowiednik sprawdza aktywny Workspace

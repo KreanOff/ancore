@@ -2,11 +2,12 @@ import re
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.utils import timezone
 
 from accounts.widgets import UserChoiceField
-from core.upload_validation import validate_image_upload
+from core.upload_validation import validate_image_crop, validate_image_upload
 from .access import editable_to
 from tasks.models import TaskTag
 from core.work_logs import TimeLogForm
@@ -39,22 +40,43 @@ class SpaceAvatarForm(StyledForm):
         validators=[validate_image_upload],
     )
     compact = True
+    avatar_photo_crop = forms.CharField(label='Przycięty awatar', required=False, widget=forms.HiddenInput)
+    avatar_photo_remove = forms.CharField(label='Usuń obraz', required=False, widget=forms.HiddenInput)
 
-    def __init__(self, *args, space, **kwargs):
+    def __init__(self, *args, space=None, **kwargs):
         self.space = space
-        kwargs['initial'] = {'avatar': 'upload' if space.avatar_photo else space.avatar or 'auto'}
+        if space:
+            kwargs.setdefault('initial', {}).update(avatar='upload' if space.avatar_photo else space.avatar or 'auto')
         super().__init__(*args, **kwargs)
-        self.current_avatar = space_avatar(space)
-        self.avatar_options = [preset_avatar(key) for key, _ in AVATARS]
+        if space:
+            self.current_avatar = space_avatar(space)
+            self.automatic_avatar = preset_avatar(seed=space.pk)
+            self.avatar_options = [preset_avatar(key) for key, _ in AVATARS]
+        else:
+            for name in ('avatar', 'avatar_photo', 'avatar_photo_crop', 'avatar_photo_remove'):
+                self.fields.pop(name, None)
+
+    def clean_avatar_photo_crop(self):
+        return validate_image_crop(self.cleaned_data.get('avatar_photo_crop'))
 
     def clean(self):
         data = super().clean()
+        if not self.space:
+            return data
+        crop = data.get('avatar_photo_crop')
+        if crop:
+            data['avatar_photo'] = ContentFile(crop['content'], name='avatar.' + crop['extension'])
+        if data.get('avatar_photo'):
+            data['avatar'] = 'upload'
+        elif data.get('avatar_photo_remove') and data.get('avatar') == 'upload':
+            data['avatar'] = 'auto'
         if data.get('avatar') == 'upload' and not data.get('avatar_photo') and not self.space.avatar_photo and not self.errors.get('avatar_photo'):
             self.add_error('avatar_photo', 'Wybierz obraz do przesłania.')
         return data
 
 
-class SpaceForm(StyledForm):
+class SpaceForm(SpaceAvatarForm):
+    compact = False
     name = forms.CharField(label='Nazwa przestrzeni', max_length=120)
     key = forms.RegexField(label='Klucz przestrzeni', regex=r'^[A-Z][A-Z0-9]{1,11}$', max_length=12, help_text='2–12 wielkich liter lub cyfr, np. ANC. Oznaczenia zadań: ANC-1, ANC-2.')
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
@@ -68,7 +90,7 @@ class SpaceForm(StyledForm):
         self.request, self.space = request, space
         if space:
             kwargs['initial'] = {'name': space.name, 'description': space.description, 'key': space.key, 'kind': space.kind, 'template': space.template, 'management': space.management, 'configuration': space.configuration_id if space.configuration.shared else None, 'visibility': space.visibility}
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, space=space, **kwargs)
         if not space:
             self.template_options = [
                 {'key': key, **template, 'kind_label': dict(KINDS)[template['kind']]}
@@ -85,11 +107,18 @@ class SpaceForm(StyledForm):
             self.fields['management'].choices = [MANAGEMENT[0]]
             self.fields['configuration'].queryset = SpaceConfiguration.objects.none()
         if space:
+            self.inline_avatar = True
+            self.fields['avatar'].required = False
             # Changing templates/configuration requires an explicit migration of active work.
             for field in ('key', 'kind', 'template', 'management', 'configuration'):
                 self.fields[field].disabled = True
             if space.visibility == 'private' and space.private_owner_id != request.user.pk:
                 self.fields['visibility'].disabled = True
+
+    def clean_avatar(self):
+        if 'avatar' not in self.data:
+            return self.initial.get('avatar', 'auto')
+        return self.cleaned_data.get('avatar') or 'auto'
 
     def clean(self):
         data = super().clean()

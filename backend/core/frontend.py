@@ -158,6 +158,10 @@ def form_payload(form):
     if getattr(form, 'avatar_options', None):
         result['avatars'] = form.avatar_options
         result['current_avatar'] = form.current_avatar
+        if getattr(form, 'automatic_avatar', None):
+            result['automatic_avatar'] = form.automatic_avatar
+        if getattr(form, 'inline_avatar', False):
+            result['inline_avatar'] = True
     if getattr(form, 'planning_summary', None):
         result['planning_summary'] = form.planning_summary
         result['sprint_name'] = form.sprint_name

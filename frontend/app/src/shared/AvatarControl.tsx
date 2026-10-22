@@ -64,11 +64,13 @@ export default function AvatarControl({
   formId,
   create = false,
   account = false,
+  space = false,
 }: {
   schema: AvatarForm;
   formId: string;
   create?: boolean;
   account?: boolean;
+  space?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const initial = useRef(schema);
@@ -124,6 +126,27 @@ export default function AvatarControl({
       crop.querySelector('[data-profile-photo-empty] span')!.textContent =
         'Wybierz zdjęcie użytkownika';
     }
+    if (space) {
+      editor.classList.remove('workplace-photo-control');
+      editor
+        .querySelector('.profile-photo-preview-button')!
+        .setAttribute('aria-label', 'Zmień awatar przestrzeni');
+      editor
+        .querySelector('.profile-photo-preview-button')!
+        .setAttribute('title', 'Zmień awatar przestrzeni');
+      editor
+        .querySelector('[data-profile-photo-preview]')!
+        .classList.replace('profile-avatar--workplace', 'space-avatar');
+      root.querySelectorAll<HTMLInputElement>('input[name^=workplace_photo]').forEach((input) => {
+        input.name = input.name.replace('workplace_photo', 'avatar_photo');
+      });
+      const crop = root.querySelector<HTMLElement>('[data-profile-photo-modal]')!;
+      crop.setAttribute('aria-label', 'Edytuj awatar przestrzeni');
+      crop.querySelector('strong')!.textContent = 'Edytuj awatar przestrzeni';
+      crop.querySelector('canvas')!.setAttribute('aria-label', 'Kadr awatara przestrzeni');
+      crop.querySelector('[data-profile-photo-empty] span')!.textContent =
+        'Wybierz obraz przestrzeni';
+    }
     editor.dataset.profilePhotoUrl = data.current_avatar?.photo_url || '';
     root.querySelector<HTMLElement>('[data-workplace-avatar-picker]')!.dataset.automaticAvatar =
       data.automatic_avatar.preset_class || '';
@@ -162,7 +185,7 @@ export default function AvatarControl({
       (editor as PhotoEditor).profilePhotoEditorApi?.destroy();
       root.replaceChildren();
     };
-  }, [formId, create, account]);
+  }, [formId, create, account, space]);
   return <div className="react-workspace-avatar" ref={host} />;
 }
 interface PhotoEditor extends HTMLElement {

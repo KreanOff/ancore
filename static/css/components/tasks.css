@@ -6504,6 +6504,10 @@ body.modal-open::before {
     cursor: pointer;
 }
 
+.tasks-filter-button:has(> [data-icon="menu"]:only-child) {
+    border-color: transparent;
+}
+
 .tasks-filterbar .tasks-filter-button {
     max-width: 220px;
 }
