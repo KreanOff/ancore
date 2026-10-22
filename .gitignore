@@ -26,6 +26,7 @@ dist/
 local_settings.py
 
 # Dane lokalne i wynik collectstatic (nigdy źródła aplikacji)
+/.local/
 /media/
 /private_documents/
 /staticfiles/

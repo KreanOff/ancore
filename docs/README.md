@@ -42,6 +42,9 @@ Wyszukiwanie zadań, zapisane filtry i udostępnianie: [Filtry](FILTERS.md).
 
 ## Co czytać przed konkretnym zadaniem
 
+Podział plików, zasady dodawania źródeł i rozróżnienie danych lokalnych:
+[Organizacja repozytorium](REPOSITORY.md).
+
 | Zadanie | Opis i punkty wejścia |
 | --- | --- |
 | Nowe pole zadania | [Przestrzenie](SPACES.md); `backend/spaces/models.py`, `backend/spaces/forms.py`, `backend/spaces/task_views.py` |

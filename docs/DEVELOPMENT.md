@@ -1,5 +1,35 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Porządkowanie repozytorium (22.10.2026)
+
+[Mapa plików i zasady organizacji](REPOSITORY.md) opisują podział usług
+w `deploy/`, narzędzi w `scripts/` oraz źródeł, wyników budowania i danych
+lokalnych. Publiczne polecenia instalacji korzystają wyłącznie z `ancore.sh`;
+na polecenie użytkownika usunięto główne skróty `install.sh` i `setup.sh`.
+Lokalny start ONLYOFFICE zachowuje swój skrót zgodności.
+Nieużywane archiwum starego środowiska
+(`venv.bak/`, następnie `.local/venv-backups/`) usunięto na późniejsze
+polecenie użytkownika; bieżące `.venv/` zachowano. Usunięto również cache
+Pythona ze źródeł i puste katalogi lokalne, odzyskując około 115 MiB.
+
+Przeszło **37/37 testów** `core.test_production_installer`,
+`core.test_production` i `core.test_project_layout`. Nowe przypadki sprawdzają
+domyślne lokalizacje konfiguracji produkcji i ONLYOFFICE spoza repozytorium,
+przy ścieżce ze spacjami, prywatne uprawnienia oraz zachowanie istniejących wartości.
+Przeszły także kontrola Django, próbny `collectstatic`, składnia Pythona i sh,
+lokalne linki dokumentacji, źródła `COPY`, indeks oraz kontrola diffu.
+
+Na lokalnym silniku Docker Linux zbudowano cztery obrazy pod osobnymi nazwami
+QA, w tym oba frontendy i kontrolę TypeScriptu. Jednorazowe kontenery bez
+sieci i bez wolumenów danych potwierdziły `manage.py check`, `collectstatic`,
+składnię entrypointów Nginx/PostgreSQL oraz pomoc CLI backupu.
+Próba rzeczywistego konfiguratora przez kontekst Colimy zakończyła się
+brakiem pliku źródłowego: ta maszyna nie udostępnia katalogu repozytorium
+przez bind mount. Build przekazujący kontekst przez API działał poprawnie;
+próba konfiguratora nie zmieniła istniejących ustawień.
+Nie uruchamiano całej instalacji, nie wykonywano migracji danych użytkownika
+ani pełnej regresji aplikacji. Porządkowanie nie zmienia kodu interfejsu.
+
 ## Uporządkowanie instalacji produkcyjnej (21.10.2026)
 
 Wspólnym publicznym wejściem jest `ancore.sh`: `setup`, `configure`, `install`,
@@ -321,6 +351,13 @@ jak wcześniej. W zwykłym skrypcie Pythona ustaw `PYTHONPATH` na katalog `backe
 
 Szablony, migracje i testy pozostają wewnątrz swoich aplikacji, React w
 `frontend/`, wspólne zasoby w `static/`, a konfiguracja usług w `deploy/`.
+Podział wdrożenia na `cli/`, `backend/`, `web/`, `postgres/` i `backup/`,
+narzędzia w `scripts/assets/` i `scripts/office/` oraz zasady przechowywania
+plików opisuje [Organizacja repozytorium](REPOSITORY.md).
+Nieużywaną kopię poprzedniego środowiska Python usunięto na polecenie
+użytkownika; bieżące `.venv/` pozostaje w dotychczasowym miejscu. Opcjonalne
+`.local/` przechowuje pliki lokalne, a `.cache/` pliki odtwarzalne.
+Oba katalogi są wyłączone z Git i builda oraz ukryte w Explorerze.
 Nie umieszczaj nowych aplikacji Django w katalogu głównym.
 Katalog `files/` zawierał wyłącznie nieużywany cache Pythona i został usunięty;
 nie jest modułem aplikacji. Usunięto też puste `deploy/chat/` i `deploy/cypht/`.
@@ -534,7 +571,8 @@ Pełnego zestawu 1407 testów po tej aktualizacji zależności nie ponawiano.
 Docelowa wersja interpretera to [**Python 3.15.0**](https://www.python.org/downloads/release/python-3150/),
 opisana w `requirements.txt` i instrukcji startu. Odtworzono `.venv` na zainstalowanym interpreterze
 3.15.0 z python.org. Zastane środowisko miało zerwane odwołania do usuniętej
-instalacji Homebrew 3.14; jego kopia pozostała w `venv.bak/` poza Git.
+instalacji Homebrew 3.14; jego kopię zachowano wówczas w `venv.bak/` poza Git
+(nieużywane archiwum usunięto 22.10.2026 na polecenie użytkownika).
 Ponownie zainstalowano zależności projektu i dziesięć dodatkowych pakietów
 lokalnych z poprzedniego środowiska, bez kopiowania `site-packages`.
 Środowisko nadal zawiera 17 pakietów; pip pochodzi z nowego interpretera
@@ -585,7 +623,8 @@ Wybraną wersję zapisuje `.python-version`.
 Python 3.14.8 został zainstalowany przez Homebrew, a `.venv` odtworzono
 z zachowaniem wersji wszystkich **17** wcześniejszych pakietów, także narzędzi
 lokalnych spoza `requirements.txt`. Poprzednie środowisko zachowano lokalnie
-w `venv.bak/python-3.14.6` (poza Git). Instalacja frameworka Python 3.14.6
+w `venv.bak/python-3.14.6` (poza Git; nieużywane archiwum usunięto później,
+22.10.2026, na polecenie użytkownika). Instalacja frameworka Python 3.14.6
 pozostaje dostępna pod pełną ścieżką. Lokalna konfiguracja `~/.zprofile`
 i `~/.zshrc` nadaje pierwszeństwo Pythonowi Homebrew dla `python3`, `python3.14`
 i `pip3`, zachowując aktywne środowiska wirtualne. Wcześniejszy wpis instalatora
@@ -1975,9 +2014,10 @@ To obserwacje stanu na 15.09.2026, nie lista wdrożonych poprawek.
 - Wspólne reguły CSS nadpisują m.in. kolory i wagi; bazowy plik komponentu
   nie wystarcza do odtworzenia finalnego wyglądu.
 
-Nie znaleziono w sprawdzonych plikach konfiguracji CI, Docker/Compose,
-osobnego runnera frontendowych testów ani serwisu zadań w tle. Nie oznacza to,
-że takie elementy nie istnieją poza repozytorium.
+Aktualny Docker Compose i polecenia utrzymania opisuje [Produkcja](PRODUCTION.md).
+Testy frontendu uruchamia `pnpm --dir frontend/app test`; ich zakres opisuje
+[Frontend React](FRONTEND.md). Nie zakładaj istnienia dodatkowych usług CI
+lub workerów na podstawie samej konfiguracji modeli.
 
 ## 8. Wdrożenie
 

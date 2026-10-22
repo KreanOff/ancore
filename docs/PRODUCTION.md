@@ -233,6 +233,8 @@ Healthcheck backupu sygnalizuje brak aktualnej kopii; Docker sam nie wysyła pow
 - `deploy/cli/setup.sh` — pytania i podsumowanie konfiguratora terminalowego.
 - `deploy/cli/configure.py` — walidacja i zapis konfiguracji; instalator uruchamia go w Dockerze.
 - `deploy/compose*.yaml`, `deploy/Dockerfile` — usługi i wspólne budowanie obrazów.
+- `deploy/backend/`, `deploy/web/`, `deploy/postgres/`, `deploy/backup/` — pliki
+  odpowiednich usług; pełna mapa: [Organizacja repozytorium](REPOSITORY.md).
 - `scripts/production.py` — zgodność ze starszymi poleceniami: konfigurację przekazuje
   do `deploy/cli/configure.py`, operacje do `ancore.sh`. Nie ma osobnego mechanizmu wdrażania.
 

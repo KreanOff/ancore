@@ -60,6 +60,10 @@ media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
 private_documents/      prywatne pliki Dysku, Dokumentów i komentarzy
 docs/                   opisy projektu i generowany indeks kodu
 scripts/                narzędzia dokumentacji, utrzymania i lokalnego ONLYOFFICE
+  assets/               generator ikon i jego mapowanie
+  office/               konfiguracja i start lokalnego ONLYOFFICE
+.local/                 opcjonalne pliki lokalne, poza Git i buildem
+.cache/                 odtwarzalny cache narzędzi, poza Git i buildem
 ancore.sh               wspólne polecenia instalacji i utrzymania produkcji
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
@@ -72,7 +76,8 @@ AGENTS.md               instrukcje pracy agenta
 `.env` zawiera lokalną konfigurację; `.venv` lokalne środowisko Python.
 Osobny `deploy/.env` generuje instalator produkcji, z losowymi sekretami.
 Treść uploadów i sekrety nie należą do dokumentacji.
-Pełny indeks źródeł znajduje się w [CODE_INDEX.md](CODE_INDEX.md).
+Pełny indeks źródeł znajduje się w [CODE_INDEX.md](CODE_INDEX.md), a zasady
+dodawania plików w [Organizacji repozytorium](REPOSITORY.md).
 
 `backend/` jest katalogiem źródeł, nie nową przestrzenią nazw Pythona.
 Importy nadal używają `spaces`, `accounts`, `ancore.settings` itd.

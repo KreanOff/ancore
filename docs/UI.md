@@ -2260,7 +2260,7 @@ w bazowych szablonach aplikacji i uwierzytelniania. Lokalny adapter
 [flaticon-icons.js](../static/js/flaticon-icons.js) normalizuje nazwy i udostępnia
 `AncoreIcons.render(scope)`, `create`, `html`, `safeName` i `normalize`.
 Nazwy używane przez moduły pozostają stabilne; ich odpowiedniki Flaticon określa
-[mapowanie](../scripts/flaticon-icon-map.json). Nie wymagają migracji danych.
+[mapowanie](../scripts/assets/flaticon-icon-map.json). Nie wymagają migracji danych.
 `data-icon` jest wspólnym atrybutem placeholdera i wygenerowanego SVG;
 `data-flaticon` wskazuje nazwę źródłową UIcons. Ponowne renderowanie jest idempotentne,
 obejmuje również przekazany element główny i działa na `ancore:content-loaded`.

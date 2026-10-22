@@ -21,12 +21,12 @@ Pobierz oficjalne archiwum:
 
 ```sh
 curl -fL https://registry.npmjs.org/@flaticon/flaticon-uicons/-/flaticon-uicons-3.3.1.tgz -o /tmp/flaticon-uicons-3.3.1.tgz
-python scripts/build_flaticon_icons.py /tmp/flaticon-uicons-3.3.1.tgz
+python scripts/assets/build_flaticon_icons.py /tmp/flaticon-uicons-3.3.1.tgz
 ```
 
 SHA256 archiwum: `2c7b6e3725241d3f00ad6345e6eed66b5b3625ff201fbb5bd14acbc057acc05f`.
 Nazwy aplikacji i odpowiadające im ikony Flaticon definiuje
-[`scripts/flaticon-icon-map.json`](../../../scripts/flaticon-icon-map.json).
+[`scripts/assets/flaticon-icon-map.json`](../../../scripts/assets/flaticon-icon-map.json).
 Wartości bez prefiksu wskazują Regular Rounded; prefiks `solid:` wybiera
 Solid Rounded (`star-filled` → `solid:star`).
 Po zmianie mapowania odtwórz zasoby i podbij wersję ich importu w obu bazowych

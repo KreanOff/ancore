@@ -58,8 +58,14 @@ requirements.txt   zależności Pythona
 AGENTS.md          zasady pracy nad projektem
 ```
 
+Dokładny podział katalogów oraz zasady dodawania plików:
+[Organizacja repozytorium](docs/REPOSITORY.md).
+`deploy/` grupuje pliki w `cli/`, `backend/`, `web/`, `postgres/` i `backup/`;
+`scripts/assets/` zawiera narzędzia ikon, a `scripts/office/` narzędzia ONLYOFFICE.
+
 `.venv/`, `node_modules/`, `.env`, `.env.office`, `media/`,
-`private_documents/` oraz generowane bundle są lokalne i pomijane przez Git.
+`private_documents/`, `.cache/`, `.local/` oraz generowane bundle są lokalne
+i pomijane przez Git oraz kontekst budowania Dockera.
 Wspólne ustawienia VS Code ukrywają zależności, cache i pliki danych w Explorerze.
 Pliki nadal istnieją na dysku; reguły widoczności można zmienić w
 [ustawieniach edytora](.vscode/settings.json).
