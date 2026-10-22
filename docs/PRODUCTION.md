@@ -1,272 +1,256 @@
-# Instalacja produkcyjna Docker Compose
+# Instalacja i obsługa produkcji
 
-Pakiet uruchamia pięć usług na jednym serwerze Linux:
+Ancore działa na jednym serwerze Linux. Obrazy aplikacji i oba frontendy są
+budowane na tym serwerze. Baza, pliki, edytor i backupy pozostają lokalne.
+Pierwsza instalacja i przebudowa wymagają internetu do pobrania obrazów bazowych,
+ONLYOFFICE oraz zależności Python/JavaScript; nie jest to instalator offline.
 
 | Usługa | Rola |
 | --- | --- |
-| `web` | Nginx: zasoby Reacta, publiczne awatary, reverse proxy i opcjonalnie HTTPS |
-| `backend` | Django przez Gunicorn, JSON API, kontrola dostępu i pobieranie plików |
-| `postgres` | PostgreSQL 17, bez publikacji portu bazy na hoście |
-| `backup` | Harmonogram nieszyfrowanych kopii bazy i plików |
-| `onlyoffice` | ONLYOFFICE Document Server z JWT i obsługą WebSocketów przez Nginx |
+| `web` | Nginx: zasoby, awatary, reverse proxy i opcjonalnie HTTPS |
+| `backend` | Django/Gunicorn: aplikacja, API i kontrolowane pobieranie plików |
+| `postgres` | PostgreSQL 17, bez portu publikowanego na hoście |
+| `backup` | Harmonogram lokalnych kopii bazy i plików |
+| `onlyoffice` | Edytor dokumentów z JWT i WebSocketami przez Nginx |
 
-Pliki, baza i backupy **nie są szyfrowane na dysku**. HTTPS chroni połączenia
-użytkowników; JWT i hasła kont pozostają częścią dotychczasowych zabezpieczeń.
-Nie zmieniono reguł Workspace, Przestrzeni, zadań ani prywatnego pobierania.
+Dane i backupy nie są szyfrowane na dysku. HTTPS szyfruje połączenia użytkowników.
+Instalator zachowuje uprawnienia Workspace, Przestrzeni i prywatnych plików.
 
 ## Wymagania
 
-- Serwer Linux z lokalnie działającym Docker Engine i aktualnym Docker Compose
-  obsługującym `up --wait`. Działa plugin `docker compose` lub `docker-compose`.
-- Pliki projektu na tym samym serwerze co daemon Docker. Instalator montuje
-  katalog projektu; zdalny daemon bez tego katalogu nie jest obsługiwany.
-- Dostęp do rejestru obrazów, PyPI i npm podczas budowania. Python, Node,
-  PostgreSQL i Nginx na hoście nie są potrzebne. Instalator nie instaluje
-  Dockera ani nie zmienia zapory hosta.
-- Jako punkt startowy przewidź 4 vCPU, 8 GiB RAM i SSD z zapasem na pliki,
-  ONLYOFFICE, obrazy oraz backupy. Dopasuj zasoby do obciążenia.
+- Docker Engine z lokalnym socketem `unix://` i Compose obsługującym
+  `up --wait --wait-timeout`. Obsługiwane są `docker compose` i `docker-compose`.
+- Źródła projektu na tym samym serwerze co daemon Docker; zdalny daemon jest
+  odrzucany. Użytkownik potrzebuje dostępu do Dockera i zapisu w katalogu projektu.
+- Jako punkt startowy: 4 vCPU, 8 GiB RAM i SSD z zapasem na ONLYOFFICE, pliki,
+  obrazy, archiwa oraz miejsce robocze backupu i odtwarzania.
 
-Backend używa Python 3.14.8, należącego do zakresu wsparcia Django 6.1.
-Oba frontendy budowane są z lockfile przez Node 24 i pnpm 11.25.0;
-proces Node nie działa obok Django w produkcji. Oba pakiety pnpm dopuszczają
-skrypt instalacyjny istniejącego esbuild. Lokalny development pozostaje bez zmian.
+Python, Node, PostgreSQL i Nginx działają w kontenerach. Instalator nie instaluje
+Dockera, nie zmienia grup użytkownika ani zapory. Przy odmowie dostępu do socketu
+sprawdź usługę Docker i [uprawnienia użytkownika](https://docs.docker.com/engine/install/linux-postinstall/).
+Grupa `docker` daje uprawnienia równoważne administratorowi.
 
-## Pierwsza instalacja: HTTP bez domeny
+Backend budowany jest na Pythonie 3.14.8, frontendy na Node 24 i pnpm 11.25.0
+z lockfile. Wersje bazowe wskazuje [Dockerfile](../deploy/Dockerfile), a zależności
+Gunicorna [deploy/backend/requirements.txt](../deploy/backend/requirements.txt).
 
-Po zainstalowaniu Dockera z Compose pobierz lub skopiuj projekt na serwer,
-wejdź do jego katalogu i wykonaj:
+## Pierwsza instalacja
+
+Po pobraniu lub skopiowaniu źródeł na serwer:
 
 ```sh
 cd ancore
-sh install.sh
+./ancore.sh setup
 ```
 
-Otwórz `http://IP_SERWERA:8080` (na samym serwerze także `http://localhost:8080`).
-Domena i certyfikat nie są wymagane. Domyślny nasłuch to `0.0.0.0:8080`;
-dostęp z innych komputerów wymaga przepuszczenia TCP 8080 w zaporze serwera.
-Adres nie jest zapisany na sztywno: można użyć aktualnego IP serwera.
-W tym trybie Django przyjmuje adresy IP i `localhost`, a odrzuca dowolne nazwy
-DNS. Jeśli chcesz używać nazwy hosta, podaj ją przez `--url`.
+Konfigurator pyta o IP lub domenę **bez protokołu i portu**, HTTP/HTTPS, porty,
+nasłuch i katalog backupów. Wartość `auto` zachowuje obsługę dowolnego IP serwera.
+Domyślnie używa HTTP, portu 8080 oraz nasłuchu `0.0.0.0`, pozwalającego na
+połączenia z sieci, jeśli przepuszcza je zapora. Nasłuch `127.0.0.1` ogranicza
+połączenia do serwera. Można także wybrać konkretny interfejs IPv4.
 
-Instalator automatycznie:
+Po podsumowaniu zapisuje `deploy/.env` (0600) z osobnymi losowymi sekretami
+Django, aplikacyjnej i administracyjnej roli PostgreSQL oraz JWT ONLYOFFICE.
+Następnie pyta, czy zbudować i uruchomić Ancore. Odpowiedź `n` zapisuje ustawienia;
+później uruchom `./ancore.sh install`. Ponowny konfigurator podpowiada zapisane
+wartości i zachowuje sekrety, nazwę projektu i wolumeny.
 
-1. Uruchamia konfigurator w tymczasowym kontenerze Pythona.
-2. Tworzy `deploy/.env` z uprawnieniami 0600 i osobnymi losowymi sekretami
-   Django, bazy aplikacji, administratora PostgreSQL oraz JWT ONLYOFFICE.
-3. Przygotowuje katalog backupów, buduje obrazy i oba frontendy.
-4. Uruchamia migracje, `collectstatic` i pięć usług z nową pustą bazą.
-5. Czeka na gotowość usług; scheduler wykonuje pierwszy backup po starcie.
+Przykładowy adres po instalacji: `http://IP_SERWERA:8080`. Na innym urządzeniu
+wpisz IP serwera, nie `localhost`. Lokalne `.env`, baza developerska i uploady
+nie są importowane ani nadpisywane przez instalator.
 
-Nie trzeba ręcznie kopiować ani edytować pliku `.env`. Lokalny `.env` z katalogu
-głównego, lokalna baza i uploady nie są importowane ani nadpisywane.
-Konfiguracja i dane produkcji są pomijane przez Git oraz `.dockerignore`.
-Ponowne `sh install.sh` zachowuje sekrety, projekt i wolumeny; przy działającej
-instalacji najpierw wykonuje backup, a następnie przebudowuje i uruchamia usługi.
-Zmiana adresu, portu lub protokołu istniejącej instalacji wymaga `--reconfigure`.
+Przed budowaniem sprawdzane są zajęte porty innych kontenerów oraz hosta
+(przez `ss`, `netstat` lub `lsof`, jeśli są dostępne). Port bieżącego kontenera
+`web` tej instalacji jest dopuszczony przy jego wymianie. Kontrola jest wstępna;
+ostatecznie gotowość potwierdza `up --wait`. Błąd kończy polecenie kodem błędu,
+bez komunikatu o gotowości.
 
-Opcje można podać już przy pierwszym uruchomieniu, np.:
+## Jedno polecenie do obsługi
+
+Wszystkie operacje udostępnia `ancore.sh`; działa także `sh ancore.sh` na Ubuntu.
+
+| Polecenie | Działanie |
+| --- | --- |
+| `./ancore.sh setup` | Konfigurator krok po kroku |
+| `./ancore.sh configure [OPCJE]` | Zapis ustawień bez budowania i startu |
+| `./ancore.sh install [OPCJE]` | Konfiguracja, backup działającej instalacji, lokalny build i start |
+| `./ancore.sh update` | Backup, lokalny build i start istniejącej instalacji z aktualnego kodu |
+| `./ancore.sh start` | Start lokalnych obrazów bez budowania i pobierania |
+| `./ancore.sh stop` / `restart` | Zatrzymanie lub ponowny start z zachowaniem danych |
+| `./ancore.sh status` | Stan wszystkich usług |
+| `./ancore.sh logs [USŁUGA]` | Podgląd logów; Ctrl+C kończy podgląd, zachowując usługi |
+| `./ancore.sh doctor` | Kontrola Dockera, konfiguracji, portów oraz tabela stanu usług |
+| `./ancore.sh backup` | Lokalna kopia bazy i plików |
+| `./ancore.sh restore PLIK --yes` | Odtworzenie kopii z zastąpieniem bieżących danych |
+| `./ancore.sh unlock` | Usunięcie pozostałej blokady, jeśli kopia nie trwa |
+| `./ancore.sh reload` | Sprawdzenie i przeładowanie Nginx w kontenerze |
+| `./ancore.sh admin` | Interaktywne utworzenie administratora Django |
+
+`start` wymaga obrazów wcześniej przygotowanych przez `install`. `update`
+wymaga istniejącej konfiguracji i nie pobiera kodu z Git. Najpierw pobierz lub
+skopiuj nowe źródła. Build używa lokalnego buildera Dockera, niezależnie od
+globalnie wybranego buildera Buildx. `collectstatic` zachowuje poprzednie chunki
+dla otwartych kart przeglądarki.
+
+`doctor` pokazuje stan usług, ale nie potwierdza dostępu z fizycznego urządzenia
+w LAN. Przy problemach sprawdź IP, port, nasłuch, zaporę, izolację Wi-Fi i tryb
+sieci maszyny wirtualnej. Healthchecki nie zastępują monitoringu z powiadomieniami.
+
+## Konfiguracja bez pytań
 
 ```sh
-sh install.sh --http-port 8080 --backup-dir /srv/ancore-backups
-# Stała nazwa hosta zamiast automatycznej obsługi adresów IP:
-sh install.sh --reconfigure --url http://ancore.lan:8080
+./ancore.sh install --http-port 8080 --backup-dir /srv/ancore-backups
+./ancore.sh configure --reconfigure --url http://ancore.lan:8080
+./ancore.sh install
+./ancore.sh install --help
 ```
 
-Domyślny katalog kopii to `deploy/backups`. Katalogi przekazuj jako osobny
-argument po `--backup-dir` lub `--tls-dir` (ze spacją). Listę opcji pokazuje
-`sh install.sh --help`. Konta tworzy istniejąca rejestracja Ancore.
+Zmiana adresu, portów lub protokołu wymaga `--reconfigure`. Katalogi przekazuj
+jako osobny argument, np. `--backup-dir /srv/ancore-backups`. Przykład pól:
+[production.env.example](../deploy/production.env.example). Zmiana hasła roli
+bazy w pliku nie aktualizuje automatycznie hasła w istniejącym PostgreSQL.
+
+Opcje globalne podaje się przed poleceniem:
+
+```sh
+./ancore.sh --env-file /srv/ancore/.env --context lokalny-docker status
+```
+
+Własny plik konfiguracji jest obsługiwany także przez konfigurator. Kontekst
+musi wskazywać lokalny Docker i widzieć te same ścieżki. Nie zmienia to globalnie
+wybranego kontekstu Docker użytkownika.
 
 ## Opcjonalne HTTPS
 
-Można włączyć HTTPS od razu lub później, zachowując dane i klucze instalacji.
-Przygotuj katalog z certyfikatem `fullchain.pem` i kluczem `privkey.pem`, potem:
+Nginx Ancore może obsługiwać HTTPS bez dodatkowej instalacji Nginx na hoście.
+Przygotuj `fullchain.pem` i `privkey.pem` odpowiadające IP lub domenie, a następnie:
 
 ```sh
-sh install.sh --reconfigure \
-  --url https://ancore.example.com \
-  --tls-dir /etc/ancore/tls
+./ancore.sh configure --reconfigure \
+  --url https://ancore.example.com --tls-dir /etc/ancore/tls
+./ancore.sh start
 ```
 
-Nginx Ancore udostępni HTTPS na porcie 443 i przekieruje dotychczasowy HTTP
-z portu 8080 na skonfigurowany adres HTTPS. Certyfikat może dotyczyć także
-adresu IP; musi odpowiadać adresowi użytemu przez klienta. Inny port HTTPS
-podaj w `--url`, np. `https://192.0.2.10:8443` (lub przez `--https-port` przy
-adresie zawierającym ten sam port).
-
-Użyj rzeczywistych plików lub symlinków wewnątrz montowanego katalogu;
+Port HTTPS domyślnie wynosi 443; niestandardowy podaj w adresie, np. `:8443`.
+HTTP na dotychczasowym porcie przekierowuje na skonfigurowany adres HTTPS.
+Pliki certyfikatu lub ich symlinki muszą mieścić się w montowanym katalogu;
 symlinki Let's Encrypt z `live/` do zewnętrznego `archive/` nie zadziałają.
-Pozyskanie i odnawianie certyfikatu należy do konfiguracji serwera.
-Po podmianie plików przeładuj Nginx komendą `exec web nginx -s reload`
-według sekcji utrzymania poniżej.
+Pozyskanie i odnawianie certyfikatu pozostaje zadaniem administratora.
+Po wymianie plików wykonaj `./ancore.sh reload`.
 
-Jeśli HTTPS obsługuje istniejący reverse proxy na tym samym hoście:
-
-```sh
-sh install.sh --reconfigure --url https://ancore.example.com
-```
-
-Bez `--tls-dir` Nginx Ancore nasłuchuje tylko na `127.0.0.1:8080`.
-Skieruj zewnętrzny proxy na ten port, zachowaj publiczny Host i WebSockety
-oraz limit uploadu co najmniej 25 MiB. Taki wariant wymaga działającego proxy.
-
-Powrót do domyślnego HTTP bez domeny:
+Jeżeli HTTPS obsługuje istniejący reverse proxy:
 
 ```sh
-sh install.sh --reconfigure
+./ancore.sh configure --reconfigure --url https://ancore.example.com
+./ancore.sh start
 ```
 
-HTTP nie szyfruje ruchu, w tym sesji i przesyłanych plików. HTTPS włącza
-bezpieczne ciasteczka, przekierowania oraz HSTS. Dane i backupy na dysku
-pozostają nieszyfrowane w obu wariantach, zgodnie z konfiguracją tej wersji.
-Przeglądarka może pamiętać HSTS po HTTPS, więc cofnięcie protokołu może
-wymagać zmiany adresu lub usunięcia zapisanej polityki dla testowego hosta.
+Bez `--tls-dir` Ancore nasłuchuje na `127.0.0.1:8080`. Zewnętrzny proxy powinien
+przekazywać publiczny Host, WebSockety i uploady co najmniej 25 MiB na ten port.
+HTTPS włącza bezpieczne ciasteczka, przekierowania i HSTS. Powrót do HTTP:
 
-Przykład ustawień: [production.env.example](../deploy/production.env.example).
-Do samego generowania konfiguracji służy także opcjonalne
-`python3 scripts/production.py configure`; Python na hoście nie jest wymagany
-przez `install.sh`. Konfigurator rozpoznaje również dawny
-`deploy/.env.production` i zachowuje jego sekrety podczas przejścia na `deploy/.env`.
-Zmiana hasła istniejącej bazy w pliku nie zmienia automatycznie hasła roli PostgreSQL.
+```sh
+./ancore.sh configure --reconfigure
+./ancore.sh start
+```
+
+HTTP nie szyfruje sesji ani plików w przesyle. Po HTTPS przeglądarka może pamiętać
+HSTS; cofnięcie protokołu może wymagać innego adresu lub wyczyszczenia polityki
+dla testowego hosta. Dane na dysku pozostają nieszyfrowane w obu wariantach.
 
 ## Dane, proxy i ONLYOFFICE
 
-Wolumeny nazwane są w obrębie stałego projektu `ancore-prod`. Przechowują
-PostgreSQL, prywatne dokumenty, media, pliki tymczasowe, blokady backupu,
-zebrane zasoby oraz katalogi robocze ONLYOFFICE. Są lokalne na serwerze Docker
-i pozostają po wymianie kontenerów. Zachowaj nazwę projektu przy aktualizacjach.
-Nie używaj `docker compose down --volumes`: usuwa dane instalacji.
+Wolumeny należą do stałego projektu `ancore-prod` albo nazwy podanej przy
+pierwszej instalacji przez `--project`. Przechowują bazę, media, prywatne pliki,
+pliki tymczasowe, blokady, static oraz katalogi robocze ONLYOFFICE. Zachowaj nazwę
+projektu. `stop` zachowuje dane; `docker compose down --volumes` je usuwa.
 
-Django działa jako UID/GID 10001; katalogi mają ograniczone uprawnienia.
-Rola bazy `ancore` jest właścicielem danych aplikacji, bez uprawnień superuser
-ani tworzenia baz. Osobne hasło administratora PostgreSQL jest dostępne
-wyłącznie usłudze bazy, a nie backendowi lub zadaniu backupu.
-Nginx widzi tylko zasoby statyczne i media. Publiczne media obejmują wyłącznie
-zdjęcia kont/Workspace z istniejącej listy rozszerzeń. Prywatne dokumenty
-i załączniki pobiera Django po kontroli dostępu. Nie ma publicznego aliasu
-całego katalogu mediów ani prywatnych dokumentów.
+Django działa jako UID/GID 10001. Rola `ancore` jest właścicielem danych aplikacji,
+bez superuser/CREATEDB. Osobne hasło administratora PostgreSQL widzi wyłącznie
+usługa bazy. Nginx ma dostęp do static oraz dozwolonych awatarów JPG/JPEG/PNG/WebP;
+prywatne dokumenty i załączniki wydaje Django po kontroli dostępu. Nie ma
+publicznego aliasu całego katalogu mediów ani dokumentów.
 
-`TRUST_PROXY_HEADERS=true` włącza zaufanie Django do `X-Forwarded-Proto`.
-Backend nie publikuje portu, a Nginx nadpisuje ten nagłówek na podstawie
-skonfigurowanego publicznego schematu. Nie wystawiaj portu backendu ani nie
-włączaj tej opcji przed proxy, które przepuszcza dowolne nagłówki klienta.
+Backend nie publikuje portu. `TRUST_PROXY_HEADERS=true` zakłada zaufany Nginx,
+który nadpisuje `X-Forwarded-Proto` na podstawie skonfigurowanego schematu.
+Nie wystawiaj backendu bezpośrednio z taką konfiguracją.
 
-ONLYOFFICE jest dostępny dla przeglądarki pod `/onlyoffice/` tego samego
-adresu IP lub hosta i portu. `ONLYOFFICE_URL=/onlyoffice` nie odsyła klienta
-do `localhost` ani do nazwy kontenera. Adres wyniku z publicznym prefiksem
-jest mapowany na skonfigurowany wewnętrzny cache ONLYOFFICE; Django nie
-pobiera pliku z hosta przekazanego w callbacku.
-Nginx przekazuje wirtualną ścieżkę i nagłówki zgodnie z
-[przykładem ONLYOFFICE](https://github.com/ONLYOFFICE/document-server-proxy/blob/master/nginx/proxy-to-virtual-path.conf).
-Django wywołuje usługę pod `http://onlyoffice`; podpisane pobrania i callbacki
-wracają przez wewnętrzny listener Nginx `http://web:8081`, dopuszczający tylko
-te endpointy i sprawdzenie gotowości. Ten port nie jest publikowany. JWT pozostaje włączony,
-przykładowa aplikacja ONLYOFFICE wyłączona, a dostęp do adresów metadanych
-chmury wyłączony. Dostęp do prywatnych adresów jest konieczny do komunikacji
-wewnątrz Compose. Szczegóły domenowe: [OFFICE.md](OFFICE.md).
+Przeglądarka używa `/onlyoffice/` pod adresem Ancore. Django łączy się z
+`http://onlyoffice`, a podpisane pobrania i callbacki wracają przez wewnętrzny
+listener `http://web:8081`, dopuszczający tylko endpointy edytora i readiness.
+JWT pozostaje włączony, aplikacja demonstracyjna i dostęp do adresów metadanych
+chmury są wyłączone. Wynik callbacku jest pobierany ze stałego wewnętrznego
+cache ONLYOFFICE po walidacji ścieżki. Szczegóły: [OFFICE.md](OFFICE.md).
 
-Logi HTTP nie zawierają standardowego access logu z podpisanymi URL.
-Logi kontenerów mają rotację. Hasła są w prywatnym pliku konfiguracji
-i środowisku usług; nie są szyfrowane przez Compose. Administrator Dockera
-ma do nich dostęp. Nie kopiuj konfiguracji ani danych do Git; `.dockerignore`
-wyklucza je również z kontekstu budowania.
+Konfiguracja i dane są pomijane przez Git i kontekst budowania. Sekrety są w
+prywatnym pliku i środowisku usług, dostępnym administratorowi Dockera.
+Logi mają rotację; standardowe access logi z podpisanymi URL są wyłączone.
 
 ## Backup i odtwarzanie
 
-Scheduler wykonuje kopię po starcie, jeżeli jej brakuje lub minął skonfigurowany
-interwał (domyślnie 24 godziny). Zachowuje 14 ostatnich poprawnych kopii.
-`BACKUP_INTERVAL_SECONDS` i `BACKUP_KEEP` zmieniają te wartości.
+Scheduler domyślnie wykonuje kopię co 24 godziny i zachowuje 14 poprawnych kopii.
+Wartości zmieniają `BACKUP_INTERVAL_SECONDS` i `BACKUP_KEEP`. Po starcie tworzy
+kopię, jeśli jej brakuje lub upłynął interwał. Ręczne wykonanie:
 
 ```sh
-docker compose --env-file deploy/.env -f deploy/compose.yaml exec -T backup python3 /opt/ancore/backup.py once
-docker compose --env-file deploy/.env -f deploy/compose.yaml ps
+./ancore.sh backup
 ```
 
-Przy bezpośrednim HTTPS w tych i kolejnych poleceniach dodaj
-`-f deploy/compose.tls.yaml` po `-f deploy/compose.yaml`. Przy samodzielnym
-Compose użyj `docker-compose` zamiast `docker compose`.
+Archiwum `.tar.gz` i jego `.sha256` zawierają `database.dump` z `pg_dump --format=custom`,
+media, prywatne pliki i manifest formatu/release. Nie zawierają konfiguracji ani
+certyfikatów; zachowaj ich osobną bezpieczną kopię. Lokalne kopie nie chronią
+przed utratą całego serwera; przechowuj potrzebne archiwa także poza nim.
 
-Backup tworzy nieszyfrowane `.tar.gz` i plik `.sha256`. Archiwum zawiera
-`database.dump` z `pg_dump --format=custom`, zapisane pliki prywatne, publiczne
-media i manifest formatu/release. Kompresja nie jest szyfrowaniem.
+Backup ustawia znacznik przerwy, odrzuca nowe żądania kodem 503 i czeka na
+zakończenie wcześniejszych operacji, pobrań i callbacków przez wspólną blokadę
+wszystkich workerów. Obejmuje GET, ponieważ aplikacja może podczas odczytu
+zapisywać sesje i inicjalizować rekordy. Przerwa trwa przez przygotowanie całego
+archiwum; dla dużych instalacji przewidź okno serwisowe lub rozbudowę mechanizmu.
+Nie zapisuj w tym czasie danych dodatkowymi skryptami omijającymi HTTP.
+Kopia obejmuje dane zatwierdzone w Ancore, bez niezapisanych edycji i cache ONLYOFFICE.
 
-Przed kopiowaniem scheduler ustawia znacznik przerwy, odrzuca nowe żądania
-HTTP kodem 503 i czeka na zakończenie wcześniejszych żądań, pobrań i callbacków.
-Pierwszy middleware Django używa wspólnej blokady plikowej we wszystkich
-workerach. Obejmuje również GET, ponieważ obecna aplikacja może podczas GET
-zapisywać sesję lub inicjalizować rekordy. Po `pg_dump` i archiwizacji plików
-usuwa blokadę. Przerwa trwa przez przygotowanie całego archiwum; przy dużych
-danych zaplanuj ją w oknie serwisowym i dostosuj mechanizm kopii.
-
-Nie uruchamiaj w tym czasie dodatkowych skryptów zapisujących bazę/pliki
-z pominięciem HTTP. Backup obejmuje dane zatwierdzone w Ancore, a nie niezapisany
-stan edytora w przeglądarce lub roboczy cache ONLYOFFICE. Kopia nie zawiera
-sekretów instalacji: zachowaj osobno bezpieczną kopię `deploy/.env` oraz
-certyfikatów. Kopiuj archiwa także poza ten serwer — lokalny kontener backupu
-nie zabezpiecza przed utratą całej maszyny.
-
-Zaawansowane polecenia `scripts/production.py` wymagają Pythona 3.10+ na hoście;
-nie są potrzebne do instalacji, aktualizacji ani zwykłego backupu.
-Odtwarzanie do już przygotowanej instalacji, po zamknięciu edytorów:
+Po zamknięciu edytorów umieść archiwum i `.sha256` w skonfigurowanym katalogu kopii:
 
 ```sh
-# Umieść archiwum i jego plik .sha256 w skonfigurowanym katalogu backupów.
-python3 scripts/production.py restore /srv/ancore-backups/ancore-NAZWA.tar.gz --yes
+./ancore.sh restore /srv/ancore-backups/ancore-NAZWA.tar.gz --yes
 ```
 
-Komenda `restore` sama zatrzymuje zapisujące usługi, weryfikuje sumę i format,
-uruchamia PostgreSQL, odtwarza bazę przez transakcyjny `pg_restore`, zastępuje katalogi plików,
-ustawia ich właściciela i uruchamia zestaw ponownie. Zastępuje bieżące dane;
-wcześniej zachowaj potrzebny aktualny backup. Przy błędzie pozostawia aplikację
-zatrzymaną, aby można było dokończyć naprawę. Odtwarzaj kod zgodny z wersją kopii;
-przy zmianach schematu zachowaj odpowiedni commit/tag oraz konfigurację.
+Polecenie sprawdza argumenty i lokalizację, zatrzymuje zapisujące usługi,
+weryfikuje sumę i format archiwum, odtwarza bazę przez transakcyjny `pg_restore`,
+zastępuje pliki, ustawia ich właściciela i uruchamia usługi ponownie.
+Błąd pozostawia zapisujące usługi zatrzymane. Odtwarzaj kod zgodny z wersją kopii;
+zachowaj potrzebny commit/tag i konfigurację. Przed zastąpieniem danych zachowaj
+potrzebny aktualny backup. Główna wersja PostgreSQL wymaga osobnej procedury migracji.
 
-Po nagłym zabiciu procesu backupu może pozostać znacznik przerwy.
-Sprawdź logi i stan zadania, następnie użyj `python3 scripts/production.py unlock`.
-Komenda odmówi usunięcia blokady, jeżeli proces kopii nadal ją trzyma.
-Healthcheck backupu sygnalizuje brak aktualnej kopii; zewnętrzny monitoring
-powinien zgłaszać niezdrowe usługi. Docker sam nie wysyła powiadomień.
+Po nagłym zabiciu backupu sprawdź logi i stan operacji, a następnie użyj
+`./ancore.sh unlock`. Polecenie odmówi usunięcia blokady trzymanej przez trwającą kopię.
+Healthcheck backupu sygnalizuje brak aktualnej kopii; Docker sam nie wysyła powiadomień.
 
-## Aktualizacja i zatrzymywanie
+## Pliki i zgodność
 
-Po pobraniu aktualnego kodu ponów instalator. Wykona backup działającej
-instalacji przed przebudową obrazów i migracjami:
+- `ancore.sh` — wspólne publiczne polecenia instalacji i utrzymania.
+- `deploy/cli/runtime.sh` — jedna implementacja Compose, konfiguracji, budowania i odtwarzania.
+- `deploy/cli/setup.sh` — pytania i podsumowanie konfiguratora terminalowego.
+- `deploy/cli/configure.py` — walidacja i zapis konfiguracji; instalator uruchamia go w Dockerze.
+- `deploy/compose*.yaml`, `deploy/Dockerfile` — usługi i wspólne budowanie obrazów.
+- `scripts/production.py` — zgodność ze starszymi poleceniami: konfigurację przekazuje
+  do `deploy/cli/configure.py`, operacje do `ancore.sh`. Nie ma osobnego mechanizmu wdrażania.
 
-```sh
-sh install.sh
-docker compose --env-file deploy/.env -f deploy/compose.yaml ps
-docker compose --env-file deploy/.env -f deploy/compose.yaml stop
-docker compose --env-file deploy/.env -f deploy/compose.yaml up -d --wait
-```
-
-Przy bezpośrednim HTTPS dodaj plik `-f deploy/compose.tls.yaml` do poleceń
-Compose, także przy ponownym `up`. `sh install.sh` dobiera go automatycznie.
-Opcjonalnego administratora Django utworzysz przez
-`docker compose --env-file deploy/.env -f deploy/compose.yaml exec backend python manage.py createsuperuser`;
-hasło jest wprowadzane interaktywnie. Przeładowanie certyfikatu wykonaj przez
-`exec web nginx -s reload` z tymi samymi argumentami Compose.
-
-`collectstatic` zachowuje poprzednie chunki dla otwartych kart. `stop` zatrzymuje
-kontenery bez usuwania wolumenów. Nie zmieniaj głównej wersji PostgreSQL przez
-samą zmianę tagu obrazu; wymaga to osobnej procedury migracji i odtworzenia.
-Opcjonalny `scripts/production.py` nadal udostępnia polecenia `update`, `backup`,
-`status`, `stop`, `start`, `admin`, `reload` i `restore`.
-
-Domyślne obrazy mają przypięte wersje Python/Node/Nginx/ONLYOFFICE, a PostgreSQL
-pozostaje na linii 17 (aktualizacje minor). Gunicorn i jego zależność są
-przypięte w `deploy/requirements.txt`. Aktualizacje obrazów i zależności
-wymagają ponownej weryfikacji, w tym zapisu dokumentu w ONLYOFFICE.
+Instalację uruchamiaj przez `./ancore.sh setup` lub `./ancore.sh install`.
+Sama konfiguracja używa `./ancore.sh configure`; `install --configure-only`
+pozostaje obsługiwanym wariantem.
+Konfigurator rozpoznaje `deploy/.env.production` i przenosi jego ustawienia do
+`deploy/.env`, zachowując sekrety. Lokalny development i `.env.office` pozostają osobne.
 
 ## Weryfikacja pakietu
 
-Testy konfiguracji, blokad backupu i readiness:
-
 ```sh
-.venv/bin/python manage.py test core.test_production core.test_project_layout
-docker compose --env-file deploy/.env -f deploy/compose.yaml config --quiet
+.venv/bin/python manage.py test core.test_production_installer core.test_production core.test_project_layout
+.venv/bin/python scripts/update_code_index.py --check
+./ancore.sh doctor
 ```
 
-Przed wdrożeniem na docelowy serwer sprawdź pięć zdrowych usług, logowanie,
-uprawnienia dwóch Workspace, upload/pobranie, zapis ONLYOFFICE, backup oraz
-odtworzenie kopii w osobnej instalacji. Sprawdź również restart kontenerów
-i zachowanie danych. Opis faktycznie wykonanej weryfikacji znajduje się
-w [DEVELOPMENT.md](DEVELOPMENT.md#produkcja-docker-compose-20102026).
+Przed wdrożeniem sprawdź pięć zdrowych usług, logowanie, uprawnienia dwóch Workspace,
+upload/pobranie, zapis ONLYOFFICE, backup i odtworzenie w osobnej instalacji oraz
+restart z zachowaniem danych. Zakres wykonanej weryfikacji opisuje
+[DEVELOPMENT.md](DEVELOPMENT.md).

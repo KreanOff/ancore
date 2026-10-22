@@ -2,7 +2,7 @@
 from pathlib import Path
 import secrets
 
-path = Path(__file__).resolve().parents[1] / '.env.office'
+path = Path(__file__).resolve().parents[2] / '.env.office'
 try:
     with path.open('x') as config:
         path.chmod(0o600)

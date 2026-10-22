@@ -1,16 +1,5 @@
 #!/bin/sh
-# Run from any directory; leaves the user's default Docker context unchanged.
+# Compatibility shortcut; the local ONLYOFFICE launcher lives in scripts/office/.
 set -eu
-cd "$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
-PATH="/opt/homebrew/bin:$PATH"
-export PATH
-.venv/bin/python scripts/configure_office.py
-if [ "$(uname -s)" = Darwin ]; then
-    colima start --profile ancore --cpu 2 --memory 4 --disk 40 --mount none --activate=false
-    export DOCKER_CONTEXT=colima-ancore
-fi
-if command -v docker-compose >/dev/null 2>&1; then
-    docker-compose --env-file .env.office -f deploy/office.compose.yml up -d --wait
-else
-    docker compose --env-file .env.office -f deploy/office.compose.yml up -d --wait
-fi
+ANCORE_ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd -P)
+exec sh "$ANCORE_ROOT/scripts/office/start.sh" "$@"

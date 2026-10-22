@@ -90,7 +90,7 @@ def backup():
 
 
 def restore(archive):
-    # Called only with the backend and ONLYOFFICE stopped by production.py.
+    # Called only with the backend and ONLYOFFICE stopped by ancore.sh restore.
     checksum = archive.with_name(archive.name + '.sha256')
     if not checksum.is_file() or checksum.read_text().split()[0] != digest(archive):
         raise ValueError('Brak lub nieprawidłowa suma SHA-256 archiwum.')

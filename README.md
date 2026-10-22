@@ -9,19 +9,37 @@ a interfejs z Reacta i TypeScriptu.
 
 ## Instalacja na serwerze (Docker)
 
-Instalacja produkcyjna z pięcioma usługami Docker Compose, lokalnymi trwałymi
-wolumenami i nieszyfrowanymi backupami: [Produkcja](docs/PRODUCTION.md).
-Po zainstalowaniu Dockera z Compose pobierz projekt na serwer i wykonaj:
+Instalacja produkcyjna z konfiguracją w terminalu, pięcioma usługami Docker
+Compose, lokalnymi wolumenami i backupami: [Produkcja](docs/PRODUCTION.md).
+Po zainstalowaniu Dockera z Compose pobierz lub skopiuj projekt na serwer:
 
 ```sh
 cd ancore
-sh install.sh
+./ancore.sh setup
 ```
 
-Instalator sam generuje `deploy/.env` z losowymi sekretami, buduje obrazy
-i uruchamia pięć usług. Domyślny adres to `http://IP_SERWERA:8080` — domena
-i Python na hoście nie są wymagane. Opcjonalne HTTPS, w tym włączenie go
-w istniejącej instalacji bez zmiany danych i kluczy, opisuje instrukcja.
+Konfigurator pyta o IP/domenę, port, HTTP/HTTPS, dostęp z sieci i katalog
+backupów. Generuje `deploy/.env` z losowymi sekretami i proponuje lokalne
+budowanie oraz uruchomienie. Domyślny adres to `http://IP_SERWERA:8080`;
+nasłuch `0.0.0.0` pozwala na połączenia z innych urządzeń, jeśli przepuszcza je
+sieć i zapora. Python, Node, Nginx i PostgreSQL działają w kontenerach.
+Pierwszy build pobiera obrazy bazowe i zależności z internetu; aplikacja, baza,
+pliki, ONLYOFFICE i nieszyfrowane backupy pozostają na tym serwerze.
+Do instalacji bez pytań służy `./ancore.sh install`, a do zapisania samych
+ustawień `./ancore.sh configure`.
+
+```sh
+./ancore.sh start
+./ancore.sh status
+./ancore.sh logs
+./ancore.sh stop
+```
+
+Polecenie `start` uruchamia już zbudowaną aplikację bez pobierania obrazów.
+Aktualny kod przebudujesz przez `./ancore.sh update`; polecenie wymaga istniejącej
+konfiguracji i wykonuje backup działającej instalacji. Backup, odtwarzanie,
+przeładowanie Nginx i diagnostykę obsługuje to samo polecenie;
+listę operacji pokazuje `./ancore.sh --help`.
 
 ## Struktura projektu
 
@@ -31,6 +49,7 @@ frontend/app/      interfejs React i TypeScript
 frontend/board/    odizolowany edytor tablicy Excalidraw
 static/            wspólne style, skrypty, obrazy i lokalne biblioteki
 deploy/            produkcyjny Docker Compose: WWW, Django, PostgreSQL, backup, ONLYOFFICE
+ancore.sh          wspólne polecenia instalacji i utrzymania produkcji
 scripts/           narzędzia do budowania i utrzymania projektu
 docs/              dokumentacja i generowany indeks kodu
 manage.py          główne wejście do poleceń Django

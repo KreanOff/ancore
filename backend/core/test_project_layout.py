@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -16,6 +17,42 @@ from ancore import settings as project_settings
 
 
 class ProjectLayoutTests(SimpleTestCase):
+    def test_production_configurator_defaults_stay_in_deploy_from_another_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = (Path(directory) / 'repo with spaces').resolve()
+            target = root / 'deploy/cli/configure.py'
+            target.parent.mkdir(parents=True)
+            shutil.copyfile(settings.BASE_DIR / 'deploy/cli/configure.py', target)
+            command = [sys.executable, str(target)]
+            result = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            configuration = root / 'deploy/.env'
+            original = configuration.read_bytes()
+            self.assertEqual(configuration.stat().st_mode & 0o777, 0o600)
+            values = dict(line.split('=', 1) for line in original.decode().splitlines() if '=' in line)
+            self.assertEqual(values['ANCORE_BACKUP_DIR'], f"'{root / 'deploy/backups'}'")
+            self.assertTrue((root / 'deploy/backups').is_dir())
+            repeated = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+            self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
+            self.assertEqual(configuration.read_bytes(), original)
+
+    def test_local_office_configuration_stays_at_root_and_preserves_existing_values(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = (Path(directory) / 'repo with spaces').resolve()
+            target = root / 'scripts/office/configure.py'
+            target.parent.mkdir(parents=True)
+            shutil.copyfile(settings.BASE_DIR / 'scripts/office/configure.py', target)
+            command = [sys.executable, str(target)]
+            result = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            configuration = root / '.env.office'
+            self.assertEqual(configuration.stat().st_mode & 0o777, 0o600)
+            configuration.write_text('ONLYOFFICE_JWT_SECRET=existing-local-value\n')
+            repeated = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+            self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
+            self.assertEqual(configuration.read_text(), 'ONLYOFFICE_JWT_SECRET=existing-local-value\n')
+            self.assertNotIn('existing-local-value', repeated.stdout + repeated.stderr)
+
     def test_manage_runs_from_outside_the_repository(self):
         with tempfile.TemporaryDirectory() as directory:
             result = subprocess.run(

@@ -46,6 +46,11 @@ backend/                katalog źródeł Pythona, dodawany do ścieżki import�
 frontend/board/         izolowany bundle Excalidraw/React i lockfile
 frontend/app/           frontend React/TypeScript aktywnych modułów
 deploy/                 produkcyjny Compose, obrazy, proxy, backup i ONLYOFFICE
+  cli/                  wspólne operacje instalacji i konfigurator
+  backend/              entrypoint Django, Gunicorn i zależności produkcji
+  web/                  entrypoint Nginx i szablon konfiguracji
+  postgres/             inicjalizacja roli aplikacji
+  backup/               archiwizacja, harmonogram i odtwarzanie
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
 static/frontend/        generowany bundle React z manifestem, poza Git
@@ -55,7 +60,7 @@ media/                  pliki obsługiwane przez standardowy MEDIA_ROOT
 private_documents/      prywatne pliki Dysku, Dokumentów i komentarzy
 docs/                   opisy projektu i generowany indeks kodu
 scripts/                narzędzia dokumentacji, utrzymania i lokalnego ONLYOFFICE
-install.sh              instalator produkcji wymagający tylko Dockera
+ancore.sh               wspólne polecenia instalacji i utrzymania produkcji
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
@@ -87,7 +92,13 @@ rozdziela WWW, backend, PostgreSQL, backup i ONLYOFFICE; pliki mają trwałe lok
 wolumeny bez szyfrowania. Middleware `core.maintenance` synchronizuje żądania
 z backupem bazy i plików. `/health/ready/` sprawdza gotowość bazy bez ujawniania
 danych użytkowników. Healthchecki usług nie zastępują zewnętrznego monitoringu.
-`sh install.sh` uruchamia konfigurator w Dockerze: domyślnie HTTP na
+`ancore.sh` jest wspólnym wejściem instalacji, konfiguracji i utrzymania.
+Budowanie obrazów i obu frontendów odbywa się na tym samym serwerze;
+obrazy bazowe i zależności są pobierane z internetu przy instalacji.
+`deploy/cli/runtime.sh` zawiera jedną implementację operacji Compose i odtwarzania,
+`deploy/cli/setup.sh` konfigurator terminalowy, a `deploy/cli/configure.py` walidację
+i zapis ustawień w kontenerze Pythona. `scripts/production.py` przekazuje starsze
+polecenia do tych samych implementacji. Domyślna instalacja używa HTTP na
 `0.0.0.0:8080`, bez stałej domeny. `core.hosts.ServerAddressMiddleware`
 przy `ALLOW_IP_HOSTS=true` ogranicza hosty do IP i localhost. Opcjonalne HTTPS
 z certyfikatem Nginx albo zewnętrznym proxy zachowuje sekrety i wolumeny przy

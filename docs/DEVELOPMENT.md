@@ -1,10 +1,66 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Uporządkowanie instalacji produkcyjnej (21.10.2026)
+
+Wspólnym publicznym wejściem jest `ancore.sh`: `setup`, `configure`, `install`,
+`update`, `start`, `stop`, `restart`, `status`, `logs`, `backup`, `restore`,
+`unlock`, `reload`, `admin` i `doctor`. `configure` zapisuje ustawienia bez startu; `update` wymaga
+istniejącej konfiguracji. Obsługiwane są globalne `--env-file` i `--context`
+przed nazwą polecenia, z kontrolą lokalnego socketu Docker.
+
+Kod poleceń wdrożenia jest w `deploy/cli/`: `runtime.sh` zarządza Compose,
+budowaniem, portami, backupem i odtwarzaniem; `setup.sh` obsługuje pytania
+terminala; `configure.py` waliduje i zapisuje ustawienia w kontenerze Pythona.
+`scripts/production.py` przekazuje starsze wywołania do tych samych implementacji.
+Usunięto drugą implementację cyklu życia usług w Pythonie i nieużywaną kopię
+instalatora z obrazu backendu. `start` nadal używa lokalnych obrazów przez
+`--no-build --pull never`; obrazy aplikacji i oba frontendy powstają na serwerze.
+Przebudowa wymaga dostępu do rejestrów obrazów i pakietów.
+
+`restore` zachowuje dotychczasową kolejność: kontrola argumentów i lokalizacji,
+zatrzymanie zapisujących usług, odtworzenie bazy i plików, usunięcie blokady,
+start z kontrolą gotowości. Błąd pozostawia zapisujące usługi zatrzymane.
+`unlock` korzysta z jednorazowego kontenera i działa także po zatrzymaniu
+schedulera, zachowując kontrolę blokady. Wolumeny, nazwa projektu i sekrety
+nie zmieniają się przy porządkowaniu skryptów.
+
+Starszy `scripts/start_office.sh` wykrywa brak lokalnego
+`deploy/office.compose.yml` przed generowaniem `.env.office` lub startem Colimy.
+Nie odtwarza wycofanej konfiguracji; kompletny aktualny zestaw jest w produkcyjnym
+Compose. Istniejąca konfiguracja developmentu i jej odczyt w Django pozostają.
+
+Weryfikacja: **35/35 testów** `core.test_production_installer`,
+`core.test_production` i `core.test_project_layout`. Zestaw obejmuje zgodność
+starych poleceń, własny plik konfiguracji, odmowę aktualizacji bez konfiguracji,
+restore bez potwierdzenia lub wymaganych plików, pozostawienie zapisujących
+usług zatrzymanych po błędzie oraz działanie unlock bez uruchomionego schedulera.
+
+Osobny projekt Docker Linux `ancore-install-cleanup-qa`, na nowych wolumenach:
+
+- przeszedł konfigurator, lokalny build czterech obrazów z oboma frontendami
+  oraz start pięciu zdrowych usług;
+- przełączenie na HTTPS z lokalnym certyfikatem, backup, zmiana danych QA,
+  `restore`, `unlock`, przeładowanie Nginx i aktualizacja przez wspólne CLI
+  zakończyły się poprawnie; restore przywrócił wartość rekordu konta i treść
+  prywatnego pliku, a cztery sekrety i nazwa projektu pozostały niezmienione;
+- drugi kontener potwierdził HTTPS readiness i logowanie (200), gotowość
+  ONLYOFFICE oraz przekierowanie HTTP 308; testowano certyfikat samopodpisany;
+- sprawdzono składnię POSIX sh w Debian dash, lokalne linki dokumentacji,
+  indeks kodu i diff. Zasoby QA usunięto po weryfikacji.
+
+Nie wykonano wdrożenia na docelowym Ubuntu użytkownika, testu z jego fizycznego
+LAN, publicznego certyfikatu CA ani pełnej regresji aplikacji. Nie zmieniano
+interfejsu przeglądarkowego. Instrukcja użytkowa:
+[Produkcja](PRODUCTION.md).
+
 ## Produkcja Docker Compose (20.10.2026)
+
+Zapis historyczny pierwszego pakietu. Aktualne polecenia i układ plików opisano
+powyżej oraz w [instrukcji produkcji](PRODUCTION.md).
 
 Dodano [pakiet produkcyjny](PRODUCTION.md) z pięcioma usługami: Nginx,
 Django/Gunicorn, PostgreSQL 17, harmonogram backupów oraz ONLYOFFICE 10.0.0.1.
-Instalator `sh install.sh` potrzebuje na hoście wyłącznie Dockera z Compose:
+Instalator `sh ancore.sh install` potrzebuje na hoście wyłącznie Dockera z Compose:
 konfigurator Pythona działa w tymczasowym kontenerze i automatycznie tworzy
 `deploy/.env` (0600) z losowymi sekretami. Domyślnie Ancore działa przez HTTP,
 bez domeny, na `0.0.0.0:8080`; `ALLOW_IP_HOSTS` sprawdza adresy IP i localhost.
@@ -55,7 +111,7 @@ korzystania z bazy ani uploadów lokalnej aplikacji:
 Dodatkowa weryfikacja domyślnego HTTP i instalatora Docker-only na osobnym
 projekcie `ancore-http-qa`:
 
-- `sh install.sh` uruchomiono z linuksowego środowiska Docker CLI bez Pythona
+- instalację (obecnie `sh ancore.sh install`) uruchomiono z linuksowego środowiska Docker CLI bez Pythona
   na hoście; wygenerował prywatny `deploy/.env` i pięć zdrowych usług na 8080;
 - sprawdzono HTTP przez IP i localhost, poprawny nagłówek IP Host, odmowę dla
   obcej nazwy DNS oraz publiczny skrypt ONLYOFFICE pod względnym prefiksem;
@@ -1606,8 +1662,9 @@ schematu. Procedura i zakres resetu: [Baza danych](DATABASE.md).
 
 Pełne edytory Dokumentów wymagają dodatkowej konfiguracji opisanej w
 [OFFICE.md](OFFICE.md): lokalnego ONLYOFFICE oraz zbudowania zasobów tablicy.
-`./scripts/start_office.sh` uruchamia osobny profil Colima/Compose; nie uruchamia
-Django. Przy wdrożeniu buduj `frontend/board` przed `collectstatic`.
+Starszy `./scripts/start_office.sh` wymaga lokalnego `deploy/office.compose.yml`,
+którego nie ma w repozytorium. Kompletny zestaw uruchamia `./ancore.sh setup`.
+Przy ręcznym wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
 

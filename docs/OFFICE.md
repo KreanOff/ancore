@@ -77,9 +77,18 @@ bieżący plik bez zmian. Rewizje, wykrywanie konfliktów, deduplikacja callback
 i unieważnianie sesji edytora działają nadal. Trwałe usunięcie dokumentu
 zachowuje istniejący cleanup bieżącego pliku i dawnych archiwów po commit.
 
-## Lokalne uruchomienie na Macu
+## Starszy wariant developerski na Macu
 
-Zależności: Homebrew, Colima, Docker CLI i Compose, Python z `requirements.txt`.
+Kod lokalnych narzędzi znajduje się w `scripts/office/`: `start.sh` uruchamia
+usługę, a `configure.py` tworzy `.env.office`. `scripts/start_office.sh`
+pozostaje skrótem zgodności do `scripts/office/start.sh`.
+
+Kompletną wersjonowaną instalację z ONLYOFFICE uruchamia `./ancore.sh setup`,
+według [instrukcji produkcji](PRODUCTION.md). Poniższy starszy wariant wymaga
+własnego `deploy/office.compose.yml`, którego nie ma w bieżącym repozytorium.
+Przy jego braku skrypt kończy pracę przed tworzeniem konfiguracji i startem Colimy.
+
+Zależności starszego wariantu: Homebrew, Colima, Docker CLI i Compose, Python z `requirements.txt`.
 Serwer dokumentów używa osobnej maszyny `ancore` (2 CPU, 4 GiB RAM, dysk 40 GiB).
 Start/stop nie zmienia domyślnego kontekstu Docker użytkownika. Przy pierwszym
 uruchomieniu potrzebne jest połączenie z Internetem do pobrania obrazu.
@@ -155,7 +164,7 @@ dotyczą starszego skryptu `scripts/start_office.sh`.
 | `ONLYOFFICE_JWT_SECRET` | Wspólny losowy sekret, minimum 32 znaki, taki sam jak `JWT_SECRET` serwera |
 
 Starszy lokalny Compose jest konfiguracją dla jednego Maca. Produkcyjny
-`install.sh` działa domyślnie przez HTTP i IP serwera na porcie 8080;
+`ancore.sh install` działa domyślnie przez HTTP i IP serwera na porcie 8080;
 HTTPS można włączyć opcjonalnie. Względny publiczny prefiks `/onlyoffice`
 działa pod adresem i protokołem użytym do otwarcia Ancore, także bez domeny.
 `ONLYOFFICE_INTERNAL_URL=http://onlyoffice` i `ONLYOFFICE_ANCORE_URL=http://web:8081`
