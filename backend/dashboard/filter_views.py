@@ -210,8 +210,13 @@ def edit(request, pk=None, management=False):
                 form.save_m2m()
                 if not item:
                     saved.favorited_by.add(request.user)
-                return mutation_response(request, return_url(request, catalog['list_url']) if management else filter_url(request, f'{saved.pk}/'))
-    modal = {'form': form, 'title': 'Edytuj filtr' if item else 'Zapisz filtr', 'action': request.get_full_path()}
+                target = return_url(request, catalog['list_url']) if management else filter_url(request, f'{saved.pk}/')
+                if item and getattr(request, '_react_api', False):
+                    from .filter_frontend import filter_form_payload
+                    return JsonResponse({'redirect': target, 'form': filter_form_payload(
+                        SavedTaskFilterForm(request=request, instance=saved))})
+                return mutation_response(request, target)
+    modal = {'form': form, 'title': 'Ustawienia filtra' if item else 'Zapisz filtr', 'action': request.get_full_path()}
     context = catalog if management else search_context(request, item)
     context['modal'] = modal
     status = 400 if request.method == 'POST' else 200

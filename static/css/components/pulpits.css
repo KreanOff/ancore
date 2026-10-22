@@ -43,6 +43,16 @@
 .pulpit-edit-page .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
 .pulpit-edit-form { max-width: 640px; }
 .pulpit-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.pulpit-settings-tabs { flex-shrink: 0; margin: 0 var(--app-panel-gutter); border-bottom: 0; overflow-x: auto; white-space: nowrap; }
+.pulpit-settings-tabs > button { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pulpit-settings-tabs svg { width: 18px; height: 18px; }
+.pulpit-settings-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+.pulpit-settings-panel[hidden] { display: none !important; }
+.pulpit-settings-message { margin: 8px var(--app-panel-gutter); }
+.pulpit-settings-panel > .pulpit-editor-page { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; margin: 0 var(--app-panel-gutter) var(--app-panel-gutter); border-radius: var(--app-modal-radius); background: var(--card-bg); overflow: hidden; }
+.pulpit-settings-modal .pulpit-topbar { flex-shrink: 0; }
+.pulpit-settings-modal .pulpit-form { align-content: start; }
+.pulpit-settings-modal .pulpit-form > .resources-react-fieldset { width: 100%; }
 .pulpit-layout-control { display: flex; align-items: center; gap: 8px; }
 .pulpit-layout-preview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; width: 44px; height: 32px; padding: 4px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--card-bg); flex-shrink: 0; }
 .pulpit-layout-preview > span { border-radius: 2px; background: rgba(var(--system-accent-rgb), .22); }

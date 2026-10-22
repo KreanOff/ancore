@@ -77,8 +77,16 @@ export interface FormSchema {
   sprint_name?: string;
 }
 const SpaceSettingsDialog = lazy(() => import('../spaces/SettingsDialog'));
+const FilterSettingsDialog = lazy(() => import('../filters/SettingsDialog'));
+
+export interface FormSection {
+  id: string;
+  label: string;
+  fields: string[];
+}
 
 export interface FormDialogData {
+  filter_settings?: 'create' | 'edit';
   space_settings?: { space_url: string; tab: 'main' | 'members' | 'avatar' };
   title: string;
   action: string;
@@ -352,6 +360,9 @@ export function EmbeddedForm({
   onSaved,
   onStateChange,
   openAvatar = false,
+  sections,
+  activeSection,
+  onInvalidSection,
 }: {
   openAvatar?: boolean;
   data: FormDialogData;
@@ -359,6 +370,9 @@ export function EmbeddedForm({
   csrfToken: string;
   onSaved: (url: string) => void;
   onStateChange: (dirty: boolean, pending: boolean) => void;
+  sections?: FormSection[];
+  activeSection?: string;
+  onInvalidSection?: (id: string) => void;
 }) {
   const [schema, setSchema] = useState(data.form),
     [pending, setPending] = useState(false),
@@ -421,14 +435,14 @@ export function EmbeddedForm({
     setPending(true);
     setError('');
     try {
-      const result = await pageRequest<{ redirect?: string; saved?: boolean; url?: string }>(
-        api,
-        data.action,
-        csrfToken,
-        controller.current.signal,
-        values,
-      );
+      const result = await pageRequest<{
+        redirect?: string;
+        saved?: boolean;
+        url?: string;
+        form?: FormSchema;
+      }>(api, data.action, csrfToken, controller.current.signal, values);
       flushSync(() => {
+        if (result.form) setSchema(result.form);
         setDirty(false);
         setPending(false);
         onStateChange(false, false);
@@ -449,6 +463,9 @@ export function EmbeddedForm({
           setKind(
             String(corrected.form.fields.find((field) => field.name === 'kind')?.value || ''),
           );
+          const invalid = corrected.form.fields.find((field) => field.errors.length);
+          const section = sections?.find((item) => item.fields.includes(invalid?.name || ''));
+          if (section) onInvalidSection?.(section.id);
         }
       }
       setError(errorMessage(exception));
@@ -479,6 +496,12 @@ export function EmbeddedForm({
       }
       className="tasks-modal__form"
       onSubmit={save}
+      onInvalidCapture={(event) => {
+        const section = sections?.find((item) =>
+          item.fields.includes((event.target as HTMLInputElement).name),
+        );
+        if (section) flushSync(() => onInvalidSection?.(section.id));
+      }}
       encType="multipart/form-data"
       aria-busy={pending}
     >
@@ -563,15 +586,41 @@ export function EmbeddedForm({
           </fieldset>
         ) : schema.layout === 'filter' ? (
           <fieldset className="resources-react-fieldset task-filter-form" disabled={pending}>
-            {schema.fields.map((field) => (
-              <div
-                key={field.name}
-                className="react-field-slot"
-                hidden={field.name === 'shared_with' && visibility !== 'selected'}
-              >
-                <FieldControl field={field} />
-              </div>
-            ))}
+            {sections
+              ? sections.map((section) => (
+                  <section
+                    key={section.id}
+                    id={`${section.id}-panel`}
+                    role="tabpanel"
+                    aria-labelledby={`${section.id}-tab`}
+                    hidden={activeSection !== section.id}
+                    className="filter-settings-panel"
+                  >
+                    {schema.fields
+                      .filter((field) => section.fields.includes(field.name))
+                      .map((field) => (
+                        <div
+                          key={field.name}
+                          className="react-field-slot"
+                          hidden={field.name === 'shared_with' && visibility !== 'selected'}
+                        >
+                          <FieldControl field={field} />
+                        </div>
+                      ))}
+                  </section>
+                ))
+              : null}
+            {schema.fields
+              .filter((field) => !sections || field.hidden)
+              .map((field) => (
+                <div
+                  key={field.name}
+                  className="react-field-slot"
+                  hidden={field.name === 'shared_with' && visibility !== 'selected'}
+                >
+                  <FieldControl field={field} />
+                </div>
+              ))}
           </fieldset>
         ) : schema.templates ? (
           <>
@@ -799,6 +848,12 @@ export function FormDialog(props: {
           initialTab={props.data.space_settings.tab}
           initialForm={props.data}
         />
+      </Suspense>
+    );
+  if (props.data.filter_settings)
+    return (
+      <Suspense fallback={<div role="status">Wczytywanie ustawień…</div>}>
+        <FilterSettingsDialog {...props} />
       </Suspense>
     );
   const schema = props.data.form;

@@ -15,14 +15,19 @@ def filter_payload(item):
     }
 
 
+def filter_form_payload(form):
+    schema = form_payload(form)
+    schema.update(compact=False, layout='filter')
+    return schema
+
+
 def modal_payload(context):
     modal = context.get('modal')
     if not modal:
         return None
-    schema = form_payload(modal['form'])
-    schema.update(compact=True, layout='filter')
     return {'title': modal['title'], 'action': modal['action'], 'return_url': context['list_url'],
-            'values': {'return_to': context['list_url']}, 'form': schema}
+            'values': {'return_to': context['list_url']}, 'form': filter_form_payload(modal['form']),
+            'filter_settings': 'edit' if modal['form'].instance.pk else 'create'}
 
 
 def catalog_page(request, context):

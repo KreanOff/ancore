@@ -145,7 +145,18 @@ od zakładki lub kryteriów pozostają zachowane; akcje są poza pustym stanem.
 
 Podstawowe pola korzystają z AncoreCustomSelect, tekstowego wyszukiwania
 i istniejących przycisków. Zaawansowany tryb ma pole zapytania i pomoc
-ze składnią. Formularz zapisu/edycji korzysta z AncoreTaskModals:
+ze składnią. Tworzenie i ustawienia filtra używają dużego wspólnego `app-modal-panel`,
+z zakładkami `notifications-tabs` „Główna” (nazwa, opis, warunki) i „Dostępy”
+(widoczność, osoby). Powłokę renderuje `filters/SettingsDialog.tsx`.
+Zakładki obsługują strzałki, Home i End. Wspólny `EmbeddedForm` zachowuje jeden
+formularz i zamontowane pola obu paneli; stopka zapisuje całą definicję,
+podczas edycji pozostawiając okno otwarte. Błędy oraz natywna walidacja odsłaniają właściwy
+panel i ustawiają fokus. Wariant `filter-settings-*` dodaje wyłącznie układ
+zakładek, paneli i istniejących wierszy etykieta/pole przy szerokości od 1100px.
+Na telefonie pola układają się pionowo. Tworzenie i „Zapisz jako” używają tych
+samych zakładek; po zapisie zamykają okno i przechodzą do utworzonego filtra
+albo wracają do katalogu zarządzania.
+Formularz zapisu/edycji korzysta z AncoreTaskModals:
 fokus, inert, Escape, potwierdzenie odrzucenia zmian i błędy w dialogu.
 Skrypt task-filters.js czeka przy pierwszym ładowaniu na wspólny
 AncoreTaskModals (jak spaces.js), dzięki czemu bezpośredni adres formularza
@@ -166,6 +177,10 @@ z dowolnego ekranu, zachowując aktualny URL oraz przywracając fokus.
 W przeniesionych ekranach powyższy układ i klasy renderują komponenty
 `frontend/app/src/filters`. `task-filters.js` pomija korzeń Reacta;
 stan formularza, walidację i modal obsługuje React z `AncoreTaskModals`.
+Przycisk „+” Filtrów oraz „Utwórz filtr” w zwiniętym menu otwierają formularz
+przez wspólny `openForm`. Adres `create_url` prowadzi do `new/`, a osobny
+`task_search_url` zachowuje skrót „Wyszukaj zadania”; `search_url` pozostaje
+adresem wyszukiwania definicji w pickerze.
 Pola wyszukiwania korzystają z wariantu `FieldControl` bez stylu właściwości
 szczegółów zadania, zachowując dotychczasowe obramowania i ikony wyboru.
 Menu boczne, gwiazdki i pickery renderuje teraz `src/shell`; dawny
@@ -2955,32 +2970,28 @@ Wewnętrzny tryb `pulpits-management` pozostaje osobny od edytora pulpitu
 oraz zarządzania Workspace. Wspólny `layout.js` synchronizuje aktywność
 i widoczność menu przy częściowej nawigacji, reload i Wstecz/Dalej.
 
-Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor` i menu
-`core/includes/pulpit_editor_sidebar.html`. Pokazuje nazwę pulpitu, powrót oraz
-„Gadżety i układ”, „Dostępy” i „Ustawienia”; wyłącznie bieżąca sekcja jest aktywna.
-Nie ma poziomych zakładek. Po wejściu z katalogu menu ogólnego zarządzania jest
-ukryte. `layout.js` podmienia zawartość menu również przy zmianie pulpitu,
-zachowując fokus i kontekst powrotu. Menu używa istniejących klas sidebaru,
-ikon i obsługi na telefonie oraz po zwinięciu.
+Ustawienia konkretnego pulpitu renderuje `src/pulpits/SettingsDialog.tsx`
+w dużym wspólnym `app-modal-panel`, tak jak ustawienia Przestrzeni. Zakładki
+`notifications-tabs` to „Gadżety i układ”, „Dostępy” i „Ustawienia”. Obsługują
+strzałki, Home i End. Ukryte formularze pozostają zamontowane i zachowują szkice.
+Menu katalogu, przeglądu i nawigacji otwiera okno nad bieżącym ekranem,
+bez zmiany jego adresu i menu bocznego. Zamknięcie po zapisie odświeża ten ekran.
+Bezpośrednie zwykłe/scoped URL oraz wariant zarządzania otwierają tę samą
+powłokę nad podglądem pulpitu; powrót zachowuje filtry katalogu zarządzania.
+Powłoka React nie przełącza się w osobne menu edytora. Szablony Django
+zachowują dotychczasowy pierwszy render i zgodność formularzy POST.
 
-Ustawienia i dostępy (`dashboard/pulpits/edit.html`) są osobnymi stronami,
-także przy bezpośrednim wejściu przez zwykły/scoped URL oraz wariant zarządzania.
-Używają powłoki `work-page--management` i menu wybranego pulpitu. Linki w katalogu,
-menu akcji i bocznej nawigacji korzystają ze wspólnej częściowej nawigacji.
-Nagłówek zawiera nazwę sekcji i pulpitu oraz „Wyświetl pulpit”. Ustawienia
-zawierają nazwę/opis, dostępy widoczność/osoby. Pola mają maksymalną szerokość 640px,
-odstęp 15px od krawędzi oraz wspólne przyciski „Anuluj” i „Zapisz”.
-Include `dashboard/pulpits/fields.html` współdzieli pola i błędy z modalami.
-Zapis przez POST wraca do pulpitu albo katalogu zarządzania z jego filtrami;
-błąd pozostaje na stronie ze szkicem i fokusem nieprawidłowego pola.
-Pole „Widoczność” w tworzeniu pulpitu i na stronie „Dostępy” używa
-`DashboardVisibilitySelect` oraz istniejącego `data-ancore-option-icon`:
-`lock` dla „Prywatny”, `users` dla „Wybrane osoby” i `building-2` dla
-„Cały Workspace”. Wspólny select pokazuje dekoracyjną ikonę w liście
-oraz przy wybranej wartości, zachowując checkbox zaznaczenia i wyszukiwarkę.
-„Osoby z dostępem” pojawiają się po wyborze „Wybrane osoby”. `pulpits.js`
-chroni niezapisane zmiany przy nawigacji i zamykaniu/przeładowaniu karty,
-a po `ancore:content-loaded` odłącza poprzednie listenery.
+„Ustawienia” zawierają nazwę i opis, „Dostępy” widoczność i osoby.
+Wspólny `EmbeddedForm` zapisuje tylko bieżącą sekcję i pozostawia okno otwarte.
+Błędy walidacji zachowują szkic i ustawiają fokus na nieprawidłowym polu.
+Zamknięcie przez Escape, tło lub przycisk chroni szkice wszystkich zakładek.
+Po zapisie formularza gadżety pobierają aktualną rewizję przed dalszą edycją.
+Widoczność używa wspólnego selecta z ikonami: `lock` dla „Prywatny”, `users`
+dla „Wybrane osoby” i `building-2` dla „Cały Workspace”. Pole „Osoby z dostępem”
+pojawia się po wyborze „Wybrane osoby”. Gadżety, ich katalog i pięć układów
+korzystają z dotychczasowego `DashboardView`; zapis układu pozostaje automatyczny.
+Konfiguracja gadżetu otwiera zagnieżdżony standardowy formularz, po zapisie
+odświeża płótno i pozostawia okno ustawień otwarte. Stopka tej zakładki ma „Gotowe”.
 
 
 Panel katalogu gadżetów (`catalog.html`) jest dokowany po prawej stronie

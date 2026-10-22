@@ -1,4 +1,4 @@
-<div class="tasks-modal app-modal-panel app-modal-panel--compact tasks-form-modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" aria-hidden="true" data-filter-modal>
+<div class="tasks-modal app-modal-panel tasks-form-modal" role="dialog" aria-modal="true" aria-labelledby="filter-modal-title" aria-hidden="true" data-filter-modal>
     <div class="tasks-modal__dialog"><form method="post" action="{{ modal.action }}" class="tasks-modal__form" data-filter-form>{% csrf_token %}
         {% if management %}<input type="hidden" name="return_to" value="{{ list_url }}">{% endif %}
         <header class="tasks-modal__header"><h2 id="filter-modal-title">{{ modal.title }}</h2><button type="button" class="tasks-modal__close" aria-label="Zamknij" data-close-modal></button></header>

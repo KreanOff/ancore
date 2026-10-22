@@ -14,6 +14,7 @@ import Sidebar from './Sidebar';
 import WorkspaceMenu from './WorkspaceMenu';
 import Toasts from './Toasts';
 const Picker = lazy(() => import('./CollectionPicker'));
+const PulpitSettings = lazy(() => import('../pulpits/SettingsDialog'));
 const Dialog = lazy(() =>
   import('../forms/FormDialog').then((module) => ({ default: module.FormDialog })),
 );
@@ -23,6 +24,7 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
     [ready, setReady] = useState(false);
   const [picker, setPicker] = useState<{ group: Collection; anchor: HTMLElement }>();
   const [modal, setModal] = useState<FormDialogData>();
+  const [pulpitSettings, setPulpitSettings] = useState<Page>();
   const [starBusy, setStarBusy] = useState(false),
     [formBusy, setFormBusy] = useState(false);
   const life = useRef(new AbortController()),
@@ -49,6 +51,7 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
     const close = () => {
       setPicker(undefined);
       setModal(undefined);
+      setPulpitSettings(undefined);
     };
     document.addEventListener('ancore:before-navigate', wait);
     document.addEventListener('ancore:content-unloading', close);
@@ -60,6 +63,73 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
       document.removeEventListener('ancore:content-unloading', close);
     };
   }, []);
+  useEffect(() => {
+    const open = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const link =
+        event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null;
+      if (
+        !link ||
+        link.hasAttribute('download') ||
+        (link.target && link.target !== '_self') ||
+        link.closest('[data-app-full-navigation]')
+      )
+        return;
+      const url = new URL(link.href, location.href);
+      const pulpit =
+        /^\/(?:workplaces\/[^/]+\/)?dashboards\/(?:manage\/)?[-a-zA-Z0-9_]+\/(?:edit|access|gadgets)\/$/.test(
+          url.pathname,
+        );
+      const filter = /^\/(?:workplaces\/[^/]+\/)?filters\/(?:manage\/)?\d+\/edit\/$/.test(
+        url.pathname,
+      );
+      if (url.origin !== location.origin || (!pulpit && !filter)) return;
+      // Filter pages already open their own FormDialog; the shell handles links outside them.
+      if (filter && link.closest('[data-react-screen]')) return;
+      const workspace = /^\/workplaces\/([^/]+)\//.exec(url.pathname)?.[1];
+      if (workspace && workspace !== /^\/workplaces\/([^/]+)\//.exec(config.api_url)?.[1]) return;
+      if (document.querySelector('.tasks-modal.is-open')) return;
+      event.preventDefault();
+      if (pending.current) return;
+      setPicker(undefined);
+      setFormBusy(true);
+      const promise = (async () => {
+        const page = await pageRequest<Page>(config.api_url, url.href, token, life.current.signal);
+        await window.AncoreReactRuntime?.preparePage({
+          page,
+          shell: dataRef.current,
+          csrf_token: token,
+          messages: [],
+        });
+        if (life.current.signal.aborted) return;
+        if (filter) {
+          const dialog = (page.data as { modal?: FormDialogData }).modal;
+          if (!dialog?.filter_settings) throw new Error('Nie udało się otworzyć ustawień filtra.');
+          setModal(dialog);
+        } else setPulpitSettings(page);
+      })();
+      pending.current = promise;
+      void promise
+        .catch((exception) => {
+          if (!life.current.signal.aborted)
+            window.showNotification?.(errorMessage(exception), 'error');
+        })
+        .finally(() => {
+          pending.current = undefined;
+          if (!life.current.signal.aborted) setFormBusy(false);
+        });
+    };
+    document.addEventListener('click', open, true);
+    return () => document.removeEventListener('click', open, true);
+  }, [config.api_url, token]);
   const closePicker = useCallback(
     (focus = false) =>
       setPicker((previous) => {
@@ -243,6 +313,17 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
       {ready ? <Toasts initial={config.messages} /> : null}
       <div id="app-shell-modals" style={{ display: 'contents' }} />
       <Suspense fallback={null}>
+        {pulpitSettings ? (
+          <PulpitSettings
+            initial={pulpitSettings}
+            csrfToken={token}
+            hostId="app-shell-modals"
+            onClose={(changed) => {
+              flushSync(() => setPulpitSettings(undefined));
+              if (changed) void window.AncoreApp?.navigate(location.pathname + location.search);
+            }}
+          />
+        ) : null}
         {picker ? (
           <Picker
             collection={picker.group}
@@ -261,7 +342,9 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
             onClose={() => setModal(undefined)}
             onSaved={(url) => {
               flushSync(() => setModal(undefined));
-              void window.AncoreApp?.navigate(url);
+              void window.AncoreApp?.navigate(
+                modal.filter_settings === 'edit' ? location.pathname + location.search : url,
+              );
             }}
           />
         ) : null}

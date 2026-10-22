@@ -10,10 +10,27 @@ import { DashboardActions, confirmDelete } from './Actions';
 import Catalog, { readCatalog } from './Catalog';
 import GadgetCard, { LayoutPreview } from './Gadget';
 import type { DetailData, Gadget, Layout } from './types';
+import { SettingsPage } from './SettingsDialog';
 
 export default function DetailPage(props: PageProps) {
+  return (props.initial.data as DetailData).editing ? (
+    <SettingsPage {...props} />
+  ) : (
+    <DashboardView {...props} />
+  );
+}
+
+export function DashboardView(
+  props: PageProps & {
+    embedded?: boolean;
+    hostId?: string;
+    onStateChange?: (pending: boolean) => void;
+    onChanged?: () => void;
+  },
+) {
   const { initial, csrfToken } = props;
   const [data, setData] = useState(initial.data as DetailData),
+    [dialogReady, setDialogReady] = useState(!props.embedded),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
@@ -32,9 +49,19 @@ export default function DetailPage(props: PageProps) {
   const locked = busy || actions.busy || !!actions.modal,
     dashboard = data.dashboard;
   useEffect(() => () => life.current.abort(), []);
+  // On a direct gadget URL, open the child after the settings panel owns focus.
+  useEffect(() => setDialogReady(true), []);
+  useEffect(
+    () => props.onStateChange?.(busy || actions.busy || !!actions.modal),
+    [busy, actions.busy, actions.modal, props.onStateChange],
+  );
   useEffect(() => {
-    document.title = `${data.dashboard.name} | ancore`;
-  }, [data.dashboard.name]);
+    if (data.dashboard.revision !== (initial.data as DetailData).dashboard.revision)
+      props.onChanged?.();
+  }, [data.dashboard.revision, initial.data, props.onChanged]);
+  useEffect(() => {
+    if (!props.embedded) document.title = `${data.dashboard.name} | ancore`;
+  }, [data.dashboard.name, props.embedded]);
   useEffect(() => {
     try {
       sessionStorage.setItem(catalogKey, JSON.stringify(catalog));
@@ -204,6 +231,7 @@ export default function DetailPage(props: PageProps) {
         life.current.signal,
         new FormData(),
       );
+      props.onChanged?.();
       await load(result.redirect);
       if (!life.current.signal.aborted) setNotice('Gadżet usunięty.');
     } catch (exception) {
@@ -407,15 +435,17 @@ export default function DetailPage(props: PageProps) {
                   }
                 </Dropdown>
               </div>
-              <a
-                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                href={dashboard.url}
-                aria-label="Gotowe — wróć do pulpitu"
-              >
-                <Icon name="check" />
-                <span>Gotowe</span>
-                <span className="u-sr-only"> · Wróć do pulpitu</span>
-              </a>
+              {!props.embedded ? (
+                <a
+                  className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                  href={dashboard.url}
+                  aria-label="Gotowe — wróć do pulpitu"
+                >
+                  <Icon name="check" />
+                  <span>Gotowe</span>
+                  <span className="u-sr-only"> · Wróć do pulpitu</span>
+                </a>
+              ) : null}
             </>
           ) : (
             <>
@@ -475,13 +505,22 @@ export default function DetailPage(props: PageProps) {
       ) : (
         canvas
       )}
-      {actions.modal ? (
+      {actions.modal && dialogReady ? (
         <FormDialog
           data={actions.modal}
           api={initial.api_url}
           csrfToken={csrfToken}
+          hostId={props.hostId}
           onClose={actions.close}
-          onSaved={navigate}
+          onSaved={
+            props.embedded
+              ? async () => {
+                  props.onChanged?.();
+                  await load(data.editor_url);
+                  actions.close();
+                }
+              : navigate
+          }
         />
       ) : null}
     </div>

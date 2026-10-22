@@ -34,6 +34,8 @@ def shell_payload(request, context=None):
     app, view = resolver.app_name, resolver.url_name
     urls = data.get('workplace_app_urls', {})
     mode = data.get('sidebar_mode', 'workspace')
+    if mode == 'pulpit-editor':
+        mode = 'pulpits-management' if (resolver.url_name or '').startswith('manage_') else 'workspace'
     if app == 'workplaces':
         mode = 'workplaces'
     active_space = data.get('space')
@@ -62,7 +64,8 @@ def shell_payload(request, context=None):
         base = urls.get(url_key, reverse(namespace))
         collections.append({'key': key, 'label': label, 'icon': icon, 'url': base,
                             'directory_url': base + ('?tab=all' if key == 'filters' else ''), 'search_url': base + search,
-                            'create_url': base + ('search/' if key == 'filters' else 'create/'),
+                            'create_url': base + ('new/' if key == 'filters' else 'create/'),
+                            'task_search_url': base + 'search/' if key == 'filters' else '',
                             'manage_url': base + 'manage/' if key != 'spaces' or data.get('spaces_management_available') else '',
                             'starred': [serializer(item) for item in data.get(starred, [])],
                             'recent': [serializer(item) for item in data.get(recent, [])]})

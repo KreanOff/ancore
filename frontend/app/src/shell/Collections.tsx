@@ -26,7 +26,7 @@ export function CollectionContents({
     <>
       {group.key === 'filters' ? (
         <a
-          href={group.create_url}
+          href={group.task_search_url}
           className={`${linkClass}${data.filter_search_active ? ' active' : ''}`}
           aria-current={data.filter_search_active ? 'page' : undefined}
         >
@@ -87,13 +87,7 @@ export function CollectionContents({
             href={group.create_url}
             className="sidebar-collapsed-flyout__link"
             onClick={(event) => {
-              if (
-                group.key !== 'filters' &&
-                !event.metaKey &&
-                !event.ctrlKey &&
-                !event.shiftKey &&
-                !event.altKey
-              ) {
+              if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
                 event.preventDefault();
                 actions.openForm(group.create_url);
               }
@@ -105,7 +99,7 @@ export function CollectionContents({
                 ? 'Utwórz przestrzeń'
                 : group.key === 'pulpits'
                   ? 'Utwórz pulpit'
-                  : 'Nowe wyszukiwanie'}
+                  : 'Utwórz filtr'}
             </span>
           </a>
           {group.manage_url ? (
@@ -269,23 +263,17 @@ export function CollectionGroup({
                 ? 'Utwórz przestrzeń'
                 : group.key === 'pulpits'
                   ? 'Utwórz pulpit'
-                  : 'Nowe wyszukiwanie'
+                  : 'Utwórz filtr'
             }
             title={
               group.key === 'spaces'
                 ? 'Utwórz przestrzeń'
                 : group.key === 'pulpits'
                   ? 'Utwórz pulpit'
-                  : 'Nowe wyszukiwanie'
+                  : 'Utwórz filtr'
             }
             onClick={(event) => {
-              if (
-                group.key !== 'filters' &&
-                !event.ctrlKey &&
-                !event.metaKey &&
-                !event.shiftKey &&
-                !event.altKey
-              ) {
+              if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
                 event.preventDefault();
                 actions.openForm(group.create_url);
               }

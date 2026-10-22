@@ -474,15 +474,17 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   oraz paginację 30 pozycji. Lista jest wspólna
   z „Pulpity”: checkboxy, menu po lewej oraz kolumny Pulpit, Twórca,
   Widoczność, Gadżety i Opis. Gwiazdka jest akcją menu wiersza.
-  Nazwa otwiera osobny edytor wybranego pulpitu,
-  domyślnie „Gadżety i układ”. Jego menu po lewej ma nazwę pulpitu, powrót oraz
-  „Gadżety i układ”, „Dostępy” i „Ustawienia”. Dawne poziome zakładki są usunięte.
+  Nazwa otwiera duże okno ustawień wybranego pulpitu, zgodne z ustawieniami
+  Przestrzeni, z zakładkami „Gadżety i układ”, „Dostępy” i „Ustawienia”.
+  Bieżący ekran i jego menu boczne pozostają w tle.
   „Dostępy” zmienia widoczność i osoby z dostępem, „Ustawienia” nazwę i opis.
   Każdy formularz zapisuje tylko własne pola; ustawienia nie zmieniają układu
-  ani udostępnienia. Menu katalogu, pulpitu i nawigacji otwiera te same ekrany.
+  ani udostępnienia. Menu katalogu, pulpitu i nawigacji otwiera to samo okno.
+  Przełączanie zakładek zachowuje szkice; zapis formularza pozostawia okno otwarte.
   Błędy walidacji zachowują szkic; wyjście z niezapisanymi zmianami wymaga
   potwierdzenia. Menu wiersza udostępnia także otwarcie i usunięcie.
-  Tworzenie, edycja i usunięcie przez ten katalog wracają do niego z filtrami.
+  Tworzenie i usunięcie wracają do katalogu z filtrami; zamknięcie okna
+  po edycji odświeża katalog z zachowaniem jego filtrów.
   Dostępne pulpity innych twórców pozostają w zwykłym katalogu do oglądania.
   Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
   Udostępnienie pozwala oglądać konfigurację; modyfikacje należą do twórcy.
@@ -490,9 +492,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   przyciskiem „Dodaj gadżet”.
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
   Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
-  lub przyciski menu w osobnym edytorze „Gadżety i układ” (`/<pk>/gadgets/`).
+  lub przyciski menu w zakładce „Gadżety i układ” (`/<pk>/gadgets/`).
   Przegląd pulpitu pozostaje widokiem do oglądania także dla twórcy; „Edytuj pulpit”
-  przełącza do edytora z menu wybranego pulpitu i wyborem pięciu układów w nagłówku.
+  otwiera okno z tą zakładką i wyborem pięciu układów w nagłówku.
   Dodawanie, konfiguracja i usuwanie wracają
   do edytora. Wariant `/manage/<slug>/gadgets/` zachowuje filtry zarządzania.
   Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności

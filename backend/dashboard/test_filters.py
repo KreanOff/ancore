@@ -132,7 +132,8 @@ class TaskFilterTests(TestCase):
         for params in [{'q': 'nieistniejący'}, {'visibility': 'selected'}]:
             response = self.client.get(self.url('manage/'), params)
             self.assertContains(response, 'Brak pasujących filtrów')
-            self.assertContains(response, 'Wyczyść filtry')
+            self.assertContains(response, 'Zmień wyszukiwanie lub wyczyść jego warunki.')
+            self.assertNotContains(response, 'Wyczyść filtry')
 
     def test_management_modal_save_validation_and_delete_preserve_list(self):
         for prefix in ['/filters/', self.url()]:

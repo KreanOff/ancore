@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 35 | 0 | 19 | 212 |
+| [backend/core](../backend/core) | 35 | 0 | 19 | 215 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -859,7 +859,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/apps.py](../backend/dashboard/apps.py) — `DashboardConfig`
 - [backend/dashboard/collaboration.py](../backend/dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`
 - [backend/dashboard/filter_forms.py](../backend/dashboard/filter_forms.py) — `BasicTaskSearchForm`, `SavedTaskFilterForm`
-- [backend/dashboard/filter_frontend.py](../backend/dashboard/filter_frontend.py) — `filter_payload`, `modal_payload`, `catalog_page`, `search_page`
+- [backend/dashboard/filter_frontend.py](../backend/dashboard/filter_frontend.py) — `filter_payload`, `filter_form_payload`, `modal_payload`, `catalog_page`, `search_page`
 - [backend/dashboard/filter_search.py](../backend/dashboard/filter_search.py) — `QueryError`, `quote`, `SearchQuery`, `Parser`, `parse_query`, `date_value`, `Compiler`, `apply_query`, `basic_query`
 - [backend/dashboard/filter_urls.py](../backend/dashboard/filter_urls.py)
 - [backend/dashboard/filter_views.py](../backend/dashboard/filter_views.py) — `get_filter`, `catalog_context`, `search_context`, `index`, `manage`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
@@ -1326,6 +1326,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/documents/useOffice.ts](../frontend/app/src/documents/useOffice.ts)
 - [frontend/app/src/filters/DirectoryPage.tsx](../frontend/app/src/filters/DirectoryPage.tsx)
 - [frontend/app/src/filters/SearchPage.tsx](../frontend/app/src/filters/SearchPage.tsx)
+- [frontend/app/src/filters/SettingsDialog.tsx](../frontend/app/src/filters/SettingsDialog.tsx)
 - [frontend/app/src/filters/types.ts](../frontend/app/src/filters/types.ts)
 - [frontend/app/src/forms/FormDialog.tsx](../frontend/app/src/forms/FormDialog.tsx)
 - [frontend/app/src/main.tsx](../frontend/app/src/main.tsx)
@@ -1335,6 +1336,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/pulpits/DirectoryPage.tsx](../frontend/app/src/pulpits/DirectoryPage.tsx)
 - [frontend/app/src/pulpits/EditPage.tsx](../frontend/app/src/pulpits/EditPage.tsx)
 - [frontend/app/src/pulpits/Gadget.tsx](../frontend/app/src/pulpits/Gadget.tsx)
+- [frontend/app/src/pulpits/SettingsDialog.tsx](../frontend/app/src/pulpits/SettingsDialog.tsx)
 - [frontend/app/src/pulpits/types.ts](../frontend/app/src/pulpits/types.ts)
 - [frontend/app/src/resources/App.tsx](../frontend/app/src/resources/App.tsx)
 - [frontend/app/src/resources/Editor.tsx](../frontend/app/src/resources/Editor.tsx)
@@ -1452,7 +1454,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_filter_frontend.py](../backend/core/test_filter_frontend.py).
 
-- `ReactFilterAndTagTests`: 12 metod testowych.
+- `ReactFilterAndTagTests`: 13 metod testowych.
 
 ### backend/core/test_frontend.py
 
@@ -1464,7 +1466,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_navigation_frontend.py](../backend/core/test_navigation_frontend.py).
 
-- `ReactNavigationTests`: 14 metod testowych.
+- `ReactNavigationTests`: 15 metod testowych.
 
 ### backend/core/test_production.py
 
@@ -1490,7 +1492,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_pulpit_frontend.py](../backend/core/test_pulpit_frontend.py).
 
-- `ReactPulpitTests`: 13 metod testowych.
+- `ReactPulpitTests`: 14 metod testowych.
 
 ### backend/core/test_schema_baseline.py
 

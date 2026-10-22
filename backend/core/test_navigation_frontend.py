@@ -126,6 +126,18 @@ class ReactNavigationTests(TestCase):
         self.assertNotIn(self.space.name, refreshed.content.decode())
         self.assertNotIn('page', refreshed.json())
 
+    def test_filter_sidebar_creation_and_task_search_have_separate_targets(self):
+        for target in ('/filters/', scoped_workplace_app_path(self.workspace, 'filters')):
+            with self.subTest(target=target):
+                collection = next(group for group in self.nav(target).json()['shell']['collections'] if group['key'] == 'filters')
+                self.assertEqual(collection['create_url'], scoped_workplace_app_path(self.workspace, 'filters', 'new/'))
+                self.assertEqual(collection['task_search_url'], scoped_workplace_app_path(self.workspace, 'filters', 'search/'))
+                self.assertEqual(collection['search_url'], scoped_workplace_app_path(self.workspace, 'filters', 'lookup/'))
+                create = self.api(collection['create_url']).json()['data']['modal']
+                self.assertEqual(create['filter_settings'], 'create')
+                self.assertFalse(create['form']['compact'])
+                self.assertIsNone(self.api(collection['task_search_url']).json()['data']['modal'])
+
     def test_pickers_use_typed_results_and_same_visibility_as_original_views(self):
         for name, wanted, secret in [('spaces:search', self.space.name, self.private.name), ('pulpits:search', self.dashboard.name, self.secret_dashboard.name), ('filters:lookup', self.filter.name, self.secret_filter.name)]:
             with self.subTest(name=name):
@@ -198,5 +210,5 @@ class ReactNavigationTests(TestCase):
                 self.assertEqual(response.json()['shell']['mode'], mode)
         response = self.nav(reverse('pulpits:edit', args=[self.dashboard.slug]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['shell']['mode'], 'pulpit-editor')
-        self.assertTrue(response.json()['shell']['editor']['links'])
+        self.assertEqual(response.json()['shell']['mode'], 'workspace')
+        self.assertTrue(response.json()['page']['data']['settings_tabs'])

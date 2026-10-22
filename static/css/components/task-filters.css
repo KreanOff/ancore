@@ -24,6 +24,18 @@
 .task-filter-form { display: flex; flex-direction: column; gap: var(--app-modal-field-gap); }
 .task-filter-form [name="query"] { font-family: monospace; }
 .task-filter-form [hidden] { display: none !important; }
+.filter-settings-tabs { flex-shrink: 0; margin: 0 var(--app-panel-gutter); border-bottom: 0; overflow-x: auto; white-space: nowrap; }
+.filter-settings-tabs > button { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.filter-settings-tabs svg { width: 18px; height: 18px; }
+.filter-settings-panel { display: flex; flex-direction: column; gap: var(--app-modal-field-gap); min-width: 0; }
+.filter-settings-panel[hidden] { display: none !important; }
+.filter-settings-message { margin: 8px var(--app-panel-gutter); }
+.filter-settings-modal .task-filter-form { align-content: start; }
+@media (min-width: 1100px) {
+    .filter-settings-panel .tasks-form-field { display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 24px; row-gap: 6px; align-items: start; }
+    .filter-settings-panel .tasks-form-field > label { grid-column: 1; padding-top: 9px; }
+    .filter-settings-panel .tasks-form-field > :not(label) { grid-column: 2; }
+}
 .tasks-directory-board.work-space-sheet.task-filter-directory {
     --tasks-directory-grid: 40px 40px 320px 220px 190px 320px;
 }

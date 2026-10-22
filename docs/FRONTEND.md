@@ -243,6 +243,19 @@ Wyniki Filtrów zawsze przechodzą przez bieżące ACL zadań; udostępnienie de
 nie rozszerza dostępu. Rewizje i blokady nadal obsługują oryginalne widoki.
 Starsze nagłówki `X-Filter-Modal` i `X-Filter-Navigation` są usuwane przez
 adapter, więc nie mogą przełączyć odpowiedzi API na fragment HTML.
+
+Tworzenie i edycja filtra otrzymują odpowiednio `filter_settings: "create"`
+lub `"edit"` i schemat bez wariantu kompaktowego. `FormDialog` deleguje je do
+`filters/SettingsDialog.tsx`, który
+łączy „Główna” i „Dostępy” przez sekcje wspólnego `EmbeddedForm`. Ukryte panele
+pozostają zamontowane. Zapis wysyła wszystkie pola z rewizją; odpowiedź API
+zwraca świeży schemat `form`, używany przez `EmbeddedForm` przed kolejną edycją.
+Walidacja odsłania panel błędnego pola, również dla wymaganych pól HTML.
+Po zapisie edycji okno pozostaje otwarte. Zamknięcie odświeża odpowiedni widok,
+zachowując filtry katalogu; menu boczne otwiera okno nad bieżącym ekranem.
+Bezpośrednie URL korzystają z tej samej powłoki. Tworzenie i „Zapisz jako”
+zamykają okno po sukcesie i zachowują dotychczasowy adres powrotu; ponowny
+zapis nie może utworzyć drugiej definicji w tym samym oknie.
 Globalne menu Filtrów, jego picker i wyszukiwanie definicji renderuje
 `src/shell`; wyniki API zachowują ten sam zakres widoczności.
 
@@ -253,6 +266,16 @@ prywatnej Przestrzeni ani jej liczników. Udostępnienie pulpitu nie rozszerza A
 danych. Edycja nadal wymaga autorstwa pulpitu, niezależnie od roli Workspace.
 Pulpit domyślny inicjalizuje oryginalny widok Django; usunięte gadżety nie są
 odtwarzane podczas kolejnego wejścia.
+
+`src/pulpits/SettingsDialog.tsx` łączy edytor gadżetów i formularze ustawień
+oraz dostępów w dużym wspólnym `Modal` z trzema zakładkami. Serializer
+przekazuje `settings_tabs` z autoryzowanymi adresami i zachowanymi filtrami.
+Powłoka przechwytuje zwykłe kliknięcia linków edytora i otwiera okno nad
+bieżącą stroną. Nowa karta i bezpośrednie URL korzystają z `SettingsPage`.
+Ukryte formularze zachowują szkice; wspólny `EmbeddedForm` obsługuje zapis,
+błędy i fokus. Po zapisie okno pozostaje otwarte, a płótno pobiera nową rewizję.
+Zamknięcie chroni wszystkie szkice i po zmianie odświeża stronę w tle.
+Zagnieżdżony formularz gadżetu korzysta z tego samego hosta modali.
 
 Wyłącznie `arrange` i `gadget_quick_add` zachowują oryginalne strukturalne JSON:
 odpowiednio `{layout, columns: [[id, ...], ...], revision}` i `{kind, revision}`.

@@ -1,6 +1,14 @@
 import type { FormDialogData, FormSchema } from '../forms/FormDialog';
 import type { PaginationData } from '../shared/Pagination';
 export type Layout = 'single' | 'equal' | 'left' | 'right' | 'three';
+export type SettingsTab = 'gadgets' | 'access' | 'settings';
+export interface EditorTab {
+  key: SettingsTab;
+  label: string;
+  icon: string;
+  url: string;
+  active: boolean;
+}
 export interface Dashboard {
   id: number;
   slug: string;
@@ -51,6 +59,7 @@ export interface DirectoryData {
   modal: FormDialogData | null;
 }
 export interface DetailData {
+  settings_tabs: EditorTab[];
   dashboard: Dashboard;
   editing: boolean;
   columns: Gadget[][];
@@ -68,6 +77,7 @@ export interface DetailData {
   modal: FormDialogData | null;
 }
 export interface EditData {
+  settings_tabs: EditorTab[];
   dashboard: Dashboard;
   section: 'access' | 'settings';
   form: FormSchema;

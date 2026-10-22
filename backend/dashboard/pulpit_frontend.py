@@ -70,11 +70,13 @@ def detail_page(request, context):
         'columns': [[gadget_payload(data, editable=editing) for data in column] for column in context['columns']],
         'layout_choices': context['layout_choices'], 'add_gadget_url': context['add_gadget_url'],
         'arrange_url': context['arrange_url'], 'quick_add_url': context.get('quick_add_url', ''),
-        'editor_url': context.get('editor_url', dashboard.gadgets_url), 'return_url': context.get('return_url', dashboard.url),
+        'editor_url': context.get('editor_url', dashboard.gadgets_url),
+        'return_url': context.get('settings_return_url', context.get('return_url', dashboard.url)),
         'list_url': context.get('editor_url', dashboard.url),
         'max_gadgets': context.get('max_gadgets', 0), 'gadget_catalog': context.get('gadget_catalog', []),
         'illustration': static('img/empty-states/dashboard-empty.webp'),
         'column_illustration': static('img/empty-states/gadget-column-empty.webp'),
+        'settings_tabs': context.get('pulpit_editor_navigation', []),
         'modal': modal_payload(context),
     }}
 
@@ -84,4 +86,5 @@ def edit_page(request, context):
     return {'type': 'pulpit-edit', 'title': f'{context["section_title"]} — {dashboard.name}', 'data': {
         'dashboard': dashboard_payload(dashboard), 'section': next(row['key'] for row in context['pulpit_editor_navigation'] if row['active']),
         'form': pulpit_form_payload(context['form']), 'action': context['action'], 'return_url': context['return_url'],
+        'settings_tabs': context['pulpit_editor_navigation'],
     }}

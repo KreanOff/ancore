@@ -39,6 +39,19 @@ zmienić również nazwę, opis i udostępnianie. „Wyczyść” zmienia bież�
 wyszukiwanie; definicja pozostaje zapisana do użycia „Zapisz”.
 Wyniki są odczytywane na nowo przy każdym otwarciu filtra.
 
+Tworzenie i ustawienia filtra otwierają duże wspólne okno, tak jak ustawienia
+Przestrzeni i Pulpitów. Zakładka „Główna” zawiera nazwę, opis i warunki
+wyszukiwania; „Dostępy” widoczność i odbiorców. Obie należą do jednego formularza:
+przełączanie zachowuje szkice, a „Zapisz” atomowo zapisuje całą definicję i
+podczas edycji pozostawia okno otwarte. Odpowiedź zawiera aktualną rewizję, więc kolejny zapis
+w tym samym oknie zachowuje kontrolę konfliktów. Błąd odsłania właściwą zakładkę
+i skupia nieprawidłowe pole; Escape i zamknięcie chronią niezapisany szkic.
+Po zamknięciu zapisanych ustawień katalog odświeża się z zachowanymi kryteriami,
+a wejście z menu bocznego zachowuje bieżący ekran. Zwykłe/scoped adresy edycji
+oraz wariant zarządzania otwierają tę samą powłokę. Tworzenie i „Zapisz jako”
+korzystają z tych samych zakładek; po utworzeniu zamykają okno i otwierają
+zapisany filtr albo wracają do katalogu zarządzania z jego kryteriami.
+
 Katalog „Filtry” zawiera zakładki Ulubione, Moje filtry, Udostępnione
 i Wszystkie, wyszukiwanie nazw/opisów i paginację. Gwiazdka jest osobista.
 Osobny ekran „Zarządzaj filtrami” (`/filters/manage/` i scoped odpowiednik)
@@ -47,7 +60,7 @@ Pokazuje wyłącznie filtry twórcy w aktywnym Workspace. Używa wspólnej tabel
 katalogu, bez zakładek: checkboxy bieżącej strony, menu działań po lewej,
 nazwa, twórca, widoczność i opis. Zaznaczenie nie uruchamia operacji zbiorczych.
 Filtry widoczności/gwiazdki są po lewej, wyszukiwarka po prawej, a paginacja
-na dole. Nazwa otwiera edycję w standardowym modalu; menu pozwala uruchomić
+na dole. Nazwa otwiera duże okno ustawień; menu pozwala uruchomić
 filtr, zmienić gwiazdkę lub usunąć definicję. Tworzenie, walidacja, zapis,
 anulowanie i usuwanie zachowują katalog oraz jego kryteria. Sekcja Workspace
 w treści centrum Ustawień udostępnia wszystkie trzy strony zarządzania;
@@ -57,6 +70,8 @@ Ustawień oraz innych modułów.
 „Wróć do ustawień” prowadzi do kategorii Workspace.
 Menu boczne stosuje wzorzec Przestrzeni: nagłówek z plusem i menu trzech
 kropek, sekcje „Oznaczone gwiazdką” oraz „Ostatnie” i panel „Więcej filtrów”.
+„+” otwiera duże okno tworzenia filtra nad bieżącą stroną, również w menu
+zwiniętym. Osobny skrót „Wyszukaj zadania” nadal prowadzi do wyszukiwania.
 Skróty mają wspólny limit sześciu pozycji; ulubione mają pierwszeństwo.
 Ostatnie są układane według osobistych odwiedzin w aktywnym Workspace,
 następnie według daty utworzenia. Wiersze pozwalają zmienić gwiazdkę

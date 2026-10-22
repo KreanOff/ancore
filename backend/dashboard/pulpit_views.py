@@ -165,6 +165,7 @@ def editor_navigation_context(request, dashboard, section, management=False):
         'section_title': next(entry['label'] for entry in sections if entry['active']),
         'editor_url': sections[0]['url'], 'access_url': sections[1]['url'], 'settings_url': sections[2]['url'],
         'return_url': management_url(request) if management else dashboard.url,
+        'settings_return_url': management_url(request) if management else dashboard.url,
     }
 
 

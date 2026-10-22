@@ -129,7 +129,10 @@ class ReactPulpitTests(TestCase):
         self.assertIn('page=2', settings['return_url'])
         access = self.get(prefix + 'access/').json()['data']
         self.assertEqual([row['name'] for row in access['form']['fields']], ['visibility', 'shared_with'])
-        gadget = self.get(prefix + f'gadgets/{self.gadget.pk}/edit/').json()['data']['modal']
+        gadget_page = self.get(prefix + f'gadgets/{self.gadget.pk}/edit/').json()['data']
+        self.assertEqual(gadget_page['return_url'], self.path('manage/'))
+        self.assertEqual(gadget_page['modal']['return_url'], prefix + 'gadgets/')
+        gadget = gadget_page['modal']
         fields = {row['name']: row for row in gadget['form']['fields']}
         self.assertNotIn(str(self.hidden.pk), [row['value'] for row in fields['space']['choices']])
         self.assertEqual([row['value'] for row in fields['kind']['choices']], ['', 'progress'])
@@ -139,6 +142,25 @@ class ReactPulpitTests(TestCase):
         self.dashboard.refresh_from_db()
         self.assertEqual(self.dashboard.revision, 1)
         self.assertEqual(self.operation('arrange', {'layout': 'three', 'columns': [[self.gadget.pk], [self.secret_gadget.pk], []], 'revision': 0}).status_code, 409)
+
+    def test_settings_window_tabs_preserve_scope_filters_and_background_navigation(self):
+        for prefix in (self.path(), '/dashboards/'):
+            for management in (False, True):
+                root = prefix + ('manage/' if management else '') + self.dashboard.slug + '/'
+                for suffix, active in (('gadgets/', 'gadgets'), ('access/', 'access'), ('edit/', 'settings')):
+                    target = root + suffix + '?q=Plan&visibility=workspace&page=2'
+                    with self.subTest(target=target):
+                        page = self.get(target).json()
+                        tabs = page['data']['settings_tabs']
+                        self.assertEqual([tab['key'] for tab in tabs], ['gadgets', 'access', 'settings'])
+                        self.assertEqual([tab['key'] for tab in tabs if tab['active']], [active])
+                        for tab in tabs:
+                            self.assertTrue(tab['url'].startswith(self.path('manage/' if management else '')))
+                            if management:
+                                self.assertIn('q=Plan', tab['url'])
+                                self.assertIn('page=2', tab['url'])
+                        navigation = self.client.get(self.endpoint(target).replace('/page/', '/navigation/')).json()
+                        self.assertEqual(navigation['shell']['mode'], 'pulpits-management' if management else 'workspace')
 
     def test_quick_add_returns_current_space_task_counts_without_html(self):
         result = self.operation('gadgets/quick-add', {'kind': 'progress', 'revision': 0})

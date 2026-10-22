@@ -137,6 +137,45 @@ class ReactFilterAndTagTests(TestCase):
         self.assertEqual(self.get(self.path('filters', f'{self.private_filter.pk}/')).status_code, 404)
         self.assertNotIn(self.saved.name, json.dumps(self.get(self.path('filters', 'manage/')).json(), ensure_ascii=False))
 
+    def test_filter_settings_window_metadata_validation_and_repeated_saves(self):
+        item = SavedTaskFilter.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.member,
+                                              name='Ustawienia React', visibility='private')
+        for prefix in (self.path('filters'), '/filters/'):
+            for management in (False, True):
+                root = prefix + ('manage/' if management else '')
+                target = root + f'{item.pk}/edit/?q=Ustawienia&visibility=private&page=2'
+                with self.subTest(target=target):
+                    modal = self.get(target).json()['data']['modal']
+                    self.assertEqual(modal['filter_settings'], 'edit')
+                    self.assertFalse(modal['form']['compact'])
+                    self.assertEqual(modal['title'], 'Ustawienia filtra')
+                    if management:
+                        self.assertIn('q=Ustawienia', modal['return_url'])
+                        self.assertIn('page=2', modal['return_url'])
+                    create = self.get(root + 'new/').json()['data']['modal']
+                    self.assertEqual(create['filter_settings'], 'create')
+                    self.assertFalse(create['form']['compact'])
+        target = self.path('filters', f'manage/{item.pk}/edit/')
+        values = {'name': item.name, 'description': 'Pierwszy zapis', 'query': '', 'visibility': 'selected',
+                  'revision': item.revision}
+        invalid = self.post(target, values)
+        self.assertEqual(invalid.status_code, 400)
+        modal = invalid.json()['data']['modal']
+        self.assertTrue(modal['filter_settings'])
+        self.assertTrue(next(field for field in modal['form']['fields'] if field['name'] == 'shared_with')['errors'])
+        first = self.post(target, {**values, 'shared_with': [self.owner.pk]})
+        self.assertEqual(first.status_code, 200)
+        fields = {field['name']: field for field in first.json()['form']['fields']}
+        self.assertEqual(fields['revision']['value'], '1')
+        self.assertEqual(fields['shared_with']['value'], [str(self.owner.pk)])
+        second = self.post(target, {**values, 'description': 'Drugi zapis', 'shared_with': [self.owner.pk],
+                                    'revision': fields['revision']['value']})
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(next(field for field in second.json()['form']['fields'] if field['name'] == 'revision')['value'], '2')
+        self.assertEqual(self.post(target, {**values, 'shared_with': [self.owner.pk]}).status_code, 400)
+        item.refresh_from_db()
+        self.assertEqual((item.description, item.revision), ('Drugi zapis', 2))
+
     def test_query_save_conflict_does_not_overwrite_current_definition(self):
         self.client.force_login(self.owner)
         target = self.path('filters', f'{self.saved.pk}/save/')

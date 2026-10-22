@@ -29,6 +29,7 @@ export interface Collection {
   directory_url: string;
   search_url: string;
   create_url: string;
+  task_search_url?: string;
   manage_url: string;
   starred: CollectionRow[];
   recent: CollectionRow[];

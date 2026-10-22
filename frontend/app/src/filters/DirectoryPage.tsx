@@ -435,7 +435,9 @@ export default function DirectoryPage(props: PageProps) {
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={actions.close}
-          onSaved={navigate}
+          onSaved={(url) =>
+            navigate(actions.modal?.filter_settings === 'edit' && !data.modal ? initial.url : url)
+          }
         />
       ) : null}
     </div>
