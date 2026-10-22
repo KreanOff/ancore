@@ -32,6 +32,8 @@ local_settings.py
 /staticfiles/
 /deploy/backups/
 /deploy/certs/
+/deploy/compose.recovery.yaml
+/.recovery/
 *.sqlite3
 *.sqlite3-journal
 *.sqlite3-wal

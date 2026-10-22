@@ -23,6 +23,8 @@ static/frontend
 static/vendor/board
 deploy/backups
 deploy/certs
+deploy/compose.recovery.yaml
+.recovery
 **/*.log
 **/*.sqlite3
 obsidian-vault

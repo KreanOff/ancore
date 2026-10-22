@@ -53,7 +53,7 @@ case "$ANCORE_ACTION" in
     restart) ancore_compose stop; ancore_start ;;
     status) ancore_compose ps -a ;;
     logs) ancore_compose logs --tail=100 --follow "$@" ;;
-    update) ancore_install_current ;;
+    update) ancore_configure; ancore_install_current ;;
     backup) ancore_backup ;;
     restore) ancore_restore "$@" ;;
     unlock) ancore_compose run --rm --no-deps --pull never backup unlock ;;

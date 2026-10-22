@@ -39,9 +39,22 @@ ENV NGINX_ENVSUBST_FILTER=^ANCORE_
 FROM postgres:17-alpine AS database
 COPY deploy/postgres/init.sh /docker-entrypoint-initdb.d/10-ancore.sh
 
+FROM python:3.14.8-slim-bookworm AS recovery-source
+WORKDIR /application
+COPY backend ./backend
+COPY frontend ./frontend
+COPY static ./static
+COPY deploy ./deploy
+COPY scripts ./scripts
+COPY docs ./docs
+COPY README.md AGENTS.md ./
+COPY manage.py requirements.txt ancore.sh restore.sh .dockerignore ./
+RUN tar -czf /application.tar.gz .
+
 FROM postgres:17-alpine AS backup
 RUN apk add --no-cache python3 tzdata
 COPY deploy/backup/backup.py /opt/ancore/backup.py
+COPY --from=recovery-source /application.tar.gz /opt/ancore/application.tar.gz
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 TZ=Europe/Warsaw
 ENTRYPOINT ["python3", "/opt/ancore/backup.py"]
 CMD ["schedule"]

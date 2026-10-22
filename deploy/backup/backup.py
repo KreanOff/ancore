@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import signal
 import subprocess
@@ -19,6 +20,7 @@ import uuid
 CONTROL = Path(os.getenv('BACKUP_CONTROL_ROOT', '/control'))
 DESTINATION = Path(os.getenv('BACKUP_DESTINATION', '/backups'))
 SOURCE = Path(os.getenv('BACKUP_SOURCE', '/source'))
+APPLICATION = Path('/opt/ancore/application.tar.gz')
 
 
 @contextmanager
@@ -54,7 +56,7 @@ def prune(keep):
 
 
 def backup():
-    keep = int(os.getenv('BACKUP_KEEP', '14'))
+    keep = int(os.getenv('BACKUP_KEEP', '10'))
     if keep < 1:
         raise ValueError('BACKUP_KEEP musi wynosić co najmniej 1.')
     DESTINATION.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -67,7 +69,10 @@ def backup():
             with maintenance():
                 subprocess.run(['pg_dump', '--format=custom', '--no-owner', '--no-acl',
                                 '--file', str(staging / 'database.dump')], check=True, timeout=3600)
-                metadata = {'format': 1, 'created_at': datetime.now(timezone.utc).isoformat(),
+                # A missing deployment snapshot must never produce a partial recovery copy.
+                if not APPLICATION.is_file() or not (SOURCE / 'production.env').is_file():
+                    raise RuntimeError('Brak kodu lub konfiguracji potrzebnej do odzyskania aplikacji.')
+                metadata = {'format': 2, 'created_at': datetime.now(timezone.utc).isoformat(),
                             'release': os.getenv('ANCORE_RELEASE', 'local'), 'encrypted': False}
                 (staging / 'manifest.json').write_text(json.dumps(metadata), encoding='utf-8')
                 with tarfile.open(partial, 'w:gz') as output:
@@ -75,6 +80,14 @@ def backup():
                     output.add(staging / 'manifest.json', arcname='manifest.json')
                     for directory in ('private', 'media'):
                         output.add(SOURCE / directory, arcname=directory)
+                    output.add(APPLICATION, arcname='recovery/application.tar.gz')
+                    output.add(SOURCE / 'production.env', arcname='recovery/production.env')
+                    if os.getenv('BACKUP_TLS_MODE') == 'direct':
+                        for filename in ('fullchain.pem', 'privkey.pem'):
+                            certificate = (SOURCE / 'tls' / filename).resolve(strict=True)
+                            if not certificate.is_relative_to((SOURCE / 'tls').resolve()):
+                                raise ValueError('Certyfikat wskazuje poza katalog TLS.')
+                            output.add(certificate, arcname='recovery/tls/' + filename)
             with partial.open('rb') as stream:
                 os.fsync(stream.fileno())
             checksum = digest(partial)
@@ -92,39 +105,57 @@ def backup():
 def restore(archive):
     # Called only with the backend and ONLYOFFICE stopped by ancore.sh restore.
     checksum = archive.with_name(archive.name + '.sha256')
-    if not checksum.is_file() or checksum.read_text().split()[0] != digest(archive):
+    if (not checksum.is_file() or not re.fullmatch(r'[a-fA-F0-9]{64}\s+[^\r\n]+\n?', checksum.read_text())
+            or checksum.read_text().split()[0].lower() != digest(archive)):
         raise ValueError('Brak lub nieprawidłowa suma SHA-256 archiwum.')
     with tempfile.TemporaryDirectory(prefix='.restore-', dir=DESTINATION) as temporary:
         staging = Path(temporary)
         with tarfile.open(archive, 'r:gz') as source:
             for entry in source.getmembers():
                 parts = Path(entry.name).parts
-                if (not parts or parts[0] not in {'database.dump', 'manifest.json', 'private', 'media'}
+                if (not parts or Path(entry.name).is_absolute() or '..' in parts
+                        or parts[0] not in {'database.dump', 'manifest.json', 'private', 'media', 'recovery'}
                         or entry.issym() or entry.islnk() or not (entry.isfile() or entry.isdir())):
                     raise ValueError('Nieprawidłowa zawartość archiwum.')
             source.extractall(staging, filter='data')
-        metadata = json.loads((staging / 'manifest.json').read_text())
-        if metadata.get('format') != 1 or not all((staging / name).is_dir() for name in ('private', 'media')):
-            raise ValueError('Nieobsługiwany format backupu.')
-        subprocess.run(['pg_restore', '--clean', '--if-exists', '--no-owner', '--no-acl',
-                        '--single-transaction', '--exit-on-error', '--dbname', os.environ['PGDATABASE'],
-                        str(staging / 'database.dump')], check=True, timeout=3600)
-        for name in ('private', 'media'):
-            target = SOURCE / name
-            for child in target.iterdir():
-                if child.is_dir() and not child.is_symlink():
-                    shutil.rmtree(child)
-                else:
-                    child.unlink()
-            shutil.copytree(staging / name, target, dirs_exist_ok=True)
-            for root, directories, files in os.walk(target):
-                os.chown(root, 10001, 10001)
-                os.chmod(root, 0o750)
-                for filename in files:
-                    path = Path(root) / filename
-                    os.chown(path, 10001, 10001)
-                    os.chmod(path, 0o640)
-        print('Odtworzono bazę i zapisane pliki. Uruchom usługi aplikacji.', flush=True)
+        restore_prepared(staging)
+
+
+def restore_prepared(staging):
+    """Restore a checksum-verified payload prepared by the standalone recovery script."""
+    metadata = json.loads((staging / 'manifest.json').read_text())
+    if (metadata.get('format') not in (1, 2) or not (staging / 'database.dump').is_file()
+            or not all((staging / name).is_dir() for name in ('private', 'media'))):
+        raise ValueError('Nieobsługiwany format backupu.')
+    subprocess.run(['pg_restore', '--clean', '--if-exists', '--no-owner', '--no-acl',
+                    '--single-transaction', '--exit-on-error', '--dbname', os.environ['PGDATABASE'],
+                    str(staging / 'database.dump')], check=True, timeout=3600)
+    for name in ('private', 'media'):
+        target = SOURCE / name
+        target.mkdir(parents=True, exist_ok=True)
+        for child in target.iterdir():
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+        shutil.copytree(staging / name, target, dirs_exist_ok=True)
+        for root, directories, files in os.walk(target):
+            os.chown(root, 10001, 10001)
+            os.chmod(root, 0o750)
+            for filename in files:
+                path = Path(root) / filename
+                os.chown(path, 10001, 10001)
+                os.chmod(path, 0o640)
+    # Fresh volumes must be usable before Django's first HTTP request.
+    CONTROL.mkdir(parents=True, exist_ok=True)
+    os.chown(CONTROL, 10001, 10001)
+    os.chmod(CONTROL, 0o750)
+    for name, content in (('requests.lock', ''), ('last-backup', str(time.time()))):
+        path = CONTROL / name
+        path.write_text(content, encoding='ascii')
+        os.chown(path, 10001, 10001)
+        os.chmod(path, 0o640)
+    print('Odtworzono bazę i zapisane pliki. Uruchom usługi aplikacji.', flush=True)
 
 
 def unlock():
@@ -160,16 +191,16 @@ def schedule():
 def main():
     os.umask(0o077)
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('schedule', 'once', 'restore', 'unlock', 'health'))
+    parser.add_argument('command', choices=('schedule', 'once', 'restore', 'restore-prepared', 'unlock', 'health'))
     parser.add_argument('archive', nargs='?')
     args = parser.parse_args()
     def terminate(_signal, _frame):
         raise SystemExit(143)
     signal.signal(signal.SIGTERM, terminate)
-    if args.command == 'restore':
+    if args.command in ('restore', 'restore-prepared'):
         if not args.archive:
             parser.error('Podaj archiwum do odtworzenia.')
-        restore(Path(args.archive))
+        {'restore': restore, 'restore-prepared': restore_prepared}[args.command](Path(args.archive))
     else:
         {'schedule': schedule, 'once': backup, 'unlock': unlock, 'health': health}[args.command]()
 

@@ -109,12 +109,14 @@ services:
       PGUSER: ancore
       PGPASSWORD: ${POSTGRES_PASSWORD:?Wygeneruj hasło bazy}
       BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
-      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_KEEP: ${BACKUP_KEEP:-10}
+      BACKUP_TLS_MODE: ${ANCORE_TLS_MODE:-http}
       ANCORE_RELEASE: ${ANCORE_RELEASE:-local}
     volumes:
       - private:/source/private:ro
       - media:/source/media:ro
       - control:/control
+      - ${ANCORE_ENV_FILE:-./.env}:/source/production.env:ro
       - ${ANCORE_BACKUP_DIR:?Wskaż katalog backupów}:/backups
     depends_on:
       backend: {condition: service_healthy}

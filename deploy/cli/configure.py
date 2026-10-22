@@ -36,10 +36,15 @@ def configure(args):
         previous = DEPLOY / '.env.production'
     existing = previous.exists()
     config = read_config(previous) if existing else {}
+    migrate_retention = config.get('BACKUP_KEEP') == '14'
+    if migrate_retention:
+        config['BACKUP_KEEP'] = '10'
     if existing and not args.reconfigure:
         if args.url and args.url.rstrip('/') != config['ANCORE_PUBLIC_URL']:
             raise ValueError('Instalacja ma już inny adres. Dodaj --reconfigure, aby zmienić adres bez wymiany sekretów.')
         if previous == path:
+            if migrate_retention:
+                write_config(path, config, replace=True)
             print('Zachowano istniejącą konfigurację i sekrety.', flush=True)
             return config
         write_config(path, config)
@@ -104,7 +109,7 @@ def configure(args):
     for key, value in {
         'SECRET_KEY': secrets.token_urlsafe(64), 'POSTGRES_PASSWORD': secrets.token_hex(32),
         'POSTGRES_ADMIN_PASSWORD': secrets.token_hex(32), 'ONLYOFFICE_JWT_SECRET': secrets.token_hex(48),
-        'BACKUP_INTERVAL_SECONDS': '86400', 'BACKUP_KEEP': '14', 'ANCORE_RELEASE': 'local',
+        'BACKUP_INTERVAL_SECONDS': '86400', 'BACKUP_KEEP': '10', 'ANCORE_RELEASE': 'local',
         'ONLYOFFICE_IMAGE': 'onlyoffice/documentserver:10.0.0.1',
     }.items():
         config.setdefault(key, value)

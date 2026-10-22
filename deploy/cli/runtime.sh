@@ -68,11 +68,14 @@ ancore_compose() {
         shift
         set -- -f "$ANCORE_ROOT/deploy/compose.restore.yaml" "$@"
     fi
+    if [ -f "$ANCORE_ROOT/deploy/compose.recovery.yaml" ]; then
+        set -- -f "$ANCORE_ROOT/deploy/compose.recovery.yaml" "$@"
+    fi
     if [ "$ANCORE_TLS_MODE" = direct ]; then
-        ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" \
+        ANCORE_ENV_FILE="$ANCORE_ENV" ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" \
             -f "$ANCORE_ROOT/deploy/compose.tls.yaml" "$@"
     else
-        ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" "$@"
+        ANCORE_ENV_FILE="$ANCORE_ENV" ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" "$@"
     fi
 }
 
@@ -154,7 +157,7 @@ Lokalny Ancore: sh ancore.sh [--env-file PLIK] [--context NAZWA] POLECENIE
   restart        Zatrzymaj i ponownie uruchom usługi.
   status         Pokaż stan wszystkich usług.
   logs [USŁUGA]  Śledź ostatnie logi (Ctrl+C kończy podgląd).
-  backup         Wykonaj lokalny backup bazy i plików.
+  backup         Wykonaj pełny lokalny backup danych, kodu i konfiguracji.
   restore PLIK --yes  Odtwórz backup, zastępując bieżące dane.
   unlock         Usuń pozostałą blokadę backupu, jeśli nie trwa kopia.
   reload         Sprawdź i przeładuj Nginx w Dockerze.
