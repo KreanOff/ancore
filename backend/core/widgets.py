@@ -2,6 +2,18 @@ from django import forms
 from django.template.loader import render_to_string
 
 
+class EmojiPickerInput(forms.TextInput):
+    """The React picker keeps a normal form value and a no-JavaScript fallback."""
+    template_name = 'core/widgets/emoji_picker.html'
+    emoji_picker = True
+
+    def get_context(self, name, value, attrs):
+        from .emoji import emoji_payload
+        context = super().get_context(name, value, attrs)
+        context['emoji'] = emoji_payload(value or 'layout-dashboard')
+        return context
+
+
 class VisualSelect(forms.Select):
     """Pass trusted option icons/previews to AncoreCustomSelect."""
 

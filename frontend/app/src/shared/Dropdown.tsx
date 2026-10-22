@@ -1,4 +1,11 @@
-import { type ReactNode, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type ButtonHTMLAttributes,
+  type ReactNode,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 export function Dropdown({
   label,
@@ -12,6 +19,7 @@ export function Dropdown({
   triggerClassName = 'tasks-filter-button',
   searchable = true,
   disabled = false,
+  triggerProps,
 }: {
   label: string;
   trigger: ReactNode;
@@ -24,6 +32,10 @@ export function Dropdown({
   triggerClassName?: string;
   searchable?: boolean;
   disabled?: boolean;
+  triggerProps?: Pick<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    'id' | 'aria-describedby' | 'aria-invalid'
+  >;
 }) {
   const [open, setOpen] = useState(false);
   const anchor = useRef<HTMLButtonElement>(null);
@@ -63,6 +75,7 @@ export function Dropdown({
         aria-haspopup={role === 'group' ? 'menu' : role}
         aria-expanded={open}
         aria-controls={id}
+        {...triggerProps}
         onClick={() => {
           if (!open) onOpen?.();
           setOpen(!open);

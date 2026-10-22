@@ -116,6 +116,10 @@ def form_payload(form):
         }
         if getattr(field, 'max_length', None):
             info['attrs']['maxlength'] = str(field.max_length)
+        if getattr(widget, 'emoji_picker', False):
+            from .emoji import emoji_picker_config
+            info['type'] = 'emoji'
+            info['emoji_picker'] = emoji_picker_config(bound.value() or 'layout-dashboard')
         if isinstance(field, (forms.ChoiceField, forms.ModelChoiceField)):
             info['type'] = 'checkboxes' if isinstance(widget, forms.CheckboxSelectMultiple) else 'select'
             info['multiple'] = isinstance(field, (forms.MultipleChoiceField, forms.ModelMultipleChoiceField))
