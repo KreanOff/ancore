@@ -471,6 +471,15 @@ wyłącznie właściciel zmienia widoczność i role administratorów. Przestrze
 publiczną zarządza właściciel/administrator Workspace lub osoba odpowiedzialna.
 Udostępnianie przestrzeni działa od razu przez `SpaceMembership`,
 bez zaproszeń. Role Workspace pozostają niezależne.
+`space_team.py` udostępnia odczyt tabeli, akcje `share`/`role`/`remove`
+pod `space/<slug>/team/` oraz wyszukiwanie `team/candidates/`, także w scoped
+Workspace i przez JSON API stron. Właściciel nadaje wszystkie trzy role;
+administrator zarządza członkami i obserwatorami, bez nadawania roli
+administratora ani operacji na innych administratorach. Wyszukiwanie pomija
+właściciela i obecnych uczestników. Zapis ponownie sprawdza bieżące członkostwo
+Workspace, uprawnienia i odbiorcę pod blokadą transakcyjną. Dotychczasowy
+adres `members/` zachowuje zgodność; aktualne UI korzysta z tabeli i osobnych
+kompaktowych okien udostępniania i roli.
 Prywatnym zadaniem zarządza jego właściciel lub administrator zadania;
 tylko właściciel zmienia widoczność i role administratorów. Kandydaci muszą
 mieć bieżący dostęp do przestrzeni i wszystkich rodziców. Zmiana zadania

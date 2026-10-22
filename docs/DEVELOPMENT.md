@@ -1,5 +1,291 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Kontrola przed zapisaniem commitów (23.10.2026)
+
+Ponowiono celowany zestaw **100 testów Django** na oddzielnej, tymczasowej
+bazie PostgreSQL i storage tworzonych przez `scripts/run_tests.py`:
+
+```sh
+.venv/bin/python scripts/run_tests.py core.test_emoji \
+  dashboard.test_pulpit_preferences spaces.test_space_sharing \
+  core.test_pulpit_frontend core.test_schema_baseline \
+  dashboard.test_pulpit_editor dashboard.test_default_pulpit \
+  dashboard.test_pulpit_management core.test_shell_frontend \
+  core.test_space_settings_frontend core.test_workspace_frontend
+```
+
+Wszystkie testy przeszły. Przeszło również **10 testów frontendu**, build
+z kontrolą TypeScript, `format:check`, kontrola Django i indeksu kodu oraz
+`git diff --check`. `makemigrations --check --dry-run` nie wykazało zmian,
+a `showmigrations dashboard --plan` potwierdziło zastosowanie lokalnych
+migracji `0003` i `0004`. Nie uruchamiano pełnego zestawu repozytorium
+ani nie ponawiano wcześniejszych prób UI w przeglądarce opisanych poniżej.
+
+## Stały rozmiar pickera emoji (23.10.2026)
+
+Pierwsze otwarcie mierzyło menu przed nadejściem katalogu i zachowywało 240px;
+ponowne otwarcie z gotowymi kategoriami dawało inną szerokość. Wariant
+`emoji-picker-menu` ustawia wspólne minimum i maksimum na 400px. Adapter nadal
+ogranicza menu do szerokości ekranu. Doprecyzowany selektor otwartego pickera
+zachowuje flex zamiast dziedziczonej siatki menu; kurczą się wyniki, dzięki
+czemu dolny pasek pozostaje wewnątrz okna. Odświeżono wersje arkuszy CSS.
+
+Playwright/Chrome (plugin Browser niedostępny) na osobnej bazie i storage QA
+odtworzył przed poprawką szerokości 240px i około 365px oraz uciętą stopkę.
+Po poprawce pierwsze otwarcie z wstrzymanym katalogiem, gotowy katalog,
+osiem ponownych otwarć, wyszukiwanie/pusty wynik i kategorie zachowały 400px.
+Błąd katalogu 503 i ponowienie nie zmieniły szerokości; sprawdzono zapis emoji
+i reload. Przy 1920, 1440, 1024, 390 i 360px menu oraz dolny pasek mieściły się
+w ekranie, również po zmianie szerokości otwartego menu. Referencyjny awatar
+i select ustawień Przestrzeni działały bez zmiany. Nie było przepełnienia
+dokumentu ani nieoczekiwanych błędów konsoli; jedyny błąd HTTP był wymuszonym
+503. Indeks i `git diff --check` przeszły. Zmiana dotyczy CSS i wersji zasobów;
+nie ponawiano builda TypeScript ani testów backendu. Safari/Firefox nie sprawdzano.
+
+## Domyślna ikona Pulpitu (23.10.2026)
+
+Wartość `layout-dashboard` wyświetla istniejącą ikonę czterech kafelków przez
+wspólny adapter ikon. `emoji_payload` i `shared/Emoji` obsługują prezentację
+`art.icon` obok dotychczasowych atlasów emoji. Picker pozwala przywrócić
+„Domyślną ikonę pulpitu”; wybrane emoji, w tym jawne 📊, zachowują swoją grafikę.
+Podgląd pozostaje przezroczysty i używa koloru tekstu aplikacji. Domyślna
+wartość modelu już wynosiła `layout-dashboard`; nie zmieniano rekordów ani migracji.
+
+Build z TypeScriptem oraz **50 testów** `core.test_emoji`,
+`dashboard.test_pulpit_preferences`, `core.test_pulpit_frontend`,
+`core.test_shell_frontend` i `dashboard.test_default_pulpit` przeszło.
+Playwright/Chrome (plugin Browser niedostępny), na osobnej bazie i storage QA,
+przy 1440×1000 i 390×844 potwierdził natywną ikonę w podglądzie, nagłówku,
+menu, katalogu, wyszukiwarce i pulpicie domyślnym. Sprawdzono tworzenie/pusty
+stan, wybór emoji, przywrócenie ikony, zapis/reload, pierwszy render Django,
+referencyjny awatar Przestrzeni i brak przepełnienia telefonu. Nie było błędów
+konsoli ani zewnętrznych żądań. Format, indeks i `git diff --check` przeszły.
+Nie uruchamiano pełnego zestawu repozytorium ani Safari/Firefox.
+
+## Podgląd ikony Pulpitu jak w Przestrzeniach (23.10.2026)
+
+`PulpitFields` umieszcza pole emoji w lewej kolumnie istniejącego
+`profile-edit-body` / `profile-photo-control`. Wariant `avatar` wspólnego
+`EmojiPicker` ma podgląd 68×68px i „Zmień” pod nim, z geometrią przycisku
+profilu/Przestrzeni. Cały podgląd i podpis są jednym przyciskiem otwierającym
+dotychczasową bibliotekę 3145 emoji. Pozostałe pola zajmują prawą kolumnę,
+a parametry zachowują dwie kolumny pól z etykietą po lewej od 1100px.
+Na telefonie ikona jest nad polami. Tworzenie Pulpitu korzysta z tego samego
+wariantu; Dostępy i konfiguracja gadżetu zachowują swoje formularze.
+
+Build z TypeScriptem, format, indeks i `git diff --check` przeszły.
+Playwright/Chrome (plugin Browser niedostępny) przy 1440×1000 i 390×844
+porównał rozmiar podglądu z rzeczywistymi ustawieniami Przestrzeni,
+sprawdził picker, wyszukiwanie/stan pusty, błąd katalogu i ponowienie,
+klawiaturę/Escape, zachowanie wyboru przy walidacji, zapis, reload,
+ponowne wejście i wariant odcienia skóry. Nagłówek, menu, katalog,
+picker wyników, pulpit domyślny i pierwszy render zachowały tę samą grafikę.
+Nie było przepełnienia telefonu ani nieoczekiwanych błędów konsoli.
+Sprawdzono też utworzenie nowego pustego Pulpitu, układ przy 1920×1000
+i 1024×1000 oraz zakładkę „Dostępy”.
+Zmiana jest prezentacyjna; testów backendu nie ponawiano. Brak zmian modeli/API.
+Nie sprawdzano Safari/Firefox.
+
+## Biblioteka Fluent Emoji i wspólny picker (22.10.2026)
+
+`core/emoji.py` ładuje lokalny katalog 3145 emoji i wariantów, buduje dane
+prezentacyjne atlasów oraz waliduje wartości. `EmojiPickerInput` przekazuje
+do Reactowego pola `emoji` wybrany symbol i adresy zasobów. Wspólny picker
+używa `Dropdown`, kategorii, polskich/angielskich nazw, ostatnich wyborów
+osobnych dla konta i Workspace oraz kolejnych porcji po 120 przycisków.
+Wyszukiwanie jest stanem kontrolki i nie oznacza formularza jako zmienionego.
+Wybór wpisuje zwykłą wartość formularza i zachowuje walidację oraz szkice.
+
+Microsoft Fluent Emoji 3D i polskie dane Unicode CLDR są przypięte w
+`scripts/assets/build_fluent_emoji.py`. Generator sprawdza SHA-256 źródeł,
+tworzy 13 arkuszy WebP z kafelkami 64px i katalog; razem około 5 MiB.
+Obrazy są grupowane kategoriami. Katalog pobierany jest dopiero po otwarciu,
+udany odczyt jest współdzielony, a błąd można ponowić. Wszystko działa z
+lokalnych zasobów bez CDN i bez nowej zależności wykonawczej. Źródła,
+licencje i odtwarzanie: [README biblioteki](../static/vendor/fluent-emoji/README.md).
+
+`dashboard.0004_dashboard_emoji_library` zastępuje stałe choices walidatorem
+katalogu. `sqlmigrate` potwierdził brak operacji SQL; migrację zastosowano
+lokalnie bez przepisywania danych. Nowe wybory zapisują Unicode w obecnym
+polu 32 znaków, a wcześniejsze osiem identyfikatorów pozostaje aliasami.
+Grafika jest wspólna dla Reacta i pierwszego renderu Django: ustawień,
+nagłówka, edytora, menu, katalogu, pickera wyników i pulpitu domyślnego.
+
+Przeszło 70 testów biblioteki, walidacji, parametrów Pulpitów, kontraktu React,
+formularzy, powłoki i pulpitu domyślnego, a także build z TypeScriptem.
+Playwright/Chrome (plugin Browser niedostępny) na odizolowanej bazie QA przy
+1440×1000 i 390×844 potwierdził wyszukiwanie PL/EN i brak wyników, kategorie,
+ostatnie wybory/pustą historię, dokładny symbol na początku wyników, klawiaturę
+siatki, wybór przez Enter oraz Escape/fokus. Sprawdzono lazy loading, błąd katalogu
+503 i ponowienie, brak oznaczania formularza jako zmienionego przy szukaniu,
+zapis Unicode i wariantu odcienia skóry, zachowanie wyboru przy walidacji,
+reload i ponowne wejście. Nagłówek, menu, katalog, picker wyników i pulpit
+domyślny używały tej samej grafiki; sprawdzono zwykłe/scoped adresy,
+referencyjny awatar Przestrzeni i pierwszy render Django bez JavaScript.
+Utworzenie nowego pulpitu z emoji sprawdzono wraz z jego pustym stanem.
+Nie było zewnętrznych żądań, przepełnienia telefonu ani nieoczekiwanych
+błędów konsoli. Kontrola Django, migracji, formatu, indeksu i `git diff --check`
+przeszła; dwa testy integralności katalogu ponowiono po grupowaniu atlasów.
+Nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
+
+## Emoji pulpitów (22.10.2026)
+
+Ikony Pulpitów mają osiem podglądów emoji w istniejącym `VisualSelect`.
+Zapisane identyfikatory pozostają zgodne; `Dashboard.Icon.emoji` i
+`Dashboard.icon_emoji` dostarczają prezentację dla formularza, danych strony,
+menu, wyszukiwarki i pierwszego renderu Django. Wspólne `shared/Emoji`
+i `core/emoji.html` używają klasy `ancore-emoji` z systemowym fontem emoji.
+Schemat formularza przekazuje opcjonalne `emoji` do istniejących podglądów
+custom selecta. Ta zmiana nie wymaga nowej migracji ani aktualizacji rekordów.
+
+Przeszło 67 testów parametrów Pulpitów, ich kontraktu React, wspólnego
+formularza, powłoki i pulpitu domyślnego. Build z TypeScriptem, formatowanie,
+kontrola Django, brak oczekujących zmian modeli, indeks i `git diff --check`
+również przeszły. Playwright/Chrome (plugin Browser niedostępny) na osobnej
+bazie QA przy 1440×1000 i 390×844 sprawdził osiem opcji, wyszukiwanie,
+wybór, zapis i reload, nagłówek/edytor, menu, katalog i zarządzanie,
+picker, pulpit domyślny oraz zwykłe/scoped URL. Sprawdzono referencyjne
+awatary Przestrzeni i pierwszy render bez JavaScript. Nie było przepełnienia
+telefonu ani błędów konsoli. Nie sprawdzano Safari/Firefox ani całego zestawu repozytorium.
+
+## Dwie kolumny parametrów pulpitu (22.10.2026)
+
+`components/pulpits.css` układa parametry zakładki „Ustawienia” w dwie równe
+kolumny od 1100px. Nazwa i opis zajmują całą szerokość; parametry korzystają
+ze wspólnego wiersza ustawień Przestrzeni: etykieta 180px po lewej,
+odstęp 24px i kontrolka po prawej. Opisy i błędy pozostają pod kontrolką.
+Warunkowy wybór Przestrzeni/filtra zachowuje
+naturalną kolejność pól i zajmuje miejsce tylko wtedy, gdy jest widoczny.
+Mniejsze ekrany zachowują jedną kolumnę. Wariant jest ograniczony do tej
+zakładki; „Dostępy” i pozostałe formularze zachowują dotychczasowy układ.
+Zaktualizowano wersję arkusza w pierwszym renderze Django.
+
+Playwright/Chrome na izolowanej bazie QA (plugin Browser niedostępny)
+potwierdził dwie kolumny i etykiety po lewej przy 1440×1000 i 1920×1000, jedną kolumnę przy
+1024×900 i 390×844, puste źródło i walidację, wybór źródeł, zapis,
+ponowne wejście i reload. Bezpośrednie porównanie z oknem ustawień
+Przestrzeni potwierdziło tę samą szerokość etykiet i odstęp od kontrolek. Stopka pozostała
+dostępna, nie było przepełnienia ani nieoczekiwanych błędów konsoli.
+Kontrola indeksu i `git diff --check` przeszły. Zmiana dotyczy CSS;
+nie ponawiano testów backendu ani budowania bundla. Nie sprawdzano Safari/Firefox.
+
+## Ikony pól ustawień pulpitu (22.10.2026)
+
+Zakres danych przekazuje do wspólnego selecta ikony `building-2`, `layers`
+i `filter`; odświeżanie `circle-slash` lub `refresh-cw`. Wybór Przestrzeni
+korzysta z `SpaceSelectMultiple`, rozszerzającego istniejący `SpaceSelect`
+o wiele wartości, z tymi samymi avatarami. Pusty/zbiorczy wybór ma warstwy,
+a zapisane filtry lejek. W `FieldControl` poprawiono klasy podglądu avatara
+na wspólne `profile-avatar space-avatar` oraz `space-avatar-art` lub `has-photo`.
+Bez nich podgląd w React nie miał rozmiaru ani ilustracji.
+
+Przeszły 24 istniejące testy parametrów i kontraktu API Pulpitów, build,
+kontrola typów/formatu, kontrola Django, indeks i `git diff --check`.
+Playwright/Chrome (plugin Browser niedostępny) na osobnej bazie QA przy
+1440×1000 i 390×844 potwierdził ikony opcji i wybranych wartości, widoczne
+avatary Przestrzeni, pusty i wielokrotny wybór, zapis i reload, wspólny
+wybór Przestrzeni w Filtrach oraz referencyjną Przestrzeń. Nie było błędów
+konsoli, nakładek błędów ani przepełnienia telefonu. Nie sprawdzano
+Safari/Firefox ani całego zestawu repozytorium. Nie ma zmian modeli/migracji.
+
+## Parametry pulpitów (22.10.2026)
+
+`dashboard.0003_dashboard_preferences` dodaje ikonę (osiem istniejących glifów),
+zakres danych (Workspace, wybrane Przestrzenie lub zapisany filtr) oraz interwał
+odświeżania 0/60/300/900 sekund. Domyślne wartości zachowują dotychczasowy
+zakres danych i wyłączone odświeżanie. Przed lokalnym zastosowaniem migracji wykonano backup PostgreSQL;
+porównanie istniejących pulpitów, gadżetów, gwiazdek i dostępów potwierdziło
+zachowanie danych. Backup pozostaje lokalnie w ignorowanym `.local/backups/`.
+Inne środowiska wymagają standardowego backupu i `manage.py migrate`.
+
+Formularz ustawień zwraca po zapisie aktualny schemat, dzięki czemu znika
+wcześniejszy błąd walidacji. Starszy POST zawierający tylko nazwę i opis
+zachowuje nowe preferencje. Wybór źródeł jest ograniczony do aktywnego Workspace
+i widoczności autora, a każdy odczyt ponownie sprawdza prawa oglądającego.
+Gadżety bez własnej Przestrzeni dziedziczą zakres. Utrata źródła nie rozszerza
+danych; zapisany filtr używa istniejącego kompilatora i ACL wynikowych zadań.
+Ikona trafia do nagłówka, katalogu, menu, pickera i pierwszego renderu Django.
+Odświeżanie działa tylko w widocznym podglądzie, z ochroną przed równoległymi
+odczytami i sprzątaniem timerów po wyjściu.
+
+Build, kontrola typów/formatu, składnia JS/Pythona oraz 112 testów Django
+Pulpitów, kontraktu React, schematu i powiązanych Filtrów przeszły.
+Po poprawce odpowiedzi zapisu ponowiono 43 testy formularzy i Pulpitów.
+Dziesięć testów Node obejmuje nawigację oraz rzeczywisty kontroler timerów:
+interwały, widoczność, wyłączenie, brak nakładania żądań, błąd i odmontowanie.
+Kontrole modeli i zastosowania migracji potwierdziły brak dalszych zmian.
+
+Plugin Browser był niedostępny. Playwright/Chrome na osobnej bazie QA przy
+1440×1000, 1024×900 i 390×844 sprawdził nowe dropdowny, brak wymaganego źródła,
+zachowanie szkiców, zapis i usunięcie błędów, ikony w menu/katalogu,
+zakres Przestrzeni i zapisany filtr oraz zwykłe/scoped adresy. Zegar przeglądarki
+przyspieszył interwał 60 sekund: po rzeczywistej zmianie zadania postęp
+zmienił się z 50% na 100%. Sprawdzono pauzę modalu, edytora i ukrytej karty,
+wznowienie, symulowany błąd 503 z zachowaniem danych i ręczne ponowienie,
+cofnięcie dostępu odbiorcy do filtra, telefon i referencyjną Przestrzeń.
+Nie było przepełnienia ani nieoczekiwanych błędów konsoli. Nie sprawdzano
+Safari/Firefox ani pełnego zestawu repozytorium.
+
+## Edycja układu bezpośrednio na pulpicie (22.10.2026)
+
+`src/pulpits/DetailPage.tsx` renderuje edytor gadżetów w głównej treści strony.
+Powłoka otwiera w modalu tylko ustawienia i dostępy; okno ma dwie zakładki.
+„Edytuj pulpit” i „Gadżety i układ” używają dotychczasowej nawigacji JSON,
+katalogu, przeciągania i automatycznego zapisu z rewizją. Nazwa w zarządzaniu
+nadal otwiera ustawienia. Nie zmieniono modeli, API zapisu ani uprawnień.
+
+Weryfikacja: build i format czterech zmienionych plików Reacta, pięć testów
+nawigacji oraz 40 testów `core.test_pulpit_frontend`,
+`dashboard.test_pulpit_editor`, `dashboard.test_default_pulpit`
+i `dashboard.test_pulpit_management` przeszły. Testy Django używały osobnej
+bazy PostgreSQL przez `scripts/run_tests.py`.
+
+Plugin Browser był niedostępny; Playwright z lokalnym Chrome na izolowanej
+bazie QA sprawdził 1440×1000, 1024×900 i 390×844: pusty pulpit, wejście do
+edycji bez modalu i przeładowania dokumentu, pięć układów, dodawanie,
+konfigurację (także z bezpośredniego adresu), usuwanie, przenoszenie menu
+i przeciąganie, trwałość po reload,
+symulowany konflikt 409 z przywróceniem układu i ponowieniem, „Gotowe”,
+powrót do edycji, szkice i zapis dwóch zakładek ustawień, zwykłe/scoped adresy
+oraz wariant zarządzania. Ekranem referencyjnym było podsumowanie Przestrzeni.
+Nie było przepełnienia strony ani nieoczekiwanych błędów konsoli.
+Nie uruchamiano pełnego zestawu repozytorium ani Safari/Firefox.
+
+## Udostępnianie Przestrzeni (22.10.2026)
+
+Zakładka „Członkowie” używa wspólnej tabeli, wyszukiwarki aktywnych osób
+Workspace oraz kompaktowych okien udostępniania i zmiany roli. `space_team.py`
+zachowuje bieżące członkostwa, ograniczenia administratorów i czyszczenie
+dostępów zadań po odebraniu dostępu do Przestrzeni. Bez zmian modeli/migracji.
+
+Na oddzielnych bazach PostgreSQL przeszło **119/119 testów**:
+
+```sh
+.venv/bin/python scripts/run_tests.py spaces.test_space_sharing \
+  spaces.test_independent_tasks spaces.test_task_detail_parity \
+  spaces.test_write_access core.test_frontend core.test_navigation_frontend \
+  core.test_shell_frontend
+.venv/bin/python scripts/run_tests.py core.test_space_settings_frontend \
+  core.test_workspace_frontend
+pnpm --dir frontend/app test
+```
+
+Pierwsze dwa polecenia obejmują 9 nowych testów udostępniania i istniejące
+regresje. Testy nawigacji frontendu przeszły **5/5**. Build z TypeScriptem,
+Prettier zmienionych źródeł, kontrola Django, linki dokumentacji, indeks
+i `git diff --check` również przeszły.
+
+Plugin Browser był niedostępny; użyto Playwright z lokalnym Chrome,
+fikcyjnymi kontami, osobną bazą i storage QA. Przy 1440×1000, 1024×900
+i 390×844 sprawdzono tabelę, wyszukiwanie/pusty wynik, wybór klawiaturą,
+udostępnienie, zmianę roli, anulowanie i potwierdzenie odebrania dostępu,
+błąd 503 i ponowienie bez duplikatu, zachowanie szkicu Głównej, Escape/fokus,
+trwałość po reload i ponowne wejście. Publiczna Przestrzeń pokazuje dostęp
+Workspace, odbiorca-obserwator nie ma kontrolek zapisu, a administrator nie
+nadaje roli administratora. Sprawdzono także referencyjną tabelę zadania,
+brak przepełnienia dokumentu i brak nieoczekiwanych błędów/ostrzeżeń JS.
+Nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
+
 ## Pełny backup i samodzielne odzyskiwanie (22.10.2026)
 
 Backup ma domyślny interwał 24 godzin i retencję 10 kopii. Format 2 dodaje

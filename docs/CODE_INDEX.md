@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 35 | 0 | 19 | 215 |
+| [backend/core](../backend/core) | 37 | 0 | 21 | 217 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 43 | 2 | 43 | 222 |
+| [backend/dashboard](../backend/dashboard) | 44 | 4 | 43 | 233 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
 | [backend/documents](../backend/documents) | 37 | 2 | 31 | 200 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 46 | 2 | 39 | 253 |
+| [backend/spaces](../backend/spaces) | 48 | 2 | 39 | 262 |
 
 ## 2. Modele i relacje
 
@@ -145,17 +145,19 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
 
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `slug` (SlugField), `description` (TextField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `layout` (CharField), `revision` (PositiveIntegerField), `is_default` (BooleanField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `slug` (SlugField), `description` (TextField), `icon` (CharField), `data_scope` (CharField), `scope_spaces` (ManyToManyField), `scope_filter` (ForeignKey), `refresh_interval` (PositiveSmallIntegerField), `visibility` (CharField), `shared_with` (ManyToManyField), `favorited_by` (ManyToManyField), `layout` (CharField), `revision` (PositiveIntegerField), `is_default` (BooleanField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workspace_dashboards' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='dashboards' |
 | `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='created_dashboards' |
+| `scope_spaces` | `'spaces.Space'` | related_name='scoped_dashboards' |
+| `scope_filter` | `SavedTaskFilter` | on_delete=models.SET_NULL; related_name='scoped_dashboards'; null=True |
 | `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_dashboards' |
 | `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_dashboards' |
 
-Metody/properties: `save`, `column_count`, `__str__`.
+Metody/properties: `save`, `icon_emoji`, `icon_emoji_art`, `column_count`, `__str__`.
 
 ### `DashboardGadget`
 
@@ -751,6 +753,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'space/<slug:pk>/sprints/<int:sprint_pk>/complete/'` | `views.sprint_plan` | 'sprint_complete' |
 | `'space/<slug:pk>/sprints/<int:sprint_pk>/action/'` | `views.sprint_action` | 'sprint_action' |
 | `'space/<slug:pk>/members/'` | `views.members` | 'members' |
+| `'space/<slug:pk>/team/'` | `space_team.team` | 'space_team' |
+| `'space/<slug:pk>/team/candidates/'` | `space_team.candidates` | 'space_candidates' |
 | `'space/<slug:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
 | `'space/<slug:pk>/configuration/'` | `views.configuration` | 'configuration' |
 | `'spaces/<int:pk>/'` | `views.detail` | 'detail' |
@@ -789,6 +793,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/apps.py](../backend/core/apps.py) — `CoreConfig`
 - [backend/core/avatars.py](../backend/core/avatars.py) — `preset_avatar`
 - [backend/core/comment_images.py](../backend/core/comment_images.py) — `comment_image_storage`, `AttachmentPresentation`
+- [backend/core/emoji.py](../backend/core/emoji.py) — `emoji_catalog`, `emoji_index`, `find_emoji`, `validate_emoji`, `emoji_art`, `emoji_payload`, `emoji_picker_config`
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
 - [backend/core/health.py](../backend/core/health.py) — `readiness`
 - [backend/core/hosts.py](../backend/core/hosts.py) — `ServerAddressMiddleware`
@@ -799,7 +804,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templatetags/__init__.py](../backend/core/templatetags/__init__.py)
 - [backend/core/templatetags/frontend.py](../backend/core/templatetags/frontend.py) — `global_panels_bootstrap`, `react_bundle`
 - [backend/core/upload_validation.py](../backend/core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
-- [backend/core/widgets.py](../backend/core/widgets.py) — `VisualSelect`, `VisualSelectMultiple`
+- [backend/core/widgets.py](../backend/core/widgets.py) — `EmojiPickerInput`, `VisualSelect`, `VisualSelectMultiple`
 - [backend/core/work_logs.py](../backend/core/work_logs.py) — `DateTimeLocalInput`, `TimeLogForm`
 
 ### accounts
@@ -870,12 +875,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardGadget`, `NotificationState`
 - [backend/dashboard/notification_frontend.py](../backend/dashboard/notification_frontend.py) — `notification_payload`
 - [backend/dashboard/notification_service.py](../backend/dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
-- [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
+- [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `configure_preferences`, `DashboardPreferencesMixin`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [backend/dashboard/pulpit_frontend.py](../backend/dashboard/pulpit_frontend.py) — `dashboard_payload`, `gadget_payload`, `pulpit_form_payload`, `modal_payload`, `directory_page`, `detail_page`, `edit_page`
 - [backend/dashboard/pulpit_navigation.py](../backend/dashboard/pulpit_navigation.py) — `sidebar_dashboards`
 - [backend/dashboard/pulpit_urls.py](../backend/dashboard/pulpit_urls.py)
 - [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
-- [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `gadget_data`, `detail_context`
+- [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `dashboard_data_scope`, `gadget_data`, `detail_context`
 - [backend/dashboard/recent.py](../backend/dashboard/recent.py) — `remember_view`, `recent_views`
 - [backend/dashboard/reminders.py](../backend/dashboard/reminders.py) — `space_reminders_for_user`
 - [backend/dashboard/urls.py](../backend/dashboard/urls.py)
@@ -945,6 +950,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
+- [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
 - [backend/spaces/summary.py](../backend/spaces/summary.py) — `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
@@ -956,13 +962,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
 - [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
-- [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `TeamSelect`
+- [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
 
 ## 6. Szablony
 
 ### core
 
 - [backend/core/templates/core/base.html](../backend/core/templates/core/base.html)
+- [backend/core/templates/core/emoji.html](../backend/core/templates/core/emoji.html)
 - [backend/core/templates/core/includes/attachment_icon.html](../backend/core/templates/core/includes/attachment_icon.html)
 - [backend/core/templates/core/includes/avatar_picker.html](../backend/core/templates/core/includes/avatar_picker.html)
 - [backend/core/templates/core/includes/avatar_presets.html](../backend/core/templates/core/includes/avatar_presets.html)
@@ -980,6 +987,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/sidebar_picker.html](../backend/core/templates/core/includes/sidebar_picker.html)
 - [backend/core/templates/core/includes/trash_icon.html](../backend/core/templates/core/includes/trash_icon.html)
 - [backend/core/templates/core/includes/workplace_management_sidebar.html](../backend/core/templates/core/includes/workplace_management_sidebar.html)
+- [backend/core/templates/core/widgets/emoji_picker.html](../backend/core/templates/core/widgets/emoji_picker.html)
 - [backend/core/templates/core/widgets/visual_select.html](../backend/core/templates/core/widgets/visual_select.html)
 
 ### accounts
@@ -1191,6 +1199,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/dialogs.css](../static/css/components/dialogs.css)
 - [static/css/components/documents.css](../static/css/components/documents.css)
 - [static/css/components/dropdown-layer.css](../static/css/components/dropdown-layer.css)
+- [static/css/components/emoji-picker.css](../static/css/components/emoji-picker.css)
 - [static/css/components/file-upload.css](../static/css/components/file-upload.css)
 - [static/css/components/forms.css](../static/css/components/forms.css)
 - [static/css/components/global-search.css](../static/css/components/global-search.css)
@@ -1337,6 +1346,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/pulpits/EditPage.tsx](../frontend/app/src/pulpits/EditPage.tsx)
 - [frontend/app/src/pulpits/Gadget.tsx](../frontend/app/src/pulpits/Gadget.tsx)
 - [frontend/app/src/pulpits/SettingsDialog.tsx](../frontend/app/src/pulpits/SettingsDialog.tsx)
+- [frontend/app/src/pulpits/autoRefresh.ts](../frontend/app/src/pulpits/autoRefresh.ts)
 - [frontend/app/src/pulpits/types.ts](../frontend/app/src/pulpits/types.ts)
 - [frontend/app/src/resources/App.tsx](../frontend/app/src/resources/App.tsx)
 - [frontend/app/src/resources/Editor.tsx](../frontend/app/src/resources/Editor.tsx)
@@ -1347,12 +1357,15 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
 - [frontend/app/src/shared/DirectoryColumns.tsx](../frontend/app/src/shared/DirectoryColumns.tsx)
 - [frontend/app/src/shared/Dropdown.tsx](../frontend/app/src/shared/Dropdown.tsx)
+- [frontend/app/src/shared/Emoji.tsx](../frontend/app/src/shared/Emoji.tsx)
+- [frontend/app/src/shared/EmojiPicker.tsx](../frontend/app/src/shared/EmojiPicker.tsx)
 - [frontend/app/src/shared/EmptyState.tsx](../frontend/app/src/shared/EmptyState.tsx)
 - [frontend/app/src/shared/Icon.tsx](../frontend/app/src/shared/Icon.tsx)
 - [frontend/app/src/shared/Members.tsx](../frontend/app/src/shared/Members.tsx)
 - [frontend/app/src/shared/Modal.tsx](../frontend/app/src/shared/Modal.tsx)
 - [frontend/app/src/shared/Pagination.tsx](../frontend/app/src/shared/Pagination.tsx)
 - [frontend/app/src/shared/Select.tsx](../frontend/app/src/shared/Select.tsx)
+- [frontend/app/src/shared/SharingDialog.tsx](../frontend/app/src/shared/SharingDialog.tsx)
 - [frontend/app/src/shared/StatusGroup.tsx](../frontend/app/src/shared/StatusGroup.tsx)
 - [frontend/app/src/shared/api.ts](../frontend/app/src/shared/api.ts)
 - [frontend/app/src/shared/clipboard.ts](../frontend/app/src/shared/clipboard.ts)
@@ -1408,6 +1421,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/WorkspaceForm.tsx](../frontend/app/src/workspaces/WorkspaceForm.tsx)
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
+- [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ### React — frontend/board
@@ -1442,6 +1456,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/core/test_document_frontend.py](../backend/core/test_document_frontend.py).
 
 - `ReactDocumentTests`: 15 metod testowych.
+
+### backend/core/test_emoji.py
+
+Źródło: [backend/core/test_emoji.py](../backend/core/test_emoji.py).
+
+- `EmojiLibraryTests`: 2 metod testowych.
 
 ### backend/core/test_file_lifecycle.py
 
@@ -1701,6 +1721,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `PulpitNavigationTests`: 8 metod testowych.
 
+### backend/dashboard/test_pulpit_preferences.py
+
+Źródło: [backend/dashboard/test_pulpit_preferences.py](../backend/dashboard/test_pulpit_preferences.py).
+
+- `DashboardPreferencesTests`: 11 metod testowych.
+
 ### backend/dashboard/test_pulpit_urls.py
 
 Źródło: [backend/dashboard/test_pulpit_urls.py](../backend/dashboard/test_pulpit_urls.py).
@@ -1925,6 +1951,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceNavigationTests`: 6 metod testowych.
 
+### backend/spaces/test_space_sharing.py
+
+Źródło: [backend/spaces/test_space_sharing.py](../backend/spaces/test_space_sharing.py).
+
+- `SpaceSharingTests`: 9 metod testowych.
+
 ### backend/spaces/test_summary.py
 
 Źródło: [backend/spaces/test_summary.py](../backend/spaces/test_summary.py).
@@ -1994,6 +2026,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [backend/dashboard/migrations/0001_initial.py](../backend/dashboard/migrations/0001_initial.py)
 - [backend/dashboard/migrations/0002_initial.py](../backend/dashboard/migrations/0002_initial.py)
+- [backend/dashboard/migrations/0003_dashboard_preferences.py](../backend/dashboard/migrations/0003_dashboard_preferences.py)
+- [backend/dashboard/migrations/0004_dashboard_emoji_library.py](../backend/dashboard/migrations/0004_dashboard_emoji_library.py)
 
 ### planner
 
@@ -2020,6 +2054,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### scripts
 
 - [scripts/assets/build_flaticon_icons.py](../scripts/assets/build_flaticon_icons.py)
+- [scripts/assets/build_fluent_emoji.py](../scripts/assets/build_fluent_emoji.py)
 - [scripts/assets/flaticon-icon-map.json](../scripts/assets/flaticon-icon-map.json)
 - [scripts/office/configure.py](../scripts/office/configure.py)
 - [scripts/office/start.sh](../scripts/office/start.sh)

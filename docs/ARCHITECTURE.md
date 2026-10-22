@@ -221,12 +221,13 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
   własnymi pulpitami, ze wspólną listą katalogu Pulpitów i wewnętrznym trybem
   `pulpits-management`, wyświetlającym własne minimalne menu zarządzania.
-  Nazwa pulpitu otwiera okno ustawień z zakładkami „Gadżety i układ”, „Dostępy” i „Ustawienia”,
+  Nazwa pulpitu otwiera okno ustawień z zakładkami „Dostępy” i „Ustawienia”,
   zgodne z dużym modalem Przestrzeni i zachowujące bieżące menu w tle.
   `Dashboard.slug` jest nazwą w formie URL, przydzielaną w obrębie Workspace
   przy tworzeniu (istniejącym rekordom przez `dashboard.0012_dashboard_slugs`).
   Duplikaty dostają końcówkę `-2`, `-3`; późniejsza zmiana nazwy nie zmienia adresu.
-  `/<slug>/access/` zmienia widoczność/osoby, `/<slug>/edit/` nazwę/opis;
+  `/<slug>/access/` zmienia widoczność/osoby, `/<slug>/edit/` nazwę, opis,
+  ikonę, zakres danych i interwał odświeżania;
   oba mają warianty `/manage/<slug>/` i scoped. Zapis i anulowanie zachowują
   kontekst wejścia oraz filtry katalogu. Tworzenie pozostaje modalem.
   Mechanizm grup pulpitów jest usunięty; dawne adresy `groups/` i przypisania

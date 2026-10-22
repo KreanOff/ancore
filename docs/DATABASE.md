@@ -4,6 +4,20 @@ Od 18.10.2026 projekt ma nowy zestaw migracji początkowych, generowany
 z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikacji.
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
+Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
+`dashboard.0003_dashboard_preferences` (22.10.2026) dodaje ikonę, zakres
+danych, listę Przestrzeni, opcjonalny zapisany filtr i interwał odświeżania.
+Istniejące pulpity zachowują dane i dostęp: otrzymują ikonę pulpitu,
+zakres Workspace i wyłączone odświeżanie. Po backupie zastosuj `manage.py migrate`.
+Usunięcie filtra zeruje relację, zachowując wybrany tryb zakresu;
+odczyt pokazuje wtedy niedostępne źródło zamiast rozszerzać dane.
+
+`dashboard.0004_dashboard_emoji_library` zamienia osiem stałych wyborów ikony
+na walidator lokalnego katalogu Fluent Emoji. Pole pozostaje `varchar(32)`;
+nowe wybory zapisują Unicode, a wcześniejsze identyfikatory są obsługiwane
+jako aliasy. Migracja zmienia wyłącznie stan Django (`sqlmigrate`: no-op),
+bez SQL zmieniającego tabelę i bez przepisywania rekordów.
+
 ## Zakres
 
 Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele

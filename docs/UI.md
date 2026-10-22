@@ -204,9 +204,23 @@ zamontowane formularze i szkice. Pod zakładkami nie ma poziomej linii rozdziela
 fioletowe podkreślenie wskazuje aktywną zakładkę. Zakładki obsługują strzałki, Home i End.
 Stopka zapisuje bieżącą sekcję, pozostawiając okno otwarte; zamknięcie chroni
 szkice wszystkich zakładek. Konfiguracja zadań przewija się wewnątrz okna,
-a udostępnianie otwiera standardowy zagnieżdżony formularz. Bezpośrednie URL
+a udostępnianie otwiera kompaktowe okno z pickerem osoby. Bezpośrednie URL
 ustawień i konfiguracji renderują tę samą powłokę. Szczegóły:
 [Okno ustawień](SPACES.md#okno-ustawień-przestrzeni).
+
+Zakładka „Członkowie” używa wspólnego Reactowego `shared/Members`: zaznaczanie,
+menu działań, awatar i nazwa, e-mail, rola i data. Model członkostwa Przestrzeni
+nie zapisuje daty dołączenia; brak tej daty jest pokazany jako „—”. Właściciel
+ma własny, chroniony wiersz. „Udostępnij” otwiera `shared/SharingDialog`,
+z istniejącym pickerem Workspace w trybie udostępniania i wyborem roli.
+Wyszukiwanie obejmuje aktywnych członków Workspace bez dostępu do Przestrzeni,
+po imieniu, nazwisku, ID konta i e-mailu. Obsługuje klawiaturę, stan pusty,
+błąd i ochronę przed spóźnioną odpowiedzią. Zmiana roli ma osobne kompaktowe
+okno; odebranie dostępu wymaga potwierdzenia. Zapis odświeża tabelę bez utraty
+szkicu pozostałych zakładek. Publiczna Przestrzeń pokazuje osoby z Workspace
+i informację o dziedziczeniu, bez przycisku udostępniania. Okna zachowują wspólny
+fokus, Escape, `inert` oraz ochronę niezapisanych zmian. Style tabeli i pickera
+pochodzą z istniejącego `workplace-team.css`.
 
 Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
 „Sortowanie” i „Filtrowanie”. Nie ma osobnego pola wyszukiwania zadań.
@@ -2837,8 +2851,8 @@ białego wariantu `tasks-tag-topbar-button--secondary` z delikatną ramką,
 tak samo jak przyciski nagłówka edytora. Nawigacja i gwiazdki są dostępne w bocznym menu
 oraz katalogu pulpitów. Pod nagłówkiem nie ma osobnego wiersza widoczności,
 autora ani wyboru układu. Przegląd nie pokazuje uchwytów ani menu gadżetów,
-także twórcy. „Edytuj pulpit” otwiera osobny edytor `gadgets.html` z menu
-wybranego pulpitu po lewej: „Gadżety i układ”, „Dostępy” i „Ustawienia”.
+także twórcy. „Edytuj pulpit” włącza edytor w głównej treści strony,
+z zachowaniem wspólnego menu bocznego. Układ nie otwiera się w modalu.
 Edytor ma w głównym nagłówku „Dodaj gadżet”, „Zmień układ” oraz „Gotowe”
 (powrót do przeglądu). Wszystkie trzy używają wspólnego białego wariantu
 `tasks-tag-topbar-button--secondary` z delikatną ramką. Pod nagłówkiem zaczyna się siatka gadżetów;
@@ -2881,8 +2895,8 @@ walidacja formularza pozostają tekstowe.
 Pusty pulpit używa wariantu `pulpit-empty-state` wspólnego `tasks-empty-state`:
 kolorowa ilustracja `static/img/empty-states/dashboard-empty.webp` i opis
 są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przegląd kieruje do edycji.
-Edytor pokazuje pustą siatkę z miejscem na
-przeciągany gadżet i przyciskiem otwarcia katalogu w każdej kolumnie.
+Edytor pokazuje pustą siatkę z miejscem na przeciągany gadżet.
+Katalog otwiera przycisk „Dodaj gadżet” w nagłówku.
 Każda pusta kolumna używa dekoracyjnej, przezroczystej ilustracji
 `static/img/empty-states/gadget-column-empty.webp` o maksymalnej szerokości 240px.
 Obraz przedstawia kolorowe kafelki gadżetów i wolne miejsce do ich dodania,
@@ -2972,7 +2986,7 @@ i widoczność menu przy częściowej nawigacji, reload i Wstecz/Dalej.
 
 Ustawienia konkretnego pulpitu renderuje `src/pulpits/SettingsDialog.tsx`
 w dużym wspólnym `app-modal-panel`, tak jak ustawienia Przestrzeni. Zakładki
-`notifications-tabs` to „Gadżety i układ”, „Dostępy” i „Ustawienia”. Obsługują
+`notifications-tabs` to „Dostępy” i „Ustawienia”. Obsługują
 strzałki, Home i End. Ukryte formularze pozostają zamontowane i zachowują szkice.
 Menu katalogu, przeglądu i nawigacji otwiera okno nad bieżącym ekranem,
 bez zmiany jego adresu i menu bocznego. Zamknięcie po zapisie odświeża ten ekran.
@@ -2981,17 +2995,66 @@ powłokę nad podglądem pulpitu; powrót zachowuje filtry katalogu zarządzania
 Powłoka React nie przełącza się w osobne menu edytora. Szablony Django
 zachowują dotychczasowy pierwszy render i zgodność formularzy POST.
 
-„Ustawienia” zawierają nazwę i opis, „Dostępy” widoczność i osoby.
+„Ustawienia” zawierają nazwę, opis, ikonę, zakres danych i automatyczne
+odświeżanie; „Dostępy” widoczność i osoby. Od szerokości 1100px parametry
+ustawień układają się w dwie równe kolumny. Każde pole używa takiego samego
+wiersza etykieta/kontrolka jak ustawienia Przestrzeni: etykieta 180px po lewej,
+odstęp 24px i kontrolka w pozostałym miejscu. Opisy i błędy są pod kontrolką.
+Nazwa i opis zajmują pełną szerokość kolumny pól;
+na mniejszych ekranach pozostaje jedna kolumna. Po lewej stronie formularza
+jest podgląd ikony 68×68px bez dodatkowego tła, z przyciskiem „Zmień” pod spodem, tak jak awatar
+w ustawieniach Przestrzeni. Korzysta ze wspólnego `profile-edit-body` oraz
+`profile-photo-control`; na telefonie podgląd przechodzi nad pola. Dotyczy to
+ustawień i tworzenia Pulpitu. Domyślny wybór to konturowa ikona czterech
+kafelków `layout-dashboard`, wyświetlana wspólnym rendererem ikon w podglądzie,
+nagłówku, menu i katalogu. Wybrane emoji zachowują własną grafikę.
+Kliknięcie podglądu lub „Zmień” otwiera wspólny `shared/EmojiPicker`:
+3145 emoji i wariantów Microsoft Fluent Emoji 3D, dziewięć kategorii,
+wyszukiwanie po polskich i angielskich nazwach oraz samym emoji. Wyszukiwanie
+ignoruje polskie znaki i wielkość liter. „Ostatnio używane” przechowuje lokalnie
+do 32 wyborów, osobno dla konta i Workspace. Siatka pokazuje po 120 elementów;
+„Pokaż więcej” udostępnia kolejne. Katalog jest pobierany dopiero po otwarciu
+pickera, a błędny odczyt można ponowić. Opcja „Domyślna ikona pulpitu” przywraca
+cztery kafelki. Wszystkie nazwy i komunikaty są polskie.
+
+Picker używa wspólnego `Dropdown` i jego top layer, zachowuje modal w tle,
+obsługuje strzałki siatki i kategorii, Escape oraz powrót fokusu. Rezerwuje
+szerokość 400px już przed wczytaniem katalogu; na wąskim ekranie adapter
+ogranicza ją do dostępnego miejsca. Pierwsze i ponowne otwarcie, wyszukiwanie
+oraz błąd/ponowienie zachowują tę samą szerokość. Wariant flex ma pierwszeństwo
+przed siatką zwykłych menu: przewijają się wyniki, a nagłówek i dolny pasek
+pozostają widoczne. Wybrany
+symbol jest widoczny w dużym podglądzie, a jego nazwa w pickerze; zapis pozostaje częścią formularza
+Pulpitu. Ta sama grafika trafia do nagłówka, katalogu, menu i wyszukiwarki.
+`ancore-emoji` używa lokalnych atlasów WebP (64px na symbol), dzięki czemu
+wygląd jest niezależny od fontu systemu. Grafika jest dekoracyjna, a przyciski
+mają polskie nazwy dla czytników ekranu. Cały zestaw zajmuje około 5 MiB.
+Zapisane wcześniej identyfikatory ośmiu ikon nadal działają. Nowe wybory
+zapisują Unicode; backend akceptuje wyłącznie symbole z lokalnego katalogu.
+Źródła, licencje i generator: [biblioteka emoji](../static/vendor/fluent-emoji/README.md).
+Zakres ma opcje „Cały Workspace”,
+„Wybrane Przestrzenie” i „Zapisany filtr”. Odpowiedni wybór źródła pojawia
+się po wyborze zakresu; ukrycie zachowuje szkic do ponownego przełączenia.
+Odświeżanie ma opcje „Wyłączone”, „Co minutę”, „Co 5 minut” i „Co 15 minut”.
+Zakres pokazuje budynek Workspace, warstwy Przestrzeni albo lejek filtra,
+zarówno w wybranej wartości, jak i na liście opcji. Wyłączone odświeżanie
+ma przekreślone koło, a aktywne interwały strzałki odświeżania. Wybór
+Przestrzeni używa ich własnych avatarów przez wspólny `SpaceSelectMultiple`;
+pusty i zbiorczy wybór mają ikonę warstw. Zapisane filtry mają ikonę lejka.
+Domyślnie pozostaje wyłączone; działa w widocznym podglądzie, z pauzą
+podczas edycji lub otwarcia modalu. W konfiguracji gadżetu pusta Przestrzeń
+ma etykietę „Zakres danych pulpitu”; wybór własnej zastępuje ten zakres.
 Wspólny `EmbeddedForm` zapisuje tylko bieżącą sekcję i pozostawia okno otwarte.
 Błędy walidacji zachowują szkic i ustawiają fokus na nieprawidłowym polu.
 Zamknięcie przez Escape, tło lub przycisk chroni szkice wszystkich zakładek.
-Po zapisie formularza gadżety pobierają aktualną rewizję przed dalszą edycją.
+Zamknięcie po zapisie odświeża także otwarty edytor i jego rewizję.
 Widoczność używa wspólnego selecta z ikonami: `lock` dla „Prywatny”, `users`
 dla „Wybrane osoby” i `building-2` dla „Cały Workspace”. Pole „Osoby z dostępem”
 pojawia się po wyborze „Wybrane osoby”. Gadżety, ich katalog i pięć układów
-korzystają z dotychczasowego `DashboardView`; zapis układu pozostaje automatyczny.
-Konfiguracja gadżetu otwiera zagnieżdżony standardowy formularz, po zapisie
-odświeża płótno i pozostawia okno ustawień otwarte. Stopka tej zakładki ma „Gotowe”.
+korzystają z `DashboardView` bezpośrednio na stronie; zapis układu pozostaje
+automatyczny. „Gadżety i układ” w menu otwiera ten sam edytor.
+Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego;
+po zapisie wraca do siatki. „Gotowe” w nagłówku kończy edycję układu.
 
 
 Panel katalogu gadżetów (`catalog.html`) jest dokowany po prawej stronie

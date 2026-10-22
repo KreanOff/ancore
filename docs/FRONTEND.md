@@ -112,6 +112,13 @@ oczekiwanie na zapis i odrzucenie wyjścia po błędzie zapisu.
 `pnpm --dir frontend/app format:check` sprawdza format źródeł;
 `pnpm --dir frontend/app format` go poprawia.
 
+Udostępnianie Przestrzeni używa kontraktu tabeli członków zadań (`team`),
+`shared/Members`, `shared/SharingDialog` i pickera Workspace w trybie
+udostępniania. Django `spaces.space_team` zachowuje zakres Workspace i role;
+odpowiedź zapisu zwraca aktualną tabelę bez dodatkowego odczytu strony.
+`workplace-team.css` jest ładowany również dla ekranów Przestrzeni i formularzy,
+aby wejście bezpośrednie i częściowa nawigacja korzystały z tych samych stylów.
+
 esbuild zapisuje lokalne pliki z hashem, osobne chunki i informacje licencyjne
 w ignorowanym katalogu `static/frontend/`. `manifest.json` wskazuje bieżący
 plik wejściowy, a tag `backend/core/templatetags/frontend.py` buduje jego URL przez
@@ -156,6 +163,22 @@ do trwałego wolumenu serwowanego przez Nginx. [Instalator i pięć usług](PROD
   są zamknięte w osobnych kontenerach, których wnętrza nie renderuje React.
   Ikony korzystają z glifu wygenerowanego w odłączonym kontenerze i korzenia
   SVG należącego do Reacta, bez wrappera zmieniającego selektory wspólnego CSS.
+  `shared/Emoji` i include `core/emoji.html` wyświetlają dekoracyjne emoji
+  Pulpitów wspólną klasą `ancore-emoji` i lokalnymi atlasami Fluent Emoji 3D.
+  Dane Pulpitu, menu i wyszukiwarki zachowują `icon` oraz przekazują `emoji`
+  i `emoji_art` (adres arkusza i pozycja albo `icon` wspólnego renderera).
+  `layout-dashboard` jest domyślną ikoną czterech kafelków, a wybrany Unicode
+  korzysta z grafiki Fluent. Formularz typu `emoji` przekazuje
+  `emoji_picker`: wybrany symbol, wybór domyślny, adres katalogu oraz bazowy adres arkuszy.
+  `shared/EmojiPicker` używa wspólnego `Dropdown`, pobiera katalog dopiero
+  po otwarciu, buforuje udany odczyt i pozwala ponowić błąd. Kategorie,
+  polska/angielska wyszukiwarka i lokalne ostatnie wybory nie dodają żądań API.
+  Wariant `avatar` pokazuje duży podgląd i „Zmień”; `PulpitFields` umieszcza
+  go w bocznej kolumnie istniejącego układu profilu/Przestrzeni. Pozostałe pola
+  zachowują wspólne wiersze i responsywne kolumny. Zwykły wariant pola pozostaje dostępny.
+  `core.emoji` jest wspólną listą dozwolonych wartości i buduje te same dane
+  dla Reacta i pierwszego renderu Django. Osiem wcześniejszych identyfikatorów
+  jest zgodnych, a nowe wybory zapisują Unicode w istniejącym polu.
   Selecty z ukrytą etykietą zachowują geometrię `tasks-inline-select` przez
   `react-select-inline`; adapter formularzy uwzględnia techniczne fieldsety
   oraz kontenery kontrolek. [Szczegóły układu](UI.md#ekrany-react-podczas-migracji).
@@ -267,15 +290,19 @@ danych. Edycja nadal wymaga autorstwa pulpitu, niezależnie od roli Workspace.
 Pulpit domyślny inicjalizuje oryginalny widok Django; usunięte gadżety nie są
 odtwarzane podczas kolejnego wejścia.
 
-`src/pulpits/SettingsDialog.tsx` łączy edytor gadżetów i formularze ustawień
-oraz dostępów w dużym wspólnym `Modal` z trzema zakładkami. Serializer
-przekazuje `settings_tabs` z autoryzowanymi adresami i zachowanymi filtrami.
-Powłoka przechwytuje zwykłe kliknięcia linków edytora i otwiera okno nad
-bieżącą stroną. Nowa karta i bezpośrednie URL korzystają z `SettingsPage`.
+`src/pulpits/DetailPage.tsx` renderuje edycję gadżetów i układu bezpośrednio
+w głównej treści pulpitu. „Edytuj pulpit” oraz „Gadżety i układ” przechodzą
+do tego widoku przez nawigację JSON; bezpośrednie adresy działają tak samo.
+`src/pulpits/SettingsDialog.tsx` zawiera formularze dostępów i ustawień
+w dużym wspólnym `Modal` z dwiema zakładkami. Serializer przekazuje
+`settings_tabs` z autoryzowanymi adresami i zachowanymi filtrami; dialog
+pomija pozycję gadżetów. Powłoka przechwytuje wyłącznie linki ustawień
+i dostępów. Ich bezpośrednie URL korzystają z `SettingsPage`.
 Ukryte formularze zachowują szkice; wspólny `EmbeddedForm` obsługuje zapis,
-błędy i fokus. Po zapisie okno pozostaje otwarte, a płótno pobiera nową rewizję.
+błędy i fokus. Po zapisie okno pozostaje otwarte.
 Zamknięcie chroni wszystkie szkice i po zmianie odświeża stronę w tle.
-Zagnieżdżony formularz gadżetu korzysta z tego samego hosta modali.
+Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego
+nad edytorem; zapis wraca do siatki z aktualną rewizją.
 
 Wyłącznie `arrange` i `gadget_quick_add` zachowują oryginalne strukturalne JSON:
 odpowiednio `{layout, columns: [[id, ...], ...], revision}` i `{kind, revision}`.
@@ -288,6 +315,29 @@ i `X-Pulpit-Navigation`. Usunięcie przekazuje `invalidated_return_paths`
 do istniejącej powłoki przed nawigacją. Stan katalogu gadżetów zachowuje
 dotychczasowy klucz sessionStorage, a tabele dotychczasowe klucze szerokości.
 Menu boczne Pulpitów, picker i wyszukiwanie w menu pozostają częścią powłoki.
+
+Ustawienia pulpitu obejmują ikonę z istniejącej biblioteki, domyślny zakres
+danych (Workspace, wybrane Przestrzenie albo zapisany filtr) i odświeżanie
+wyłączone lub co 60/300/900 sekund. Ikona jest przekazywana do nagłówka,
+katalogu, skrótów menu i wyników pickera. `PulpitFields` zachowuje szkice
+źródeł przy przełączaniu zakresu; formularze Django ograniczają wybór do
+widocznych źródeł aktywnego Workspace.
+Widżety przekazują semantyczne ikony zakresu i odświeżania oraz avatary
+wybranych Przestrzeni. Wielokrotny wybór korzysta z `SpaceSelectMultiple`,
+tej samej serializacji `space_avatar` i istniejącego adaptera custom selecta.
+
+Gadżet bez własnej Przestrzeni dziedziczy zakres pulpitu. Odczyt ponownie
+sprawdza widoczność Przestrzeni, filtra i wynikowych zadań dla oglądającego;
+zapisany filtr korzysta z istniejącego kompilatora zapytań. Usunięcie albo
+utrata dostępu do źródła daje niedostępny gadżet, bez rozszerzenia na Workspace
+i bez ujawnienia prywatnych nazw. Własna Przestrzeń gadżetu zastępuje zakres.
+
+`src/pulpits/autoRefresh.ts` planuje odczyty wyłącznie widocznego podglądu,
+bez nakładających się żądań. Ukrycie karty usuwa timer; powrót uruchamia
+pełny nowy interwał. Edytor, otwarty modal, trwająca operacja i brak sieci
+wstrzymują automatyczny odczyt. Odmontowanie usuwa listener i timer,
+a cykl życia strony anuluje niedokończone żądania. Błąd pozostawia ostatnie
+dane, pokazuje alert i zachowuje możliwość ręcznego ponowienia.
 
 ## Dysk, Dokumenty i edytory
 

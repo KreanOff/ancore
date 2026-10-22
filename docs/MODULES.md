@@ -475,9 +475,10 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   z „Pulpity”: checkboxy, menu po lewej oraz kolumny Pulpit, Twórca,
   Widoczność, Gadżety i Opis. Gwiazdka jest akcją menu wiersza.
   Nazwa otwiera duże okno ustawień wybranego pulpitu, zgodne z ustawieniami
-  Przestrzeni, z zakładkami „Gadżety i układ”, „Dostępy” i „Ustawienia”.
+  Przestrzeni, z zakładkami „Dostępy” i „Ustawienia”.
   Bieżący ekran i jego menu boczne pozostają w tle.
-  „Dostępy” zmienia widoczność i osoby z dostępem, „Ustawienia” nazwę i opis.
+  „Dostępy” zmienia widoczność i osoby z dostępem, „Ustawienia” nazwę, opis,
+  ikonę, domyślny zakres danych i automatyczne odświeżanie.
   Każdy formularz zapisuje tylko własne pola; ustawienia nie zmieniają układu
   ani udostępnienia. Menu katalogu, pulpitu i nawigacji otwiera to samo okno.
   Przełączanie zakładek zachowuje szkice; zapis formularza pozostawia okno otwarte.
@@ -492,9 +493,10 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   przyciskiem „Dodaj gadżet”.
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
   Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
-  lub przyciski menu w zakładce „Gadżety i układ” (`/<pk>/gadgets/`).
+  lub przyciski menu bezpośrednio w treści pulpitu (`/<slug>/gadgets/`).
   Przegląd pulpitu pozostaje widokiem do oglądania także dla twórcy; „Edytuj pulpit”
-  otwiera okno z tą zakładką i wyborem pięciu układów w nagłówku.
+  włącza edycję na stronie, z wyborem pięciu układów w nagłówku i katalogiem
+  gadżetów po prawej. „Gotowe” wraca do przeglądu.
   Dodawanie, konfiguracja i usuwanie wracają
   do edytora. Wariant `/manage/<slug>/gadgets/` zachowuje filtry zarządzania.
   Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności
@@ -512,11 +514,22 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Brak zadań daje 0% i pięć zer. Na pulpicie można dodać do 24 kart tego samego rodzaju,
   np. dla różnych przestrzeni. Starsze rodzaje zastępuje migracja `dashboard.0010`:
   jedna karta „Postęp pracy” na niepusty stary pulpit, bez dawnych filtrów i tytułów.
-  Puste pulpity pozostają puste. Nie ma automatycznego odświeżania ani zewnętrznych gadżetów;
+  Puste pulpity pozostają puste. Automatyczne odświeżanie może być wyłączone
+  lub działać co 1, 5 albo 15 minut w widocznym podglądzie. Edycja, otwarte
+  okno, ukryta karta i trwające żądanie wstrzymują odczyty. Nie ma zewnętrznych gadżetów;
   „Odśwież” w przeglądzie pulpitu pobiera aktualne dane. Szczegóły implementacji:
   [pulpits.py](../backend/dashboard/pulpits.py), [widoki](../backend/dashboard/pulpit_views.py)
   i [routing](../backend/dashboard/pulpit_urls.py). Inspiracja funkcjonalna:
   [pulpity Jira](https://support.atlassian.com/jira-software-cloud/docs/create-and-edit-dashboards/).
+
+  Zakres danych pulpitu obejmuje Workspace, wybrane widoczne Przestrzenie
+  albo dostępny zapisany filtr. Dziedziczą go gadżety bez własnej Przestrzeni.
+  Własne źródło gadżetu zastępuje zakres, zachowując filtr przypisania.
+  Odbiorca widzi wyłącznie dane dostępne dla niego. Cofnięty dostęp,
+  usunięty filtr lub pusta po usunięciach lista Przestrzeni nie rozszerza
+  zakresu; gadżet pokazuje niedostępne źródło. Ikona z biblioteki 3145 emoji
+  Fluent Emoji 3D rozpoznaje pulpit w nagłówku, katalogu i menu.
+  Picker ma kategorie, polskie/angielskie wyszukiwanie i ostatnie wybory.
 - **Ustawienia:** centrum linków do profilu, kont i Workspace oraz zarządzania sesją.
   Sekcja Preferencje jest usunięta; zwijanie menu i powiadomienia są dostępne
   przez kontrolki wspólnej powłoki aplikacji.
