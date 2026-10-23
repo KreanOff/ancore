@@ -12,7 +12,7 @@
     const SIDEBAR_FAVORITES_STORAGE_KEY = 'ancoreSidebarFavoritesCollapsed';
     const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ancoreSidebarCollapsed';
     const SIDEBAR_WIDTH_STORAGE_KEY = 'ancoreSidebarWidth';
-    const MANAGEMENT_MODES = new Set(['workplaces', 'administration', 'pulpits-management', 'filters-management', 'pulpit-editor']);
+    const MANAGEMENT_MODES = new Set(['workplaces', 'pulpit-editor']);
     const RETURN_SCROLL_SELECTORS = ['.main-content', '.settings-scroll-area', '.work-content', '.tasks-table-wrap', '.tasks-board'];
 
     const sidebar = document.querySelector('.sidebar');
@@ -137,9 +137,7 @@
         if (/^\/workplaces\/?$/.test(url.pathname)) return 'workplaces';
         const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards|filters)\/)/, '/');
         if (/^\/dashboards\/(manage\/)?[-a-zA-Z0-9_]+\/(edit|access|gadgets)(\/|$)/.test(path)) return 'pulpit-editor';
-        if (/^\/dashboards\/manage(\/|$)/.test(path)) return 'pulpits-management';
-        if (/^\/filters\/manage(\/|$)/.test(path)) return 'filters-management';
-        return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
+        return '';
     }
 
     function managementStorageKey(mode) {

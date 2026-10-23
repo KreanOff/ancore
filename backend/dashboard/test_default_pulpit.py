@@ -120,7 +120,7 @@ class DefaultPulpitTests(TestCase):
         self.assertContains(self.client.get('/'), 'Mój start')
         dashboard.favorited_by.add(self.owner)
         self.client.get(self.url(f'{dashboard.slug}/'))
-        response = self.client.get(self.url('manage/'))
+        response = self.client.get(self.url('manage/'), follow=True)
         self.assertIn(dashboard.pk, [row.pk for row in response.context['page']])
         self.assertNotIn(dashboard.pk, [row.pk for row in response.context['navigation_starred_dashboards']])
         self.assertNotIn(dashboard.pk, [row.pk for row in response.context['navigation_recent_dashboards']])

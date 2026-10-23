@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from core.frontend import render
@@ -94,43 +94,16 @@ def search(request):
 
 def management_url(request, suffix=''):
     filters = {key: request.GET[key] for key in ['q', 'visibility', 'favorite', 'page'] if request.GET.get(key)}
-    return app_url(request, 'manage/' + suffix) + ('?' + urlencode(filters) if filters else '')
-
-
-def management_context(request):
-    query = request.GET.get('q', '').strip()[:120]
-    visibility = request.GET.get('visibility', '')
-    favorite_filter = request.GET.get('favorite', '')
-    favorites = Dashboard.favorited_by.through.objects.filter(dashboard_id=OuterRef('pk'), user_id=request.user.pk)
-    queryset = visible_dashboards(request).filter(created_by=request.user).select_related('created_by').annotate(
-        gadget_count=Count('gadgets', distinct=True), is_favorite=Exists(favorites),
-    )
-    if query:
-        queryset = queryset.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    if visibility in Dashboard.Visibility.values:
-        queryset = queryset.filter(visibility=visibility)
-    else:
-        visibility = ''
-    if favorite_filter in {'starred', 'unstarred'}:
-        queryset = queryset.filter(is_favorite=favorite_filter == 'starred')
-    else:
-        favorite_filter = ''
-    page = Paginator(queryset.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
-    for dashboard in page:
-        decorate_dashboard(request, dashboard)
-        dashboard.edit_url = management_url(request, f'{dashboard.slug}/edit/')
-        dashboard.access_url = management_url(request, f'{dashboard.slug}/access/')
-        dashboard.gadgets_url = management_url(request, f'{dashboard.slug}/gadgets/')
-        dashboard.delete_url = management_url(request, f'{dashboard.slug}/delete/')
-    return {'page': page, 'query': query, 'visibility_filter': visibility, 'favorite_filter': favorite_filter,
-            'visibility_choices': Dashboard.Visibility.choices, 'management_url': app_url(request, 'manage/'),
-            'return_url': management_url(request), 'create_url': management_url(request, 'create/')}
+    return app_url(request, 'manage/' + suffix if suffix else '') + ('?' + urlencode(filters) if filters else '')
 
 
 @login_required
 @require_GET
 def manage(request):
-    return render(request, 'dashboard/pulpits/manage.html', management_context(request))
+    target = management_url(request)
+    if getattr(request, '_react_api', False):
+        return JsonResponse({'redirect': target})
+    return redirect(target)
 
 
 @login_required
@@ -209,8 +182,8 @@ def form_response(request, form, title, return_url, dashboard=None, gadget=False
         context = editor_context(request, dashboard, management)
         template = 'dashboard/pulpits/gadgets.html'
     elif management:
-        context = management_context(request)
-        template = 'dashboard/pulpits/manage.html'
+        context = index_context(request)
+        template = 'dashboard/pulpits/index.html'
     elif dashboard:
         context = detail_context(request, dashboard)
         template = 'dashboard/pulpits/detail.html'

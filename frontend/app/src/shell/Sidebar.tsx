@@ -157,7 +157,7 @@ export default function Sidebar({
       <span className="nav-label">{context?.label || label}</span>
     </a>
   );
-  let management: ReactNode;
+  let management: ReactNode = null;
   if (data.mode === 'settings')
     management = (
       <>
@@ -225,37 +225,6 @@ export default function Sidebar({
         ))}
       </>
     );
-  else {
-    const group = data.collections.find(
-      (item) =>
-        item.key ===
-        (data.mode === 'administration'
-          ? 'spaces'
-          : data.mode === 'filters-management'
-            ? 'filters'
-            : 'pulpits'),
-    )!;
-    management = (
-      <>
-        <h2 className="sidebar-menu-section-title">
-          {data.mode === 'administration'
-            ? 'Zarządzanie przestrzeniami'
-            : data.mode === 'filters-management'
-              ? 'Zarządzanie filtrami'
-              : 'Zarządzanie pulpitami'}
-        </h2>
-        {returnLink(data.settings_url + '#workspace', 'Wróć do ustawień')}
-        <a
-          href={group.manage_url}
-          className="nav-link sidebar-primary-link sidebar-primary-link--standalone active"
-          aria-current="page"
-        >
-          <Icon name={group.icon} className="nav-icon" />
-          <span className="nav-label">{group.label}</span>
-        </a>
-      </>
-    );
-  }
   return (
     <>
       <div

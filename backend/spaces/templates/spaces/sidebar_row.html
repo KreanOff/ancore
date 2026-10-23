@@ -6,9 +6,6 @@
             {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
             <button type="submit" class="tasks-project-menu-button tasks-favorite-toggle" aria-pressed="{{ nav_space.is_favorite|yesno:'true,false' }}"><i data-icon="{% if nav_space.is_favorite %}star-filled{% else %}star{% endif %}" aria-hidden="true"></i><span>{% if nav_space.is_favorite %}Usuń z oznaczonych gwiazdką{% else %}Dodaj do oznaczonych gwiazdką{% endif %}</span></button>
         </form>
-        {% if nav_space.can_manage and nav_space.visibility == 'private' %}
-        <a href="{{ nav_space.url }}members/" class="tasks-project-menu-button" data-sidebar-space-action data-work-open aria-haspopup="dialog"><i data-icon="user-round-plus" aria-hidden="true"></i><span>Dodaj osoby</span></a>
-        {% endif %}
         <a href="{{ nav_space.settings_url }}" class="tasks-project-menu-button" data-sidebar-space-action><i data-icon="settings" aria-hidden="true"></i><span>Ustawienia przestrzeni</span></a>
         <div class="sidebar-space-menu__summary">
             {% include 'spaces/avatar.html' with space=nav_space %}

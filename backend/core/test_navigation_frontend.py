@@ -203,7 +203,7 @@ class ReactNavigationTests(TestCase):
     def test_management_modes_and_editor_links_match_server_context(self):
         self.client.force_login(self.owner)
         self.activate(self.workspace)
-        for name, mode in [('spaces:manage', 'administration'), ('filters:manage', 'filters-management'), ('pulpits:manage', 'pulpits-management'), ('workplaces:workplaces', 'workplaces'), ('settings', 'settings')]:
+        for name, mode in [('workplaces:workplaces', 'workplaces'), ('settings', 'settings')]:
             with self.subTest(name=name):
                 response = self.nav(reverse(name))
                 self.assertEqual(response.status_code, 200)

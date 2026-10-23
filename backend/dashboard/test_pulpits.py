@@ -267,7 +267,7 @@ class PulpitTests(TestCase):
             for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
                 for suffix in ['?tab=all', f'{dashboard.slug}/', 'manage/']:
                     with self.subTest(viewer=viewer.pk, prefix=prefix, suffix=suffix):
-                        response = self.client.get(prefix + suffix)
+                        response = self.client.get(prefix + suffix, follow=True)
                         self.assertEqual(response.status_code, 200)
                         self.assertNotContains(response, 'Kopiuj pulpit')
                         self.assertNotContains(response, '/copy/')

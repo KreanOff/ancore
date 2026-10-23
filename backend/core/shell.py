@@ -35,7 +35,7 @@ def shell_payload(request, context=None):
     urls = data.get('workplace_app_urls', {})
     mode = data.get('sidebar_mode', 'workspace')
     if mode == 'pulpit-editor':
-        mode = 'pulpits-management' if (resolver.url_name or '').startswith('manage_') else 'workspace'
+        mode = 'workspace'
     if app == 'workplaces':
         mode = 'workplaces'
     active_space = data.get('space')
@@ -43,7 +43,6 @@ def shell_payload(request, context=None):
         return {'id': str(item.pk), 'name': item.name, 'url': item.url, 'avatar': space_avatar(item),
                 'active': bool(active_space and active_space.pk == item.pk), 'favorite': bool(item.is_favorite),
                 'favorite_url': item.favorite_url, 'settings_url': item.settings_url,
-                'members_url': item.url + 'members/' if item.can_manage and item.visibility == 'private' else '',
                 'description': f'Przestrzeń {item.get_kind_display().lower()}', 'detail': item.get_management_display()}
     def pulpit_row(item):
         actions = [('Gadżety i układ', 'layout-dashboard', 'gadgets_url')] if item.can_edit else []
@@ -68,7 +67,6 @@ def shell_payload(request, context=None):
                             'directory_url': base + ('?tab=all' if key == 'filters' else ''), 'search_url': base + search,
                             'create_url': base + ('new/' if key == 'filters' else 'create/'),
                             'task_search_url': base + 'search/' if key == 'filters' else '',
-                            'manage_url': base + 'manage/' if key != 'spaces' or data.get('spaces_management_available') else '',
                             'starred': [serializer(item) for item in data.get(starred, [])],
                             'recent': [serializer(item) for item in data.get(recent, [])]})
     catalog = sidebar_favorite_catalog(workplace)
@@ -82,7 +80,7 @@ def shell_payload(request, context=None):
                         'switch_url': reverse('workplaces:switch', args=[item.pk])} for item in data['available_workplaces']],
         'profile': {'name': request.user.get_full_name() or request.user.username, 'avatar': account_avatar(request.user),
                     'url': reverse('profile'), 'active': resolver.view_name == 'profile'},
-        'settings_url': reverse('settings'), 'settings_active': resolver.view_name == 'settings' or app == 'workplaces' or data.get('settings_management_mode', False) or data.get('pulpits_management_mode', False),
+        'settings_url': reverse('settings'), 'settings_active': resolver.view_name == 'settings' or app == 'workplaces' or data.get('pulpits_management_mode', False),
         'workplaces_url': reverse('workplaces:workplaces'), 'links': links,
         'favorites': favorite_items(request, workplace) if workplace else [],
         'favorite_toggle_url': reverse('workplaces:toggle-sidebar-favorite', args=[workplace.pk]) if workplace else '',

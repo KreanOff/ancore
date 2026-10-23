@@ -1,7 +1,7 @@
 {% load static %}
-<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet{% if management %} work-space-sheet--management{% endif %}{% if directory_compact %} work-space-sheet--compact{% endif %}{% if hide_selection %} work-space-sheet--unselectable{% endif %}{% if hide_actions %} work-space-sheet--no-actions{% endif %}{% if directory_class %} {{ directory_class }}{% endif %}">
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet{% if directory_compact %} work-space-sheet--compact{% endif %}{% if hide_selection %} work-space-sheet--unselectable{% endif %}{% if hide_actions %} work-space-sheet--no-actions{% endif %}{% if directory_class %} {{ directory_class }}{% endif %}">
     {% if page %}
-    <section class="tasks-directory-group" role="table" aria-label="{% if management %}Zarządzanie przestrzeniami{% else %}Lista przestrzeni{% endif %}">
+    <section class="tasks-directory-group" role="table" aria-label="Lista przestrzeni">
         <div class="tasks-directory-header" role="row">
             {% if not hide_selection %}<span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
                 <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie przestrzenie na tej stronie" title="Zaznacz wszystkie przestrzenie na tej stronie" data-select-all-checkbox data-select-all-target="spaces">
@@ -22,7 +22,7 @@
                 {% if not hide_selection %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ space.pk }}" data-space-id="{{ space.pk }}" aria-label="Zaznacz przestrzeń {{ space.name }}"></span>{% endif %}
                 {% if not hide_actions %}{% include 'tasks/includes/directory_row_menu.html' with kind='space' item_id=space.pk item_name=space.name actions_template='spaces/directory_row_actions.html' cell_role='cell' %}{% endif %}
                 {% if not directory_compact %}<span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>{% endif %}
-                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{% if management %}{{ space.settings_url }}{% else %}{{ space.url }}{% endif %}" title="{{ space.name }}">{{ space.name }}</a></span>
+                <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'spaces/avatar.html' %}<a href="{{ space.url }}" title="{{ space.name }}">{{ space.name }}</a></span>
                 {% if directory_compact %}<span class="tasks-directory-sheet__cell" data-column="key" role="cell" title="{{ space.key }}">{{ space.key }}</span>{% else %}
                 <span class="tasks-directory-sheet__cell" data-column="kind" role="cell" title="{{ space.get_kind_display }}">{{ space.get_kind_display }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="template" role="cell" title="{{ space.get_template_display }}">{{ space.get_template_display }}</span>
@@ -37,8 +37,8 @@
     <div class="tasks-empty-state tasks-empty-state--illustrated work-space-empty-state" role="status">
         <img class="tasks-empty-state__illustration work-space-empty-state__illustration" src="{% static 'img/empty-states/spaces-empty.webp' %}" alt="" width="720" height="540" draggable="false">
         <div class="tasks-empty-state__copy">
-        <h2>{% if query or kind or management and management_filter %}Brak pasujących przestrzeni{% elif management %}Brak przestrzeni do zarządzania{% elif tab == 'favorites' %}Brak ulubionych przestrzeni{% elif tab == 'private' %}Brak prywatnych przestrzeni{% else %}Brak przestrzeni{% endif %}</h2>
-        <p>{% if query or kind or management and management_filter %}Zmień wyszukiwanie lub filtry.{% elif management %}Utwórz przestrzeń, aby skonfigurować pracę zespołu.{% elif tab == 'favorites' %}Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.{% else %}Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.{% endif %}</p>
+        <h2>{% if query or kind %}Brak pasujących przestrzeni{% elif tab == 'favorites' %}Brak ulubionych przestrzeni{% elif tab == 'private' %}Brak prywatnych przestrzeni{% else %}Brak przestrzeni{% endif %}</h2>
+        <p>{% if query or kind %}Zmień wyszukiwanie lub filtry.{% elif tab == 'favorites' %}Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.{% else %}Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.{% endif %}</p>
     </div></div>
     {% endif %}
 </div>

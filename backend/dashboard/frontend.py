@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.utils.html import strip_tags
 
 from accounts.avatar import account_avatar
-from spaces.services import can_manage_spaces
 from spaces.templatetags.space_ui import space_avatar
 from workplaces.services import scoped_workplace_app_path
 
@@ -53,15 +52,6 @@ def settings_page(request, context):
         {'category': 'account', 'url': reverse('add_account'), 'icon': 'user-round-plus', 'title': 'Dodaj konto', 'description': 'Korzystaj z kilku kont bez wylogowywania.'},
         {'category': 'workspace', 'url': reverse('workplaces:workplaces'), 'icon': 'folder', 'title': 'Zarządzaj Workspace', 'description': 'Wszystkie Workspace, ich ustawienia, członkowie i zaproszenia.'},
     ]
-    for app, label, icon, description in (
-        ('spaces', 'przestrzeniami', 'layers', 'Ustawienia, konfiguracje i dostęp do przestrzeni w bieżącym Workspace.'),
-        ('dashboards', 'pulpitami', 'layout-dashboard', 'Własne pulpity, ich konfiguracja i dostęp w bieżącym Workspace.'),
-        ('filters', 'filtrami', 'filter', 'Własne zapisane filtry i ich udostępnianie w bieżącym Workspace.'),
-    ):
-        if app == 'spaces' and not can_manage_spaces(request):
-            continue
-        rows.append({'category': 'workspace', 'url': scoped_workplace_app_path(request.workplace, app, 'manage/'), 'icon': icon,
-                     'title': f'Zarządzaj {label}', 'description': description})
     if request.user.is_staff:
         rows.append({'category': 'workspace', 'url': reverse('admin:index'), 'icon': 'shield-check', 'title': 'Panel administracyjny', 'description': 'Zarządzaj systemem i dostępem użytkowników.'})
     return {'type': 'settings', 'title': 'Ustawienia', 'data': {

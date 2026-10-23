@@ -76,7 +76,7 @@ class SpaceUrlTests(TestCase):
                      scoped_workplace_app_path(self.workspace, 'spaces', 'manage/'),
                      scoped_workplace_app_path(self.workspace, 'teams', f'{team.pk}/'),
                      scoped_workplace_app_path(self.workspace, 'for-you', '?tab=starred')]:
-            response = self.client.get(path)
+            response = self.client.get(path, follow=True)
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, self.url())
         response = self.client.get(scoped_workplace_app_path(self.workspace, 'spaces', 'search/?q=Scrum'))

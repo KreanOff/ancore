@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect
 from core.frontend import render
 from django.template.loader import render_to_string
@@ -32,27 +32,21 @@ def get_filter(request, pk, editable=False, lock=False):
     return decorate_filter(request, item)
 
 
-def catalog_context(request, management=False):
-    tab = request.GET.get('tab', 'favorites')
+def directory_url(request, query=None):
+    query = request.GET if query is None else query
+    tab = query.get('tab', 'mine')
+    params = {'tab': tab if tab in {'favorites', 'mine', 'shared', 'all'} else 'mine'}
+    params.update({key: query[key] for key in ['q', 'page'] if query.get(key)})
+    return filter_url(request) + '?' + urlencode(params)
+
+
+def catalog_context(request, default_tab='favorites'):
+    tab = request.GET.get('tab', default_tab)
     if tab not in {'favorites', 'mine', 'shared', 'all'}:
-        tab = 'favorites'
+        tab = default_tab
     query = request.GET.get('q', '').strip()[:120]
     filters = visible_filters(request).select_related('created_by')
-    visibility = request.GET.get('visibility', '')
-    favorite = request.GET.get('favorite', '')
-    if management:
-        filters = filters.filter(created_by=request.user)
-        if visibility in SavedTaskFilter.Visibility.values:
-            filters = filters.filter(visibility=visibility)
-        else:
-            visibility = ''
-        if favorite == 'starred':
-            filters = filters.filter(favorited_by=request.user)
-        elif favorite == 'unstarred':
-            filters = filters.exclude(favorited_by=request.user)
-        else:
-            favorite = ''
-    elif tab == 'favorites':
+    if tab == 'favorites':
         filters = filters.filter(favorited_by=request.user)
     elif tab == 'mine':
         filters = filters.filter(created_by=request.user)
@@ -64,17 +58,9 @@ def catalog_context(request, management=False):
     rows = list(page.object_list)
     favorites = set(visible_filters(request).filter(favorited_by=request.user, pk__in=[row.pk for row in rows]).values_list('pk', flat=True))
     rows = [decorate_filter(request, row, favorites) for row in rows]
-    management_url = filter_url(request, 'manage/')
-    list_url = management_url + ('?' + request.GET.urlencode() if request.GET else '') if management else request.get_full_path()
-    if management:
-        for row in rows:
-            row.edit_url = filter_url(request, f'manage/{row.pk}/edit/') + ('?' + request.GET.urlencode() if request.GET else '')
-    return {'filters': rows, 'page': page, 'management': management,
+    return {'filters': rows, 'page': page,
             'tab': tab, 'query': query, 'filters_url': filter_url(request), 'search_url': filter_url(request, 'search/'),
-            'management_url': management_url, 'visibility_filter': visibility, 'favorite_filter': favorite,
-            'visibility_choices': SavedTaskFilter.Visibility.choices,
-            'create_url': filter_url(request, 'manage/new/') + ('?' + request.GET.urlencode() if request.GET else ''),
-            'list_url': list_url}
+            'list_url': request.get_full_path()}
 
 
 def search_context(request, item=None):
@@ -132,7 +118,10 @@ def index(request):
 @login_required
 @require_GET
 def manage(request):
-    return render(request, 'dashboard/filters/manage.html', catalog_context(request, management=True))
+    target = directory_url(request)
+    if getattr(request, '_react_api', False):
+        return JsonResponse({'redirect': target})
+    return redirect(target)
 
 
 @login_required
@@ -184,6 +173,8 @@ def return_url(request, fallback=None):
     except ValueError:
         return fallback or base
     if not parts.scheme and not parts.netloc and parts.path.startswith((base, '/filters/')):
+        if parts.path in {base + 'manage/', '/filters/manage/'}:
+            return directory_url(request, QueryDict(parts.query))
         return value
     return fallback or base
 
@@ -191,7 +182,9 @@ def return_url(request, fallback=None):
 @login_required
 @require_http_methods(['GET', 'POST'])
 def edit(request, pk=None, management=False):
-    catalog = catalog_context(request, management=True) if management else None
+    catalog = catalog_context(request, default_tab='mine') if management else None
+    if catalog is not None:
+        catalog['list_url'] = directory_url(request)
     with transaction.atomic():
         item = get_filter(request, pk, editable=True, lock=request.method == 'POST') if pk else None
         form = SavedTaskFilterForm(request.POST if request.method == 'POST' else None, request=request, instance=item,
@@ -222,7 +215,7 @@ def edit(request, pk=None, management=False):
     status = 400 if request.method == 'POST' else 200
     if request.headers.get('X-Filter-Modal') == 'true':
         return JsonResponse({'html': render_to_string('dashboard/filters/form.html', context, request=request)}, status=status)
-    return render(request, 'dashboard/filters/manage.html' if management else 'dashboard/filters/search.html', context, status=status)
+    return render(request, 'dashboard/filters/index.html' if management else 'dashboard/filters/search.html', context, status=status)
 
 
 @login_required

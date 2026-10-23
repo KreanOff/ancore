@@ -34,14 +34,12 @@ export interface Space {
 }
 interface Data {
   results: Space[];
-  management: boolean;
   base_url: string;
   spaces_url: string;
   create_url: string;
   query: string;
   tab: string;
   kind: string;
-  management_filter: string;
   pagination: PaginationData;
   illustration: string;
   modal: FormDialogData | null;
@@ -49,7 +47,6 @@ interface Data {
 export default function DirectoryPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as Data;
   const [kind, setKind] = useState(data.kind),
-    [management, setManagement] = useState(data.management_filter),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [modal, setModal] = useState<FormDialogData | null>(data.modal),
     [busy, setBusy] = useState(false),
@@ -105,7 +102,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
     setModal(null);
     if (data.modal) setPageLocation(data.modal.return_url);
   }
-  const filtered = !!(data.query || data.kind || (data.management && data.management_filter));
+  const filtered = !!(data.query || data.kind);
   const headings = [
     ['select', 'Zaznaczenie', ''],
     ['menu', 'Działania', ''],
@@ -120,15 +117,10 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
   const columns = headings.map(([key, label], index) => ({ key, label, width: widths[index] }));
   const sizing = useTableWidths(
     columns,
-    data.management
-      ? 'spaces-management'
-      : location.pathname.split('/').filter(Boolean)[0] || 'spaces',
+    location.pathname.split('/').filter(Boolean)[0] || 'spaces',
   );
   return (
-    <div
-      className={`tasks-page tasks-list-page work-page ${data.management ? 'work-page--management' : ''}`}
-      data-react-screen="space-directory"
-    >
+    <div className="tasks-page tasks-list-page work-page" data-react-screen="space-directory">
       <section className="tasks-workspace" aria-busy={busy}>
         <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
           <div className="tasks-titlebar-left">
@@ -147,24 +139,22 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
             </button>
           </div>
         </header>
-        {!data.management ? (
-          <nav className="notifications-tabs work-tabs" aria-label="Katalog przestrzeni">
-            {[
-              ['all', 'Wszystkie', 'layers'],
-              ['favorites', 'Ulubione', 'star'],
-              ['private', 'Prywatne', 'lock'],
-            ].map(([key, label, icon]) => (
-              <a
-                key={key}
-                href={data.spaces_url + (key === 'all' ? '' : `?tab=${key}`)}
-                aria-current={data.tab === key ? 'page' : undefined}
-              >
-                <Icon name={icon} />
-                {label}
-              </a>
-            ))}
-          </nav>
-        ) : null}
+        <nav className="notifications-tabs work-tabs" aria-label="Katalog przestrzeni">
+          {[
+            ['all', 'Wszystkie', 'layers'],
+            ['favorites', 'Ulubione', 'star'],
+            ['private', 'Prywatne', 'lock'],
+          ].map(([key, label, icon]) => (
+            <a
+              key={key}
+              href={data.spaces_url + (key === 'all' ? '' : `?tab=${key}`)}
+              aria-current={data.tab === key ? 'page' : undefined}
+            >
+              <Icon name={icon} />
+              {label}
+            </a>
+          ))}
+        </nav>
         <form
           className="tasks-filterbar tasks-filterbar--directory work-item-toolbar"
           method="get"
@@ -172,7 +162,6 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
         >
           <input type="hidden" name="tab" value={data.tab} />
           <input type="hidden" name="kind" value={kind} />
-          <input type="hidden" name="management" value={management} />
           <div className="tasks-filterbar-left">
             <Select
               label="Rodzaj przestrzeni"
@@ -181,15 +170,6 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
               options={KINDS}
               onChange={setKind}
             />
-            {data.management ? (
-              <Select
-                label="Sposób zarządzania"
-                hideLabel
-                value={management}
-                options={MANAGEMENT}
-                onChange={setManagement}
-              />
-            ) : null}
             <button type="submit" className="tasks-filter-button">
               <Icon name="filter" />
               <span>Filtruj</span>
@@ -216,7 +196,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
         ) : null}
         <div className="work-content work-content--directory">
           <div
-            className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet ${data.management ? 'work-space-sheet--management' : ''}`}
+            className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet"
             data-directory-resize="false"
             style={sizing.style}
           >
@@ -224,7 +204,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
               <section
                 className="tasks-directory-group"
                 role="table"
-                aria-label={data.management ? 'Zarządzanie przestrzeniami' : 'Lista przestrzeni'}
+                aria-label="Lista przestrzeni"
               >
                 <div className="tasks-directory-header" role="row">
                   {headings.map(([key, label, icon], index) => (
@@ -326,33 +306,18 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                                 </span>
                               </button>
                               {space.can_manage ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    className="tasks-project-menu-button"
-                                    disabled={busy}
-                                    onClick={() => {
-                                      closeMenu();
-                                      void openForm(space.edit_url);
-                                    }}
-                                  >
-                                    <Icon name="pencil" />
-                                    <span>Edytuj przestrzeń</span>
-                                  </button>
-                                  {space.visibility === 'private' && !data.management ? (
-                                    <button
-                                      type="button"
-                                      className="tasks-project-menu-button"
-                                      onClick={() => {
-                                        closeMenu();
-                                        void openForm(space.url + 'members/');
-                                      }}
-                                    >
-                                      <Icon name="user-round-plus" />
-                                      <span>Dodaj osoby</span>
-                                    </button>
-                                  ) : null}
-                                </>
+                                <button
+                                  type="button"
+                                  className="tasks-project-menu-button"
+                                  disabled={busy}
+                                  onClick={() => {
+                                    closeMenu();
+                                    void openForm(space.edit_url);
+                                  }}
+                                >
+                                  <Icon name="pencil" />
+                                  <span>Edytuj przestrzeń</span>
+                                </button>
                               ) : null}
                               <a
                                 href={space.settings_url}
@@ -376,21 +341,8 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                                 }
                               >
                                 <Icon name="settings" />
-                                <span>
-                                  {data.management
-                                    ? 'Ustawienia i dostęp'
-                                    : 'Ustawienia przestrzeni'}
-                                </span>
+                                <span>Ustawienia przestrzeni</span>
                               </a>
-                              {data.management && space.configuration_url ? (
-                                <a
-                                  className="tasks-project-menu-button"
-                                  href={space.configuration_url}
-                                >
-                                  <Icon name="sliders-horizontal" />
-                                  <span>Konfiguracja zadań</span>
-                                </a>
-                              ) : null}
                             </div>
                           )}
                         </Dropdown>
@@ -409,10 +361,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                         role="cell"
                       >
                         <Avatar space data={space.avatar} />
-                        <a
-                          href={data.management ? space.settings_url : space.url}
-                          title={space.name}
-                        >
+                        <a href={space.url} title={space.name}>
                           {space.name}
                         </a>
                       </span>
@@ -462,13 +411,11 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                   <h2>
                     {filtered
                       ? 'Brak pasujących przestrzeni'
-                      : data.management
-                        ? 'Brak przestrzeni do zarządzania'
-                        : data.tab === 'favorites'
-                          ? 'Brak ulubionych przestrzeni'
-                          : data.tab === 'private'
-                            ? 'Brak prywatnych przestrzeni'
-                            : 'Brak przestrzeni'}
+                      : data.tab === 'favorites'
+                        ? 'Brak ulubionych przestrzeni'
+                        : data.tab === 'private'
+                          ? 'Brak prywatnych przestrzeni'
+                          : 'Brak przestrzeni'}
                   </h2>
                   <p>
                     {filtered
@@ -504,9 +451,4 @@ const KINDS: [string, string][] = [
   ['software', 'Programistyczne'],
   ['business', 'Biznesowe'],
   ['service', 'Obsługowe'],
-];
-const MANAGEMENT: [string, string][] = [
-  ['', 'Każdy sposób zarządzania'],
-  ['team', 'Przez zespół'],
-  ['company', 'Przez organizację'],
 ];

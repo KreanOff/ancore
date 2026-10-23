@@ -5,7 +5,6 @@
     {% if changed and saved_filter.editable and can_save %}<form action="{{ saved_filter.url }}save/" method="post" data-filter-action>{% csrf_token %}<input type="hidden" name="jql" value="{{ jql }}"><input type="hidden" name="revision" value="{{ saved_filter.revision }}"><button class="tasks-filter-button" type="submit">Zapisz</button></form>{% endif %}
     {% if can_save %}<a class="tasks-filter-button" href="{{ save_as_url }}" data-filter-open><i data-icon="filter" aria-hidden="true"></i>{% if saved_filter %}Zapisz jako{% else %}Zapisz filtr{% endif %}</a>{% endif %}
     {% if saved_filter.editable %}<a class="tasks-filter-button" href="{{ saved_filter.edit_url }}" data-filter-open><i data-icon="settings" aria-hidden="true"></i>Edytuj filtr</a>{% endif %}
-    <a class="tasks-filter-button" href="{{ filters_url }}manage/">Zarządzaj filtrami</a>
 {% endblock %}
 {% block work_navigation %}
 <nav class="notifications-tabs work-tabs" aria-label="Tryb wyszukiwania">

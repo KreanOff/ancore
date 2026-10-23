@@ -58,7 +58,7 @@ class ReactPulpitTests(TestCase):
 
     def test_registered_screens_have_typed_bootstrap_scoped_and_plain(self):
         for prefix in (self.path(), '/dashboards/'):
-            for suffix, kind in (('', 'pulpit-directory'), ('manage/', 'pulpit-directory'), (f'{self.dashboard.slug}/', 'pulpit-detail'), (f'{self.dashboard.slug}/gadgets/', 'pulpit-detail'), (f'{self.dashboard.slug}/edit/', 'pulpit-edit'), (f'{self.dashboard.slug}/access/', 'pulpit-edit')):
+            for suffix, kind in (('', 'pulpit-directory'), (f'{self.dashboard.slug}/', 'pulpit-detail'), (f'{self.dashboard.slug}/gadgets/', 'pulpit-detail'), (f'{self.dashboard.slug}/edit/', 'pulpit-edit'), (f'{self.dashboard.slug}/access/', 'pulpit-edit')):
                 with self.subTest(path=prefix + suffix):
                     response = self.get(prefix + suffix)
                     self.assertEqual(response.status_code, 200)
@@ -66,6 +66,18 @@ class ReactPulpitTests(TestCase):
                     self.assertNotIn('html', response.json())
                     self.assertEqual(response['Cache-Control'], 'no-store')
                     self.assertContains(self.client.get(prefix + suffix, follow=True), 'data-react-root="page"')
+
+    def test_retired_management_redirects_in_page_and_navigation_api(self):
+        for prefix in (self.path(), '/dashboards/'):
+            target = prefix + 'manage/?q=Raport&visibility=workspace&page=2'
+            destination = self.path() + '?q=Raport&visibility=workspace&page=2'
+            self.assertEqual(self.get(target).json(), {'redirect': destination})
+            navigation = scoped_workplace_app_path(self.workspace, 'api', 'v1/navigation/')
+            result = self.client.get(navigation, {'url': target}).json()
+            self.assertEqual(result, {'redirect': destination})
+        data = self.get(self.path()).json()['data']
+        self.assertNotIn('management', data)
+        self.assertNotIn('favorite', data)
 
     def test_default_initializes_once_and_does_not_recreate_deleted_gadgets(self):
         for target in ('/', self.path('default/'), '/'):
@@ -99,7 +111,7 @@ class ReactPulpitTests(TestCase):
         self.assertEqual(self.operation('arrange', {'layout': 'single', 'columns': [[self.gadget.pk, self.secret_gadget.pk]], 'revision': 0}).status_code, 403)
         self.assertEqual(self.operation('gadgets/quick-add', {'kind': 'progress', 'revision': 0}).status_code, 403)
         self.assertEqual(self.post(self.path(f'{self.dashboard.slug}/delete/'), {}).status_code, 403)
-        self.assertEqual(self.get(self.path('manage/')).json()['data']['results'], [])
+        self.assertEqual(self.get(self.path('manage/')).json(), {'redirect': self.path()})
 
     def test_create_validation_choices_actor_and_sharing(self):
         target = self.path('manage/create/') + '?q=React&visibility=selected'
@@ -131,7 +143,7 @@ class ReactPulpitTests(TestCase):
         access = self.get(prefix + 'access/').json()['data']
         self.assertEqual([row['name'] for row in access['form']['fields']], ['visibility', 'shared_with'])
         gadget_page = self.get(prefix + f'gadgets/{self.gadget.pk}/edit/').json()['data']
-        self.assertEqual(gadget_page['return_url'], self.path('manage/'))
+        self.assertEqual(gadget_page['return_url'], self.path())
         self.assertEqual(gadget_page['modal']['return_url'], prefix + 'gadgets/')
         gadget = gadget_page['modal']
         fields = {row['name']: row for row in gadget['form']['fields']}
@@ -162,7 +174,7 @@ class ReactPulpitTests(TestCase):
                                 self.assertIn('q=Plan', tab['url'])
                                 self.assertIn('page=2', tab['url'])
                         navigation = self.client.get(self.endpoint(target).replace('/page/', '/navigation/')).json()
-                        self.assertEqual(navigation['shell']['mode'], 'pulpits-management' if management else 'workspace')
+                        self.assertEqual(navigation['shell']['mode'], 'workspace')
 
     def test_quick_add_returns_current_space_task_counts_without_html(self):
         result = self.operation('gadgets/quick-add', {'kind': 'progress', 'revision': 0})
@@ -232,10 +244,10 @@ class ReactPulpitTests(TestCase):
 
     def test_pagination_filters_and_numeric_links_preserve_query(self):
         Dashboard.objects.bulk_create([Dashboard(owner=self.owner, workplace=self.workspace, created_by=self.member, name=f'Raport {i:02}', slug=f'raport-{i}', visibility='workspace') for i in range(32)])
-        data = self.get(self.path('manage/') + '?q=Raport&visibility=workspace&favorite=unstarred&page=2').json()['data']
+        data = self.get(self.path() + '?q=Raport&visibility=workspace&page=2').json()['data']
         self.assertEqual((len(data['results']), data['pagination']['count']), (2, 32))
-        self.assertIn('favorite=unstarred', data['pagination']['previous'])
-        self.assertIn('q=Raport', data['results'][0]['gadgets_url'])
+        self.assertIn('visibility=workspace', data['pagination']['previous'])
+        self.assertTrue(data['results'][0]['gadgets_url'].startswith(self.path()))
         self.assertEqual(self.get(self.path(f'{self.dashboard.pk}/') + '?q=Plan').json()['redirect'], self.path(self.dashboard.slug + '/') + '?q=Plan')
 
     def test_auth_csrf_methods_foreign_workspace_and_removed_routes(self):

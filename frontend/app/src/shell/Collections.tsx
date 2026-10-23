@@ -107,12 +107,6 @@ export function CollectionContents({
                   : 'Utwórz filtr'}
             </span>
           </a>
-          {group.manage_url ? (
-            <a className="sidebar-collapsed-flyout__link" href={group.manage_url}>
-              <Icon name="settings" />
-              <span>Zarządzaj: {group.label.toLocaleLowerCase('pl')}</span>
-            </a>
-          ) : null}
         </>
       ) : null}
     </>
@@ -172,22 +166,6 @@ function Row({
                 {row.favorite ? 'Usuń z oznaczonych gwiazdką' : 'Dodaj do oznaczonych gwiazdką'}
               </span>
             </button>
-            {row.members_url ? (
-              <a
-                href={row.members_url}
-                className="tasks-project-menu-button"
-                onClick={(event) => {
-                  if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
-                    event.preventDefault();
-                    close();
-                    actions.openForm(row.members_url!);
-                  }
-                }}
-              >
-                <Icon name="user-round-plus" />
-                <span>Dodaj osoby</span>
-              </a>
-            ) : null}
             {row.settings_url ? (
               <a href={row.settings_url} className="tasks-project-menu-button" onClick={close}>
                 <Icon name="settings" />
@@ -288,32 +266,6 @@ export function CollectionGroup({
           >
             <Icon name="plus" />
           </a>
-          <Dropdown
-            className="react-sidebar-row-menu"
-            triggerClassName="sidebar-header-action"
-            trigger={<Icon name="ellipsis" />}
-            label={`Opcje: ${group.label}`}
-            role="group"
-            menuClass="tasks-section-menu sidebar-group-menu"
-            searchable={false}
-          >
-            {(close) =>
-              group.manage_url ? (
-                <a href={group.manage_url} className="tasks-project-menu-button" onClick={close}>
-                  <Icon name="settings" />
-                  <span>
-                    {group.key === 'spaces'
-                      ? 'Zarządzaj przestrzeniami'
-                      : group.key === 'pulpits'
-                        ? 'Zarządzaj pulpitami'
-                        : 'Zarządzaj filtrami'}
-                  </span>
-                </a>
-              ) : (
-                <p className="sidebar-workspace-search__empty">Brak dostępnych działań.</p>
-              )
-            }
-          </Dropdown>
         </div>
       </div>
       <div

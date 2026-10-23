@@ -259,9 +259,6 @@
             const form = event.currentTarget;
             refresh(form.action + '?' + new URLSearchParams(new FormData(form)));
         }, { signal });
-        page.querySelectorAll('[data-pulpit-management-filters] select').forEach(select => {
-            select.addEventListener('change', () => select.form.requestSubmit(), { signal });
-        });
         host.addEventListener('change', updateFields, { signal });
         if (modal()) display(host.innerHTML);
     }

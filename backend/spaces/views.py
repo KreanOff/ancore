@@ -21,7 +21,6 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
-from accounts.avatar import account_avatar
 from dashboard.recent import remember_view
 from .access import editable_to, require_editable, visible_to
 from .models import SpaceTask, SpaceMembership
@@ -33,7 +32,7 @@ from .board import move_board_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, can_manage_spaces, decorate_directory_spaces, manageable_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 from .item_query import item_sort, order_items
 
@@ -44,7 +43,7 @@ def space_object(request, pk):
 
 
 def base_context(request):
-    return {'spaces_url': app_url(request), 'spaces_manage_url': app_url(request, 'manage/'), 'teams_url': app_url(request, app='teams')}
+    return {'spaces_url': app_url(request), 'teams_url': app_url(request, app='teams')}
 
 
 def decorate_items(request, items):
@@ -83,35 +82,27 @@ def issue_type_filters(request, space=None):
     return list(options.values()), request.GET.get('work_type', '').strip()[:40]
 
 
-def index_context(request, management=False):
+def index_context(request):
     query = request.GET.get('q', '').strip()[:120]
     tab = request.GET.get('tab', 'all')
-    spaces = manageable_spaces(request) if management else visible_spaces(request)
+    spaces = visible_spaces(request)
     if query:
         spaces = spaces.filter(Q(name__icontains=query) | Q(key__icontains=query))
-    if not management and tab == 'favorites':
+    if tab == 'favorites':
         spaces = spaces.filter(favorited_by=request.user)
-    elif not management and tab == 'private':
+    elif tab == 'private':
         spaces = spaces.filter(visibility='private')
     kind = request.GET.get('kind')
     if kind in {'software', 'business', 'service'}:
         spaces = spaces.filter(kind=kind)
-    management_filter = request.GET.get('management', '')
-    if management and management_filter in {'team', 'company'}:
-        spaces = spaces.filter(management=management_filter)
-    if management:
-        spaces = spaces.select_related('responsible_user', 'private_owner', 'user')
     page = Paginator(spaces.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     page.object_list = decorate_directory_spaces(request, page.object_list)
-    activity = {row['space_id']: row['last_activity'] for row in visible_items(request).filter(space__in=page.object_list).values('space_id').annotate(last_activity=Max('task__activities__created_at'))} if management else {}
-    for space in page:
-        if management:
-            space.edit_url = app_url(request, f'manage/{space.slug}/edit/')
-            space.configuration_url = space_url(request, space, 'configuration/') if manage_configuration(request, space) else ''
-            space.leader = space.responsible_user or space.private_owner or space.user
-            space.leader_avatar = account_avatar(space.leader)
-            space.last_activity = activity.get(space.pk)
-    return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'management_filter': management_filter, 'create_url': app_url(request, 'manage/create/' if management else 'create/'), 'templates': TEMPLATES}
+    return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'create_url': app_url(request, 'create/'), 'templates': TEMPLATES}
+
+
+def directory_url(request):
+    filters = {key: request.GET[key] for key in ['q', 'kind', 'tab', 'page'] if request.GET.get(key)}
+    return app_url(request) + ('?' + urlencode(filters) if filters else '')
 
 
 @login_required
@@ -123,9 +114,10 @@ def index(request):
 @login_required
 @require_GET
 def manage(request):
-    if not can_manage_spaces(request):
-        raise PermissionDenied
-    return render(request, 'spaces/manage.html', index_context(request, management=True))
+    target = directory_url(request)
+    if getattr(request, '_react_api', False):
+        return JsonResponse({'redirect': target})
+    return redirect(target)
 
 
 @login_required
@@ -346,7 +338,7 @@ def retired_all_items(request):
     return redirect(target)
 
 
-def dialog_response(request, form, title, return_url, saved=False, directory=False, management=False, background_space=None, settings_space=None, settings_tab='main'):
+def dialog_response(request, form, title, return_url, saved=False, directory=False, background_space=None, settings_space=None, settings_tab='main'):
     if saved:
         if request.headers.get('X-Work-Modal') == 'true':
             return JsonResponse({'saved': True, 'url': return_url})
@@ -361,9 +353,9 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
     if request.headers.get('X-Work-Modal') == 'true':
         return JsonResponse({'html': render_to_string('spaces/form.html', context, request=request)}, status=status)
     if directory:
-        context.update(index_context(request, management=management))
+        context.update(index_context(request))
         modal['directory_url'] = return_url
-        return render(request, 'spaces/manage.html' if management else 'spaces/index.html', context, status=status)
+        return render(request, 'spaces/index.html', context, status=status)
     if background_space:
         context.update(detail_context(request, background_space, 'backlog'))
         modal['directory_url'] = return_url
@@ -380,7 +372,7 @@ def edit(request, pk=None, management=False):
     if space and not manage_space(request, space):
         raise PermissionDenied
     form = SpaceForm(request.POST if request.method == 'POST' else None, request.FILES or None, request=request, space=space)
-    url = app_url(request, 'manage/') if management else space_url(request, space, '?view=settings') if pk else app_url(request)
+    url = directory_url(request) if management else space_url(request, space, '?view=settings') if pk else app_url(request)
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
         saved_file = None
@@ -410,7 +402,7 @@ def edit(request, pk=None, management=False):
                         space.save()
                     if visibility_changed:
                         space.memberships.all().delete()
-                url = app_url(request, 'manage/') if management else space_url(request, space)
+                url = directory_url(request) if management else space_url(request, space)
         except ValidationError as error:
             form.add_error('avatar_photo', error)
         except Exception as error:
@@ -421,7 +413,7 @@ def edit(request, pk=None, management=False):
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
         else:
             return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None or management, management=management, settings_space=space if pk else None)
+    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None or management, settings_space=space if pk else None)
 
 
 @login_required
@@ -484,7 +476,7 @@ def favorite(request, pk):
     return_url = request.POST.get('next', '')
     if return_url and url_has_allowed_host_and_scheme(return_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
         return redirect(return_url)
-    return redirect(app_url(request, 'manage/' if request.POST.get('directory') == 'manage' else ''))
+    return redirect(app_url(request))
 
 
 @login_required

@@ -32,13 +32,12 @@ def form_page(request, context):
 
 
 def directory_page(request, context):
-    management = request.resolver_match.url_name in {'manage', 'manage_create', 'manage_edit'}
-    base = context['spaces_manage_url'] if management else context['spaces_url']
-    return {'type': 'space-directory', 'title': 'Zarządzaj przestrzeniami' if management else 'Przestrzenie', 'data': {
-        'results': [space_payload(space) for space in context['page']], 'management': management,
+    base = context['spaces_url']
+    return {'type': 'space-directory', 'title': 'Przestrzenie', 'data': {
+        'results': [space_payload(space) for space in context['page']],
         'base_url': base, 'spaces_url': context['spaces_url'], 'create_url': context['create_url'],
         'query': context['query'], 'tab': context['tab'], 'kind': context.get('kind') or '',
-        'management_filter': context['management_filter'], 'pagination': pagination_payload(request, context['page'], base),
+        'pagination': pagination_payload(request, context['page'], base),
         'illustration': static('img/empty-states/spaces-empty.webp'),
         'modal': modal_payload(context['modal']) if context.get('modal') else None,
     }}

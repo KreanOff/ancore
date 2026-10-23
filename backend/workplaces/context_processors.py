@@ -17,32 +17,17 @@ def current_workplace(request):
     space_navigation = {'navigation_spaces': [], 'navigation_starred_spaces': [], 'navigation_recent_spaces': []}
     dashboard_navigation = {'navigation_starred_dashboards': [], 'navigation_recent_dashboards': []}
     filter_navigation = {'navigation_starred_filters': [], 'navigation_recent_filters': []}
-    spaces_management_available = False
     resolver = getattr(request, 'resolver_match', None)
-    spaces_management_mode = bool(
-        resolver
-        and resolver.app_name in {'spaces', 'workplace_spaces'}
-        and resolver.url_name in {'manage', 'manage_create', 'manage_edit'}
-    )
-    pulpits_management_mode = bool(
-        resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'}
-        and (resolver.url_name in {'manage', 'edit', 'access', 'gadgets', 'gadget_add', 'gadget_edit'} or (resolver.url_name or '').startswith('manage_'))
-    )
     pulpit_editor_mode = bool(
         resolver and resolver.app_name in {'pulpits', 'workplace_pulpits'}
         and resolver.url_name in {'edit', 'access', 'gadgets', 'gadget_add', 'gadget_edit',
                                   'manage_edit', 'manage_access', 'manage_gadgets', 'manage_gadget_add', 'manage_gadget_edit'}
     )
-    filters_management_mode = bool(
-        resolver and resolver.app_name in {'filters', 'workplace_filters'}
-        and (resolver.url_name or '').startswith('manage')
-    )
-    settings_management_mode = spaces_management_mode or (pulpits_management_mode and not pulpit_editor_mode) or filters_management_mode
+    pulpits_management_mode = pulpit_editor_mode
     sidebar_mode = 'settings' if resolver and resolver.view_name == 'settings' else (
-        'administration' if spaces_management_mode else 'pulpit-editor' if pulpit_editor_mode else 'pulpits-management' if pulpits_management_mode else 'filters-management' if filters_management_mode else 'workspace'
+        'pulpit-editor' if pulpit_editor_mode else 'workspace'
     )
     if active_workplace:
-        from spaces.services import can_manage_spaces
         from spaces.navigation import sidebar_spaces
         from dashboard.pulpit_navigation import sidebar_dashboards
         from dashboard.filters import sidebar_filters
@@ -50,7 +35,6 @@ def current_workplace(request):
         dashboard_navigation = sidebar_dashboards(request)
         filter_navigation = sidebar_filters(request)
         request.sidebar_default_pulpit = dashboard_navigation['default_dashboard_is_current']
-        spaces_management_available = can_manage_spaces(request)
         workplace_app_urls = {
             'filters': scoped_workplace_app_path(active_workplace, 'filters'),
             'dashboards': scoped_workplace_app_path(active_workplace, 'dashboards'),
@@ -77,12 +61,8 @@ def current_workplace(request):
         **space_navigation,
         **dashboard_navigation,
         **filter_navigation,
-        'spaces_management_available': spaces_management_available,
-        'spaces_management_mode': spaces_management_mode,
         'pulpits_management_mode': pulpits_management_mode,
         'pulpit_editor_mode': pulpit_editor_mode,
-        'filters_management_mode': filters_management_mode,
-        'settings_management_mode': settings_management_mode,
         'sidebar_mode': sidebar_mode,
         'available_workplaces': user_workplaces,
         'available_workplace_count': len(user_workplaces),

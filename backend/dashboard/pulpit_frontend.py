@@ -50,14 +50,13 @@ def modal_payload(context):
 
 
 def directory_page(request, context):
-    management = 'management_url' in context
-    base = context['management_url'] if management else context['dashboards_url']
-    return {'type': 'pulpit-directory', 'title': 'Zarządzaj pulpitami' if management else 'Pulpity', 'data': {
-        'management': management, 'base_url': base, 'query': context['query'],
-        'visibility': context['visibility_filter'], 'favorite': context.get('favorite_filter', ''),
+    base = context['dashboards_url']
+    return {'type': 'pulpit-directory', 'title': 'Pulpity', 'data': {
+        'base_url': base, 'query': context['query'],
+        'visibility': context['visibility_filter'],
         'visibility_choices': context['visibility_choices'], 'create_url': context['create_url'],
         'list_url': context.get('return_url', request.get_full_path()),
-        'results': [dashboard_payload(item) | {'description': strip_tags(item.description)} for item in (context['page'] if management else context['dashboards'])],
+        'results': [dashboard_payload(item) | {'description': strip_tags(item.description)} for item in context['dashboards']],
         'pagination': pagination_payload(request, context['page'], base),
         'illustration': static('img/empty-states/dashboard-empty.webp'), 'modal': modal_payload(context),
     }}

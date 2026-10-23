@@ -18,16 +18,10 @@ export interface SavedFilter {
   delete_url: string;
 }
 export interface DirectoryData {
-  management: boolean;
   tab: string;
   query: string;
   filters_url: string;
   search_url: string;
-  management_url: string;
-  visibility_filter: string;
-  favorite_filter: string;
-  visibility_choices: [string, string][];
-  create_url: string;
   list_url: string;
   results: SavedFilter[];
   pagination: PaginationData;

@@ -7582,11 +7582,8 @@ function initTasksPage() {
         }
 
         function getDirectoryStorageSegment() {
-            if (document.querySelector('.task-filter-directory--management')) return 'task-filters-management';
             if (document.querySelector('.task-filter-directory')) return 'task-filters-directory';
-            if (document.querySelector('.pulpit-management-sheet')) return 'pulpits-management';
             if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
-            if (document.querySelector('.work-space-sheet--management')) return 'spaces-management';
             if (document.querySelector('.for-you-space-sheet')) return 'for-you-spaces';
             if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';

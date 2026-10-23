@@ -49,11 +49,11 @@ class PulpitGroupRetirementTests(TestCase):
         for prefix in self.prefixes():
             for suffix in ['', f'{self.dashboard.slug}/', 'manage/', f'{self.dashboard.slug}/edit/', f'{self.dashboard.slug}/gadgets/']:
                 with self.subTest(prefix=prefix, suffix=suffix):
-                    response = self.client.get(prefix + suffix)
+                    response = self.client.get(prefix + suffix, follow=True)
                     self.assertEqual(response.status_code, 200)
                     for text in ['Grupy pulpitów', 'Utwórz grupę pulpitów', 'Przypisz do grup', 'data-sidebar-pulpit-group=', '/groups/']:
                         self.assertNotContains(response, text)
-                    self.assertContains(response, 'Zarządzaj pulpitami')
+                    self.assertNotContains(response, 'Zarządzaj pulpitami')
                     self.assertContains(response, 'Utwórz pulpit')
 
     def test_legacy_group_filter_is_ignored_without_widening_dashboard_access(self):

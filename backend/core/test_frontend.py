@@ -67,7 +67,7 @@ class ReactPageApiTests(TestCase):
         titles = [row['title'] for row in data['rows']]
         self.assertNotIn('Zarządzaj przestrzeniami', titles)
         self.assertNotIn('Panel administracyjny', titles)
-        self.assertIn('Zarządzaj filtrami', titles)
+        self.assertNotIn('Zarządzaj filtrami', titles)
 
     def test_proxy_is_allowlisted_and_cannot_cross_workspace_context(self):
         for target in ['/admin/', '/resources/', '/accounts/logout/', self.api()]:

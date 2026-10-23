@@ -8,13 +8,7 @@ import type {
   ShellData,
 } from './navigation-types';
 
-const managementModes = new Set([
-  'workplaces',
-  'administration',
-  'pulpits-management',
-  'filters-management',
-  'pulpit-editor',
-]);
+const managementModes = new Set(['workplaces', 'pulpit-editor']);
 const scrollSelectors = [
   '.main-content',
   '.settings-scroll-area',
@@ -79,9 +73,7 @@ function modeFor(href: string) {
   const path = url.pathname.replace(/^\/workplaces\/[^/]+\/(?=(spaces|dashboards|filters)\/)/, '/');
   if (/^\/dashboards\/(manage\/)?[-a-zA-Z0-9_]+\/(edit|access|gadgets)(\/|$)/.test(path))
     return 'pulpit-editor';
-  if (/^\/dashboards\/manage(\/|$)/.test(path)) return 'pulpits-management';
-  if (/^\/filters\/manage(\/|$)/.test(path)) return 'filters-management';
-  return /^\/spaces\/manage(\/|$)/.test(path) ? 'administration' : '';
+  return '';
 }
 export function startNavigation(
   initial: ShellData,

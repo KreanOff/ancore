@@ -20,7 +20,6 @@ export interface CollectionRow {
   favorite: boolean;
   favorite_url: string;
   settings_url?: string;
-  members_url?: string;
   description?: string;
   detail?: string;
   actions?: { label: string; icon: string; url: string }[];
@@ -34,7 +33,6 @@ export interface Collection {
   search_url: string;
   create_url: string;
   task_search_url?: string;
-  manage_url: string;
   starred: CollectionRow[];
   recent: CollectionRow[];
 }

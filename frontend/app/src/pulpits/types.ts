@@ -53,12 +53,10 @@ export interface Gadget {
   caption?: string;
 }
 export interface DirectoryData {
-  management: boolean;
   base_url: string;
   list_url: string;
   query: string;
   visibility: string;
-  favorite: string;
   visibility_choices: [string, string][];
   create_url: string;
   results: Dashboard[];

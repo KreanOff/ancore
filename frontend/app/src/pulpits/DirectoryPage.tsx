@@ -22,14 +22,9 @@ export default function DirectoryPage(props: PageProps) {
     data = initial.data as DirectoryData;
   const actions = usePageActions(props, data.modal);
   const [selected, setSelected] = useState<Set<number>>(new Set()),
-    [visibility, setVisibility] = useState(data.visibility),
-    [favorite, setFavorite] = useState(data.favorite);
-  const all = useRef<HTMLInputElement>(null),
-    form = useRef<HTMLFormElement>(null);
-  const sizing = useTableWidths(
-    columns,
-    data.management ? 'pulpits-management' : 'pulpits-directory',
-  );
+    [visibility, setVisibility] = useState(data.visibility);
+  const all = useRef<HTMLInputElement>(null);
+  const sizing = useTableWidths(columns, 'pulpits-directory');
   useLayoutEffect(() => {
     if (all.current)
       all.current.indeterminate = selected.size > 0 && selected.size < data.results.length;
@@ -47,22 +42,11 @@ export default function DirectoryPage(props: PageProps) {
         ),
     );
   }
-  function filter(key: string, value: string) {
-    if (key === 'visibility') setVisibility(value);
-    else setFavorite(value);
-    if (data.management) {
-      const params = new URLSearchParams();
-      params.set('q', (form.current?.elements.namedItem('q') as HTMLInputElement)?.value || '');
-      params.set('visibility', key === 'visibility' ? value : visibility);
-      params.set('favorite', key === 'favorite' ? value : favorite);
-      void navigate(data.base_url + '?' + params);
-    }
-  }
-  const filtered = !!(data.query || data.visibility || data.favorite),
+  const filtered = !!(data.query || data.visibility),
     page = data.pagination;
   return (
     <div
-      className={`tasks-page tasks-list-page work-page ${data.management ? 'work-page--management' : 'pulpits-directory-page'}`}
+      className="tasks-page tasks-list-page work-page pulpits-directory-page"
       data-react-screen="pulpit-directory"
     >
       <section className="tasks-workspace" aria-busy={actions.busy}>
@@ -82,7 +66,6 @@ export default function DirectoryPage(props: PageProps) {
           </div>
         </header>
         <form
-          ref={form}
           className="tasks-filterbar tasks-filterbar--directory work-item-toolbar"
           action={data.base_url}
           onSubmit={search}
@@ -94,22 +77,8 @@ export default function DirectoryPage(props: PageProps) {
               label="Widoczność pulpitu"
               options={[['', 'Każda widoczność'], ...data.visibility_choices]}
               value={visibility}
-              onChange={(value) => filter('visibility', value)}
+              onChange={setVisibility}
             />
-            {data.management ? (
-              <Select
-                name="favorite"
-                hideLabel
-                label="Oznaczenie gwiazdką"
-                value={favorite}
-                options={[
-                  ['', 'Wszystkie pulpity'],
-                  ['starred', 'Oznaczone gwiazdką'],
-                  ['unstarred', 'Bez gwiazdki'],
-                ]}
-                onChange={(value) => filter('favorite', value)}
-              />
-            ) : null}
             <button className="tasks-filter-button" type="submit">
               <Icon name="filter" />
               <span>Filtruj</span>
@@ -128,7 +97,7 @@ export default function DirectoryPage(props: PageProps) {
             </label>
             <nav
               className="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar"
-              aria-label={data.management ? 'Strony zarządzania pulpitami' : 'Strony pulpitów'}
+              aria-label="Strony pulpitów"
             >
               {page.previous ? (
                 <a
@@ -182,15 +151,11 @@ export default function DirectoryPage(props: PageProps) {
         ) : null}
         <div className="work-content work-content--directory">
           <div
-            className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet ${data.management ? 'pulpit-management-sheet' : ''}`}
+            className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet"
             style={sizing.style}
           >
             {data.results.length ? (
-              <section
-                className="tasks-directory-group"
-                role="table"
-                aria-label={data.management ? 'Zarządzanie pulpitami' : 'Lista pulpitów'}
-              >
+              <section className="tasks-directory-group" role="table" aria-label="Lista pulpitów">
                 <div className="tasks-directory-header" role="row">
                   {columns.map((column, index) => (
                     <span
@@ -284,7 +249,7 @@ export default function DirectoryPage(props: PageProps) {
                           art={item.emoji_art}
                           className="pulpit-directory-icon"
                         />
-                        <a href={data.management ? item.edit_url : item.url} title={item.name}>
+                        <a href={item.url} title={item.name}>
                           {item.name}
                         </a>
                       </span>
@@ -337,13 +302,7 @@ export default function DirectoryPage(props: PageProps) {
                   draggable={false}
                 />
                 <div className="tasks-empty-state__copy">
-                  <h2>
-                    {filtered
-                      ? 'Brak pasujących pulpitów'
-                      : data.management
-                        ? 'Brak pulpitów do zarządzania'
-                        : 'Brak pulpitów'}
-                  </h2>
+                  <h2>{filtered ? 'Brak pasujących pulpitów' : 'Brak pulpitów'}</h2>
                   <p>
                     {filtered
                       ? 'Zmień wyszukiwanie lub filtry.'

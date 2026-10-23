@@ -35,33 +35,29 @@ class PulpitManagementTests(TestCase):
     def payload(self, **kwargs):
         return {'name': 'Nowy plan', 'description': '', 'visibility': 'private', 'layout': 'equal', **kwargs}
 
-    def test_management_is_separate_from_catalog_in_plain_and_scoped_urls(self):
+    def test_retired_management_redirects_to_catalog_in_plain_and_scoped_urls(self):
+        catalog = scoped_workplace_app_path(self.workspace, 'dashboards')
         for url in ['/dashboards/manage/', self.url()]:
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertTemplateUsed(response, 'dashboard/pulpits/manage.html')
-            self.assertTrue(response.context['pulpits_management_mode'])
-            self.assertContains(response, 'data-sidebar-mode="pulpits-management"')
-            self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
-            self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
-            self.assertNotContains(response, 'data-sidebar-navigation="pulpits-management" hidden')
-            menu = response.content.decode().split('data-sidebar-navigation="pulpits-management"', 1)[1].split('</nav>', 1)[0]
-            self.assertIn('Zarządzanie pulpitami', menu)
-            self.assertIn('aria-current="page" aria-label="Pulpity"', menu)
-            for label in ['Ogólne', 'Konto i dostęp', 'Workspace', 'Przestrzenie', 'Filtry']:
-                self.assertNotIn(label, menu)
-            self.assertEqual(menu.count('<a '), 2)
-            self.assertContains(response, 'Wróć do ustawień')
-        response = self.client.get(scoped_workplace_app_path(self.workspace, 'dashboards'))
+            with self.subTest(url=url):
+                response = self.client.get(url, {'q': 'Plan', 'visibility': 'private', 'page': 2})
+                self.assertRedirects(response, catalog + '?q=Plan&visibility=private&page=2')
+        response = self.client.get(catalog)
         self.assertFalse(response.context['pulpits_management_mode'])
-        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
-        self.assertContains(response, self.url())
+        self.assertContains(response, 'data-sidebar-mode="workspace"')
+        self.assertNotContains(response, 'Zarządzaj pulpitami')
+        self.assertNotContains(response, 'data-sidebar-navigation="pulpits-management"')
+        self.assertNotContains(response, self.url())
+        self.assertContains(response, f'data-pulpit-directory-row="{self.own.pk}"')
+        self.assertContains(response, f'data-pulpit-directory-row="{self.shared.pk}"')
+        settings = self.client.get('/settings/')
+        self.assertNotContains(settings, 'Zarządzaj pulpitami')
+        self.assertNotContains(settings, self.url())
 
-    def test_only_editable_dashboards_in_current_scope_are_managed(self):
-        response = self.client.get(self.url())
-        self.assertEqual(list(response.context['page']), [self.own])
+    def test_redirect_uses_visible_catalog_and_legacy_edits_keep_creator_checks(self):
+        response = self.client.get(self.url(), follow=True)
+        self.assertEqual(list(response.context['page']), [self.shared, self.own])
         self.login(self.member)
-        response = self.client.get(self.url())
+        response = self.client.get(self.url(), follow=True)
         self.assertEqual({item.pk for item in response.context['page']}, {self.shared.pk, self.hidden.pk})
         self.assertEqual(self.client.get(self.url(f'{self.own.slug}/edit/')).status_code, 404)
         self.login(self.owner)
@@ -70,17 +66,14 @@ class PulpitManagementTests(TestCase):
             self.assertEqual(self.client.post(self.url(f'{item.slug}/edit/'), self.payload()).status_code, 404)
             self.assertEqual(self.client.post(self.url(f'{item.slug}/delete/')).status_code, 404)
 
-    def test_search_visibility_star_filters_and_pagination(self):
-        self.own.favorited_by.add(self.owner)
-        response = self.client.get(self.url(), {'q': 'wydania', 'visibility': 'private', 'favorite': 'starred'})
+    def test_redirect_keeps_search_visibility_and_pagination(self):
+        response = self.client.get(self.url(), {'q': 'wydania', 'visibility': 'private'}, follow=True)
         self.assertEqual(list(response.context['page']), [self.own])
-        for filters in [{'visibility': 'workspace'}, {'favorite': 'unstarred'}, {'q': 'nieznana nazwa'}]:
-            response = self.client.get(self.url(), filters)
-            self.assertEqual(response.context['page'].paginator.count, 0)
-            self.assertContains(response, 'Brak pasujących pulpitów')
+        response = self.client.get(self.url(), {'q': 'nieznana nazwa'}, follow=True)
+        self.assertContains(response, 'Brak pasujących pulpitów')
         for number in range(31):
             Dashboard.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.owner, name=f'Wydanie {number}')
-        response = self.client.get(self.url(), {'q': 'Wydanie', 'visibility': 'private', 'page': 2})
+        response = self.client.get(self.url(), {'q': 'Wydanie', 'visibility': 'private', 'page': 2}, follow=True)
         self.assertEqual(response.context['page'].paginator.count, 31)
         self.assertEqual(len(response.context['page']), 1)
         self.assertContains(response, 'q=Wydanie&amp;visibility=private&amp;page=1')
@@ -95,7 +88,7 @@ class PulpitManagementTests(TestCase):
                 target = f'{scoped}manage/{self.own.slug}/gadgets/' + filters
                 response = self.client.get(base + filters)
                 self.assertTrue(response.context['pulpits_management_mode'])
-                self.assertEqual(response.context['return_url'], scoped + 'manage/' + filters)
+                self.assertEqual(response.context['return_url'], scoped + filters)
                 self.assertEqual(response.context['editor_url'], target)
                 self.assertEqual(response.context['settings_url'], f'{scoped}manage/{self.own.slug}/edit/' + filters)
                 form = self.client.get(base + 'add/' + filters)
@@ -113,13 +106,13 @@ class PulpitManagementTests(TestCase):
     def test_create_and_validation_keep_management_and_actual_creator(self):
         self.login(self.member)
         response = self.client.get(self.url('create/'))
-        self.assertTemplateUsed(response, 'dashboard/pulpits/manage.html')
+        self.assertTemplateUsed(response, 'dashboard/pulpits/index.html')
         invalid = self.client.post(self.url('create/'), self.payload(name=''))
         self.assertEqual(invalid.status_code, 400)
-        self.assertTemplateUsed(invalid, 'dashboard/pulpits/manage.html')
-        self.assertTrue(invalid.context['pulpits_management_mode'])
+        self.assertTemplateUsed(invalid, 'dashboard/pulpits/index.html')
+        self.assertFalse(invalid.context['pulpits_management_mode'])
         response = self.client.post(self.url('create/'), self.payload(), HTTP_X_PULPIT_MODAL='true')
-        self.assertEqual(response.json(), {'saved': True, 'url': self.url()})
+        self.assertEqual(response.json(), {'saved': True, 'url': scoped_workplace_app_path(self.workspace, 'dashboards')})
         dashboard = Dashboard.objects.get(name='Nowy plan')
         self.assertEqual((dashboard.owner, dashboard.created_by, dashboard.workplace), (self.owner, self.member, self.workspace))
         self.assertEqual(dashboard.gadgets.count(), 0)
@@ -130,11 +123,11 @@ class PulpitManagementTests(TestCase):
         gadget = DashboardGadget.objects.create(dashboard=self.own, kind='progress')
         response = self.client.get(self.url(f'{self.own.slug}/edit/') + filters)
         self.assertTemplateUsed(response, 'dashboard/pulpits/edit.html')
-        self.assertEqual(response.context['return_url'], self.url() + filters)
+        self.assertEqual(response.context['return_url'], scoped_workplace_app_path(self.workspace, 'dashboards') + filters)
         response = self.client.post(self.url(f'{self.own.slug}/edit/') + filters, self.payload(name='Plan po edycji'), HTTP_X_PULPIT_MODAL='true')
-        self.assertEqual(response.json()['url'], self.url() + filters)
+        self.assertEqual(response.json()['url'], scoped_workplace_app_path(self.workspace, 'dashboards') + filters)
         response = self.client.post(self.url(f'{self.own.slug}/delete/') + filters, HTTP_X_PULPIT_MODAL='true')
-        self.assertEqual(response.json()['url'], self.url() + filters)
+        self.assertEqual(response.json()['url'], scoped_workplace_app_path(self.workspace, 'dashboards') + filters)
         self.assertFalse(DashboardGadget.objects.filter(pk=gadget.pk).exists())
 
     def test_settings_are_a_page_with_editor_sidebar_and_validation_in_both_url_scopes(self):
@@ -176,7 +169,7 @@ class PulpitManagementTests(TestCase):
                     response = self.client.post(url, HTTP_X_PULPIT_MODAL='true')
                     self.assertEqual(response.status_code, 200)
                     result = response.json()
-                    target = scoped + ('manage/' + filters if management else '')
+                    target = scoped + (filters if management else '')
                     self.assertEqual(result['url'], target)
                     self.assertEqual(set(result['invalidated_return_paths']), {
                         f'/dashboards/{pk}/', f'/dashboards/manage/{pk}/',
@@ -203,7 +196,7 @@ class PulpitManagementTests(TestCase):
         for management in [False, True]:
             prefix = scoped_workplace_app_path(self.workspace, 'dashboards')
             url = prefix + (f'manage/{self.own.slug}/edit/' if management else f'{self.own.slug}/edit/') + filters
-            target = self.url() + filters if management else prefix + f'{self.own.slug}/'
+            target = scoped_workplace_app_path(self.workspace, 'dashboards') + filters if management else prefix + f'{self.own.slug}/'
             response = self.client.get(url)
             self.assertEqual(response.context['return_url'], target)
             revision = self.own.revision
@@ -230,6 +223,6 @@ class PulpitManagementTests(TestCase):
         self.assertEqual(secure.post(self.url(f'{self.own.slug}/delete/')).status_code, 403)
         self.assertEqual(self.client.get(self.url(f'{self.own.slug}/delete/')).status_code, 405)
         empty = create_workplace_for_user(self.owner, 'Pusty Workspace')
-        response = self.client.get(scoped_workplace_app_path(empty, 'dashboards', 'manage/'))
-        self.assertContains(response, 'Brak pulpitów do zarządzania')
+        response = self.client.get(scoped_workplace_app_path(empty, 'dashboards', 'manage/'), follow=True)
+        self.assertContains(response, 'Brak pulpitów')
         self.assertContains(response, 'Utwórz pulpit')

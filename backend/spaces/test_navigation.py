@@ -80,7 +80,7 @@ class SpaceNavigationTests(TestCase):
         self.assertEqual(self.client.get(self.url(self.private, 'members/')).status_code, 403)
         self.assertEqual(self.client.get(self.url(self.private, '?view=settings')).status_code, 200)
         SpaceMembership.objects.filter(space=self.private, user=self.member).update(role='admin')
-        self.assertContains(self.client.get(self.url()), '>Dodaj osoby</span>')
+        self.assertNotContains(self.client.get(self.url()), '>Dodaj osoby</span>')
         self.assertEqual(self.client.get(self.url(self.private, 'members/')).status_code, 200)
         SpaceMembership.objects.filter(space=self.private, user=self.member).delete()
         self.assertNotContains(self.client.get(self.url()), 'Prywatna')

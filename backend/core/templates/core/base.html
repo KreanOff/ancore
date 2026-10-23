@@ -186,7 +186,7 @@
                 <span id="notifications-invitation-status" class="u-sr-only" data-notifications-invitation-status>{% if pending_notification_invitation_count %}Oczekujące zaproszenia: {{ pending_notification_invitation_count }}.{% endif %}</span>
             </button>
             {% if global_panels %}</span>{% endif %}
-            <a href="{% url 'settings' %}" class="nav-link tasks-icon-button app-topbar__action {% if request.resolver_match.view_name == 'settings' or request.resolver_match.app_name == 'workplaces' or settings_management_mode or pulpits_management_mode %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
+            <a href="{% url 'settings' %}" class="nav-link tasks-icon-button app-topbar__action {% if request.resolver_match.view_name == 'settings' or request.resolver_match.app_name == 'workplaces' or pulpits_management_mode %}active{% endif %}" aria-label="Ustawienia Ancore" title="Ustawienia Ancore">
                 <i data-icon="settings" aria-hidden="true"></i>
             </a>
             <a href="{% url 'profile' %}" class="nav-link app-topbar__profile {% if request.resolver_match.view_name == 'profile' %}active{% endif %}" aria-label="Profil użytkownika: {{ request.user.get_full_name|default:request.user.username }}" title="Profil użytkownika">
@@ -226,11 +226,7 @@
                     </button>
                     <div class="sidebar-header-actions sidebar-group-actions">
                         <a href="{{ sidebar_pulpits_url }}create/" class="sidebar-header-action" aria-label="Utwórz pulpit" title="Utwórz pulpit" data-sidebar-group-action data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span class="u-sr-only">Utwórz pulpit</span></a>
-                        <div data-row-actions><button type="button" class="sidebar-header-action" aria-label="Opcje pulpitów" title="Opcje pulpitów" aria-expanded="false" aria-controls="sidebar-pulpits-actions" popovertarget="sidebar-pulpits-actions" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
-                            <div id="sidebar-pulpits-actions" class="tasks-section-menu sidebar-group-menu" popover="auto" role="group" aria-label="Opcje pulpitów" data-row-actions-panel>
-                                <a href="{{ sidebar_pulpits_url }}manage/" class="tasks-project-menu-button" data-sidebar-group-action><i data-icon="settings" aria-hidden="true"></i><span>Zarządzaj pulpitami</span></a>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
                 <div class="sidebar-subnav sidebar-subnav--extended sidebar-subnav--spaces sidebar-subnav--pulpits" id="sidebar-pulpits-subnav" data-sidebar-group-label="Pulpity" aria-label="Pulpity">{% include 'dashboard/pulpits/sidebar_navigation.html' %}</div>
@@ -248,12 +244,7 @@
                         <a href="{{ sidebar_spaces_url }}create/" class="sidebar-header-action" aria-label="Utwórz przestrzeń" title="Utwórz przestrzeń" data-sidebar-group-action data-work-open aria-haspopup="dialog">
                             <i data-icon="plus" aria-hidden="true"></i><span class="u-sr-only">Utwórz przestrzeń</span>
                         </a>
-                        <div data-row-actions>
-                            <button type="button" class="sidebar-header-action" aria-label="Opcje przestrzeni" title="Opcje przestrzeni" aria-expanded="false" aria-controls="sidebar-spaces-actions" popovertarget="sidebar-spaces-actions" data-row-actions-toggle><i data-icon="ellipsis" aria-hidden="true"></i></button>
-                            <div id="sidebar-spaces-actions" class="tasks-section-menu sidebar-group-menu" popover="auto" role="group" aria-label="Opcje przestrzeni" data-row-actions-panel>
-                                <a href="{{ sidebar_spaces_url }}manage/" class="nav-link tasks-project-menu-button {% if spaces_management_mode %}active{% endif %}" data-sidebar-group-action{% if not spaces_management_available %} hidden{% endif %}><i data-icon="settings" aria-hidden="true"></i><span>Zarządzaj przestrzeniami</span></a>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
                 {% sidebar_favorite_toggle 'spaces' 'Przestrzenie' 'layers' sidebar_spaces_url %}
@@ -289,9 +280,6 @@
             </div>
 
         </nav>
-        {% include 'core/includes/management_sidebar.html' with mode='administration' section_title='Zarządzanie przestrzeniami' label='Przestrzenie' icon='layers' catalog_url=sidebar_spaces_url|add:'manage/' %}
-        {% include 'core/includes/management_sidebar.html' with mode='pulpits-management' section_title='Zarządzanie pulpitami' label='Pulpity' icon='layout-dashboard' catalog_url=sidebar_pulpits_url|add:'manage/' %}
-        {% include 'core/includes/management_sidebar.html' with mode='filters-management' section_title='Zarządzanie filtrami' label='Filtry' icon='filter' catalog_url=sidebar_filters_url|add:'manage/' %}
         {% include 'core/includes/pulpit_editor_sidebar.html' %}
         {% include 'core/includes/workplace_management_sidebar.html' %}
         {% include 'core/includes/settings_sidebar.html' %}

@@ -61,7 +61,7 @@ class ReactFilterAndTagTests(TestCase):
         for scoped in (True, False):
             prefix = self.path('filters') if scoped else '/filters/'
             tags = self.tags() if scoped else f'/space/{self.space.slug}/?view=tags'
-            for path, kind in ((prefix, 'filter-directory'), (prefix + 'manage/', 'filter-directory'), (prefix + 'search/', 'filter-search'), (tags, 'space-tags')):
+            for path, kind in ((prefix, 'filter-directory'), (prefix + 'search/', 'filter-search'), (tags, 'space-tags')):
                 with self.subTest(path=path):
                     response = self.get(path)
                     self.assertEqual(response.status_code, 200)
@@ -98,10 +98,21 @@ class ReactFilterAndTagTests(TestCase):
         self.assertEqual(len(result['items']), 3)
         self.assertIn('jql=', result['pagination']['pages'][0]['url'])
 
+    def test_retired_management_redirects_in_page_and_navigation_api(self):
+        for prefix in ['/filters/', self.path('filters')]:
+            target = prefix + 'manage/?q=Plan&page=2&visibility=private&favorite=starred'
+            expected = self.path('filters') + '?tab=mine&q=Plan&page=2'
+            self.assertEqual(self.get(target).json(), {'redirect': expected})
+            endpoint = self.path('api', 'v1/navigation/')
+            self.assertEqual(self.client.get(endpoint, {'url': target}).json(), {'redirect': expected})
+        data = self.get(self.path('filters')).json()['data']
+        for field in ['management', 'management_url', 'visibility_filter', 'favorite_filter']:
+            self.assertNotIn(field, data)
+
     def test_filter_crud_preserves_actor_authorized_sharing_and_revision(self):
         create = self.path('filters', 'manage/new/') + '?visibility=workspace&q=React'
         modal = self.get(create).json()['data']['modal']
-        self.assertEqual(modal['values']['return_to'], self.path('filters', 'manage/') + '?visibility=workspace&q=React')
+        self.assertEqual(modal['values']['return_to'], self.path('filters') + '?tab=mine&q=React')
         values = {'name': 'React filtr', 'description': 'Opis', 'visibility': 'selected', 'shared_with': [self.owner.pk],
                   'query': 'assignee = currentUser()', 'revision': 0, 'return_to': modal['return_url'], 'owner': self.outsider.pk}
         saved = self.post(create, values)
@@ -135,7 +146,7 @@ class ReactFilterAndTagTests(TestCase):
         for operation in ('edit/', 'delete/', 'save/'):
             self.assertEqual(self.post(target + operation, {'jql': '', 'revision': self.saved.revision}).status_code, 403)
         self.assertEqual(self.get(self.path('filters', f'{self.private_filter.pk}/')).status_code, 404)
-        self.assertNotIn(self.saved.name, json.dumps(self.get(self.path('filters', 'manage/')).json(), ensure_ascii=False))
+        self.assertEqual(self.get(self.path('filters', 'manage/')).json(), {'redirect': self.path('filters') + '?tab=mine'})
 
     def test_filter_settings_window_metadata_validation_and_repeated_saves(self):
         item = SavedTaskFilter.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.member,

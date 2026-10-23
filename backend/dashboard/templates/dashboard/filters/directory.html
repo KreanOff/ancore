@@ -1,9 +1,9 @@
 {% load static %}
-<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet task-filter-directory{% if management %} task-filter-directory--management tasks-project-sheet--selectable{% endif %}">
+<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet task-filter-directory">
     {% if filters %}
-    <section class="tasks-directory-group" role="table" aria-label="{% if management %}Zarządzanie filtrami{% else %}Lista filtrów{% endif %}">
+    <section class="tasks-directory-group" role="table" aria-label="Lista filtrów">
         <div class="tasks-directory-header" role="row">
-            <span class="tasks-directory-header-select tasks-directory-sheet__cell" role="columnheader" data-column="select">{% if management %}<input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie filtry na tej stronie" data-select-all-checkbox data-select-all-target="filters">{% else %}<i data-icon="star" aria-hidden="true"></i><span class="u-sr-only">Ulubione</span>{% endif %}</span>
+            <span class="tasks-directory-header-select tasks-directory-sheet__cell" role="columnheader" data-column="select"><i data-icon="star" aria-hidden="true"></i><span class="u-sr-only">Ulubione</span></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" role="columnheader" data-column="menu" aria-label="Działania"><span class="u-sr-only">Działania</span></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" role="columnheader" data-column="name">FILTR<i data-icon="filter" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" role="columnheader" data-column="leader">TWÓRCA<i data-icon="user-round" aria-hidden="true"></i></span>
@@ -13,9 +13,9 @@
         <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
             {% for item in filters %}
             <article class="tasks-issue-row tasks-directory-row" role="row" data-filter-directory-row="{{ item.pk }}">
-                <span class="tasks-directory-sheet__cell" role="cell" data-column="select">{% if management %}<input type="checkbox" class="tasks-row-checkbox" value="{{ item.pk }}" aria-label="Zaznacz filtr {{ item.name }}">{% else %}{% include 'dashboard/filters/favorite.html' %}{% endif %}</span>
+                <span class="tasks-directory-sheet__cell" role="cell" data-column="select">{% include 'dashboard/filters/favorite.html' %}</span>
                 {% include 'tasks/includes/directory_row_menu.html' with kind='filter' item_id=item.pk item_name=item.name actions_template='dashboard/filters/row_actions.html' cell_role='cell' directory=True %}
-                <span class="tasks-directory-sheet__cell tasks-directory-name" role="cell" data-column="name"><a href="{% if management %}{{ item.edit_url }}{% else %}{{ item.url }}{% endif %}"{% if management %} data-filter-open{% endif %} title="{{ item.name }}">{{ item.name }}</a></span>
+                <span class="tasks-directory-sheet__cell tasks-directory-name" role="cell" data-column="name"><a href="{{ item.url }}" title="{{ item.name }}">{{ item.name }}</a></span>
                 <span class="tasks-directory-sheet__cell" role="cell" data-column="leader">{{ item.created_by.get_full_name|default:item.created_by.email }}</span>
                 <span class="tasks-directory-sheet__cell" role="cell" data-column="visibility">{{ item.get_visibility_display }}</span>
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__description" role="cell" data-column="description" title="{{ item.description }}">{{ item.description|default:'Brak opisu' }}</span>
@@ -26,7 +26,7 @@
     {% else %}
     <div class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated" role="status">
         <img class="tasks-empty-state__illustration" src="{% static 'img/empty-states/filters-empty.webp' %}" alt="" width="720" height="540" draggable="false">
-        <div class="tasks-empty-state__copy"><h2>{% if query or management and visibility_filter or management and favorite_filter %}Brak pasujących filtrów{% elif management %}Brak filtrów do zarządzania{% else %}Brak filtrów{% endif %}</h2><p>{% if query or management and visibility_filter or management and favorite_filter %}Zmień wyszukiwanie lub wyczyść jego warunki.{% elif management %}Utwórz filtr, aby wracać do aktualnych wyników.{% elif tab == 'favorites' %}Oznacz filtr gwiazdką, aby mieć go pod ręką.{% elif tab == 'shared' %}Filtry udostępnione przez inne osoby pojawią się tutaj.{% else %}Zapisz wyszukiwanie, aby wracać do aktualnych wyników.{% endif %}</p></div>
+        <div class="tasks-empty-state__copy"><h2>{% if query %}Brak pasujących filtrów{% else %}Brak filtrów{% endif %}</h2><p>{% if query %}Zmień wyszukiwanie lub wyczyść jego warunki.{% elif tab == 'favorites' %}Oznacz filtr gwiazdką, aby mieć go pod ręką.{% elif tab == 'shared' %}Filtry udostępnione przez inne osoby pojawią się tutaj.{% else %}Zapisz wyszukiwanie, aby wracać do aktualnych wyników.{% endif %}</p></div>
     </div>
     {% endif %}
 </div>

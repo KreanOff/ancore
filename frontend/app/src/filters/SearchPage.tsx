@@ -97,9 +97,6 @@ export default function SearchPage(props: PageProps) {
                 Edytuj filtr
               </button>
             ) : null}
-            <a className="tasks-filter-button" href={data.filters_url + 'manage/'}>
-              Zarządzaj filtrami
-            </a>
           </div>
         </header>
         <nav className="notifications-tabs work-tabs" aria-label="Tryb wyszukiwania">

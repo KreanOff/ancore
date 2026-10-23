@@ -33,17 +33,17 @@ class PulpitEditorTests(TestCase):
     def prefixes(self):
         return ['/dashboards/', scoped_workplace_app_path(self.workspace, 'dashboards')]
 
-    def test_management_name_opens_settings_and_each_editor_section_has_its_own_sidebar(self):
+    def test_retired_management_opens_catalog_and_each_editor_section_has_its_own_sidebar(self):
         scoped = scoped_workplace_app_path(self.workspace, 'dashboards')
         for prefix in self.prefixes():
-            response = self.client.get(prefix + 'manage/', {'q': 'Przegląd', 'visibility': 'workspace'})
-            self.assertContains(response, f'href="{scoped}manage/{self.dashboard.slug}/edit/?q=Przegl%C4%85d&amp;visibility=workspace" title="{self.dashboard.name}"')
+            response = self.client.get(prefix + 'manage/', {'q': 'Przegląd', 'visibility': 'workspace'}, follow=True)
+            self.assertContains(response, f'href="{scoped}{self.dashboard.slug}/" title="{self.dashboard.name}"')
             self.assertFalse(response.context['pulpit_editor_mode'])
             for management in [False, True]:
                 for suffix, key in [('gadgets/', 'gadgets'), ('access/', 'access'), ('edit/', 'settings')]:
                     path = prefix + ('manage/' if management else '') + f'{self.dashboard.slug}/' + suffix
                     with self.subTest(path=path):
-                        response = self.client.get(path)
+                        response = self.client.get(path, follow=True)
                         self.assertEqual(response.status_code, 200)
                         self.assertTrue(response.context['pulpit_editor_mode'])
                         self.assertContains(response, 'data-sidebar-mode="pulpit-editor"')
@@ -135,12 +135,12 @@ class PulpitEditorTests(TestCase):
             for suffix in ['gadgets/', 'access/', 'edit/']:
                 url = prefix + f'manage/{self.dashboard.slug}/' + suffix + filters
                 response = self.client.get(url)
-                self.assertEqual(response.context['return_url'], scoped + 'manage/' + filters)
+                self.assertEqual(response.context['return_url'], scoped + filters)
                 self.assertEqual([entry['url'] for entry in response.context['pulpit_editor_navigation']],
                                  [scoped + f'manage/{self.dashboard.slug}/' + section + filters for section in ['gadgets/', 'edit/', 'access/']])
                 if suffix == 'access/':
                     saved = self.client.post(url, {'visibility': 'workspace'}, HTTP_X_PULPIT_MODAL='true')
-                    self.assertEqual(saved.json(), {'saved': True, 'url': scoped + 'manage/' + filters})
+                    self.assertEqual(saved.json(), {'saved': True, 'url': scoped + filters})
 
     def test_direct_gadget_modal_keeps_selected_dashboard_sidebar(self):
         for prefix in self.prefixes():

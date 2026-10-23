@@ -37,8 +37,10 @@ class PulpitNavigationTests(TestCase):
 
     def test_navigation_matches_reference_and_default_dashboard_is_preserved(self):
         response = self.client.get(self.url())
-        for text in ['Pulpit domyślny', 'Więcej pulpitów', 'Wyszukaj wszystkie pulpity', 'Wyświetl wszystkie pulpity', 'Utwórz pulpit', 'Zarządzaj pulpitami']:
+        for text in ['Pulpit domyślny', 'Więcej pulpitów', 'Wyszukaj wszystkie pulpity', 'Wyświetl wszystkie pulpity', 'Utwórz pulpit']:
             self.assertContains(response, text)
+        self.assertNotContains(response, 'Zarządzaj pulpitami')
+        self.assertNotContains(response, 'Opcje pulpitów')
         self.assertEqual(self.ids(response, 'recent'), [])
         self.assertEqual(self.client.get('/').status_code, 200)
 

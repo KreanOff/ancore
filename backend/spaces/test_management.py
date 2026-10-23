@@ -1,11 +1,9 @@
 from .testing import make_space
-from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.utils import timezone
 
-from .models import SpaceTask, SpaceTaskActivity, Space, SpaceMembership
+from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.navigation import sidebar_favorite_is_active
 from workplaces.services import scoped_workplace_app_path
@@ -40,47 +38,45 @@ class SpaceManagementTests(TestCase):
     def url(self, suffix='manage/'):
         return scoped_workplace_app_path(self.workspace, 'spaces', suffix)
 
-    def test_catalog_and_management_have_distinct_destinations(self):
+    def test_retired_management_redirects_to_catalog_in_plain_and_scoped_urls(self):
         for url in ['/spaces/manage/', self.url()]:
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, 200)
-            self.assertTemplateUsed(response, 'spaces/manage.html')
-            self.assertContains(response, 'Zarządzaj przestrzeniami')
-            self.assertTrue(response.context['spaces_management_mode'])
-            self.assertContains(response, 'data-sidebar-mode="administration"')
-            self.assertContains(response, 'data-sidebar-navigation="workspace" hidden')
-            self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
-            self.assertNotContains(response, 'data-sidebar-navigation="administration" hidden')
-            self.assertContains(response, 'data-sidebar-navigation="workplaces" hidden')
-            menu = response.content.decode().split('data-sidebar-navigation="administration"', 1)[1].split('</nav>', 1)[0]
-            self.assertIn('Zarządzanie przestrzeniami', menu)
-            self.assertIn('aria-current="page" aria-label="Przestrzenie"', menu)
-            self.assertIn('Wróć do ustawień', menu)
-            for label in ['Ogólne', 'Konto i dostęp', 'Workspace', 'Pulpity', 'Filtry']:
-                self.assertNotIn(label, menu)
-            self.assertEqual(menu.count('<a '), 2)
-            self.assertNotContains(response, 'work-management-navigation')
-            self.assertNotContains(response, 'Obcy projekt')
-            self.assertFalse(sidebar_favorite_is_active('spaces', response.wsgi_request))
+            response = self.client.get(url, {'q': 'produkt', 'kind': 'business', 'tab': 'private', 'page': 2})
+            self.assertRedirects(response, self.url('') + '?q=produkt&kind=business&tab=private&page=2')
         daily = self.client.get(self.url(''))
         self.assertTemplateUsed(daily, 'spaces/index.html')
-        self.assertFalse(daily.context['spaces_management_mode'])
         self.assertContains(daily, 'data-sidebar-mode="workspace"')
-        self.assertContains(daily, 'data-sidebar-navigation="settings" hidden')
-        self.assertNotContains(daily, 'data-sidebar-navigation="workspace" hidden')
-        self.assertContains(daily, f'href="{self.url()}"')
+        self.assertNotContains(daily, 'data-sidebar-navigation="administration"')
+        self.assertNotContains(daily, 'Zarządzaj przestrzeniami')
+        self.assertNotContains(daily, self.url())
+        self.assertNotContains(daily, 'Obcy projekt')
         self.assertTrue(sidebar_favorite_is_active('spaces', daily.wsgi_request))
-        self.assertContains(self.client.get('/settings/'), f'href="{self.url()}"')
+        settings = self.client.get('/settings/')
+        self.assertNotContains(settings, 'Zarządzaj przestrzeniami')
+        self.assertNotContains(settings, self.url())
+
+    def test_redirect_in_page_and_navigation_api(self):
+        for prefix in ['/spaces/', self.url('')]:
+            target = prefix + 'manage/?q=produkt&kind=business&page=2&management=company'
+            destination = self.url('') + '?q=produkt&kind=business&page=2'
+            for api in ['page', 'navigation']:
+                endpoint = scoped_workplace_app_path(self.workspace, 'api', f'v1/{api}/')
+                response = self.client.get(endpoint, {'url': target})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json(), {'redirect': destination})
+        endpoint = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        data = self.client.get(endpoint, {'url': self.url('')}).json()['data']
+        self.assertNotIn('management', data)
+        self.assertNotIn('management_filter', data)
 
     def test_management_respects_workspace_and_private_access(self):
         self.client.force_login(self.admin)
-        response = self.client.get(self.url())
+        response = self.client.get(self.url(), follow=True)
         self.assertContains(response, 'Prywatny produkt')
         self.assertContains(response, 'Publiczny produkt')
         self.assertNotContains(response, 'Poufny projekt')
         self.assertNotContains(response, 'Obcy projekt')
         SpaceMembership.objects.filter(space=self.private, user=self.admin).delete()
-        self.assertNotContains(self.client.get(self.url()), 'Prywatny produkt')
+        self.assertNotContains(self.client.get(self.url(), follow=True), 'Prywatny produkt')
 
     def test_members_and_observers_keep_daily_access_without_management(self):
         section = self.public
@@ -89,7 +85,8 @@ class SpaceManagementTests(TestCase):
         for role in ['member', 'observer']:
             SpaceMembership.objects.filter(space=self.private, user=self.member).update(role=role)
             self.assertContains(self.client.get(self.url('')), 'Prywatny produkt')
-            for suffix in ['manage/', 'manage/create/', f'manage/{self.private.pk}/edit/']:
+            self.assertRedirects(self.client.get(self.url()), self.url(''))
+            for suffix in ['manage/create/', f'manage/{self.private.pk}/edit/']:
                 self.assertEqual(self.client.get(self.url(suffix)).status_code, 403)
             settings = self.client.get('/settings/')
             self.assertNotContains(settings, 'Ustawienia, konfiguracje i dostęp do przestrzeni')
@@ -97,62 +94,60 @@ class SpaceManagementTests(TestCase):
     def test_project_admin_and_public_leader_manage_only_their_spaces(self):
         self.client.force_login(self.member)
         SpaceMembership.objects.filter(space=self.private, user=self.member).update(role='admin')
-        response = self.client.get(self.url())
-        self.assertEqual([space.pk for space in response.context['page']], [self.private.pk])
+        response = self.client.get(self.url(), follow=True)
+        self.assertEqual({space.pk for space in response.context['page']}, {self.private.pk, self.public.pk})
+        self.assertEqual(set(manageable_spaces(response.wsgi_request).values_list('pk', flat=True)), {self.private.pk})
         self.public.responsible_user = self.member
         self.public.save()
-        response = self.client.get(self.url())
+        response = self.client.get(self.url(), follow=True)
         self.assertEqual(set(manageable_spaces(response.wsgi_request).values_list('pk', flat=True)), {self.private.pk, self.public.pk})
         self.assertTrue(all(manage_space(response.wsgi_request, space) for space in response.context['page']))
 
-    def test_filters_and_pagination_apply_to_manageable_subset(self):
+    def test_redirect_keeps_catalog_search_kind_and_pagination(self):
         self.client.force_login(self.admin)
         space = self.public
         space.kind = 'software'
         space.management = 'company'
         space.save()
-        response = self.client.get(self.url(), {'q': space.key.lower(), 'kind': 'software', 'management': 'company'})
+        response = self.client.get(self.url(), {'q': space.key.lower(), 'kind': 'software', 'management': 'company'}, follow=True)
         self.assertEqual([space.pk for space in response.context['page']], [self.public.pk])
-        response = self.client.get(self.url(), {'q': space.key, 'management': 'team'})
-        self.assertContains(response, 'Brak pasujących przestrzeni')
+        response = self.client.get(self.url(), {'q': space.key, 'management': 'team'}, follow=True)
+        self.assertEqual([space.pk for space in response.context['page']], [self.public.pk])
+        self.assertNotContains(response, 'Każdy sposób zarządzania')
         for number in range(31):
             make_space(user=self.owner, workplace=self.workspace, name=f'Filtrowany {number:02}')
-        response = self.client.get(self.url(), {'q': 'Filtrowany', 'page': '2', 'kind': 'business'})
+        response = self.client.get(self.url(), {'q': 'Filtrowany', 'page': '2', 'kind': 'business'}, follow=True)
         self.assertEqual(response.context['page'].paginator.count, 31)
         self.assertEqual(len(response.context['page']), 1)
         self.assertContains(response, 'q=Filtrowany')
         self.assertContains(response, 'kind=business')
 
-    def test_last_activity_does_not_reveal_hidden_tasks(self):
+    def test_catalog_count_does_not_reveal_hidden_tasks(self):
         section = self.private
-        visible = SpaceTask.objects.create(created_by=self.owner, space=section, title='Dostępne')
-        hidden = SpaceTask.objects.create(created_by=self.owner, space=section, title='Ukryte', visibility='private', private_owner=self.member)
-        visible_at = timezone.now() - timedelta(days=3)
-        SpaceTaskActivity.objects.filter(task=visible).update(created_at=visible_at)
-        SpaceTaskActivity.objects.filter(task=hidden).update(created_at=timezone.now())
-        response = self.client.get(self.url(), {'q': self.private.key})
+        SpaceTask.objects.create(created_by=self.owner, space=section, title='Dostępne')
+        SpaceTask.objects.create(created_by=self.owner, space=section, title='Ukryte', visibility='private', private_owner=self.member)
+        response = self.client.get(self.url(), {'q': self.private.key}, follow=True)
         row = response.context['page'][0]
-        self.assertEqual(row.last_activity, visible_at)
         self.assertEqual(row.item_count, 1)
 
-    def test_create_and_edit_return_to_management(self):
+    def test_legacy_create_and_edit_return_to_catalog(self):
         create_url = self.url('manage/create/')
         response = self.client.get(create_url)
-        self.assertTemplateUsed(response, 'spaces/manage.html')
-        self.assertTrue(response.context['spaces_management_mode'])
-        self.assertEqual(response.context['modal']['directory_url'], self.url())
+        self.assertTemplateUsed(response, 'spaces/index.html')
+        self.assertContains(response, 'data-sidebar-mode="workspace"')
+        self.assertEqual(response.context['modal']['directory_url'], self.url(''))
         payload = {'name': 'Nowa przestrzeń', 'key': 'NOWA', 'kind': 'business', 'template': 'tasks', 'management': 'team', 'visibility': 'private'}
         invalid = self.client.post(create_url, {**payload, 'key': '!'})
         self.assertEqual(invalid.status_code, 400)
-        self.assertTemplateUsed(invalid, 'spaces/manage.html')
-        self.assertTrue(invalid.context['spaces_management_mode'])
+        self.assertTemplateUsed(invalid, 'spaces/index.html')
+        self.assertContains(invalid, 'data-sidebar-mode="workspace"', status_code=400)
         response = self.client.post(create_url, payload, HTTP_X_WORK_MODAL='true')
-        self.assertEqual(response.json(), {'saved': True, 'url': self.url()})
+        self.assertEqual(response.json(), {'saved': True, 'url': self.url('')})
         space = Space.objects.get(name='Nowa przestrzeń')
         response = self.client.post(self.url(f'manage/{space.pk}/edit/'), {**payload, 'name': 'Zmieniona przestrzeń'}, HTTP_X_WORK_MODAL='true')
-        self.assertEqual(response.json(), {'saved': True, 'url': self.url()})
-        self.assertContains(self.client.get(self.url()), 'Zmieniona przestrzeń')
-        self.assertRedirects(self.client.post(self.url(f'{space.pk}/favorite/'), {'directory': 'manage'}), self.url())
+        self.assertEqual(response.json(), {'saved': True, 'url': self.url('')})
+        self.assertContains(self.client.get(self.url(), follow=True), 'Zmieniona przestrzeń')
+        self.assertRedirects(self.client.post(self.url(f'{space.pk}/favorite/'), {'directory': 'manage'}), self.url(''))
 
     def test_management_edit_still_checks_each_space(self):
         self.client.force_login(self.admin)
@@ -164,8 +159,8 @@ class SpaceManagementTests(TestCase):
 
     def test_empty_workspace_and_method_guards(self):
         empty = create_workplace_for_user(self.owner, 'Pusty')
-        response = self.client.get(scoped_workplace_app_path(empty, 'spaces', 'manage/'))
-        self.assertContains(response, 'Brak przestrzeni do zarządzania')
+        response = self.client.get(scoped_workplace_app_path(empty, 'spaces', 'manage/'), follow=True)
+        self.assertContains(response, 'Brak przestrzeni')
         self.assertEqual(self.client.post(self.url()).status_code, 405)
         self.client.logout()
         self.assertEqual(self.client.get(self.url()).status_code, 302)
