@@ -1,6 +1,7 @@
 import type { FormDialogData, FormSchema } from '../forms/FormDialog';
 import type { PaginationData } from '../shared/Pagination';
 import type { EmojiArt } from '../shared/Emoji';
+import type { Team } from '../tasks/types';
 export type Layout = 'single' | 'equal' | 'left' | 'right' | 'three';
 export type SettingsTab = 'gadgets' | 'access' | 'settings';
 export interface EditorTab {
@@ -26,6 +27,8 @@ export interface Dashboard {
   revision: number;
   is_default: boolean;
   editable: boolean;
+  manageable: boolean;
+  deletable: boolean;
   favorite: boolean;
   gadget_count: number;
   url: string;
@@ -82,6 +85,8 @@ export interface DetailData {
   modal: FormDialogData | null;
 }
 export interface EditData {
+  team: Team & { name: string; visibility: string };
+  team_url: string;
   settings_tabs: EditorTab[];
   dashboard: Dashboard;
   section: 'access' | 'settings';

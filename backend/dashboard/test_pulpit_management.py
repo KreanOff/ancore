@@ -207,7 +207,7 @@ class PulpitManagementTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.context['return_url'], target)
             revision = self.own.revision
-            response = self.client.post(url, self.payload(name='Plan po zapisie', visibility='selected', shared_with=[self.member.pk], layout='single'))
+            response = self.client.post(url, self.payload(name='Plan po zapisie', visibility='private', shared_with=[self.member.pk], layout='single'))
             self.assertRedirects(response, target)
             self.own.refresh_from_db()
             gadget.refresh_from_db()

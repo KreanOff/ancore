@@ -46,12 +46,13 @@ def shell_payload(request, context=None):
                 'members_url': item.url + 'members/' if item.can_manage and item.visibility == 'private' else '',
                 'description': f'Przestrzeń {item.get_kind_display().lower()}', 'detail': item.get_management_display()}
     def pulpit_row(item):
+        actions = [('Gadżety i układ', 'layout-dashboard', 'gadgets_url')] if item.can_edit else []
+        if item.can_manage:
+            actions += [('Ustawienia', 'settings', 'edit_url')]
         return {'id': str(item.pk), 'name': item.name, 'url': item.url, 'active': bool(item.is_current),
                 'icon': item.icon, 'emoji': item.icon_emoji, 'emoji_art': item.icon_emoji_art,
                 'favorite': bool(item.is_favorite), 'favorite_url': item.favorite_url,
-                'actions': [{'label': label, 'icon': icon, 'url': getattr(item, field)} for label, icon, field in (
-                    ('Gadżety i układ', 'layout-dashboard', 'gadgets_url'), ('Dostępy', 'users', 'access_url'),
-                    ('Ustawienia', 'settings', 'edit_url'))] if item.can_edit else []}
+                'actions': [{'label': label, 'icon': icon, 'url': getattr(item, field)} for label, icon, field in actions]}
     def filter_row(item):
         return {'id': str(item.pk), 'name': item.name, 'url': item.url, 'active': bool(item.current),
                 'favorite': bool(item.favorite), 'favorite_url': item.favorite_url,
@@ -112,7 +113,7 @@ def page_styles(page):
         names += ['components/task-filters.css', 'components/pulpits.css']
     if kind == 'settings':
         names += ['components/settings.css']
-    if kind == 'workspace-directory' or kind.startswith('space-') or kind == 'form':
+    if kind == 'workspace-directory' or kind.startswith(('space-', 'pulpit')) or kind == 'form':
         names += ['components/workplace-team.css']
     if kind.startswith(('document', 'office')):
         names += ['components/office.css']

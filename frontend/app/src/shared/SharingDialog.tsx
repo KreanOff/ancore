@@ -40,7 +40,8 @@ export default function SharingDialog<T>({
       .filter((field) => field.name === 'role')
       .map((field) => ({
         ...field,
-        value: person?.role || 'member',
+        value:
+          person?.role || (Array.isArray(field.value) ? field.value[0] : field.value) || 'member',
       })),
   }));
   return (

@@ -59,6 +59,7 @@ VIEWS = {
     'dashboard.views': {'for_you', 'settings', 'home', 'global_search', 'notifications', 'notification_action'},
     'dashboard.filter_views': {'index', 'manage', 'search', 'lookup', 'edit', 'save_query', 'favorite', 'delete'},
     'dashboard.pulpit_views': {'index', 'search', 'manage', 'detail', 'default', 'gadgets', 'edit', 'access', 'delete', 'favorite', 'gadget_edit', 'gadget_delete', 'gadget_quick_add', 'arrange'},
+    'dashboard.pulpit_sharing': {'team', 'candidates'},
     'spaces.views': {'index', 'search', 'manage', 'detail', 'configuration', 'edit', 'avatar_edit', 'favorite', 'members', 'remove_member', 'item_edit', 'item_action', 'backlog_plan', 'sprint_create', 'sprint_plan', 'sprint_action'},
     'spaces.task_views': {'detail', 'members'},
     'spaces.task_team': {'team', 'candidates'},

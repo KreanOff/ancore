@@ -53,28 +53,26 @@ export function DashboardActions({
                 <Icon name="layout-dashboard" />
                 <span>Gadżety i układ</span>
               </a>
-              <a className="tasks-project-menu-button" href={item.access_url}>
-                <Icon name="users" />
-                <span>Dostępy</span>
-              </a>
-              <a className="tasks-project-menu-button" href={item.edit_url}>
-                <Icon name="settings" />
-                <span>Ustawienia</span>
-              </a>
-              {!item.is_default ? (
-                <button
-                  className="tasks-project-menu-button"
-                  disabled={busy}
-                  onClick={() => {
-                    close();
-                    remove();
-                  }}
-                >
-                  <Icon name="trash-2" />
-                  <span>Usuń pulpit</span>
-                </button>
-              ) : null}
             </>
+          ) : null}
+          {item.manageable ? (
+            <a className="tasks-project-menu-button" href={item.edit_url}>
+              <Icon name="settings" />
+              <span>Ustawienia</span>
+            </a>
+          ) : null}
+          {item.deletable ? (
+            <button
+              className="tasks-project-menu-button"
+              disabled={busy}
+              onClick={() => {
+                close();
+                remove();
+              }}
+            >
+              <Icon name="trash-2" />
+              <span>Usuń pulpit</span>
+            </button>
           ) : null}
         </div>
       )}

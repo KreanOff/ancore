@@ -1,5 +1,6 @@
 from django.urls import path, register_converter
 from . import pulpit_views as views
+from . import pulpit_sharing
 from .identifiers import DashboardSlugConverter
 
 register_converter(DashboardSlugConverter, 'dashboard_slug')
@@ -22,6 +23,8 @@ urlpatterns = [
     path('<int:pk>/', views.detail, name='detail'),
     path('<int:pk>/edit/', views.edit, name='edit'),
     path('<int:pk>/access/', views.access, name='access'),
+    path('<int:pk>/team/', pulpit_sharing.team, name='team'),
+    path('<int:pk>/team/candidates/', pulpit_sharing.candidates, name='team_candidates'),
     path('<int:pk>/delete/', views.delete, name='delete'),
     path('<int:pk>/favorite/', views.favorite, name='favorite'),
     path('<int:pk>/arrange/', views.arrange, name='arrange'),
@@ -42,6 +45,8 @@ urlpatterns = [
     path('<dashboard_slug:pk>/', views.detail, name='detail'),
     path('<dashboard_slug:pk>/edit/', views.edit, name='edit'),
     path('<dashboard_slug:pk>/access/', views.access, name='access'),
+    path('<dashboard_slug:pk>/team/', pulpit_sharing.team, name='team'),
+    path('<dashboard_slug:pk>/team/candidates/', pulpit_sharing.candidates, name='team_candidates'),
     path('<dashboard_slug:pk>/delete/', views.delete, name='delete'),
     path('<dashboard_slug:pk>/favorite/', views.favorite, name='favorite'),
     path('<dashboard_slug:pk>/arrange/', views.arrange, name='arrange'),

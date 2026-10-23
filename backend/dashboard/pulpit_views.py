@@ -13,26 +13,32 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from workplaces.services import workspace_owner
+from workplaces.services import workplace_role, workspace_owner
 from spaces.services import visible_spaces
 from spaces.access import visible_to
 from spaces.models import SpaceTask
 from .models import Dashboard, DashboardGadget
 from .pulpit_forms import DashboardAccessForm, DashboardForm, DashboardSettingsForm, GadgetForm
 from .pulpits import (GADGET_CATALOG, MAX_GADGETS, app_url, decorate_dashboard, decorate_gadget,
-                      dashboard_url, default_dashboard, detail_context, gadget_data, visible_dashboards)
+                      can_edit_dashboard, can_manage_dashboard, dashboard_url, default_dashboard, detail_context, gadget_data, visible_dashboards)
 from .recent import remember_view
 
 
-def get_dashboard(request, pk, edit=False, lock=False):
+def get_dashboard(request, pk, edit=False, lock=False, manage=False, creator=False):
     queryset = visible_dashboards(request)
     if lock:
         # Lock the base table, avoiding DISTINCT / M2M joins in FOR UPDATE.
         queryset = Dashboard.objects.filter(pk__in=queryset.values('pk')).select_for_update()
     lookup = {'pk': pk} if isinstance(pk, int) else {'slug': pk}
     dashboard = get_object_or_404(queryset, **lookup)
-    if edit and dashboard.created_by_id != request.user.pk:
-        raise PermissionDenied('Tylko twórca może zmieniać pulpit.')
+    if lock and not workplace_role(request.user, request.workplace):
+        raise PermissionDenied
+    if edit and not can_edit_dashboard(request, dashboard):
+        raise PermissionDenied('Masz dostęp tylko do odczytu tego pulpitu.')
+    if manage and not can_manage_dashboard(request, dashboard):
+        raise PermissionDenied('Ustawieniami i dostępem zarządza właściciel lub administrator pulpitu.')
+    if creator and dashboard.created_by_id != request.user.pk:
+        raise PermissionDenied('Tylko właściciel może usunąć pulpit.')
     return dashboard
 
 
@@ -153,8 +159,8 @@ def editor_navigation_context(request, dashboard, section, management=False):
     decorate_dashboard(request, dashboard)
     sections = [
         {'key': 'gadgets', 'suffix': 'gadgets/', 'label': 'Gadżety i układ', 'icon': 'layout-dashboard'},
-        {'key': 'access', 'suffix': 'access/', 'label': 'Dostępy', 'icon': 'users'},
         {'key': 'settings', 'suffix': 'edit/', 'label': 'Ustawienia', 'icon': 'settings'},
+        {'key': 'access', 'suffix': 'access/', 'label': 'Udostępnienia', 'icon': 'users'},
     ]
     for entry in sections:
         suffix = f'{dashboard.slug}/' + entry.pop('suffix')
@@ -163,7 +169,7 @@ def editor_navigation_context(request, dashboard, section, management=False):
     return {
         'dashboard': dashboard, 'pulpit_editor_navigation': sections,
         'section_title': next(entry['label'] for entry in sections if entry['active']),
-        'editor_url': sections[0]['url'], 'access_url': sections[1]['url'], 'settings_url': sections[2]['url'],
+        'editor_url': sections[0]['url'], 'access_url': sections[2]['url'], 'settings_url': sections[1]['url'],
         'return_url': management_url(request) if management else dashboard.url,
         'settings_return_url': management_url(request) if management else dashboard.url,
     }
@@ -228,7 +234,7 @@ def saved_response(request, url, **extra):
 @require_http_methods(['GET', 'POST'])
 @transaction.atomic
 def edit(request, pk=None, management=False):
-    source = get_dashboard(request, pk, edit=True, lock=request.method == 'POST') if pk else None
+    source = get_dashboard(request, pk, manage=True, lock=request.method == 'POST') if pk else None
     item = source if source else Dashboard(owner=workspace_owner(request), workplace=request.workplace, created_by=request.user)
     editing_settings = source is not None
     form_type = DashboardSettingsForm if editing_settings else DashboardForm
@@ -238,6 +244,8 @@ def edit(request, pk=None, management=False):
         dashboard.revision += 1
         dashboard.save()
         form.save_m2m()
+        if editing_settings and 'visibility' in request.POST and dashboard.visibility == Dashboard.Visibility.WORKSPACE:
+            dashboard.shared_with.clear()
         if not editing_settings:
             dashboard.favorited_by.add(request.user)
         target = management_url(request) if management else dashboard_url(request, dashboard)
@@ -260,7 +268,10 @@ def edit(request, pk=None, management=False):
 @require_http_methods(['GET', 'POST'])
 @transaction.atomic
 def access(request, pk, management=False):
-    dashboard = get_dashboard(request, pk, edit=True, lock=request.method == 'POST')
+    dashboard = get_dashboard(request, pk, manage=True, lock=request.method == 'POST')
+    # The legacy bulk form can replace administrators; keep it owner-only.
+    if request.method == 'POST' and dashboard.created_by_id != request.user.pk:
+        raise PermissionDenied
     form = DashboardAccessForm(request.POST if request.method == 'POST' else None, instance=dashboard, request=request)
     if request.method == 'POST' and form.is_valid():
         dashboard = form.save(commit=False)
@@ -278,7 +289,7 @@ def access(request, pk, management=False):
 @require_POST
 @transaction.atomic
 def delete(request, pk, management=False):
-    dashboard = get_dashboard(request, pk, edit=True, lock=True)
+    dashboard = get_dashboard(request, pk, creator=True, lock=True)
     if dashboard.is_default:
         raise PermissionDenied('Pulpitu domyślnego nie można usunąć. Możesz zmienić jego gadżety i układ.')
     dashboard_pk = dashboard.pk

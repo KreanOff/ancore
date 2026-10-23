@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models, router, transaction
+from django.utils import timezone
 from core.emoji import emoji_payload, validate_emoji
 
 from .identifiers import SLUG_MAX_LENGTH, unique_dashboard_slug
@@ -83,7 +84,7 @@ class Dashboard(models.Model):
                                      related_name='scoped_dashboards', verbose_name='Zapisany filtr')
     refresh_interval = models.PositiveSmallIntegerField('Automatyczne odświeżanie', choices=RefreshInterval.choices, default=RefreshInterval.OFF)
     visibility = models.CharField('Widoczność', max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
-    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='shared_dashboards')
+    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, through='DashboardMembership', blank=True, related_name='shared_dashboards')
     favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_dashboards')
     layout = models.CharField('Układ', max_length=6, choices=Layout.choices, default=Layout.EQUAL)
     revision = models.PositiveIntegerField(default=0)
@@ -131,6 +132,25 @@ class Dashboard(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class DashboardMembership(models.Model):
+    class Role(models.TextChoices):
+        ADMIN = 'admin', 'Administrator'
+        MEMBER = 'member', 'Członek'
+        OBSERVER = 'observer', 'Obserwator'
+
+    dashboard = models.ForeignKey(Dashboard, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_memberships')
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.OBSERVER, db_default=Role.OBSERVER)
+    created_at = models.DateTimeField(default=timezone.now, null=True, blank=True)
+
+    class Meta:
+        # Retain the existing M2M table, relation IDs and unique pair constraint.
+        db_table = 'dashboard_dashboard_shared_with'
+        unique_together = [('dashboard', 'user')]
+        constraints = [models.CheckConstraint(condition=models.Q(role__in=['admin', 'member', 'observer']),
+                                              name='dashboard_member_role_valid')]
 
 
 class DashboardGadget(models.Model):

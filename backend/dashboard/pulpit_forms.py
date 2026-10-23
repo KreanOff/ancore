@@ -49,7 +49,7 @@ class DashboardAccessForm(forms.ModelForm):
         self.fields['shared_with'].queryset = workplace_people(request.workplace, request.user).exclude(pk=request.user.pk)
         self.fields['shared_with'].label_from_instance = lambda user: user.get_full_name() or user.email
         self.fields['shared_with'].help_text = 'Wybierz osoby dla widoczności „Wybrane osoby”. Dostęp do danych nadal zależy od ich uprawnień.'
-        self.fields['visibility'].help_text = 'Tylko twórca może zmieniać pulpit i jego gadżety.'
+        self.fields['visibility'].help_text = 'Nowe osoby otrzymają dostęp obserwatora. Role zmienisz w zakładce „Udostępnienia”.'
         style_fields(self)
 
     def clean(self):
@@ -134,12 +134,30 @@ class DashboardForm(DashboardPreferencesMixin, DashboardAccessForm):
 class DashboardSettingsForm(DashboardPreferencesMixin, forms.ModelForm):
     class Meta:
         model = Dashboard
-        fields = ['name', 'description', *PREFERENCE_FIELDS]
-        widgets = {**PREFERENCE_WIDGETS, 'description': forms.Textarea(attrs={'rows': 3})}
+        fields = ['name', 'description', *PREFERENCE_FIELDS, 'visibility']
+        widgets = {**PREFERENCE_WIDGETS, 'description': forms.Textarea(attrs={'rows': 3}),
+                   'visibility': DashboardVisibilitySelect}
 
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
         configure_preferences(self, request)
+        self.fields['visibility'].choices = [
+            (Dashboard.Visibility.PRIVATE, 'Prywatny — wybrane osoby'),
+            (Dashboard.Visibility.WORKSPACE, 'Cały Workspace'),
+        ]
+        self.fields['visibility'].required = False
+        self.fields['visibility'].help_text = 'Osobami i rolami zarządzaj w zakładce „Udostępnienia”. Widoczność zmienia właściciel pulpitu.'
+        self.fields['visibility'].disabled = self.instance.created_by_id != request.user.pk
+        if self.instance.visibility == Dashboard.Visibility.SELECTED:
+            self.initial['visibility'] = Dashboard.Visibility.PRIVATE
+
+    def clean_visibility(self):
+        value = self.cleaned_data.get('visibility')
+        if not value:
+            return self.instance.visibility
+        if value == Dashboard.Visibility.PRIVATE and self.instance.shared_with.exists():
+            return Dashboard.Visibility.SELECTED
+        return value
 
 
 class GadgetKindSelect(forms.Select):

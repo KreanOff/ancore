@@ -18,6 +18,15 @@ nowe wybory zapisują Unicode, a wcześniejsze identyfikatory są obsługiwane
 jako aliasy. Migracja zmienia wyłącznie stan Django (`sqlmigrate`: no-op),
 bez SQL zmieniającego tabelę i bez przepisywania rekordów.
 
+`dashboard.0005_dashboard_membership_roles` dodaje role udostępnienia Pulpitów.
+`DashboardMembership` przejmuje istniejącą tabelę `dashboard_dashboard_shared_with`
+bez jej odtwarzania ani kopiowania relacji. Zachowane są PK, odbiorcy i unikalność
+pary pulpit/osoba. Migracja dodaje rolę `observer` wszystkim dotychczasowym
+odbiorcom; data ich dołączenia pozostaje nieznana (`NULL`). Nowe udostępnienia
+otrzymują datę i wybraną rolę. [Wzorzec migracji Django](https://docs.djangoproject.com/en/6.0/howto/writing-migrations/#changing-a-manytomanyfield-to-use-a-through-model).
+Po backupie zastosuj `manage.py migrate`. Cofnięcie zachowuje odbiorców,
+ale usuwa dodatkowe kolumny ról i dat.
+
 ## Zakres
 
 Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele

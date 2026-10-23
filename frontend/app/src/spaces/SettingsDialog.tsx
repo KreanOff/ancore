@@ -12,8 +12,8 @@ import type { DetailData } from './types';
 
 type Tab = 'main' | 'members' | 'configuration';
 const tabs: { key: Tab; label: string; icon: string }[] = [
-  { key: 'main', label: 'Główna', icon: 'settings' },
-  { key: 'members', label: 'Członkowie', icon: 'users' },
+  { key: 'main', label: 'Ustawienia', icon: 'settings' },
+  { key: 'members', label: 'Udostępnienia', icon: 'users' },
   { key: 'configuration', label: 'Statusy, typy i pola', icon: 'list-checks' },
 ];
 
@@ -323,7 +323,7 @@ export default function SettingsDialog({
                   {data.space.visibility === 'public' ? (
                     <p className="workplace-team__hint">
                       Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom,
-                      zapisz widoczność „Prywatna” w zakładce „Główna”.
+                      zapisz widoczność „Prywatna” w zakładce „Ustawienia”.
                     </p>
                   ) : null}
                   <Members

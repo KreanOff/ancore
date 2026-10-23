@@ -40,6 +40,26 @@ samo przypisanie nie nadaje dostępu. Odebranie członkostwa odbiera dostęp tak
 do przypisanych zasobów. Dawne przypisanie pozostaje w ewidencji do edycji,
 podczas której formularz wymaga wyboru aktywnej osoby lub wyczyszczenia przypisania.
 
+## Role Pulpitów
+
+Role `DashboardMembership` dotyczą konkretnego Pulpitu, niezależnie od roli
+Workspace. Właścicielem Pulpitu pozostaje jego `created_by`; `owner` nadal
+wyznacza właściciela danych Workspace. Członkostwo Workspace jest wymagane
+dla każdej roli. Widoczność całego Workspace daje pozostałym osobom tylko odczyt.
+
+| Rola Pulpitu | Uprawnienia |
+| --- | --- |
+| Właściciel | Pełna edycja, wszystkie role, widoczność i usunięcie zwykłego Pulpitu; chroniony wiersz bez zmiany właściciela |
+| Administrator | Gadżety, układ, ustawienia oraz udostępnianie i zmiana/odebranie ról członka i obserwatora; bez operacji na administratorach i właścicielu, bez zmiany widoczności ani usuwania Pulpitu |
+| Członek | Dodawanie, konfiguracja, usuwanie i układanie gadżetów; bez ustawień Pulpitu i zarządzania dostępem |
+| Obserwator | Wyłącznie oglądanie Pulpitu i danych, do których ma własny dostęp |
+
+Obniżenie roli i odebranie dostępu obowiązuje przy następnym żądaniu, również
+w już otwartym edytorze. Usunięcie lub wyłączenie członka Workspace usuwa
+jego udostępnienia Pulpitów; ponowne dołączenie nie przywraca dawnych ról.
+Dotychczasowi odbiorcy pozostają obserwatorami po migracji. Pulpitu domyślnego
+nadal nie można usunąć. Role nie rozszerzają dostępu do Przestrzeni ani Filtrów.
+
 ## Widoczność projektów Zadań
 
 Dawne projekty usunięto. Bieżący zakres wyznaczają `SpaceMembership` i `spaces.access`.

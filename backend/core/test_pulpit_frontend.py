@@ -126,7 +126,7 @@ class ReactPulpitTests(TestCase):
         prefix = self.path(f'manage/{self.dashboard.slug}/')
         settings = self.get(prefix + 'edit/?q=Plan&page=2').json()['data']
         self.assertEqual([row['name'] for row in settings['form']['fields']],
-                         ['name', 'description', 'icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval'])
+                         ['name', 'description', 'icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval', 'visibility'])
         self.assertIn('page=2', settings['return_url'])
         access = self.get(prefix + 'access/').json()['data']
         self.assertEqual([row['name'] for row in access['form']['fields']], ['visibility', 'shared_with'])
@@ -153,7 +153,8 @@ class ReactPulpitTests(TestCase):
                     with self.subTest(target=target):
                         page = self.get(target).json()
                         tabs = page['data']['settings_tabs']
-                        self.assertEqual([tab['key'] for tab in tabs], ['gadgets', 'access', 'settings'])
+                        self.assertEqual([tab['key'] for tab in tabs], ['gadgets', 'settings', 'access'])
+                        self.assertEqual([tab['label'] for tab in tabs], ['Gadżety i układ', 'Ustawienia', 'Udostępnienia'])
                         self.assertEqual([tab['key'] for tab in tabs if tab['active']], [active])
                         for tab in tabs:
                             self.assertTrue(tab['url'].startswith(self.path('manage/' if management else '')))

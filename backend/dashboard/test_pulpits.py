@@ -271,10 +271,11 @@ class PulpitTests(TestCase):
                         self.assertEqual(response.status_code, 200)
                         self.assertNotContains(response, 'Kopiuj pulpit')
                         self.assertNotContains(response, '/copy/')
+                        self.assertNotContains(response, '<span>Dostępy</span>', html=True)
                         if suffix == f'{dashboard.slug}/':
                             self.assertContains(response, 'data-pulpit-refresh')
                             if viewer == self.owner:
-                                for action in ['Gadżety i układ', 'Dostępy', 'Ustawienia', 'Usuń pulpit']:
+                                for action in ['Gadżety i układ', 'Ustawienia', 'Usuń pulpit']:
                                     self.assertContains(response, action)
                             else:
                                 self.assertNotContains(response, f'id="pulpit-actions-{dashboard.pk}"')

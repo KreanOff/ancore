@@ -1,12 +1,12 @@
 """Saved dashboards; sharing their configuration never grants data access."""
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, OuterRef, Q, Subquery
 
 from spaces.services import visible_items, visible_spaces
 from spaces.access import visible_to
 from spaces.models import SpaceTask
 from workplaces.services import scoped_workplace_app_path, workspace_owner
-from .models import Dashboard, DashboardGadget
+from .models import Dashboard, DashboardGadget, DashboardMembership
 from .filters import visible_filters
 from .filter_search import QueryError, apply_query
 
@@ -30,7 +30,27 @@ def app_url(request, suffix=''):
 def visible_dashboards(request):
     return Dashboard.objects.filter(owner=workspace_owner(request), workplace=request.workplace).filter(
         Q(created_by=request.user) | Q(visibility='workspace') | Q(visibility='selected', shared_with=request.user),
-    ).distinct()
+    ).annotate(_viewer_role=Subquery(DashboardMembership.objects.filter(
+        dashboard_id=OuterRef('pk'), user=request.user).values('role')[:1])).distinct()
+
+
+def dashboard_role(request, dashboard):
+    if dashboard.created_by_id == request.user.pk:
+        return 'owner'
+    if dashboard.visibility == Dashboard.Visibility.SELECTED:
+        role = getattr(dashboard, '_viewer_role', None)
+        if role is None:
+            role = dashboard.memberships.filter(user=request.user).values_list('role', flat=True).first()
+        return role if role in DashboardMembership.Role.values else ''
+    return 'observer' if dashboard.visibility == Dashboard.Visibility.WORKSPACE else ''
+
+
+def can_edit_dashboard(request, dashboard):
+    return dashboard_role(request, dashboard) in {'owner', 'admin', 'member'}
+
+
+def can_manage_dashboard(request, dashboard):
+    return dashboard_role(request, dashboard) in {'owner', 'admin'}
 
 
 @transaction.atomic
@@ -57,7 +77,9 @@ def decorate_dashboard(request, dashboard):
     dashboard.gadgets_url = app_url(request, f'{dashboard.slug}/gadgets/')
     dashboard.delete_url = app_url(request, f'{dashboard.slug}/delete/')
     dashboard.favorite_url = app_url(request, f'{dashboard.slug}/favorite/')
-    dashboard.can_edit = dashboard.created_by_id == request.user.pk
+    dashboard.can_edit = can_edit_dashboard(request, dashboard)
+    dashboard.can_manage = can_manage_dashboard(request, dashboard)
+    dashboard.can_delete = dashboard.created_by_id == request.user.pk and not dashboard.is_default
     if not hasattr(dashboard, 'is_favorite'):
         dashboard.is_favorite = dashboard.favorited_by.filter(pk=request.user.pk).exists()
     return dashboard

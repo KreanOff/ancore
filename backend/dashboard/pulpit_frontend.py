@@ -12,7 +12,7 @@ def dashboard_payload(item):
         'visibility': item.visibility, 'visibility_label': item.get_visibility_display(),
         'layout': item.layout, 'revision': item.revision, 'is_default': item.is_default,
         'icon': item.icon, 'emoji': item.icon_emoji, 'emoji_art': item.icon_emoji_art, 'refresh_interval': item.refresh_interval,
-        'editable': item.can_edit, 'favorite': item.is_favorite,
+        'editable': item.can_edit, 'manageable': item.can_manage, 'deletable': item.can_delete, 'favorite': item.is_favorite,
         'gadget_count': getattr(item, 'gadget_count', 0),
         **{key: getattr(item, key) for key in ('url', 'edit_url', 'access_url', 'gadgets_url', 'delete_url', 'favorite_url')},
     }
@@ -83,9 +83,11 @@ def detail_page(request, context):
 
 
 def edit_page(request, context):
+    from .pulpit_sharing import payload, team_url
     dashboard = context['dashboard']
     return {'type': 'pulpit-edit', 'title': f'{context["section_title"]} — {dashboard.name}', 'data': {
         'dashboard': dashboard_payload(dashboard), 'section': next(row['key'] for row in context['pulpit_editor_navigation'] if row['active']),
         'form': pulpit_form_payload(context['form']), 'action': context['action'], 'return_url': context['return_url'],
         'settings_tabs': context['pulpit_editor_navigation'],
+        'team': payload(request, dashboard), 'team_url': team_url(request, dashboard),
     }}

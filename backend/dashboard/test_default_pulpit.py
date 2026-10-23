@@ -83,7 +83,7 @@ class DefaultPulpitTests(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['editing_gadgets'])
             self.assertEqual([entry['label'] for entry in response.context['pulpit_editor_navigation']],
-                             ['Gadżety i układ', 'Dostępy', 'Ustawienia'])
+                         ['Gadżety i układ', 'Ustawienia', 'Udostępnienia'])
             dashboard.refresh_from_db()
             response = self.client.post(root + 'gadgets/quick-add/', json.dumps({
                 'kind': 'progress', 'revision': dashboard.revision,

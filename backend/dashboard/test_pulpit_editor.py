@@ -50,7 +50,7 @@ class PulpitEditorTests(TestCase):
                         self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
                         self.assertNotContains(response, 'data-sidebar-navigation="pulpit-editor" hidden')
                         sections = response.context['pulpit_editor_navigation']
-                        self.assertEqual([entry['label'] for entry in sections], ['Gadżety i układ', 'Dostępy', 'Ustawienia'])
+                        self.assertEqual([entry['label'] for entry in sections], ['Gadżety i układ', 'Ustawienia', 'Udostępnienia'])
                         self.assertEqual([entry['key'] for entry in sections if entry['active']], [key])
                         self.assertContains(response, f'aria-current="page" data-pulpit-editor-section="{key}"')
                         self.assertNotContains(response, 'notifications-tabs work-tabs pulpit-tabs')
@@ -62,7 +62,7 @@ class PulpitEditorTests(TestCase):
                 root = prefix + ('manage/' if management else '') + f'{self.dashboard.slug}/'
                 response = self.client.get(root + 'edit/')
                 self.assertEqual(list(response.context['form'].fields),
-                                 ['name', 'description', 'icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval'])
+                                 ['name', 'description', 'icon', 'data_scope', 'scope_spaces', 'scope_filter', 'refresh_interval', 'visibility'])
                 response = self.client.get(root + 'access/')
                 self.assertEqual(list(response.context['form'].fields), ['visibility', 'shared_with'])
                 self.dashboard.refresh_from_db()
@@ -74,7 +74,7 @@ class PulpitEditorTests(TestCase):
                 self.assertEqual((self.dashboard.name, self.dashboard.layout, self.dashboard.visibility), ('Przegląd zespołu', 'three', 'selected'))
                 self.assertEqual(list(self.dashboard.shared_with.all()), [self.member])
                 response = self.client.post(root + 'edit/', {'name': 'Przegląd zespołu', 'description': 'Nowy opis',
-                                                            'visibility': 'workspace', 'shared_with': [self.outsider.pk], 'layout': 'single'})
+                                                            'shared_with': [self.outsider.pk], 'layout': 'single'})
                 self.assertEqual(response.status_code, 302)
                 self.dashboard.refresh_from_db()
                 self.gadget.refresh_from_db()
@@ -137,7 +137,7 @@ class PulpitEditorTests(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.context['return_url'], scoped + 'manage/' + filters)
                 self.assertEqual([entry['url'] for entry in response.context['pulpit_editor_navigation']],
-                                 [scoped + f'manage/{self.dashboard.slug}/' + section + filters for section in ['gadgets/', 'access/', 'edit/']])
+                                 [scoped + f'manage/{self.dashboard.slug}/' + section + filters for section in ['gadgets/', 'edit/', 'access/']])
                 if suffix == 'access/':
                     saved = self.client.post(url, {'visibility': 'workspace'}, HTTP_X_PULPIT_MODAL='true')
                     self.assertEqual(saved.json(), {'saved': True, 'url': scoped + 'manage/' + filters})
