@@ -34,8 +34,8 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     --sidebar-icon-size: var(--app-topbar-icon-size);
     --sidebar-avatar-inset: 0px;
 
-    width: var(--app-topbar-workspace-width);
-    max-width: calc(var(--sidebar-width) - var(--app-topbar-control-height) - 3rem);
+    width: auto;
+    max-width: 100%;
     min-width: 0;
 }
 

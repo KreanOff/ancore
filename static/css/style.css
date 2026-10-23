@@ -3,7 +3,7 @@
 @import 'base/variables.css?v=20261017-page-padding-15px';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261017-border-visibility-3pct';
-@import 'layout/main.css?v=20261017-border-visibility-3pct';
+@import 'layout/main.css?v=20261023-topbar-workspace-width';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261017-border-visibility-3pct';
 @import 'components/buttons.css?v=20261017-collection-favorite-stars';
@@ -489,6 +489,7 @@ body :where(input, textarea)::placeholder {
 .sidebar,
 .sidebar-collapsed-flyout {
     --sidebar-icon-size: 18px;
+    --sidebar-subnav-icon-size: 20px;
     --sidebar-space-selection: var(--system-accent);
     --sidebar-space-selection-bg: #e8ebfa;
     --sidebar-space-focus: var(--sidebar-space-selection);
@@ -1547,18 +1548,20 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     white-space: nowrap;
 }
 
-.sidebar-subnav-icon {
-    width: var(--sidebar-icon-size);
-    height: var(--sidebar-icon-size);
-    flex: 0 0 var(--sidebar-icon-size);
+.sidebar-subnav-icon,
+.sidebar-collapsed-flyout__link > svg:not(.sidebar-spaces-more__chevron) {
+    width: var(--sidebar-subnav-icon-size);
+    height: var(--sidebar-subnav-icon-size);
+    flex: 0 0 var(--sidebar-subnav-icon-size);
     display: inline-grid;
     place-items: center;
     color: #656b75;
+    font-size: var(--sidebar-subnav-icon-size);
 }
 
 .sidebar-subnav-icon svg {
-    width: var(--sidebar-icon-size);
-    height: var(--sidebar-icon-size);
+    width: var(--sidebar-subnav-icon-size);
+    height: var(--sidebar-subnav-icon-size);
     stroke-width: 1.8;
 }
 
@@ -1624,13 +1627,6 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 .sidebar .sidebar-subnav--spaces .sidebar-spaces-more > span,
 .sidebar-collapsed-flyout :is([data-sidebar-space-link], [data-sidebar-pulpit-link], [data-sidebar-filter-link]) > span:not(.sidebar-subnav-icon) {
     font-weight: 600 !important;
-}
-
-.sidebar-subnav--spaces .space-avatar.sidebar-subnav-icon,
-.sidebar-subnav--spaces .sidebar-spaces-more .sidebar-subnav-icon {
-    width: 20px;
-    height: 20px;
-    flex-basis: 20px;
 }
 
 .sidebar .sidebar-space-row .sidebar-subnav-link {
