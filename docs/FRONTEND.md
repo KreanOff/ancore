@@ -7,7 +7,7 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
 - **Zasoby:** katalog, filtry, sortowanie, paginacja, kolumny i pełne CRUD.
 - **Kalendarz:** miesiąc/tydzień/dzień/rok, plan, filtry, wydarzenia i terminy zadań.
 - **Dla ciebie** oraz centrum **Ustawień**.
-- **Przestrzenie:** katalog i zarządzanie, kreator szablonu, formularze, awatary,
+- **Przestrzenie:** katalog, kreator szablonu, formularze, awatary,
   podsumowanie, lista zadań, tablica, backlog, sprinty, oś czasu, raporty,
   ustawienia dostępu i konfiguracja statusów/typów/pól.
 - **Szczegóły zadania Przestrzeni:** właściwości z automatycznym zapisem,
@@ -16,9 +16,9 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
 - **Zespoły:** katalog, szczegóły, formularz i członkostwa.
 - **Tagi Przestrzeni:** katalog, wyszukiwanie, filtry, sortowanie, paginacja,
   układ/szerokości kolumn, CRUD, informacje, notatki i zbiorcze usuwanie.
-- **Filtry zadań:** wyszukiwanie podstawowe i zaawansowane, katalog i zarządzanie,
+- **Filtry zadań:** wyszukiwanie podstawowe i zaawansowane, katalog,
   zapis/edycja/kopia definicji, osobiste gwiazdki i udostępnianie.
-- **Pulpity:** katalog i zarządzanie, pulpit domyślny, przegląd, ustawienia,
+- **Pulpity:** katalog, pulpit domyślny, przegląd, ustawienia,
   dostępy oraz edytor gadżetów z katalogiem, pięcioma układami i przeciąganiem.
 - **Dysk i Dokumenty:** listy/kafelki, filtry i wyszukiwanie, formularze, upload,
   podglądy, przenoszenie, gwiazdki, kosz, szablony, edytor tekstowy Ancore
@@ -55,7 +55,7 @@ sesję bez nowego systemu tokenów ani konfiguracji CORS.
 zadań w jednym `shared/Modal`. Formularze są ładowane przy pierwszym otwarciu
 sekcji, a ukryte panele pozostają zamontowane. `forms/EmbeddedForm` współdzieli
 pola, upload, walidację i zapis z `FormDialog`. `SpaceForm.inline_avatar` udostępnia
-w „Główna” ten sam `shared/AvatarControl` co Profil, z wariantem `space`, nazwami
+w „Ustawienia” ten sam `shared/AvatarControl` co Profil, z wariantem `space`, nazwami
 pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany awatar
 i kadr należą do formularza głównego także po przeniesieniu pickera nad modal.
 Zapis łączy pola Przestrzeni i awatar w jednej transakcji; `ConfigurationForm` zachowuje
@@ -67,7 +67,7 @@ Serializer formularza edycji/awatara/członków zwraca opcjonalne `space_setting
 `FormDialog` ładuje okno ustawień dynamicznie wyłącznie dla tego kontraktu;
 pozostali odbiorcy zachowują standardową powłokę. `?view=settings` i bezpośredni
 URL konfiguracji także otwierają to okno. Wejście `avatar/` otwiera picker
-nad „Główna”, zamiast osobnej zakładki. Lista członków zawiera serwerowe
+nad „Ustawienia”, zamiast osobnej zakładki. Lista członków w „Udostępnienia” zawiera serwerowe
 `can_remove`, odpowiadające regułom właściciela i administratora Przestrzeni.
 
 ## Animacje zadań Przestrzeni
@@ -286,20 +286,37 @@ Pulpity używają `backend/dashboard/pulpit_frontend.py` i `src/pulpits/`. Odczy
 udostępnia liczniki i statusy bieżących `SpaceTask`, bez fragmentu HTML.
 Niedostępne źródło zwraca wyłącznie metadane gadżetu i `unavailable`, bez nazwy
 prywatnej Przestrzeni ani jej liczników. Udostępnienie pulpitu nie rozszerza ACL
-danych. Edycja nadal wymaga autorstwa pulpitu, niezależnie od roli Workspace.
+danych. Edycja gadżetów wymaga roli właściciela, administratora lub członka
+konkretnego Pulpitu, niezależnie od roli Workspace.
 Pulpit domyślny inicjalizuje oryginalny widok Django; usunięte gadżety nie są
 odtwarzane podczas kolejnego wejścia.
 
 `src/pulpits/DetailPage.tsx` renderuje edycję gadżetów i układu bezpośrednio
 w głównej treści pulpitu. „Edytuj pulpit” oraz „Gadżety i układ” przechodzą
 do tego widoku przez nawigację JSON; bezpośrednie adresy działają tak samo.
-`src/pulpits/SettingsDialog.tsx` zawiera formularze dostępów i ustawień
-w dużym wspólnym `Modal` z dwiema zakładkami. Serializer przekazuje
+`src/pulpits/SettingsDialog.tsx` zawiera tabelę dostępów i formularz ustawień
+w dużym wspólnym `Modal` z zakładkami „Ustawienia” i „Udostępnienia”, w tej kolejności. Serializer przekazuje
 `settings_tabs` z autoryzowanymi adresami i zachowanymi filtrami; dialog
 pomija pozycję gadżetów. Powłoka przechwytuje wyłącznie linki ustawień
 i dostępów. Ich bezpośrednie URL korzystają z `SettingsPage`.
-Ukryte formularze zachowują szkice; wspólny `EmbeddedForm` obsługuje zapis,
-błędy i fokus. Po zapisie okno pozostaje otwarte.
+Zakładka „Udostępnienia” używa `shared/Members`, `shared/SharingDialog` oraz
+pickera Workspace, tak jak Przestrzenie. `pulpit_sharing.py` obsługuje
+zwykłe/scoped `dashboards/<slug>/team/` i `team/candidates/`, także przez API strony.
+Serializer przekazuje `team` i `team_url`; tabela odświeża się po każdej operacji,
+bez odmontowania szkicu ustawień. Wspólny `EmbeddedForm` obsługuje zapis,
+błędy i fokus ustawień, w tym widoczności. Prywatny pulpit z odbiorcami zachowuje
+wewnętrzną widoczność `selected`; pierwszy odbiorca ją ustawia, a usunięcie ostatniego
+przywraca `private`. Zmiana na Workspace usuwa indywidualne udostępnienia.
+Operacje blokują pulpit i ponownie weryfikują rolę oraz aktywne osoby Workspace.
+`DashboardMembership` jest jawnym modelem istniejącej relacji `shared_with`;
+migracja zachowuje dawnych odbiorców jako obserwatorów. Tabela i `SharingDialog`
+obsługują zmianę roli. Administrator zarządza członkami i obserwatorami,
+bez promowania administratorów i operacji na innych administratorach lub właścicielu.
+Kontrakt `editable`/`manageable`/`deletable` rozdziela menu gadżetów, ustawień
+i usuwania także w powłoce i szablonach. Widoczność i usunięcie Pulpitu są
+zastrzeżone dla właściciela. Źródła danych nadal stosują uprawnienia oglądającego.
+Po zapisie okno pozostaje otwarte. Bezpośrednio otwarte okno odmontowuje się przed
+nawigacją, także po potwierdzeniu odrzucenia szkicu, aby uniknąć ponownego zamknięcia.
 Zamknięcie chroni wszystkie szkice i po zmianie odświeża stronę w tle.
 Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego
 nad edytorem; zapis wraca do siatki z aktualną rewizją.

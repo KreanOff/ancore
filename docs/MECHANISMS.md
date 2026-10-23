@@ -714,10 +714,14 @@ więc wycofane `groups/` nadal zwraca 404 dla GET i POST. Usunięcie unieważnia
 `Dashboard.owner` jest właścicielem Workspace z `workspace_owner(request)`,
 a `created_by` faktycznym twórcą. Katalog i każdy bezpośredni endpoint najpierw
 ograniczają właściciela i aktywny Workspace, następnie widoczność pulpitu.
-Osobista gwiazdka nie nadaje dostępu. Tylko twórca może edytować
-konfigurację, usuwać pulpit oraz zarządzać gadżetami. Formularz udostępniania
+Osobista gwiazdka nie nadaje dostępu. `DashboardMembership` zapisuje rolę w tej samej
+tabeli co dotychczasowe `shared_with`. Właściciel, administrator i członek edytują
+gadżety; właściciel i administrator zarządzają ustawieniami i niższymi rolami.
+Widoczność i usunięcie Pulpitu pozostają przy właścicielu. Formularz udostępniania
 wybiera aktywne osoby obecnego Workspace; udostępnienie jest natychmiastowe,
-bez zaproszeń, a pozostali użytkownicy mają tylko odczyt.
+bez zaproszeń. Obserwator i dostęp odziedziczony z Workspace mają tylko odczyt.
+Administrator nie promuje ani nie zmienia innych administratorów i właściciela.
+Zwykłe, scoped i starsze adresy korzystają z tych samych kontroli ról.
 
 Listy, liczniki, historia i gwiazdki ponownie sprawdzają dostęp;
 cofnięcie udostępnienia ukrywa pulpit również w menu.
@@ -742,27 +746,29 @@ Gwiazdka z menu korzysta z tego samego endpointu co katalog; nagłówek
 `X-Pulpit-Navigation` zwraca JSON do odświeżenia aktualnego ekranu.
 Fallback formularza sprawdza lokalny adres `next` przed przekierowaniem.
 
-`management_context` zawęża `visible_dashboards` do `created_by=request.user`.
-Nowy katalog nie rozszerza prawa edycji; bezpośrednie endpointy nadal wymagają
-widoczności i twórcy. Trasy `manage/create/` i `manage/<slug>/edit|access|delete/`
-korzystają z tych samych operacji, z jawnym parametrem `management=True`.
-`management_url` zachowuje wyłącznie parametry q, visibility, favorite i page,
-budując docelowy adres w aktywnym Workspace. Bezpośrednie wejście oraz błędy
-tworzenia renderują `manage.html` pod modalem. Zapis/usunięcie wraca do katalogu.
-Ostatnia zmiana pochodzi z `Dashboard.updated_at`, nie z aktywności zadań.
-Tryb `pulpits-management` wyświetla własny wariant `management_sidebar.html`.
-Katalog zarządzania zawsze odsyła do Ustawień (`#workspace`). Mechanizm
-źródła powrotu nadal obsługuje osobny edytor pulpitu, zachowując adres
-katalogu, filtry i przewinięcie.
+Dawny katalog „Zarządzaj pulpitami” jest usunięty. GET `manage/` przekierowuje
+na katalog „Pulpity” w aktywnym Workspace; API strony i nawigacji zwraca ten sam
+adres w polu `redirect`. Menu oraz Ustawienia nie zawierają tego wejścia.
+Zwykły katalog nadal korzysta z `visible_dashboards`, a edycja wymaga odpowiedniej roli Pulpitu.
+Trasy `manage/create/` i `manage/<slug>/edit|access|delete/` pozostają zgodnymi
+adresami istniejących operacji. `management_url` zachowuje parametry q,
+visibility, favorite i page; pusty sufiks kieruje już do zwykłego katalogu.
+Bezpośrednie wejście i błędy tworzenia pokazują modal nad `index.html`.
+Dawny parametr gwiazdki katalogu jest ignorowany. Zapis/usunięcie wraca
+na katalog, bez osobnego trybu menu `pulpits-management`.
 
-Edytor konkretnego pulpitu ma osobny tryb `pulpit-editor`; wejście z nazwy
-w zarządzaniu otwiera gadżety. `editor_navigation_context` buduje jego trzy
+Edytor konkretnego pulpitu ma osobny tryb zgodności `pulpit-editor`;
+powłoka React zachowuje zwykłe menu Workspace także dla starych adresów.
+`editor_navigation_context` buduje jego trzy
 pozycje i powrót z zachowaniem filtrów. `DashboardSettingsForm` zapisuje tylko
-nazwę/opis, a `DashboardAccessForm` widoczność/udostępnienie w `access/`.
+nazwę/opis, parametry i widoczność (tę ostatnią tylko dla właściciela),
+a starszy `DashboardAccessForm` widoczność/udostępnienie w `access/`, wyłącznie właścicielowi.
 Tworzenie używa pełnego `DashboardForm`. Kopiowanie pulpitów jest usunięte;
 dawne endpointy kopiowania zwracają 404 w obu zakresach URL, także w zarządzaniu.
-Wszystkie konfiguracje wymagają
-twórcy i zwiększają rewizję pod blokadą wiersza. Układ zmienia wyłącznie edytor
+Zapisy ponownie sprawdzają role
+i zwiększają rewizję pod blokadą wiersza. Usunięcie lub wyłączenie członkostwa
+Workspace usuwa role Pulpitów, więc ponowne dołączenie nie przywraca ich automatycznie.
+Układ zmienia wyłącznie edytor
 gadżetów przez `arrange/`. Nawigacja React aktualizuje kontekst i menu konkretnego
 pulpitu z odpowiedzi JSON, odświeżając nazwę, adresy i aktywną pozycję.
 Źródło powrotu edytora przechowuje również wcześniejsze źródło katalogu;

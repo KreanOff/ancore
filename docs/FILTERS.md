@@ -50,35 +50,32 @@ Po zamknięciu zapisanych ustawień katalog odświeża się z zachowanymi kryter
 a wejście z menu bocznego zachowuje bieżący ekran. Zwykłe/scoped adresy edycji
 oraz wariant zarządzania otwierają tę samą powłokę. Tworzenie i „Zapisz jako”
 korzystają z tych samych zakładek; po utworzeniu zamykają okno i otwierają
-zapisany filtr albo wracają do katalogu zarządzania z jego kryteriami.
+zapisany filtr albo wracają do zwykłego katalogu z jego kryteriami.
 
 Katalog „Filtry” zawiera zakładki Ulubione, Moje filtry, Udostępnione
 i Wszystkie, wyszukiwanie nazw/opisów i paginację. Gwiazdka jest osobista.
-Osobny ekran „Zarządzaj filtrami” (`/filters/manage/` i scoped odpowiednik)
-należy do Ustawień Ancore, podobnie jak zarządzanie przestrzeniami i pulpitami.
-Pokazuje wyłącznie filtry twórcy w aktywnym Workspace. Używa wspólnej tabeli
-katalogu, bez zakładek: checkboxy bieżącej strony, menu działań po lewej,
-nazwa, twórca, widoczność i opis. Zaznaczenie nie uruchamia operacji zbiorczych.
-Filtry widoczności/gwiazdki są po lewej, wyszukiwarka po prawej, a paginacja
-na dole. Nazwa otwiera duże okno ustawień; menu pozwala uruchomić
-filtr, zmienić gwiazdkę lub usunąć definicję. Tworzenie, walidacja, zapis,
-anulowanie i usuwanie zachowują katalog oraz jego kryteria. Sekcja Workspace
-w treści centrum Ustawień udostępnia wszystkie trzy strony zarządzania;
-każda ma własny minimalny pasek boczny, jak katalog Workspace. Dla Filtrów
-menu zawiera tylko „Wróć do ustawień” i aktywne „Filtry”, bez kategorii
-Ustawień oraz innych modułów.
-„Wróć do ustawień” prowadzi do kategorii Workspace.
-Menu boczne stosuje wzorzec Przestrzeni: nagłówek z plusem i menu trzech
-kropek, sekcje „Oznaczone gwiazdką” oraz „Ostatnie” i panel „Więcej filtrów”.
+Osobny ekran „Zarządzaj filtrami” jest usunięty wraz z własnym menu bocznym
+oraz odnośnikami w Ustawieniach, nagłówku Filtrów, wyszukiwaniu i zwiniętym menu.
+Stare zwykłe/scoped `/filters/manage/` przekierowują do zakładki „Moje filtry”
+w zwykłym katalogu. Poprawna jawna zakładka, wyszukiwanie i numer strony pozostają
+zachowane; dawne filtry widoczności/gwiazdki są ignorowane. API strony
+oraz nawigacji zwracają ten sam docelowy adres.
+Starsze `manage/new/` i `manage/<pk>/edit/` nadal obsługują formularze
+z dotychczasową kontrolą twórcy i Workspace. W tle jest zwykły katalog,
+a zapis/anulowanie zachowują jego zakładkę i wyszukiwanie. Adres `return_to`
+prowadzący do wycofanego katalogu jest normalizowany również przy gwiazdce
+oraz usuwaniu. Pozostałe zabezpieczenia lokalnego przekierowania są zachowane.
+Ustawienia, dostępy, osobiste gwiazdki i usuwanie pozostają w menu konkretnego
+filtra. Modele, zapisane definicje i wyniki zadań pozostają bez zmian.
+Menu boczne ma nagłówek z plusem, sekcje „Oznaczone gwiazdką” i „Ostatnie”
+oraz panel „Więcej filtrów”.
 „+” otwiera duże okno tworzenia filtra nad bieżącą stroną, również w menu
 zwiniętym. Osobny skrót „Wyszukaj zadania” nadal prowadzi do wyszukiwania.
 Skróty mają wspólny limit sześciu pozycji; ulubione mają pierwszeństwo.
 Ostatnie są układane według osobistych odwiedzin w aktywnym Workspace,
 następnie według daty utworzenia. Wiersze pozwalają zmienić gwiazdkę
 oraz otworzyć ustawienia własnego filtra. Operacja gwiazdki zachowuje
-bieżący ekran, także poza modułem Filtry. „Zarządzaj filtrami” znajduje
-się także pod trzema kropkami jako skrót do osobnej strony Ustawień,
-a „Więcej filtrów” korzysta ze wspólnego panelu
+bieżący ekran, także poza modułem Filtry. „Więcej filtrów” korzysta ze wspólnego panelu
 wyszukiwania Przestrzeni i prowadzi do wszystkich dostępnych definicji.
 Usunięcie filtra usuwa jego definicję i ulubione, zachowując zadania.
 
@@ -175,7 +172,7 @@ Adresy zwykłe i scoped są równoważne:
 [nawigacja menu](../static/js/filter-navigation.js),
 [testy](../backend/dashboard/test_filters.py).
 
-Ekrany katalogu, zarządzania i wyników oraz modale są renderowane przez
+Ekrany katalogu i wyników oraz modale są renderowane przez
 [React](../frontend/app/src/filters/SearchPage.tsx) i
 [jawny serializer](../backend/dashboard/filter_frontend.py). JSON API deleguje zapis
 do tych samych widoków i formularzy, zachowując ACL, rewizje i transakcje.

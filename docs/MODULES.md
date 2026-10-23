@@ -465,30 +465,31 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   i 6 ostatnich bez gwiazdki. Mechanizm grup pulpitów jest usunięty wraz
   z konfiguracją grup i przypisaniami; dawne zwykłe/scoped adresy zwracają 404.
   Stary parametr katalogu `group` jest ignorowany.
-  „Zarządzaj pulpitami” w menu „…” otwiera osobny katalog zarządzania pod
-  `/dashboards/manage/` i scoped adresem. Pokazuje tylko pulpity twórcy
-  w aktywnym Workspace, zgodnie z dotychczasowymi prawami edycji.
-  Jest dostępny również z sekcji Workspace w treści Ustawień Ancore, obok
-  zarządzania przestrzeniami i filtrami. Powrót prowadzi do Ustawień (Workspace).
-  Zachowuje wyszukiwanie po nazwie/opisie, filtry widoczności i gwiazdki
-  oraz paginację 30 pozycji. Lista jest wspólna
-  z „Pulpity”: checkboxy, menu po lewej oraz kolumny Pulpit, Twórca,
-  Widoczność, Gadżety i Opis. Gwiazdka jest akcją menu wiersza.
-  Nazwa otwiera duże okno ustawień wybranego pulpitu, zgodne z ustawieniami
-  Przestrzeni, z zakładkami „Dostępy” i „Ustawienia”.
+  Osobny ekran „Zarządzaj pulpitami” jest usunięty z menu i Ustawień Ancore.
+  Stare `/dashboards/manage/` i scoped adresy kierują do zwykłego katalogu
+  z zachowaniem wyszukiwania, widoczności i numeru strony. Katalog obejmuje
+  wszystkie dostępne pulpity; właściciel lub administrator otwiera „Ustawienia” z menu
+  konkretnego pulpitu w dużym oknie z zakładkami „Ustawienia” i „Udostępnienia”.
+  Menu nie zawiera osobnej pozycji „Dostępy”.
   Bieżący ekran i jego menu boczne pozostają w tle.
-  „Dostępy” zmienia widoczność i osoby z dostępem, „Ustawienia” nazwę, opis,
-  ikonę, domyślny zakres danych i automatyczne odświeżanie.
-  Każdy formularz zapisuje tylko własne pola; ustawienia nie zmieniają układu
-  ani udostępnienia. Menu katalogu, pulpitu i nawigacji otwiera to samo okno.
+  „Udostępnienia” pokazuje wspólną tabelę osób jak w Przestrzeniach, z przyciskiem
+  „Udostępnij”, wyszukiwaniem osób Workspace i potwierdzanym odebraniem dostępu.
+  Role to Administrator, Członek i Obserwator. Administrator zarządza ustawieniami
+  oraz niższymi rolami; członek edytuje gadżety i układ, a obserwator tylko ogląda.
+  Twórca pozostaje chronionym właścicielem; tylko on zmienia widoczność i usuwa Pulpit.
+  „Ustawienia” zmienia nazwę, opis, ikonę, domyślny zakres danych, automatyczne
+  odświeżanie i widoczność. Przy wyborze całego Workspace tabela pokazuje
+  dostęp odziedziczony, a indywidualne udostępnienia są usuwane.
+  Udostępnienie i odebranie zapisują się od razu, bez utraty szkicu ustawień.
+  Ustawienia nie zmieniają układu. Menu katalogu, pulpitu i nawigacji otwiera to samo okno.
   Przełączanie zakładek zachowuje szkice; zapis formularza pozostawia okno otwarte.
   Błędy walidacji zachowują szkic; wyjście z niezapisanymi zmianami wymaga
   potwierdzenia. Menu wiersza udostępnia także otwarcie i usunięcie.
   Tworzenie i usunięcie wracają do katalogu z filtrami; zamknięcie okna
   po edycji odświeża katalog z zachowaniem jego filtrów.
-  Dostępne pulpity innych twórców pozostają w zwykłym katalogu do oglądania.
+  Dostępne pulpity innych twórców pozostają w zwykłym katalogu, z akcjami zgodnymi z rolą.
   Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
-  Udostępnienie pozwala oglądać konfigurację; modyfikacje należą do twórcy.
+  Uprawnienia wynikają z roli konkretnego Pulpitu, niezależnie od roli Workspace.
   Nowy pulpit jest pusty i otrzymuje gwiazdkę twórcy; gadżety dodaje się ręcznie
   przyciskiem „Dodaj gadżet”.
   Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
@@ -501,7 +502,8 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   do edytora. Wariant `/manage/<slug>/gadgets/` zachowuje filtry zarządzania.
   Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności
   zapisuje się automatycznie, także dla pustego pulpitu; błąd lub konflikt rewizji
-  przywraca poprzedni układ i pokazuje komunikat. Dostęp do edytora ma wyłącznie twórca.
+  przywraca poprzedni układ i pokazuje komunikat. Dostęp do edytora mają właściciel,
+  administrator i członek Pulpitu; każda operacja ponownie weryfikuje rolę.
   Katalog boczny oferuje jeden rodzaj gadżetu: „Postęp pracy”, w kategorii
   Statystyki. Wyszukiwanie pomaga go znaleźć. „Dodaj” zapisuje domyślne filtry i dołącza gadżet
   do najmniej zapełnionej kolumny, pozostawiając katalog otwarty. Menu „Konfiguruj”

@@ -3,9 +3,9 @@
 ## Okno ustawień przestrzeni
 
 „Ustawienia przestrzeni” otwiera wspólne duże okno `app-modal-panel`, zgodne
-z dotychczasowym wzorcem Projektów. Zakładki „Główna”, „Członkowie”
+z dotychczasowym wzorcem Projektów. Zakładki „Ustawienia”, „Udostępnienia”
 i „Statusy, typy i pola” obejmują wszystkie dotychczasowe ustawienia. Awatar
-znajduje się w „Główna”, po lewej stronie pól, tak jak w edycji profilu.
+znajduje się w „Ustawienia”, po lewej stronie pól, tak jak w edycji profilu.
 Konfiguracja i operacje członkostwa są dostępne zgodnie z istniejącymi uprawnieniami. Osoby bez prawa zarządzania widzą podgląd i członków; publiczna
 przestrzeń pokazuje informację o dostępie przez Workspace.
 
@@ -43,7 +43,7 @@ są pod `/space/<slug>/tasks/<klucz>/`, również w adresie scoped.
 Parametr `view=list|backlog|board|timeline` zachowuje miejsce powrotu;
 zakładkę szczegółów wybiera `tab`. Stare numeryczne endpointy operacji
 `/spaces/items/<pk>/` pozostają dla zgodności.
-Edycja z zarządzania używa `/spaces/manage/<slug>/edit/`.
+Starszy adres `/spaces/manage/<slug>/edit/` nadal obsługuje edycję i wraca do katalogu Przestrzeni.
 Nazwy routingu `spaces` i `workplace_spaces` pozostają wspólne dla obu prefiksów.
 Dawne `/spaces/<pk>/` przekierowuje GET/HEAD po kontroli dostępu, zachowując
 parametry zapytania; numeryczne endpointy zapisu nadal działają dla zgodności.
@@ -75,9 +75,10 @@ ulubionych lub utracie dostępu, zachowując stan zwinięcia sekcji.
 
 Wiersz pokazuje menu „…” przy najechaniu, fokusie lub otwarciu, a na telefonie
 stale. Menu pozwala zmienić osobistą gwiazdkę i otworzyć ustawienia przestrzeni.
-„Dodaj osoby” otwiera istniejący formularz członków wyłącznie dla osób
-zarządzających prywatną przestrzenią. Publiczne przestrzenie zachowują dostęp
-poprzez Workspace; obserwatorzy nie zarządzają członkami. Stopka menu pokazuje
+Menu boczne i menu katalogu nie zawierają pozycji „Dodaj osoby”. Osobami i rolami
+zarządza się przez „Ustawienia przestrzeni” → „Udostępnienia”, zgodnie z uprawnieniami.
+Publiczne przestrzenie zachowują dostęp poprzez Workspace; obserwatorzy nie
+zarządzają członkami. Stopka menu pokazuje
 rodzaj i sposób zarządzania. Korzysta ze wspólnego `row-actions.js` oraz
 niemodalnego popovera. Akcja gwiazdki używa dotychczasowej relacji
 `Space.favorited_by` i endpointu POST; `space-navigation.js` odświeża
@@ -85,45 +86,30 @@ bieżący ekran przez `AncoreApp`, pozostawiając jego adres. Bez JavaScriptu
 formularz wraca do bezpiecznego adresu `next` z tego samego hosta. Błąd zapisu
 pokazuje powiadomienie i pozwala ponowić akcję.
 
-„Zarządzaj przestrzeniami” (`/spaces/manage/` i scoped odpowiednik) to osobny
-ekran ustawień, dostępny z menu „…” przy Przestrzeniach oraz z Ustawień Ancore.
-Główny pasek boczny pokazuje własne minimalne menu, jak katalog Workspace:
-„Wróć do ustawień” i aktywne „Przestrzenie”, pod nagłówkiem zarządzania
-przestrzeniami. Nie ma kategorii Ustawień ani innych modułów. Link powrotu
-prowadzi do sekcji Workspace w treści Ustawień. Linki trzech stron zarządzania
-pozostają w tej sekcji. Menu i aktywność aktualizują się także przy częściowej nawigacji,
-przeładowaniu i korzystaniu z historii. Workspace zachowuje własne menu zarządzania.
-Ekran zawiera wyszukiwanie po nazwie/kluczu, filtry rodzaju i sposobu zarządzania
-oraz paginację. Lista współdzieli `spaces/directory.html` z „Przestrzenie”:
-checkboxy, menu po lewej oraz kolumny Klucz, Przestrzeń, Rodzaj, Szablon, Opis
-i liczba widocznych zadań. Zachowuje te same szerokości, ikony i awatary.
-Zaznaczenie dotyczy bieżącej strony, bez operacji zbiorczych.
-Filtry są po lewej, wyszukiwarka po prawej, a pasek stron na dole panelu.
-Nazwa prowadzi do ustawień przestrzeni; menu wiersza udostępnia otwarcie,
-osobiste ulubione, edycję, ustawienia dostępu i konfigurację zadań
-(jeśli osoba może ją zmieniać). Gwiazdka zachowuje adres i filtry zarządzania.
+Osobny ekran „Zarządzaj przestrzeniami” jest usunięty wraz z wejściami
+w menu i Ustawieniach Ancore. Zwykłe oraz scoped `/spaces/manage/` przekierowują
+do katalogu „Przestrzenie”. API strony i nawigacji zwraca to samo przekierowanie.
+Zachowane są wyszukiwanie, rodzaj, zakładka i numer strony; dawny filtr sposobu
+zarządzania jest ignorowany. Katalog pokazuje dostępne przestrzenie przez
+`visible_spaces`; uprawnienia do zmiany każdej przestrzeni określa `manage_space`.
+Ustawienia, osoby i konfiguracja zadań pozostają przy konkretnej przestrzeni.
 
-`manageable_spaces` zawęża `visible_spaces` według istniejącego `manage_space`.
-Właściciel/administrator Workspace zarządza widocznymi przestrzeniami
-publicznymi; osoba odpowiedzialna również może zarządzać swoją publiczną
-przestrzenią. Prywatnymi przestrzeniami zarządza ich prywatny właściciel lub
-administrator przestrzeni. Administrator Workspace nie uzyskuje dostępu do
-nieudostępnionych prywatnych przestrzeni. Zwykłe członkostwo, obserwowanie
-i przydział wykonawcy nie dają dostępu do katalogu zarządzania.
-Właściciel/administrator Workspace ma do niego dostęp również przed
-utworzeniem pierwszej przestrzeni; pozostałe osoby muszą mieć co najmniej
-jedną przestrzeń, którą mogą zarządzać. Endpoint i formularze kontrolują
-uprawnienia niezależnie od widoczności linków.
+`manageable_spaces` nadal służy do sprawdzania, którymi widocznymi przestrzeniami
+może zarządzać użytkownik. Właściciel/administrator Workspace zarządza widocznymi
+przestrzeniami publicznymi, a osoba odpowiedzialna swoją publiczną przestrzenią.
+Prywatnymi przestrzeniami zarządza ich prywatny właściciel lub administrator
+przestrzeni. Rola Workspace nie daje dostępu do nieudostępnionych prywatnych
+przestrzeni, a przydział wykonawcy nie przyznaje prawa zarządzania.
 
-`/spaces/manage/create/` i `/spaces/manage/<pk>/edit/` używają istniejącego
-formularza oraz powłoki modalnej. Bezpośrednie wejście i błąd walidacji
-pozostawiają ekran zarządzania pod modalem; anulowanie i zapis wracają do
-niego. Tworzenie z codziennego katalogu zachowuje dotychczasowy przepływ.
-Oba katalogi korzystają z tego samego modelu `Space`.
+Starsze `/spaces/manage/create/` i `/spaces/manage/<pk lub slug>/edit/` pozostają
+zgodnymi adresami formularzy. Kontrolują dotychczasowe uprawnienia do tworzenia
+oraz zmiany konkretnej przestrzeni; bezpośrednie wejście i błędy formularza
+pokazują zwykły katalog w tle. Zapis i anulowanie wracają do niego, zachowując
+obsługiwane filtry. Modele i dane przestrzeni pozostają bez zmian.
 
 ## Tworzenie przestrzeni i wybór szablonu
 
-„Utwórz przestrzeń” w katalogu, zarządzaniu oraz plus w menu bocznym otwierają
+„Utwórz przestrzeń” w katalogu oraz plus w menu bocznym otwierają
 ten sam kreator. Pierwszy krok to ilustrowane kafelki wszystkich sześciu
 szablonów z `backend/spaces/defaults.py`: Kanban, Scrum, Zarządzanie zadaniami,
 Marketing, Rekrutacja i Obsługa zgłoszeń. Wybranie kafelka otwiera drugi krok
@@ -172,7 +158,7 @@ przechowuje stabilny identyfikator motywu, a `Space.avatar_photo` opcjonalny obr
 Zamiana wcześniejszych ikon konturowych na ilustracje zachowuje zapisane wybory
 i automatyczne przypisania; nie wymaga kolejnej migracji.
 Sam wybór awatara nie zmienia konfiguracji, zadań ani uprawnień przestrzeni.
-Bezpośredni adres `avatar/` otwiera wybór nad zakładką „Główna”.
+Bezpośredni adres `avatar/` otwiera wybór nad zakładką „Ustawienia”.
 Przesłany kadr jest walidowany przez `core.upload_validation.validate_image_crop`;
 wybór ilustracji i kadru współdzieli `SpaceAvatarForm` oraz `save_space_avatar`.
 Starszy zapis głównych ustawień bez pól awatara zachowuje dotychczasowy obraz.

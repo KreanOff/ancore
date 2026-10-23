@@ -1,5 +1,164 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Weryfikacja przed podziałem zmian na commity (23.10.2026)
+
+Na osobnej, tymczasowej bazie PostgreSQL i storage przez `scripts/run_tests.py`
+przeszły **234 testy Django** obejmujące role, migrację i udostępnianie Pulpitów,
+katalogi i wycofane ekrany zarządzania, Filtry, nawigację i kontrakty React,
+powłokę, schemat oraz udostępnianie Przestrzeni. Dostosowano trzy nieaktualne
+testy do przekierowań katalogu, kolejności zakładek i widoczności w ustawieniach.
+
+Przeszło **10 testów frontendu**, build z kontrolą TypeScript, `format:check`,
+kontrola Django, `makemigrations --check --dry-run`, kontrola indeksu kodu,
+lokalnych odnośników dokumentacji oraz `git diff --check`. Migracja
+`dashboard.0005_dashboard_membership_roles` została objęta commitem.
+Nie uruchamiano pełnego zestawu repozytorium ani nie ponawiano wcześniejszych
+prób UI w przeglądarce opisanych poniżej. Zweryfikowano też opis szerokości
+przełącznika Workspace na podstawie aktualnych reguł CSS.
+
+## Role Pulpitów (23.10.2026)
+
+Pulpity obsługują role Administrator/Członek/Obserwator przez jawny model
+`DashboardMembership` w istniejącej tabeli M2M. Migracja `dashboard.0005`
+zachowuje tabelę, identyfikatory i odbiorców, nadając dotychczasowym relacjom
+rolę obserwatora. Test migracji sprawdził przejście w obie strony na danych,
+niezmienny identyfikator tabeli oraz zapis starego procesu M2M po migracji.
+Usunięcie/wyłączenie członkostwa Workspace czyści role Pulpitów.
+Uprawnienia i wyjątki właściciela opisuje [Praca zespołowa](TEAMWORK.md#role-pulpitów).
+
+Na osobnej bazie PostgreSQL przeszło **166 testów**: role, migracja,
+udostępnianie i podstawowe mechanizmy Pulpitów, wspólne API/powłoka, schemat
+oraz udostępnianie Przestrzeni. Sprawdzono m.in. każde wejście edycji gadżetów,
+układ, ustawienia, dostęp i usuwanie, ograniczenia administratora, obniżenie roli,
+cofnięte członkostwo, prywatne źródła oraz zgodność starych formularzy i M2M.
+Przeszły też build/TypeScript, 10 testów frontendu, Prettier, kontrola Django,
+`makemigrations --check --dry-run`, SQL migracji, linki, indeks i diff.
+
+Plugin Browser był niedostępny; istniejący Playwright/Chrome na osobnej bazie
+i fikcyjnych osobach sprawdził 1440×900, 1024×900 i 390×900: nadanie i zmianę ról,
+503/ponowienie, zachowanie szkicu, uprawnienia menu, administratora bez operacji
+na właścicielu/innych administratorach, rzeczywiste dodanie gadżetu przez członka,
+odmowę zapisu w otwartym edytorze po obniżeniu roli, odebranie dostępu, reload
+i referencyjne role Przestrzeni. Brak nieoczekiwanych błędów JS i przepełnienia.
+Po kopii lokalnej bazy zastosowano migrację; stan modeli i migracji jest zgodny.
+Nie sprawdzano pełnego zestawu, Safari/Firefox ani wdrożenia produkcyjnego.
+
+## Wspólne udostępnianie Pulpitów i Przestrzeni (23.10.2026)
+
+„Udostępnienia” Pulpitu używają `shared/Members`, `shared/SharingDialog`
+i pickera Workspace, z natychmiastowym dodawaniem/odbieraniem dostępu.
+Widoczność przeniesiono do „Ustawień”; dotychczasowe relacje `shared_with`,
+odbiorcy oraz prawo edycji wyłącznie przez twórcę pozostają zachowane.
+Nie zmieniono modeli ani migracji. Naprawiono również rekurencję zamknięcia
+bezpośredniego okna po potwierdzeniu odrzucenia szkicu.
+
+Na osobnej bazie PostgreSQL przeszło 158 testów: nowe `dashboard.test_pulpit_sharing`,
+kontrakty React, parametry/adresy/nawigacja Pulpitów, udostępnianie Przestrzeni
+oraz wspólne API i powłoka. Po końcowej poprawce odświeżania nazwy i ponawiania
+operacji ponowiono 35 testów udostępniania i kontraktów. Build z TypeScriptem,
+10 testów frontendu, Prettier, kontrola Django, lokalne linki dokumentacji,
+indeks kodu i `git diff --check` przeszły.
+
+Plugin Browser był niedostępny; użyto istniejącego Playwright/Chrome, osobnej
+bazy i fikcyjnych osób. Przy 1440×1000/900, 1024×900 i 390×900 sprawdzono
+tabelę i chronionego twórcę, pustą listę odbiorców, wyszukiwanie/pusty wynik,
+wybór klawiaturą, udostępnienie i odebranie (także 503 i ponowienie), odczyt
+odbiorcy bez prawa edycji, natychmiastowe cofnięcie dostępu, widoczność Workspace,
+zachowanie szkicu, ponowne wejście/reload, Escape/fokus oraz referencyjne okno
+Przestrzeni. Nie wykryto błędów JS ani przepełnienia dokumentu. Pełnego zestawu,
+Safari i Firefoksa nie uruchamiano.
+
+## Wspólny rozmiar ikon podpunktów menu (23.10.2026)
+
+`--sidebar-subnav-icon-size: 20px` określa pole i flex-basis wszystkich ikon
+podpunktów Pulpitów, Przestrzeni i Filtrów, w tym emoji, awatarów, pulpitu
+domyślnego, wyszukiwania i „Więcej…”. Usunięto osobne nadpisania 20/21px;
+nagłówki sekcji zachowują 18px. Odświeżono wersje arkuszy w `core/base.html`.
+
+Playwright/Chrome na osobnej bazie QA przy 1440×1100 i 390×844 zmierzył
+jednakowe wymiary 12 ikon SVG/emoji/awatarów oraz sprawdził hover, aktywny
+wiersz, reload, referencyjne Zasoby, wszystkie trzy podmenu zwiniętego paska,
+menu mobilne i pierwszy render Django bez JavaScriptu. Wymiary uwzględniają
+istniejący `zoom: 0.98`; nominalne pole CSS wynosi 20×20px. Nie było błędów
+konsoli, nakładek błędów ani przepełnienia strony. Plugin Browser był
+niedostępny; użyto istniejącego Playwright. Indeks i `git diff --check` przeszły.
+Zmiana dotyczy CSS i wersji zasobów; nie ponawiano builda ani testów backendu.
+Nie sprawdzano Safari/Firefox.
+
+## Usunięcie ekranu zarządzania Filtrami (23.10.2026)
+
+Usunięto „Zarządzaj filtrami”, jego szablon, wariant tabeli i menu oraz wejścia
+w Ustawieniach, nagłówku kolekcji, wyszukiwaniu i zwiniętej nawigacji.
+Stare zwykłe/scoped `filters/manage/` kierują do „Moje filtry”; zachowują
+poprawną jawną zakładkę, wyszukiwanie i stronę, pomijając dawne parametry
+widoczności/gwiazdki. API strony i nawigacji zwraca identyczny adres.
+Starsze formularze tworzenia/edycji działają nad zwykłym katalogiem i zachowują
+kontrolę twórcy, Workspace, udostępnienia i rewizji. `return_to` wskazujący
+wycofany katalog jest normalizowany także dla gwiazdki/usuwania.
+Po wycofaniu trzech ekranów usunięto nieużywany `management_sidebar.html`.
+Katalogi Przestrzeni, Pulpitów i Filtrów oraz zarządzanie Workspace nadal działają.
+
+Przeszły 124 testy Django: `dashboard.test_filters`, `core.test_filter_frontend`,
+`core.test_frontend`, `core.test_navigation_frontend`,
+`dashboard.tests.DashboardViewTests`, `core.test_pulpit_frontend`,
+`dashboard.test_pulpit_management`, `spaces.test_management`
+i `spaces.test_navigation`. Przeszło też 10 testów frontendu, build TypeScript,
+format, kontrola Django, indeks, składnia skryptów i `git diff --check`.
+
+Playwright/Chrome na osobnej bazie QA przy 1440×1000 i 390×844 potwierdził
+przekierowania/parametry, brak skrótów w menu, zwiniętym menu, Ustawieniach
+i wyszukiwaniu, okna ustawień/dostępów i tworzenia, zakładki, pusty wynik,
+reload, częściową nawigację i Wstecz oraz referencyjne zarządzanie Workspace.
+Nie było błędów konsoli, nakładek błędów ani przepełnienia strony.
+Plugin Browser był niedostępny; użyto istniejącego Playwright bez instalacji
+zależności. Nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
+
+## Usunięcie ekranu zarządzania Przestrzeniami (23.10.2026)
+
+Usunięto osobny ekran „Zarządzaj przestrzeniami”, jego menu boczne, odnośniki
+w nagłówku Przestrzeni i Ustawieniach oraz warianty listy w React i HTML.
+Stare zwykłe/scoped `spaces/manage/` przekierowują do katalogu „Przestrzenie”,
+zachowując wyszukiwanie, rodzaj, zakładkę i numer strony. Dawny filtr sposobu
+zarządzania jest ignorowany. Starsze formularze tworzenia/edycji nadal
+sprawdzają dotychczasowe uprawnienia, a zapis i anulowanie wracają do katalogu.
+Ustawienia i konfiguracja każdej przestrzeni oraz modele i dane pozostają zachowane.
+
+Przeszło 130 testów Django: `spaces.test_management`, `spaces.test_navigation`,
+`spaces.test_urls`, `spaces.tests`, `core.test_frontend`,
+`core.test_navigation_frontend`, `core.test_space_settings_frontend`,
+`core.test_pulpit_frontend`, `dashboard.test_pulpit_management`
+i `dashboard.tests.DashboardViewTests`. Przeszło też 10 testów frontendu,
+build TypeScript, format, kontrola Django, składnia zmienionych skryptów,
+indeks i `git diff --check`.
+
+Playwright/Chrome na osobnej bazie QA przy 1440×1000 i 390×844 potwierdził
+przekierowania i parametry URL, brak odnośników w menu/Ustawieniach,
+ustawienia przestrzeni, otwarcie kreatora, zakładki, pusty wynik, reload,
+częściową nawigację i Wstecz oraz referencyjne zarządzanie Filtrami.
+Nie było błędów konsoli, nakładek błędów ani przepełnienia strony.
+Plugin Browser był niedostępny; użyto istniejącego Playwright bez instalacji
+zależności. Nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
+
+## Usunięcie ekranu zarządzania pulpitami (23.10.2026)
+
+Usunięto osobny katalog „Zarządzaj pulpitami”, jego wariant menu i odnośniki
+w menu Pulpitów oraz Ustawieniach (HTML i JSON). Stare zwykłe/scoped adresy
+`dashboards/manage/` przekierowują do katalogu „Pulpity”, zachowując parametry
+wyszukiwania, widoczności i strony. Starsze adresy edycji i POST nadal działają;
+zapis oraz anulowanie wracają do zwykłego katalogu. Usunięto nieużywany szablon,
+wariant Reacta i obsługę filtrów wycofanego ekranu. Modele i dane pozostają bez zmian.
+
+Przeszło 115 testów Django obejmujących zarządzanie, nawigację, pulpity,
+pulpit domyślny, usunięte grupy, kontrakt Reacta, powłokę i Ustawienia,
+a także 10 testów frontendu, build TypeScript, format, kontrola Django,
+indeks oraz `git diff --check`. Playwright/Chrome na izolowanej bazie QA
+przy 1440×1000 i 390×844 potwierdził stare przekierowania, brak odnośników,
+ustawienia/dostępy, edytor gadżetów, częściową nawigację i Wstecz, pusty wynik,
+reload oraz referencyjne zarządzanie Filtrami. Nie było przepełnienia strony,
+nakładek błędów ani błędów konsoli. Plugin Browser był niedostępny;
+użyto istniejącego Playwright bez instalowania zależności. Nie sprawdzano
+Safari/Firefox ani pełnego zestawu repozytorium.
+
 ## Kontrola przed zapisaniem commitów (23.10.2026)
 
 Ponowiono celowany zestaw **100 testów Django** na oddzielnej, tymczasowej

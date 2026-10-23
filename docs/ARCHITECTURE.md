@@ -216,13 +216,13 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   Workspace (`owner`) jest oddzielony od twórcy (`created_by`).
   `pulpit_navigation.py` buduje menu gwiazdek i ostatnich z aktualnie
   dostępnych pulpitów. „Pulpit domyślny” ma stałą pozycję w menu bez duplikowania
-  go w osobistych gwiazdkach i ostatnich. Jest widoczny w katalogu i zarządzaniu;
+  go w osobistych gwiazdkach i ostatnich. Jest widoczny w katalogu;
   ma te same ustawienia i dostępy, ale nie można usunąć jego rekordu.
-  `/dashboards/manage/` i scoped odpowiednik są osobnym ekranem zarządzania
-  własnymi pulpitami, ze wspólną listą katalogu Pulpitów i wewnętrznym trybem
-  `pulpits-management`, wyświetlającym własne minimalne menu zarządzania.
-  Nazwa pulpitu otwiera okno ustawień z zakładkami „Dostępy” i „Ustawienia”,
-  zgodne z dużym modalem Przestrzeni i zachowujące bieżące menu w tle.
+  Osobny ekran „Zarządzaj pulpitami” został usunięty. Dawne
+  `/dashboards/manage/` i scoped odpowiednik przekierowują do katalogu „Pulpity”,
+  zachowując wyszukiwanie, widoczność i numer strony. Menu oraz Ustawienia
+  nie pokazują wejścia do dawnego ekranu. Ustawienia i dostępy konkretnego pulpitu
+  pozostają w dużym oknie otwieranym z jego menu.
   `Dashboard.slug` jest nazwą w formie URL, przydzielaną w obrębie Workspace
   przy tworzeniu (istniejącym rekordom przez `dashboard.0012_dashboard_slugs`).
   Duplikaty dostają końcówkę `-2`, `-3`; późniejsza zmiana nazwy nie zmienia adresu.
@@ -238,7 +238,9 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   Dawne `/<pk>/` przekierowuje po kontroli dostępu, zachowując parametry URL.
   Numeryczne endpointy edycji i POST nadal działają dla zgodności.
   Osobny edytor `/<slug>/gadgets/` i `/manage/<slug>/gadgets/` używa menu wybranego pulpitu;
-  tylko twórca dodaje, konfiguruje, usuwa i układa gadżety. Bezpośrednie formularze
+  właściciel, administrator i członek dodają, konfigurują, usuwają i układają gadżety.
+  `DashboardMembership` przechowuje role w dotychczasowej tabeli udostępnień;
+  ustawienia i dostępy wymagają właściciela lub administratora, a obserwator ma odczyt. Bezpośrednie formularze
   gadżetów otwierają modal nad edytorem, a zapis wraca do edytora.
   Panel katalogu w edytorze dodaje wyłącznie „Postęp pracy” przez POST `gadgets/quick-add/`
   (również zarządzanie/scoped), zwracający HTML rzeczywistego gadżetu i rewizję.
@@ -254,17 +256,17 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   `w_` + 26 małych liter/cyfr, niezależnego od dowolnej, powtarzalnej nazwy.
   Stare segmenty zachowuje `Workplace.legacy_slug`; middleware obsługuje je
   z dotychczasowymi kontrolami członkostwa i kieruje GET/HEAD na aktualny adres.
-  Katalogi zarządzania przestrzeniami, pulpitami i filtrami mają osobne
-  minimalne menu, jak katalog Workspace: powrót do Ustawień i własną pozycję. Okna zarządzania i błędy
-  formularzy pozostają nad tym katalogiem, bez zmiany aktywnego Workspace.
+  Osobne ekrany zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
+  Ich dawne adresy prowadzą do zwykłych katalogów. Zarządzanie Workspace
+  zachowuje własny ekran i menu; formularze nie zmieniają aktywnego Workspace.
 - Moduły mają adresy bazowe `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.
 - Kalendarz ma etykietę aplikacji `planner`, lecz segment URL `calendar`.
-- `/spaces/` jest katalogiem do pracy, a `/spaces/manage/` osobnym ekranem
-  zarządzania widocznymi przestrzeniami zgodnie z rolami. Oba mają scoped
-  odpowiedniki i korzystają z tych samych modeli. Ekran zarządzania przełącza
-  główny pasek boczny na własne minimalne menu zarządzania; [szczegóły](SPACES.md).
+- `/spaces/` jest katalogiem Przestrzeni. Osobny ekran zarządzania usunięto;
+  `/spaces/manage/` i scoped odpowiednik przekierowują do katalogu, zachowując
+  wyszukiwanie, rodzaj, zakładkę i numer strony. Stare adresy tworzenia/edycji
+  nadal kontrolują uprawnienia i wracają do tego katalogu; [szczegóły](SPACES.md).
   Poszczególne przestrzenie używają `/space/<slug>/` i scoped odpowiednika.
   Segment z nazwy przydzielany jest raz w obrębie Workspace; późniejsza edycja
   nazwy zachowuje adres. Stare `/spaces/<pk>/` przekierowuje po kontroli dostępu.

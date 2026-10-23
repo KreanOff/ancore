@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 37 | 0 | 21 | 217 |
+| [backend/core](../backend/core) | 37 | 0 | 20 | 219 |
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 44 | 4 | 43 | 233 |
+| [backend/dashboard](../backend/dashboard) | 49 | 5 | 41 | 255 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
 | [backend/documents](../backend/documents) | 37 | 2 | 31 | 200 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 48 | 2 | 39 | 262 |
+| [backend/spaces](../backend/spaces) | 48 | 2 | 38 | 263 |
 
 ## 2. Modele i relacje
 
@@ -154,10 +154,21 @@ Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `creat
 | `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='created_dashboards' |
 | `scope_spaces` | `'spaces.Space'` | related_name='scoped_dashboards' |
 | `scope_filter` | `SavedTaskFilter` | on_delete=models.SET_NULL; related_name='scoped_dashboards'; null=True |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_dashboards' |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_dashboards'; through='DashboardMembership' |
 | `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_dashboards' |
 
 Metody/properties: `save`, `icon_emoji`, `icon_emoji_art`, `column_count`, `__str__`.
+
+### `DashboardMembership`
+
+Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
+
+Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `dashboard` | `Dashboard` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='dashboard_memberships' |
 
 ### `DashboardGadget`
 
@@ -867,22 +878,24 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/filter_frontend.py](../backend/dashboard/filter_frontend.py) — `filter_payload`, `filter_form_payload`, `modal_payload`, `catalog_page`, `search_page`
 - [backend/dashboard/filter_search.py](../backend/dashboard/filter_search.py) — `QueryError`, `quote`, `SearchQuery`, `Parser`, `parse_query`, `date_value`, `Compiler`, `apply_query`, `basic_query`
 - [backend/dashboard/filter_urls.py](../backend/dashboard/filter_urls.py)
-- [backend/dashboard/filter_views.py](../backend/dashboard/filter_views.py) — `get_filter`, `catalog_context`, `search_context`, `index`, `manage`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
+- [backend/dashboard/filter_views.py](../backend/dashboard/filter_views.py) — `get_filter`, `directory_url`, `catalog_context`, `search_context`, `index`, `manage`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
 - [backend/dashboard/filters.py](../backend/dashboard/filters.py) — `filter_url`, `visible_filters`, `decorate_filter`, `sidebar_filters`
 - [backend/dashboard/for_you.py](../backend/dashboard/for_you.py) — `for_you_context`
 - [backend/dashboard/frontend.py](../backend/dashboard/frontend.py) — `for_you_page`, `settings_page`
 - [backend/dashboard/identifiers.py](../backend/dashboard/identifiers.py) — `DashboardSlugConverter`, `unique_dashboard_slug`
-- [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardGadget`, `NotificationState`
+- [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardMembership`, `DashboardGadget`, `NotificationState`
 - [backend/dashboard/notification_frontend.py](../backend/dashboard/notification_frontend.py) — `notification_payload`
 - [backend/dashboard/notification_service.py](../backend/dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `configure_preferences`, `DashboardPreferencesMixin`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [backend/dashboard/pulpit_frontend.py](../backend/dashboard/pulpit_frontend.py) — `dashboard_payload`, `gadget_payload`, `pulpit_form_payload`, `modal_payload`, `directory_page`, `detail_page`, `edit_page`
 - [backend/dashboard/pulpit_navigation.py](../backend/dashboard/pulpit_navigation.py) — `sidebar_dashboards`
+- [backend/dashboard/pulpit_sharing.py](../backend/dashboard/pulpit_sharing.py) — `ShareForm`, `payload`, `team_url`, `team`, `candidates`
 - [backend/dashboard/pulpit_urls.py](../backend/dashboard/pulpit_urls.py)
-- [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `management_context`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
-- [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `dashboard_data_scope`, `gadget_data`, `detail_context`
+- [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
+- [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `dashboard_role`, `can_edit_dashboard`, `can_manage_dashboard`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `dashboard_data_scope`, `gadget_data`, `detail_context`
 - [backend/dashboard/recent.py](../backend/dashboard/recent.py) — `remember_view`, `recent_views`
 - [backend/dashboard/reminders.py](../backend/dashboard/reminders.py) — `space_reminders_for_user`
+- [backend/dashboard/signals.py](../backend/dashboard/signals.py) — `removed_workspace_member`, `disabled_workspace_member`
 - [backend/dashboard/urls.py](../backend/dashboard/urls.py)
 - [backend/dashboard/views.py](../backend/dashboard/views.py) — `global_search`, `settings`, `for_you`, `home`, `notifications`, `notification_action`
 
@@ -961,7 +974,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
-- [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
 
 ## 6. Szablony
@@ -976,7 +989,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/bootstrap.html](../backend/core/templates/core/includes/bootstrap.html)
 - [backend/core/templates/core/includes/content_skeleton.html](../backend/core/templates/core/includes/content_skeleton.html)
 - [backend/core/templates/core/includes/icon_credit.html](../backend/core/templates/core/includes/icon_credit.html)
-- [backend/core/templates/core/includes/management_sidebar.html](../backend/core/templates/core/includes/management_sidebar.html)
 - [backend/core/templates/core/includes/photo_crop_dialog.html](../backend/core/templates/core/includes/photo_crop_dialog.html)
 - [backend/core/templates/core/includes/priority_icon.html](../backend/core/templates/core/includes/priority_icon.html)
 - [backend/core/templates/core/includes/pulpit_editor_sidebar.html](../backend/core/templates/core/includes/pulpit_editor_sidebar.html)
@@ -1054,7 +1066,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/templates/dashboard/filters/favorite.html](../backend/dashboard/templates/dashboard/filters/favorite.html)
 - [backend/dashboard/templates/dashboard/filters/form.html](../backend/dashboard/templates/dashboard/filters/form.html)
 - [backend/dashboard/templates/dashboard/filters/index.html](../backend/dashboard/templates/dashboard/filters/index.html)
-- [backend/dashboard/templates/dashboard/filters/manage.html](../backend/dashboard/templates/dashboard/filters/manage.html)
 - [backend/dashboard/templates/dashboard/filters/results.html](../backend/dashboard/templates/dashboard/filters/results.html)
 - [backend/dashboard/templates/dashboard/filters/row_actions.html](../backend/dashboard/templates/dashboard/filters/row_actions.html)
 - [backend/dashboard/templates/dashboard/filters/search.html](../backend/dashboard/templates/dashboard/filters/search.html)
@@ -1085,7 +1096,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/templates/dashboard/pulpits/gadgets.html](../backend/dashboard/templates/dashboard/pulpits/gadgets.html)
 - [backend/dashboard/templates/dashboard/pulpits/index.html](../backend/dashboard/templates/dashboard/pulpits/index.html)
 - [backend/dashboard/templates/dashboard/pulpits/layout_preview.html](../backend/dashboard/templates/dashboard/pulpits/layout_preview.html)
-- [backend/dashboard/templates/dashboard/pulpits/manage.html](../backend/dashboard/templates/dashboard/pulpits/manage.html)
 - [backend/dashboard/templates/dashboard/pulpits/row_actions.html](../backend/dashboard/templates/dashboard/pulpits/row_actions.html)
 - [backend/dashboard/templates/dashboard/pulpits/search_results.html](../backend/dashboard/templates/dashboard/pulpits/search_results.html)
 - [backend/dashboard/templates/dashboard/pulpits/sidebar_navigation.html](../backend/dashboard/templates/dashboard/pulpits/sidebar_navigation.html)
@@ -1161,7 +1171,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/item_list.html](../backend/spaces/templates/spaces/item_list.html)
 - [backend/spaces/templates/spaces/item_planning.html](../backend/spaces/templates/spaces/item_planning.html)
 - [backend/spaces/templates/spaces/item_toolbar.html](../backend/spaces/templates/spaces/item_toolbar.html)
-- [backend/spaces/templates/spaces/manage.html](../backend/spaces/templates/spaces/manage.html)
 - [backend/spaces/templates/spaces/pagination.html](../backend/spaces/templates/spaces/pagination.html)
 - [backend/spaces/templates/spaces/row.html](../backend/spaces/templates/spaces/row.html)
 - [backend/spaces/templates/spaces/search_results.html](../backend/spaces/templates/spaces/search_results.html)
@@ -1474,7 +1483,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_filter_frontend.py](../backend/core/test_filter_frontend.py).
 
-- `ReactFilterAndTagTests`: 13 metod testowych.
+- `ReactFilterAndTagTests`: 14 metod testowych.
 
 ### backend/core/test_frontend.py
 
@@ -1512,7 +1521,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_pulpit_frontend.py](../backend/core/test_pulpit_frontend.py).
 
-- `ReactPulpitTests`: 14 metod testowych.
+- `ReactPulpitTests`: 15 metod testowych.
 
 ### backend/core/test_schema_baseline.py
 
@@ -1726,6 +1735,25 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/dashboard/test_pulpit_preferences.py](../backend/dashboard/test_pulpit_preferences.py).
 
 - `DashboardPreferencesTests`: 11 metod testowych.
+
+### backend/dashboard/test_pulpit_role_migration.py
+
+Źródło: [backend/dashboard/test_pulpit_role_migration.py](../backend/dashboard/test_pulpit_role_migration.py).
+
+- `PulpitRoleMigrationTests`: 1 metod testowych.
+
+### backend/dashboard/test_pulpit_roles.py
+
+Źródło: [backend/dashboard/test_pulpit_roles.py](../backend/dashboard/test_pulpit_roles.py).
+
+- `PulpitRoleTests`: 10 metod testowych.
+
+### backend/dashboard/test_pulpit_sharing.py
+
+Źródło: [backend/dashboard/test_pulpit_sharing.py](../backend/dashboard/test_pulpit_sharing.py).
+
+- `PulpitSharingFixture`: 0 metod testowych.
+- `PulpitSharingTests`: 11 metod testowych.
 
 ### backend/dashboard/test_pulpit_urls.py
 
@@ -1943,7 +1971,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_management.py](../backend/spaces/test_management.py).
 
-- `SpaceManagementTests`: 9 metod testowych.
+- `SpaceManagementTests`: 10 metod testowych.
 
 ### backend/spaces/test_navigation.py
 
@@ -2028,6 +2056,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/dashboard/migrations/0002_initial.py](../backend/dashboard/migrations/0002_initial.py)
 - [backend/dashboard/migrations/0003_dashboard_preferences.py](../backend/dashboard/migrations/0003_dashboard_preferences.py)
 - [backend/dashboard/migrations/0004_dashboard_emoji_library.py](../backend/dashboard/migrations/0004_dashboard_emoji_library.py)
+- [backend/dashboard/migrations/0005_dashboard_membership_roles.py](../backend/dashboard/migrations/0005_dashboard_membership_roles.py)
 
 ### planner
 

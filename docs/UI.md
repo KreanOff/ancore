@@ -10,9 +10,19 @@ w `layout/main.css` uwzględnia korzeń Reacta z `display: contents`, zachowują
 wysokość topbaru i położenie sidebaru. Dropdowny korzystają ze wspólnego
 adaptera; `.react-sidebar-row-menu` nie dodaje własnego pola w układzie.
 
+Nazwa Workspace w topbarze wykorzystuje dostępną szerokość przed wyszukiwarką,
+niezależnie od szerokości i zwinięcia bocznego menu. Wielokropek pojawia się
+dopiero po wypełnieniu tego miejsca. Menu wyboru zachowuje własną szerokość,
+a na telefonie przycisk pokazuje sam awatar.
+
 Menu ma dotychczasowe grupy i skróty, zapamiętywanie szerokości/zwinięcia,
 podmenu w zwiniętym pasku oraz backdrop na telefonie. Wybór Workspace
 obsługuje wyszukiwanie z normalizacją polskich znaków i klawiaturę.
+Ikony podpunktów Pulpitów, Przestrzeni i Filtrów mają wspólne pole 20×20px
+oraz stałą szerokość w układzie flex przez `--sidebar-subnav-icon-size`.
+Dotyczy to SVG, emoji Pulpitów, awatarów Przestrzeni, pulpitu domyślnego,
+wyszukiwania i przycisków „Więcej…”, także w zwiniętym i mobilnym menu.
+Nagłówki sekcji zachowują token `--sidebar-icon-size` o wartości 18px.
 Pickery Przestrzeni, Pulpitów i Filtrów używają istniejącej powłoki popover,
 stanu pustego/błędu/ponowienia, strzałek i Escape z powrotem fokusu.
 Menu mobilne wyłącza treść przez `inert` i ogranicza Tab do swoich kontrolek.
@@ -25,7 +35,7 @@ Akcje oznaczania Przestrzeni, Pulpitów i Filtrów współdzielą
 `tasks-favorite-toggle` oraz stan `aria-pressed`. Oznaczony element ma pełną
 żółtą gwiazdkę `star-filled` (`#e2b203`), także przy hover/fokusie;
 nieoznaczony ma zwykły kontur `star`. Dotyczy to menu bocznego i jego panelu
-skrótów, katalogów oraz zarządzania, w React i pierwszym renderze Django.
+skrótów i katalogów, w React i pierwszym renderze Django.
 Dekoracyjne gwiazdki zakładek i nagłówków pozostają konturowe.
 
 Favorites zachowują bazę i klucze ustawień. Obsługują dodanie/usunięcie przez
@@ -124,17 +134,18 @@ kluczem, tytułem, typem, licznikami tagów/załączników i oznaczeniem terminu
 Grupy obejmują bieżącą stronę wyników, a sortowanie zachowuje kolejność
 zadań wewnątrz grup. Wyniki nie używają tabeli z nagłówkami kolumn.
 
-„Zarządzaj filtrami” jest osobną stroną `dashboard/filters/manage.html`,
-bez zakładek katalogu, z własnym minimalnym menu zarządzania: powrót
-do Ustawień i aktywna pozycja „Filtry”.
-`directory.html` współdzieli tabelę z katalogiem; wariant
-`task-filter-directory--management` zamienia gwiazdki w pierwszej kolumnie
-na checkboxy i przenosi gwiazdki do menu wiersza. Nazwa otwiera modal edycji.
-`tasks.js` obsługuje zaznaczanie bieżącej strony, stan częściowy i osobny
-klucz szerokości `task-filters-management`, wspólny dla zwykłego/scoped URL.
-Toolbar i przycisk tworzenia korzystają z wzorca zarządzania Przestrzeniami.
+Osobny ekran „Zarządzaj filtrami”, jego wariant menu i wejścia w Ustawieniach,
+nagłówku Filtrów, wyszukiwaniu oraz zwiniętym menu są usunięte. Stare zwykłe/scoped
+`filters/manage/` prowadzą do zakładki „Moje filtry” w katalogu; zachowują
+poprawną zakładkę, wyszukiwanie i numer strony. Katalog ma jeden wariant
+`task-filter-directory`, z gwiazdką w pierwszej kolumnie, nazwą otwierającą
+wyniki oraz menu edycji/dostępów i usuwania według uprawnień. Szerokości używają
+klucza `task-filters-directory`. Starsze adresy formularzy korzystają z modali
+nad zwykłym katalogiem i zachowują menu Workspace. Ustawienia Workspace
+zachowują własny ekran zarządzania; dawny wspólny `management_sidebar.html`
+nie ma już odbiorców i został usunięty.
 
-Pusty katalog i zarządzanie filtrami, również przy braku pasujących wyników,
+Pusty katalog Filtrów, również przy braku pasujących wyników,
 używają wspólnego wariantu `tasks-empty-state--illustrated` z dekoracyjną
 ilustracją `static/img/empty-states/filters-empty.webp`: pastelowym lejkiem,
 kolorowymi znacznikami i kartami wyszukiwania. Obraz ma przezroczyste tło,
@@ -155,7 +166,7 @@ panel i ustawiają fokus. Wariant `filter-settings-*` dodaje wyłącznie układ
 zakładek, paneli i istniejących wierszy etykieta/pole przy szerokości od 1100px.
 Na telefonie pola układają się pionowo. Tworzenie i „Zapisz jako” używają tych
 samych zakładek; po zapisie zamykają okno i przechodzą do utworzonego filtra
-albo wracają do katalogu zarządzania.
+albo wracają do zwykłego katalogu.
 Formularz zapisu/edycji korzysta z AncoreTaskModals:
 fokus, inert, Escape, potwierdzenie odrzucenia zmian i błędy w dialogu.
 Skrypt task-filters.js czeka przy pierwszym ładowaniu na wspólny
@@ -194,8 +205,8 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 ## Przestrzenie i zespoły
 
 Ustawienia Przestrzeni korzystają ze wspólnego dużego `app-modal-panel` z
-zakładkami `notifications-tabs`: „Główna”, „Członkowie” oraz „Statusy, typy i pola”,
-według uprawnień. W „Główna” wspólny `AvatarControl` pokazuje po lewej awatar
+zakładkami `notifications-tabs`: „Ustawienia”, „Udostępnienia” oraz „Statusy, typy i pola”,
+według uprawnień. W „Ustawienia” wspólny `AvatarControl` pokazuje po lewej awatar
 68px i przycisk „Zmień”, jak w edycji profilu. Wybór ilustracji, upload
 i kadrowanie używają tego samego pickera; zatwierdzony szkic awatara zapisuje
 się dopiero z całym formularzem ustawień. Nie ma osobnej zakładki awatara. `space-settings-panel` dodaje jedynie
@@ -208,7 +219,10 @@ a udostępnianie otwiera kompaktowe okno z pickerem osoby. Bezpośrednie URL
 ustawień i konfiguracji renderują tę samą powłokę. Szczegóły:
 [Okno ustawień](SPACES.md#okno-ustawień-przestrzeni).
 
-Zakładka „Członkowie” używa wspólnego Reactowego `shared/Members`: zaznaczanie,
+Menu wierszy Przestrzeni w nawigacji i katalogu nie zawierają „Dodaj osoby”.
+Udostępnianie pozostaje w zakładce „Udostępnienia” okna ustawień przestrzeni.
+
+Zakładka „Udostępnienia” używa wspólnego Reactowego `shared/Members`: zaznaczanie,
 menu działań, awatar i nazwa, e-mail, rola i data. Model członkostwa Przestrzeni
 nie zapisuje daty dołączenia; brak tej daty jest pokazany jako „—”. Właściciel
 ma własny, chroniony wiersz. „Udostępnij” otwiera `shared/SharingDialog`,
@@ -311,7 +325,7 @@ przestrzeń, a akcja w menu wiersza zmienia osobiste ulubione, zachowując filtr
 `tasks.js` obsługuje zaznaczenie i szerokości, a `space-navigation.js` zapis
 gwiazdki oraz przywrócenie fokusu po częściowej nawigacji. Pusty wynik ukrywa nagłówki
 i pokazuje komunikat zależny od filtrów/zakładki.
-Puste katalogi przestrzeni i zarządzania używają wariantu `work-space-empty-state`
+Pusty katalog przestrzeni używa wariantu `work-space-empty-state`
 wspólnego `tasks-empty-state`: kolorowej ilustracji 3D
 `static/img/empty-states/spaces-empty.webp`, tekstu `tasks-empty-state__copy`
 bez przycisków i linków akcji w pustym stanie.
@@ -461,34 +475,18 @@ przez `AncoreTaskTags` w `tasks.js`, zachowując własne dropdowny. Szczegóły
 zadania korzystają wyłącznie z tagów jego zapisanej przestrzeni. Dane opcji
 są filtrowane przez widoczność projektów; etykiety trafiają do DOM jako tekst.
 
-Osobny ekran „Zarządzaj przestrzeniami” (`spaces/manage.html`) używa tej samej
-powłoki. Główny pasek boczny przełącza się na minimalne menu danej strony,
-według wzorca katalogu Workspace. Wspólny wariant
-`core/includes/management_sidebar.html` renderuje osobne menu Przestrzeni,
-Pulpitów i Filtrów: nagłówek „Zarządzanie…”, „Wróć do ustawień” oraz jedną
-aktywną pozycję z nazwą modułu. Nie zawiera kategorii centrum Ustawień
-ani linków pozostałych stron zarządzania. Strony otwiera się z wierszy
-sekcji Workspace w centrum Ustawień. „Wróć do ustawień” prowadzi do `#workspace`.
-Treść zajmuje całą szerokość obok tego paska. Oba warianty menu używają wspólnych klas i zachowują zwijanie,
-zmianę szerokości oraz mobilne otwieranie/zamykanie. `Sidebar.tsx` przełącza
-widoczną nawigację z danych JSON również przy powrocie i historii
-przeglądarki. Bezpośrednie wejście do kreatora/edycji używa trybu administracyjnego.
-Tabela ma te same kolumny, szerokości i awatary co „Przestrzenie”: checkbox,
-menu z trzema paskami, Klucz, Przestrzeń, Rodzaj, Szablon, Opis i Zadania.
-Checkboxy zaznaczają tylko bieżącą stronę, bez operacji zbiorczych.
-`work-space-sheet--management` wybiera osobny klucz `spaces-management`
-dla preferencji kolumn w `tasks.js`, wspólny dla zwykłego i scoped URL;
-nie nadpisuje wspólnej siatki. Filtry rodzaju i sposobu zarządzania są po lewej,
-wyszukiwarka po prawej, a paginacja na dole panelu. Nazwa przestrzeni otwiera ustawienia.
-Wspólne menu `spaces/directory_row_actions.html` zachowuje osobistą gwiazdkę,
-otwarcie, edycję, ustawienia dostępu i konfigurację zadań według uprawnień.
-Formularze, `row-actions.js` i obsługa częściowej nawigacji pozostają wspólne.
-Menu „…” w głównej nawigacji zawiera wyłącznie „Zarządzaj przestrzeniami”;
-dostępność zarządzania odświeża się po częściowej nawigacji.
-Skrót Favorites „Przestrzenie” pozostaje aktywny tylko w codziennym module,
-a ekran zarządzania aktywuje ikonę Ustawień. Przy braku odpowiadającego linku
-w menu JS zachowuje stan aktywności skrótu otrzymany z serwera, także po częściowej
-nawigacji. Szczegóły uprawnień: [SPACES.md](SPACES.md).
+Osobny ekran „Zarządzaj przestrzeniami” jest usunięty wraz z jego menu bocznym,
+wejściem w nagłówku Przestrzeni i wierszem w Ustawieniach. Stare zwykłe/scoped
+`spaces/manage/` otwierają katalog „Przestrzenie”, z zachowaniem wyszukiwania,
+rodzaju, zakładki i numeru strony. Katalog ma jeden wariant listy; stary filtr
+sposobu zarządzania i klucz szerokości `spaces-management` są wycofane.
+Zachowane są zakładki Wszystkie, Ulubione i Prywatne, wspólna tabela,
+wyszukiwanie, filtr rodzaju, paginacja i menu konkretnej przestrzeni.
+Starsze formularze tworzenia/edycji korzystają z tej samej powłoki modalnej
+nad katalogiem oraz zwykłej nawigacji Workspace. Ustawienia, dostęp i konfiguracja
+zadań pozostają przy konkretnej przestrzeni. Uprawnienia: [SPACES.md](SPACES.md).
+Katalog Workspace zachowuje własny wariant menu; dawne osobne katalogi
+zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
 
 Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
 głównego paska bocznego (`core/includes/settings_sidebar.html`). Zastępuje
@@ -999,12 +997,12 @@ trzy kolumny danych w kolejności Przestrzeń z awatarem, Klucz i Opis.
 `hide_selection=True` usuwa checkboxy wierszy,
 checkbox nagłówka i kolumnę wyboru z siatki. Nagłówek kolumn „PRZESTRZEŃ”,
 „KLUCZ” i „OPIS” jest ukryty w `for-you-space-sheet`; jego metadane nadal
-służą wspólnemu mechanizmowi szerokości kolumn. Katalog i „Zarządzaj przestrzeniami”
-korzystają z pełnego wariantu z widocznym nagłówkiem. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
-dane tabel w katalogu, zarządzaniu i „Dla ciebie”; licznik obejmuje tylko widoczne
+służą wspólnemu mechanizmowi szerokości kolumn. Katalog Przestrzeni
+korzysta z pełnego wariantu z widocznym nagłówkiem. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
+dane tabel w katalogu i „Dla ciebie”; licznik obejmuje tylko widoczne
 zadania przestrzeni. Nazwa otwiera przestrzeń. Menu z osobistą gwiazdką,
 ustawieniami i edycją/dodawaniem osób według roli pozostaje w katalogu
-i zarządzaniu Przestrzeniami. W każdej grupie dat tabela znajduje się w sekcji
+Przestrzeni. W każdej grupie dat tabela znajduje się w sekcji
 `for-you-space-group`, z taką samą ramką, zaokrągleniem, odstępami i wysokością
 nagłówka jak grupy zadań. Wspólny `tasks/includes/issue_group_header.html`
 pokazuje neutralny nagłówek „Przestrzenie”, ikonę, liczbę przestrzeni na stronie
@@ -1134,11 +1132,11 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   i profilu oraz podpowiedź skrótu są ukryte; wszystkie kontrolki pozostają
   dostępne. Zwinięcie sidebaru nie zmienia przełącznika Workspace ani
   położenia jego menu, które rozwija się pod avatarem w górnym pasku.
-  Przycisk i menu Workspace współdzielą szerokość docelową 280px
-  (`--app-topbar-workspace-width`). Przycisk mieści się w szerokości sidebaru
-  po odjęciu przycisku zwijania, odstępu i bocznych marginesów; w ciasnym
-  układzie skraca nazwę. Menu zachowuje czytelną szerokość z ograniczeniem
-  do szerokości ekranu.
+  Przycisk Workspace dopasowuje szerokość do zawartości, z ograniczeniem
+  do dostępnego miejsca w lewej kolumnie górnego paska; w ciasnym układzie
+  skraca nazwę. Jego szerokość nie zależy od szerokości sidebaru.
+  Menu zachowuje szerokość docelową 280px (`--app-topbar-workspace-width`)
+  z ograniczeniem do szerokości ekranu.
   Na telefonie menu Workspace wyrównuje się do lewej krawędzi paska,
   aby mieściło się w szerokości ekranu.
   Menu, treść, szkielet ładowania oraz panel wyszukiwania zaczynają się
@@ -1941,7 +1939,7 @@ akcje oraz wspólna obsługa menu i modali pozostają bez zmian.
 `dashboard/home.html` rozszerza `dashboard/pulpits/detail.html`, a przez niego
 wspólną powłokę `core/base.html`. Strona główna i `/dashboards/default/` używają
 tych samych nagłówków, siatki, pustych stanów, CSS i `pulpits.js` co nowe pulpity.
-„Edytuj pulpit” prowadzi do wspólnego edytora z menu „Gadżety i układ”, „Dostępy”
+„Edytuj pulpit” prowadzi do wspólnego edytora z menu „Gadżety i układ”
 i „Ustawienia”. Pierwsze wejście pokazuje jeden „Postęp pracy”; kolejne odczytują
 zapisany układ i gadżety. Przegląd nie pokazuje kontrolek zmiany gadżetów.
 Nazwa i opis są edytowalne, a osobista pozycja „Pulpit domyślny” pozostaje w menu.
@@ -2398,8 +2396,7 @@ w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
 ## 12. Zarządzanie Workspace i zespołem
 
-Katalog `/workplaces/` jest osobną stroną administracyjną, tak jak
-„Zarządzaj przestrzeniami”. Zastępuje codzienne menu własnym
+Katalog `/workplaces/` jest osobną stroną administracyjną. Zastępuje codzienne menu własnym
 `core/includes/workplace_management_sidebar.html` (tryb `workplaces`):
 Link powrotu prowadzi do miejsca wejścia (z Ustawień: „Wróć do ustawień”),
 a „Workspace” jest pozycją aktywną. Bez wcześniejszego wejścia w aplikacji
@@ -2808,8 +2805,8 @@ formularze, katalog i układ. `pulpits.js` pomija korzeń Reacta; wspólne
 menu boczne i wyszukiwarka Pulpitów nadal należą do powłoki.
 Małe adaptery w `react.css` zachowują rozmiar ikon nagłówka, łamanie opisu
 oraz geometrię pól renderowanych przez wyspy kontrolek DOM.
-Katalog i zarządzanie współdzielą `dashboard/pulpits/directory.html`
-oraz tabelę Przestrzeni w powłoce `work-page`:
+Katalog korzysta z `dashboard/pulpits/directory.html`
+oraz tabeli Przestrzeni w powłoce `work-page`:
 `tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable
 tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet`.
 Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
@@ -2829,7 +2826,7 @@ akcje według uprawnień. Nazwa otwiera pulpit. Opis jest osobną kolumną,
 a pełne teksty są dostępne w `title`. Puste wyniki ukrywają nagłówki i pokazują
 komunikat odpowiedni do filtrów lub pustego katalogu. Przegląd pulpitu nadal używa
 `dashboard-overview` i gadżetów. Pozostałe warianty `pulpit-*` zachowują tokeny.
-Puste stany katalogu i zarządzania używają `pulpit-directory-empty-state`:
+Puste stany katalogu używają `pulpit-directory-empty-state`:
 kolorowej ilustracji 3D `static/img/empty-states/dashboard-empty.webp`
 o maksymalnej szerokości 440px, wspólnego `tasks-empty-state__copy` oraz
 opisów i akcji dla pustego katalogu lub filtrów. Ilustracja jest
@@ -2843,8 +2840,8 @@ Jedyny gadżet „Postęp pracy” rozszerza `dashboard-panel` i współdzieli
 z istniejącymi kolorowymi `status-indicator`. Pusty zakres nadal pokazuje wszystkie
 statusy z zerami, bez ilustracji zastępującej dane. Ikona wykresu jest po prawej
 stronie nagłówka; uchwyt i menu występują wyłącznie w edytorze. Nagłówek pulpitu
-pokazuje samą nazwę po lewej, a „Edytuj pulpit” (dla twórcy), odświeżenie i menu
-edycji (dla twórcy) po prawej. „Kopiuj pulpit” jest usunięte ze wszystkich menu;
+pokazuje samą nazwę po lewej, a „Edytuj pulpit” (dla właściciela, administratora i członka),
+odświeżenie i menu działań zgodne z rolą po prawej. „Kopiuj pulpit” jest usunięte ze wszystkich menu;
 przegląd odbiorcy udostępnionego pulpitu nie pokazuje pustego menu działań.
 „Edytuj pulpit” i „Odśwież” używają wspólnego
 białego wariantu `tasks-tag-topbar-button--secondary` z delikatną ramką,
@@ -2864,8 +2861,8 @@ tokenów. „Zmień układ” otwiera wspólny popover
 Na telefonie przyciski nagłówka zawijają się,
 a wszystkie kolumny wyświetlają się pionowo. Puste kolumny edytora mają
 przerywaną ramkę, kolorową ilustrację 3D i podpowiedź przeciągania.
-Widoczność zmienia się na stronie
-„Dostępy”, otwieranej też przez menu akcji. Menu gadżetu
+Widoczność zmienia się w zakładce „Ustawienia” okna ustawień pulpitu,
+a osoby i ich role w zakładce „Udostępnienia”. Menu gadżetu
 w edytorze zapewnia konfigurację, przeniesienie wyżej/niżej/do
 następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,
 więc nie zakłóca linków i zaznaczania tekstu. Niedostępne kierunki przeniesienia
@@ -2934,8 +2931,8 @@ konfiguracja i usuwanie gadżetu pozostają w edytorze, także z filtrami zarzą
 
 Menu „Pulpity” wykorzystuje istniejący wariant nagłówka Przestrzeni, listy
 `sidebar-space-list` i wiersze z `row-actions.js`. Ikona nagłówka zmienia się
-na chevron przy hover/fokus; plus otwiera tworzenie pulpitu, menu oferuje
-„Zarządzaj pulpitami”. Sekcje pokazują gwiazdki, ostatnie oraz przycisk
+na chevron przy hover/fokus; plus otwiera tworzenie pulpitu. Nagłówek nie ma
+menu zarządzania. Sekcje pokazują gwiazdki, ostatnie oraz przycisk
 „Więcej pulpitów” z ikoną `align-left` i strzałką w prawo, jak „Więcej przestrzeni”.
 Otwiera ten sam niemodalny panel z tytułem „Pulpity”, zamknięciem, polem
 „Wyszukaj wszystkie pulpity” i linkiem „Wyświetl wszystkie pulpity”.
@@ -2961,42 +2958,41 @@ odłączając listenery. Zapis tworzenia pulpitu i konfiguracji gadżetu aktuali
 Wspólny flyout ma nagłówek poza przewijanym obszarem,
 aby linki i akcje pozostały dostępne również przy wielu pozycjach.
 
-„Zarządzaj pulpitami” używa powłoki `work-page--management`, pasków
-`tasks-topbar--directory`, `work-item-toolbar` i paginacji w toolbarze.
-Lista używa tego samego include'a, klas i szerokości kolumn co „Pulpity”:
-checkbox, menu z trzema paskami, Pulpit, Twórca, Widoczność, Gadżety i Opis.
-Twórca jest tekstem, a osobista gwiazdka znajduje się w menu wiersza.
-Filtry widoczności i gwiazdki pozostają po lewej, wyszukiwarka i paginacja po prawej.
-Checkboxy zaznaczają tylko bieżącą stronę, bez operacji zbiorczych.
-Klasa `pulpit-management-sheet` wybiera osobny klucz `pulpits-management`
-w `tasks.js`; nie nadpisuje wspólnej siatki `pulpit-directory-sheet`.
-Preferencje szerokości pozostają wspólne dla zwykłego i scoped adresu zarządzania,
-niezależne od katalogu. Nazwa otwiera edytor gadżetów,
-„Utwórz pulpit” modal nad katalogiem. Anulowanie i zapis edycji wracają
-do tego katalogu z jego filtrami; błąd pozostaje na stronie edycji.
-Tworzenie i usunięcie zachowują katalog oraz filtry. Filtry widoczności
-i gwiazdki wysyłają formularz także po wyborze wartości.
-
-Katalog zarządzania pulpitami pokazuje własne minimalne menu przez
-`core/includes/management_sidebar.html`: „Wróć do ustawień” i aktywne „Pulpity”.
-Powrót prowadzi do Ustawień (`#workspace`), również po usunięciu pulpitu.
-Wewnętrzny tryb `pulpits-management` pozostaje osobny od edytora pulpitu
-oraz zarządzania Workspace. Wspólny `layout.js` synchronizuje aktywność
-i widoczność menu przy częściowej nawigacji, reload i Wstecz/Dalej.
+Osobny ekran „Zarządzaj pulpitami”, jego menu boczne oraz wejście w Ustawieniach
+Ancore są usunięte. Stare zwykłe/scoped adresy `dashboards/manage/` otwierają
+zwykły katalog „Pulpity”, z zachowaniem wyszukiwania, widoczności i numeru strony.
+Katalog ma jeden wariant listy i klucz szerokości `pulpits-directory`.
+Menu konkretnego pulpitu zawiera „Gadżety i układ” oraz „Ustawienia”.
+Nie ma osobnej pozycji „Dostępy”; udostępnieniami zarządza się w zakładce
+„Udostępnienia” okna ustawień.
 
 Ustawienia konkretnego pulpitu renderuje `src/pulpits/SettingsDialog.tsx`
 w dużym wspólnym `app-modal-panel`, tak jak ustawienia Przestrzeni. Zakładki
-`notifications-tabs` to „Dostępy” i „Ustawienia”. Obsługują
+`notifications-tabs` to kolejno „Ustawienia” i „Udostępnienia”. Obsługują
 strzałki, Home i End. Ukryte formularze pozostają zamontowane i zachowują szkice.
 Menu katalogu, przeglądu i nawigacji otwiera okno nad bieżącym ekranem,
 bez zmiany jego adresu i menu bocznego. Zamknięcie po zapisie odświeża ten ekran.
 Bezpośrednie zwykłe/scoped URL oraz wariant zarządzania otwierają tę samą
-powłokę nad podglądem pulpitu; powrót zachowuje filtry katalogu zarządzania.
+powłokę nad podglądem pulpitu; stare adresy wracają do zwykłego katalogu z filtrami.
 Powłoka React nie przełącza się w osobne menu edytora. Szablony Django
 zachowują dotychczasowy pierwszy render i zgodność formularzy POST.
 
-„Ustawienia” zawierają nazwę, opis, ikonę, zakres danych i automatyczne
-odświeżanie; „Dostępy” widoczność i osoby. Od szerokości 1100px parametry
+„Ustawienia” zawierają nazwę, opis, ikonę, zakres danych, automatyczne
+odświeżanie i widoczność („Prywatny — wybrane osoby” albo „Cały Workspace”).
+„Udostępnienia” używają tych samych `shared/Members`, `shared/SharingDialog`
+i pickera osób Workspace co Przestrzenie: tabela z chronionym wierszem twórcy,
+przycisk „Udostępnij”, wyszukiwanie osoby oraz potwierdzane odebranie dostępu.
+Operacje zapisują się od razu i zachowują szkic ustawień. Udostępnienie i „Zmień rolę”
+używają ról „Administrator”, „Członek” i „Obserwator”, z domyślnym członkiem.
+Właściciel wybiera wszystkie role; administrator tylko członka i obserwatora,
+bez menu działań na innych administratorach i właścicielu. Ustawienia są dostępne
+właścicielowi i administratorowi; pole widoczności jest wyłączone dla administratora.
+Gadżety i układ edytuje również członek, a obserwator ma tylko odczyt.
+Usunięcie Pulpitu jest dostępne wyłącznie właścicielowi. Daty nowych udostępnień
+są zapisywane, a brak historycznej daty jest pokazywany jako „—”.
+Przy widoczności Workspace tabela pokazuje dostęp odziedziczony, bez indywidualnych
+akcji. Dawne formularze `access/` pozostają zgodne dla starszych klientów.
+Od szerokości 1100px parametry
 ustawień układają się w dwie równe kolumny. Każde pole używa takiego samego
 wiersza etykieta/kontrolka jak ustawienia Przestrzeni: etykieta 180px po lewej,
 odstęp 24px i kontrolka w pozostałym miejscu. Opisy i błędy są pod kontrolką.
