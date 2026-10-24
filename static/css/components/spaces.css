@@ -320,6 +320,12 @@
 .work-sprint-preview p:last-child { margin: 6px 0 0; }
 .work-panel .work-item-list { padding: 0; }
 .work-content--tasks > .work-panel-heading { padding: 12px 16px 0; flex-wrap: wrap; }
+.work-page .work-content.work-content--items { display: flex; flex-direction: column; gap: 8px; padding: 8px var(--work-space-inline-padding, var(--app-page-padding-x)) 20px; }
+.work-content--items > .work-item-toolbar { min-height: 0; padding: 0; border: 0; }
+.work-content--items > .tasks-board { padding: 0; }
+.work-content--items > .work-panel-heading { padding: 0; }
+.work-content--items > .work-summary-filter { flex-shrink: 0; padding: 0; border: 0; }
+.work-content--items > .work-backlog-bulk { flex-shrink: 0; margin: 0; }
 .work-member { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--border-color); }
 .work-member > :first-child { flex: 1; min-width: 180px; }
 .work-member form { margin: 0; }

@@ -409,29 +409,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             ) : null
           }
         />
-        {tableView ? (
-          <>
-            <ItemToolbar data={data} url={initial.url} />
-            {data.filters.summary ? (
-              <div className="work-summary-filter" role="status">
-                <span>{data.summary_filter_label}</span>
-                <a
-                  className="tasks-filter-button"
-                  href={(() => {
-                    const url = new URL(initial.url, location.origin);
-                    url.searchParams.delete('summary');
-                    url.searchParams.delete('page');
-                    return url.pathname + url.search;
-                  })()}
-                  aria-label={`Usuń filtr: ${data.summary_filter_label}`}
-                >
-                  <Icon name="x" />
-                  Usuń filtr
-                </a>
-              </div>
-            ) : null}
-          </>
-        ) : null}
         {error ? (
           <div className="tasks-modal__errors" role="alert">
             {error}
@@ -452,8 +429,31 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           onPointerDownCapture={motion.pointerDown}
           onDragOverCapture={motion.over}
           onDragEnterCapture={motion.over}
-          className={`work-content ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''}`}
+          className={`work-content ${tableView ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''}`}
         >
+          {tableView ? (
+            <>
+              <ItemToolbar data={data} url={initial.url} />
+              {data.filters.summary ? (
+                <div className="work-summary-filter" role="status">
+                  <span>{data.summary_filter_label}</span>
+                  <a
+                    className="tasks-filter-button"
+                    href={(() => {
+                      const url = new URL(initial.url, location.origin);
+                      url.searchParams.delete('summary');
+                      url.searchParams.delete('page');
+                      return url.pathname + url.search;
+                    })()}
+                    aria-label={`Usuń filtr: ${data.summary_filter_label}`}
+                  >
+                    <Icon name="x" />
+                    Usuń filtr
+                  </a>
+                </div>
+              ) : null}
+            </>
+          ) : null}
           {data.view === 'overview' && data.summary ? (
             <Summary data={data.summary} software={data.space.kind === 'software'} />
           ) : null}

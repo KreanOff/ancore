@@ -238,6 +238,13 @@ pochodzą z istniejącego `workplace-team.css`.
 
 Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
 „Sortowanie” i „Filtrowanie”. Nie ma osobnego pola wyszukiwania zadań.
+W otwartej Przestrzeni pasek jest pierwszą częścią obszaru zadań
+`work-content--items`, a w Liście i Backlogu przewija się razem z wynikami.
+Wspólny kontener wyrównuje menu i treść do tych samych marginesów strony,
+z odstępem 8px od nagłówka i między częściami. Tabele nie dodają drugiego
+wewnętrznego paddingu. Pasek nie ma osobnej ramki ani separatora;
+ramki przycisków i separator pod nagłówkiem Przestrzeni pozostają zachowane.
+Ten sam układ obejmuje Tablicę i Oś czasu oraz pierwszy render Django.
 `spaces/ItemToolbar.tsx` używa wspólnego `Dropdown` oraz klas
 `tasks-project-query-*`, tak jak Dysk i Zasoby. Sortowanie ma wybór pola,
 kierunku i powrót do domyślnej kolejności. Filtrowanie zawiera typ zgłoszenia,
