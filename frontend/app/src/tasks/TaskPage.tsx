@@ -77,14 +77,15 @@ export default function TaskPage(props: PageProps) {
     setData(page.data as TaskData);
   }
   async function act(values: Record<string, string> | FormData, url = initial.url) {
-    if (actionPending.current || !(await auto.save())) return false;
+    if (actionPending.current) return false;
     actionPending.current = true;
     setBusy(true);
     setError('');
-    const body = values instanceof FormData ? values : new FormData();
-    if (!(values instanceof FormData))
-      Object.entries(values).forEach(([key, value]) => body.set(key, value));
     try {
+      if (!(await auto.save())) return false;
+      const body = values instanceof FormData ? values : new FormData();
+      if (!(values instanceof FormData))
+        Object.entries(values).forEach(([key, value]) => body.set(key, value));
       const result = await pageRequest<{ redirect?: string }>(
         initial.api_url,
         url,

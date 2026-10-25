@@ -245,6 +245,10 @@ kontrolowanymi adresami domenowymi, z dotychczasowym prywatnym storage.
 Automatyczny zapis zadania wysyła `autosave_fields`, łączy je po stronie
 Django z aktualnymi pozostałymi wartościami i szereguje kolejne zapisy.
 Nawigacja aplikacji czeka na zakończenie zapisu; błąd zachowuje wpisane dane.
+Operacje zadania, w tym wysłanie komentarza, ustawiają blokadę przed
+oczekiwaniem na autosave. Przez całe oczekiwanie pola komentarza i wysyłka
+są wyłączone; ponowne kliknięcie nie tworzy drugiego żądania. Błąd autosave
+zwalnia blokadę i zachowuje szkic do ponowienia.
 Pola dodatkowe zadania są edytowalne w panelu właściwości. Błędy pozostałych
 pól planowania odsłaniają odpowiednią kontrolkę w tym panelu. Jeśli konfiguracja
 doda pole podczas edycji, odpowiedź walidacji uzupełnia schemat bez odtwarzania

@@ -355,7 +355,7 @@ def members(request, space_pk, key):
     if not manages_task(request, task) or not editable_to(SpaceTask.objects.filter(pk=task.pk), request.user).exists():
         raise PermissionDenied
     form = MemberForm(request.POST if request.method == 'POST' else None, request=request)
-    form.fields['person'].queryset = task_people(task)
+    form.fields['person'].queryset = task_people(task).exclude(pk=task.private_owner_id)
     from django import forms
     form.fields['visibility'] = forms.ChoiceField(label='Widoczność', choices=SpaceTask._meta.get_field('visibility').choices, initial=task.visibility)
     form.fields['person'].required = False
@@ -378,6 +378,12 @@ def members(request, space_pk, key):
                 form.add_error('person', 'Ta osoba nie ma już dostępu do przestrzeni lub rodzica zadania.')
                 return dialog_response(request, form, 'Dostęp do zadania', url)
             membership = get_object_or_404(task.memberships, pk=posted_id(request, 'remove_member')) if request.POST.get('remove_member') else None
+            if membership and membership.user_id == task.private_owner_id:
+                raise PermissionDenied
+            next_owner_id = (task.private_owner_id or request.user.pk) if form.cleaned_data['visibility'] == 'private' else None
+            if person and person.pk == next_owner_id:
+                form.add_error('person', 'Właściciel zadania ma dostęp bez osobnego członkostwa.')
+                return dialog_response(request, form, 'Dostęp do zadania', url)
             existing = task.memberships.filter(user=form.cleaned_data.get('person')).first()
             if task.visibility == 'private' and task.private_owner_id != request.user.pk and (membership or existing) and (membership or existing).role == 'admin':
                 raise PermissionDenied

@@ -25,7 +25,8 @@ class DocumentQueryTests(TestCase):
         cls.nested = Folder.objects.create(owner=cls.user, workplace=cls.workspace, library=cls.alpha, parent=cls.folder, name='Załączniki')
         cls.tag = TaskTag.objects.create(user=cls.user, workplace=cls.workspace, name='Klient')
         cls.a = Document.objects.create(owner=cls.user, workplace=cls.workspace, library=cls.alpha, folder=cls.nested,
-                                       title='alpha umowa', filename='alpha.PDF', description='Oferta klienta', file_size=1024 * 1024, is_starred=True)
+                                       title='alpha umowa', filename='alpha.PDF', description='Oferta klienta', file_size=1024 * 1024)
+        cls.a.favorited_by.add(cls.user)
         cls.z = Document.objects.create(owner=cls.user, workplace=cls.workspace, library=cls.zulu,
                                        title='Zulu', filename='zulu.txt', description='', file_size=6 * 1024 * 1024)
         cls.a.tags.add(cls.tag)

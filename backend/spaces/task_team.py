@@ -55,7 +55,8 @@ def team_context(request, task):
     owner = manager and (task.visibility == 'public' or request.user.pk == task.private_owner_id)
     people = task_people(task)
     if task.visibility == 'private':
-        members = list(task.memberships.filter(user__in=people).select_related('user').order_by('role', 'user__email'))
+        members = list(task.memberships.filter(user__in=people).exclude(user_id=task.private_owner_id)
+                       .select_related('user').order_by('role', 'user__email'))
         for member in members:
             member.can_change = manager and (owner or member.role in {'member', 'observer'})
         if task.private_owner_id:
@@ -102,7 +103,7 @@ def team(request, space_pk, key):
             SpaceTaskMembership.objects.create(task=task, user=form.recipient, role=form.cleaned_data['role'])
         elif action in {'role', 'remove'}:
             member = get_object_or_404(task.memberships, pk=posted_id(request, 'member_id'))
-            if not owner and member.role == 'admin':
+            if member.user_id == task.private_owner_id or (not owner and member.role == 'admin'):
                 raise PermissionDenied
             if action == 'remove':
                 member.delete()

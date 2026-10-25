@@ -183,7 +183,7 @@ class ReactDocumentTests(TestCase):
         self.assertIn('name=Instr', response.json()['redirect'])
         self.assertNotIn('library=', response.json()['redirect'])
         self.document.refresh_from_db()
-        self.assertTrue(self.document.is_starred)
+        self.assertTrue(self.document.favorited_by.filter(pk=self.member.pk).exists())
         key = self.document.office_key
         self.assertEqual(self.post(self.path('documents', f'{self.document.pk}/trash/'), values).status_code, 200)
         self.assertEqual(self.get(self.path('documents', f'{self.document.pk}/preview/')).status_code, 404)

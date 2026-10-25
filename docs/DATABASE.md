@@ -53,6 +53,23 @@ Test `workplaces.test_email_retirement_migration` sprawdza upgrade istniejących
 danych oraz zachowanie dostępu i zawartości. Testy nie stosują migracji do
 lokalnej bazy użytkownika.
 
+## Osobiste gwiazdki dokumentów (25.10.2026)
+
+`documents.0003_personal_document_stars` zastępuje wspólne `is_starred`
+relacją `favorited_by` dla `Document`, `Folder` i `WorkspaceDocument`.
+Dotychczasowe oznaczone rekordy otrzymują gwiazdkę swojego właściciela;
+stare pole nie przechowywało autora operacji. Migracja nie przypisuje tych
+oznaczeń innym członkom Workspace. Zawartość, UUID, pliki, lokalizacje
+i dostęp pozostają zachowane. Nieużywany `WorkspaceDocumentFolder`
+nie zmienia schematu.
+
+Cofnięcie odtwarza wspólny bool na podstawie oznaczenia właściciela.
+Osobistych oznaczeń pozostałych użytkowników nie da się odwzorować w dawnym
+schemacie; ich odzyskanie po cofnięciu wymaga backupu. Przed zastosowaniem
+wykonaj backup i sprawdź `manage.py migrate --plan`, następnie
+`manage.py migrate`. Testy `documents.test_personal_stars` sprawdzają
+migrację istniejących danych i izolację osobistych oznaczeń.
+
 ## Zakres
 
 Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele

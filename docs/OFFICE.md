@@ -237,6 +237,9 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   pozostaje w przeglądarce; „Pobierz kopię tablicy” w jej menu pobiera lokalną
   kopię. „Zapisz w Ancore” i Ctrl+S pozostają dostępne wewnątrz tablicy. Ochrona
   przed wyjściem działa, gdy istnieją niezapisane zmiany.
+  Podgląd gościa także potwierdza załadowanie tablicy komunikatem
+  „Tablica otwarta”, bez oznaczania sceny jako zmienionej ani wywoływania
+  zapisu. Dzięki temu powłoka nie zgłasza błędu po upływie limitu ładowania.
 - Scena tablicy ma limit 10 MiB i 10 000 elementów. Obrazy są walidowanymi
   danymi PNG/JPEG/WebP (do 200 obrazów, po 5 MiB każdy, w ramach limitu sceny).
   Aktywne osadzenia i niebezpieczne schematy odnośników są odrzucane. Iframe ma

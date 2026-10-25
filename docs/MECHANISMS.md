@@ -321,8 +321,11 @@ Szczegóły walidacji i wspólnej konfiguracji opisuje [SPACES.md](SPACES.md).
 
 Documents pobiera pliki tylko przez widok właściciela/Workspace,
 wyklucza kosz i ustawia `Cache-Control: private, no-store`.
-Foldery Dysku mają osobne `is_starred`. POST `folders/<pk>/star/` blokuje rekord,
-przełącza gwiazdkę i zachowuje kontekst dysku albo widoku Workspace wraz
+Pliki Dysku, jego foldery i Dokumenty zapisują osobiste gwiazdki w M2M
+`favorited_by`. Bazowe querysety dodają `is_starred` przez `Exists` dla
+zalogowanej osoby; listy, liczniki, filtry i serializery używają tej adnotacji.
+POST `folders/<pk>/star/` blokuje rekord, przełącza tylko relację tej osoby
+i zachowuje kontekst dysku albo widoku Workspace wraz
 z filtrami, układem i stroną. GET `folders/<pk>/download/` sprawdza także
 właściciela/Workspace dysku i tworzy ZIP przez wspólny
 [folder_exports.py](../backend/documents/folder_exports.py). Zakres obejmuje tylko

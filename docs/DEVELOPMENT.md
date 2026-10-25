@@ -1,5 +1,40 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Cztery poprawki po przeglądzie projektu (25.10.2026)
+
+Zabezpieczono właściciela zadania w obu endpointach członkostwa oraz przy
+usuwaniu nadmiarowego rekordu przez sygnał. Operacja zadania blokuje się
+przed oczekiwaniem na autosave; błąd zachowuje szkic komentarza i pozwala
+ponowić zapis. Tablica gościa potwierdza gotowość bez zapisu. Gwiazdki Dysku,
+folderów i Dokumentów należą do zalogowanej osoby. Migracja
+`documents.0003_personal_document_stars` zachowuje dawne oznaczenia właściciela;
+opis upgrade i cofnięcia: [Baza danych](DATABASE.md#osobiste-gwiazdki-dokumentów-25102026).
+
+Przeszło **1259/1259 testów Django** przez `scripts/run_tests.py --parallel 4`
+na izolowanych bazach i storage, w tym 17 nowych regresji uprawnień,
+osobistych oznaczeń oraz migracji forward/reverse. Przeszło również
+**27/27 testów frontendu**, oba buildy (aplikacja z TypeScriptem i tablica),
+Prettier, kontrola Django, zgodność modeli i planu migracji, indeks oraz diff.
+
+Plugin Browser był niedostępny. Chrome/Playwright na osobnej bazie QA i
+fikcyjnych kontach sprawdził blokadę podczas opóźnionego autosave, pojedynczy
+komentarz po reload, szkic po błędzie autosave i wysyłki oraz udane ponowienia;
+osobiste gwiazdki w sesjach właściciela, członka i gościa; foldery; podgląd
+tablicy gościa przez ponad 20 sekund bez błędu i żądań zapisu. Sprawdzono
+1440, 1024, 390 i 320 px, ponowne wejście, stany puste/błędu oraz referencyjne
+okno konfiguracji Przestrzeni. Zrzuty obejrzano. Brak nieoczekiwanych błędów
+JS, ostrzeżeń konsoli i przepełnienia strony zadania; odpowiedzi 503 były
+kontrolowanymi awariami w teście. Nie sprawdzano żywego ONLYOFFICE,
+wdrożenia Docker, Safari ani Firefoksa.
+Serwer QA zatrzymano, a tymczasową bazę i storage usunięto.
+
+Lokalny plan zawierał wyłącznie nową migrację Dokumentów. Po zgodzie użytkownika
+wykonano świeży prywatny `pg_dump` w `.cache/database-backups/`, sprawdzono listę
+archiwum oraz SHA-256 i zastosowano `documents.0003_personal_document_stars`.
+Porównanie przed/po potwierdziło zachowanie rekordów, ich pozostałych pól
+i dawnych oznaczeń właściciela. Nie ma zaległych migracji ani rozbieżności
+modeli; kontrola Django przeszła.
+
 ## Granice uploadu, role zadania i północ w Kalendarzu (25.10.2026)
 
 Publiczny limit Nginx wynosi 225 MiB i mieści obsługiwaną paczkę 20 plików

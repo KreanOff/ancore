@@ -34,12 +34,20 @@ class DriveFolderTests(TestCase):
         field.storage = FileSystemStorage(directory.name)
 
     def folder(self, **kwargs):
-        return Folder.objects.create(**{'owner': self.user, 'workplace': self.workspace, 'library': self.library,
+        starred = kwargs.pop('is_starred', False)
+        item = Folder.objects.create(**{'owner': self.user, 'workplace': self.workspace, 'library': self.library,
                                         'name': 'Materiały', **kwargs})
+        if starred:
+            item.favorited_by.add(item.owner)
+        return item
 
     def document(self, **kwargs):
-        return Document.objects.create(**{'owner': self.user, 'workplace': self.workspace, 'library': self.library,
+        starred = kwargs.pop('is_starred', False)
+        item = Document.objects.create(**{'owner': self.user, 'workplace': self.workspace, 'library': self.library,
             'title': 'Plik', 'filename': 'Plik.txt', 'file': SimpleUploadedFile('Plik.txt', b'content'), 'file_size': 7, **kwargs})
+        if starred:
+            item.favorited_by.add(item.owner)
+        return item
 
     def rows(self, **params):
         response = self.client.get(self.base, {'view': 'starred', **params})
@@ -67,11 +75,11 @@ class DriveFolderTests(TestCase):
             self.assertEqual(urlsplit(response.url).path, self.base)
             self.assertEqual(parse_qs(urlsplit(response.url).query), {key: [value] for key, value in {**params, 'library': str(self.library.pk)}.items()})
             folder.refresh_from_db()
-            self.assertEqual(folder.is_starred, base == self.base)
+            self.assertEqual(folder.favorited_by.filter(pk=self.user.pk).exists(), base == self.base)
         item.refresh_from_db()
         parent.refresh_from_db()
-        self.assertFalse(item.is_starred)
-        self.assertFalse(parent.is_starred)
+        self.assertFalse(item.favorited_by.exists())
+        self.assertFalse(parent.favorited_by.exists())
         params = {'scope': 'workspace', 'view': 'starred', 'document_library': str(self.library.pk), 'display': 'list'}
         response = self.client.post(f'{self.base}folders/{folder.pk}/star/', {**params, 'folder': parent.pk})
         self.assertEqual(parse_qs(urlsplit(response.url).query), {key: [value] for key, value in params.items() if key != 'scope'})
@@ -130,7 +138,7 @@ class DriveFolderTests(TestCase):
             for hidden in invalid:
                 self.assertEqual(self.client.get(f'{base}folders/{hidden.pk}/download/', follow=True).status_code, 404)
                 self.assertEqual(self.client.post(f'{base}folders/{hidden.pk}/star/').status_code, 404)
-                Folder.objects.filter(pk=hidden.pk).update(is_starred=True)
+                hidden.favorited_by.add(self.user)
             self.assertEqual(self.client.get(base, {'view': 'starred'}, follow=True).context['rows'], [])
         self.assertEqual(self.client.get(f'{self.base}folders/{folder.pk}/star/').status_code, 405)
         self.assertEqual(self.client.post(f'{self.base}folders/{folder.pk}/download/').status_code, 405)

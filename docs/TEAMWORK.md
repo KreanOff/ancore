@@ -209,6 +209,11 @@ Zakładka „Członkowie” zadania pokazuje „Zmień rolę” i „Odbierz dos
 w dozwolonych wierszach zarówno właścicielowi, jak i administratorowi.
 Administrator nie ma tych działań wobec właściciela ani innych administratorów;
 członek i obserwator widzą tabelę bez operacji zarządzania.
+Właściciel nie może otrzymać dodatkowego zwykłego członkostwa przez formularz
+`members/` ani API. Serwer chroni go również przy zmianie i usuwaniu dawniej
+utworzonego nadmiarowego rekordu. Usunięcie takiego rekordu nie odbiera
+udostępnień prywatnych podzadań, ponieważ dostęp do rodzica nadal wynika
+z jego własności.
 Kandydat jest aktywną osobą Workspace z dostępem do przestrzeni i rodziców.
 Endpoint po blokadzie ponownie sprawdza autora, kandydata i zakres.
 Zmiana widoczności na dziedziczoną czyści członkostwa samego zadania,
@@ -268,5 +273,8 @@ edytowalne, a zapis, Ctrl/⌘+S i akcje zmieniające dokument są niedostępne.
 Wyjątek GET dla tekstu nie odblokowuje tworzenia ani metadanych plików.
 Rola gościa dotyczy tylko jego dostępu; obecność gościa w Workspace nie
 odbiera prawa zapisu właścicielowi, administratorowi ani członkowi.
+Gwiazdki plików Dysku, folderów i Dokumentów są osobiste (`favorited_by`):
+oznaczenie przez gościa lub członka zmienia wyłącznie jego własny katalog
+i liczniki. Nie nadaje dostępu do elementu po usunięciu członkostwa Workspace.
 Zasady ręcznego dodawania i linków opisuje sekcja
 [Dodawanie osób i linki do dołączenia](#dodawanie-osób-i-linki-do-dołączenia).

@@ -14,10 +14,10 @@ let latestJSON = '', savedJSON = '', timer, inFlight = false, conflict = false;
 const notify = (type, message, dirty = false) => parent.postMessage({ source: 'ancore-board', type, message, dirty }, location.origin);
 const sceneJSON = () => JSON.stringify(latest);
 function onChange(elements, state, files) {
-    if (config.readOnly) return;
     const nextSignature = elements.map(item => `${item.id}:${item.version}:${item.versionNonce}`).join('|') + state.viewBackgroundColor + Object.keys(files).join('|');
     if (nextSignature === signature) return;
     const first = signature === null;
+    if (config.readOnly && !first) return;
     signature = nextSignature;
     latest = { type: 'excalidraw', version: 2, source: 'Ancore', elements,
         appState: { viewBackgroundColor: state.viewBackgroundColor }, files };

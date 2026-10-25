@@ -61,7 +61,7 @@ class Folder(models.Model):
     parent = models.ForeignKey('self', on_delete=models.RESTRICT, null=True, blank=True, related_name='children')
     workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='document_folders')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='document_folders')
-    is_starred = models.BooleanField(default=False)
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='favorite_drive_folders', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -91,7 +91,7 @@ class Document(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='documents')
     # Legacy relation retained for existing data; not used by Drive or Documents.
     tags = models.ManyToManyField('tasks.TaskTag', blank=True, related_name='documents', verbose_name='Tagi')
-    is_starred = models.BooleanField(default=False)
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='favorite_drive_documents', blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -174,7 +174,7 @@ class WorkspaceDocument(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='office_documents')
     # Legacy relation retained for existing data; not used by Drive or Documents.
     tags = models.ManyToManyField('tasks.TaskTag', blank=True, related_name='office_documents', verbose_name='Tagi')
-    is_starred = models.BooleanField(default=False)
+    favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='favorite_workspace_documents', blank=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

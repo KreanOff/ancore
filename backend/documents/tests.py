@@ -53,11 +53,15 @@ class DocumentLibraryTests(TestCase):
         return self.client.post(url, {'files': SimpleUploadedFile(name, body)})
 
     def document(self, **kwargs):
+        starred = kwargs.pop('is_starred', False)
         defaults = {'owner': self.user, 'workplace': self.workspace, 'title': 'Dokument', 'filename': 'Dokument.txt'}
         defaults.update(kwargs)
         if 'library' not in defaults:
             defaults['library'] = DocumentLibrary.objects.filter(owner=defaults['owner'], workplace=defaults['workplace']).first()
-        return Document.objects.create(**defaults)
+        item = Document.objects.create(**defaults)
+        if starred:
+            item.favorited_by.add(item.owner)
+        return item
 
     def test_library_requires_login(self):
         self.assertRedirects(Client().get(self.base), f'{reverse("login")}?next={self.base}', fetch_redirect_response=False)

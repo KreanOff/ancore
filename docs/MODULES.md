@@ -221,7 +221,10 @@ pozostają kompatybilne; ta zmiana nazewnictwa nie wymaga migracji danych.
 
 Każdy dysk, folder i plik ma właściciela oraz Workspace.
 Plik ma UUID, nazwę, opis, oryginalną nazwę pliku, rozmiar,
-gwiazdkę oraz datę przeniesienia do kosza.
+osobiste oznaczenia gwiazdką (`favorited_by`) oraz datę przeniesienia do kosza.
+Gwiazdki plików, folderów i Dokumentów są niezależne dla każdego użytkownika,
+także gościa. Katalog, filtry, liczniki i stan przycisków uwzględniają
+wyłącznie oznaczenia zalogowanego konta w dostępnym Workspace.
 
 **Ekrany i funkcje:**
 
@@ -298,7 +301,7 @@ gwiazdkę oraz datę przeniesienia do kosza.
   zaszyfrowany plik ma stan zastępczy. PDF wymaga obsługi tego formatu w przeglądarce.
 - Tworzenie/zmiana nazwy/usunięcie pustego folderu.
 - Foldery mają gwiazdkę i pobieranie ZIP w obu układach. Oznaczone foldery
-  pojawiają się obok plików w widoku „Oznaczone gwiazdką” całego Workspace
+  pojawiają się obok plików w osobistym widoku „Oznaczone gwiazdką” obejmującym Workspace
   i jego liczniku; pokazują nazwę dysku oraz prawidłowy link do zawartości.
   Filtr gwiazdki obejmuje foldery, również zagnieżdżone, i łączy się z wyborem dysku.
   Gwiazdka nie oznacza automatycznie zawartości. ZIP zachowuje aktywne pliki

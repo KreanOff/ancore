@@ -19,6 +19,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from workplaces.services import workspace_owner
+from .stars import toggle_star, with_personal_stars
 
 from core.upload_validation import ATTACHMENT_ALLOWED_EXTENSIONS, attachment_download_response
 from workplaces.services import scoped_workplace_app_path
@@ -51,11 +52,11 @@ def _url(request, suffix='', **params):
 
 
 def _documents(request):
-    return Document.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
+    return with_personal_stars(Document.objects.filter(owner=workspace_owner(request), workplace=request.workplace), request.user)
 
 
 def _folders(request):
-    return Folder.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
+    return with_personal_stars(Folder.objects.filter(owner=workspace_owner(request), workplace=request.workplace), request.user)
 
 
 def _libraries(request):
@@ -261,7 +262,7 @@ def _library_page(request, form_context=None):
         documents = documents.filter(library=selected_library)
     # Workspace-wide file views include folders for stars, without changing "All files".
     show_folders = current_library or current_view == 'starred' or values['starred']
-    folders = _folders(request).filter(library__in=_libraries(request)) if show_folders and current_view in {'all', 'starred'} and not document_only_filter else Folder.objects.none()
+    folders = _folders(request).filter(library__in=_libraries(request)) if show_folders and current_view in {'all', 'starred'} and not document_only_filter else _folders(request).none()
     if current_library or selected_library:
         folders = folders.filter(library=current_library or selected_library)
     if not searching and current_library and current_view == 'all':
@@ -492,8 +493,7 @@ def folder_delete(request, pk):
 def folder_star(request, pk):
     with transaction.atomic():
         folder = get_object_or_404(_folders(request).filter(library__in=_libraries(request)).select_for_update(), pk=pk)
-        folder.is_starred = not folder.is_starred
-        folder.save(update_fields=['is_starred'])
+        toggle_star(folder, request.user)
     return _return_to_library(request, folder)
 
 
@@ -603,8 +603,7 @@ def _return_to_library(request, document):
 def star(request, pk):
     with transaction.atomic():
         document = get_object_or_404(_documents(request).select_for_update(), pk=pk, deleted_at__isnull=True)
-        document.is_starred = not document.is_starred
-        document.save(update_fields=['is_starred'])
+        toggle_star(document, request.user)
     return _return_to_library(request, document)
 
 

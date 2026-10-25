@@ -21,6 +21,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 from workplaces.services import workspace_owner
 from workplaces.policy import read_only
+from .stars import toggle_star, with_personal_stars
 
 from core.upload_validation import attachment_download_response
 from workplaces.services import scoped_workplace_app_path
@@ -44,7 +45,7 @@ def _url(request, suffix='', **params):
 
 
 def _documents(request):
-    return Document.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
+    return with_personal_stars(Document.objects.filter(owner=workspace_owner(request), workplace=request.workplace), request.user)
 
 
 def _item(request, pk, **filters):
@@ -209,7 +210,6 @@ def edit(request, pk=None):
                     if locked:
                         item.revision = locked.revision + 1
                         # Star/trash changes are independent of the editing form.
-                        item.is_starred = locked.is_starred
                         item.office_key = locked.office_key
                         item.office_save_error = locked.office_save_error
                         item.is_pdf_form = locked.is_pdf_form
@@ -341,8 +341,7 @@ def action(request, pk, operation):
     with transaction.atomic():
         item = get_object_or_404(_documents(request).select_for_update(), pk=pk, deleted_at__isnull=operation != 'restore')
         if operation == 'star':
-            item.is_starred = not item.is_starred
-            item.save(update_fields=['is_starred'])
+            toggle_star(item, request.user)
         elif operation in {'trash', 'restore'}:
             item.deleted_at = timezone.now() if operation == 'trash' else None
             item.office_key = uuid.uuid4()

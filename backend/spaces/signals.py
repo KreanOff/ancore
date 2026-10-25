@@ -36,7 +36,8 @@ def removed_space_member(sender, instance, **kwargs):
 def removed_task_member(sender, instance, **kwargs):
     from .access import tree_ids
     from .models import SpaceTask, SpaceTaskMembership
-    if SpaceTask.objects.filter(pk=instance.task_id, visibility='private').exists():
+    # A redundant owner membership does not grant access: private_owner still does.
+    if SpaceTask.objects.filter(pk=instance.task_id, visibility='private').exclude(private_owner_id=instance.user_id).exists():
         descendants = tree_ids(SpaceTask.objects.filter(parent_id=instance.task_id))
         SpaceTaskMembership.objects.filter(task_id__in=descendants, user_id=instance.user_id).delete()
 

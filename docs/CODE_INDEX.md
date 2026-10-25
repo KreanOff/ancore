@@ -24,9 +24,9 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
 | [backend/dashboard](../backend/dashboard) | 52 | 7 | 42 | 261 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
-| [backend/documents](../backend/documents) | 38 | 2 | 31 | 202 |
+| [backend/documents](../backend/documents) | 41 | 3 | 31 | 211 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 48 | 2 | 38 | 266 |
+| [backend/spaces](../backend/spaces) | 49 | 2 | 38 | 274 |
 
 ## 2. Modele i relacje
 
@@ -254,7 +254,7 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/documents/models.py](../backend/documents/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `color` (CharField), `library` (ForeignKey), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `is_starred` (BooleanField), `created_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `color` (CharField), `library` (ForeignKey), `parent` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `favorited_by` (ManyToManyField), `created_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -262,6 +262,7 @@ Pola zadeklarowane tutaj: `name` (CharField), `color` (CharField), `library` (Fo
 | `parent` | `'self'` | on_delete=models.RESTRICT; related_name='children'; null=True |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='document_folders' |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='document_folders' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_drive_folders' |
 
 Metody/properties: `__str__`.
 
@@ -269,7 +270,7 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/documents/models.py](../backend/documents/models.py).
 
-Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (ForeignKey), `description` (TextField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (ForeignKey), `description` (TextField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -278,6 +279,7 @@ Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `library` (Fore
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='documents' |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='documents' |
 | `tags` | `'tasks.TaskTag'` | related_name='documents' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_drive_documents' |
 
 Metody/properties: `extension`, `office_type`, `icon`, `__str__`.
 
@@ -299,7 +301,7 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/documents/models.py](../backend/documents/models.py).
 
-Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `is_template` (BooleanField), `is_pdf_form` (BooleanField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `is_starred` (BooleanField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharField), `content` (TextField), `is_template` (BooleanField), `is_pdf_form` (BooleanField), `revision` (PositiveIntegerField), `office_key` (UUIDField), `office_save_error` (BooleanField), `file` (FileField), `filename` (CharField), `file_size` (PositiveBigIntegerField), `folder` (ForeignKey), `workplace` (ForeignKey), `owner` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `deleted_at` (DateTimeField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -307,6 +309,7 @@ Pola zadeklarowane tutaj: `id` (UUIDField), `title` (CharField), `kind` (CharFie
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='office_documents' |
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='office_documents' |
 | `tags` | `'tasks.TaskTag'` | related_name='office_documents' |
+| `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_workspace_documents' |
 
 Metody/properties: `extension`, `office_type`, `has_full_editor`, `icon`, `__str__`.
 
@@ -963,6 +966,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/documents/previews.py](../backend/documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [backend/documents/query.py](../backend/documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
 - [backend/documents/rich_text.py](../backend/documents/rich_text.py) — `DocumentHTML`, `clean_content`, `text_to_content`, `docx_bytes`
+- [backend/documents/stars.py](../backend/documents/stars.py) — `with_personal_stars`, `toggle_star`
 - [backend/documents/suite_views.py](../backend/documents/suite_views.py) — `create`, `editor`, `board_frame`, `rename`, `save_board`, `save_office`, `state`, `source`, `callback`, `upgrade_text`, `convert`
 - [backend/documents/urls.py](../backend/documents/urls.py)
 - [backend/documents/views.py](../backend/documents/views.py) — `library`, `library_create`, `library_edit`, `library_photo`, `library_delete`, `upload`, `folder_create`, `folder_edit`, `folder_delete`, `folder_star`, `folder_download`, `detail`, `preview`, `preview_content`, `download`, `star`, `trash`, `restore`
@@ -1474,10 +1478,12 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/TeamTable.tsx](../frontend/app/src/workspaces/TeamTable.tsx)
 - [frontend/app/src/workspaces/WorkspaceForm.tsx](../frontend/app/src/workspaces/WorkspaceForm.tsx)
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
+- [frontend/app/tests/board-read-only.test.mjs](../frontend/app/tests/board-read-only.test.mjs)
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
+- [frontend/app/tests/task-actions.test.mjs](../frontend/app/tests/task-actions.test.mjs)
 - [frontend/app/tests/task-members.test.mjs](../frontend/app/tests/task-members.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
@@ -1973,6 +1979,18 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `OfficeQueryTests`: 9 metod testowych.
 
+### backend/documents/test_personal_star_migration.py
+
+Źródło: [backend/documents/test_personal_star_migration.py](../backend/documents/test_personal_star_migration.py).
+
+- `PersonalDocumentStarMigrationTests`: 1 metod testowych.
+
+### backend/documents/test_personal_stars.py
+
+Źródło: [backend/documents/test_personal_stars.py](../backend/documents/test_personal_stars.py).
+
+- `PersonalDocumentStarTests`: 8 metod testowych.
+
 ### backend/documents/test_previews.py
 
 Źródło: [backend/documents/test_previews.py](../backend/documents/test_previews.py).
@@ -2119,6 +2137,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DetailParityTests`: 15 metod testowych.
 
+### backend/spaces/test_task_owner_membership.py
+
+Źródło: [backend/spaces/test_task_owner_membership.py](../backend/spaces/test_task_owner_membership.py).
+
+- `TaskOwnerMembershipTests`: 8 metod testowych.
+
 ### backend/spaces/test_urls.py
 
 Źródło: [backend/spaces/test_urls.py](../backend/spaces/test_urls.py).
@@ -2184,6 +2208,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [backend/documents/migrations/0001_initial.py](../backend/documents/migrations/0001_initial.py)
 - [backend/documents/migrations/0002_initial.py](../backend/documents/migrations/0002_initial.py)
+- [backend/documents/migrations/0003_personal_document_stars.py](../backend/documents/migrations/0003_personal_document_stars.py)
 
 ### resources
 

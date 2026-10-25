@@ -23,7 +23,8 @@ class OfficeQueryTests(TestCase):
         cls.nested = Folder.objects.create(owner=cls.user, workplace=cls.workspace, parent=cls.folder, name='Zulu')
         cls.tag = TaskTag.objects.create(user=cls.user, workplace=cls.workspace, name='Klient')
         cls.alpha = Document.objects.create(owner=cls.user, workplace=cls.workspace, folder=cls.nested,
-                                           kind='file', title='alpha umowa', filename='alpha.PDF', file_size=1024 * 1024, is_starred=True)
+                                           kind='file', title='alpha umowa', filename='alpha.PDF', file_size=1024 * 1024)
+        cls.alpha.favorited_by.add(cls.user)
         cls.zulu = Document.objects.create(owner=cls.user, workplace=cls.workspace, kind='file',
                                           title='Zulu', filename='zulu.txt', file_size=6 * 1024 * 1024)
         cls.alpha.tags.add(cls.tag)
