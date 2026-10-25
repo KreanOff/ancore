@@ -1,0 +1,40 @@
+{% extends 'accounts/auth_base.html' %}
+
+{% block title %}Utwórz Workspace | ancore{% endblock %}
+{% block auth_page_class %}auth-page--register{% endblock %}
+{% block auth_form_header %}
+<header class="auth-form-header">
+    <h1 id="auth-form-title" tabindex="-1">Utwórz Workspace</h1>
+</header>
+{% endblock %}
+
+{% block auth_content %}
+<form method="post" class="auth-form" novalidate>
+    {% csrf_token %}
+    {% if workspaces %}<input type="hidden" name="create_another" value="1">{% endif %}
+    {% if form.errors %}
+    <div class="auth-alert" role="alert">
+        <span>Sprawdź oznaczone pola.</span>
+        {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="auth-field{% if form.name.errors %} auth-field--invalid{% endif %}">
+        <label class="auth-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+        <div id="workspace-name-errors">
+            {% for error in form.name.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="auth-submit">
+        <span class="auth-submit-label">Utwórz Workspace</span>
+    </button>
+</form>
+<p class="auth-footer auth-footer--workspace">
+    Masz już Workspace?
+    <a href="{% url 'select_workspace' %}">Wybierz Workspace</a>
+</p>
+{% endblock %}

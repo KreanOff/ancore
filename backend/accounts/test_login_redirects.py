@@ -18,6 +18,7 @@ class LoginRedirectTests(TestCase):
             username='login-redirect', email='login-redirect@example.test',
             password=cls.password,
         )
+        create_workplace_for_user(cls.user, 'Workspace logowania')
 
     def login(self, url=None, **extra):
         return self.client.post(url or reverse('login'), {
@@ -31,31 +32,25 @@ class LoginRedirectTests(TestCase):
         self.assertNotIn((reverse('workplaces:workplaces'), 302), response.redirect_chain)
         self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
 
-    def test_first_login_opens_for_you_and_initializes_workspace(self):
+    def test_first_login_without_workspace_opens_setup(self):
+        Workplace.objects.filter(owner=self.user).delete()
+        response = self.login()
+        self.assertTemplateUsed(response, 'accounts/register_workspace.html')
         self.assertFalse(Workplace.objects.filter(owner=self.user).exists())
 
-        response = self.login()
-
-        self.assert_for_you(response)
-        workplace = Workplace.objects.get(owner=self.user)
-        self.assertEqual(response.wsgi_request.workplace, workplace)
-        self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], workplace.pk)
-
-    def test_first_login_after_registration_and_relogin_open_for_you(self):
+    def test_registration_setup_enters_workspace_and_relogin_opens_for_you(self):
         response = self.client.post(reverse('register'), {
-            'first_name': 'Anna', 'last_name': 'Nowak',
-            'email': 'registered-login@example.test',
+            'first_name': 'Anna', 'last_name': 'Nowak', 'email': 'registered-login@example.test',
             'password1': self.password, 'password2': self.password,
         })
-        self.assertRedirects(response, reverse('login'))
+        self.assertRedirects(response, reverse('register_workspace'))
+        response = self.client.post(reverse('register_workspace'), {'name': 'Biuro Anny'})
         self.user = get_user_model().objects.get(email='registered-login@example.test')
-
-        self.assert_for_you(self.login())
         workplace = Workplace.objects.get(owner=self.user)
+        self.assertEqual(response.url, scoped_workplace_app_path(workplace, 'for-you'))
         self.client.post(reverse('logout'))
         self.assert_for_you(self.login())
         self.assertEqual(Workplace.objects.filter(owner=self.user).count(), 1)
-        self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], workplace.pk)
 
     def test_get_and_post_next_cannot_change_login_destination(self):
         for next_url in (
@@ -92,6 +87,7 @@ class LoginRedirectTests(TestCase):
         self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], selected.pk)
 
     def test_member_login_opens_for_you_in_shared_workspace(self):
+        Workplace.objects.filter(owner=self.user).delete()
         owner = get_user_model().objects.create_user(username='shared-login-owner', email='shared-login@example.test')
         workplace = create_workplace_for_user(owner, 'Wspólny Workspace')
         WorkplaceMembership.objects.create(workplace=workplace, user=self.user, role='member')
@@ -103,6 +99,7 @@ class LoginRedirectTests(TestCase):
         self.assertFalse(Workplace.objects.filter(owner=self.user).exists())
 
     def test_foreign_workspace_in_session_or_next_does_not_grant_access(self):
+        Workplace.objects.filter(owner=self.user).delete()
         own = create_workplace_for_user(self.user, 'Własny Workspace')
         owner = get_user_model().objects.create_user(username='foreign-login-owner', email='foreign-login@example.test')
         foreign = create_workplace_for_user(owner, 'Obcy Workspace')
@@ -127,7 +124,7 @@ class LoginRedirectTests(TestCase):
         self.assertTemplateUsed(response, 'accounts/login.html')
         self.assertContains(response, 'Email lub hasło są nieprawidłowe.')
         self.assertNotIn(SESSION_KEY, self.client.session)
-        self.assertFalse(Workplace.objects.filter(owner=self.user).exists())
+        self.assertEqual(Workplace.objects.filter(owner=self.user).count(), 1)
 
     def test_login_still_requires_csrf_token(self):
         client = Client(enforce_csrf_checks=True)

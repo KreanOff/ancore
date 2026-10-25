@@ -15,11 +15,11 @@
         <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
             {% for invitation in team_invitations %}
             <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
-                <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" data-team-select value="{{ invitation.pk }}" aria-label="Zaznacz zaproszenie dla {{ invitation.recipient.email }}">
+                <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" data-team-select value="{{ invitation.pk }}" aria-label="Zaznacz zaproszenie dla {{ invitation.recipient.email|default:invitation.email }}">
                 <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
-                    {% if is_team_owner or invitation.role == 'member' or project_team and invitation.role == 'observer' %}
+                    {% if is_team_owner or invitation.role == 'member' or invitation.role == 'guest' or project_team and invitation.role == 'observer' %}
                     <div class="documents-item-actions" data-row-actions>
-                        <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" aria-controls="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ invitation.recipient.email }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
+                        <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" aria-controls="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania: {{ invitation.recipient.email|default:invitation.email }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
                         <div id="{{ team_prefix }}team-invitation-menu-{{ invitation.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="menu" data-row-actions-panel>
                             <div class="documents-menu-actions">
                                 {% if project_team %}
@@ -33,10 +33,12 @@
                     {% endif %}
                 </div>
                 <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="cell">
-                    {% user_avatar invitation.recipient as recipient_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=recipient_avatar avatar_class='tasks-directory-avatar' only %}
-                    <span class="workplace-team__name" title="{{ invitation.recipient.get_full_name|default:invitation.recipient.username }}">{{ invitation.recipient.get_full_name|default:invitation.recipient.username }}</span>
+                    {% if invitation.recipient %}
+                        {% user_avatar invitation.recipient as recipient_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=recipient_avatar avatar_class='tasks-directory-avatar' only %}
+                        <span class="workplace-team__name" title="{{ invitation.recipient.get_full_name|default:invitation.recipient.username }}">{{ invitation.recipient.get_full_name|default:invitation.recipient.username }}</span>
+                    {% else %}<span class="workplace-team__name">{{ invitation.email }}</span>{% endif %}
                 </div>
-                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="cell" title="{{ invitation.recipient.email }}"><span class="workplace-team__name">{{ invitation.recipient.email }}</span></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="cell" title="{{ invitation.recipient.email|default:invitation.email }}"><span class="workplace-team__name">{{ invitation.recipient.email|default:invitation.email }}</span></span>
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="role" role="cell">{{ invitation.get_role_display }}</span>
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="expires" role="cell">{{ invitation.expires_at|date:'d.m.Y' }}</span>
             </div>

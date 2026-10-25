@@ -23,8 +23,11 @@ SIDEBAR_FAVORITE_KEYS = frozenset(item['key'] for item in SIDEBAR_FAVORITE_DEFIN
 
 
 def sidebar_favorite_catalog(workplace):
+    from .policy import module_enabled
     catalog = {}
     for definition in SIDEBAR_FAVORITE_DEFINITIONS:
+        if not module_enabled(workplace, definition.get('app', '')):
+            continue
         item = definition.copy()
         if item.get('route_name'):
             item['url'] = reverse(item['route_name'])
@@ -34,7 +37,7 @@ def sidebar_favorite_catalog(workplace):
                 item['app'],
                 item.get('suffix', ''),
                 item.get('query', ''),
-            )
+            ) if workplace else '/' + item['app'] + '/'
         catalog[item['key']] = item
     return catalog
 

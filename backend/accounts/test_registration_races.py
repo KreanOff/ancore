@@ -40,7 +40,8 @@ class RegistrationRaceTests(TransactionTestCase):
                 html, api = [future.result(timeout=20) for future in futures]
         self.assertEqual(html.status_code, 302, html.content)
         self.assertEqual(api.status_code, 200, api.content)
-        self.assertEqual(api.json()['redirect'], reverse('login'))
+        self.assertEqual(html.url, reverse('register_workspace'))
+        self.assertEqual(api.json()['redirect'], reverse('register_workspace'))
         users = list(get_user_model().objects.order_by('email'))
         self.assertEqual({user.username for user in users}, {'@anna.nowak', '@anna.nowak2'})
         self.assertEqual(len(users), 2)

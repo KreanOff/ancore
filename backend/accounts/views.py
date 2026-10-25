@@ -10,11 +10,15 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.crypto import constant_time_compare
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
 from core.api import api_error
 from core.frontend import render
+from workplaces.forms import RegistrationWorkspaceForm
+from workplaces.models import Workplace, create_workplace_for_user
+from workplaces.services import workplaces_for_user, set_active_workplace, enable_workspace_url_scope, scoped_workplace_app_path
 from .avatar import account_avatar as _account_avatar
 from .forms import UserProfileForm, UserRegistrationForm
 from .presence import mark_user_inactive, mark_user_seen
@@ -34,6 +38,15 @@ class AccountLoginView(LoginView):
     def get_redirect_url(self):
         # Every login opens the same landing page, including requests with next.
         return ''
+
+    def get_success_url(self):
+        from workplaces.invitations import pending_join_url
+        invitation = pending_join_url(self.request)
+        if invitation:
+            return invitation
+        if not workplaces_for_user(self.request.user).exists():
+            return reverse('register_workspace')
+        return super().get_success_url()
 
 
 class AccountLogoutView(LogoutView):
@@ -151,13 +164,56 @@ def _save_user_form(form):
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
-        if form.is_valid() and _save_user_form(form):
-            messages.success(request, 'Konto zostało utworzone pomyślnie! Możesz się teraz zalogować.')
-            return redirect('login')
+        if form.is_valid():
+            with transaction.atomic():
+                if _save_user_form(form):
+                    from workplaces.invitations import pending_join_url
+                    invitation = pending_join_url(request)
+                    account_ids = _normalized_account_ids(request) if request.user.is_authenticated else []
+                    _login_preserving_switcher(request, form.instance, account_ids, authenticated=True)
+                    if invitation:
+                        request.session['workspace_join_url'] = invitation
+                    return redirect(invitation or reverse('register_workspace'))
     else:
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form},
                   status=400 if getattr(request, '_react_api', False) and form.errors else 200)
+
+
+@never_cache
+@login_required
+@require_http_methods(['GET', 'POST'])
+def register_workspace(request):
+    user_workplaces = workplaces_for_user(request.user)
+    workplace = user_workplaces.first()
+    create_another = request.POST.get('create_another') == '1'
+    if request.method == 'POST' and workplace and not create_another:
+        return redirect(scoped_workplace_app_path(workplace, 'for-you'))
+    form = RegistrationWorkspaceForm(request.POST if request.method == 'POST' else None)
+    if request.method == 'POST' and form.is_valid():
+        with transaction.atomic():
+            get_user_model().objects.select_for_update().get(pk=request.user.pk)
+            workplace = workplaces_for_user(request.user).first()
+            if workplace is None or create_another:
+                workplace = create_workplace_for_user(request.user, form.cleaned_data['name'])
+        set_active_workplace(request, workplace)
+        enable_workspace_url_scope(request)
+        messages.success(request, 'Workspace jest gotowy.')
+        return redirect(scoped_workplace_app_path(workplace, 'for-you'))
+
+    return render(request, 'accounts/register_workspace.html', {
+        'form': form,
+        'workspaces': user_workplaces,
+    }, status=400 if getattr(request, '_react_api', False) and form.errors else 200)
+
+
+@never_cache
+@login_required
+@require_http_methods(['GET'])
+def select_workspace(request):
+    return render(request, 'accounts/select_workspace.html', {
+        'workspaces': workplaces_for_user(request.user),
+    })
 
 
 @login_required

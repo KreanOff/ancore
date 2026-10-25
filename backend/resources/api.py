@@ -55,8 +55,10 @@ def editor_payload(form):
 
 
 def directory_payload(request, context=None):
+    from workplaces.policy import read_only
     context = context if context is not None else directory_context(request)
     return {
+        'read_only': read_only(request),
         'results': [resource_payload(item) for item in context['resources']],
         'list_url': context['list_url'], 'base_url': context['resources_url'],
         'api_url': resource_base_url(request) + 'api/v1/',

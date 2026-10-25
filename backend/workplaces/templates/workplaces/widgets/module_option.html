@@ -1,0 +1,11 @@
+<label class="workplace-module-card"{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>
+    <i data-icon="{{ widget.icon }}" aria-hidden="true"></i>
+    <span class="workplace-module-card__body">
+        <span class="workplace-module-card__name" id="{{ widget.attrs.id }}-label">{{ widget.label }}</span>
+        <span class="workplace-module-card__description" id="{{ widget.attrs.id }}-description">{{ widget.description }}</span>
+    </span>
+    <span class="tasks-toggle workplace-module-card__toggle">
+        {% include 'django/forms/widgets/input.html' %}
+        <span aria-hidden="true"></span>
+    </span>
+</label>

@@ -162,6 +162,9 @@ def for_you_context(request):
         if model is SpaceTask:
             query = query.select_related('work_item__space__configuration', 'work_item__space')
         scopes[model] = query
+    from workplaces.policy import module_enabled
+    if not module_enabled(workplace, 'spaces'):
+        scopes = {model: query.none() for model, query in scopes.items()}
 
     assigned_count = scopes[SpaceTask].filter(assignee=viewer).exclude(status='closed').count()
     projects = _project_shortcuts(scopes, viewer, workplace, now, recent)

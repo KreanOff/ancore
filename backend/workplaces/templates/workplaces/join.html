@@ -1,0 +1,12 @@
+{% extends 'accounts/auth_base.html' %}
+{% block title %}Dołącz do Workspace | ancore{% endblock %}
+{% block auth_card_title %}Dołącz do Workspace{% endblock %}
+{% block auth_subtitle %}{{ invitation.workplace.name }} · {{ invitation.get_role_display }}{% endblock %}
+{% block auth_content %}
+{% if join_error %}<div class="auth-alert" role="alert">{{ join_error }}</div>
+{% elif user.is_authenticated %}
+<form method="post" class="auth-form">{% csrf_token %}
+<button class="auth-submit" type="submit">Dołącz do Workspace</button></form>
+{% else %}<p>Zaloguj się lub utwórz konto, aby przyjąć zaproszenie.</p>
+<p><a href="{% url 'login' %}">Zaloguj się</a> · <a href="{% url 'register' %}">Utwórz konto</a></p>{% endif %}
+{% endblock %}

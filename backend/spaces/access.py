@@ -19,7 +19,9 @@ def spaces_for(viewer):
 
 def editable_spaces(viewer):
     observed = Space.objects.filter(visibility='private', memberships__user=viewer, memberships__role='observer').exclude(private_owner=viewer)
-    return spaces_for(viewer).exclude(pk__in=observed.values('pk'))
+    return spaces_for(viewer).exclude(pk__in=observed.values('pk')).exclude(
+        workplace__memberships__user=viewer, workplace__memberships__role='guest', workplace__memberships__is_active=True,
+    )
 
 
 def tree_ids(roots):

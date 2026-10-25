@@ -147,6 +147,8 @@ def global_search(request):
     query = (request.GET.get('q') or '').strip()[:GLOBAL_SEARCH_QUERY_LIMIT]
     if not query and request.GET.get('recent') == '1':
         recent = _recent_search_results(request)
+        from workplaces.policy import module_enabled, module_for_path
+        recent = [item for item in recent if module_enabled(request.workplace, module_for_path(item['url']))]
         response = JsonResponse({
             'query': '', 'recent': True, 'total': len(recent), 'truncated': False,
             'groups': [{'key': 'recent', 'label': 'Ostatnio oglądane', 'icon': 'history',
@@ -298,6 +300,9 @@ def global_search(request):
             lambda item: _global_search_result(item.name, 'Folder', _search_url(documents_url, library=item.library_id, folder=item.pk), 'folder', item.library.name),
         ),
     ))
+    from workplaces.policy import module_enabled, module_for_path
+    for group in groups:
+        group['results'] = [item for item in group['results'] if module_enabled(workplace, module_for_path(item['url']))]
     groups = [group for group in groups if group['results']]
     response = JsonResponse({
         'query': query,

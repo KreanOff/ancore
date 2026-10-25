@@ -1,0 +1,33 @@
+{% extends 'accounts/auth_base.html' %}
+
+{% block title %}Wybierz Workspace | ancore{% endblock %}
+{% block auth_form_header %}
+<header class="auth-form-header">
+    <h1 id="auth-form-title" tabindex="-1">Wybierz Workspace</h1>
+</header>
+{% endblock %}
+
+{% block auth_content %}
+{% if workspaces %}
+<ul class="auth-workspace-list">
+    {% for workspace in workspaces %}
+    <li>
+        <form method="post" action="{% url 'workplaces:switch' workspace.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="auth-workspace-option">
+                <i data-icon="folder" aria-hidden="true"></i>
+                <span>{{ workspace.name }}</span>
+                <i data-icon="arrow-right" aria-hidden="true"></i>
+            </button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="auth-form-subtitle">Brak dostępnych Workspace.</p>
+{% endif %}
+<div class="auth-footer auth-footer--workspace">
+    <p>Chcesz utworzyć kolejny Workspace? <a href="{% url 'register_workspace' %}">Utwórz Workspace</a></p>
+    <p>Nie widzisz swojego Workspace? <a href="{% url 'login' %}">Zmień konto</a></p>
+</div>
+{% endblock %}

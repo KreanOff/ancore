@@ -120,6 +120,8 @@ def board_frame(request, pk):
     item = _item(request, pk, kind=Document.Kind.BOARD)
     config = {'scene': json.loads(item.content or json.dumps(EMPTY_SCENE)), 'revision': item.revision,
               'saveUrl': _url(request, f'{pk}/board/save/'), 'name': item.title}
+    from workplaces.policy import read_only
+    config['readOnly'] = read_only(request)
     response = django_render(request, 'documents/office/board_frame.html', {'board_config': config})
     # Images are data URLs; application assets/fonts and saves stay on this origin.
     response['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; frame-src 'none'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'"

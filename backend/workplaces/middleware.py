@@ -1,5 +1,8 @@
 from django.db.models import Q
 from django.shortcuts import redirect
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.urls import reverse
 from core.api import api_error, is_api_request
 
 from .services import (
@@ -23,6 +26,27 @@ def _scoped_workplace_segments(path_info):
 class ActiveWorkplaceMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        from .policy import check_access, module_for_request
+        if not request.user.is_authenticated:
+            return None
+        domain = view_func.__module__.split('.')[0]
+        personal = domain == 'dashboard' and view_func.__name__ in {'notifications', 'notification_action'}
+        if request.workplace is None and not personal and (module_for_request(request) or domain in {'spaces', 'planner', 'resources', 'documents', 'dashboard'}):
+            if is_api_request(request) or view_func.__name__ == 'global_search':
+                return api_error('Utwórz Workspace lub przyjmij zaproszenie.', 409, redirect=reverse('register_workspace'))
+            return redirect('register_workspace')
+        try:
+            check_access(request)
+        except PermissionDenied as error:
+            if is_api_request(request):
+                return api_error(str(error), 403)
+            raise
+        except Http404 as error:
+            if is_api_request(request):
+                return api_error(str(error), 404)
+            raise
 
     def __call__(self, request):
         user = getattr(request, 'user', None)

@@ -15,5 +15,5 @@ def removed_workspace_member(sender, instance, using, **kwargs):
 
 @receiver(post_save, sender='workplaces.WorkplaceMembership')
 def disabled_workspace_member(sender, instance, raw=False, using=None, **kwargs):
-    if not raw and (not instance.is_active or instance.role not in {'owner', 'admin', 'member'}):
+    if not raw and (not instance.is_active or instance.role not in {'owner', 'admin', 'member', 'guest'}):
         removed_workspace_member(sender, instance, using)

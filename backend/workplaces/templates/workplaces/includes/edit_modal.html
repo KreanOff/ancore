@@ -39,6 +39,12 @@
                                         <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code"><span>Kod miejsca pracy</span><input id="workplace-edit-code" type="text" value="{{ workplace.code }}" class="tasks-inline-input" readonly aria-describedby="workplace-edit-code-hint"><small id="workplace-edit-code-hint" class="u-sr-only">Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu.</small></label>
                                     </div>
                                 </section>
+                                {% if can_manage_team %}<div class="tasks-form-field workplace-module-fields">
+                                    <label>{{ avatar_edit_form.enabled_modules.label }}</label>
+                                    <input type="hidden" name="modules_submitted" value="1">
+                                    {{ avatar_edit_form.enabled_modules }}
+                                    <small>{{ avatar_edit_form.enabled_modules.help_text }}</small>
+                                </div>{% endif %}
                             </div>
                         </div>
                     </form>

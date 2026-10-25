@@ -1,10 +1,12 @@
 import secrets
 import string
+import uuid
 
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import IntegrityError, models, router, transaction
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils import timezone
 from datetime import timedelta
 
@@ -20,6 +22,7 @@ class Workplace(models.Model):
     slug = models.SlugField(max_length=160, blank=True, unique=True, editable=False)
     legacy_slug = models.SlugField(max_length=160, blank=True, null=True, unique=True, editable=False)
     avatar = models.CharField(max_length=32, blank=True, default='')
+    disabled_modules = models.JSONField(default=list, blank=True)
     workplace_photo = models.FileField(
         blank=True,
         upload_to='workplace_photos/',
@@ -97,6 +100,7 @@ class WorkplaceMembership(models.Model):
         OWNER = 'owner', 'Właściciel'
         ADMIN = 'admin', 'Administrator'
         MEMBER = 'member', 'Członek'
+        GUEST = 'guest', 'Gość — tylko odczyt'
 
     workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='memberships')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workplace_memberships')
@@ -126,9 +130,12 @@ class WorkplaceInvitation(models.Model):
         REVOKED = 'revoked', 'Anulowane'
 
     workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='invitations')
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workplace_invitations')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workplace_invitations', null=True, blank=True)
+    email = models.EmailField(blank=True)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    email_sent_at = models.DateTimeField(null=True, blank=True)
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_workplace_invitations')
-    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek')], default='member')
+    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('guest', 'Gość — tylko odczyt')], default='member')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(default=invitation_expiry)
@@ -136,8 +143,31 @@ class WorkplaceInvitation(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['workplace', 'recipient'], condition=Q(status='pending'), name='unique_pending_workplace_invite'),
+            models.UniqueConstraint(Lower('email'), 'workplace', condition=Q(status='pending') & ~Q(email=''), name='unique_pending_workspace_email'),
         ]
         ordering = ['-created_at', '-pk']
+
+
+class WorkplaceInviteLink(models.Model):
+    workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='invite_links')
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    role = models.CharField(max_length=20, choices=[('member', 'Członek'), ('guest', 'Gość — tylko odczyt')], default='member')
+    email_domain = models.CharField(max_length=253, blank=True)
+    max_uses = models.PositiveIntegerField(default=10)
+    uses = models.PositiveIntegerField(default=0)
+    expires_at = models.DateTimeField(default=invitation_expiry)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class WorkplaceInviteLinkUse(models.Model):
+    link = models.ForeignKey(WorkplaceInviteLink, on_delete=models.CASCADE, related_name='redemptions')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['link', 'user'], name='unique_workspace_link_user')]
 
 
 class SidebarFavorite(models.Model):
@@ -168,13 +198,14 @@ class SidebarFavorite(models.Model):
         return f'{self.user} - {self.workplace} - {self.item_key}'
 
 
-def create_workplace_for_user(user, name, workplace_photo=None, description='', avatar=''):
+def create_workplace_for_user(user, name, workplace_photo=None, description='', avatar='', disabled_modules=None):
     with transaction.atomic():
         workplace_data = {
             'owner': user,
             'name': name,
             'description': description,
             'avatar': avatar,
+            'disabled_modules': disabled_modules or [],
         }
         if workplace_photo:
             workplace_data['workplace_photo'] = workplace_photo
@@ -185,4 +216,10 @@ def create_workplace_for_user(user, name, workplace_photo=None, description='', 
             workplace=workplace,
             item_key='dashboard',
         )
+        from dashboard.models import Dashboard, DashboardGadget
+        dashboard = Dashboard.objects.create(
+            owner=user, workplace=workplace, created_by=user,
+            is_default=True, name='Pulpit domyślny',
+        )
+        DashboardGadget.objects.create(dashboard=dashboard, kind=DashboardGadget.Kind.PROGRESS)
     return workplace

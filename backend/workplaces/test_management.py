@@ -4,7 +4,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
-from .services import workplace_management_url
+from .services import workplace_management_url, scoped_workplace_app_path
 
 
 class WorkspaceManagementTests(TestCase):
@@ -96,7 +96,7 @@ class WorkspaceManagementTests(TestCase):
 
     def test_invitation_errors_and_success_keep_selected_team(self):
         url = reverse('workplaces:team', args=[self.selected.pk])
-        response = self.client.post(url, {'email': 'missing@example.test', 'role': 'member'})
+        response = self.client.post(url, {'email': 'invalid-email', 'role': 'member'})
         self.assertEqual(response.context['team_workplace'], self.selected)
         self.assertTrue(response.context['invite_form'].errors)
         self.assertTrue(response.context['workplace_edit_modal_open'])
@@ -157,11 +157,11 @@ class WorkspaceManagementTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(WorkplaceInvitation.objects.filter(recipient=self.recipient).exists())
 
-    def test_creation_stays_in_management_and_explicit_switch_changes_context(self):
+    def test_creation_enters_new_workspace_and_explicit_switch_changes_context(self):
         response = self.client.post(reverse('workplaces:workplaces'), {'name': 'Nowy Workspace'})
         created = self.owner.owned_workplaces.get(name='Nowy Workspace')
-        self.assertRedirects(response, workplace_management_url(created, 'workspaces'))
-        self.assert_active_unchanged()
+        self.assertRedirects(response, scoped_workplace_app_path(created, 'for-you'))
+        self.assertEqual(self.client.session['active_workplace_id'], created.pk)
         response = self.client.post(reverse('workplaces:switch', args=[created.pk]))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session['active_workplace_id'], created.pk)

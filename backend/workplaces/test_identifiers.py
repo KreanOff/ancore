@@ -104,7 +104,7 @@ class WorkspaceIdentifierTests(TestCase):
         self.client.force_login(self.owner)
         for identifier in [self.workspace.slug, self.workspace.legacy_slug]:
             response = self.client.get(reverse('workplaces:workplace-home', args=[identifier]))
-            self.assertRedirects(response, scoped_workplace_app_path(self.workspace), fetch_redirect_response=False)
+            self.assertRedirects(response, scoped_workplace_app_path(self.workspace, 'for-you'), fetch_redirect_response=False)
 
     def test_alias_and_random_code_do_not_bypass_membership(self):
         self.client.force_login(self.other)

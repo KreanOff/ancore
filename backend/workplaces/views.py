@@ -40,11 +40,13 @@ def workplaces(request):
                 ),
                 description=form.cleaned_data.get('description', ''),
                 avatar=form.cleaned_data.get('avatar', ''),
+                disabled_modules=[key for key, _ in form.fields['enabled_modules'].choices if key not in form.cleaned_data['enabled_modules']],
             )
             if form.avatar_mode == 'upload' and form.cleaned_data.get('workplace_photo_crop'):
                 form.apply_photo(workplace)
             messages.success(request, 'Miejsce pracy utworzone.')
-            return redirect(workplace_management_url(workplace, 'workspaces'))
+            set_active_workplace(request, workplace)
+            return redirect(scoped_workplace_app_path(workplace, 'for-you'))
         messages.error(request, 'Nie udało się utworzyć miejsca pracy.')
 
     return render_workplaces(request, form=form, workplace_create_modal_open=workplace_create_modal_open)
@@ -81,7 +83,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
              if member.user_id == request.user.pk and member.is_active), ''
         ))
         workplace.can_manage_team = role in {'owner', 'admin'}
-        workplace.viewer_role_label = {'owner': 'Właściciel', 'admin': 'Administrator', 'member': 'Członek'}.get(role, '')
+        workplace.viewer_role_label = {'owner': 'Właściciel', 'admin': 'Administrator', 'member': 'Członek', 'guest': 'Gość — tylko odczyt'}.get(role, '')
     selected_id = str(team_workplace.pk) if team_workplace else request.GET.get('workspace')
     if selected_id is not None:
         team_workplace = next((workplace for workplace in user_workplaces if str(workplace.pk) == selected_id), None)
@@ -147,7 +149,7 @@ def switch_workplace(request, workplace_id):
     workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
     set_active_workplace(request, workplace)
     enable_workspace_url_scope(request)
-    next_url = scoped_workplace_app_path(workplace, 'tasks')
+    next_url = scoped_workplace_app_path(workplace, 'for-you')
     messages.success(request, f'Przełączono na {workplace.name}.')
     return redirect(next_url)
 
@@ -287,7 +289,7 @@ def workplace_home(request, workplace_slug):
     )
     set_active_workplace(request, workplace)
     enable_workspace_url_scope(request)
-    return redirect(scoped_workplace_app_path(workplace, 'tasks'))
+    return redirect(scoped_workplace_app_path(workplace, 'for-you'))
 
 
 @login_required

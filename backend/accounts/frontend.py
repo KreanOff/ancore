@@ -14,7 +14,7 @@ def _form(form):
         # PasswordInput.format_value alone does not implement render_value=False.
         if field['type'] == 'password':
             field['value'] = ''
-        for key in ('autocomplete', 'spellcheck'):
+        for key in ('autocomplete', 'spellcheck', 'aria-describedby'):
             if key in bound.field.widget.attrs:
                 field['attrs'][key] = str(bound.field.widget.attrs[key])
     return schema
@@ -34,6 +34,24 @@ def login_page(request, context):
 
 def register_page(request, context):
     return _auth_page(context, 'register', 'Rejestracja')
+
+
+def register_workspace_page(request, context):
+    page = _auth_page(context, 'workspace', 'Utwórz Workspace')
+    page['data']['has_workspaces'] = bool(context['workspaces'])
+    page['data']['urls']['select_workspace'] = reverse('select_workspace')
+    return page
+
+
+def select_workspace_page(request, context):
+    return {'type': 'account-workspace-picker', 'title': 'Wybierz Workspace',
+            'api_url': reverse('accounts-api'), 'data': {
+        'workspaces': [{
+            'id': str(workplace.pk), 'name': workplace.name,
+            'switch_url': reverse('workplaces:switch', args=[workplace.pk]),
+        } for workplace in context['workspaces']],
+        'urls': {'home': reverse('home'), 'create': reverse('register_workspace'), 'login': reverse('login')},
+    }}
 
 
 def add_account_page(request, context):

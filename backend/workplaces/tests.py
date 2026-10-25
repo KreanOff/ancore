@@ -575,11 +575,11 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertRedirects(
             response,
-            scoped_workplace_app_path(self.second_workplace, 'tasks'),
+            scoped_workplace_app_path(self.second_workplace, 'for-you'),
             fetch_redirect_response=False,
         )
 
-    def test_create_workplace_opens_management_without_switching(self):
+    def test_create_workplace_enters_new_workspace(self):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
@@ -588,10 +588,10 @@ class WorkplaceSelectionTests(TestCase):
 
         self.assertRedirects(
             response,
-            workplace_management_url(workplace, 'workspaces'),
+            scoped_workplace_app_path(workplace, 'for-you'),
             fetch_redirect_response=False,
         )
-        self.assertEqual(self.client.session['active_workplace_id'], self.first_workplace.pk)
+        self.assertEqual(self.client.session['active_workplace_id'], workplace.pk)
         membership = workplace.memberships.get(user=self.user)
         self.assertEqual(membership.role, WorkplaceMembership.Role.OWNER)
 
@@ -603,7 +603,7 @@ class WorkplaceSelectionTests(TestCase):
         workplace = type(self.first_workplace).objects.get(owner=self.user, name='Zespół wdrożeniowy')
         self.assertRedirects(
             response,
-            workplace_management_url(workplace, 'workspaces'),
+            scoped_workplace_app_path(workplace, 'for-you'),
             fetch_redirect_response=False,
         )
 

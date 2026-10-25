@@ -19,6 +19,9 @@ from .api import api_error, api_view, json_object
 SCREENS = {
     'accounts/login.html': ('accounts.frontend', 'login_page'),
     'accounts/register.html': ('accounts.frontend', 'register_page'),
+    'accounts/register_workspace.html': ('accounts.frontend', 'register_workspace_page'),
+    'accounts/select_workspace.html': ('accounts.frontend', 'select_workspace_page'),
+    'workplaces/join.html': ('workplaces.frontend', 'join_page'),
     'accounts/add_account.html': ('accounts.frontend', 'add_account_page'),
     'accounts/profile.html': ('accounts.frontend', 'profile_page'),
     'workplaces/workplaces.html': ('workplaces.frontend', 'directory_page'),
@@ -49,6 +52,7 @@ SCREENS = {
     'documents/office/suite.html': ('documents.frontend', 'suite_page'),
 }
 VIEWS = {
+    'workplaces.invitations': {'create_link', 'revoke_link', 'resend_email'},
     'accounts.views': {'profile'},
     'workplaces.views': {'workplaces', 'update_workplace', 'delete_workplace', 'switch_workplace', 'toggle_sidebar_favorite', 'reorder_sidebar_favorites'},
     'workplaces.team_views': {'team', 'invitation_candidates', 'member_update', 'invitation_cancel', 'invitation_response'},
@@ -86,6 +90,10 @@ def render(request, template_name, context=None, *args, **kwargs):
     context = dict(context or {})
     serializer = getattr(import_module(registration[0]), registration[1])
     page = serializer(request, context)
+    from workplaces.policy import read_only, restrict_page
+    page['read_only'] = read_only(request) and not page['type'].startswith(('account-', 'workspace-'))
+    if page['read_only']:
+        restrict_page(page)
     page.update(url=request.get_full_path())
     page.setdefault('api_url', api_url(request))
     if getattr(request, '_react_api', False):
@@ -230,6 +238,11 @@ def dispatch(request):
     except ValueError as error:
         return api_error(str(error), 400)
     module, name = match.func.__module__, match.func.__name__
+    from workplaces.policy import check_access, module_for_request
+    if request.workplace is None and module_for_request(delegated):
+        from django.urls import reverse
+        return JsonResponse({'redirect': reverse('register_workspace')})
+    check_access(delegated)
     if request.method == 'POST' and request.content_type == 'application/json' and (module, name) not in JSON_BODY_VIEWS:
         try:
             values = json_object(request)

@@ -64,7 +64,7 @@ class AccountFrontendTests(TestCase):
         self.assertEqual(self.client.get(reverse('react-page'), {'url': reverse('login')}).status_code, 401)
 
     def test_private_account_routes_require_session(self):
-        for name in ('profile', 'add_account', 'switch_account', 'remove_account', 'update_presence_status', 'logout'):
+        for name in ('profile', 'select_workspace', 'add_account', 'switch_account', 'remove_account', 'update_presence_status', 'logout'):
             for body in (None, {}):
                 with self.subTest(name=name, body=body):
                     self.assertEqual(self.api(name, body).status_code, 401)
@@ -107,7 +107,7 @@ class AccountFrontendTests(TestCase):
             self.assertNotIn(SESSION_KEY, self.client.session)
         get_user_model().objects.filter(pk=self.user.pk).update(is_active=True)
 
-    def test_registration_validates_then_creates_without_logging_in(self):
+    def test_registration_validates_then_authenticates_for_workspace_setup(self):
         payload = {'first_name': 'Ewa', 'last_name': 'Testowa', 'email': 'ewa.frontend@example.test',
                    'password1': self.password, 'password2': 'mismatch-never-echo'}
         response = self.api('register', payload)
@@ -116,16 +116,16 @@ class AccountFrontendTests(TestCase):
         self.assertNotContains(response, payload['password2'], status_code=400)
         self.assertTrue(next(f for f in response.json()['data']['form']['fields'] if f['name'] == 'password2')['errors'])
         payload['password2'] = self.password
-        self.assertEqual(self.api('register', payload).json(), {'redirect': reverse('login')})
+        self.assertEqual(self.api('register', payload).json(), {'redirect': reverse('register_workspace')})
         created = get_user_model().objects.get(email=payload['email'])
         self.assertTrue(created.check_password(self.password))
-        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.assertEqual(self.client.session[SESSION_KEY], str(created.pk))
         payload['email'] = payload['email'].upper()
         self.assertEqual(self.api('register', payload).status_code, 400)
 
     def test_csrf_is_required_for_public_and_private_operations(self):
         client = Client(enforce_csrf_checks=True)
-        for name in ('login', 'register'):
+        for name in ('login', 'register', 'register_workspace'):
             response = self.api(name, {}, client=client)
             self.assertEqual(response.status_code, 403)
             self.assertEqual(response['Content-Type'], 'application/json')

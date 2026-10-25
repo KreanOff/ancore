@@ -30,20 +30,20 @@ class TeamRoleSelect(forms.Select):
 
 
 class InvitationForm(forms.Form):
-    email = forms.EmailField(label='Osoba lub adres e-mail konta Ancore', widget=forms.TextInput(attrs={
+    email = forms.EmailField(label='Osoba lub adres e-mail', widget=forms.TextInput(attrs={
         'class': 'form-input', 'autocomplete': 'off', 'spellcheck': 'false',
         'placeholder': 'Wpisz imię, nazwisko, ID Ancore lub e-mail',
         'data-team-invite-search': '', 'role': 'combobox', 'aria-autocomplete': 'list',
         'aria-expanded': 'false', 'aria-controls': 'team-invite-results',
         'aria-describedby': 'team-invite-search-status',
     }))
-    role = forms.ChoiceField(label='Rola', choices=[('member', 'Członek'), ('admin', 'Administrator')], widget=TeamRoleSelect(attrs={'class': 'form-select'}))
+    role = forms.ChoiceField(label='Rola', choices=[('member', 'Członek'), ('admin', 'Administrator'), ('guest', 'Gość — tylko odczyt')], widget=TeamRoleSelect(attrs={'class': 'form-select'}))
 
     def __init__(self, *args, workplace, actor, **kwargs):
         super().__init__(*args, **kwargs)
         self.workplace = workplace
         if workplace.owner_id != actor.pk:
-            self.fields['role'].choices = [('member', 'Członek')]
+            self.fields['role'].choices = [('member', 'Członek'), ('guest', 'Gość — tylko odczyt')]
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip()
@@ -51,13 +51,16 @@ class InvitationForm(forms.Form):
         try:
             recipient = user_model.objects.get(email__iexact=email, is_active=True)
         except user_model.DoesNotExist:
-            raise forms.ValidationError('Nie znaleziono aktywnego konta Ancore z tym adresem. Poproś tę osobę o rejestrację.')
+            recipient = None
         except user_model.MultipleObjectsReturned:
             # Fail closed for legacy databases awaiting the email constraint.
             raise forms.ValidationError('Adres e-mail pasuje do kilku kont. Poproś administratora o wyjaśnienie duplikatu.')
-        if recipient.pk == self.workplace.owner_id or self.workplace.memberships.filter(user=recipient, is_active=True).exists():
+        if recipient and (recipient.pk == self.workplace.owner_id or self.workplace.memberships.filter(user=recipient, is_active=True).exists()):
             raise forms.ValidationError('Ta osoba jest już członkiem Workspace.')
-        if self.workplace.invitations.filter(recipient=recipient, status='pending', expires_at__gt=timezone.now()).exists():
+        duplicate = Q(email__iexact=email)
+        if recipient:
+            duplicate |= Q(recipient=recipient)
+        if self.workplace.invitations.filter(duplicate, status='pending', expires_at__gt=timezone.now()).exists():
             raise forms.ValidationError('Ta osoba ma już oczekujące zaproszenie.')
         self.recipient = recipient
         return email
@@ -106,16 +109,20 @@ def team(request, workplace_id):
         return redirect(workplace_management_url(workplace, request.GET.get('view')))
     form = InvitationForm(workplace=workplace, actor=request.user)
     if request.method == 'POST':
+        invitation = None
         with transaction.atomic():
             workplace = get_object_or_404(Workplace.objects.select_for_update(), pk=workplace_id)
             if not can_manage_team(request.user, workplace):
                 raise PermissionDenied
             form = InvitationForm(request.POST, workplace=workplace, actor=request.user)
             if form.is_valid():
-                workplace.invitations.filter(recipient=form.recipient, status='pending').update(status='revoked')
-                WorkplaceInvitation.objects.create(workplace=workplace, recipient=form.recipient, invited_by=request.user, role=form.cleaned_data['role'])
-                messages.success(request, 'Zaproszenie dodane. Osoba zobaczy je w powiadomieniach i na ekranie Workspace.')
-                return redirect(workplace_management_url(workplace, 'invitations'))
+                invitation = WorkplaceInvitation.objects.create(workplace=workplace, recipient=form.recipient,
+                    email=form.cleaned_data['email'], invited_by=request.user, role=form.cleaned_data['role'])
+        if invitation is not None:
+            from .invitations import send_invitation
+            sent = send_invitation(request, invitation)
+            messages.success(request, 'Zaproszenie wysłane e-mailem.' if sent else 'Zaproszenie zapisane. E-mail nie został wysłany — sprawdź pocztę lub skopiuj link w zaproszeniach.')
+            return redirect(workplace_management_url(workplace, 'invitations'))
     from .views import render_workplaces
     return render_workplaces(request, team_workplace=workplace, invite_form=form)
 
@@ -127,7 +134,7 @@ def team_context(request, workplace, invite_form=None):
     role = workplace_role(request.user, workplace)
     for member in members:
         member.can_change = member.user_id != workplace.owner_id and (
-            role == 'owner' or (role == 'admin' and member.role == 'member')
+            role == 'owner' or (role == 'admin' and member.role in {'member', 'guest'})
         )
     return {
         'team_workplace': workplace, 'members': members,
@@ -141,10 +148,11 @@ def team_context(request, workplace, invite_form=None):
 @login_required
 @require_POST
 def invitation_response(request, invitation_id):
-    invitation = get_object_or_404(WorkplaceInvitation, pk=invitation_id, recipient=request.user)
+    recipient = Q(recipient=request.user) | Q(email__iexact=request.user.email)
+    invitation = get_object_or_404(WorkplaceInvitation.objects.filter(recipient), pk=invitation_id)
     with transaction.atomic():
         workplace = get_object_or_404(Workplace.objects.select_for_update(), pk=invitation.workplace_id)
-        invitation = get_object_or_404(WorkplaceInvitation.objects.select_for_update(), pk=invitation.pk, recipient=request.user, status='pending', expires_at__gt=timezone.now())
+        invitation = get_object_or_404(WorkplaceInvitation.objects.select_for_update().filter(recipient), pk=invitation.pk, status='pending', expires_at__gt=timezone.now())
         action = request.POST.get('action')
         if action not in {'accept', 'decline'}:
             raise PermissionDenied
@@ -160,7 +168,7 @@ def invitation_response(request, invitation_id):
     if action == 'accept':
         set_active_workplace(request, workplace)
         messages.success(request, f'Dołączono do {workplace.name}.')
-        return redirect(scoped_workplace_app_path(workplace, 'tasks'))
+        return redirect(scoped_workplace_app_path(workplace, 'for-you'))
     messages.success(request, 'Zaproszenie odrzucone.')
     return redirect('workplaces:workplaces')
 
@@ -172,7 +180,7 @@ def member_update(request, workplace_id, member_id):
         workplace = get_object_or_404(Workplace.objects.select_for_update(), pk=workplace_id)
         role = workplace_role(request.user, workplace)
         member = get_object_or_404(WorkplaceMembership, pk=member_id, workplace=workplace)
-        if member.user_id == workplace.owner_id or role not in {'owner', 'admin'} or (role == 'admin' and member.role != 'member'):
+        if member.user_id == workplace.owner_id or role not in {'owner', 'admin'} or (role == 'admin' and member.role not in {'member', 'guest'}):
             raise PermissionDenied
         action = request.POST.get('action')
         if action == 'remove':
@@ -185,7 +193,7 @@ def member_update(request, workplace_id, member_id):
             for model in (Document, WorkspaceDocument):
                 model.objects.filter(owner=workplace.owner, workplace=workplace).update(office_key=uuid.uuid4())
             messages.success(request, 'Dostęp odebrany. Dane zespołu pozostały w Workspace.')
-        elif action == 'role' and role == 'owner' and request.POST.get('role') in {'admin', 'member'}:
+        elif action == 'role' and role == 'owner' and request.POST.get('role') in {'admin', 'member', 'guest'}:
             member.role = request.POST['role']
             member.save(update_fields=['role'])
             messages.success(request, 'Rola zmieniona.')
@@ -201,7 +209,7 @@ def invitation_cancel(request, workplace_id, invitation_id):
         workplace = get_object_or_404(Workplace.objects.select_for_update(), pk=workplace_id)
         role = workplace_role(request.user, workplace)
         invitation = get_object_or_404(WorkplaceInvitation, pk=invitation_id, workplace=workplace, status='pending')
-        if role not in {'owner', 'admin'} or (role == 'admin' and invitation.role != 'member'):
+        if role not in {'owner', 'admin'} or (role == 'admin' and invitation.role not in {'member', 'guest'}):
             raise PermissionDenied
         invitation.status = 'revoked'
         invitation.save(update_fields=['status'])

@@ -1,7 +1,8 @@
 """Small, explicit bridge to the existing session/account operations.
 
-Only login and registration allow an anonymous session. The general page API
-remains authenticated; this endpoint never proxies other application routes.
+Only login and registration, including its session-bound Workspace step, allow
+an anonymous session. The general page API remains authenticated; this endpoint
+never proxies other application routes.
 """
 from copy import copy
 from urllib.parse import urlsplit
@@ -29,15 +30,22 @@ def accounts_api(request):
     if not target.startswith('/') or target.startswith('//') or parsed.netloc or parsed.scheme or '\\' in target:
         return api_error('Nieprawidłowy adres ekranu.', 400)
     routes = {reverse(name): name for name in (
-        'login', 'register', 'profile', 'add_account', 'update_presence_status',
+        'login', 'register', 'register_workspace', 'select_workspace', 'profile', 'add_account', 'update_presence_status',
         'switch_account', 'remove_account', 'logout',
     )}
     name = routes.get(parsed.path)
     if not name:
+        try:
+            match = resolve(parsed.path)
+            if match.view_name in {'workplaces:join-link', 'workplaces:join-email'}:
+                name = 'join'
+        except Http404:
+            pass
+    if not name:
         return api_error('Nie znaleziono elementu.', 404)
-    if name not in {'login', 'register'} and not request.user.is_authenticated:
+    if name not in {'login', 'register', 'join'} and not request.user.is_authenticated:
         return api_error('Sesja wygasła. Zaloguj się ponownie.', 401)
-    if request.method == 'GET' and name not in {'login', 'register', 'profile', 'add_account'}:
+    if request.method == 'GET' and name not in {'login', 'register', 'register_workspace', 'select_workspace', 'profile', 'add_account', 'join'}:
         response = api_error('Ta metoda żądania nie jest obsługiwana.', 405)
         response['Allow'] = 'POST'
         return response
@@ -57,7 +65,7 @@ def accounts_api(request):
         for key, value in values.items():
             delegated.POST[key] = str(value)
     try:
-        response = delegated.resolver_match.func(delegated)
+        response = delegated.resolver_match.func(delegated, *delegated.resolver_match.args, **delegated.resolver_match.kwargs)
     except Http404:
         return api_error('Nie znaleziono elementu.', 404)
     except PermissionDenied:

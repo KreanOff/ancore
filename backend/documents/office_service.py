@@ -49,7 +49,10 @@ def check_capability(document, token, purpose):
     if not isinstance(payload, list) or len(payload) != 5 or payload[:4] != expected:
         return False
     actor = get_user_model().objects.filter(pk=payload[4], is_active=True).first()
-    return bool(actor and workplace_role(actor, document.workplace))
+    from workplaces.policy import module_enabled
+    role = workplace_role(actor, document.workplace) if actor else ''
+    module = 'documents' if document._meta.label_lower == 'documents.document' else 'office'
+    return bool(role and module_enabled(document.workplace, module) and (purpose != 'callback' or role != 'guest'))
 
 
 def _service_scope(document):
@@ -66,12 +69,14 @@ def document_key(document):
 
 
 def editor_config(document, user):
+    from workplaces.services import workplace_role
+    editable = workplace_role(user, document.workplace) != 'guest'
     config = {
         'documentType': document.office_type, 'type': 'desktop', 'width': '100%', 'height': '100%',
         'document': {'fileType': document.extension.lower(), 'key': document_key(document),
                      'title': document.filename, 'url': service_url(document, 'source', user),
-                     'permissions': {'edit': True, 'download': True, 'print': True, 'chat': False}},
-        'editorConfig': {'lang': 'pl', 'mode': 'edit', 'callbackUrl': service_url(document, 'callback', user),
+                     'permissions': {'edit': editable, 'download': True, 'print': True, 'chat': False}},
+        'editorConfig': {'lang': 'pl', 'mode': 'edit' if editable else 'view', 'callbackUrl': service_url(document, 'callback', user),
                          'user': {'id': str(user.pk), 'name': user.get_full_name() or user.username},
                          'customization': {'forcesave': True, 'autosave': True, 'macros': False,
                                            'plugins': False, 'help': False}},

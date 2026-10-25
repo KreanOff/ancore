@@ -1,43 +1,14 @@
-from random import choice
-
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.urls import reverse
 
-from .models import SidebarFavorite, Workplace, WorkplaceInvitation, WorkplaceMembership
+from .models import Workplace, WorkplaceInvitation, WorkplaceMembership
 
 
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
 WORKPLACE_URL_SCOPE_SESSION_KEY = 'workspace_url_scope_enabled'
-DEFAULT_WORKPLACE_NAMES = (
-    'Biuro Latających Pierogów',
-    'Sztab Kofeinowych Pingwinów',
-    'Baza Turboślimaków',
-    'Królestwo Zaginionych Długopisów',
-    'Departament Dzielnych Kapibar',
-    'Fabryka Genialnych Wymówek',
-    'Centrum Dowodzenia Chomików',
-    'Agencja Kosmicznych Ogórków',
-    'Pracownia Tańczących Ziemniaków',
-    'Klub Bardzo Zajętych Kotów',
-    'Bunkier Ostatniego Ciastka',
-    'Akademia Drzemek Strategicznych',
-    'Liga Nieustraszonych Naleśników',
-    'Biuro Spraw Prawie Pilnych',
-    'Sztab Gumowych Kaczek',
-    'Baza Tajnych Skarpetek',
-    'Królestwo Wiecznej Przerwy',
-    'Departament Kawy i Chaosu',
-    'Fabryka Pomysłów z Kosmosu',
-    'Centrum Dowodzenia Kanapek',
-    'Agencja Sprytnych Leniwców',
-    'Pracownia Mruczących Silników',
-    'Klub Wędrujących Kubków',
-    'Bunkier Zapomnianych Haseł',
-)
 SCOPED_WORKPLACE_APPS = {'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'space', 'teams', 'dashboards', 'filters', 'api'}
 
 
@@ -56,7 +27,7 @@ def pending_invitations_for_user(user):
     if not user or not getattr(user, 'is_authenticated', False) or not user.is_active:
         return WorkplaceInvitation.objects.none()
     return WorkplaceInvitation.objects.filter(
-        recipient=user, status=WorkplaceInvitation.Status.PENDING,
+        Q(recipient=user) | Q(email__iexact=user.email), status=WorkplaceInvitation.Status.PENDING,
         expires_at__gt=timezone.now(),
     )
 
@@ -67,7 +38,7 @@ def workplaces_for_user(user):
     return (
         Workplace.objects
         .filter(Q(owner=user) | Q(pk__in=WorkplaceMembership.objects.filter(
-            user=user, is_active=True, role__in=['admin', 'member'],
+            user=user, is_active=True, role__in=['admin', 'member', 'guest'],
         ).values('workplace_id')))
         .select_related('owner')
         .distinct()
@@ -81,7 +52,7 @@ def workplace_role(user, workplace):
     if workplace.owner_id == user.pk:
         return WorkplaceMembership.Role.OWNER
     role = workplace.memberships.filter(user=user, is_active=True).values_list('role', flat=True).first()
-    return role if role in {'admin', 'member'} else ''
+    return role if role in {'admin', 'member', 'guest'} else ''
 
 
 def can_manage_team(user, workplace):
@@ -120,32 +91,8 @@ def ensure_default_workplace(user):
     if not user or not getattr(user, 'is_authenticated', False):
         return None
 
-    existing = workplaces_for_user(user).first()
-    if existing:
-        return existing
-
-    with transaction.atomic():
-        # Serialize first visits: random names no longer provide a shared lookup key.
-        get_user_model().objects.select_for_update().get(pk=user.pk)
-        existing = workplaces_for_user(user).first()
-        if existing:
-            return existing
-
-        workplace = Workplace.objects.create(
-            owner=user,
-            name=choice(DEFAULT_WORKPLACE_NAMES),
-        )
-        WorkplaceMembership.objects.get_or_create(
-            workplace=workplace,
-            user=user,
-            defaults={'role': WorkplaceMembership.Role.OWNER},
-        )
-        SidebarFavorite.objects.get_or_create(
-            workplace=workplace,
-            user=user,
-            item_key='dashboard',
-        )
-    return workplace
+    # Selecting a context never creates business data. Setup requires an explicit POST.
+    return workplaces_for_user(user).first()
 
 
 def set_active_workplace(request, workplace):

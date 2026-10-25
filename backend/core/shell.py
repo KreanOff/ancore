@@ -71,8 +71,18 @@ def shell_payload(request, context=None):
                             'recent': [serializer(item) for item in data.get(recent, [])]})
     catalog = sidebar_favorite_catalog(workplace)
     links = {key: {**item, 'is_active': sidebar_favorite_is_active(key, request)} for key, item in catalog.items()}
+    from workplaces.policy import module_enabled, read_only
+    links = {key: item for key, item in links.items() if module_enabled(workplace, item.get('app', ''))}
+    collections = [item for item in collections if module_enabled(workplace, {'pulpits': 'dashboards'}.get(item['key'], item['key']))]
+    for item in collections:
+        if read_only(request):
+            item['create_url'] = ''
+            for row in item['starred'] + item['recent']:
+                row['settings_url'] = ''
+                row['actions'] = []
     return {
         'account_id': str(request.user.pk), 'workplace_id': str(workplace.pk) if workplace else '',
+        'read_only': read_only(request), 'disabled_modules': workplace.disabled_modules if workplace else [],
         'mode': mode, 'url': request.get_full_path(),
         'navigation_url': scoped_workplace_app_path(workplace, 'api', 'v1/navigation/') if workplace else reverse('react-navigation'),
         'refresh_url': scoped_workplace_app_path(workplace, 'api', 'v1/shell/') if workplace else reverse('react-shell'), 'build_id': build_id(),

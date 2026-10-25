@@ -77,7 +77,7 @@ class ReactWorkspaceTests(TestCase):
         self.assertEqual(data['tab'], 'main')
         self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
 
-    def test_creation_keeps_active_context_and_immutable_code(self):
+    def test_creation_enters_new_context_and_keeps_immutable_code(self):
         result = self.post(self.base, {'name': ' Powtarzalny  Workspace ', 'avatar': 'ship', 'code': 'evil', 'owner': self.outside.pk})
         self.assertEqual(result.status_code, 200)
         item = Workplace.objects.get(name='Powtarzalny Workspace')
@@ -85,8 +85,8 @@ class ReactWorkspaceTests(TestCase):
         self.assertEqual(item.avatar, 'ship')
         self.assertNotEqual(item.code, 'evil')
         self.assertTrue(item.memberships.filter(user=self.owner, is_active=True).exists())
-        self.assertIn(str(item.pk), result.json()['redirect'])
-        self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
+        self.assertEqual(result.json()['redirect'], scoped_workplace_app_path(item, 'for-you'))
+        self.assertEqual(self.client.session['active_workplace_id'], item.pk)
         self.assertEqual(self.post(self.base, {'name': item.name}).status_code, 200)
         self.assertEqual(Workplace.objects.filter(name=item.name).count(), 2)
 
@@ -152,7 +152,7 @@ class ReactWorkspaceTests(TestCase):
         invitation = WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.outside, invited_by=self.owner, role='admin')
         self.login(self.admin)
         data = self.get(self.base+f'?workspace={self.selected.pk}').json()['data']['team']
-        self.assertEqual([c['value'] for f in data['invite_form']['fields'] if f['name']=='role' for c in f['choices']], ['member'])
+        self.assertEqual([c['value'] for f in data['invite_form']['fields'] if f['name']=='role' for c in f['choices']], ['member', 'guest'])
         self.assertFalse(next(p for p in data['members'] if p['id']==str(self.administrator.pk))['change_url'])
         self.assertFalse(next(p for p in data['invitations'] if p['id']==str(invitation.pk))['cancel_url'])
         self.assertEqual(self.post(self.target('member-update', self.selected.pk, self.membership.pk), {'action':'role','role':'admin'}).status_code, 403)

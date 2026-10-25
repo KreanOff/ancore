@@ -2,7 +2,7 @@
 {% load workplace_avatar static %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20260927-invite-role-row">
+<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261025-module-cards-muted">
 <script src="{% static 'js/workplace-team.js' %}?v=20261016-react-workspace" defer></script>
 {% endblock %}
 
@@ -163,6 +163,12 @@
                             <div class="tasks-form-field">
                                 <label for="{{ form.description.id_for_label }}">Opis</label>
                                 {{ form.description }}
+                                <div class="tasks-form-field workplace-module-fields">
+                                    <label>{{ form.enabled_modules.label }}</label>
+                                    <input type="hidden" name="modules_submitted" value="1">
+                                    {{ form.enabled_modules }}
+                                    <small>{{ form.enabled_modules.help_text }}</small>
+                                </div>
                             </div>
                             {% for error in form.description.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
 

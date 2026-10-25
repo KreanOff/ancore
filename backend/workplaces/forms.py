@@ -8,13 +8,57 @@ from django.db import transaction
 from core.avatars import AVATARS, AVATAR_CHOICES, preset_avatar
 from core.upload_validation import validate_image_crop, validate_image_upload
 from .models import Workplace
+from .policy import MODULES
 from .templatetags.workplace_avatar import workplace_avatar
 
 
 WORKPLACE_PHOTO_MAX_SIZE = getattr(settings, 'MAX_WORKPLACE_PHOTO_SIZE', 5 * 1024 * 1024)
 
+MODULE_DETAILS = {
+    'spaces': {'icon': 'layers', 'description': 'Organizuj pracę w przestrzeniach i zarządzaj zadaniami.'},
+    'teams': {'icon': 'users', 'description': 'Twórz zespoły i zarządzaj ich członkami.'},
+    'calendar': {'icon': 'calendar', 'description': 'Planuj wydarzenia i przeglądaj terminy zadań.'},
+    'documents': {'icon': 'hard-drive', 'description': 'Przechowuj pliki i porządkuj je w folderach.'},
+    'office': {'icon': 'file-text', 'description': 'Twórz i edytuj dokumenty, arkusze oraz prezentacje.'},
+    'resources': {'icon': 'package', 'description': 'Prowadź ewidencję sprzętu, licencji i narzędzi.'},
+    'dashboards': {'icon': 'layout-dashboard', 'description': 'Śledź postęp pracy i przeglądaj dane na pulpitach.'},
+    'filters': {'icon': 'filter', 'description': 'Wyszukuj zadania i zapisuj własne zestawy filtrów.'},
+}
+
+
+class WorkplaceModuleSelect(forms.CheckboxSelectMultiple):
+    template_name = 'workplaces/widgets/module_select.html'
+    option_template_name = 'workplaces/widgets/module_option.html'
+
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        option.update(MODULE_DETAILS.get(str(value), {}))
+        option['attrs']['role'] = 'switch'
+        if option['attrs'].get('id'):
+            option['attrs']['aria-labelledby'] = option['attrs']['id'] + '-label'
+            option['attrs']['aria-describedby'] = option['attrs']['id'] + '-description'
+        return option
+
+
+class RegistrationWorkspaceForm(forms.Form):
+    name = forms.CharField(
+        label='Nazwa Workspace', required=True,
+        max_length=Workplace._meta.get_field('name').max_length,
+        error_messages={'required': 'Wpisz nazwę Workspace.', 'max_length': 'Nazwa Workspace może mieć maksymalnie 140 znaków.'},
+        widget=forms.TextInput(attrs={
+            'class': 'form-input', 'id': 'workspace-name', 'autocomplete': 'organization',
+        }),
+    )
+
+    def clean_name(self):
+        return ' '.join((self.cleaned_data.get('name') or '').split())
+
 
 class WorkplaceForm(forms.ModelForm):
+    enabled_modules = forms.MultipleChoiceField(
+        label='Włączone moduły', choices=MODULES, required=False,
+        widget=WorkplaceModuleSelect, help_text='Wyłączenie modułu zachowuje jego dane.',
+    )
     avatar = forms.ChoiceField(
         label='Awatar Workspace', choices=AVATAR_CHOICES, required=False, widget=forms.RadioSelect,
     )
@@ -75,6 +119,7 @@ class WorkplaceForm(forms.ModelForm):
         self.automatic_avatar = preset_avatar(seed=self.instance.pk or 0)
         self.current_avatar = workplace_avatar(self.instance)
         self.original_photo = self.instance.workplace_photo.name
+        self.initial['enabled_modules'] = [key for key, _ in MODULES if key not in self.instance.disabled_modules]
 
     def clean_avatar(self):
         # Older clients can still submit only the existing photo/settings fields.
@@ -109,6 +154,11 @@ class WorkplaceForm(forms.ModelForm):
     def clean_description(self):
         return (self.cleaned_data.get('description') or '').strip()
 
+    def clean_enabled_modules(self):
+        if 'modules_submitted' not in self.data and 'enabled_modules' not in self.data:
+            return self.initial['enabled_modules']
+        return self.cleaned_data['enabled_modules']
+
     def clean_workplace_photo(self):
         if 'avatar' in self.data and self.data.get('avatar') != 'upload':
             return None
@@ -132,6 +182,7 @@ class WorkplaceForm(forms.ModelForm):
 
     def save(self, commit=True):
         workplace = super().save(commit=False)
+        workplace.disabled_modules = [key for key, _ in MODULES if key not in self.cleaned_data['enabled_modules']]
         self.apply_photo(workplace, commit=False)
 
         if commit:
