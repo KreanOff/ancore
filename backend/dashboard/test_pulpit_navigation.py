@@ -13,6 +13,7 @@ class PulpitNavigationTests(TestCase):
         cls.member = get_user_model().objects.create_user(username='pulpit-nav-member', email='nav-member@example.test')
         cls.workspace = create_workplace_for_user(cls.owner, 'Nawigacja pulpitów')
         cls.other = create_workplace_for_user(cls.owner, 'Drugi Workspace')
+        cls.default_dashboard = Dashboard.objects.get(workplace=cls.workspace, created_by=cls.owner, is_default=True)
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
         cls.first = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Pierwszy pulpit', visibility='workspace')
         cls.second = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Drugi pulpit', visibility='workspace')
@@ -146,4 +147,5 @@ class PulpitNavigationTests(TestCase):
         response = self.client.get(self.url())
         self.assertEqual(self.ids(response, 'starred'), [item.pk for item in items[:6]])
         self.assertEqual(self.ids(response, 'recent'), [])
-        self.assertEqual(self.client.get(self.url('?tab=all&q=Pulpit ')).context['page'].paginator.count, 11)
+        results = self.client.get(self.url('?tab=all&q=Pulpit ')).context['page']
+        self.assertSetEqual(set(results), {*items, self.first, self.second, self.private, self.default_dashboard})

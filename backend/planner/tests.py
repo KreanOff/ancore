@@ -5,6 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from workplaces.models import create_workplace_for_user
 from .models import CalendarEvent
 
 User = get_user_model()
@@ -17,6 +18,7 @@ class CalendarEventTests(TestCase):
             email='calendar@test.com',
             password='testpass123',
         )
+        self.workspace = create_workplace_for_user(self.user, 'Kalendarz testowy')
         self.client = Client()
         self.client.login(username='calendar@test.com', password='testpass123')
 

@@ -28,6 +28,8 @@ class DashboardViewTests(TestCase):
             email='settings-user@example.com',
             password='test-pass-123',
         )
+        if not user.owned_workplaces.exists():
+            create_workplace_for_user(user, 'Testowy Workspace')
         self.client.force_login(user)
 
         response = self.client.get(reverse('settings'))
@@ -79,6 +81,8 @@ class DashboardViewTests(TestCase):
             username='settings-admin', email='settings-admin@example.com',
             password='test-pass-123', is_staff=True,
         )
+        if not user.owned_workplaces.exists():
+            create_workplace_for_user(user, 'Testowy Workspace')
         self.client.force_login(user)
 
         response = self.client.get(reverse('settings'))
@@ -93,6 +97,8 @@ class DashboardViewTests(TestCase):
             profile_photo='profile_photos/dashboard-user.webp',
             password='test-pass-123',
         )
+        if not user.owned_workplaces.exists():
+            create_workplace_for_user(user, 'Testowy Workspace')
         self.client.force_login(user)
 
         response = self.client.get(reverse('home'))
@@ -112,6 +118,8 @@ class DashboardViewTests(TestCase):
             email='notifications-user@example.com',
             password='test-pass-123',
         )
+        if not user.owned_workplaces.exists():
+            create_workplace_for_user(user, 'Testowy Workspace')
         self.client.force_login(user)
 
         response = self.client.get(reverse('notifications'))
@@ -123,6 +131,8 @@ class DashboardViewTests(TestCase):
         workplace = create_workplace_for_user(user, 'Panel')
         task = make_task(user=user, workplace=workplace, title='Powiadomienie w panelu')
         task.activities.create(actor=user, kind='comment', action='commented', message='Komentarz w panelu')
+        if not user.owned_workplaces.exists():
+            create_workplace_for_user(user, 'Testowy Workspace')
         self.client.force_login(user)
         response = self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(response.status_code, 200)

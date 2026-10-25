@@ -1,5 +1,61 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Poprawki po przeglądzie i dostęp Workspace (25.10.2026)
+
+Usunięto zaproszenia e-mail: model, trasy bezpośrednie i delegowane API,
+wysyłkę SMTP, oczekujące powiadomienia i ich interfejs. Workspace zachowuje
+ręczne dodawanie istniejących kont oraz linki do dołączenia. Picker wybiera
+identyfikator konta, ma minimum 2 znaki i limit 10; formularz nie eksportuje
+katalogu użytkowników. Bez JS działa dokładne ID Ancore. Walidacja odrzuca
+same adresy e-mail, nieaktywne/niejednoznaczne konta i niedozwolone role.
+Administrator nie zarządza również nieaktywnym administratorem.
+[Zasady i migracje](TEAMWORK.md), [schemat](DATABASE.md).
+
+Naprawiono także XSS w potwierdzeniach dostępu (`messageText`), blokowanie
+zapisu wszystkich osób po dodaniu gościa, podgląd TEXT przez gościa w obu
+frontendach, walidację TXT/CSV UTF-16 oraz odświeżenie mountu konfiguracji
+backupu po rekonfiguracji. Nieaktywny gość nie blokuje pozostałych ról.
+Wygasłe zaproszenia e-mail nie mogą już wywoływać konfliktu ponownej wysyłki,
+ponieważ cały ten mechanizm został usunięty.
+
+Na izolowanych bazach i storage przez `scripts/run_tests.py --parallel 4`
+przeszło **1241/1241 testów Django**. Dodano regresje uprawnień, braku starych
+tras i źródeł e-mail, ręcznego dodawania (również równoczesnego), migracji
+istniejących danych, TXT/CSV i konfiguracji backupu. Dostosowano nieaktualne
+fixture/asercje do jawnego tworzenia Workspace, istniejących pulpitów
+domyślnych oraz pełnego stanu migracji; produkcyjne zachowanie nie zostało
+zmienione w celu dopasowania do starych testów.
+
+Przeszły build/TypeScript, **12 testów frontendu**, Prettier, składnia JS
+oraz szablonów, kontrola Django, zgodności migracji, indeksu i diffu.
+Browser plugin nie był dostępny. Chrome/Playwright przy 1440×900 i 390px
+sprawdził **24 scenariusze** na osobnej bazie: wybór istniejącego konta,
+błąd/ponowienie zapisu, role, brak grantów przez e-mail, linki i ich cofnięcie,
+wygaśnięcie, odczyt gościa, pierwszy render i rzeczywiste dodanie bez JS,
+ponowne wejście oraz trzy okna podatne wcześniej na XSS. Zrzuty obejrzano;
+brak nieoczekiwanych błędów JS. Bazę i storage QA usunięto, serwer zatrzymano.
+Dodatkowe dwa scenariusze Chrome potwierdziły kopiowanie linku przy braku
+Clipboard API (typowe dla HTTP): React i adapter zaznaczają adres i pokazują
+instrukcję ręcznego kopiowania, bez błędu JS. Po ochronie starszych formularzy
+z domeną ponowiono 23 testy linków, ręcznego dodawania i migracji — przeszły.
+
+Migracje `dashboard.0007_remove_workspace_invitations` oraz
+`workplaces.0005_remove_email_invitations` zastosowano lokalnie po wykonaniu
+prywatnego `pg_dump` w `.cache/database-backups/`, walidacji archiwum oraz
+zapisaniu SHA-256. Plan zawierał wyłącznie te dwie migracje. Istniejące
+członkostwa i dane biznesowe są zachowane; stare linki z domeną unieważniono.
+Nie wykonywano wdrożenia, rzeczywistego odzyskiwania produkcji ani testu żywego
+ONLYOFFICE. Konfigurację Compose sprawdzono bez działającego demona Docker;
+Safari i Firefox nie były testowane.
+
+Przed podziałem zmian na commity ponowiono pełny zestaw: **1241 testów Django**
+na izolowanych bazach i storage oraz **12 testów frontendu** — wszystkie przeszły.
+Ponownie sprawdzono build z TypeScriptem, Prettier, kontrolę Django, zgodność
+modeli i historii migracji, składnię skryptu runtime, indeks kodu oraz diff.
+Sprawdzono 1024 lokalne odnośniki dokumentacji; nie było brakujących plików.
+Podczas tej kontroli nie ponawiano prób UI w przeglądarce ani testu wdrożenia.
+
+
 ## Osobisty domyślny Workspace (25.10.2026)
 
 Katalog Workspace pozwala ustawić/zmienić/usunąć osobisty wybór startowy.

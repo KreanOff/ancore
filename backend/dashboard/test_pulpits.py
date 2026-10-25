@@ -63,7 +63,7 @@ class PulpitTests(TestCase):
         self.login(self.member)
         response = self.client.post('/dashboards/create/', self.form_data(), HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.status_code, 200)
-        dashboard = Dashboard.objects.get()
+        dashboard = Dashboard.objects.get(workplace=self.workplace, created_by=self.member, is_default=False)
         self.assertEqual((dashboard.owner, dashboard.created_by, dashboard.workplace), (self.owner, self.member, self.workplace))
         self.assertEqual(dashboard.gadgets.count(), 0)
         self.assertTrue(dashboard.favorited_by.filter(pk=self.member.pk).exists())
@@ -183,10 +183,11 @@ class PulpitTests(TestCase):
     def test_selected_people_must_belong_to_active_workspace(self):
         response = self.client.post('/dashboards/create/', self.form_data(visibility='selected', shared_with=[self.outsider.pk]), HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(response.status_code, 400)
-        self.assertFalse(Dashboard.objects.exists())
+        self.assertFalse(Dashboard.objects.filter(workplace=self.workplace, is_default=False).exists())
         response = self.client.post('/dashboards/create/', self.form_data(visibility='selected', shared_with=[self.member.pk]))
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(list(Dashboard.objects.get().shared_with.all()), [self.member])
+        dashboard = Dashboard.objects.get(workplace=self.workplace, is_default=False)
+        self.assertEqual(list(dashboard.shared_with.all()), [self.member])
 
     def test_read_only_member_cannot_change_dashboard_or_gadgets(self):
         dashboard = self.dashboard(visibility='workspace')
@@ -338,12 +339,14 @@ class PulpitTests(TestCase):
         self.assertEqual(dashboard.favorited_by.count(), 2)
 
     def test_delete_only_removes_configuration(self):
+        default_ids = set(Dashboard.objects.filter(is_default=True).values_list('pk', flat=True))
         dashboard = self.dashboard()
-        DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
+        gadget = DashboardGadget.objects.create(dashboard=dashboard, kind='progress')
         task = self.task()
         self.assertEqual(self.client.post(self.url(dashboard, 'delete/')).status_code, 302)
-        self.assertFalse(Dashboard.objects.exists())
-        self.assertFalse(DashboardGadget.objects.exists())
+        self.assertFalse(Dashboard.objects.filter(pk=dashboard.pk).exists())
+        self.assertFalse(DashboardGadget.objects.filter(pk=gadget.pk).exists())
+        self.assertSetEqual(set(Dashboard.objects.values_list('pk', flat=True)), default_ids)
         self.assertTrue(SpaceTask.objects.filter(pk=task.pk).exists())
 
     def test_post_csrf_login_and_get_mutation_guards(self):

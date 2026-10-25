@@ -245,8 +245,9 @@ class SidebarActiveStateTests(SimpleTestCase):
                 selector_start = css.index(f'{selector} {{')
                 selector_end = css.index('}', selector_start)
                 selector_css = css[selector_start:selector_end]
-                self.assertIn('width: var(--sidebar-icon-size);', selector_css)
-                self.assertIn('height: var(--sidebar-icon-size);', selector_css)
+                token = '--sidebar-subnav-icon-size' if selector == '.sidebar-subnav-icon svg' else '--sidebar-icon-size'
+                self.assertIn(f'width: var({token});', selector_css)
+                self.assertIn(f'height: var({token});', selector_css)
 
         self.assertIn(
             'html.sidebar-collapsed .sidebar-favorite-icon,\n'

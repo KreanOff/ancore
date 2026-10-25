@@ -20,6 +20,7 @@ class ReactPulpitTests(TestCase):
         cls.foreign = users.objects.create_user(username='pulpit-react-foreign', email='foreign@example.test')
         cls.workspace = create_workplace_for_user(cls.owner, 'Pulpity React')
         cls.other = create_workplace_for_user(cls.owner, 'Inny Workspace')
+        cls.default_dashboard = Dashboard.objects.get(workplace=cls.workspace, created_by=cls.owner, is_default=True)
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
         cls.space = make_space(user=cls.owner, workplace=cls.workspace, name='Produkt', key='PRO')
         cls.hidden = make_space(user=cls.owner, workplace=cls.workspace, name='Poufne źródło', key='SEC', visibility='private', private_owner=cls.owner)
@@ -104,7 +105,7 @@ class ReactPulpitTests(TestCase):
     def test_visibility_and_creator_rights_are_independent_of_workspace_owner(self):
         self.login(self.owner)
         catalog = self.get(self.path()).json()['data']
-        self.assertEqual([row['id'] for row in catalog['results']], [self.dashboard.pk])
+        self.assertSetEqual({row['id'] for row in catalog['results']}, {self.dashboard.pk, self.default_dashboard.pk})
         self.assertEqual(self.get(self.path(self.private.slug + '/')).status_code, 404)
         for operation in ('gadgets/', 'edit/', 'access/'):
             self.assertEqual(self.get(self.path(f'{self.dashboard.slug}/{operation}')).status_code, 403)

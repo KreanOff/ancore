@@ -56,7 +56,8 @@ class DefaultPulpitTests(TestCase):
             self.assertTrue(sidebar_favorite_is_active('dashboard', response.wsgi_request))
             self.assertFalse(sidebar_favorite_is_active('pulpits', response.wsgi_request))
             self.assertEqual(response.context['default_dashboard_url'], self.url('default/'))
-        self.assertEqual(Dashboard.objects.filter(is_default=True).count(), 1)
+        self.assertEqual(Dashboard.objects.filter(is_default=True, created_by=self.owner, workplace=self.workspace).count(), 1)
+        self.assertEqual(Dashboard.objects.filter(is_default=True, created_by=self.owner, workplace=self.other).count(), 1)
         self.assertEqual(dashboard.gadgets.count(), 1)
 
     def test_default_is_personal_and_workspace_scoped(self):

@@ -13,6 +13,7 @@ class PulpitManagementTests(TestCase):
         cls.member = get_user_model().objects.create_user(username='pulpit-manager-member', email='member@example.test')
         cls.workspace = create_workplace_for_user(cls.owner, 'Zarządzanie pulpitami')
         cls.other = create_workplace_for_user(cls.owner, 'Inny Workspace')
+        cls.default_dashboard = Dashboard.objects.get(workplace=cls.workspace, created_by=cls.owner, is_default=True)
         WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
         cls.own = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Plan wydania', visibility='private')
         cls.shared = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.member, name='Plan członka', visibility='workspace')
@@ -55,7 +56,7 @@ class PulpitManagementTests(TestCase):
 
     def test_redirect_uses_visible_catalog_and_legacy_edits_keep_creator_checks(self):
         response = self.client.get(self.url(), follow=True)
-        self.assertEqual(list(response.context['page']), [self.shared, self.own])
+        self.assertEqual(list(response.context['page']), [self.shared, self.own, self.default_dashboard])
         self.login(self.member)
         response = self.client.get(self.url(), follow=True)
         self.assertEqual({item.pk for item in response.context['page']}, {self.shared.pk, self.hidden.pk})
@@ -223,6 +224,10 @@ class PulpitManagementTests(TestCase):
         self.assertEqual(secure.post(self.url(f'{self.own.slug}/delete/')).status_code, 403)
         self.assertEqual(self.client.get(self.url(f'{self.own.slug}/delete/')).status_code, 405)
         empty = create_workplace_for_user(self.owner, 'Pusty Workspace')
+        # The owner's initialized default is private; a new member still has an empty catalog.
+        WorkplaceMembership.objects.create(workplace=empty, user=self.member)
+        self.login(self.member)
         response = self.client.get(scoped_workplace_app_path(empty, 'dashboards', 'manage/'), follow=True)
         self.assertContains(response, 'Brak pulpitów')
         self.assertContains(response, 'Utwórz pulpit')
+        self.assertTrue(Dashboard.objects.filter(workplace=empty, created_by=self.owner, is_default=True).exists())
