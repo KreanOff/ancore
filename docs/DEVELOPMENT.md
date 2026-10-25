@@ -1,5 +1,86 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Podświetlenia menu na szklanym tle (25.10.2026)
+
+Kryjące tła hover i zaznaczenia zastąpiono wariantami neutralnych kolorów
+i akcentu z przezroczystością. Aktywny wiersz ma jedną warstwę tła,
+ciemniejszy tekst akcentu i dotychczasowy znacznik. Dodano stan naciśnięcia,
+wewnętrzny obrys fokusu klawiatury oraz podświetlenie „Więcej…” powiązane
+z otwartym natywnym popoverem. Nagłówki i wiersze mają przejście tła 120ms.
+Topbar używa neutralnego tła także w przełączniku Workspace.
+
+Playwright z lokalnym Chrome (plugin Browser niedostępny), osobną bazą
+i fikcyjnym kontem potwierdził 27 sprawdzeń: hover, naciśnięcie, aktywny
+wiersz i jego menu, fokus, zwinięty pasek z panelem skrótów, pusty i błędny
+picker z ponowieniem, reload i częściową nawigację do Zasobów oraz powrót.
+Sprawdzono 1440×900, 1024×900, 390×900 i 320×900; zrzuty przed/po obejrzano.
+Brak poziomego przepełnienia i nieoczekiwanych błędów JS. Jeden HTTP 503
+był symulowaną awarią pickera. Pomiar przykładowej aktywnej pozycji na tapecie
+dał kontrast tekstu 6,30:1. Logowanie zachowuje 46% przezroczystości.
+Kontrola Django, indeks, lokalne linki UI i diff przeszły. Nie ponawiano
+builda ani testów domenowych dla zmiany CSS; Safari i Firefox nie testowano.
+
+Po ustawieniu 45% przezroczystości szkła złagodzono podświetlenia:
+neutralny hover ma 6% krycia, naciśnięcie 10%, aktywne tło 10%, a jego
+wariant interakcji 16%. Zachowano znacznik, fokus i ciemniejszy tekst.
+Na tej samej konfiguracji Chrome przeszło 28 sprawdzeń, w tym wskazany
+przez użytkownika hover „Pulpit domyślny” obok aktywnego Scrum, mobilne
+menu, stany otwartego pickera i jego błędu oraz nawigacja i reload.
+Zrzuty obejrzano; kontrast przykładowego aktywnego tekstu wyniósł 6,77:1.
+Nie wykryto nieoczekiwanych błędów JS. Indeks, lokalne linki i diff przeszły.
+
+## Tapeta z fałdami inspirowana Windows 11 (25.10.2026)
+
+Wspólny token tapety wskazuje `wallpaper-fluent-bloom-light-4k.webp`:
+błękitno-lawendowe, przestrzenne fałdy wygenerowane wbudowanym Image Gen.
+Pochodzenie, pełny prompt i sposób powiększenia do 3840×2160 opisuje
+[README grafiki](../static/img/auth/README.md). Odświeżono cache powłok
+i tokenów oraz indeks; szkło i poprawka narożników pozostają wspólne.
+
+Plugin Browser był niedostępny; użyto Playwright z lokalnym Chrome,
+osobnej tymczasowej bazy i fikcyjnego konta. Sprawdzono logowanie,
+rejestrację i paski przy 1440×900, 390×844, 320×568 oraz 3840×2160;
+powłokę także przy 1024×768. Zrzuty obejrzano pod kątem kadrowania
+i czytelności. Potwierdzono odczyt WebP 3840×2160, zachowanie szkła,
+mobilne menu, zwijanie, picker Workspace, częściową nawigację do Zasobów,
+powrót/reload, pierwszy render bez JS i błąd pustego formularza logowania.
+Brak przepełnienia, nieoczekiwanych błędów JS i nieudanych żądań;
+jeden HTTP 400 był oczekiwaną walidacją. Pomiar narożników potwierdził
+ciągłość tła (różnica sąsiednich kanałów maksymalnie 2/255).
+Indeks, lokalne linki i diff przeszły. Dla podmiany obrazu nie ponawiano
+builda ani testów domenowych; Safari i Firefox nie były sprawdzane.
+
+## Tapeta i matowe szkło pasków aplikacji (25.10.2026)
+
+Górny i boczny pasek współdzielą tapetę i tokeny szkła z panelem logowania.
+Mobilne menu ma własną warstwę tej samej grafiki pod szkłem. Zmieniono CSS
+i wersje cache obu powłok; układ, React i mechanizmy domenowe pozostają wspólne.
+
+Plugin Browser był niedostępny; Playwright z lokalnym Chrome na osobnej,
+tymczasowej bazie sprawdził 1440×900, 1920×1080, 1024×768, 768×1024,
+390×844, 320×568 i 3840×2160. Przeszły: pusty ekran „Dla ciebie”,
+Zasoby, scoped Przestrzenie, zwijanie i mobilne menu, picker Workspace,
+pusty/błędny wynik wyszukiwania oraz ponowienie, częściowa nawigacja,
+Wstecz/reload, pierwszy render bez JS i ograniczenie przezroczystości.
+Potwierdzono odczyt tapety 3840×2160 i zgodność parametrów szkła z logowaniem
+oraz rejestracją. Zrzuty obejrzano; brak poziomego przepełnienia,
+nieoczekiwanych błędów JS i nieudanych żądań. Jeden HTTP 503 był celowo
+symulowany w pickerze. Kontrola Django, indeks kodu, lokalne linki UI i diff
+przeszły. Nie ponawiano builda ani testów domenowych dla zmiany CSS;
+Safari i Firefox nie były sprawdzane.
+
+Korekta narożników: szkło przeniesiono z osobnych powierzchni pasków na
+jedną dekoracyjną warstwę `body::before`, także pod zaokrągloną treścią.
+Usuwa to ciemniejszy prostokąt surowej tapety przy narożnikach. Mobilne menu
+zachowuje własną warstwę szkła nad swoją tapetą. Filtr pozostaje oddzielony
+od elementów interaktywnych; powłoka używa `isolation: isolate`.
+Chrome/Playwright potwierdził narożniki przez porównanie sąsiednich pikseli,
+przy 1440×900, 1920×1080, 1024×768 i 3840×2160 oraz menu przy 390×844
+i 320×568. Przeszły też zwijanie, menu Workspace, picker, otwarcie i zamknięcie
+modala Przestrzeni, nawigacja do Zasobów i powrót, reload, pierwszy render
+bez JS, ograniczenie przezroczystości i referencja logowania. Zrzuty przed
+i po poprawce porównano wizualnie; kontrola Django, indeks i diff przeszły.
+
 ## Kompaktowa karta kont w jasnym trybie (25.10.2026)
 
 Dopisek „Ikony UIcons: Flaticon” usunięto z Reacta i pierwszego renderu

@@ -10,6 +10,32 @@ w `layout/main.css` uwzględnia korzeń Reacta z `display: contents`, zachowują
 wysokość topbaru i położenie sidebaru. Dropdowny korzystają ze wspólnego
 adaptera; `.react-sidebar-row-menu` nie dodaje własnego pola w układzie.
 
+Górny i boczny pasek współdzielą z panelem logowania jasną tapetę z fałdami
+oraz efekt matowego szkła. Token `--app-wallpaper-image` wskazuje jeden obraz
+w tle całej powłoki; `--glass-surface-bg` i `--glass-surface-filter` określają
+55% krycia bieli (45% przezroczystości), rozmycie 20px i nasycenie 115%.
+Jedna dekoracyjna warstwa
+szkła `body::before` obejmuje całe tło, także odsłonięte narożniki zaokrąglonej
+treści. Izolacja powłoki utrzymuje ją nad tapetą i pod interfejsem; filtr
+nie zmienia pozycjonowania menu i paneli.
+Mobilne menu ma pod szkłem własną warstwę tej samej tapety, również gdy
+otwiera się nad treścią strony. Treść stron zachowuje białe wypełnienie.
+Przy ograniczeniu przezroczystości lub braku obsługi filtra powierzchnie
+są w pełni kryjące.
+
+Podświetlenia menu przepuszczają tapetę: neutralne najechanie korzysta
+z 6% krycia `--system-interaction`, a naciśnięcie z 10%. Aktywna pozycja
+ma fioletowe tło o kryciu 10%, wzmacniane do 16% przy najechaniu, fokusie
+lub otwartym menu wiersza. W aktywnym wierszu tło rodzica jest przezroczyste,
+więc kolory nie nakładają się. Tekst i zwykłe ikony aktywnej pozycji używają
+ciemniejszego wariantu akcentu (`--sidebar-space-selection-ink`: 60% akcentu
+z czernią), aby zachować czytelność nad tapetą; znacznik i fokus zachowują
+bazowy akcent. Krótkie przejście tła ma 120ms; preferencja
+ograniczenia ruchu wyłącza przejścia istniejącą regułą powłoki.
+Fokus klawiatury linków i „Więcej…” ma wewnętrzny obrys 2px,
+również w panelu zwiniętego menu. Lokalna reguła obrysu nadpisuje globalne
+`outline: none !important`; zwykłe kliknięcie nie utrzymuje fokusu wizualnego.
+
 Nazwa Workspace w topbarze wykorzystuje dostępną szerokość przed wyszukiwarką,
 niezależnie od szerokości i zwinięcia bocznego menu. Wielokropek pojawia się
 dopiero po wypełnieniu tego miejsca. Menu wyboru zachowuje własną szerokość,
@@ -53,11 +79,12 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 
 Logowanie, rejestracja i dodanie konta renderują `src/accounts/AuthPage.tsx`
 w powłoce `accounts/auth_base.html`. Pełnoekranowa, lokalna tapeta
-`static/img/auth/wallpaper-violet-dunes-light-4k.webp` jest wspólnym tłem:
-jasną, perłowo-lawendową wersją wcześniejszych wydm. Jasny panel formularza
+`static/img/auth/wallpaper-fluent-bloom-light-4k.webp` jest wspólnym tłem:
+jasną kompozycją błękitno-lawendowych fałd inspirowaną tapetami Windows 11.
+Jasny panel formularza
 ma szerokość 520px, wysokość dopasowaną do treści i jest wyśrodkowany pionowo
 po prawej stronie. Korzysta z `--card-bg`, `--border-color` i `--shadow-lg`.
-Panel ma efekt matowego szkła: 59% krycia koloru `--card-bg` (41% przezroczystości),
+Panel ma efekt matowego szkła: 55% krycia koloru `--card-bg` (45% przezroczystości),
 rozmycie tapety 20px i nasycenie 115% przez `backdrop-filter` (również z prefiksem WebKit).
 Przy braku obsługi filtra lub preferencji `prefers-reduced-transparency: reduce`
 wraca do pełnego krycia. Pola mają pełne białe wypełnienie `--card-bg`
@@ -654,7 +681,7 @@ wysokość jego powłoki korzysta z `--dropdown-menu-item-height`, jak sam
 przycisk; nie powiększa tła do 36px z wariantu zwiniętego paska.
 Szare tło pojawia się
 po najechaniu, przy fokusie klawiatury lub otwartym menu. Token
-`--sidebar-interaction-bg` (`#e9ebef`) zapewnia ten sam kolor hover dla Dashboardu
+`--sidebar-interaction-bg` (6% krycia `--system-interaction`) zapewnia ten sam kolor hover dla Dashboardu
 i pozostałych pozycji menu; obejmuje też szare podświetlenia wierszy przestrzeni,
 otwarty przycisk „Więcej przestrzeni” oraz zwinięty pasek i jego panel skrótów.
 Fioletowe zaznaczenie wybranej pozycji pozostaje odrębne. Fokus pozostający
@@ -675,8 +702,8 @@ podpisy i awatary stoją w tej samej kolumnie, 6px od jej krawędzi. Awatar ma
 nawigacji mają wagę 600 również na wewnętrznych `span`, pomimo globalnej
 reguły wagi 400. Pozycje codziennej nawigacji również mają wysokość 32px;
 zwinięty pasek zachowuje dotychczasowe wymiary. Tło głównego paska bocznego
-jest takie samo jak górnego paska aplikacji: `--sidebar-bg` (`#FBFBFC`), także
-w codziennym menu Workspace, po zwinięciu i na telefonie.
+jest takie samo jak górnego paska aplikacji: wspólna powierzchnia matowego
+szkła, także w codziennym menu Workspace, po zwinięciu i na telefonie.
 Wybrana pozycja (`a.nav-link.active`) ma jasne fioletowe
 tło, fioletowy tekst/ikonę i krótki znacznik przy lewej krawędzi. Ta sama reguła
 obejmuje Dashboard, pozostałe moduły, Favorites oraz kategorie
@@ -689,7 +716,9 @@ Lokalne zmienne
 `--sidebar-space-selection`, `--sidebar-space-selection-bg`, `--sidebar-space-focus`
 i `--sidebar-space-marker` są współdzielone przez cały główny pasek boczny
 i jego panel skrótów. Kolor zaznaczenia, ramki fokusu i znacznika wynosi
-`#5b5fc7`, a jasne tło `#e8ebfa`. Ten wariant menu używa palety `brandTeams`
+`#5b5fc7`; tekst i zwykłe ikony mają ciemniejszy wariant `--sidebar-space-selection-ink`,
+a półprzezroczyste tło używa akcentu z kryciem 10%
+(16% przy interakcji). Ten wariant menu używa palety `brandTeams`
 jasnego motywu [Microsoft Fluent UI](https://github.com/microsoft/fluentui/blob/master/packages/tokens/src/global/brandColors.ts).
 Menu boczne współdzieli główny token akcentu aplikacji `--system-accent`.
 Przy zwiniętym pasku nagłówek grupy z aktywnym podpunktem
@@ -1155,8 +1184,9 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 
 Źródło: [core/base.html](../backend/core/templates/core/base.html).
 
-- Stały pasek u góry całej aplikacji (`app-topbar`) ma tło
-  `--sidebar-bg`, identyczne jak boczna nawigacja, i wysokość `--app-topbar-height`
+- Stały pasek u góry całej aplikacji (`app-topbar`) ma powierzchnię matowego
+  szkła nad wspólną tapetą, identyczną jak boczna nawigacja, i wysokość
+  `--app-topbar-height`
   (44px przed skalowaniem UI). Po lewej zawiera przełącznik Workspace
   z avatarem i nazwą, na środku jedno pole globalnego wyszukiwania,
   a po prawej Sticker, powiadomienia, ustawienia i profil z avatarem.
@@ -1349,8 +1379,8 @@ zmiennej zamiast powielania wartości liczbowej.
 | Tekst na akcencie | `--text-inverse: #FFFFFF` |
 | Główny akcent | `--system-accent: #5b5fc7`, `--system-accent-rgb: 91, 95, 199` |
 | Interakcje | `--system-interaction: #6f7580`, miękkie tło z alfa 0.1 |
-| Szare podświetlenie menu bocznego | `--sidebar-interaction-bg: #e9ebef` |
-| Wybrana pozycja menu bocznego | `--sidebar-space-selection: var(--system-accent)`, tło `--sidebar-space-selection-bg: #e8ebfa`, znacznik i ramka fokusu korzystają z koloru zaznaczenia |
+| Szare podświetlenie menu bocznego | `--sidebar-interaction-bg` (6% krycia `--system-interaction`), naciśnięcie: `--sidebar-interaction-pressed-bg` (10%) |
+| Wybrana pozycja menu bocznego | `--sidebar-space-selection: var(--system-accent)`, tekst/ikony: `--sidebar-space-selection-ink` (60% akcentu z czernią), tło `--sidebar-space-selection-bg` (10% krycia akcentu), `--sidebar-space-selection-hover-bg` (16%); znacznik i ramka fokusu zachowują bazowy akcent |
 | Główna powierzchnia | `--bg-main: #ffffff`, `--card-bg: #ffffff` |
 | Nawigacja pomocnicza | `--secondary-menu-bg: #FBFBFC` |
 | Tło panelu | `--panel-bg: #f7f6f4` |

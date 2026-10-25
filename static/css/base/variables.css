@@ -23,7 +23,7 @@
     --system-accent-soft: var(--system-interaction-soft);
     --sidebar-text: var(--text-primary);
     --sidebar-active: var(--system-interaction);
-    --sidebar-interaction-bg: #e9ebef;
+    --sidebar-interaction-bg: rgba(var(--system-interaction-rgb), 0.06);
     --accent-peach: var(--system-accent);
     --accent-peach-hover: var(--system-accent-hover);
     --accent-peach-border: var(--system-accent);
@@ -41,6 +41,9 @@
     --text-muted: var(--text-primary);
     --border-color: #e0ddd9;
     --card-bg: #ffffff;
+    --app-wallpaper-image: url('../../img/auth/wallpaper-fluent-bloom-light-4k.webp');
+    --glass-surface-bg: var(--card-bg);
+    --glass-surface-filter: none;
     --panel-bg: #f7f6f4;
     --surface-hover: #f2efeb;
     --surface-selected: #e9e7e4;
@@ -114,4 +117,18 @@
     --error-color-light: #fff6f1;
     --background-secondary: #faf9f7;
     --background-hover: var(--surface-hover);
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    :root {
+        --glass-surface-bg: color-mix(in srgb, var(--card-bg) 55%, transparent);
+        --glass-surface-filter: blur(20px) saturate(115%);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --glass-surface-bg: var(--card-bg);
+        --glass-surface-filter: none;
+    }
 }

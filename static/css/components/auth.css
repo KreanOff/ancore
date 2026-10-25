@@ -26,7 +26,7 @@ body.auth-page .auth-shell {
     grid-template-columns: minmax(0, 1fr) 520px;
     align-items: center;
     padding: 32px clamp(24px, 4.4vw, 96px);
-    background: var(--auth-bg) url('../../img/auth/wallpaper-violet-dunes-light-4k.webp') left center / cover no-repeat;
+    background: var(--auth-bg) var(--app-wallpaper-image) left center / cover no-repeat;
 }
 
 body.auth-page .auth-topbar {
@@ -74,24 +74,10 @@ body.auth-page .auth-form-panel {
     padding: 40px;
     border: 1px solid var(--auth-border);
     border-radius: 16px;
-    background: var(--card-bg);
+    background: var(--glass-surface-bg);
+    -webkit-backdrop-filter: var(--glass-surface-filter);
+    backdrop-filter: var(--glass-surface-filter);
     box-shadow: var(--shadow-lg);
-}
-
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-    body.auth-page .auth-form-panel {
-        background: color-mix(in srgb, var(--card-bg) 59%, transparent);
-        -webkit-backdrop-filter: blur(20px) saturate(115%);
-        backdrop-filter: blur(20px) saturate(115%);
-    }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-    body.auth-page .auth-form-panel {
-        background: var(--card-bg);
-        -webkit-backdrop-filter: none;
-        backdrop-filter: none;
-    }
 }
 
 body.auth-page .auth-form-inner {

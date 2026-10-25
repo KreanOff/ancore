@@ -1,9 +1,9 @@
 /* Main Style Entry Point */
 @import 'base/fonts.css?v=20261003-atlassian-sans';
-@import 'base/variables.css?v=20261017-page-padding-15px';
+@import 'base/variables.css?v=20261025-soft-sidebar-highlights';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261017-border-visibility-3pct';
-@import 'layout/main.css?v=20261023-topbar-workspace-width';
+@import 'layout/main.css?v=20261025-sidebar-highlights';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261017-border-visibility-3pct';
 @import 'components/buttons.css?v=20261017-collection-favorite-stars';
@@ -18,7 +18,7 @@
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/auth.css?v=20261025-auth-tabs-18';
+@import 'components/auth.css?v=20261025-shell-glass';
 @import 'components/workplaces.css?v=20261017-border-visibility-3pct';
 @import 'calendar.css?v=20261017-page-padding-15px';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
@@ -481,6 +481,15 @@ body :where(input, textarea)::placeholder {
     background: #FBFBFC;
 }
 
+body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) .main-content {
+    background: transparent;
+}
+
+.app-topbar,
+.sidebar {
+    background: transparent;
+}
+
 /* Unified application sidebar: primary destinations with fixed subnavigation. */
 .secondary-menu {
     display: none !important;
@@ -491,7 +500,10 @@ body :where(input, textarea)::placeholder {
     --sidebar-icon-size: 18px;
     --sidebar-subnav-icon-size: 20px;
     --sidebar-space-selection: var(--system-accent);
-    --sidebar-space-selection-bg: #e8ebfa;
+    --sidebar-space-selection-ink: color-mix(in srgb, var(--system-accent) 60%, #000000);
+    --sidebar-space-selection-bg: rgba(var(--system-accent-rgb), 0.1);
+    --sidebar-space-selection-hover-bg: rgba(var(--system-accent-rgb), 0.16);
+    --sidebar-interaction-pressed-bg: rgba(var(--system-interaction-rgb), 0.1);
     --sidebar-space-focus: var(--sidebar-space-selection);
     --sidebar-space-marker: var(--sidebar-space-selection);
 }
@@ -852,7 +864,10 @@ body :where(input, textarea)::placeholder {
     background: transparent;
     cursor: pointer;
 }
-.sidebar .sidebar-spaces-more[aria-expanded="true"] {
+.sidebar .sidebar-spaces-more[aria-expanded="true"],
+body:has(#sidebar-spaces-picker:popover-open) .sidebar .sidebar-spaces-more[aria-controls="sidebar-spaces-picker"],
+body:has(#sidebar-pulpits-picker:popover-open) .sidebar .sidebar-spaces-more[aria-controls="sidebar-pulpits-picker"],
+body:has(#sidebar-filters-picker:popover-open) .sidebar .sidebar-spaces-more[aria-controls="sidebar-filters-picker"] {
     background: var(--sidebar-interaction-bg);
 }
 .sidebar-spaces-more__chevron {
@@ -1384,6 +1399,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     align-items: center;
     padding-right: 4px;
     border-radius: 8px;
+    transition: background-color 0.12s ease;
 }
 
 .sidebar-group-header:hover,
@@ -1611,6 +1627,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     position: relative;
     min-width: 0;
     border-radius: var(--radius);
+    transition: background-color 0.12s ease;
 }
 
 .sidebar .sidebar-subnav--spaces .sidebar-subnav-link {
@@ -1639,6 +1656,14 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     background: var(--sidebar-interaction-bg);
 }
 
+.sidebar-space-row:has(> a.active) {
+    background: transparent;
+}
+
+.sidebar-space-row:has(> a:active:not(.active)) {
+    background: var(--sidebar-interaction-pressed-bg);
+}
+
 .sidebar .sidebar-space-row .sidebar-subnav-link:is(:hover, :focus-visible),
 .sidebar-collapsed-flyout .sidebar-space-row .sidebar-collapsed-flyout__link:is(:hover, :focus-visible) {
     background: transparent;
@@ -1648,21 +1673,44 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 .sidebar .sidebar-space-row .sidebar-subnav-link.active,
 .sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active,
 .sidebar-collapsed-flyout .sidebar-space-row .sidebar-collapsed-flyout__link.active {
-    --app-text-color: var(--sidebar-space-selection);
+    --app-text-color: var(--sidebar-space-selection-ink);
     position: relative;
     border-color: transparent;
-    color: var(--sidebar-space-selection);
+    color: var(--sidebar-space-selection-ink);
     background: var(--sidebar-space-selection-bg);
+}
+
+.sidebar a.nav-link.active:is(:hover, :focus-visible),
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active:is(:hover, :focus-visible),
+:is(.sidebar, .sidebar-collapsed-flyout) .sidebar-space-row:is(:hover, :has(:focus-visible), :has([aria-expanded="true"])) > a.active {
+    background: var(--sidebar-space-selection-hover-bg);
+}
+
+.sidebar :is(a.nav-link, button.sidebar-spaces-more):focus-visible,
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link:focus-visible,
+.sidebar-space-row:has(.sidebar-space-row__toggle:focus-visible) {
+    outline: calc(2px / var(--app-ui-scale)) solid var(--sidebar-space-focus) !important;
+    outline-offset: -2px;
+}
+
+.sidebar :is(a.nav-link, button.sidebar-spaces-more):active:not(.active),
+.sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link:active:not(.active) {
+    background: var(--sidebar-interaction-pressed-bg);
+}
+
+.sidebar .sidebar-space-row > a:active:not(.active),
+.sidebar-collapsed-flyout .sidebar-space-row > a:active:not(.active) {
+    background: transparent;
 }
 
 .sidebar a.nav-link.active > span:not(.sidebar-subnav-icon),
 .sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active > span:not(.sidebar-subnav-icon) {
-    --app-text-color: var(--sidebar-space-selection);
+    --app-text-color: var(--sidebar-space-selection-ink);
 }
 
 .sidebar a.nav-link.active :is(.nav-icon, .sidebar-favorite-icon, .sidebar-subnav-icon):not([data-space-avatar]),
 .sidebar-collapsed-flyout a.sidebar-collapsed-flyout__link.active .sidebar-subnav-icon:not([data-space-avatar]) {
-    color: var(--sidebar-space-selection);
+    color: var(--sidebar-space-selection-ink);
 }
 
 .sidebar a.nav-link.active::after,
@@ -1774,7 +1822,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
     align-items: stretch;
     gap: 0;
     padding: 0.5rem var(--sidebar-rail-gutter) 0.6rem;
-    background: var(--sidebar-bg);
+    background: transparent;
 }
 
 .sidebar .sidebar-footer::after {
@@ -2151,14 +2199,22 @@ body:not(.sidebar-collapsed) .sidebar-collapsed-flyout {
     }
 
     html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle {
-        --app-text-color: var(--sidebar-space-selection);
+        --app-text-color: var(--sidebar-space-selection-ink);
         border-color: transparent;
         background: var(--sidebar-space-selection-bg);
-        color: var(--sidebar-space-selection);
+        color: var(--sidebar-space-selection-ink);
     }
 
     html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle .nav-icon {
-        color: var(--sidebar-space-selection);
+        color: var(--sidebar-space-selection-ink);
+    }
+
+    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-header {
+        background: transparent;
+    }
+
+    html.sidebar-collapsed .sidebar-nav-group:has(.sidebar-subnav-link.active) .sidebar-group-toggle:is(:hover, :focus-visible, [aria-expanded="true"]) {
+        background: var(--sidebar-space-selection-hover-bg);
     }
 
     html.sidebar-collapsed .sidebar .nav-label {

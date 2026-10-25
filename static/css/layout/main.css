@@ -1,5 +1,19 @@
 body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     --app-topbar-height: calc(var(--dropdown-control-height) + 8px);
+    isolation: isolate;
+    background: var(--bg-main) var(--app-wallpaper-image) left center / cover no-repeat;
+}
+
+/* One glass surface also fills the exposed, rounded corners of page content. */
+body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar)::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--glass-surface-bg);
+    -webkit-backdrop-filter: var(--glass-surface-filter);
+    backdrop-filter: var(--glass-surface-filter);
 }
 
 .app-topbar {
@@ -41,6 +55,10 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
 
 .app-topbar .sidebar-workspace-toggle {
     height: var(--app-topbar-control-height);
+}
+
+.app-topbar .sidebar-workspace-toggle:is(:hover, :focus-visible, [aria-expanded="true"]) {
+    background: var(--system-interaction-soft);
 }
 
 .app-topbar .sidebar-workspace-name {
@@ -177,6 +195,22 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
 }
 
 @media (max-width: 767px) {
+    /* The drawer covers the page, so give its glass a wallpaper of its own. */
+    body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) .sidebar {
+        background: var(--bg-main) var(--app-wallpaper-image) left center / auto var(--app-viewport-height) no-repeat;
+    }
+
+    body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) .sidebar::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background: var(--glass-surface-bg);
+        -webkit-backdrop-filter: var(--glass-surface-filter);
+        backdrop-filter: var(--glass-surface-filter);
+    }
+
     .app-topbar .sidebar-workspace-menu {
         position: fixed;
         top: var(--app-topbar-height);
