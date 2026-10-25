@@ -61,8 +61,12 @@ function Input({
             (field.name === 'username' ? 'username' : password ? 'current-password' : undefined)
           }
           placeholder={
-            field.attrs.placeholder ||
-            (field.name === 'username' ? 'email@firma.pl' : 'Wpisz hasło')
+            modern
+              ? field.name === 'username' || field.name === 'email'
+                ? 'email@firma.pl'
+                : undefined
+              : field.attrs.placeholder ||
+                (field.name === 'username' ? 'email@firma.pl' : 'Wpisz hasło')
           }
           aria-invalid={field.errors.length ? true : undefined}
           aria-describedby={field.errors.length ? id + '-errors' : undefined}
@@ -159,125 +163,45 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
     <main className="auth-shell" data-react-screen="account-auth">
       <header className="auth-topbar">
         <a href={data.urls.home} className="auth-brand" aria-label="Ancore — strona główna">
-          <img src={data.logo} alt="" className="auth-brand-mark" />
+          <span className="auth-brand-mark" aria-hidden="true" />
           <span className="auth-brand-name">ANCORE</span>
         </a>
-        <div className="auth-topbar-switch">
-          <span className="auth-switch-prompt">
-            {add ? '' : register ? 'Masz już konto?' : 'Nie masz konta?'}
-          </span>
-          <div className="auth-topbar-action">
-            {!add ? (
-              <a
-                className="auth-switch-link"
-                href={register ? data.urls.login : data.urls.register}
-              >
-                {register ? 'Zaloguj się' : 'Utwórz konto'}
-              </a>
-            ) : null}
-          </div>
-        </div>
       </header>
       <div className="auth-content">
-        <section className="auth-story" aria-labelledby="auth-page-title">
-          <div className="auth-story-copy">
-            <h1 id="auth-page-title" className="auth-story-title">
-              {register ? (
-                <>
-                  Zacznij
-                  <br />
-                  po swojemu.
-                </>
-              ) : add ? (
-                'Dodaj konto'
-              ) : (
-                <>
-                  Wszystko
-                  <br />
-                  na swoim
-                  <br />
-                  miejscu.
-                </>
-              )}
-            </h1>
-            <p className="auth-story-lead">
-              {register ? (
-                <>
-                  Jedno konto. Jasny plan.
-                  <br />
-                  Więcej przestrzeni na właściwą pracę.
-                </>
-              ) : add ? (
-                'Podłącz drugi profil do bieżącej sesji.'
-              ) : (
-                <>
-                  Wracaj do projektów, ludzi i terminów
-                  <br />
-                  bez szukania.
-                </>
-              )}
-            </p>
-            <div className="auth-steps" aria-label="Etapy pracy">
-              {(register
-                ? ['Profil', 'Kontakty', 'Pierwszy plan']
-                : add
-                  ? ['Profil', 'Kontakty', 'Plan dnia']
-                  : ['Priorytety', 'Rozmowy', 'Plan dnia']
-              ).map((step, index) => (
-                <span className="auth-step" key={step}>
-                  <strong>0{index + 1}</strong>
-                  <span>{step}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-          <svg
-            className="auth-watermark"
-            viewBox="0 0 1254 1254"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <defs>
-              <filter
-                id="auth-logo-outline"
-                x="-5%"
-                y="-5%"
-                width="110%"
-                height="110%"
-                colorInterpolationFilters="sRGB"
-              >
-                <feMorphology
-                  in="SourceAlpha"
-                  operator="dilate"
-                  radius="4"
-                  result="outline-outer"
-                />
-                <feMorphology in="SourceAlpha" operator="erode" radius="4" result="outline-inner" />
-                <feComposite
-                  in="outline-outer"
-                  in2="outline-inner"
-                  operator="out"
-                  result="outline"
-                />
-                <feFlood floodColor="#5bbcbe" floodOpacity="0.52" result="outline-color" />
-                <feComposite in="outline-color" in2="outline" operator="in" />
-              </filter>
-            </defs>
-            <image href={data.logo} width="1254" height="1254" filter="url(#auth-logo-outline)" />
-          </svg>
-        </section>
         <section className="auth-form-panel" aria-labelledby="auth-form-title">
           <div className="auth-form-inner">
-            <header className="auth-form-header">
-              <h2 id="auth-form-title">{title}</h2>
-              <p className="auth-form-subtitle">
-                {register
-                  ? 'Zajmie Ci to mniej niż minutę.'
-                  : add
-                    ? 'Dodaj konto do szybkiego przełączania'
-                    : 'Wpisz dane swojego konta.'}
-              </p>
-            </header>
+            {add ? (
+              <header className="auth-form-header">
+                <h1 id="auth-form-title" tabIndex={-1}>
+                  {title}
+                </h1>
+                <p className="auth-form-subtitle">Dodaj konto do szybkiego przełączania</p>
+              </header>
+            ) : (
+              <>
+                <header className="auth-form-header">
+                  <h1 id="auth-form-title" tabIndex={-1}>
+                    {register ? title : 'Witaj ponownie'}
+                  </h1>
+                </header>
+                <nav className="auth-tabs" aria-label="Dostęp do konta">
+                  <a
+                    href={data.urls.register}
+                    className="auth-tab"
+                    aria-current={register ? 'page' : undefined}
+                  >
+                    Rejestracja
+                  </a>
+                  <a
+                    href={data.urls.login}
+                    className="auth-tab"
+                    aria-current={!register ? 'page' : undefined}
+                  >
+                    Logowanie
+                  </a>
+                </nav>
+              </>
+            )}
             <form
               method="post"
               className={'auth-form' + (register ? ' auth-form--register' : '')}
@@ -287,12 +211,7 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
             >
               <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
               {message || invalid ? (
-                <div
-                  ref={alert}
-                  className={add ? 'alert alert-error' : 'auth-alert'}
-                  role="alert"
-                  tabIndex={-1}
-                >
+                <div ref={alert} className="auth-alert" role="alert" tabIndex={-1}>
                   {message ||
                     (register
                       ? 'Sprawdź oznaczone pola.'
@@ -306,9 +225,9 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
                 <>
                   <div className="auth-field-row auth-field-row--names">
                     {renderField('first_name', 'Imię', true)}
-                    {renderField('middle_name', 'Drugie imię')}
                     {renderField('last_name', 'Nazwisko')}
                   </div>
+                  {renderField('middle_name', 'Drugie imię (opcjonalnie)')}
                   {renderField('email', 'Adres email')}
                   <div className="auth-field-row auth-field-row--passwords">
                     {renderField('password1', 'Hasło')}
@@ -330,32 +249,18 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
                   {pending
                     ? 'Zapisywanie…'
                     : register
-                      ? 'Zacznij w Ancore'
+                      ? 'Utwórz konto'
                       : add
                         ? 'Dodaj konto'
-                        : 'Przejdź do Ancore'}
-                </span>
-                <span className="auth-submit-icon" aria-hidden="true">
-                  <Icon name="arrow-right" />
+                        : 'Zaloguj się'}
                 </span>
               </button>
             </form>
-            {register ? (
-              <a href={data.urls.home} className="auth-home-link">
-                <Icon name="arrow-left" />
-                <span>Wróć do strony głównej</span>
-              </a>
-            ) : add ? (
+            {add ? (
               <p className="auth-footer">
                 <a href={data.urls.profile}>Wróć do profilu</a>
               </p>
             ) : null}
-            <p className="icon-credit">
-              Ikony UIcons:{' '}
-              <a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener noreferrer">
-                Flaticon
-              </a>
-            </p>
           </div>
         </section>
       </div>

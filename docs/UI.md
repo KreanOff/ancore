@@ -52,8 +52,39 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 ## Konta w React
 
 Logowanie, rejestracja i dodanie konta renderują `src/accounts/AuthPage.tsx`
-w dotychczasowej powłoce `accounts/auth_base.html`: te same klasy, typografia,
-opowieść po lewej, pola, przełączanie widoczności hasła i układ mobilny.
+w powłoce `accounts/auth_base.html`. Pełnoekranowa, lokalna tapeta
+`static/img/auth/wallpaper-violet-dunes-light-4k.webp` jest wspólnym tłem:
+jasną, perłowo-lawendową wersją wcześniejszych wydm. Biały panel formularza
+ma szerokość 520px, wysokość dopasowaną do treści i jest wyśrodkowany pionowo
+po prawej stronie. Korzysta z `--card-bg`, `--border-color` i `--shadow-lg`.
+Panel i pola mają pełne krycie. Wariant zachowuje szare teksty `--text-primary`
+i neutralne interakcje `--system-interaction`. Przycisk ma lokalny wariant
+`--primary-button-bg: var(--system-accent)` z białym tekstem; hover delikatnie
+przyciemnia fiolet. Aktywna zakładka ma fioletowe podkreślenie.
+Powłoka ma `color-scheme: light`. Znak Ancore korzysta z maski alfa istniejącej
+grafiki `logo-ancore.png` i koloru `--system-accent`. Maska pomija przezroczyste
+marginesy źródła: widoczny znak ma wysokość 24px, odstęp od napisu 8px,
+a napis 18px i odstęp liter 0.04em. Wariant obejmuje tylko ekrany kont;
+plik źródłowy i logo we wspólnej powłoce pozostają bez zmian.
+Tapeta ma 3840×2160px i bezstratny zapis WebP;
+to eksport powiększonego obrazu Image Gen, nie natywna generacja w 4K.
+[Pochodzenie i prompt](../static/img/auth/README.md).
+Logo Ancore pozostaje w lewym górnym rogu.
+Wariant `auth-tabs` przełącza zwykłymi linkami „Rejestrację” i „Logowanie”;
+aktywny adres ma `aria-current="page"` i fioletowe podkreślenie. Nad zakładkami
+jest widoczny nagłówek „Witaj ponownie” lub „Utwórz konto”. Pola mają widoczne
+etykiety i wysokość 48px. Email ma placeholder `email@firma.pl`; pozostałe pola
+nie powtarzają etykiet wewnątrz. Subtelnie fioletowe tło pól obejmuje także
+przycisk podglądu hasła; reguły `:autofill`/`:-webkit-autofill` ujednolicają
+kolor autouzupełnienia przeglądarki i tekstu. Imię i nazwisko
+są w jednym wierszu, opcjonalne drugie imię poniżej; hasła są ułożone pionowo.
+Formularze kont nie wyświetlają dopisku o bibliotece ikon. Panel zachowuje
+lokalny Atlassian Sans i ikony UIcons, podgląd hasła,
+stany błędu/zapisu oraz fokus klawiatury. Do 760px zajmuje szerokość
+ekranu pod logo; do 380px również imię i nazwisko układają się pionowo.
+Na niskim ekranie formularz i błędy przewijają się razem z panelem.
+Dodanie konta korzysta z tej samej powłoki, z własnym nagłówkiem i powrotem
+do profilu. Pierwszy render Django zachowuje ten sam układ i formularze POST.
 `auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
 Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
 
@@ -1260,9 +1291,9 @@ definiują bloki `secondary_menu`/`page_header`, których aktualny base nie
 wywołuje. Sprawdź rzeczywiste dziedziczenie, zanim skopiujesz cały szablon.
 
 Ekrany logowania/rejestracji mają oddzielny
-[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z osobnym
-układem i akcentem typograficznym Playfair Display. To istniejący wyjątek;
-nie należy przenosić jego dekoracyjnej typografii do tabel aplikacji.
+[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z tapetą
+i prawym panelem formularza. Zachowują wspólny Atlassian Sans; szczegóły
+wariantu opisuje rozdział [Konta w React](#konta-w-react).
 
 ## 3. Skąd bierze się końcowy styl
 
@@ -2318,8 +2349,8 @@ zwykły krój i kursywę, ze zmienną wagą 100–900 oraz `font-display: swap`.
 Oba bazowe szablony wstępnie pobierają zwykły krój. Font nie wymaga CDN.
 Źródło, wersja, sumy kontrolne i licencja SIL OFL 1.1 znajdują się w
 [static/vendor/atlassian-sans](../static/vendor/atlassian-sans/README.md).
-Rozmiary, wagi i odstępy istniejących komponentów pozostają bez zmian;
-dekoracyjny Playfair Display na ekranach uwierzytelniania zachowuje swój krój.
+Rozmiary, wagi i odstępy istniejących komponentów pozostają bez zmian.
+Ekrany uwierzytelniania również korzystają wyłącznie z lokalnego kroju UI.
 Osobne edytory w iframe (Excalidraw/ONLYOFFICE) zarządzają własną typografią.
 
 Biblioteka ikon to **Flaticon UIcons Regular Rounded 3.3.1**, z pełną gwiazdką
@@ -2340,7 +2371,7 @@ nie stosuj do nich `stroke-width`. Checkboxy, strzałki selectów i wskaźniki s
 korzystają z lokalnych SVG przez tokeny `--icon-*`.
 Zestaw, licencja i instrukcja odtworzenia znajdują się w
 [static/vendor/flaticon](../static/vendor/flaticon/README.md).
-Oznaczenie źródła ikon jest widoczne w Ustawieniach i na ekranach uwierzytelniania.
+Oznaczenie źródła ikon jest widoczne w Ustawieniach.
 
 ```html
 <button type="button" class="btn btn-secondary btn-sm" aria-label="Odśwież listę">

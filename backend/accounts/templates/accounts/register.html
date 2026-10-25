@@ -2,19 +2,15 @@
 
 {% block title %}Rejestracja | ancore{% endblock %}
 {% block auth_page_class %}auth-page--register{% endblock %}
-{% block auth_switch_prompt %}Masz już konto?{% endblock %}
-{% block auth_header_action %}
-<a href="{% url 'login' %}" class="auth-switch-link">Zaloguj się</a>
+{% block auth_form_header %}
+<header class="auth-form-header">
+    <h1 id="auth-form-title" tabindex="-1">Utwórz konto</h1>
+</header>
+<nav class="auth-tabs" aria-label="Dostęp do konta">
+    <a href="{% url 'register' %}" class="auth-tab" aria-current="page">Rejestracja</a>
+    <a href="{% url 'login' %}" class="auth-tab">Logowanie</a>
+</nav>
 {% endblock %}
-{% block auth_heading %}Zacznij<br>po swojemu.{% endblock %}
-{% block auth_lead %}Jedno konto. Jasny plan.<br>Więcej przestrzeni na właściwą pracę.{% endblock %}
-{% block auth_steps %}
-<span class="auth-step"><strong>01</strong><span>Profil</span></span>
-<span class="auth-step"><strong>02</strong><span>Kontakty</span></span>
-<span class="auth-step"><strong>03</strong><span>Pierwszy plan</span></span>
-{% endblock %}
-{% block auth_card_title %}Utwórz konto{% endblock %}
-{% block auth_subtitle %}Zajmie Ci to mniej niż minutę.{% endblock %}
 
 {% block auth_content %}
 <form method="post" class="auth-form auth-form--register" novalidate>
@@ -33,16 +29,17 @@
             {{ form.first_name }}
             {% for error in form.first_name.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
         </div>
-        <div class="auth-field{% if form.middle_name.errors %} auth-field--invalid{% endif %}">
-            <label class="auth-label" for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
-            {{ form.middle_name }}
-            {% for error in form.middle_name.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
-        </div>
         <div class="auth-field{% if form.last_name.errors %} auth-field--invalid{% endif %}">
             <label class="auth-label" for="{{ form.last_name.id_for_label }}">Nazwisko</label>
             {{ form.last_name }}
             {% for error in form.last_name.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
         </div>
+    </div>
+
+    <div class="auth-field{% if form.middle_name.errors %} auth-field--invalid{% endif %}">
+        <label class="auth-label" for="{{ form.middle_name.id_for_label }}">Drugie imię (opcjonalnie)</label>
+        {{ form.middle_name }}
+        {% for error in form.middle_name.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
     </div>
 
     <div class="auth-field{% if form.email.errors %} auth-field--invalid{% endif %}">
@@ -77,15 +74,8 @@
     </div>
 
     <button type="submit" class="auth-submit">
-        <span class="auth-submit-label">Zacznij w Ancore</span>
-        <span class="auth-submit-icon" aria-hidden="true">
-            <i data-icon="arrow-right" aria-hidden="true"></i>
-        </span>
+        <span class="auth-submit-label">Utwórz konto</span>
     </button>
 </form>
 
-<a href="{% url 'home' %}" class="auth-home-link">
-    <i data-icon="arrow-left" aria-hidden="true"></i>
-    <span>Wróć do strony głównej</span>
-</a>
 {% endblock %}

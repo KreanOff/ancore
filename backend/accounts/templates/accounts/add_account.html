@@ -1,10 +1,7 @@
 {% extends 'accounts/auth_base.html' %}
 
 {% block title %}Dodaj konto | ancore{% endblock %}
-{% block auth_kicker %}Przełącznik{% endblock %}
-{% block auth_heading %}Dodaj konto{% endblock %}
-{% block auth_lead %}Podłącz drugi profil do bieżącej sesji.{% endblock %}
-{% block auth_panel_label %}Konto użytkownika{% endblock %}
+{% block auth_page_class %}auth-page--add{% endblock %}
 {% block auth_card_title %}Dodaj konto{% endblock %}
 {% block auth_subtitle %}Dodaj konto do szybkiego przełączania{% endblock %}
 
@@ -13,7 +10,7 @@
     {% csrf_token %}
 
     {% if form.errors %}
-    <div class="alert alert-error" role="alert">
+    <div class="auth-alert" role="alert">
         Nieprawidłowy email lub hasło.
     </div>
     {% endif %}

@@ -1294,6 +1294,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### img
 
+- [static/img/auth/README.md](../static/img/auth/README.md)
+- [static/img/auth/wallpaper-violet-dunes-4k.webp](../static/img/auth/wallpaper-violet-dunes-4k.webp)
+- [static/img/auth/wallpaper-violet-dunes-light-4k.webp](../static/img/auth/wallpaper-violet-dunes-light-4k.webp)
 - [static/img/empty-states/README.md](../static/img/empty-states/README.md)
 - [static/img/empty-states/dashboard-empty.webp](../static/img/empty-states/dashboard-empty.webp)
 - [static/img/empty-states/filters-empty.webp](../static/img/empty-states/filters-empty.webp)

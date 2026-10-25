@@ -2,19 +2,15 @@
 
 {% block title %}Logowanie | ancore{% endblock %}
 {% block auth_page_class %}auth-page--login{% endblock %}
-{% block auth_switch_prompt %}Nie masz konta?{% endblock %}
-{% block auth_header_action %}
-<a href="{% url 'register' %}" class="auth-switch-link">Utwórz konto</a>
+{% block auth_form_header %}
+<header class="auth-form-header">
+    <h1 id="auth-form-title" tabindex="-1">Witaj ponownie</h1>
+</header>
+<nav class="auth-tabs" aria-label="Dostęp do konta">
+    <a href="{% url 'register' %}" class="auth-tab">Rejestracja</a>
+    <a href="{% url 'login' %}" class="auth-tab" aria-current="page">Logowanie</a>
+</nav>
 {% endblock %}
-{% block auth_heading %}Wszystko<br>na swoim<br>miejscu.{% endblock %}
-{% block auth_lead %}Wracaj do projektów, ludzi i terminów<br>bez szukania.{% endblock %}
-{% block auth_steps %}
-<span class="auth-step"><strong>01</strong><span>Priorytety</span></span>
-<span class="auth-step"><strong>02</strong><span>Rozmowy</span></span>
-<span class="auth-step"><strong>03</strong><span>Plan dnia</span></span>
-{% endblock %}
-{% block auth_card_title %}Zaloguj się{% endblock %}
-{% block auth_subtitle %}Wpisz dane swojego konta.{% endblock %}
 
 {% block auth_content %}
 <form method="post" class="auth-form" novalidate>
@@ -52,7 +48,6 @@
                 id="password"
                 class="auth-input"
                 autocomplete="current-password"
-                placeholder="Wpisz hasło"
                 {% if form.password.errors %}aria-invalid="true"{% endif %}
                 required
             >
@@ -64,10 +59,7 @@
     </div>
 
     <button type="submit" class="auth-submit">
-        <span class="auth-submit-label">Przejdź do Ancore</span>
-        <span class="auth-submit-icon" aria-hidden="true">
-            <i data-icon="arrow-right" aria-hidden="true"></i>
-        </span>
+        <span class="auth-submit-label">Zaloguj się</span>
     </button>
 </form>
 {% endblock %}

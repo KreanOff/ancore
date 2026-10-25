@@ -1,5 +1,121 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Kompaktowa karta kont w jasnym trybie (25.10.2026)
+
+Dopisek „Ikony UIcons: Flaticon” usunięto z Reacta i pierwszego renderu
+formularzy kont, wraz z nieużywanymi regułami stopki. Oznaczenie w Ustawieniach
+i lokalne pliki biblioteki pozostają. Build/TypeScript, Prettier, indeks i diff
+przeszły. Playwright/Chrome przy 1440×900 i 390×844 potwierdził brak dopisku
+w logowaniu i rejestracji, także bez JS, oraz brak przepełnienia i błędów JS.
+
+Korekta nagłówka kont używa oryginalnej sylwetki znaku jako maski w kolorze
+`--system-accent`, pomija przezroczyste marginesy PNG i zmniejsza odstępy
+napisu Ancore. Reguły obejmują wyłącznie powłokę kont; źródłowe logo nie jest
+zmieniane. Ponowiono build/TypeScript, Prettier, indeks i diff. Playwright/Chrome
+przy 1440×900, 390×844, 320×568 i 3840×2160 sprawdził logo obu formularzy,
+rzeczywisty kolor i wycięcie maski, fokus linku, błędy/reload, brak JS,
+przepełnienia oraz nieoczekiwanych błędów konsoli. Zrzuty porównano ze zdjęciem
+użytkownika. Dla tej zmiany prezentacji nie ponawiano testów domenowych.
+
+Logowanie, rejestracja i dodanie konta używają białej karty 520px z wysokością
+dopasowaną do treści, wyśrodkowanej pionowo po prawej stronie tapety.
+Publiczne formularze mają widoczny nagłówek i etykiety, pola 48px oraz lokalny
+fioletowy wariant przycisku z białym tekstem. Tło autouzupełnienia i obszaru
+podglądu hasła jest wspólne. Pierwszy render Django odpowiada Reactowi;
+nie zmieniono obsługi sesji, walidacji, zapisu ani modelu kont.
+
+Przeszły build z kontrolą TypeScript, Prettier zmienionego komponentu oraz
+28 testów: `accounts.tests.AuthPageViewTests`, `accounts.test_frontend`
+i `accounts.test_login_redirects`, na osobnej bazie przez `scripts/run_tests.py`.
+Plugin Browser był niedostępny; użyto istniejącego Playwright i Chrome.
+Przy 1440×900, 1024×768, 390×844, 320×568 i 3840×2160 sprawdzono oba
+formularze, błędy/fokus, podgląd hasła, szkic po 503, zakładki/reload,
+POST bez JS oraz natywny stan `autofill` wymuszony przez Chrome DevTools.
+Na tymczasowej bazie przeszła rzeczywista rejestracja → logowanie → „Dla ciebie”
+oraz dodanie drugiego konta. Profil był ekranem referencyjnym; dodanie konta
+sprawdzono też na telefonie i przed uruchomieniem Reacta. Dodatkowo przeszły
+3600×1906 (rozmiar zdjęcia użytkownika) i 844×390. Zrzuty obejrzano przez
+`view_image`, porównując tapetę, proporcje, nagłówek, etykiety, odstępy,
+przycisk i kolor autouzupełnienia z zaakceptowanym opisem korekty.
+Poprawiono nadpisanie białego tekstu CTA przez globalny CSS; nie pozostały
+znane problemy w badanych widokach. Nie sprawdzano Safari/Firefox ani całego
+zestawu testów repozytorium. Tymczasową bazę i storage usunięto po QA.
+
+## Logowanie i rejestracja z tapetą (25.10.2026)
+
+Kolejna korekta na prośbę użytkownika zastąpiła niebieskie fałdy spokojnymi
+fioletowo-granatowymi wydmami.
+Odświeżono wersje arkuszy. Playwright/Chrome na lokalnym porcie 8000 przy
+1440×900 i 390×844 potwierdził odczyt grafiki, kadrowanie obu formularzy,
+zakładki, podgląd hasła, ponowne wejście/reload oraz brak przepełnienia
+i błędów JS. Sprawdzono indeks, linki i diff; dla samej podmiany obrazu
+nie ponawiano poniższego zestawu testów ani builda.
+
+Na żądanie 4K tapetę zastąpił `wallpaper-violet-dunes-4k.webp`: dokładnie
+3840×2160px, bezstratny WebP, 2 601 788 bajtów. Image Gen zwrócił źródło
+1672×941px mimo żądania UHD; końcowy eksport powiększono filtrem Lanczos3.
+Nie jest to natywna generacja szczegółów w 4K. Metadane pliku i odczyt
+`naturalWidth`/`naturalHeight` w Chrome potwierdziły rozdzielczość.
+Playwright/Chrome przy 3840×2160, 1440×900 i 390×844 sprawdził tapetę,
+formularze, zakładki, podgląd hasła i reload; brak błędów JS i poziomego
+przepełnienia. Odświeżono cache arkuszy, dokumentację i indeks. Przeszły
+linki i diff; dla samego obrazu nie ponawiano testów domenowych ani builda.
+
+Na prośbę użytkownika przywrócono wariant ze wskazanego zdjęcia: kryjący
+ciemny gradient panelu, jasny tekst, ciemne pola z jasnymi ramkami i lawendowy
+przycisk. Przywrócono wcześniejszy subtelny cień; panel nie używa filtra szkła
+ani przezroczystości. Zachowano układ i tapetę 3840×2160px.
+Playwright/Chrome przy 1440×900, 390×844 i 3840×2160 potwierdził gradient,
+kolory pól i przycisku, brak rozmycia, błędy, podgląd hasła, zakładki/reload
+oraz brak błędów JS i poziomego przepełnienia. Indeks, linki i diff przeszły;
+dla przywrócenia CSS nie ponawiano builda ani testów domenowych.
+
+Następnie przygotowano jasny wariant tej samej powłoki: perłowo-lawendowe
+wydmy `wallpaper-violet-dunes-light-4k.webp`, biały panel i pola, ciemnoszary
+tekst, fioletowe podkreślenie oraz standardowy przycisk aplikacji. Logo
+korzysta z oryginalnych kolorów. Jasny wariant jest aktywną powłoką kont;
+układ i obsługa formularzy pozostają wspólne. Tapeta ma 3840×2160px,
+bezstratny WebP i 3 197 040 bajtów; źródło Image Gen 1672×941px powiększono
+filtrem Lanczos3. Ciemny plik zachowano jako wcześniejszą wersję.
+Playwright/Chrome przy 1440×900, 1024×768, 390×844, 320×568 i 3840×2160
+potwierdził oba formularze, kolory, rozdzielczość tapety, błędy/fokus,
+podgląd hasła, szkic po 503, zakładki/reload, klawiaturę i POST bez JS.
+Nie wykryto błędów JS ani poziomego przepełnienia. Zaktualizowano cache
+arkuszy, opis UI, pochodzenie grafiki i indeks; linki i diff przeszły.
+Dla zmiany CSS i obrazu nie ponawiano builda ani testów domenowych.
+
+Powłoka kont ma lokalną tapetę WebP, prawy biały panel i zakładki
+logowania/rejestracji. React i pierwszy render Django współdzielą układ;
+dodanie konta zachowuje nagłówek oraz powrót do profilu. Zmiana nie dotyczy
+modeli, sesji, uprawnień ani migracji. [Wariant UI](UI.md#konta-w-react).
+
+Na tymczasowej bazie PostgreSQL przeszły **64 testy**:
+`accounts.tests`, `accounts.test_frontend`, `accounts.test_login_redirects`,
+`accounts.test_email_identity` i `accounts.test_registration_races`, uruchomione
+przez `scripts/run_tests.py`. Przeszło też 10 testów frontendu, build z TypeScriptem,
+Prettier zmienionego komponentu, kontrola Django, indeks, lokalne linki i diff.
+
+Plugin Browser był niedostępny; Playwright z lokalnym Chrome sprawdził
+`http://127.0.0.1:8779` na osobnej bazie i fikcyjnych kontach. Rozmiary:
+1586×992 (natywny rozmiar koncepcji), 1440×900, 1024×768, 390×844,
+320×568 i 844×390. Sprawdzono oba formularze, ponowne wejście, zakładki,
+błędne/puste dane, podgląd hasła, fokus komunikatów i skrót do formularza,
+zachowanie szkicu po HTTP 503 i ponowienie, rzeczywistą rejestrację → logowanie
+→ „Dla ciebie”, dodanie drugiego konta oraz pierwszy render i POST bez JS.
+Na 320px formularz z błędami pozwala przewinąć do zapisu. Profil i dodanie
+konta posłużyły jako ekrany referencyjne. Tożsamość stron, treść, brak nakładek
+błędu, konsola, zrzuty i interakcje przeszły; brak nieoczekiwanych błędów JS
+oraz poziomego przepełnienia formularzy.
+
+Porównano koncepcję i końcowe zrzuty przez `view_image`: proporcje panelu,
+kadrowanie tapety bez nakładki, paletę, typografię, odstępy i wysokości pól,
+zakładki oraz mobilne ułożenie. Poprawiono proporcje panelu, kontrast przycisku
+przesłaniany przez globalny CSS i tło powrotu do profilu. Teksty sprawdzono
+względem koncepcji: polskie etykiety, własne logo Ancore, opcjonalne drugie imię
+i wymagane przypisanie ikon są świadomym dostosowaniem do aplikacji.
+Nie dodano tekstów marketingowych. Nie pozostały znane problemy w badanych
+widokach. Safari, Firefox i pełny zestaw testów repozytorium nie były sprawdzane.
+
 ## Weryfikacja przed podziałem zmian na commity (23.10.2026)
 
 Na osobnej, tymczasowej bazie PostgreSQL i storage przez `scripts/run_tests.py`

@@ -11,8 +11,8 @@ Kształty pochodzą z Flaticon; aplikacja nie potrzebuje fontu ikon, npm ani CDN
 Osobne SVG służą checkboxom, strzałkom selectów, maskom statusów i krzyżykom
 zamykania okien (`x-mask.svg`) w CSS.
 
-Oznaczenie „Ikony UIcons: Flaticon” znajduje się w Ustawieniach i na stronach
-uwierzytelniania, zgodnie z [instrukcją atrybucji](https://www.flaticon.com/uicons/get-started).
+Oznaczenie „Ikony UIcons: Flaticon” znajduje się w Ustawieniach.
+[Instrukcja atrybucji](https://www.flaticon.com/uicons/get-started).
 
 ## Odtworzenie zestawu
 

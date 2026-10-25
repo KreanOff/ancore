@@ -56,30 +56,32 @@ class UserRegistrationFormTests(TestCase):
 
 
 class AuthPageViewTests(TestCase):
-    def test_login_page_uses_editorial_auth_layout(self):
+    def test_login_page_uses_wallpaper_auth_layout(self):
         response = self.client.get(reverse('login'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Wszystko<br>na swoim<br>miejscu.')
-        self.assertContains(response, 'Przejdź do Ancore')
+        self.assertContains(response, 'class="auth-tabs"')
+        self.assertContains(response, 'aria-current="page">Logowanie</a>')
+        self.assertContains(response, 'Zaloguj się')
         self.assertContains(response, 'data-password-toggle')
         self.assertContains(response, 'class="auth-page auth-page--login"')
         self.assertNotContains(response, 'Wróć do strony głównej')
 
-    def test_registration_keeps_name_fields_in_one_desktop_row(self):
+    def test_registration_pairs_names_and_keeps_optional_middle_name(self):
         response = self.client.get(reverse('register'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="auth-field-row auth-field-row--names"')
-        self.assertContains(response, 'Zacznij w Ancore')
-        self.assertContains(response, 'placeholder="Maria (opcjonalnie)"')
+        self.assertContains(response, 'Utwórz konto')
+        self.assertContains(response, 'aria-current="page">Rejestracja</a>')
+        self.assertContains(response, '>Drugie imię (opcjonalnie)</label>')
 
         content = response.content.decode()
         names_row_start = content.index('auth-field-row auth-field-row--names')
         email_field_start = content.index('for="email"', names_row_start)
         names_row = content[names_row_start:email_field_start]
-        self.assertLess(names_row.index('id="first-name"'), names_row.index('id="middle-name"'))
-        self.assertLess(names_row.index('id="middle-name"'), names_row.index('id="last-name"'))
+        self.assertLess(names_row.index('id="first-name"'), names_row.index('id="last-name"'))
+        self.assertLess(names_row.index('id="last-name"'), names_row.index('id="middle-name"'))
 
 
 class ProfileViewTests(TestCase):

@@ -442,8 +442,11 @@ Zachowuje rotację sesji i cookie CSRF także wtedy, gdy `LoginView` już zapisa
 cookie do odpowiedzi przekierowania. Parametr `next` nadal nie zastępuje
 strony „Dla ciebie” po logowaniu. Po rejestracji trzeba się zalogować.
 
-Ekrany `src/accounts/` używają dotychczasowego wyglądu `auth_base.html` oraz
-profilu w `core/base.html`. Formularze zachowują szkic po błędach i blokują
+Ekrany `src/accounts/` współdzielą z `auth_base.html` tapetę i prawą kartę
+formularza (520px, wysokość według treści) z widocznym nagłówkiem, etykietami
+i zakładkami logowania/rejestracji. Przycisk ma lokalny, fioletowy wariant
+(szczegóły w [standardzie UI](UI.md#konta-w-react)).
+Profil pozostaje w `core/base.html`. Formularze zachowują szkic po błędach i blokują
 równoległy zapis. Edytor profilu korzysta ze wspólnego modalu: Escape, fokus,
 inert oraz potwierdzenie odrzucenia zmian. `shared/AvatarControl.tsx` współdzieli
 z Workspace izolowany picker i canvas, z osobną pulą ilustracji użytkownika,
