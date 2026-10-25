@@ -36,6 +36,7 @@ export default function SchemaDialog({
     })),
     [dirty, setDirty] = useState(false),
     [pending, setPending] = useState(false),
+    [saved, setSaved] = useState(false),
     [error, setError] = useState(''),
     [candidates, setCandidates] = useState<{ email: string; name: string; avatar: AvatarData }[]>(
       [],
@@ -43,7 +44,8 @@ export default function SchemaDialog({
     [searchStatus, setSearchStatus] = useState('');
   const form = useRef<HTMLFormElement>(null),
     life = useRef(new AbortController()),
-    sending = useRef(false);
+    sending = useRef(false),
+    committed = useRef(false);
   useEffect(() => () => life.current.abort(), []);
   useEffect(() => {
     if (dialog.kind !== 'share') return;
@@ -95,18 +97,29 @@ export default function SchemaDialog({
   async function save(event: FormEvent) {
     event.preventDefault();
     if (sending.current) return;
-    const body = new FormData(form.current!);
-    body.set('action', dialog.action);
-    if (dialog.values?.id) body.set('work_log_id', String(dialog.values.id));
     sending.current = true;
     setPending(true);
     setError('');
     try {
-      await pageRequest(api, dialog.url, csrfToken, life.current.signal, body);
+      if (!committed.current) {
+        const body = new FormData(form.current!);
+        body.set('action', dialog.action);
+        if (dialog.values?.id) body.set('work_log_id', String(dialog.values.id));
+        await pageRequest(api, dialog.url, csrfToken, life.current.signal, body);
+        committed.current = true;
+        setSaved(true);
+        setDirty(false);
+      }
       await onSaved();
       onClose();
     } catch (exception) {
       if (life.current.signal.aborted) return;
+      if (committed.current) {
+        setError(
+          `Zapisano zmiany, ale nie udało się odświeżyć zadania. ${errorMessage(exception)}`,
+        );
+        return;
+      }
       if (exception instanceof PageError) {
         const data = exception.data.data as TaskData | undefined;
         if (data) setSchema(dialog.kind === 'subtask' ? data.subtask_form : data.log_form);
@@ -158,7 +171,7 @@ export default function SchemaDialog({
               {message}
             </p>
           ))}
-          <fieldset className="resources-react-fieldset" disabled={pending}>
+          <fieldset className="resources-react-fieldset" disabled={pending || saved}>
             <FormFields schema={schema} />
             {dialog.kind === 'share' ? (
               <div className="resources-form-wide">
@@ -210,16 +223,20 @@ export default function SchemaDialog({
               if (modal) window.AncoreTaskModals?.close(modal);
             }}
           >
-            Anuluj
+            {saved ? 'Zamknij' : 'Anuluj'}
           </button>
           <button type="submit" className="tasks-modal__submit" disabled={pending}>
             {pending
-              ? 'Zapisywanie…'
-              : dialog.kind === 'subtask'
-                ? 'Dodaj podzadanie'
-                : dialog.kind === 'share'
-                  ? 'Udostępnij'
-                  : 'Zapisz'}
+              ? saved
+                ? 'Odświeżanie…'
+                : 'Zapisywanie…'
+              : saved
+                ? 'Odśwież zadanie'
+                : dialog.kind === 'subtask'
+                  ? 'Dodaj podzadanie'
+                  : dialog.kind === 'share'
+                    ? 'Udostępnij'
+                    : 'Zapisz'}
           </button>
         </footer>
       </form>

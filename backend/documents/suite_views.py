@@ -22,6 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from workplaces.services import workspace_owner
+from workplaces.policy import read_only
 
 from core.upload_validation import validate_attachment_upload
 from . import office_service as service
@@ -105,7 +106,10 @@ def editor(request, pk, drive=False):
     if not item.office_type and (drive or not item.has_full_editor):
         return redirect(_suite_url(request, f'{pk}/preview/' if drive else f'{pk}/', drive))
     location = drive_views._context(request, item.library, item.folder) if drive else _context(request)
+    # This full-screen template has no Shell host; layout.js owns its page loader lifecycle.
     context = {**location, 'document': item, 'drive_editor': drive,
+               'office_read_only': read_only(request),
+               'disable_react_shell': True,
                'office_configured': service.configured(),
                'api_url': settings.ONLYOFFICE_URL + '/web-apps/apps/api/documents/api.js'}
     if item.office_type and service.configured():
@@ -120,7 +124,6 @@ def board_frame(request, pk):
     item = _item(request, pk, kind=Document.Kind.BOARD)
     config = {'scene': json.loads(item.content or json.dumps(EMPTY_SCENE)), 'revision': item.revision,
               'saveUrl': _url(request, f'{pk}/board/save/'), 'name': item.title}
-    from workplaces.policy import read_only
     config['readOnly'] = read_only(request)
     response = django_render(request, 'documents/office/board_frame.html', {'board_config': config})
     # Images are data URLs; application assets/fonts and saves stay on this origin.

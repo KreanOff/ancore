@@ -9,6 +9,7 @@ import type { SuiteData } from './types';
 export default function SuitePage({ initial, csrfToken }: PageProps) {
   const data = initial.data as SuiteData,
     item = data.document,
+    canRename = !initial.read_only && !!data.rename_url,
     office = useOffice(data, csrfToken);
   const [saved, setSaved] = useState(item.name),
     [title, setTitle] = useState(item.name),
@@ -20,7 +21,7 @@ export default function SuitePage({ initial, csrfToken }: PageProps) {
     life = useRef(new AbortController()),
     active = useRef(false),
     sending = useRef(false);
-  useDirtyGuard(office.dirty || (editing && title.trim() !== saved), pending);
+  useDirtyGuard(office.dirty || (canRename && editing && title.trim() !== saved), pending);
   useEffect(() => () => life.current.abort(), []);
   useEffect(() => {
     document.title = `${saved} | ${data.drive ? 'Dysk' : 'Dokumenty'} | ancore`;
@@ -33,7 +34,7 @@ export default function SuitePage({ initial, csrfToken }: PageProps) {
     if (focus) requestAnimationFrame(() => button.current?.focus());
   }
   function begin() {
-    if (sending.current) return;
+    if (!canRename || sending.current) return;
     active.current = true;
     setEditing(true);
     requestAnimationFrame(() => {
@@ -42,7 +43,7 @@ export default function SuitePage({ initial, csrfToken }: PageProps) {
     });
   }
   async function persist(focus = false) {
-    if (!active.current || sending.current) return;
+    if (!canRename || !active.current || sending.current) return;
     const value = title.trim();
     if (value === saved) {
       finish(focus);
@@ -107,69 +108,83 @@ export default function SuitePage({ initial, csrfToken }: PageProps) {
             <FileIcon variant={item.variant} />
           </span>
           <h1 className="tasks-topbar-title office-suite-title" aria-busy={pending}>
-            <button
-              ref={button}
-              type="button"
-              className="office-suite-title-button"
-              hidden={editing}
-              aria-label={`Zmień nazwę: ${saved}`}
-              title={`Zmień nazwę: ${saved}`}
-              onClick={begin}
-            >
-              {saved}
-            </button>
-            <input
-              ref={input}
-              className="form-input office-suite-title-input"
-              type="text"
-              hidden={!editing}
-              value={title}
-              maxLength={255}
-              size={Math.max(12, Math.min(60, Array.from(title).length + 1))}
-              aria-label="Nazwa pliku"
-              aria-describedby="suite-title-hint suite-title-error"
-              aria-invalid={!!error}
-              autoComplete="off"
-              readOnly={pending}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setError('');
-              }}
-              onBlur={() => void persist()}
-              onKeyDown={(e) => {
-                if (e.nativeEvent.isComposing || !['Enter', 'Escape'].includes(e.key)) return;
-                e.preventDefault();
-                if (pending) return;
-                if (e.key === 'Escape') finish(true);
-                else void persist(true);
-              }}
-            />
+            {canRename ? (
+              <>
+                <button
+                  ref={button}
+                  type="button"
+                  className="office-suite-title-button"
+                  hidden={editing}
+                  aria-label={`Zmień nazwę: ${saved}`}
+                  title={`Zmień nazwę: ${saved}`}
+                  onClick={begin}
+                >
+                  {saved}
+                </button>
+                <input
+                  ref={input}
+                  className="form-input office-suite-title-input"
+                  type="text"
+                  hidden={!editing}
+                  value={title}
+                  maxLength={255}
+                  size={Math.max(12, Math.min(60, Array.from(title).length + 1))}
+                  aria-label="Nazwa pliku"
+                  aria-describedby="suite-title-hint suite-title-error"
+                  aria-invalid={!!error}
+                  autoComplete="off"
+                  readOnly={pending}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setError('');
+                  }}
+                  onBlur={() => void persist()}
+                  onKeyDown={(e) => {
+                    if (e.nativeEvent.isComposing || !['Enter', 'Escape'].includes(e.key)) return;
+                    e.preventDefault();
+                    if (pending) return;
+                    if (e.key === 'Escape') finish(true);
+                    else void persist(true);
+                  }}
+                />
+              </>
+            ) : (
+              <span className="office-suite-title-text" title={saved}>
+                {saved}
+              </span>
+            )}
           </h1>
         </div>
       </header>
-      <span id="suite-title-hint" className="u-sr-only">
-        Enter zapisuje nazwę, Escape anuluje. Kliknięcie poza polem także zapisuje zmianę.
-      </span>
-      <span className="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {pending
-          ? 'Zapisywanie nazwy…'
-          : error
-            ? 'Błąd zapisu nazwy'
-            : editing && title.trim() !== saved
-              ? 'Nazwa do zapisania'
-              : 'Nazwa zapisana'}
-      </span>
+      {canRename ? (
+        <>
+          <span id="suite-title-hint" className="u-sr-only">
+            Enter zapisuje nazwę, Escape anuluje. Kliknięcie poza polem także zapisuje zmianę.
+          </span>
+          <span className="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {pending
+              ? 'Zapisywanie nazwy…'
+              : error
+                ? 'Błąd zapisu nazwy'
+                : editing && title.trim() !== saved
+                  ? 'Nazwa do zapisania'
+                  : 'Nazwa zapisana'}
+          </span>
+        </>
+      ) : null}
       <span className="u-sr-only" role="status" aria-live="polite">
         {office.status}
       </span>
-      <div
-        id="suite-title-error"
-        className="office-suite-error tasks-modal__errors"
-        role="alert"
-        hidden={!error}
-      >
-        {error}
-      </div>
+      {canRename ? (
+        <div
+          id="suite-title-error"
+          className="office-suite-error tasks-modal__errors"
+          role="alert"
+          hidden={!error}
+        >
+          {error}
+        </div>
+      ) : null}
       <div className="office-suite-error tasks-modal__errors" role="alert" hidden={!office.error}>
         <span>{office.error}</span>
         {office.retry ? (

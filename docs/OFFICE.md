@@ -232,6 +232,12 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   sam komunikat edytora o synchronizacji nie potwierdza zapisu w prywatnym
   storage. Widoczne błędy pod paskiem udostępniają „Ponów zapis”. Zamknięcie edytora może zapisać wynik po kilku
   sekundach, zgodnie z protokołem ONLYOFFICE.
+  Zmiany powstałe podczas oczekiwania na poprzedni force save pozostają
+  w kolejce. Potwierdzenie wcześniejszej rewizji uruchamia ich zapis;
+  odpowiedź o braku zmian także zwalnia kolejkę. Jednocześnie działa najwyżej
+  jedno żądanie zapisu. Błąd zapisu lub unieważnienie sesji zatrzymuje automatyczne
+  ponowienia, a odmontowanie usuwa timery. Reguła obejmuje React i adapter
+  `office-suite.js`.
 - Tablica zapisuje scenę po krótkiej przerwie w edycji oraz na żądanie/Ctrl+S.
   Rewizja zapobiega nadpisaniu przez starsze okno (409). Przy błędzie scena
   pozostaje w przeglądarce; „Pobierz kopię tablicy” w jej menu pobiera lokalną

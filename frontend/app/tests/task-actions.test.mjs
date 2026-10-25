@@ -15,7 +15,7 @@ const bundle = await build({
       import CommentComposer from './src/tasks/CommentComposer';
       export function capture(props) {
         renderToStaticMarkup(React.createElement(TaskPage, props));
-        return globalThis.taskComposer;
+        return { composer: globalThis.taskComposer, retryRefresh: globalThis.taskRetryRefresh };
       }
       export const renderComposer = props => renderToStaticMarkup(React.createElement(CommentComposer, props));`,
     resolveDir: new URL('..', import.meta.url).pathname,
@@ -24,6 +24,13 @@ const bundle = await build({
     {
       name: 'task-action-boundaries',
       setup(builder) {
+        builder.onLoad({ filter: /\/tasks\/TaskPage\.tsx$/ }, async (args) => ({
+          contents: (await readFile(args.path, 'utf8')).replace(
+            'const title = schema.fields',
+            'globalThis.taskRetryRefresh = retryRefresh; const title = schema.fields',
+          ),
+          loader: 'tsx',
+        }));
         builder.onResolve({ filter: /^\.\/(useTaskSave|CommentComposer)$/ }, (args) => {
           if (!args.importer.endsWith('/tasks/TaskPage.tsx')) return;
           return { path: args.path, namespace: 'task-action-boundary' };
@@ -110,7 +117,8 @@ function deferred() {
 function harness(save) {
   const initial = page(),
     posts = [],
-    controls = { save, failPost: false };
+    requests = [],
+    controls = { save, failPost: false, failRefresh: false };
   const module = { exports: {} };
   const context = {
     module,
@@ -132,18 +140,27 @@ function harness(save) {
     location: { origin: 'http://ancore.test' },
     fetch: async (_url, options) => {
       const post = options.method === 'POST';
+      requests.push(options.method);
       if (post) posts.push(options.body);
       return {
-        ok: !post || !controls.failPost,
-        status: post && controls.failPost ? 500 : 200,
+        ok: post ? !controls.failPost : !controls.failRefresh,
+        status: post ? (controls.failPost ? 500 : 200) : controls.failRefresh ? 503 : 200,
         headers: { get: () => 'application/json' },
         json: async () => (post ? {} : initial),
       };
     },
   };
   vm.runInNewContext(bundle.outputFiles[0].text, context);
-  const composer = module.exports.capture({ initial, csrfToken: 'token' });
-  return { composer, controls, posts, renderComposer: module.exports.renderComposer, initial };
+  const { composer, retryRefresh } = module.exports.capture({ initial, csrfToken: 'token' });
+  return {
+    composer,
+    retryRefresh,
+    controls,
+    posts,
+    requests,
+    renderComposer: module.exports.renderComposer,
+    initial,
+  };
 }
 function draft(send) {
   const module = { exports: {} };
@@ -216,6 +233,23 @@ test('an unexpected autosave error releases the action lock for the next attempt
   assert.equal(await app.composer.send({ action: 'comment', message: 'Szkic' }), false);
   assert.equal(app.posts.length, 0);
   assert.equal(await app.composer.send({ action: 'comment', message: 'Szkic' }), true);
+  assert.equal(app.posts.length, 1);
+});
+
+test('a committed comment clears its draft when refresh fails and retries only the read', async () => {
+  const app = harness(async () => true),
+    composer = draft(app.composer.send);
+  app.controls.failRefresh = true;
+  await composer.submit();
+  assert.deepEqual(app.requests, ['POST', 'GET']);
+  assert.equal(composer.state.text, '');
+  assert.equal(composer.state.files.length, 0);
+  assert.equal(composer.state.mentions.length, 0);
+  await app.retryRefresh();
+  assert.deepEqual(app.requests, ['POST', 'GET', 'GET']);
+  app.controls.failRefresh = false;
+  await app.retryRefresh();
+  assert.deepEqual(app.requests, ['POST', 'GET', 'GET', 'GET']);
   assert.equal(app.posts.length, 1);
 });
 

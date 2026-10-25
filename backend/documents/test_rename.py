@@ -1,9 +1,11 @@
 """Inline title changes leave the open editor's content and session untouched."""
+from urllib.parse import urlencode
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
-from workplaces.models import create_workplace_for_user
+from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from . import office_service
 from .models import Document, DocumentLibrary, Folder, WorkspaceDocument
@@ -15,7 +17,9 @@ class EditorRenameTests(TestCase):
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user(username='rename-owner', email='rename-owner@example.test')
         cls.other = get_user_model().objects.create_user(username='rename-other', email='rename-other@example.test')
+        cls.guest = get_user_model().objects.create_user(username='rename-guest', email='rename-guest@example.test')
         cls.workplace = create_workplace_for_user(cls.user, 'Zmiana nazwy')
+        WorkplaceMembership.objects.create(workplace=cls.workplace, user=cls.guest, role='guest')
         cls.second = create_workplace_for_user(cls.user, 'Drugi Workspace')
         cls.library = DocumentLibrary.objects.create(owner=cls.user, workplace=cls.workplace, name='Dysk')
         cls.folder = Folder.objects.create(owner=cls.user, workplace=cls.workplace, library=cls.library, name='Folder')
@@ -35,6 +39,82 @@ class EditorRenameTests(TestCase):
 
     def items(self):
         return [('documents', self.drive), ('office', self.office), ('office', self.board)]
+
+    def guest_client(self):
+        client = Client()
+        client.force_login(self.guest)
+        session = client.session
+        session['active_workplace_id'] = self.workplace.pk
+        session.save()
+        return client
+
+    def page_apis(self):
+        return ['/api/v1/page/', self.base('api') + 'v1/page/']
+
+    def test_guest_suite_has_plain_title_in_html_and_no_rename_capability_in_page_apis(self):
+        client = self.guest_client()
+        for module, item in self.items():
+            for route in (self.base(module), f'/{module}/'):
+                target = f'{route}{item.pk}/editor/'
+                with self.subTest(target=target):
+                    response = client.get(target, follow=True)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertTrue(response.context['office_read_only'])
+                    self.assertContains(response, f'<span class="office-suite-title-text" title="{item.title}">{item.title}</span>', html=True)
+                    for marker in ('data-suite-title-button', 'data-suite-title-input', 'data-rename-url', 'id="suite-title-hint"'):
+                        self.assertNotContains(response, marker)
+                    page = response.context['frontend_bootstrap']
+                    self.assertTrue(page['read_only'])
+                    self.assertEqual(page['data']['rename_url'], '')
+                    for api in self.page_apis():
+                        result = client.get(api, {'url': target}, follow=True)
+                        self.assertEqual(result.status_code, 200)
+                        page = result.json()
+                        self.assertTrue(page['read_only'])
+                        self.assertEqual(page['data']['document']['name'], item.title)
+                        self.assertEqual(page['data']['rename_url'], '')
+
+    def test_guest_rename_stays_forbidden_through_direct_and_page_api_routes(self):
+        client = self.guest_client()
+        for module, item in self.items():
+            before = type(item).objects.values().get(pk=item.pk)
+            for route in (self.base(module), f'/{module}/'):
+                target = f'{route}{item.pk}/rename/'
+                with self.subTest(target=target):
+                    self.assertEqual(client.post(target, {'title': 'Zmiana gościa'}).status_code, 403)
+                    for api in self.page_apis():
+                        self.assertEqual(client.post(api + '?' + urlencode({'url': target}), {'title': 'Zmiana gościa'}).status_code, 403)
+            self.assertEqual(type(item).objects.values().get(pk=item.pk), before)
+
+    def test_owner_suite_keeps_inline_title_controls(self):
+        for module, item in self.items():
+            self.client.get(self.base(module))
+            for route in (self.base(module), f'/{module}/'):
+                with self.subTest(route=route, item=item.pk):
+                    response = self.client.get(f'{route}{item.pk}/editor/', follow=True)
+                    self.assertFalse(response.context['office_read_only'])
+                    self.assertContains(response, 'data-suite-title-button')
+                    self.assertContains(response, 'data-suite-title-input')
+                    self.assertNotContains(response, 'class="office-suite-title-text"')
+                    page = response.context['frontend_bootstrap']
+                    self.assertFalse(page['read_only'])
+                    self.assertEqual(page['data']['rename_url'], f'{self.base(module)}{item.pk}/rename/')
+
+    def test_full_suite_loads_page_lifecycle_without_mounting_the_navigation_shell(self):
+        for client in (self.client, self.guest_client()):
+            for module, item in self.items():
+                client.get(self.base(module))
+                for route in (self.base(module), f'/{module}/'):
+                    with self.subTest(route=route, item=item.pk):
+                        response = client.get(f'{route}{item.pk}/editor/', follow=True)
+                        self.assertEqual(response.status_code, 200)
+                        self.assertTrue(response.context['disable_react_shell'])
+                        self.assertContains(response, 'js/layout.js')
+                        self.assertContains(response, 'data-react-root="page"')
+                        self.assertEqual(response.context['frontend_bootstrap']['type'], 'office-suite')
+                        self.assertNotContains(response, 'data-react-global-panels')
+                        self.assertNotContains(response, 'ancore-global-panels-data')
+                        self.assertNotContains(response, 'id="app-sidebar"')
 
     def test_rename_scoped_and_ordinary_urls_changes_only_title_and_modified_date(self):
         for module, item in self.items():

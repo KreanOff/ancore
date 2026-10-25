@@ -90,11 +90,16 @@ export function useOffice(data: SuiteData, token: string) {
     const config = { ...data.editor_config };
     let revision = data.revision,
       pending = false,
+      requesting = false,
+      queued = false,
       sessionInvalid = false,
       generation = 0,
       savingGeneration = 0,
       attempt = 0,
       autoSave: ReturnType<typeof setTimeout> | undefined;
+    function saveQueued() {
+      if (queued && !pending && !requesting && generation > savingGeneration) void save();
+    }
     async function poll() {
       try {
         const state = await documentRequest<{
@@ -103,21 +108,26 @@ export function useOffice(data: SuiteData, token: string) {
           save_error: boolean;
           saved_at: string;
         }>(data.state_url, token, life.signal);
-        if (life.signal.aborted) return;
+        if (life.signal.aborted || sessionInvalid) return;
         if (state.key !== config.document.key) {
           sessionInvalid = true;
           pending = false;
+          queued = false;
+          clearTimeout(autoSave);
           setStatus('Sesja dokumentu zmieniła się');
           fail(
             'Plik został podmieniony lub sesja zakończona. Pobierz swoje zmiany z menu Plik edytora i otwórz aktualną wersję w nowej karcie.',
           );
           return;
         }
-        if (state.save_error)
+        if (state.save_error) {
+          queued = false;
           fail(
             'Nie udało się zapisać pliku w Ancore. Pozostaw edytor otwarty i spróbuj zapisać ponownie.',
             true,
           );
+          return;
+        }
         if (state.revision > revision) {
           revision = state.revision;
           pending = false;
@@ -127,13 +137,20 @@ export function useOffice(data: SuiteData, token: string) {
               ? `Zapisano w Ancore ${state.saved_at}`
               : 'Nowsze zmiany w edytorze',
           );
+          saveQueued();
         }
       } catch {
         if (pending) fail('Brak potwierdzenia zapisu. Sprawdź połączenie i ponów zapis.', true);
       }
     }
     async function save() {
-      if (pending || sessionInvalid || life.signal.aborted) return;
+      if (sessionInvalid || life.signal.aborted) return;
+      if (pending || requesting) {
+        queued = generation > savingGeneration;
+        return;
+      }
+      queued = false;
+      requesting = true;
       pending = true;
       const current = ++attempt;
       savingGeneration = generation;
@@ -147,7 +164,7 @@ export function useOffice(data: SuiteData, token: string) {
           new FormData(),
           { 'X-Office-Key': config.document.key },
         );
-        if (life.signal.aborted) return;
+        if (life.signal.aborted || sessionInvalid) return;
         if (!result.pending) {
           pending = false;
           setStatus('Brak nowych zmian do zapisania');
@@ -155,6 +172,7 @@ export function useOffice(data: SuiteData, token: string) {
           delay(() => {
             if (pending && attempt === current) {
               pending = false;
+              queued = false;
               fail(
                 'Zapis nie został jeszcze potwierdzony. Spróbuj ponownie; dokument pozostaje w edytorze.',
                 true,
@@ -164,10 +182,14 @@ export function useOffice(data: SuiteData, token: string) {
         await poll();
       } catch (reason) {
         pending = false;
+        queued = false;
         fail(
           reason instanceof Error ? reason.message : 'Nie udało się zapisać. Spróbuj ponownie.',
           true,
         );
+      } finally {
+        requesting = false;
+        saveQueued();
       }
     }
     persist.current = () => void save();
@@ -182,7 +204,7 @@ export function useOffice(data: SuiteData, token: string) {
         interval = setInterval(() => void poll(), 4000);
       },
       onDocumentStateChange(event: { data: boolean }) {
-        if (life.signal.aborted) return;
+        if (life.signal.aborted || sessionInvalid) return;
         if (event.data) {
           generation++;
           setStatus('Zmiany w edytorze');

@@ -6,8 +6,8 @@
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-suite-title-radius">
-<script src="{% static 'js/office-suite.js' %}?v=20261016-react-migration" defer></script>
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20261025-suite-read-only-title">
+<script src="{% static 'js/office-suite.js' %}?v=20261025-save-queue" defer></script>
 {% endblock %}
 {% block content %}
 <div class="documents-page office-suite" data-app-full-navigation data-office-suite data-kind="{{ document.kind }}" data-state-url="{{ documents_url }}{{ document.pk }}/state/" data-save-url="{{ documents_url }}{{ document.pk }}/save/" data-revision="{{ document.revision }}" data-back-url="{{ folder_url }}">
@@ -15,16 +15,18 @@
         <div class="tasks-titlebar-left tasks-project-breadcrumb">
             <a class="tasks-issue-close" href="{{ folder_url }}" aria-label="{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}" title="{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}"><i data-icon="arrow-left" aria-hidden="true"></i></a>
             <span class="office-suite-file-icon" aria-hidden="true">{% include 'documents/includes/file_icon.html' with document=document only %}</span>
-            <h1 class="tasks-topbar-title office-suite-title" data-suite-title data-rename-url="{{ documents_url }}{{ document.pk }}/rename/" data-page-title-suffix=" | {% if drive_editor %}Dysk{% else %}Dokumenty{% endif %} | ancore">
+            <h1 class="tasks-topbar-title office-suite-title"{% if not office_read_only %} data-suite-title data-rename-url="{{ documents_url }}{{ document.pk }}/rename/" data-page-title-suffix=" | {% if drive_editor %}Dysk{% else %}Dokumenty{% endif %} | ancore"{% endif %}>
+                {% if office_read_only %}<span class="office-suite-title-text" title="{{ document.title }}">{{ document.title }}</span>{% else %}
                 <button type="button" class="office-suite-title-button" data-suite-title-button title="Zmień nazwę: {{ document.title }}" aria-label="Zmień nazwę: {{ document.title }}">{{ document.title }}</button>
                 <input id="suite-title-input" class="form-input office-suite-title-input" data-suite-title-input type="text" value="{{ document.title }}" maxlength="255" aria-label="Nazwa pliku" aria-describedby="suite-title-hint suite-title-error" autocomplete="off" hidden>
+                {% endif %}
             </h1>
         </div>
     </header>
-    <span id="suite-title-hint" class="u-sr-only">Enter zapisuje nazwę, Escape anuluje. Kliknięcie poza polem także zapisuje zmianę.</span>
+    {% if not office_read_only %}<span id="suite-title-hint" class="u-sr-only">Enter zapisuje nazwę, Escape anuluje. Kliknięcie poza polem także zapisuje zmianę.</span>
     <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-suite-title-status data-state="saved">Nazwa zapisana</span>
+    <div id="suite-title-error" class="office-suite-error tasks-modal__errors" role="alert" data-suite-title-error hidden></div>{% endif %}
     <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-suite-status>Otwieranie edytora…</span>
-    <div id="suite-title-error" class="office-suite-error tasks-modal__errors" role="alert" data-suite-title-error hidden></div>
     <div class="office-suite-error tasks-modal__errors" role="alert" data-suite-error hidden>
         <span data-suite-error-message></span>
         <button class="btn btn-secondary btn-sm" type="button" data-suite-retry hidden>Ponów zapis</button>

@@ -91,8 +91,10 @@ html.office-editor-window { --app-ui-scale: 1; }
 .office-suite .tasks-titlebar-left { min-width: 0; flex: 1 1 0; gap: 12px; }
 .office-suite-file-icon, .office-suite-file-icon > svg { width: 32px; height: 32px; flex: 0 0 32px; }
 .office-suite .office-suite-title { display: flex; min-width: 0; margin: 0; font-size: var(--font-size-base); }
-.office-suite-title-button, .office-suite-title-input.form-input { min-width: 0; max-width: 100%; height: var(--control-height); padding: 0 6px; color: inherit; font: inherit; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; box-shadow: none; }
-.office-suite-title-button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; cursor: text; border-radius: var(--dropdown-control-radius); }
+.office-suite-title-button, .office-suite-title-text, .office-suite-title-input.form-input { min-width: 0; max-width: 100%; height: var(--control-height); padding: 0 6px; color: inherit; font: inherit; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; box-shadow: none; }
+.office-suite-title-button, .office-suite-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.office-suite-title-button { cursor: text; border-radius: var(--dropdown-control-radius); }
+.office-suite-title-text { line-height: var(--control-height); }
 .office-suite-title-button:hover { background: var(--system-interaction-soft); }
 .office-suite .office-suite-title-input.form-input { width: auto; }
 .office-suite .office-suite-title-input.form-input:focus { border-bottom-color: var(--system-interaction); outline: none; box-shadow: none; }

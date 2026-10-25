@@ -1,5 +1,40 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Ponowienia odczytu i kolejka edytora po przeglądzie (25.10.2026)
+
+Po udanym POST błąd następującego GET nie powtarza komentarza, podzadania,
+wpisu czasu ani notatki tagu. Interfejs potwierdza zapis i pozwala ponowić
+sam odczyt; błąd POST nadal zachowuje szkic. Autosave pamięta zaległy GET
+oraz pomija powtórne zdarzenie `change` niezmienionego tekstu po blur.
+[Kontrakt i zachowanie](FRONTEND.md#api-ekranów-v1).
+
+Kolejka ONLYOFFICE w React i adapterze zapisuje nowszą generację po
+potwierdzeniu wcześniejszej, bez równoległych żądań i automatycznej pętli
+po błędzie zapisu. [Granice zapisu](OFFICE.md#zapis-i-granice-dostępu).
+Gość ma zwykły tytuł bez edycji, także w pierwszym renderze Django.
+Pełny edytor jawnie wyłącza nieobecną powłokę React; istniejący `layout.js`
+usuwa zasłonę ładowania po reloadzie i obsługuje anulowane wyjście.
+Bootstrap React samej strony pozostaje aktywny. [Standard UI](UI.md#katalog-i-edytor-dokumentów).
+
+Przeszło **1263/1263 testów Django** przez `scripts/run_tests.py --parallel 4`
+na izolowanych bazach i storage oraz **72/72 testy frontendu**. Dodano cztery
+regresje Django i 45 przypadków frontendu, obejmujących rzeczywiste callbacki,
+hooki, render React i lifecycle adaptera. Przeszły build aplikacji z TypeScriptem,
+Prettier, kontrola Django, składnia JS, indeks, lokalne linki i diff.
+Modele i migracje pozostały bez zmian.
+
+Plugin Browser był niedostępny. Chrome/Playwright na osobnej bazie i fikcyjnych
+kontach sprawdził 13 scenariuszy: zapis i kontrolowany błąd odczytu, ponowienie
+samego GET, zachowanie szkicu po błędzie POST, komentarz z plikiem, podzadanie,
+czas, notatkę tagu, prawa gościa w Dysku/Dokumentach/tablicy, zmianę nazwy,
+Escape, reload, kolejkę edytora, pusty katalog i konfigurację referencyjną.
+Sprawdzono 1440, 1024, 390 i 320 px, długą nazwę oraz pierwszy render bez JS.
+Zrzuty obejrzano; brak nieoczekiwanych błędów JS, ostrzeżeń konsoli i przepełnienia.
+Kontrolowane odpowiedzi 503 były częścią testu. ONLYOFFICE sprawdzono przez
+atrapę DocsAPI i odpowiedzi zapisu/stanu; nie uruchamiano żywej usługi ani
+wdrożenia Docker. Safari i Firefox nie były testowane.
+Serwer QA zatrzymano, a jego tymczasową bazę i storage usunięto.
+
 ## Cztery poprawki po przeglądzie projektu (25.10.2026)
 
 Zabezpieczono właściciela zadania w obu endpointach członkostwa oraz przy

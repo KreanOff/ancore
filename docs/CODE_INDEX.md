@@ -24,7 +24,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
 | [backend/dashboard](../backend/dashboard) | 52 | 7 | 42 | 261 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
-| [backend/documents](../backend/documents) | 41 | 3 | 31 | 211 |
+| [backend/documents](../backend/documents) | 41 | 3 | 31 | 215 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
 | [backend/spaces](../backend/spaces) | 49 | 2 | 38 | 274 |
 
@@ -1481,10 +1481,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/board-read-only.test.mjs](../frontend/app/tests/board-read-only.test.mjs)
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
+- [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
+- [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
+- [frontend/app/tests/suite-read-only.test.mjs](../frontend/app/tests/suite-read-only.test.mjs)
 - [frontend/app/tests/task-actions.test.mjs](../frontend/app/tests/task-actions.test.mjs)
 - [frontend/app/tests/task-members.test.mjs](../frontend/app/tests/task-members.test.mjs)
+- [frontend/app/tests/task-refresh.test.mjs](../frontend/app/tests/task-refresh.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ### React — frontend/board
@@ -2008,7 +2012,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/documents/test_rename.py](../backend/documents/test_rename.py).
 
-- `EditorRenameTests`: 5 metod testowych.
+- `EditorRenameTests`: 9 metod testowych.
 
 ### backend/documents/test_suite.py
 

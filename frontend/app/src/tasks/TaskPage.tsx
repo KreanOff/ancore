@@ -37,6 +37,7 @@ export default function TaskPage(props: PageProps) {
     [tab, setTab] = useState((initial.data as TaskData).tab),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
+    [refreshFailed, setRefreshFailed] = useState(false),
     [dialog, setDialog] = useState<DialogData | null>(null),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [sort, setSort] = useState(false),
@@ -75,12 +76,34 @@ export default function TaskPage(props: PageProps) {
       life.current.signal,
     );
     setData(page.data as TaskData);
+    setRefreshFailed(false);
+    setError('');
+  }
+  function refreshError(exception: unknown) {
+    if (life.current.signal.aborted) return;
+    setRefreshFailed(true);
+    setError(`Zapisano zmiany, ale nie udało się odświeżyć zadania. ${errorMessage(exception)}`);
+  }
+  async function retryRefresh() {
+    if (actionPending.current) return;
+    actionPending.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      await refresh();
+    } catch (exception) {
+      refreshError(exception);
+    } finally {
+      actionPending.current = false;
+      setBusy(false);
+    }
   }
   async function act(values: Record<string, string> | FormData, url = initial.url) {
     if (actionPending.current) return false;
     actionPending.current = true;
     setBusy(true);
     setError('');
+    setRefreshFailed(false);
     try {
       if (!(await auto.save())) return false;
       const body = values instanceof FormData ? values : new FormData();
@@ -97,7 +120,12 @@ export default function TaskPage(props: PageProps) {
         navigate(result.redirect || data.back_url);
         return true;
       }
-      await refresh();
+      // The mutation is committed even when its follow-up read fails.
+      try {
+        await refresh();
+      } catch (exception) {
+        refreshError(exception);
+      }
       return true;
     } catch (exception) {
       if (!life.current.signal.aborted) setError(errorMessage(exception));
@@ -222,7 +250,16 @@ export default function TaskPage(props: PageProps) {
         {error || auto.error ? (
           <div className="tasks-error-banner" role="alert">
             <span>{error || auto.error}</span>
-            {auto.error ? (
+            {error && refreshFailed ? (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={busy}
+                onClick={() => void retryRefresh()}
+              >
+                Odśwież zadanie
+              </button>
+            ) : auto.error ? (
               <button
                 type="button"
                 className="btn btn-secondary"

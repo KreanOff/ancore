@@ -28,6 +28,7 @@ export function useTaskSave(
     version = useRef(0),
     timer = useRef<ReturnType<typeof setTimeout>>(),
     request = useRef<Promise<boolean> | null>(null),
+    needsRefresh = useRef(false),
     life = useRef(new AbortController());
   const saveRef = useRef<() => Promise<boolean>>(async () => true),
     refreshRef = useRef(refresh);
@@ -40,31 +41,40 @@ export function useTaskSave(
       if (changed.current.size) return saveRef.current();
       return true;
     }
-    if (!changed.current.size) return true;
-    const snapshot = new Map(changed.current),
-      all = new FormData(form.current!),
-      body = new FormData();
-    snapshot.forEach((_, name) => all.getAll(name).forEach((value) => body.append(name, value)));
-    body.set('action', 'save');
-    body.set('autosave_fields', JSON.stringify([...snapshot.keys()]));
+    if (!changed.current.size && !needsRefresh.current) return true;
+    const snapshot = new Map(changed.current);
     setPending(true);
     setError('');
-    setNotice('Zapisywanie…');
+    setNotice(snapshot.size ? 'Zapisywanie…' : 'Odświeżanie…');
     request.current = (async () => {
+      let committed = false;
       try {
-        await pageRequest(
-          props.initial.api_url,
-          props.initial.url,
-          props.csrfToken,
-          life.current.signal,
-          body,
-        );
-        snapshot.forEach((value, name) => {
-          if (changed.current.get(name) === value) changed.current.delete(name);
-        });
-        if (!changed.current.size) {
-          const input = form.current?.querySelector<HTMLInputElement>('input[name="files"]');
-          if (input) input.value = '';
+        if (snapshot.size) {
+          const all = new FormData(form.current!),
+            body = new FormData();
+          snapshot.forEach((_, name) =>
+            all.getAll(name).forEach((value) => body.append(name, value)),
+          );
+          body.set('action', 'save');
+          body.set('autosave_fields', JSON.stringify([...snapshot.keys()]));
+          await pageRequest(
+            props.initial.api_url,
+            props.initial.url,
+            props.csrfToken,
+            life.current.signal,
+            body,
+          );
+          committed = true;
+          needsRefresh.current = true;
+          snapshot.forEach((value, name) => {
+            if (changed.current.get(name) === value) changed.current.delete(name);
+          });
+          setErrors({});
+          setDirty(!!changed.current.size);
+          if (!changed.current.size) {
+            const input = form.current?.querySelector<HTMLInputElement>('input[name="files"]');
+            if (input) input.value = '';
+          }
         }
         const page = await pageRequest<Page>(
           props.initial.api_url,
@@ -73,12 +83,20 @@ export function useTaskSave(
           life.current.signal,
         );
         refreshRef.current(page.data as TaskData);
+        needsRefresh.current = false;
         setErrors({});
         setNotice('Zapisano zmiany.');
         setDirty(!!changed.current.size);
         return true;
       } catch (exception) {
         if (life.current.signal.aborted) return false;
+        if (needsRefresh.current && (!snapshot.size || committed)) {
+          setError(
+            `Zapisano zmiany, ale nie udało się odświeżyć zadania. ${errorMessage(exception)}`,
+          );
+          setNotice('Zapisano zmiany. Nie udało się odświeżyć zadania.');
+          return false;
+        }
         if (exception instanceof PageError) {
           const data = exception.data.data as TaskData | undefined;
           if (data?.form) {
@@ -106,7 +124,8 @@ export function useTaskSave(
     return result;
   };
   useEffect(() => {
-    const element = form.current!;
+    const element = form.current!,
+      textValues = new WeakMap<Element, string>();
     function change(event: Event) {
       const input = event.target;
       if (
@@ -119,6 +138,11 @@ export function useTaskSave(
       )
         return;
       if (!initial.can_edit || !fieldNames.current.has(input.name)) return;
+      if (input instanceof HTMLTextAreaElement || input.type === 'text') {
+        // Text inputs emit change again on blur, possibly after autosave committed.
+        if (textValues.get(input) === input.value) return;
+        textValues.set(input, input.value);
+      }
       changed.current.set(input.name, ++version.current);
       setDirty(true);
       setNotice('Oczekiwanie na zapis…');

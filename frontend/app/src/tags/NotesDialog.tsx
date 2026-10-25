@@ -22,13 +22,51 @@ export default function NotesDialog({
     [editing, setEditing] = useState<number | null>(null),
     [draft, setDraft] = useState(''),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [refreshFailed, setRefreshFailed] = useState(false);
   const life = useRef(new AbortController()),
-    pending = useRef(false);
+    pending = useRef(false),
+    refreshUrl = useRef<string | null>(null);
   useEffect(() => () => life.current.abort(), []);
   const edited = tag.notes.find((note) => note.id === editing);
+  async function refresh() {
+    const page = await pageRequest<Page>(
+      initial.api_url,
+      refreshUrl.current!,
+      csrfToken,
+      life.current.signal,
+    );
+    if (!life.current.signal.aborted) {
+      updated(page.data as TagsData);
+      refreshUrl.current = null;
+      setRefreshFailed(false);
+    }
+  }
+  function actionError(exception: unknown) {
+    if (life.current.signal.aborted) return;
+    setRefreshFailed(!!refreshUrl.current);
+    setError(
+      refreshUrl.current
+        ? `Zapisano zmiany, ale nie udało się odświeżyć notatek. ${errorMessage(exception)}`
+        : errorMessage(exception),
+    );
+  }
+  async function retryRefresh() {
+    if (pending.current || !refreshUrl.current) return;
+    pending.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      await refresh();
+    } catch (exception) {
+      actionError(exception);
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  }
   async function act(action: string, values: Record<string, string>) {
-    if (pending.current) return;
+    if (pending.current || refreshUrl.current) return;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -44,19 +82,14 @@ export default function NotesDialog({
         life.current.signal,
         body,
       );
-      const page = await pageRequest<Page>(
-        initial.api_url,
-        result.redirect,
-        csrfToken,
-        life.current.signal,
-      );
+      refreshUrl.current = result.redirect;
       if (!life.current.signal.aborted) {
-        updated(page.data as TagsData);
         if (action === 'add_tag_note') setMessage('');
         if (action === 'edit_tag_note') setEditing(null);
       }
+      await refresh();
     } catch (exception) {
-      if (!life.current.signal.aborted) setError(errorMessage(exception));
+      actionError(exception);
     } finally {
       pending.current = false;
       setBusy(false);
@@ -95,6 +128,16 @@ export default function NotesDialog({
         {error ? (
           <div className="tasks-modal__errors" role="alert">
             {error}
+            {refreshFailed ? (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={busy}
+                onClick={() => void retryRefresh()}
+              >
+                Odśwież notatki
+              </button>
+            ) : null}
           </div>
         ) : null}
         {canEdit ? (
@@ -109,11 +152,15 @@ export default function NotesDialog({
                 onChange={(event) => setMessage(event.target.value)}
                 placeholder="Dodaj notatkę..."
                 required
-                disabled={busy}
+                disabled={busy || refreshFailed}
               />
             </div>
             <div className="tasks-project-notes-compose__footer">
-              <button className="tasks-project-note__primary" type="submit" disabled={busy}>
+              <button
+                className="tasks-project-note__primary"
+                type="submit"
+                disabled={busy || refreshFailed}
+              >
                 <Icon name="plus" />
                 <span>Dodaj notatkę</span>
               </button>
@@ -147,7 +194,7 @@ export default function NotesDialog({
                         type="button"
                         className="tasks-project-note__icon-button"
                         aria-label="Edytuj notatkę"
-                        disabled={busy || editing !== null}
+                        disabled={busy || refreshFailed || editing !== null}
                         onClick={() => {
                           setEditing(note.id);
                           setDraft(note.message);
@@ -159,7 +206,7 @@ export default function NotesDialog({
                         type="button"
                         className="tasks-project-note__icon-button"
                         aria-label="Usuń notatkę"
-                        disabled={busy}
+                        disabled={busy || refreshFailed}
                         onClick={() =>
                           window.showConfirmModal({
                             title: 'Usuń notatkę',
@@ -198,13 +245,13 @@ export default function NotesDialog({
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
                         required
-                        disabled={busy}
+                        disabled={busy || refreshFailed}
                       />
                       <div className="tasks-project-note__edit-actions">
                         <button
                           type="button"
                           className="tasks-project-note__secondary"
-                          disabled={busy}
+                          disabled={busy || refreshFailed}
                           onClick={stopEdit}
                         >
                           Anuluj
@@ -212,7 +259,7 @@ export default function NotesDialog({
                         <button
                           className="tasks-project-note__primary"
                           type="submit"
-                          disabled={busy}
+                          disabled={busy || refreshFailed}
                         >
                           Zapisz zmiany
                         </button>

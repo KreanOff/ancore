@@ -138,69 +138,100 @@
         }
         const holder = root.querySelector('[data-api-url]');
         if (!holder) { status.textContent = 'Dokument zapisany'; return; }
-        let editor, pollTimer, autoSaveTimer, editGeneration = 0, savingGeneration = 0, saveAttempt = 0, sessionInvalid = false;
+        const life = new AbortController(), timeouts = new Set();
+        function delay(action, time) {
+            const id = setTimeout(() => { timeouts.delete(id); if (!life.signal.aborted) action(); }, time);
+            timeouts.add(id);
+            return id;
+        }
+        let editor, pollTimer, autoSaveTimer, editGeneration = 0, savingGeneration = 0, saveAttempt = 0, sessionInvalid = false, requesting = false, queued = false;
+        function saveQueued() {
+            if (queued && !pending && !requesting && editGeneration > savingGeneration) void persist();
+        }
         async function poll() {
             try {
-                const response = await fetch(root.dataset.stateUrl, {headers: {'Accept': 'application/json'}, cache: 'no-store'});
+                const response = await fetch(root.dataset.stateUrl, {headers: {'Accept': 'application/json'}, cache: 'no-store', signal: life.signal});
                 if (!response.ok || response.redirected) throw new Error();
                 const data = await response.json();
+                if (life.signal.aborted || sessionInvalid) return;
                 if (data.key !== config.document.key) {
                     sessionInvalid = true;
                     pending = false;
+                    queued = false;
+                    clearTimeout(autoSaveTimer);
                     status.textContent = 'Sesja dokumentu zmieniła się';
                     fail('Plik został podmieniony lub sesja zakończona. Pobierz swoje zmiany z menu Plik edytora i otwórz aktualną wersję w nowej karcie.');
                     return;
                 }
-                if (data.save_error) fail('Nie udało się zapisać pliku w Ancore. Pozostaw edytor otwarty i spróbuj zapisać ponownie.', true);
+                if (data.save_error) { queued = false; fail('Nie udało się zapisać pliku w Ancore. Pozostaw edytor otwarty i spróbuj zapisać ponownie.', true); return; }
                 if (data.revision > revision) {
                     revision = data.revision;
                     pending = false;
                     clearError();
                     status.textContent = savingGeneration === editGeneration ? `Zapisano w Ancore ${data.saved_at}` : 'Nowsze zmiany w edytorze';
+                    saveQueued();
                 }
-            } catch { if (pending) fail('Brak potwierdzenia zapisu. Sprawdź połączenie i ponów zapis.', true); }
+            } catch { if (pending && !life.signal.aborted) fail('Brak potwierdzenia zapisu. Sprawdź połączenie i ponów zapis.', true); }
         }
         async function persist() {
-            if (pending || sessionInvalid) return;
+            if (sessionInvalid || life.signal.aborted) return;
+            if (pending || requesting) { queued = editGeneration > savingGeneration; return; }
+            queued = false;
+            requesting = true;
             pending = true;
             const attempt = ++saveAttempt;
             savingGeneration = editGeneration;
             status.textContent = 'Zapisywanie w Ancore…';
             clearError();
             try {
-                const response = await fetch(root.dataset.saveUrl, {method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Office-Key': config.document.key, 'Accept': 'application/json'}});
+                const response = await fetch(root.dataset.saveUrl, {method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Office-Key': config.document.key, 'Accept': 'application/json'}, signal: life.signal});
                 const data = await response.json();
+                if (life.signal.aborted || sessionInvalid) return;
                 if (!response.ok) throw new Error(data.error);
                 if (!data.pending) { pending = false; status.textContent = 'Brak nowych zmian do zapisania'; }
                 else {
-                    setTimeout(() => {
-                        if (pending && attempt === saveAttempt) { pending = false; fail('Zapis nie został jeszcze potwierdzony. Spróbuj ponownie; dokument pozostaje w edytorze.', true); }
+                    delay(() => {
+                        if (pending && attempt === saveAttempt) { pending = false; queued = false; fail('Zapis nie został jeszcze potwierdzony. Spróbuj ponownie; dokument pozostaje w edytorze.', true); }
                     }, 30000);
                 }
                 await poll();
-            } catch (reason) { pending = false; fail(reason.message || 'Nie udało się zapisać. Spróbuj ponownie.', true); }
+            } catch (reason) {
+                pending = false;
+                queued = false;
+                if (!life.signal.aborted) fail(reason.message || 'Nie udało się zapisać. Spróbuj ponownie.', true);
+            } finally { requesting = false; saveQueued(); }
         }
         retry.addEventListener('click', persist);
         const config = JSON.parse(document.getElementById('office-editor-config').textContent);
         config.events = {
-            onAppReady() { status.textContent = 'Ładowanie dokumentu…'; },
-            onDocumentReady() { status.textContent = 'Dokument otwarty'; pollTimer = setInterval(poll, 4000); },
+            onAppReady() { if (!life.signal.aborted) status.textContent = 'Ładowanie dokumentu…'; },
+            onDocumentReady() { if (life.signal.aborted) return; status.textContent = 'Dokument otwarty'; clearInterval(pollTimer); pollTimer = setInterval(poll, 4000); },
             onDocumentStateChange(event) {
+                if (life.signal.aborted || sessionInvalid) return;
                 if (event.data) { editGeneration++; status.textContent = 'Zmiany w edytorze'; }
-                else { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(persist, 1500); }
+                else { clearTimeout(autoSaveTimer); autoSaveTimer = delay(persist, 1500); }
             },
-            onError() { fail('Edytor zgłosił błąd. Zachowaj otwarte okno i sprawdź połączenie z serwerem edycji.'); },
-            onRequestClose() { location.href = root.dataset.backUrl; },
+            onError() { if (!life.signal.aborted) fail('Edytor zgłosił błąd. Zachowaj otwarte okno i sprawdź połączenie z serwerem edycji.'); },
+            onRequestClose() { if (!life.signal.aborted) location.href = root.dataset.backUrl; },
         };
         const script = document.createElement('script');
         script.src = holder.dataset.apiUrl;
         script.onload = () => {
+            if (life.signal.aborted) return;
             try { editor = new window.DocsAPI.DocEditor('office-doc-editor', config); }
             catch { fail('Nie udało się uruchomić edytora. Odśwież stronę.'); }
         };
-        script.onerror = () => { status.textContent = 'Edytor niedostępny'; fail('Nie można połączyć się z serwerem edycji. Uruchom go i odśwież stronę. Plik pozostaje zapisany w Ancore.'); };
+        script.onerror = () => { if (!life.signal.aborted) { status.textContent = 'Edytor niedostępny'; fail('Nie można połączyć się z serwerem edycji. Uruchom go i odśwież stronę. Plik pozostaje zapisany w Ancore.'); } };
         document.head.append(script);
-        window.addEventListener('pagehide', () => { clearInterval(pollTimer); clearTimeout(autoSaveTimer); editor?.destroyEditor(); }, {once: true});
+        window.addEventListener('pagehide', () => {
+            life.abort();
+            clearInterval(pollTimer);
+            clearTimeout(autoSaveTimer);
+            timeouts.forEach(clearTimeout);
+            script.onload = script.onerror = null;
+            script.remove();
+            editor?.destroyEditor();
+        }, {once: true});
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
     document.addEventListener('ancore:content-loaded', init);

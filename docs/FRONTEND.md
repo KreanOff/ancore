@@ -244,11 +244,21 @@ kontrolowanymi adresami domenowymi, z dotychczasowym prywatnym storage.
 
 Automatyczny zapis zadania wysyła `autosave_fields`, łączy je po stronie
 Django z aktualnymi pozostałymi wartościami i szereguje kolejne zapisy.
+Pola tekstowe i textarea pomijają powtórne `change` z tą samą wartością po
+`input`, aby opuszczenie pola po debounce nie wysyłało ponownie zapisanego tekstu.
 Nawigacja aplikacji czeka na zakończenie zapisu; błąd zachowuje wpisane dane.
 Operacje zadania, w tym wysłanie komentarza, ustawiają blokadę przed
 oczekiwaniem na autosave. Przez całe oczekiwanie pola komentarza i wysyłka
 są wyłączone; ponowne kliknięcie nie tworzy drugiego żądania. Błąd autosave
 zwalnia blokadę i zachowuje szkic do ponowienia.
+Udany POST i następujący po nim odczyt strony mają osobne wyniki. Błąd
+odświeżenia po zapisaniu komentarza usuwa już wysłany szkic i udostępnia
+„Odśwież zadanie”, które ponawia wyłącznie GET. Podzadanie lub wpis czasu
+pozostają po takim błędzie w zablokowanym formularzu z potwierdzeniem zapisu;
+ponowienie odświeża dane bez ponownego tworzenia rekordu. Autosave pamięta
+zaległe odświeżenie również po wyczyszczeniu listy zapisanych pól i plików,
+więc „Spróbuj ponownie” może wykonać sam GET. Błąd samego POST nadal
+zachowuje niezapisany szkic do ponowienia.
 Pola dodatkowe zadania są edytowalne w panelu właściwości. Błędy pozostałych
 pól planowania odsłaniają odpowiednią kontrolkę w tym panelu. Jeśli konfiguracja
 doda pole podczas edycji, odpowiedź walidacji uzupełnia schemat bez odtwarzania
@@ -272,6 +282,9 @@ akcji/powrotu. Nieprawidłowy zapis zwraca HTTP 400 z tym samym modalem;
 React pokazuje błędy bez zamykania okna. Puste notatki w API zwracają HTTP 400.
 Zbiorcze usuwanie tagów wysyła wielokrotny `tag_ids` w FormData i zachowuje
 atomową kontrolę wszystkich identyfikatorów. Edycja notatki wymaga jej autorstwa.
+Po udanym zapisie notatki tagu szkic jest czyszczony przed odświeżeniem.
+Awaria odczytu udostępnia „Odśwież notatki” i wstrzymuje dalsze operacje
+na nieaktualnej liście do udanego GET, bez powtarzania zapisanego POST.
 Wyniki Filtrów zawsze przechodzą przez bieżące ACL zadań; udostępnienie definicji
 nie rozszerza dostępu. Rewizje i blokady nadal obsługują oryginalne widoki.
 Starsze nagłówki `X-Filter-Modal` i `X-Filter-Navigation` są usuwane przez
@@ -398,6 +411,13 @@ pliku, bez ponownego zapisu. Starszy edytor tekstowy zachowuje czyszczenie HTML,
 Ctrl+S, rewizje i ochronę szkicu. Pełne edytory są wyspami DOM: ONLYOFFICE
 `DocEditor` i odizolowany iframe istniejącego `frontend/board`. React obsługuje
 ich powłokę, nazwę, komunikaty, ponowienie zapisu i sprzątanie sesji.
+Gość widzi nazwę jako zwykły tekst bez kontrolek jej zmiany, zarówno w React,
+jak i pierwszym renderze Django. Kolejka ONLYOFFICE zachowuje nowsze zmiany
+powstałe podczas oczekiwania na zapis i wysyła je po jego potwierdzeniu.
+Pełny edytor wyłącza `global_panels_bootstrap` przez `disable_react_shell`,
+ponieważ jego szablon pomija całą nawigację. Istniejący `layout.js` obsługuje
+wtedy sam cykl ładowania strony bez sidebara, także usunięcie zasłony po
+przeładowaniu i `pageshow`; korzeń Reacta strony pozostaje aktywny.
 Pobieranie, źródła/callbacki usługi oraz zapis sceny tablicy pozostają pod
 oryginalnymi chronionymi endpointami; nie są dopuszczone do proxy API ekranów.
 Przy przejściu do pełnego edytora helper nawigacji sprawdza

@@ -1,0 +1,402 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+import vm from 'node:vm';
+import { transform } from 'esbuild';
+import ts from 'typescript';
+
+// Run the source callbacks with their component state and HTTP boundaries controlled.
+async function callbacks(file, names) {
+  const source = ts.createSourceFile(
+    file,
+    await readFile(new URL('../src/' + file, import.meta.url), 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const found = new Map();
+  function visit(node) {
+    if (ts.isFunctionDeclaration(node) && names.includes(node.name?.text))
+      found.set(node.name.text, node.getText());
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  assert.equal(found.size, names.length, 'all requested source callbacks must exist');
+  return (
+    await transform([...found.values()].join('\n') + `\nexport { ${names.join(', ')} };`, {
+      loader: 'tsx',
+      format: 'cjs',
+    })
+  ).code;
+}
+const schemaCallbacks = await callbacks('tasks/SchemaDialog.tsx', ['save']);
+const noteCallbacks = await callbacks('tags/NotesDialog.tsx', [
+  'refresh',
+  'actionError',
+  'retryRefresh',
+  'act',
+]);
+const autosaveCode = (
+  await transform(
+    (await readFile(new URL('../src/tasks/useTaskSave.ts', import.meta.url), 'utf8')).replace(
+      /^import.*?;\n/gm,
+      '',
+    ),
+    { loader: 'ts', format: 'cjs' },
+  )
+).code;
+
+function execute(code, context) {
+  const module = { exports: {} };
+  vm.runInNewContext(code, {
+    module,
+    exports: module.exports,
+    FormData,
+    PageError: class PageError extends Error {},
+    errorMessage: (error) => error.message,
+    ...context,
+  });
+  return module.exports;
+}
+function setters(context, names) {
+  for (const name of names)
+    context['set' + name] = (value) => {
+      context[name[0].toLowerCase() + name.slice(1)] = value;
+    };
+}
+function deferred() {
+  let resolve;
+  const promise = new Promise((done) => (resolve = done));
+  return { promise, resolve };
+}
+
+function schemaHarness(kind) {
+  const requests = [],
+    context = {
+      dialog: { kind, action: kind === 'subtask' ? 'add_subtask' : 'add_work_log', url: '/task/' },
+      api: '/api/',
+      csrfToken: 'token',
+      form: { current: null },
+      life: { current: new AbortController() },
+      sending: { current: false },
+      committed: { current: false },
+      dirty: true,
+      saved: false,
+      closed: 0,
+      failPost: false,
+      failRefresh: true,
+      pageRequest: async (_api, _url, _token, _signal, body) => {
+        requests.push(body);
+        if (context.postWait) await context.postWait;
+        if (context.failPost) throw new Error('POST 503');
+      },
+      onSaved: async () => {
+        requests.push('GET');
+        if (context.failRefresh) throw new Error('GET 503');
+      },
+      onClose: () => context.closed++,
+      // Form data is read only for a mutation, never for a refresh retry.
+      FormData: class extends FormData {
+        constructor() {
+          super();
+          this.set('title', 'Szkic');
+        }
+      },
+    };
+  setters(context, ['Pending', 'Error', 'Saved', 'Dirty', 'Schema']);
+  return { context, requests, ...execute(schemaCallbacks, context) };
+}
+
+for (const kind of ['subtask', 'log']) {
+  test(`${kind} dialog retries only refresh after its mutation committed`, async () => {
+    const app = schemaHarness(kind),
+      event = { preventDefault() {} };
+    await app.save(event);
+    assert.equal(app.requests.length, 2);
+    assert.equal(app.requests[0].get('action'), app.context.dialog.action);
+    assert.equal(app.context.saved, true);
+    assert.equal(app.context.dirty, false);
+    assert.match(app.context.error, /^Zapisano zmiany.*GET 503$/);
+    await app.save(event);
+    assert.deepEqual(app.requests.slice(1), ['GET', 'GET']);
+    assert.equal(app.context.closed, 0);
+    app.context.failRefresh = false;
+    await app.save(event);
+    assert.deepEqual(app.requests.slice(1), ['GET', 'GET', 'GET']);
+    assert.equal(app.context.closed, 1);
+  });
+}
+
+test('dialog failed POST preserves its draft and concurrent submits cannot repeat it', async () => {
+  const app = schemaHarness('subtask'),
+    post = deferred(),
+    event = { preventDefault() {} };
+  app.context.failPost = true;
+  app.context.postWait = post.promise;
+  const first = app.save(event);
+  await app.save(event);
+  assert.equal(app.requests.length, 1);
+  post.resolve();
+  await first;
+  assert.equal(app.context.saved, false);
+  assert.equal(app.context.dirty, true);
+  assert.equal(app.context.closed, 0);
+  assert.equal(app.context.error, 'POST 503');
+  app.context.failPost = false;
+  app.context.failRefresh = false;
+  await app.save(event);
+  assert.equal(app.requests.length, 3);
+  assert.equal(app.context.closed, 1);
+});
+
+function notesHarness() {
+  const requests = [],
+    context = {
+      tag: { id: 1 },
+      initial: { api_url: '/api/', url: '/tags/' },
+      csrfToken: 'token',
+      life: { current: new AbortController() },
+      pending: { current: false },
+      refreshUrl: { current: null },
+      message: 'Nowa notatka',
+      editing: 3,
+      draft: 'Zmieniona notatka',
+      failPost: false,
+      failRefresh: true,
+      updates: [],
+      updated: (data) => context.updates.push(data),
+      pageRequest: async (_api, url, _token, _signal, body) => {
+        requests.push({ method: body ? 'POST' : 'GET', url, body });
+        if (body && context.failPost) throw new Error('POST 503');
+        if (!body && context.failRefresh) throw new Error('GET 503');
+        return body ? { redirect: '/tags/?page=2' } : { data: { notes: ['Zapisana notatka'] } };
+      },
+    };
+  setters(context, ['Busy', 'Error', 'RefreshFailed', 'Message', 'Editing']);
+  return { context, requests, ...execute(noteCallbacks, context) };
+}
+
+for (const action of ['add_tag_note', 'edit_tag_note', 'delete_tag_note']) {
+  test(`${action} commits once and can retry its read repeatedly`, async () => {
+    const app = notesHarness(),
+      values = { note_id: '3', message: 'Treść' };
+    await app.act(action, values);
+    assert.deepEqual(
+      app.requests.map((row) => row.method),
+      ['POST', 'GET'],
+    );
+    assert.equal(app.context.refreshFailed, true);
+    if (action === 'add_tag_note') assert.equal(app.context.message, '');
+    if (action === 'edit_tag_note') assert.equal(app.context.editing, null);
+    await app.act(action, values);
+    assert.equal(app.requests.length, 2, 'stale mutation controls must stay blocked');
+    await app.retryRefresh();
+    assert.deepEqual(
+      app.requests.map((row) => row.method),
+      ['POST', 'GET', 'GET'],
+    );
+    app.context.failRefresh = false;
+    await app.retryRefresh();
+    assert.deepEqual(
+      app.requests.map((row) => row.method),
+      ['POST', 'GET', 'GET', 'GET'],
+    );
+    assert.equal(app.requests[3].url, '/tags/?page=2');
+    assert.equal(app.context.refreshFailed, false);
+    assert.equal(app.context.error, '');
+    assert.equal(app.context.updates.length, 1);
+    await app.retryRefresh();
+    assert.equal(app.requests.length, 4);
+  });
+}
+
+test('failed note POST preserves compose and edit drafts for a real retry', async () => {
+  const app = notesHarness();
+  app.context.failPost = true;
+  await app.act('add_tag_note', { message: 'Nowa notatka' });
+  assert.equal(app.context.message, 'Nowa notatka');
+  assert.equal(app.context.editing, 3);
+  assert.equal(app.context.draft, 'Zmieniona notatka');
+  assert.equal(app.context.refreshFailed, false);
+  assert.equal(app.requests.length, 1);
+  app.context.failPost = false;
+  app.context.failRefresh = false;
+  await app.act('add_tag_note', { message: 'Nowa notatka' });
+  assert.deepEqual(
+    app.requests.map((row) => row.method),
+    ['POST', 'POST', 'GET'],
+  );
+  assert.equal(app.context.message, '');
+});
+
+function autosaveHarness() {
+  const states = [],
+    listeners = {},
+    requests = [],
+    inputs = new Map(),
+    fileInput = { value: 'wybrany plik' },
+    controls = { failPost: false, failRefresh: true, updates: [] };
+  class Input {
+    constructor(name) {
+      this.name = name;
+      this.type = name === 'files' ? 'file' : 'text';
+      this.value = controls.title || 'Nowy tytuł';
+    }
+  }
+  const context = {
+    useState(initial) {
+      const index = states.length;
+      states.push(typeof initial === 'function' ? initial() : initial);
+      return [states[index], (value) => (states[index] = value)];
+    },
+    useRef: (initial) => ({ current: initial }),
+    useEffect: (callback) => callback(),
+    AbortController,
+    Map,
+    Set,
+    FormData: class extends FormData {
+      constructor(form) {
+        super();
+        if (form) {
+          this.set('title', controls.title || 'Nowy tytuł');
+          this.set('files', new File(['Treść'], 'notatka.txt'));
+        }
+      }
+    },
+    HTMLInputElement: Input,
+    HTMLTextAreaElement: class extends Input {},
+    HTMLSelectElement: class extends Input {},
+    setTimeout: () => 1,
+    clearTimeout() {},
+    document: { addEventListener() {}, removeEventListener() {} },
+    window: { addEventListener() {}, removeEventListener() {} },
+    pageRequest: async (_api, _url, _token, _signal, body) => {
+      requests.push(body || 'GET');
+      if (body && controls.postWait) await controls.postWait;
+      if (body && controls.failPost) throw new Error('POST 503');
+      if (!body && controls.failRefresh) throw new Error('GET 503');
+      return { data: { title: controls.title || 'Nowy tytuł' } };
+    },
+  };
+  const form = {
+    current: {
+      addEventListener: (name, callback) => (listeners[name] = callback),
+      removeEventListener() {},
+      querySelector: () => fileInput,
+    },
+  };
+  const hook = execute(autosaveCode, context).useTaskSave(
+    form,
+    {
+      initial: {
+        data: { form: { fields: [{ name: 'title', errors: [] }] }, can_edit: true, error: '' },
+        api_url: '/api/',
+        url: '/task/',
+      },
+      csrfToken: 'token',
+    },
+    (data) => controls.updates.push(data),
+    () => {},
+  );
+  function input(name) {
+    if (!inputs.has(name)) inputs.set(name, new Input(name));
+    const element = inputs.get(name);
+    element.value = controls.title || 'Nowy tytuł';
+    return element;
+  }
+  return {
+    hook,
+    controls,
+    states,
+    requests,
+    fileInput,
+    change: (name) => listeners.input({ target: input(name) }),
+    blur: (name) => listeners.change({ target: input(name) }),
+  };
+}
+
+test('blurring an unchanged text field after a committed autosave retries only GET', async () => {
+  const app = autosaveHarness();
+  app.change('title');
+  assert.equal(await app.hook.save(), false);
+  assert.equal(app.requests.length, 2);
+  app.blur('title');
+  assert.equal(app.states[1], false, 'blur must not mark committed text dirty again');
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.deepEqual(app.requests.slice(1), ['GET', 'GET']);
+  assert.equal(app.states[2], '');
+});
+
+test('task autosave retries only GET after a committed upload and clears stale errors', async () => {
+  const app = autosaveHarness();
+  app.change('title');
+  app.change('files');
+  assert.equal(await app.hook.save(), false);
+  assert.equal(app.requests.length, 2);
+  assert.equal(app.requests[0].get('files').name, 'notatka.txt');
+  assert.equal(app.fileInput.value, '');
+  assert.equal(app.states[1], false, 'committed fields are no longer dirty');
+  assert.match(app.states[2], /^Zapisano zmiany.*GET 503$/);
+  assert.equal(await app.hook.save(), false);
+  assert.deepEqual(app.requests.slice(1), ['GET', 'GET']);
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.deepEqual(app.requests.slice(1), ['GET', 'GET', 'GET']);
+  assert.equal(app.states[0], false);
+  assert.equal(app.states[1], false);
+  assert.equal(app.states[2], '');
+  assert.equal(app.states[4], 'Zapisano zmiany.');
+  assert.equal(app.controls.updates.length, 1);
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests.length, 4);
+});
+
+test('failed task autosave keeps fields and files for retry', async () => {
+  const app = autosaveHarness();
+  app.controls.failPost = true;
+  app.change('title');
+  app.change('files');
+  assert.equal(await app.hook.save(), false);
+  assert.equal(app.states[1], true);
+  assert.equal(app.fileInput.value, 'wybrany plik');
+  assert.equal(app.requests.length, 1);
+  app.blur('title');
+  assert.equal(app.states[1], true, 'an unchanged blur must preserve a failed draft');
+  app.controls.failPost = false;
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests.length, 3);
+  assert.equal(app.requests[1].get('title'), 'Nowy tytuł');
+  assert.equal(app.requests[1].get('files').name, 'notatka.txt');
+  assert.equal(app.states[1], false);
+});
+
+test('edits made during a committed autosave survive a failed refresh and save on retry', async () => {
+  const app = autosaveHarness(),
+    post = deferred();
+  app.change('title');
+  app.change('files');
+  app.controls.postWait = post.promise;
+  const first = app.hook.save();
+  app.controls.title = 'Nowszy tytuł';
+  app.change('title');
+  const overlapping = app.hook.save();
+  post.resolve();
+  assert.equal(await first, false);
+  assert.equal(await overlapping, false);
+  assert.equal(app.requests.length, 2);
+  assert.equal(app.states[1], true);
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests.length, 4);
+  assert.equal(app.requests[0].get('title'), 'Nowy tytuł');
+  assert.equal(app.requests[0].get('files').name, 'notatka.txt');
+  assert.equal(app.requests[2].get('title'), 'Nowszy tytuł');
+  assert.equal(
+    app.requests[2].get('files'),
+    null,
+    'a newer edit must not upload committed files again',
+  );
+  assert.equal(app.states[1], false);
+});

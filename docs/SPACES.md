@@ -406,9 +406,13 @@ w tym planowanie, pochodzą z aktualnego rekordu pod blokadą. Powtórzenie
 niezmienionych danych nie dopisuje historii. Nagłówek, data zamknięcia,
 historia, członkowie po zmianie widoczności i zapisane załączniki odświeżają
 się w otwartym widoku. Komentarze wymagają użycia przycisku wysyłania.
-Błąd zachowuje szkic oraz wybrane pliki; „Spróbuj ponownie” w banerze błędu ponawia zapis,
-a powrót połączenia uruchamia kolejną próbę. Częściowa nawigacja czeka na
-zapis i pozostaje na zadaniu przy błędzie. Pełne wyjście lub przeładowanie
+Błąd zapisu zachowuje szkic oraz wybrane pliki; „Spróbuj ponownie” w banerze
+błędu ponawia zapis. Jeśli POST już się powiódł, a zawiódł dopiero GET,
+komunikat potwierdza zapis, a ponowienie wykonuje sam odczyt. Wysłany
+komentarz jest wtedy czyszczony, bez ponownego dodawania treści i plików.
+Zapisane podzadanie lub wpis czasu pozostają w zablokowanym formularzu,
+z opcją odświeżenia albo zamknięcia. Częściowa nawigacja czeka na
+zapis i pozostaje na zadaniu przy błędzie zapisu. Pełne wyjście lub przeładowanie
 z niezapisanymi zmianami chroni `beforeunload`; szkic nie jest utrwalany poza
 otwartą stroną. Bez JavaScript pozostaje zwykły przycisk „Zapisz” i POST.
 Załączniki wybrane przy „Dodaj załącznik” zapisują się razem z danymi zadania,

@@ -1886,6 +1886,10 @@ zapisują nazwę; Escape przywraca ostatnią zapisaną wartość i fokus nazwy.
 Pusta nazwa lub błąd zapisu pozostawiają tekst do poprawienia i pokazują
 alert pod paskiem. Zapis blokuje ponowne wysłanie, aktualizuje tytuł karty
 bez przeładowania iframe i nie wpływa na treść dokumentu.
+Gość Workspace widzi nazwę jako zwykły tekst `office-suite-title-text`,
+bez przycisku, pola edycji i instrukcji zapisu. Wariant zachowuje wymiary,
+odstępy i wielokropek nazwy, bez hover ani dodatkowego punktu fokusu.
+Dotyczy Reacta oraz pierwszego renderu Django w Dokumentach i Dysku.
 
 Statusy nazwy i dokumentu pozostają w regionach `role=status` ukrytych
 wizualnie przez `u-sr-only`. Automatyczny zapis ONLYOFFICE i tablicy działa
