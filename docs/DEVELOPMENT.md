@@ -1,5 +1,91 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Osobisty domyślny Workspace (25.10.2026)
+
+Katalog Workspace pozwala ustawić/zmienić/usunąć osobisty wybór startowy.
+Po logowaniu otwiera się „Dla ciebie” wskazanego, nadal dostępnego Workspace;
+zwykłe przełączanie nie zmienia preferencji. Oczekujące zaproszenie zachowuje
+swój przepływ. [Mechanizm](MECHANISMS.md#1-tożsamość-sesja-i-obecność).
+
+Migracja `accounts.0002_user_default_workplace` dodaje opcjonalną relację
+`SET_NULL`, bez zmiany istniejących danych. Zastosowano ją lokalnie po backupie
+w `.cache/database-backups/`; plan obejmował wyłącznie tę migrację.
+Na osobnej bazie i storage przeszło **277 testów Django**: `workplaces`,
+`accounts`, `core.test_workspace_frontend`, `core.test_navigation_frontend`,
+`core.test_schema_baseline`, `dashboard.test_for_you`. Nowe testy obejmują
+HTML i zwykłe/scoped API, osobiste uprawnienia, CSRF, utratę dostępu, usunięcie
+Workspace, logowanie z nowej/istniejącej sesji i migrację istniejących kont.
+Przeszły build z TypeScriptem, 10 testów frontendu, format, kontrola Django,
+migracji, indeksu, lokalnych linków dokumentacji i `git diff --check`.
+
+Plugin Browser był niedostępny; Playwright z lokalnym Chrome na osobnej bazie
+QA (`http://127.0.0.1:8783`) sprawdził katalog referencyjny i zmieniony,
+1440×900, 1024×768, 390×844 i 320×568: menu, ustawienie/zamianę/usunięcie,
+przeładowanie i ponowne wejście, kontrolowany błąd zapisu i ponowienie,
+logowanie do domyślnego Workspace z nowej sesji i po ręcznym przełączeniu,
+niezależność wyborów właściciela/członka, pusty katalog i natywny POST bez JS.
+Zrzuty obejrzano. Brak nieoczekiwanych błędów konsoli/wykonania i nieudanych
+żądań; szeroka tabela zachowuje własne przewijanie. Bazę i storage QA usunięto.
+Nie sprawdzano Safari/Firefox ani pełnego zestawu testów repozytorium.
+
+## System Workspace inspirowany Huly (25.10.2026)
+
+Jawne tworzenie po rejestracji, wejście do nowego Workspace, transakcyjne
+przygotowanie pulpitu, moduły, gość tylko do odczytu oraz zaproszenia e-mail
+i linkiem opisuje [Praca zespołowa](TEAMWORK.md#system-workspace-25102026).
+Zachowano Django, istniejące konta, granice danych i aktualny wygląd.
+
+Przeszło **314 testów Django**: `workplaces`, `accounts`,
+`core.test_workspace_frontend`, `core.test_navigation_frontend`,
+`dashboard.test_workspace_invitations`, `documents.test_suite`,
+`documents.test_drive_office`, `spaces.test_write_access`, `resources`.
+Końcowy dodatkowy zestaw **55 testów** objął nowy system, migrację, Dla ciebie
+i regresje wyszukiwania. Testy używały osobnych baz i storage.
+Sprawdzono równoczesne przyjęcia ostatniego miejsca w linku oraz upgrade
+zaproszeń istniejących przed migracją; stare rekordy dostały różne UUID.
+Przeszły TypeScript, oba buildy (aplikacja i tablica), 10 testów frontendu,
+kontrola Django, indeks kodu, lokalne linki i `git diff --check`.
+Migracje `workplaces.0002`–`0004` zastosowano w lokalnej bazie; plan nie zawierał
+innych operacji. Nie wykonywano wdrożenia produkcyjnego.
+
+Browser plugin nie był dostępny. Playwright z lokalnym Chrome na osobnej bazie
+(`http://127.0.0.1:8791`) sprawdził 1440×900, 1024×768, 390×844 i 320×568:
+rejestrację, błędną/pustą nazwę, tworzenie kolejnego Workspace, przełączenie
+kontekstu, reload, moduł wyłączony/włączony, odrzucenie bezpośredniego API,
+link, jego unieważnienie, zewnętrzny adres bez konta, rejestrację z zaproszenia,
+potwierdzenie dołączenia oraz gościa na katalogu i zadaniu. Próba z poprawnym
+CSRF potwierdziła 403 dla zapisu gościa. Zadziałały też natywne POST bez JS
+oraz pierwszy render z zaproszeniem do osoby bez konta. Zrzuty obejrzano;
+poprawiono szerokość checkboxów modułów i odczyt pustego odbiorcy w szablonie.
+Brak nieoczekiwanych błędów JS, pustych ekranów i poziomego przepełnienia strony;
+szerokie tabele zachowują własne przewijanie. Nie testowano Safari/Firefox,
+prawdziwej dostawy SMTP ani rzeczywistego serwera ONLYOFFICE (uprawnienia,
+konfigurację view i odrzucenie callbacku pokrywają testy Django).
+
+## Opcjonalna nazwa Workspace po rejestracji (25.10.2026)
+
+Rejestracja tworzy konto i domyślny Workspace atomowo, po czym otwiera
+`/accounts/register/workspace/` we wspólnej powłoce kont. Sesja ogranicza zmianę
+do nowego Workspace. Własna nazwa zastępuje losową; puste pole zachowuje nazwę.
+Nie zmieniono modeli ani migracji. [Przepływ](MECHANISMS.md#1-tożsamość-sesja-i-obecność).
+
+Na osobnej bazie PostgreSQL przez `scripts/run_tests.py` przeszło **110 testów**:
+`accounts.test_registration_workspace`, `accounts.tests`, `accounts.test_frontend`,
+`accounts.test_login_redirects`, `accounts.test_email_identity`,
+`accounts.test_registration_races`, `workplaces.test_defaults` i `dashboard.test_for_you`.
+Obejmują HTML/API, granice sesji, CSRF, walidację, zachowanie kodu/adresu,
+wycofanie transakcji i pierwsze logowanie w zwykłym/scoped Workspace.
+Przeszły też build z TypeScriptem, 10 testów frontendu, format, kontrola Django,
+indeks kodu, lokalne linki dokumentacji i `git diff --check`.
+
+Playwright z lokalnym Chrome (plugin Browser niedostępny) na osobnej bazie i storage
+QA sprawdził rejestrację → własną/pustą nazwę → logowanie → zapisany Workspace,
+przeładowanie i zakończony krok. Porównano kartę z rejestracją i układ przy
+1440×900, 1024×768, 390×844 i 320×568; sprawdzono błąd długości, fokus, zachowanie
+szkicu, ponowienie oraz formularz bez JavaScriptu. Brak błędów wykonania,
+nieoczekiwanych błędów konsoli i nieudanych żądań. Tymczasową bazę i storage
+usunięto. Safari, Firefox i pełnego zestawu testów repozytorium nie sprawdzano.
+
 ## Podświetlenia menu na szklanym tle (25.10.2026)
 
 Kryjące tła hover i zaznaczenia zastąpiono wariantami neutralnych kolorów

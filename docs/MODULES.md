@@ -70,9 +70,13 @@ dodania z aktualnymi danymi logowania. „Usuń konto z przełącznika”
 usuwa wpis z przełącznika; nie usuwa użytkownika z bazy. Nie można w ten sposób
 usunąć jedynego pozostałego konta sesji.
 
-**Scenariusz:** rejestracja → logowanie → „Dla ciebie” w aktywnym Workspace →
-profil/ustawienia → opcjonalnie dodanie drugiego konta → przełączenie. Statusy automatyczne i ręczne
-obsługuje osobny mechanizm opisany w Mechanizmach.
+Rejestracja tworzy i uwierzytelnia konto, a następnie otwiera
+`/accounts/register/workspace/` z wymaganą nazwą. Dopiero potwierdzenie tworzy
+Workspace i otwiera „Dla ciebie”. Rejestracja z linku zaproszenia wraca do
+potwierdzenia dołączenia, bez tworzenia osobistego Workspace.
+
+**Scenariusz:** rejestracja → nazwany Workspace lub przyjęcie zaproszenia →
+„Dla ciebie” → profil i ustawienia. Statusy obecności opisują Mechanizmy.
 
 ## 2. Workspace — Workplaces
 
@@ -88,6 +92,12 @@ Nazwy mogą się powtarzać. Kod `w_` + 26 małych liter/cyfr jest globalnie uni
 nadawany automatycznie i tylko do odczytu. Jest także segmentem adresu Workspace;
 zmiana nazwy nie zmienia kodu ani adresu. Dawne adresy pozostają aliasami
 z tymi samymi kontrolami dostępu.
+
+Menu działań w katalogu zawiera „Ustaw jako domyślny”, a dla wybranego miejsca
+„Usuń ustawienie domyślne”. Etykieta „Domyślny” wskazuje jeden osobisty wybór,
+niezależny od etykiety „Bieżący”. Każda osoba może wskazać własny lub udostępniony
+Workspace, do którego nadal ma dostęp. Po zalogowaniu otwiera się jego „Dla ciebie”.
+Zmiana preferencji nie przełącza bieżącego kontekstu ani ustawień innych osób.
 `Workplace.avatar` zapisuje identyfikator jednej z 30 ilustracji współdzielonych
 z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID z pierwotnej
 puli 24 motywów, zachowujący wcześniejsze przypisania.
@@ -97,17 +107,15 @@ Właściciel i administrator otwierają wybór kliknięciem awatara lub „Dodaj
 w formularzu tworzenia lub edycji. Wybór zatwierdzają w osobnym oknie,
 a następnie zapisują Workspace. Anulowanie okna przywraca poprzedni awatar.
 Zwykły członek ma podgląd. Zapis jest widoczny w katalogu i przełączniku Workspace.
-Po zalogowaniu, jeśli użytkownik nie ma żadnego dostępnego Workspace, usługa
-tworzy domyślny z losową, zabawną polską nazwą z puli `DEFAULT_WORKPLACE_NAMES`,
-np. „Biuro Latających Pierogów” lub „Baza Turboślimaków”. Nazwa jest zapisywana
-raz i można ją później zmienić w zwykłym formularzu edycji. Kolejne logowania
-zachowują zapisany Workspace; istniejące nazwy nie są zmieniane.
+Workspace powstaje po jawnym POST z nazwą i otwiera własne „Dla ciebie”.
+Inicjalizacja transakcyjnie tworzy rolę właściciela oraz pulpit z jednym gadżetem;
+nie kopiuje Przestrzeni, zadań ani członków innego Workspace. Nie ma workera
+inicjalizacji ani osobnego serwera/bazy dla każdego Workspace.
 
-`WorkplaceMembership` udostępnia wspólny Workspace rolom owner/admin/member.
-Zakładkę członków Workspace, zaproszenia w aplikacji do istniejących kont, zmiany ról oraz
-odebranie dostępu opisuje [Praca zespołowa](TEAMWORK.md). Członkostwo obejmuje
-wszystkie moduły danego Workspace. Dane są zapisywane z właścicielem Workspace;
-autorzy komentarzy i historii pozostają faktycznymi użytkownikami.
+`WorkplaceMembership` obsługuje role owner/admin/member/guest. Gość odczytuje
+dostępne dane; prywatność Przestrzeni i zadań nadal obowiązuje. `disabled_modules`
+przechowuje wyłączone moduły, zachowując ich dane. Linki i e-maile zaproszeń,
+terminy, limity, domeny oraz role opisuje [Praca zespołowa](TEAMWORK.md#system-workspace-25102026).
 
 `SidebarFavorite` zapisuje w bazie parę użytkownik–Workspace, klucz miejsca
 nawigacji i pozycję. Katalog dozwolonych miejsc jest w

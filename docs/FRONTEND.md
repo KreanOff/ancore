@@ -423,12 +423,21 @@ Zmiany nazw nie zmieniają stałego kodu. Usunięcie członka zachowuje istniej�
 czyszczenie dostępów Przestrzeni i unieważnienie sesji Office.
 Favorites i globalny picker Workspace renderuje trwała powłoka `src/shell`.
 
+Wiersze katalogu zawierają osobiste `is_default` i `default_url`. Menu używa
+POST `default_url` z `action=set/remove`; JSON zwraca `default_workplace_id`
+(tekst lub null). React aktualizuje etykiety bez przeładowania i bez zmiany
+aktywnego Workspace. Stan błędu zachowuje poprzedni wybór; zapis blokuje
+równoległe operacje. HTML zachowuje natywny formularz POST z CSRF.
+Po logowaniu zapisany, nadal dostępny domyślny Workspace ma pierwszeństwo
+przed aktywną sesją, z zachowaniem przepływu oczekującego zaproszenia.
+
 ## API i interfejs kont
 
 `GET/POST /accounts/api/v1/page/?url=<adres_konta>` ma osobną, zamkniętą
-listę adresów: logowanie, rejestracja, profil, dodanie/przełączenie/usunięcie
-konta z sesji, zmiana statusu i wylogowanie. Tylko logowanie i rejestracja
-działają bez uwierzytelnienia; ogólny `/api/v1/page/` nadal wymaga sesji
+listę adresów: logowanie, rejestracja i jej krok nazwy Workspace, wybór Workspace, profil,
+dodanie/przełączenie/usunięcie konta z sesji, zmiana statusu i wylogowanie.
+Logowanie, rejestracja i publiczny ekran zaproszenia działają bez uwierzytelnienia;
+tworzenie Workspace wymaga sesji; ogólny `/api/v1/page/` nadal wymaga sesji
 i nie udostępnia tras Accounts. Operacje zapisu wymagają CSRF. Walidacja
 zwraca JSON 400, brak sesji 401, a niedozwolone przełączenie konta 403.
 Odpowiedzi mają `Cache-Control: no-store`; hasła i hashe przełącznika
@@ -440,7 +449,19 @@ edycji podsumowanie profilu pokazuje dane z bazy, a szkic pozostaje w formularzu
 `backend/accounts/api.py` deleguje do dotychczasowych widoków i formularzy Django.
 Zachowuje rotację sesji i cookie CSRF także wtedy, gdy `LoginView` już zapisał
 cookie do odpowiedzi przekierowania. Parametr `next` nadal nie zastępuje
-strony „Dla ciebie” po logowaniu. Po rejestracji trzeba się zalogować.
+strony „Dla ciebie” po logowaniu. Konto bez Workspace przechodzi do tworzenia,
+a sesja z linkiem zaproszenia wraca do jego potwierdzenia. `account-auth`
+z `mode: workspace` zawiera wymagane pole `name`, flagę `has_workspaces` i link
+`select_workspace` do `/accounts/workspaces/`. Osobny ekran
+`account-workspace-picker` zawiera listę `workspaces` (id, nazwa, `switch_url`)
+ograniczoną przez `workplaces_for_user`; nie zawiera formularza tworzenia.
+Wybór używa istniejącego natywnego POST przełącznika z CSRF. Formularz
+tworzenia osoby z dostępnym Workspace wysyła `create_another=1`, aby jawnie
+utworzyć kolejne środowisko; ponowiony pierwszy POST bez tej flagi zachowuje
+dotychczasowe przekierowanie do istniejącego Workspace. `account-join` obsługuje
+potwierdzenie dołączenia w React. Tożsamość i CSRF zachowują pełne przeładowanie.
+Kontrakt strony zawiera `read_only`; gość nie otrzymuje uprawnień/URL edycji.
+Ustawienia Workspace zawierają moduły oraz formularz i listę linków zaproszeń.
 
 Ekrany `src/accounts/` współdzielą z `auth_base.html` tapetę i prawą kartę
 formularza (520px, wysokość według treści) z widocznym nagłówkiem, etykietami

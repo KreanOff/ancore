@@ -82,6 +82,12 @@ Kopie lokalne trzymaj poza Git, np. w `.cache/database-backups/`.
 
 ## Weryfikacja
 
+`accounts.0002_user_default_workplace` dodaje opcjonalny osobisty wybór Workspace
+do konta. Istniejące konta zaczynają bez preferencji, a dane i identyfikatory
+Workspace pozostają zachowane. Relacja ma `SET_NULL` przy usunięciu Workspace;
+uprawnienia nadal wynikają z właściciela lub aktywnego członkostwa. Przed
+zastosowaniem migracji na istniejącej bazie wykonaj standardowy backup.
+
 Pełny runner `.venv/bin/python scripts/run_tests.py` tworzy osobną pustą
 bazę, stosuje nowe migracje i testuje aktywne moduły. Regresje schematu
 znajdują się w `core.test_schema_baseline`; testy dawnych przejść migracyjnych

@@ -19,8 +19,8 @@ oraz [Mechanizmy](MECHANISMS.md).
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
 | [backend/core](../backend/core) | 37 | 0 | 20 | 219 |
-| [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
-| [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
+| [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
+| [backend/workplaces](../backend/workplaces) | 29 | 4 | 16 | 137 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
 | [backend/dashboard](../backend/dashboard) | 52 | 6 | 42 | 267 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
@@ -36,7 +36,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 
 Źródło: [backend/accounts/models.py](../backend/accounts/models.py).
 
-Pola zadeklarowane tutaj: `email` (EmailField), `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `avatar` (CharField), `profile_photo` (FileField), `phone_number` (CharField), `job_title` (CharField), `bio` (TextField), `presence_status` (CharField), `last_seen_at` (DateTimeField).
+Pola zadeklarowane tutaj: `email` (EmailField), `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `avatar` (CharField), `profile_photo` (FileField), `phone_number` (CharField), `job_title` (CharField), `bio` (TextField), `presence_status` (CharField), `last_seen_at` (DateTimeField), `default_workplace` (ForeignKey).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `default_workplace` | `'workplaces.Workplace'` | on_delete=models.SET_NULL; related_name='+'; null=True |
 
 Metody/properties: `presence_status_class`, `get_full_name`, `__str__`.
 
@@ -46,7 +50,7 @@ Metody/properties: `presence_status_class`, `get_full_name`, `__str__`.
 
 Źródło: [backend/workplaces/models.py](../backend/workplaces/models.py).
 
-Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `slug` (SlugField), `legacy_slug` (SlugField), `avatar` (CharField), `workplace_photo` (FileField), `owner` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `name` (CharField), `description` (TextField), `code` (CharField), `slug` (SlugField), `legacy_slug` (SlugField), `avatar` (CharField), `disabled_modules` (JSONField), `workplace_photo` (FileField), `owner` (ForeignKey), `members` (ManyToManyField), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -72,13 +76,35 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/workplaces/models.py](../backend/workplaces/models.py).
 
-Pola zadeklarowane tutaj: `workplace` (ForeignKey), `recipient` (ForeignKey), `invited_by` (ForeignKey), `role` (CharField), `status` (CharField), `created_at` (DateTimeField), `expires_at` (DateTimeField).
+Pola zadeklarowane tutaj: `workplace` (ForeignKey), `recipient` (ForeignKey), `email` (EmailField), `token` (UUIDField), `email_sent_at` (DateTimeField), `invited_by` (ForeignKey), `role` (CharField), `status` (CharField), `created_at` (DateTimeField), `expires_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `workplace` | `Workplace` | on_delete=models.CASCADE; related_name='invitations' |
-| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workplace_invitations' |
+| `recipient` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workplace_invitations'; null=True |
 | `invited_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='sent_workplace_invitations'; null=True |
+
+### `WorkplaceInviteLink`
+
+Źródło: [backend/workplaces/models.py](../backend/workplaces/models.py).
+
+Pola zadeklarowane tutaj: `workplace` (ForeignKey), `token` (UUIDField), `created_by` (ForeignKey), `role` (CharField), `email_domain` (CharField), `max_uses` (PositiveIntegerField), `uses` (PositiveIntegerField), `expires_at` (DateTimeField), `revoked_at` (DateTimeField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `workplace` | `Workplace` | on_delete=models.CASCADE; related_name='invite_links' |
+| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; null=True |
+
+### `WorkplaceInviteLinkUse`
+
+Źródło: [backend/workplaces/models.py](../backend/workplaces/models.py).
+
+Pola zadeklarowane tutaj: `link` (ForeignKey), `user` (ForeignKey), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `link` | `WorkplaceInviteLink` | on_delete=models.CASCADE; related_name='redemptions' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 
 ### `SidebarFavorite`
 
@@ -537,6 +563,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 Źródło: [backend/workplaces/forms.py](../backend/workplaces/forms.py).
 
+- `WorkplaceModuleSelect`
+- `RegistrationWorkspaceForm`
 - `WorkplaceForm` — Meta.fields: `['avatar', 'workplace_photo', 'name', 'description']`
 
 ### tasks
@@ -640,6 +668,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'login/'` | `views.AccountLoginView.as_view()` | 'login' |
 | `'logout/'` | `views.AccountLogoutView.as_view()` | 'logout' |
 | `'register/'` | `views.register` | 'register' |
+| `'register/workspace/'` | `views.register_workspace` | 'register_workspace' |
+| `'workspaces/'` | `views.select_workspace` | 'select_workspace' |
 | `'profile/'` | `views.profile` | 'profile' |
 | `'profile/status/'` | `views.update_presence_status` | 'update_presence_status' |
 | `'profile/add-account/'` | `views.add_account` | 'add_account' |
@@ -653,6 +683,11 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 | Ścieżka / regex | Widok / include | Nazwa |
 | --- | --- | --- |
+| `'join/<uuid:token>/'` | `invitations.join` | 'join-link' |
+| `'invite/<uuid:token>/'` | `invitations.join` | 'join-email' |
+| `'<int:workplace_id>/invite-links/'` | `invitations.create_link` | 'invite-link-create' |
+| `'<int:workplace_id>/invite-links/<int:link_id>/revoke/'` | `invitations.revoke_link` | 'invite-link-revoke' |
+| `'<int:workplace_id>/invitations/<int:invitation_id>/resend/'` | `invitations.resend_email` | 'invitation-resend' |
 | `'<int:workplace_id>/team/candidates/'` | `team_views.invitation_candidates` | 'invitation-candidates' |
 | `'<int:workplace_id>/team/'` | `team_views.team` | 'team' |
 | `'<int:workplace_id>/team/<int:member_id>/'` | `team_views.member_update` | 'member-update' |
@@ -660,6 +695,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'invitations/<int:invitation_id>/respond/'` | `team_views.invitation_response` | 'invitation-response' |
 | `''` | `views.workplaces` | 'workplaces' |
 | `'<int:workplace_id>/switch/'` | `views.switch_workplace` | 'switch' |
+| `'<int:workplace_id>/default/'` | `views.set_default_workplace` | 'set-default' |
 | `'<int:workplace_id>/favorites/toggle/'` | `views.toggle_sidebar_favorite` | 'toggle-sidebar-favorite' |
 | `'<int:workplace_id>/favorites/reorder/'` | `views.reorder_sidebar_favorites` | 'reorder-sidebar-favorites' |
 | `'<int:workplace_id>/settings/'` | `views.update_workplace` | 'update' |
@@ -840,14 +876,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/accounts/backends.py](../backend/accounts/backends.py) — `EmailBackend`
 - [backend/accounts/context_processors.py](../backend/accounts/context_processors.py) — `current_account_avatar`
 - [backend/accounts/forms.py](../backend/accounts/forms.py) — `UserRegistrationForm`, `UserProfileForm`
-- [backend/accounts/frontend.py](../backend/accounts/frontend.py) — `login_page`, `register_page`, `add_account_page`, `profile_page`
+- [backend/accounts/frontend.py](../backend/accounts/frontend.py) — `login_page`, `register_page`, `register_workspace_page`, `select_workspace_page`, `add_account_page`, `profile_page`
 - [backend/accounts/middleware.py](../backend/accounts/middleware.py) — `UserPresenceMiddleware`
 - [backend/accounts/models.py](../backend/accounts/models.py) — `User`, `normalize_public_username`, `default_public_username`, `unique_public_username`
 - [backend/accounts/presence.py](../backend/accounts/presence.py) — `idle_seconds`, `heartbeat_seconds`, `write_throttle_seconds`, `mark_user_seen`, `mark_user_inactive`, `sync_stale_presence_statuses`
 - [backend/accounts/templatetags/__init__.py](../backend/accounts/templatetags/__init__.py)
 - [backend/accounts/templatetags/account_avatar.py](../backend/accounts/templatetags/account_avatar.py) — `user_avatar`
 - [backend/accounts/urls.py](../backend/accounts/urls.py)
-- [backend/accounts/views.py](../backend/accounts/views.py) — `AccountLoginView`, `AccountLogoutView`, `register`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
+- [backend/accounts/views.py](../backend/accounts/views.py) — `AccountLoginView`, `AccountLogoutView`, `register`, `register_workspace`, `select_workspace`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
 - [backend/accounts/widgets.py](../backend/accounts/widgets.py) — `UserSelect`, `UserChoiceField`, `UserSelectMultiple`
 
 ### workplaces
@@ -856,18 +892,20 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/workplaces/admin.py](../backend/workplaces/admin.py) — `WorkplaceMembershipInline`, `WorkplaceAdmin`, `WorkplaceMembershipAdmin`, `SidebarFavoriteAdmin`
 - [backend/workplaces/apps.py](../backend/workplaces/apps.py) — `WorkplacesConfig`
 - [backend/workplaces/context_processors.py](../backend/workplaces/context_processors.py) — `current_workplace`
-- [backend/workplaces/forms.py](../backend/workplaces/forms.py) — `WorkplaceForm`
-- [backend/workplaces/frontend.py](../backend/workplaces/frontend.py) — `path`, `person`, `schema`, `directory_page`
+- [backend/workplaces/forms.py](../backend/workplaces/forms.py) — `WorkplaceModuleSelect`, `RegistrationWorkspaceForm`, `WorkplaceForm`
+- [backend/workplaces/frontend.py](../backend/workplaces/frontend.py) — `path`, `person`, `join_page`, `schema`, `directory_page`
+- [backend/workplaces/invitations.py](../backend/workplaces/invitations.py) — `pending_join_url`, `invitation_url`, `send_invitation`, `InviteLinkForm`, `create_link`, `revoke_link`, `resend_email`, `join`
 - [backend/workplaces/middleware.py](../backend/workplaces/middleware.py) — `ActiveWorkplaceMiddleware`
-- [backend/workplaces/models.py](../backend/workplaces/models.py) — `generate_workplace_code`, `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `SidebarFavorite`, `create_workplace_for_user`
+- [backend/workplaces/models.py](../backend/workplaces/models.py) — `generate_workplace_code`, `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInvitation`, `WorkplaceInviteLink`, `WorkplaceInviteLinkUse`, `SidebarFavorite`, `create_workplace_for_user`
 - [backend/workplaces/navigation.py](../backend/workplaces/navigation.py) — `sidebar_favorite_catalog`, `sidebar_favorite_is_active`, `sidebar_favorites_for_request`
-- [backend/workplaces/services.py](../backend/workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `ensure_default_workplace`, `set_active_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
+- [backend/workplaces/policy.py](../backend/workplaces/policy.py) — `module_enabled`, `read_only`, `module_for_request`, `module_for_path`, `check_access`, `restrict_page`
+- [backend/workplaces/services.py](../backend/workplaces/services.py) — `workplace_management_url`, `pending_invitations_for_user`, `workplaces_for_user`, `workplace_role`, `can_manage_team`, `workspace_owner`, `workplace_people`, `default_workplace_for_user`, `ensure_default_workplace`, `set_active_workplace`, `enable_workspace_url_scope`, `workspace_url_scope_enabled`, `scoped_workplace_app_path`, `legacy_app_path_to_scoped`, `get_active_workplace`
 - [backend/workplaces/team_views.py](../backend/workplaces/team_views.py) — `TeamRoleSelect`, `InvitationForm`, `invitation_candidates`, `team`, `team_context`, `invitation_response`, `member_update`, `invitation_cancel`
 - [backend/workplaces/templatetags/__init__.py](../backend/workplaces/templatetags/__init__.py)
 - [backend/workplaces/templatetags/sidebar_favorites.py](../backend/workplaces/templatetags/sidebar_favorites.py) — `sidebar_favorite_toggle`
 - [backend/workplaces/templatetags/workplace_avatar.py](../backend/workplaces/templatetags/workplace_avatar.py) — `workplace_avatar_seed`, `workplace_avatar`
 - [backend/workplaces/urls.py](../backend/workplaces/urls.py)
-- [backend/workplaces/views.py](../backend/workplaces/views.py) — `workplaces`, `render_workplaces`, `switch_workplace`, `toggle_sidebar_favorite`, `reorder_sidebar_favorites`, `workplace_home`, `update_workplace`, `delete_workplace`
+- [backend/workplaces/views.py](../backend/workplaces/views.py) — `workplaces`, `render_workplaces`, `switch_workplace`, `set_default_workplace`, `toggle_sidebar_favorite`, `reorder_sidebar_favorites`, `workplace_home`, `update_workplace`, `delete_workplace`
 
 ### tasks
 
@@ -1024,6 +1062,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/accounts/templates/accounts/login.html](../backend/accounts/templates/accounts/login.html)
 - [backend/accounts/templates/accounts/profile.html](../backend/accounts/templates/accounts/profile.html)
 - [backend/accounts/templates/accounts/register.html](../backend/accounts/templates/accounts/register.html)
+- [backend/accounts/templates/accounts/register_workspace.html](../backend/accounts/templates/accounts/register_workspace.html)
+- [backend/accounts/templates/accounts/select_workspace.html](../backend/accounts/templates/accounts/select_workspace.html)
 - [backend/accounts/templates/accounts/widgets/user_select.html](../backend/accounts/templates/accounts/widgets/user_select.html)
 
 ### workplaces
@@ -1040,6 +1080,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/workplaces/templates/workplaces/includes/team_modals.html](../backend/workplaces/templates/workplaces/includes/team_modals.html)
 - [backend/workplaces/templates/workplaces/includes/team_panel.html](../backend/workplaces/templates/workplaces/includes/team_panel.html)
 - [backend/workplaces/templates/workplaces/includes/workplace_photo_editor.html](../backend/workplaces/templates/workplaces/includes/workplace_photo_editor.html)
+- [backend/workplaces/templates/workplaces/join.html](../backend/workplaces/templates/workplaces/join.html)
+- [backend/workplaces/templates/workplaces/widgets/module_option.html](../backend/workplaces/templates/workplaces/widgets/module_option.html)
+- [backend/workplaces/templates/workplaces/widgets/module_select.html](../backend/workplaces/templates/workplaces/widgets/module_select.html)
 - [backend/workplaces/templates/workplaces/workplaces.html](../backend/workplaces/templates/workplaces/workplaces.html)
 
 ### tasks
@@ -1337,6 +1380,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/accounts/PresenceSelect.tsx](../frontend/app/src/accounts/PresenceSelect.tsx)
 - [frontend/app/src/accounts/ProfileEditor.tsx](../frontend/app/src/accounts/ProfileEditor.tsx)
 - [frontend/app/src/accounts/ProfilePage.tsx](../frontend/app/src/accounts/ProfilePage.tsx)
+- [frontend/app/src/accounts/WorkspacePickerPage.tsx](../frontend/app/src/accounts/WorkspacePickerPage.tsx)
 - [frontend/app/src/accounts/types.ts](../frontend/app/src/accounts/types.ts)
 - [frontend/app/src/calendar/CalendarPage.tsx](../frontend/app/src/calendar/CalendarPage.tsx)
 - [frontend/app/src/calendar/EventEditor.tsx](../frontend/app/src/calendar/EventEditor.tsx)
@@ -1442,6 +1486,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/tasks/useTaskSave.ts](../frontend/app/src/tasks/useTaskSave.ts)
 - [frontend/app/src/workspaces/AvatarControl.tsx](../frontend/app/src/workspaces/AvatarControl.tsx)
 - [frontend/app/src/workspaces/DirectoryPage.tsx](../frontend/app/src/workspaces/DirectoryPage.tsx)
+- [frontend/app/src/workspaces/JoinPage.tsx](../frontend/app/src/workspaces/JoinPage.tsx)
 - [frontend/app/src/workspaces/Picker.tsx](../frontend/app/src/workspaces/Picker.tsx)
 - [frontend/app/src/workspaces/TeamDialog.tsx](../frontend/app/src/workspaces/TeamDialog.tsx)
 - [frontend/app/src/workspaces/TeamTable.tsx](../frontend/app/src/workspaces/TeamTable.tsx)
@@ -1618,6 +1663,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `RegistrationRaceTests`: 1 metod testowych.
 
+### backend/accounts/test_registration_workspace.py
+
+Źródło: [backend/accounts/test_registration_workspace.py](../backend/accounts/test_registration_workspace.py).
+
+- `RegistrationWorkspaceTests`: 8 metod testowych.
+
 ### backend/accounts/tests.py
 
 Źródło: [backend/accounts/tests.py](../backend/accounts/tests.py).
@@ -1633,12 +1684,18 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `WorkplaceAvatarTests`: 8 metod testowych.
 
+### backend/workplaces/test_default_preference.py
+
+Źródło: [backend/workplaces/test_default_preference.py](../backend/workplaces/test_default_preference.py).
+
+- `DefaultWorkplacePreferenceTests`: 12 metod testowych.
+- `DefaultWorkplaceMigrationTests`: 1 metod testowych.
+
 ### backend/workplaces/test_defaults.py
 
 Źródło: [backend/workplaces/test_defaults.py](../backend/workplaces/test_defaults.py).
 
-- `DefaultWorkplaceTests`: 6 metod testowych.
-- `ConcurrentDefaultWorkplaceTests`: 1 metod testowych.
+- `DefaultWorkplaceTests`: 3 metod testowych.
 
 ### backend/workplaces/test_deletions.py
 
@@ -1669,6 +1726,19 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/workplaces/test_team.py](../backend/workplaces/test_team.py).
 
 - `TeamAccessTests`: 20 metod testowych.
+
+### backend/workplaces/test_workspace_migration.py
+
+Źródło: [backend/workplaces/test_workspace_migration.py](../backend/workplaces/test_workspace_migration.py).
+
+- `WorkspaceSystemMigrationTests`: 1 metod testowych.
+
+### backend/workplaces/test_workspace_system.py
+
+Źródło: [backend/workplaces/test_workspace_system.py](../backend/workplaces/test_workspace_system.py).
+
+- `WorkspaceSystemTests`: 13 metod testowych.
+- `ConcurrentInviteLinkTests`: 1 metod testowych.
 
 ### backend/workplaces/tests.py
 
@@ -2071,10 +2141,14 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### accounts
 
 - [backend/accounts/migrations/0001_initial.py](../backend/accounts/migrations/0001_initial.py)
+- [backend/accounts/migrations/0002_user_default_workplace.py](../backend/accounts/migrations/0002_user_default_workplace.py)
 
 ### workplaces
 
 - [backend/workplaces/migrations/0001_initial.py](../backend/workplaces/migrations/0001_initial.py)
+- [backend/workplaces/migrations/0002_workplace_disabled_modules_workplaceinvitation_email_and_more.py](../backend/workplaces/migrations/0002_workplace_disabled_modules_workplaceinvitation_email_and_more.py)
+- [backend/workplaces/migrations/0003_workplaceinvitelinkuse.py](../backend/workplaces/migrations/0003_workplaceinvitelinkuse.py)
+- [backend/workplaces/migrations/0004_workplaceinvitation_unique_pending_workspace_email.py](../backend/workplaces/migrations/0004_workplaceinvitation_unique_pending_workspace_email.py)
 
 ### tasks
 

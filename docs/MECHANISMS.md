@@ -51,20 +51,40 @@ to `email`. Profil i publiczny identyfikator są oddzielone od danych wpisu
 `Contact`. Aktualne konto jest w `request.user`.
 
 React używa osobnego `/accounts/api/v1/page/` z jawną listą operacji.
-Anonimowy dostęp dotyczy tylko logowania/rejestracji, a wszystkie zapisy
+Anonimowy dostęp dotyczy logowania/rejestracji i ekranu zaproszenia; tworzenie Workspace wymaga zalogowania, a wszystkie zapisy
 zachowują CSRF. Adapter przekazuje zmienionego użytkownika do middleware
 i zachowuje cookie CSRF z wewnętrznej odpowiedzi `LoginView`, gdy zamienia
 przekierowanie na JSON. Dane kont nie są cache'owane; hasła i hashe sesyjne
 przełącznika pozostają wyłącznie w Django. Zmiana tożsamości wymaga pełnego
 odświeżenia powłoki, aby nie zachować danych poprzedniego konta w interfejsie.
 
-Każde udane logowanie przez `/accounts/login/` otwiera „Dla ciebie”
-(`LOGIN_REDIRECT_URL = 'for_you'`), także pierwsze logowanie po rejestracji.
-`AccountLoginView` ignoruje `next` z GET i POST, więc katalog Workspace ani
-wcześniej otwierany ekran nie zastępują strony startowej. Rejestracja nadal
-prowadzi najpierw do formularza logowania. Middleware wybiera lub tworzy
-aktywny Workspace według dotychczasowych reguł; gdy sesja ma włączony zakres
-URL, `/for-you/` przekierowuje do `/workplaces/<slug>/for-you/`.
+Logowanie otwiera „Dla ciebie” w dostępnym Workspace. Konto bez Workspace
+przechodzi do `/accounts/register/workspace/`; oczekujące dołączenie przez link
+wraca do potwierdzenia zaproszenia. Dowolny parametr `next` nadal nie zmienia
+celu logowania. Rejestracja tworzy i uwierzytelnia konto, bez tworzenia Workspace.
+
+`User.default_workplace` zapisuje osobisty wybór startowego Workspace. Menu
+katalogu pozwala ustawić jeden dostępny Workspace albo usunąć wybór przez
+POST `/workplaces/<pk>/default/` (`action=set/remove`, CSRF). Zmiana dotyczy
+wyłącznie zalogowanej osoby i nie przełącza aktywnej sesji. Przy logowaniu
+`default_workplace_for_user()` ponawia kontrolę dostępu; poprawny wybór ustawia
+sesję i prowadzi do scoped „Dla ciebie”, również gdy poprzednio używano innego
+Workspace. Oczekujące zaproszenie zachowuje pierwszeństwo. Bez poprawnego wyboru
+obowiązuje dotychczasowe zachowanie. Usunięcie Workspace ustawia preferencję
+na NULL; nieaktywne/usunięte członkostwo nie daje dostępu przez tę relację.
+
+Rejestracja i tworzenie Workspace:
+Krok „Utwórz Workspace” wymaga nazwy (1–140 znaków po normalizacji odstępów).
+Dopiero POST tworzy Workspace, członkostwo właściciela, skrót Dashboardu,
+pulpit domyślny i gadżet „Postęp pracy” w jednej transakcji. Blokada wiersza
+użytkownika chroni pierwszy Workspace przed podwójnym zapisem. Błąd inicjalizacji
+wycofuje Workspace; konto pozostaje gotowe do ponowienia. Utworzenie ustawia
+sesję i prowadzi do scoped „Dla ciebie”. Istniejące dane i nazwy pozostają zachowane.
+GET tego kroku pokazuje również listę dostępnych Workspace. Wybór używa
+istniejącego POST przełącznika, z ponowną kontrolą członkostwa i CSRF.
+Formularz osoby z istniejącym Workspace jawnie oznacza tworzenie kolejnego
+przez `create_another=1`; pierwszy POST bez tej flagi zachowuje ochronę
+przed utworzeniem kolejnego rekordu po ponowieniu.
 
 Rejestracja i profil sprawdzają e-mail bez względu na wielkość liter.
 Logowanie i dodanie kolejnego konta używają `accounts.backends.EmailBackend`
@@ -114,7 +134,7 @@ od aktywnego Workspace. `render_workplaces()` sprawdza wybór w `workplaces_for_
 `management_view` rozdziela katalog, członków i zaproszenia otrzymane/wysłane.
 `workplace_management_url()` zachowuje wybór po zapisie i dopuszcza wyłącznie
 znane wartości `view`; ustawienia odtwarzają zakładkę z formularza. Oglądanie i edycja zespołu
-oraz tworzenie Workspace nie wywołują `set_active_workplace()`; jawne przełączenie,
+nie wywołują `set_active_workplace()`; utworzenie nowego Workspace, jawne przełączenie,
 scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
 
 Źródło: [workplaces/services.py](../backend/workplaces/services.py).
@@ -122,17 +142,17 @@ scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
 1. Middleware sprawdza, czy adres zawiera `/workplaces/<slug>/<app>/`.
 2. Wyszukuje Workspace w zbiorze właściciela i członkostw bieżącego użytkownika.
 3. Ustawia sesję oraz `request.workplace`, albo wraca do wyboru Workspace.
-4. Dla zwykłych adresów korzysta z sesji; jeśli potrzeba, wybiera/tworzy domyślny.
+4. Dla zwykłych adresów korzysta z sesji; jeśli potrzeba, wybiera dostępny albo kieruje do jawnego tworzenia.
 5. Zmiana Workspace nie przypisuje ani nie przenosi rekordów między katalogami.
 
-`ensure_default_workplace()` tworzy Workspace tylko wtedy, gdy użytkownik nie
-ma żadnego dostępnego miejsca (własnego ani przez aktywne członkostwo).
-Losuje polską nazwę z `DEFAULT_WORKPLACE_NAMES` i zapisuje ją razem ze stałym
-losowym identyfikatorem generowanym przez model, rolą właściciela oraz ulubionym
-Dashboardem. W transakcji blokuje wiersz użytkownika i ponownie sprawdza
-dostępne Workspace, aby równoczesne pierwsze wejścia nie tworzyły duplikatów.
-Kolejne wejścia, utrata sesji oraz edycja nazwy nie powodują ponownego losowania.
-Istniejące Workspace, również z dawną nazwą domyślną, pozostają bez zmian.
+`ensure_default_workplace()` wybiera dostępny Workspace wskazany w osobistej
+preferencji, a przy jej braku pierwszy dostępny. Aktywny wybór sesji nadal ma
+pierwszeństwo podczas zwykłej pracy. Funkcja nie tworzy
+rekordów podczas logowania, GET ani utraty sesji. Jeśli użytkownik nie ma żadnego
+miejsca pracy, domenowe ekrany prowadzą do jawnego tworzenia. Katalog Workspace,
+konto, publiczny ekran zaproszenia i osobiste powiadomienia pozostają dostępne.
+Moduły i odczyt gościa kontroluje `workplaces.policy`, również w delegowanych
+operacjach `/api/v1/page/`. [Pełne zasady](TEAMWORK.md#system-workspace-25102026).
 
 Nazwa Workspace jest etykietą: może zawierać dowolny tekst do 140 znaków
 i może się powtarzać, również u tego samego właściciela. Formularz nadal wymaga
@@ -176,7 +196,7 @@ sposób przekierowywany, więc bazowy endpoint POST nadal korzysta z sesji.
 Stare scoped adresy z `legacy_slug` nadal sprawdzają dostęp bieżącego użytkownika:
 GET/HEAD przekierowuje na losowy identyfikator z zachowaniem modułu, dalszej
 ścieżki i query string, a POST obsługuje ten sam Workspace bez utraty treści.
-Stary adres główny Workspace również prowadzi do jego aktualnego modułu Zadań.
+Stary adres główny Workspace również prowadzi do jego „Dla ciebie”.
 Operacje JS zadań, kart i kalendarza używają adresów scoped wygenerowanych
 dla otwartego ekranu. Zmiana Workspace w drugiej karcie nie zmienia ich celu.
 `tasks.js` odczytuje moduł i bazowy adres z `data-task-app` oraz

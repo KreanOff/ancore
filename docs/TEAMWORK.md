@@ -19,13 +19,14 @@ Dokumenty oraz Zasoby. Dawne katalogi Kontaktów, Firm, Użytkowników i Gości
 są wycofane; nie zmienia to kont ani członkostw Workspace. Dołączenie udostępnia wspólne dane Workspace.
 Przestrzenie i ich zadania mają własną widoczność oraz role.
 Rola „Obserwator” zapewnia wyłącznie odczyt w swoim zakresie; rola Workspace
-nie omija prywatności Przestrzeni ani zadania. Nie ma roli gościa Workspace.
+nie omija prywatności Przestrzeni ani zadania. Gość Workspace ma wyłącznie odczyt dostępnych danych.
 
 | Rola | Dostęp |
 | --- | --- |
 | Właściciel | Wspólne dane i własne i udostępnione prywatne przestrzenie; ustawienia Workspace; zaproszenia członków i administratorów; zmiana ról i odbieranie dostępu; usunięcie Workspace zgodnie z dotychczasowym ograniczeniem ostatniej własnej przestrzeni |
-| Administrator | Wspólne dane i własne i udostępnione prywatne przestrzenie; ustawienia Workspace; zapraszanie i usuwanie członków; anulowanie zaproszeń członków. Nie zmienia administratorów ani właściciela |
+| Administrator | Wspólne dane i własne i udostępnione prywatne przestrzenie; ustawienia Workspace; zapraszanie i usuwanie członków oraz gości; anulowanie ich zaproszeń. Nie zmienia administratorów ani właściciela |
 | Członek | Tworzenie, odczyt, edycja i usuwanie wspólnych danych oraz własnych i udostępnionych prywatnych przestrzeni; lista zespołu. Bez zarządzania zespołem i ustawieniami Workspace |
+| Gość | Wyłącznie odczyt wspólnych i udostępnionych prywatnych danych; konto i osobiste gwiazdki; bez zapisu danych zespołu |
 
 Właściciel wynika z `Workplace.owner`; nie można go usunąć z zespołu ani
 zmienić tą ścieżką. Przenoszenie własności i usuwanie kont właścicieli nie
@@ -104,7 +105,7 @@ Nazwa Workspace i ikona ustawień otwierają „Główną”; liczba członków 
 linki `?workspace=<pk>` / `?view=members&workspace=<pk>` otwierają „Członkowie”.
 Okno wybranego Workspace jest renderowane nad katalogiem. Zarządzanie nim nie
 zmienia aktywnej sesji ani kontekstu modułów. Znacznik „Bieżący” wskazuje
-przestrzeń pracy; strzałka przełączenia nadal otwiera jej Zadania.
+przestrzeń pracy; strzałka przełączenia otwiera jej „Dla ciebie”.
 Zwykły członek ma okno „Miejsce pracy” z odczytem danych i składu zespołu,
 bez akcji edycji, zapraszania, zmiany ról i odbierania dostępu.
 Wejście z Ustawień pokazuje „Wróć do ustawień” i zachowuje kategorię oraz
@@ -125,11 +126,11 @@ Nie ma już przełącznika rodzaju zaproszeń ani wyboru Workspace na tej stroni
 Właściciel i administrator mają przycisk „Zaproś osobę” w zakładce
 „Członkowie” i „Wysłane zaproszenia” w oknie miejsca pracy.
 Zmiana ról i odebranie dostępu pozostają w menu wiersza,
-zgodnie z macierzą ról. Po utworzeniu Workspace wracamy do katalogu,
+zgodnie z macierzą ról. Po utworzeniu Workspace otwieramy jego „Dla ciebie”,
 po zapisie ustawień — do katalogu, po zmianie roli —
 do otwartej zakładki „Członkowie” w oknie, a po wysłaniu lub anulowaniu zaproszenia —
 do zakładki „Wysłane zaproszenia” tego Workspace.
-Utworzenie nie przełącza kontekstu pracy. Ustawienia aplikacji mają jeden
+Utworzenie przełącza kontekst na nowy Workspace. Ustawienia aplikacji mają jeden
 link „Zarządzaj Workspace”. Dotychczasowy GET `/workplaces/<pk>/team/`
 przekierowuje do właściwej zakładki; POST nadal waliduje zaproszenie i przy
 błędzie renderuje okno wysyłania nad zakładką „Wysłane zaproszenia”.
@@ -145,8 +146,8 @@ wybór pozostaje niezależny w obu zakładkach i podświetla zaznaczone wiersze.
 otwierają standardowe modale. Wpływ
 odebrania dostępu na Office opisuje potwierdzenie operacji.
 
-Zaproszenie wskazuje **istniejące aktywne konto Ancore przez e-mail**. Jest
-zapisywane w aplikacji, bez wysyłania e-maila. Odbiorca widzi je pod dzwonkiem,
+Zaproszenie wskazuje adres e-mail istniejącego lub przyszłego konta Ancore.
+Jest zapisywane w aplikacji i wysyłane przez skonfigurowany SMTP. Odbiorca widzi je pod dzwonkiem,
 niezależnie od aktualnie wybranej przestrzeni.
 Formularz podpowiada osoby po co najmniej 2 znakach imienia, drugiego imienia,
 nazwiska, ID Ancore lub e-maila. Można łączyć części imienia i nazwiska.
@@ -256,6 +257,65 @@ Katalog i okna ustawień/członków/zaproszeń korzystają z React/TypeScript or
 JSON API Django (`backend/workplaces/frontend.py`, `frontend/app/src/workspaces/`).
 Reguły ról, transakcje i operacje domenowe pozostają w `views.py` oraz
 `team_views.py`. Wybór do zarządzania nadal nie przełącza aktywnego Workspace.
+Ustawienie domyślnego Workspace jest osobistą preferencją konta, dostępną
+również członkowi i gościowi. Nie zmienia wspólnych danych, ról ani aktywnego
+kontekstu. Logowanie wybiera wskazane środowisko dopiero po ponownym sprawdzeniu
+członkostwa; usunięcie lub wyłączenie członkostwa uniemożliwia taki wybór.
 Odpowiedź na otrzymane zaproszenie jest dostępna wyłącznie jego odbiorcy;
 przyjęcie tworzy/aktywuje członkostwo i przełącza kontekst. API podpowiedzi
 osób udostępnia dane zamiast HTML. [Kontrakt migracji](FRONTEND.md).
+
+
+## System Workspace (25.10.2026)
+
+Rejestracja uwierzytelnia konto. Workspace powstaje wyłącznie po podaniu nazwy
+albo użytkownik dołącza przez zaproszenie. Pierwsze tworzenie blokuje wiersz
+użytkownika i inicjalizuje właściciela, pulpit oraz gadżet w transakcji Django.
+Nowy Workspace staje się aktywny; edycja ustawień wybranego środowiska nadal
+nie zmienia kontekstu. Własność pozostaje pojedyncza (`Workplace.owner`).
+
+Ekran `/accounts/register/workspace/` pokazuje pod przyciskiem tworzenia link
+„Wybierz Workspace” do osobnej strony `/accounts/workspaces/` w powłoce kont.
+Lista na tej stronie obejmuje własne Workspace i aktywne członkostwa,
+także gościa; nie ujawnia obcych miejsc pracy ani nie nadaje członkostwa.
+Oba ekrany GET pozostają dostępne również osobie mającej już Workspace. Wybór korzysta
+z dotychczasowego POST `workplaces:switch`, który ponownie sprawdza dostęp.
+Osoba z istniejącym Workspace może też jawnie utworzyć kolejny przez ten
+formularz. Bez dostępnych środowisk widoczny jest komunikat pustej listy.
+
+„Główna” okna Workspace pozwala wybrać włączone moduły: Przestrzenie i zadania,
+Zespoły, Kalendarz, Dysk, Dokumenty, Zasoby, Pulpity i Filtry. Wyłączenie ukrywa
+nawigację i blokuje bezpośrednie adresy oraz API modułu; dane pozostają w bazie.
+Włączenie przywraca dostęp. Polityka działa też dla już otwartych ekranów.
+
+Gość (`guest`) odczytuje wspólne oraz udostępnione mu prywatne dane. Nie tworzy,
+nie edytuje i nie usuwa danych zespołu, niezależnie od ról Przestrzeni. Może
+korzystać z konta, nawigacji i osobistych gwiazdek. Serwer blokuje także surowe
+POST/PUT/PATCH/DELETE i delegowane API. ONLYOFFICE działa w trybie view,
+callback starej sesji edycji sprawdza aktualną rolę oraz włączony moduł.
+Tablica ma tryb podglądu. Właściciel nadaje role admin/member/guest;
+administrator zaprasza i usuwa członków oraz gości, bez zarządzania właścicielem
+ani administratorami. Odebranie członkostwa nadal czyści osobne udostępnienia.
+
+Zaproszenie e-mail ma UUID, docelowy adres, rolę i 7 dni ważności. Nie wymaga
+istnienia konta odbiorcy. Link ujawnia nazwę i rolę; GET nigdy nie nadaje dostępu.
+Po logowaniu lub rejestracji trzeba potwierdzić dołączenie z dokładnie pasującym
+adresem (bez rozróżnienia wielkości liter). Oczekujące zaproszenie jest także
+w osobistych powiadomieniach. Anulowane, wykorzystane i wygasłe tokeny nie działają.
+Brak SMTP lub błąd wysyłki zachowuje zaproszenie, pokazuje stan „E-mail niewysłany”
+i umożliwia skopiowanie linku oraz ponowienie wysyłki; nie udaje dostarczenia.
+
+Link do dołączenia nadaje wyłącznie member albo guest. Zarządzający wybiera
+ważność 1–30 dni, limit 1–1000 użyć i opcjonalną domenę e-mail. Unieważnienie
+natychmiast blokuje link. Blokada Workspace i linku serializuje przyjęcia;
+użycie liczy nowego członka. Ponowne potwierdzenie nie podnosi istniejącej roli.
+Rejestr użyć blokuje odzyskanie odebranego członkostwa tym samym wykorzystanym
+linkiem. Linków nie należy udostępniać osobom, których nie chcemy zapraszać.
+
+Migracje `workplaces.0002`–`0004` dodają moduły, gości, e-maile, unikalne tokeny,
+linki i rejestr użyć. Każde stare zaproszenie dostaje osobny UUID i adres odbiorcy;
+nie zmieniają się konta, członkostwa, identyfikatory ani dane Workspace.
+SMTP konfiguruje się na poziomie instalacji: `EMAIL_HOST`, `EMAIL_PORT`,
+`EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`
+i `DEFAULT_FROM_EMAIL` w lokalnym `.env` lub `deploy/.env`. Produkcyjny Compose
+przekazuje te wartości backendowi. TLS i SSL należy wybierać rozłącznie.

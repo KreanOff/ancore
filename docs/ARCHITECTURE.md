@@ -170,6 +170,8 @@ słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym
 ## 5. Główne zależności
 
 - `accounts.User` jest wspólnym modelem konta, `workplaces.Workplace` granicą danych.
+  `User.default_workplace` przechowuje osobisty Workspace otwierany po logowaniu;
+  relacja nie nadaje dostępu i jest sprawdzana przez `workplaces.services`.
 - `spaces.Space` organizuje `SpaceTask`, planowanie `WorkItem`, sprinty i zespoły.
   Dostęp wyznacza `spaces.access` oraz role przestrzeni i zadań.
 - `tasks.TaskTag` i `TaskTagNote` obsługują katalogi tagów Przestrzeni.
@@ -250,7 +252,9 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   „Dla ciebie”, składany przez `backend/dashboard/for_you.py` z dostępnych danych.
   `backend/dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;
   nie tworzy dodatkowych modeli ani kopii danych biznesowych.
-- `/accounts/...` obsługuje konto; `/workplaces/...` Workspace.
+- `/accounts/...` obsługuje konto, w tym `/accounts/register/workspace/` jako
+  jawne utworzenie nazwanego Workspace po rejestracji oraz `/accounts/workspaces/`
+  jako osobny wybór dostępnego Workspace w powłoce kont; `/workplaces/...` Workspace.
   Katalog `/workplaces/` jest osobną stroną z własnym menu zarządzania Workspace.
   Segment `<slug>` w adresach Workspace ma wartość stałego losowego kodu
   `w_` + 26 małych liter/cyfr, niezależnego od dowolnej, powtarzalnej nazwy.
@@ -258,7 +262,7 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   z dotychczasowymi kontrolami członkostwa i kieruje GET/HEAD na aktualny adres.
   Osobne ekrany zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
   Ich dawne adresy prowadzą do zwykłych katalogów. Zarządzanie Workspace
-  zachowuje własny ekran i menu; formularze nie zmieniają aktywnego Workspace.
+  zachowuje własny ekran i menu; edycja ustawień i zespołu nie zmienia aktywnego Workspace. Utworzenie otwiera nowe „Dla ciebie”.
 - Moduły mają adresy bazowe `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.

@@ -77,7 +77,8 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 
 ## Konta w React
 
-Logowanie, rejestracja i dodanie konta renderują `src/accounts/AuthPage.tsx`
+Logowanie, rejestracja, krok nazwy Workspace i dodanie konta renderują
+`src/accounts/AuthPage.tsx`
 w powłoce `accounts/auth_base.html`. Pełnoekranowa, lokalna tapeta
 `static/img/auth/wallpaper-fluent-bloom-light-4k.webp` jest wspólnym tłem:
 jasną kompozycją błękitno-lawendowych fałd inspirowaną tapetami Windows 11.
@@ -121,6 +122,27 @@ Dodanie konta korzysta z tej samej powłoki, z własnym nagłówkiem i powrotem
 do profilu. Pierwszy render Django zachowuje ten sam układ i formularze POST.
 `auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
 Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
+
+Po utworzeniu konta ekran „Utwórz Workspace” używa tej samej tapety i karty
+co logowanie. Nagłówek nie ma dodatkowego opisu. Jedno wymagane pole nazwy
+ma limit 140 znaków; przycisk
+„Utwórz Workspace” pokazuje rzeczywisty stan zapisu „Przygotowywanie Workspace…”.
+Sukces otwiera nowe środowisko. Pod przyciskiem wiersz „Masz już Workspace?” z linkiem „Wybierz Workspace”
+otwiera osobną stronę `/accounts/workspaces/` w tej samej powłoce kont.
+Strona zawiera listę miejsc pracy dostępnych dla konta, bez formularza tworzenia,
+oraz dwa zwarte wiersze: „Chcesz utworzyć kolejny Workspace? Utwórz Workspace”
+i „Nie widzisz swojego Workspace? Zmień konto” (link do logowania).
+Wariant `auth-footer--workspace` ma tekst 13px, interlinię 1.4, bez dodatkowych
+odstępów między wierszami. Opisy są przygaszone; linki mają kolor głównego tekstu
+i podkreślenie dopiero przy najechaniu. Zachowują wspólny fokus klawiatury.
+Wiersze korzystają z ikon folderu
+i strzałki oraz neutralnego hover/fokusu; dłuższa lista ma własne przewijanie.
+Pusta lista wyświetla „Brak dostępnych Workspace.”. Wybór wysyła standardowy
+POST z CSRF do przełącznika Workspace i otwiera jego „Dla ciebie”. Ten sam
+układ i działanie zachowuje pierwszy render Django bez JavaScriptu.
+Publiczny ekran zaproszenia korzysta z tej samej
+powłoki: logowanie/rejestracja, rola, potwierdzenie dołączenia albo komunikat
+wygasłego lub niedopasowanego zaproszenia. GET nie nadaje dostępu.
 
 Profil używa istniejącego układu szczegółów zadania, listy kont w sesji,
 panelu właściwości i menu „Edytuj”. React renderuje formularz edycji we
@@ -2502,6 +2524,13 @@ filtry i pozycję przewinięcia. Punkt wejścia jest zapisany w historii i
 pozostaje dostępny po przeładowaniu, otwieraniu okien i błędach/zapisie formularzy.
 Oglądanie lub edycja wybranego Workspace nie przełącza aktywnego kontekstu pracy.
 
+Menu działań wiersza udostępnia „Ustaw jako domyślny” z istniejącą ikoną `home`.
+Po zapisaniu pokazuje „Usuń ustawienie domyślne” z ikoną `check`, a obok nazwy
+pojawia się etykieta „Domyślny” z opisem „Otwierany po zalogowaniu”. Etykieta
+korzysta z istniejącego wariantu `workplace-row__current-badge`; „Bieżący”
+nadal oznacza aktualny kontekst. Ustawienie i jego usunięcie nie otwierają okna
+edycji, nie przełączają Workspace i zachowują lokalne wyszukiwanie/paginację.
+
 Profil użytkownika korzysta ze wspólnego okna `core/includes/avatar_picker.html`
 i `workplace-avatars.js`, z osobną pulą 30 zwierzęcych maskotek w
 `backend/accounts/avatar_presets.py`. Lokalne atlasy `static/img/user-avatars/illustrations-v1.png`
@@ -3221,3 +3250,19 @@ Pozycjonowanie dropdownu pomija kontenery za przodkiem `position: fixed`,
 które nie przycinają kontrolek pełnego modala nad boczną nawigacją.
 Powłoka modala wybiera początkowy fokus wyłącznie spośród własnych kontrolek
 w widocznych panelach; pomija schowany picker awatara i preferuje aktywną zakładkę.
+
+
+Lista modułów Workspace używa wariantu `workplace-module-fields` z siatką
+`workplace-module-grid`: dwie kolumny kart, a do 767px jedna. Karta zawiera
+ikonę ze wspólnego zestawu, nazwę, krótki polski opis i istniejący przełącznik
+`tasks-toggle` w kolorze `--system-accent`. Cała etykieta przełącza natywny
+checkbox z rolą `switch`; Tab i spacja zachowują obsługę klawiatury, a fokus
+wyróżnia kartę. Powierzchnie, obramowanie i odstępy korzystają ze wspólnych
+tokenów. Wyłączony moduł ma tło `--panel-bg` oraz przygaszoną ikonę i tekst
+(krycie 55%); przełącznik pozostaje w pełni widoczny i aktywny.
+Włączenie natychmiast przywraca pełne krycie. Zmiany zapisuje przycisk formularza;
+dane modułu pozostają zachowane. React oraz widget `WorkplaceModuleSelect`
+pierwszego renderu Django współdzielą opisy i ikony z `MODULE_DETAILS`.
+`workplace-invite-links` i `workplace-invite-link` układają
+link, opis i istniejące przyciski w zawijanym wierszu; pole adresu może się
+zwężać na telefonie, a modal zachowuje własne przewijanie.
