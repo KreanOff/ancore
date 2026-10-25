@@ -111,6 +111,10 @@ Zmiana adresu, portów lub protokołu wymaga `--reconfigure`. Katalogi przekazuj
 jako osobny argument, np. `--backup-dir /srv/ancore-backups`. Przykład pól:
 [production.env.example](../deploy/production.env.example). Zmiana hasła roli
 bazy w pliku nie aktualizuje automatycznie hasła w istniejącym PostgreSQL.
+Po zapisaniu zmian uruchom `./ancore.sh start` albo `install`. Suma kontrolna
+treści konfiguracji jest przekazywana do usługi backupu, dzięki czemu Compose
+odtwarza ją po zmianie pliku i odświeża jego montowanie. Kolejne kopie zawierają
+aktualną konfigurację; start z niezmienionym plikiem nie wymusza restartu backupu.
 
 Opcje globalne podaje się przed poleceniem:
 

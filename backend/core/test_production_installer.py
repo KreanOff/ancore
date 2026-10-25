@@ -16,6 +16,9 @@ import json, os, pathlib, subprocess, sys
 args = sys.argv[1:]
 with open(os.environ['INSTALLER_CALLS'], 'a') as output:
     output.write(json.dumps([pathlib.Path(sys.argv[0]).name, *args]) + '\n')
+if os.getenv('INSTALLER_FINGERPRINTS') and os.getenv('ANCORE_CONFIG_FINGERPRINT'):
+    with open(os.environ['INSTALLER_FINGERPRINTS'], 'a') as output:
+        output.write(json.dumps({'args': args, 'fingerprint': os.environ['ANCORE_CONFIG_FINGERPRINT']}) + '\n')
 if pathlib.Path(sys.argv[0]).name == 'ss':
     print(os.getenv('INSTALLER_LISTENERS', ''))
     sys.exit(0)
@@ -169,6 +172,45 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.config()['ANCORE_PUBLIC_URL'], "'https://example.test:8443'")
         self.assertEqual(self.config()['ANCORE_BIND'], "'127.0.0.1'")
+
+    def test_start_refreshes_backup_configuration_after_atomic_reconfigure(self):
+        self.prepare()
+        fingerprints = self.root.parent / 'fingerprints.jsonl'
+        def start_fingerprint():
+            result = self.run_script('ancore.sh', 'start', INSTALLER_FINGERPRINTS=str(fingerprints))
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            calls = [json.loads(line) for line in fingerprints.read_text().splitlines()]
+            fingerprint = next(call['fingerprint'] for call in reversed(calls)
+                               if 'up' in call['args'] and '--help' not in call['args'])
+            expected = subprocess.check_output(['cksum'], input=(self.root / 'deploy/.env').read_bytes()).decode().strip()
+            self.assertEqual(fingerprint, expected)
+            return fingerprint
+        initial = start_fingerprint()
+        path = self.root / 'deploy/.env'
+        initial_inode = path.stat().st_ino
+        configured = self.run_script('ancore.sh', 'configure', '--reconfigure', '--url', 'http://new.example.test:8089')
+        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
+        self.assertNotEqual(path.stat().st_ino, initial_inode)
+        changed = start_fingerprint()
+        self.assertNotEqual(changed, initial)
+        self.assertEqual(start_fingerprint(), changed)
+
+    def test_https_start_passes_custom_configuration_fingerprint(self):
+        custom = self.root.parent / 'custom configuration' / '.env'
+        tls = self.root / 'certs'
+        tls.mkdir()
+        for name in ('fullchain.pem', 'privkey.pem'):
+            (tls / name).write_text('fixture')
+        configured = self.run_script('ancore.sh', '--env-file', str(custom), 'configure',
+                                     '--url', 'https://example.test', '--tls-dir', str(tls))
+        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
+        fingerprints = self.root.parent / 'fingerprints.jsonl'
+        started = self.run_script('ancore.sh', '--env-file', str(custom), 'start',
+                                  INSTALLER_FINGERPRINTS=str(fingerprints))
+        self.assertEqual(started.returncode, 0, started.stdout + started.stderr)
+        calls = [json.loads(line) for line in fingerprints.read_text().splitlines()]
+        started_call = next(call for call in calls if 'up' in call['args'] and '--help' not in call['args'])
+        self.assertEqual(started_call['fingerprint'], subprocess.check_output(['cksum'], input=custom.read_bytes()).decode().strip())
 
     def test_invalid_bind_and_colliding_tls_ports_never_write_configuration(self):
         tls = self.root / 'certs'

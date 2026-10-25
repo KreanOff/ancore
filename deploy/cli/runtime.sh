@@ -64,6 +64,9 @@ ancore_load_config() {
 }
 
 ancore_compose() {
+    # Reconfiguration atomically replaces .env. Include its content fingerprint
+    # in the backup service so Compose refreshes that file's bind mount.
+    ANCORE_CONFIG_FINGERPRINT=$(cksum < "$ANCORE_ENV")
     if [ "${1:-}" = --restore ]; then
         shift
         set -- -f "$ANCORE_ROOT/deploy/compose.restore.yaml" "$@"
@@ -72,10 +75,10 @@ ancore_compose() {
         set -- -f "$ANCORE_ROOT/deploy/compose.recovery.yaml" "$@"
     fi
     if [ "$ANCORE_TLS_MODE" = direct ]; then
-        ANCORE_ENV_FILE="$ANCORE_ENV" ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" \
+        ANCORE_ENV_FILE="$ANCORE_ENV" ANCORE_CONFIG_FINGERPRINT="$ANCORE_CONFIG_FINGERPRINT" ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" \
             -f "$ANCORE_ROOT/deploy/compose.tls.yaml" "$@"
     else
-        ANCORE_ENV_FILE="$ANCORE_ENV" ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" "$@"
+        ANCORE_ENV_FILE="$ANCORE_ENV" ANCORE_CONFIG_FINGERPRINT="$ANCORE_CONFIG_FINGERPRINT" ancore_raw_compose --env-file "$ANCORE_ENV" -f "$ANCORE_ROOT/deploy/compose.yaml" "$@"
     fi
 }
 
