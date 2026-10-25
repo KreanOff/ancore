@@ -147,6 +147,13 @@ def team_context(request, workplace, add_form=None):
     }
 
 
+def _invalidate_office_sessions(workplace):
+    # A coauthor's callback can persist changes made by another participant.
+    from documents.models import Document, WorkspaceDocument
+    for model in (Document, WorkspaceDocument):
+        model.objects.filter(owner=workplace.owner, workplace=workplace).update(office_key=uuid.uuid4())
+
+
 @login_required
 @require_POST
 def member_update(request, workplace_id, member_id):
@@ -161,13 +168,18 @@ def member_update(request, workplace_id, member_id):
             member.delete()
             # End existing shared editor sessions too: a coauthor's old callback
             # URL could otherwise keep a removed user's editing session alive.
-            from documents.models import Document, WorkspaceDocument
-            for model in (Document, WorkspaceDocument):
-                model.objects.filter(owner=workplace.owner, workplace=workplace).update(office_key=uuid.uuid4())
+            _invalidate_office_sessions(workplace)
             messages.success(request, 'Dostęp odebrany. Dane zespołu pozostały w Workspace.')
         elif action == 'role' and role == 'owner' and request.POST.get('role') in {'admin', 'member', 'guest'}:
-            member.role = request.POST['role']
+            new_role = request.POST['role']
+            loses_write_access = (
+                member.is_active and member.role != WorkplaceMembership.Role.GUEST
+                and new_role == WorkplaceMembership.Role.GUEST
+            )
+            member.role = new_role
             member.save(update_fields=['role'])
+            if loses_write_access:
+                _invalidate_office_sessions(workplace)
             messages.success(request, 'Rola zmieniona.')
         else:
             raise PermissionDenied

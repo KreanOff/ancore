@@ -7,10 +7,10 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
 <link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20261025-suite-read-only-title">
-<script src="{% static 'js/office-suite.js' %}?v=20261025-save-queue" defer></script>
+<script src="{% static 'js/office-suite.js' %}?v=20261025-save-receipts" defer></script>
 {% endblock %}
 {% block content %}
-<div class="documents-page office-suite" data-app-full-navigation data-office-suite data-kind="{{ document.kind }}" data-state-url="{{ documents_url }}{{ document.pk }}/state/" data-save-url="{{ documents_url }}{{ document.pk }}/save/" data-revision="{{ document.revision }}" data-back-url="{{ folder_url }}">
+<div class="documents-page office-suite" data-app-full-navigation data-office-suite data-kind="{{ document.kind }}" data-state-url="{{ documents_url }}{{ document.pk }}/state/" data-save-url="{{ documents_url }}{{ document.pk }}/save/" data-revision="{{ document.revision }}" data-save-receipt="{{ office_save_receipt }}" data-back-url="{{ folder_url }}">
     <header class="tasks-topbar tasks-topbar--directory documents-topbar office-suite-topbar" aria-label="Pasek dokumentu">
         <div class="tasks-titlebar-left tasks-project-breadcrumb">
             <a class="tasks-issue-close" href="{{ folder_url }}" aria-label="{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}" title="{% if drive_editor %}Wróć do dysku{% else %}Wróć do dokumentów{% endif %}"><i data-icon="arrow-left" aria-hidden="true"></i></a>

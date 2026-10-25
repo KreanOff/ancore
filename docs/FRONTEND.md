@@ -54,6 +54,13 @@ wydarzenie kończące się o północy nie pojawia się w następnym dniu ani je
 kolumnie godzinowej. Punktowe terminy zadań (`start == end`), również o północy,
 pozostają widoczne w dniu terminu. Granice dni zachowują zmianę czasu letniego
 i zimowego; wydarzenia całodzienne pozostają poza siatką godzinową.
+Godziny wydarzeń są wyświetlane w strefie przeglądarki i wysyłane z jawnym
+offsetem/UTC. Zapis samego opisu zachowuje oryginalne chwile, sekundy oraz
+drugie wystąpienie godziny po cofnięciu zegara. Nowe lub zmienione godziny
+nieistniejące/dwuznaczne przy zmianie czasu wymagają poprawienia w formularzu.
+Wydarzenia całodzienne zachowują daty kalendarzowe z API niezależnie od strefy
+przeglądarki; ich zapis nadal normalizuje granice w Django. Te same zasady
+obowiązują w React i adapterze `calendar.js`.
 
 ## Okno ustawień Przestrzeni
 
@@ -414,6 +421,9 @@ ich powłokę, nazwę, komunikaty, ponowienie zapisu i sprzątanie sesji.
 Gość widzi nazwę jako zwykły tekst bez kontrolek jej zmiany, zarówno w React,
 jak i pierwszym renderze Django. Kolejka ONLYOFFICE zachowuje nowsze zmiany
 powstałe podczas oczekiwania na zapis i wysyła je po jego potwierdzeniu.
+Potwierdzeniem jest nowy `save_receipt` utworzony przez callback zapisujący plik;
+zmiana ogólnego `revision` przy przeniesieniu albo edycji metadanych nie kończy
+oczekiwania. React i adapter `office-suite.js` korzystają z tego samego kontraktu.
 Pełny edytor wyłącza `global_panels_bootstrap` przez `disable_react_shell`,
 ponieważ jego szablon pomija całą nawigację. Istniejący `layout.js` obsługuje
 wtedy sam cykl ładowania strony bez sidebara, także usunięcie zasłony po

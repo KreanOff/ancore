@@ -127,7 +127,11 @@ katalogu, a POST dodaje osobę; sukces wraca do „Członkowie”, błąd zachow
 formularz. Zmiana roli i odebranie dostępu pozostają w menu wiersza.
 Operacje wymagają sesji i CSRF. Odebranie dostępu zachowuje treści zespołu,
 czyści osobne udostępnienia i unieważnia sesje Office w całym Workspace;
-pozostali użytkownicy ponownie otwierają pliki.
+pozostali użytkownicy ponownie otwierają pliki. Zmiana aktywnego administratora
+lub członka na gościa także unieważnia sesje Dysku i Dokumentów, w tym podpisane
+źródła i callbacki pozostałych współautorów. Zapobiega to zapisaniu dalszych zmian
+gościa przez wspólną sesję innej osoby. Przejścia administrator ↔ członek,
+podniesienie roli gościa i ponowny wybór roli gościa zachowują bieżące sesje.
 
 Jedynymi zaproszeniami są linki `WorkplaceInviteLink`. Właściciel lub
 administrator wybiera rolę `member` albo `guest`, ważność 1–30 dni i limit
@@ -167,9 +171,10 @@ Zmiana statusu zachowuje zakończenie, datę i autora historii.
 
 ONLYOFFICE otrzymuje tożsamość faktycznego edytora. Podpisane URL źródła i callbacku
 zawierają jego identyfikator; serwer ponownie sprawdza aktywność konta i dostęp.
-Starsze podpisy właściciela pozostają zgodne. Usunięcie członka zmienia klucze
-Office także dla współdzielonych sesji; pliki już pobrane na urządzenie pozostają
-poza kontrolą aplikacji.
+Starsze podpisy właściciela pozostają zgodne. Usunięcie członka lub odebranie
+prawa zapisu przez zmianę na gościa zmienia klucze Office także dla współdzielonych
+sesji. Zmiana nie podmienia plików ani ich rewizji; pliki już pobrane na urządzenie
+pozostają poza kontrolą aplikacji.
 
 ## Widoczność i udostępnianie Kanbana
 
@@ -189,7 +194,10 @@ i unieważnia istniejące linki z ograniczeniem domeny, aby nie rozszerzyć dost
 Testy członkostwa, podpowiedzi i zarządzania znajdują się w
 `backend/workplaces/test_team.py`, `test_management.py` oraz
 `test_member_candidates.py` i `test_manual_members.py`. `test_read_only_documents.py` obejmuje
-odczyt tekstowych Dokumentów przez gościa i odrzucenie zapisu.
+odczyt tekstowych Dokumentów przez gościa, odrzucenie zapisu oraz unieważnianie
+sesji Office obu katalogów przy odebraniu prawa zapisu przez zwykłe i delegowane
+żądania. Sprawdza stare źródła, klucze i callbacki współautorów, zachowanie danych
+oraz brak zbędnej rotacji kluczy przy pozostałych zmianach ról.
 `backend/dashboard/test_workspace_invitations.py` sprawdza wycofanie modelu,
 tras, pól i źródła powiadomień; testy centrum i powłoki zachowują zakres
 komentarzy, przypomnień, dostępu oraz snapshotów. Weryfikacja wymaga PostgreSQL.

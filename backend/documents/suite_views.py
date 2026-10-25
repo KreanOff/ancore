@@ -109,6 +109,7 @@ def editor(request, pk, drive=False):
     # This full-screen template has no Shell host; layout.js owns its page loader lifecycle.
     context = {**location, 'document': item, 'drive_editor': drive,
                'office_read_only': read_only(request),
+               'office_save_receipt': service.save_confirmation(item)['save_receipt'] if item.office_type else 0,
                'disable_react_shell': True,
                'office_configured': service.configured(),
                'api_url': settings.ONLYOFFICE_URL + '/web-apps/apps/api/documents/api.js'}
@@ -192,7 +193,7 @@ def save_office(request, pk, drive=False):
 def state(request, pk, drive=False):
     item = _suite_item(request, pk, drive)
     return _private(JsonResponse({'revision': item.revision, 'key': service.document_key(item), 'save_error': item.office_save_error,
-                                  'saved_at': timezone.localtime(item.updated_at).strftime('%H:%M:%S')}))
+                                  **service.save_confirmation(item)}))
 
 
 def _service_item(request, pk, purpose, drive=False):

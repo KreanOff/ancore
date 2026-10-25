@@ -1,5 +1,39 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Cztery poprawki po pełnym przeglądzie (25.10.2026)
+
+Zmiana aktywnego administratora/członka na gościa unieważnia sesje Office
+Dysku i Dokumentów, także podpisane callbacki współautorów; pozostałe zmiany
+ról zachowują klucze. [Dostęp zespołu](TEAMWORK.md#dodawanie-osób-i-linki-do-dołączenia).
+Potwierdzenie zapisu treści korzysta z istniejących rekordów callbacków
+(`save_receipt`), a przeniesienie pliku/folderu lub zapis metadanych nie
+zwalnia oczekiwania. [Kontrakt zapisu](OFFICE.md#zapis-i-granice-dostępu).
+Kilka warunków tekstowych filtra pozostaje w trybie zaawansowanym bez utraty
+kryteriów. [Filtry](FILTERS.md). Kalendarz przesyła jednoznaczne chwile,
+zachowuje niezmienione sekundy/wariant DST oraz kalendarzowe daty wydarzeń
+całodniowych. Nowe nieistniejące i dwuznaczne godziny wymagają poprawienia.
+[Kontrakt frontendu](FRONTEND.md#zakres-migracji).
+
+Przeszły **1272/1272 testy Django** przez `scripts/run_tests.py --parallel 4`
+na izolowanych bazach i storage oraz **93/93 testy frontendu**. Dodano 9 metod
+regresji Django i 21 przypadków frontendu obejmujących rzeczywiste endpointy,
+callbacki React oraz adapterów. Przeszły build z TypeScriptem, Prettier,
+kontrola Django, zgodność modeli i migracji, składnia JS, indeks kodu, lokalne
+linki dokumentacji oraz diff. Modele i migracje pozostają bez zmian.
+
+Plugin Browser był niedostępny. Playwright z lokalnym Chrome i osobną bazą QA
+sprawdził 13 scenariuszy: UTC/Warszawę/Nowy Jork, niezmienione godziny i daty
+całodniowe po zapisie/reloadzie, tworzenie wydarzeń, walidację DST, kontrolowany
+błąd POST i ponowienie, pełne kryteria filtra i pusty wynik, ekran referencyjny
+konfiguracji, ponowne wejście, przeniesienie podczas zapisu, nadal aktywny
+limit potwierdzenia, rzeczywisty podpisany callback i zmianę roli na gościa.
+Sprawdzono 1440, 1024, 390 i 320 px. Zrzuty obejrzano; nie wykryto błędów
+wykonania, nieoczekiwanych błędów konsoli ani przepełnienia zmienionych ekranów.
+Usługę ONLYOFFICE zastępowała atrapa DocsAPI/force-save i pobrania wyniku;
+kontrole sesji, zapis pliku i callback działały w rzeczywistym Django.
+Nie uruchamiano żywego ONLYOFFICE, wdrożenia Docker, Safari ani Firefoksa.
+Serwer QA zatrzymano, a jego tymczasową bazę i storage usunięto.
+
 ## Ponowienia odczytu i kolejka edytora po przeglądzie (25.10.2026)
 
 Po udanym POST błąd następującego GET nie powtarza komentarza, podzadania,

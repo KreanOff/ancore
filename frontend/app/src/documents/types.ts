@@ -134,6 +134,7 @@ export interface SuiteData {
   drive: boolean;
   back_url: string;
   revision: number;
+  save_receipt: number;
   rename_url: string;
   save_url: string;
   state_url: string;

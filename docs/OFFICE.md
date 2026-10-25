@@ -228,12 +228,17 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   wyłącznie od numeru rewizji. Nie zmieniaj pliku w katalogu storage poza Ancore.
 - Zapis w edytorze oraz zapis po ustaniu zmian wyzwalają force save.
   Usunięcie przycisku z paska Ancore nie zmienia tego mechanizmu.
-  Status dla czytników ekranu potwierdza zapis po zwiększeniu rewizji w Django;
+  Status dla czytników ekranu potwierdza zapis po nowym potwierdzeniu callbacku
+  (`save_receipt` z `OfficeSaveReceipt` albo `DriveOfficeSaveReceipt`), zapisanym
+  w tej samej transakcji co plik. Bootstrap i `/state/` udostępniają ostatni
+  identyfikator oraz czas tego zapisu. Rewizja metadanych pozostaje osobna:
+  przeniesienie pliku/folderu lub edycja metadanych nie potwierdza zapisu treści
+  ani nie wyłącza limitu oczekiwania i przycisku ponowienia;
   sam komunikat edytora o synchronizacji nie potwierdza zapisu w prywatnym
   storage. Widoczne błędy pod paskiem udostępniają „Ponów zapis”. Zamknięcie edytora może zapisać wynik po kilku
   sekundach, zgodnie z protokołem ONLYOFFICE.
   Zmiany powstałe podczas oczekiwania na poprzedni force save pozostają
-  w kolejce. Potwierdzenie wcześniejszej rewizji uruchamia ich zapis;
+  w kolejce. Nowe potwierdzenie wcześniejszego zapisu uruchamia ich zapis;
   odpowiedź o braku zmian także zwalnia kolejkę. Jednocześnie działa najwyżej
   jedno żądanie zapisu. Błąd zapisu lub unieważnienie sesji zatrzymuje automatyczne
   ponowienia, a odmontowanie usuwa timery. Reguła obejmuje React i adapter
@@ -252,8 +257,11 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   CSP ograniczające połączenia, skrypty i fonty do lokalnej aplikacji.
 
 `DocumentVersion` zachowuje wyłącznie archiwa sprzed wycofania historii; potwierdzenia callbacków
-i `revision` nadal nie zawierają treści. Nie ma wspólnej edycji pomiędzy
-różnymi użytkownikami, OCR ani VBA.
+i `revision` nadal nie zawierają treści. ONLYOFFICE współdzieli sesję dokumentu
+między uprawnionymi użytkownikami Workspace. Odebranie członkostwa albo zmiana
+aktywnego administratora/członka na gościa unieważnia sesje obu katalogów,
+także callbacki współautorów. Pozostałe zmiany ról zachowują sesję.
+Tablica nie ma współedycji na żywo; nie ma OCR ani VBA.
 Kopia przekonwertowana ze starego formatu może różnić się wizualnie; oryginał
 pozostaje dostępny. Utworzenie pliku nie wymaga działającego serwera, ale jego
 pełna edycja wymaga uruchomionego ONLYOFFICE. Tablica działa niezależnie.

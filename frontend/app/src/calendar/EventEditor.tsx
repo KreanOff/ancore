@@ -4,7 +4,14 @@ import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { PageError, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
-import { colors, localInput, type CalendarEvent } from './dates';
+import {
+  colors,
+  eventDate,
+  eventDateValue,
+  eventInput,
+  localInput,
+  type CalendarEvent,
+} from './dates';
 
 export function EventEditor({
   event,
@@ -50,15 +57,10 @@ export function EventEditor({
       ['end', true],
     ] as const) {
       const input = element.elements.namedItem(name) as HTMLInputElement;
-      const value = new Date(input.value);
-      if (Number.isNaN(value.getTime())) continue;
-      value.setHours(
-        checked ? (ending ? 23 : 0) : ending ? 10 : 9,
-        checked && ending ? 59 : 0,
-        0,
-        0,
-      );
-      input.value = localInput(value);
+      if (!input.value) continue;
+      input.value =
+        input.value.slice(0, 10) +
+        (checked ? (ending ? 'T23:59' : 'T00:00') : ending ? 'T10:00' : 'T09:00');
     }
     setDirty(true);
   }
@@ -72,6 +74,15 @@ export function EventEditor({
     setError('');
     setErrors({});
     try {
+      for (const name of ['start', 'end'] as const)
+        data.set(
+          name,
+          eventDateValue(
+            String(data.get(name) || ''),
+            !!data.get('all_day'),
+            event ? { event, name } : undefined,
+          ),
+        );
       await pageRequest(
         api,
         event ? urls.update.replace('__ID__', String(event.id)) : urls.create,
@@ -132,7 +143,7 @@ export function EventEditor({
         <div className="tasks-modal__body">
           <h3>{event?.title}</h3>
           <p>{event?.description}</p>
-          <p>{event ? new Date(event.start).toLocaleString('pl-PL') : ''}</p>
+          <p>{event ? eventDate(event).toLocaleString('pl-PL') : ''}</p>
           <p>Gość ma dostęp tylko do odczytu.</p>
         </div>
       </Modal>
@@ -206,7 +217,7 @@ export function EventEditor({
                   id={`react-event-${name}`}
                   name={name}
                   className="tasks-inline-input"
-                  defaultValue={localInput(new Date(value))}
+                  defaultValue={event ? eventInput(event, name) : localInput(new Date(value))}
                   required
                   disabled={pending}
                   aria-invalid={!!errors[name]}

@@ -13,6 +13,7 @@ from django.core import signing
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.crypto import salted_hmac
 
 OFFICE_FORMATS = {'word': ('docx', 'Dokument'), 'cell': ('xlsx', 'Arkusz'), 'slide': ('pptx', 'Prezentacja'),
@@ -66,6 +67,15 @@ def service_url(document, purpose, actor=None):
 
 def document_key(document):
     return salted_hmac(f'{_service_scope(document)}-editor', f'{document.pk}:{document.office_key}', algorithm='sha256').hexdigest()
+
+
+def save_confirmation(document):
+    """Only persisted content callbacks acknowledge an editor save, never metadata."""
+    receipt = document.save_receipts.order_by('-pk').values('pk', 'created_at').first()
+    return {
+        'save_receipt': receipt['pk'] if receipt else 0,
+        'saved_at': timezone.localtime(receipt['created_at'] if receipt else document.updated_at).strftime('%H:%M:%S'),
+    }
 
 
 def editor_config(document, user):

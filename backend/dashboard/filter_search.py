@@ -54,12 +54,13 @@ class SearchQuery:
             if node[0] != 'clause':
                 return False
             _, field, operator, operands = node
-            if field not in {'space', 'status', 'priority', 'type', 'assignee', 'tag', 'team', 'text'} or field in values:
+            basic_field = 'q' if field == 'text' else field
+            if field not in {'space', 'status', 'priority', 'type', 'assignee', 'tag', 'team', 'text'} or basic_field in values:
                 return False
             if field == 'text':
                 if operator != '~':
                     return False
-                values['q'] = operands[0]
+                values[basic_field] = operands[0]
             elif operator in {'=', 'IN'}:
                 values[field] = ['me' if value == ('function', 'currentuser') else value for value in operands]
             elif field == 'assignee' and operator == 'IS EMPTY':

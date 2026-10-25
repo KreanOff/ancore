@@ -18,7 +18,7 @@ vm.runInNewContext(bundle.outputFiles[0].text, {
   exports: module.exports,
   Date,
 });
-const { occurs, lanes, bounds } = module.exports;
+const { occurs, lanes, bounds, eventDate } = module.exports;
 const at = (value) => new Date(value);
 const event = (start, end, extra = {}) => ({
   id: 1,
@@ -95,4 +95,17 @@ test('midnight boundaries follow the local day across both daylight-saving chang
     assert.equal(lanes([item], date)[0].end, 1440);
     assert.equal(lanes([item], at(nextDay)).length, 0);
   }
+});
+
+test('all-day rendering uses calendar dates independently of the browser timezone', () => {
+  const item = event('2026-03-29T00:00:00+01:00', '2026-03-30T23:59:59+02:00', { all_day: true });
+  for (const zone of ['UTC', 'Europe/Warsaw', 'America/New_York', 'Pacific/Kiritimati']) {
+    process.env.TZ = zone;
+    assert.equal(eventDate(item).getDate(), 29);
+    assert.equal(occurs(item, new Date(2026, 2, 28)), false);
+    assert.equal(occurs(item, new Date(2026, 2, 29)), true);
+    assert.equal(occurs(item, new Date(2026, 2, 30)), true);
+    assert.equal(occurs(item, new Date(2026, 2, 31)), false);
+  }
+  process.env.TZ = 'Europe/Warsaw';
 });

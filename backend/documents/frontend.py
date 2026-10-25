@@ -153,7 +153,8 @@ def suite_page(request, context):
     base = context['documents_url']
     return {'type': 'office-suite', 'title': item.title + (' | Dysk' if context['drive_editor'] else ' | Dokumenty'), 'data': {
         'document': file_payload(item, base), 'drive': context['drive_editor'], 'back_url': context['folder_url'],
-        'revision': item.revision, 'rename_url': f'{base}{item.pk}/rename/', 'save_url': f'{base}{item.pk}/save/',
+        'revision': item.revision, 'save_receipt': context['office_save_receipt'],
+        'rename_url': f'{base}{item.pk}/rename/', 'save_url': f'{base}{item.pk}/save/',
         'state_url': f'{base}{item.pk}/state/', 'board_url': f'{base}{item.pk}/board/' if getattr(item, 'kind', '') == 'board' else '',
         'editor_config': context.get('editor_config'), 'api_url': context['api_url'],
     }}

@@ -48,6 +48,7 @@ function initCalendarPage() {
     let sourceFilter = '';
     const activeColors = new Set(COLORS);
     let saving = false;
+    let editedEvent = null;
     let dialogTrigger = null;
     let requestController = null;
     let loading = false;
@@ -125,11 +126,27 @@ function initCalendarPage() {
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
 
-    function parseLocalInput(value) {
-        const [datePart, timePart] = value.split('T');
-        const [y, m, d] = datePart.split('-').map(Number);
-        const [hh, mm] = (timePart || '00:00').split(':').map(Number);
-        return new Date(y, m - 1, d, hh, mm);
+    function eventDate(event, name = 'start') {
+        return new Date(event.all_day ? event[name].slice(0, 19) : event[name]);
+    }
+
+    function eventInputValue(event, name) {
+        return event.all_day ? event[name].slice(0, 16) : toLocalInputValue(eventDate(event, name));
+    }
+
+    function eventDateValue(value, allDay, original, name) {
+        if (allDay) return value;
+        if (original && !original.all_day && eventInputValue(original, name) === value) return original[name];
+        const date = new Date(value);
+        const repeated = [-1, 1].some((direction) => {
+            const offset = new Date(date.getTime() + direction * 86400000).getTimezoneOffset();
+            return offset !== date.getTimezoneOffset()
+                && toLocalInputValue(new Date(date.getTime() + (offset - date.getTimezoneOffset()) * 60000)) === value.slice(0, 16);
+        });
+        if (Number.isNaN(date.getTime()) || toLocalInputValue(date) !== value.slice(0, 16) || repeated) {
+            throw new Error('Wybierz prawidłową datę i godzinę. Ta godzina nie istnieje lub występuje dwukrotnie po zmianie czasu.');
+        }
+        return date.toISOString();
     }
 
     function isSameDay(a, b) {
@@ -191,8 +208,8 @@ function initCalendarPage() {
     }
 
     function eventOccursOnDay(event, day) {
-        const start = new Date(event.start);
-        const end = new Date(event.end);
+        const start = eventDate(event);
+        const end = eventDate(event, 'end');
         return start <= endOfDay(day) && (end > startOfDay(day) || isSameDay(start, day));
     }
 
@@ -203,7 +220,7 @@ function initCalendarPage() {
 
     function eventsOnDay(day) {
         return visibleEvents().filter((event) => eventOccursOnDay(event, day))
-            .sort((a, b) => Number(b.all_day) - Number(a.all_day) || new Date(a.start) - new Date(b.start));
+            .sort((a, b) => Number(b.all_day) - Number(a.all_day) || eventDate(a) - eventDate(b));
     }
 
     function eventCountLabel(count) {
@@ -228,7 +245,7 @@ function initCalendarPage() {
         if (currentView !== 'month') return visibleEvents();
         const start = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
         const end = new Date(anchorDate.getFullYear(), anchorDate.getMonth() + 1, 1);
-        return visibleEvents().filter((event) => new Date(event.start) < end && new Date(event.end) >= start);
+        return visibleEvents().filter((event) => eventDate(event) < end && eventDate(event, 'end') >= start);
     }
 
     function formatEventTime(event) {
@@ -282,7 +299,7 @@ function initCalendarPage() {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `calendar-event calendar-event--${COLORS.includes(event.color) ? event.color : 'slate'}`;
-        const eventStart = new Date(event.start), eventEnd = new Date(event.end);
+        const eventStart = eventDate(event), eventEnd = eventDate(event, 'end');
         btn.title = `${event.title} · ${dateLabel(eventStart)} · ${event.all_day ? 'Cały dzień' : `${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())} – ${!isSameDay(eventStart, eventEnd) ? dateLabel(eventEnd) + ' ' : ''}${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`}`;
         if (event.url) btn.title = `${event.title} · Termin: ${dateLabel(eventStart)}, ${formatEventTime(event)} · Otwórz szczegóły`;
         if (showTime) {
@@ -590,7 +607,7 @@ function initCalendarPage() {
         document.getElementById('cal-agenda-title').textContent = agendaMode === 'day' ? 'Plan dnia' : 'Wydarzenia';
         document.getElementById('cal-agenda-mode').textContent = agendaMode === 'day' ? 'Cały okres' : 'Plan dnia';
         document.getElementById('cal-agenda-date').textContent = agendaMode === 'day' ? dateLabel(selectedDate, true) : periodLabel.textContent;
-        const sorted = (agendaMode === 'day' ? eventsOnDay(selectedDate) : periodEvents()).sort((a, b) => new Date(a.start) - new Date(b.start));
+        const sorted = (agendaMode === 'day' ? eventsOnDay(selectedDate) : periodEvents()).sort((a, b) => eventDate(a) - eventDate(b));
         document.getElementById('cal-agenda-count').textContent = loading ? 'Wczytywanie…' : eventCountLabel(sorted.length);
         if (!sorted.length) {
             const empty = document.createElement('li');
@@ -605,7 +622,7 @@ function initCalendarPage() {
         }
         let lastDate = '';
         sorted.forEach((event) => {
-            const start = new Date(event.start), end = new Date(event.end);
+            const start = eventDate(event), end = eventDate(event, 'end');
             if (agendaMode === 'period' && dateLabel(start) !== lastDate) {
                 lastDate = dateLabel(start);
                 const heading = document.createElement('li');
@@ -902,6 +919,7 @@ function initCalendarPage() {
         closeEventColorSelect();
         clearFormError();
         eventForm.reset();
+        editedEvent = mode === 'create' ? null : event;
 
         if (mode === 'create') {
             eventDialogTitle.textContent = 'Nowe wydarzenie';
@@ -923,8 +941,8 @@ function initCalendarPage() {
             eventTitleInput.value = event.title;
             eventDescInput.value = event.description || '';
             eventAllDayInput.checked = event.all_day;
-            eventStartInput.value = toLocalInputValue(new Date(event.start));
-            eventEndInput.value = toLocalInputValue(new Date(event.end));
+            eventStartInput.value = eventInputValue(event, 'start');
+            eventEndInput.value = eventInputValue(event, 'end');
             eventColorInput.value = event.color;
         }
 
@@ -946,12 +964,8 @@ function initCalendarPage() {
 
     function applyAllDayTimes() {
         if (!eventAllDayInput.checked || !eventStartInput.value || !eventEndInput.value) return;
-        const start = parseLocalInput(eventStartInput.value);
-        const end = parseLocalInput(eventEndInput.value);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 0, 0);
-        eventStartInput.value = toLocalInputValue(start);
-        eventEndInput.value = toLocalInputValue(end);
+        eventStartInput.value = eventStartInput.value.slice(0, 10) + 'T00:00';
+        eventEndInput.value = eventEndInput.value.slice(0, 10) + 'T23:59';
     }
 
     function setSaving(value) {
@@ -969,13 +983,21 @@ function initCalendarPage() {
         if (!eventTitleInput.value.trim()) { showFormError('Wpisz tytuł wydarzenia.'); eventTitleInput.focus(); return; }
         if (!eventStartInput.value || !eventEndInput.value) { showFormError('Uzupełnij datę rozpoczęcia i zakończenia.'); return; }
         applyAllDayTimes();
-        if (parseLocalInput(eventEndInput.value) < parseLocalInput(eventStartInput.value)) {
-            showFormError('Zakończenie nie może być wcześniejsze niż rozpoczęcie.'); eventEndInput.focus(); return;
-        }
         const formData = new FormData(eventForm);
         formData.set('title', eventTitleInput.value.trim());
         formData.set('description', eventDescInput.value.trim());
         formData.set('all_day', eventAllDayInput.checked ? 'on' : '');
+        try {
+            for (const name of ['start', 'end']) {
+                formData.set(name, eventDateValue(formData.get(name), eventAllDayInput.checked, editedEvent, name));
+            }
+        } catch (error) {
+            showFormError(error.message);
+            return;
+        }
+        if (new Date(formData.get('end')) < new Date(formData.get('start'))) {
+            showFormError('Zakończenie nie może być wcześniejsze niż rozpoczęcie.'); eventEndInput.focus(); return;
+        }
         const eventId = eventIdInput.value;
         setSaving(true);
         try {
@@ -988,7 +1010,7 @@ function initCalendarPage() {
                 return;
             }
             agendaMode = 'day';
-            selectedDate = startOfDay(new Date(data.event.start));
+            selectedDate = startOfDay(eventDate(data.event));
             anchorDate = cloneDate(selectedDate);
             setSaving(false);
             closeDialog();

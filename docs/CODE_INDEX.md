@@ -20,11 +20,11 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
 | [backend/core](../backend/core) | 37 | 0 | 20 | 225 |
 | [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
-| [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 153 |
+| [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 52 | 7 | 42 | 261 |
-| [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
-| [backend/documents](../backend/documents) | 41 | 3 | 31 | 215 |
+| [backend/dashboard](../backend/dashboard) | 52 | 7 | 42 | 263 |
+| [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
+| [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
 | [backend/spaces](../backend/spaces) | 49 | 2 | 38 | 274 |
 
@@ -962,7 +962,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/documents/models.py](../backend/documents/models.py) — `document_storage`, `document_upload_path`, `library_photo_upload_path`, `DocumentLibrary`, `delete_library_photo`, `Folder`, `Document`, `delete_drive_document_file`, `WorkspaceDocumentFolder`, `WorkspaceDocument`, `delete_workspace_document_file`, `OfficeSaveReceipt`, `DriveOfficeSaveReceipt`, `DocumentVersion`, `delete_document_version_file`
 - [backend/documents/move_views.py](../backend/documents/move_views.py) — `MoveForm`, `move`
 - [backend/documents/office_extras.py](../backend/documents/office_extras.py) — `from_template`, `template_toggle`
-- [backend/documents/office_service.py](../backend/documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
+- [backend/documents/office_service.py](../backend/documents/office_service.py) — `configured`, `sign`, `verify`, `capability`, `check_capability`, `service_url`, `document_key`, `save_confirmation`, `editor_config`, `NoRedirect`, `download_result`, `force_save`, `validate_ooxml`, `blank_file`, `receipt_digest`, `convert_file`
 - [backend/documents/previews.py](../backend/documents/previews.py) — `inline_type`, `validate_inline`, `OfficePackage`, `build_preview`
 - [backend/documents/query.py](../backend/documents/query.py) — `text_field`, `choice_field`, `query_context`, `apply_text_filters`, `apply_date_filter`, `order_results`
 - [backend/documents/rich_text.py](../backend/documents/rich_text.py) — `DocumentHTML`, `clean_content`, `text_to_content`, `docx_bytes`
@@ -1480,6 +1480,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
 - [frontend/app/tests/board-read-only.test.mjs](../frontend/app/tests/board-read-only.test.mjs)
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
+- [frontend/app/tests/calendar-save.test.mjs](../frontend/app/tests/calendar-save.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
@@ -1734,6 +1735,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/workplaces/test_read_only_documents.py](../backend/workplaces/test_read_only_documents.py).
 
 - `ReadOnlyTextDocumentTests`: 6 metod testowych.
+- `OfficeRoleDowngradeTests`: 2 metod testowych.
 
 ### backend/workplaces/test_team.py
 
@@ -1794,7 +1796,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_filters.py](../backend/dashboard/test_filters.py).
 
-- `TaskFilterTests`: 25 metod testowych.
+- `TaskFilterTests`: 27 metod testowych.
 
 ### backend/dashboard/test_for_you.py
 
@@ -1917,7 +1919,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/planner/tests.py](../backend/planner/tests.py).
 
-- `CalendarEventTests`: 3 metod testowych.
+- `CalendarEventTests`: 6 metod testowych.
 
 ### backend/documents/test_colors.py
 
@@ -1935,7 +1937,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/documents/test_drive_office.py](../backend/documents/test_drive_office.py).
 
-- `DriveOfficeTests`: 14 metod testowych.
+- `DriveOfficeTests`: 15 metod testowych.
 
 ### backend/documents/test_folder_icons.py
 
@@ -2018,7 +2020,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/documents/test_suite.py](../backend/documents/test_suite.py).
 
-- `FullEditorTests`: 19 metod testowych.
+- `FullEditorTests`: 20 metod testowych.
 - `SceneValidationTests`: 3 metod testowych.
 
 ### backend/documents/test_text_uploads.py

@@ -35,6 +35,8 @@ całe wyszukiwanie. Checkboxy zaznaczają wiersze lokalnie.
 
 Tryb zaawansowany pozwala zapisać warunki tekstowo. Przełączenie na podstawowy
 jest dostępne wyłącznie dla zapytań, które można przedstawić bez utraty warunków.
+Kilka warunków `text` lub jego aliasu `summary` pozostaje w trybie zaawansowanym,
+ponieważ podstawowe wyszukiwanie ma jedno pole tekstowe.
 Wyszukiwanie i paginacja zachowują zapytanie w URL. Błędne warunki pokazują
 komunikat oraz pusty wynik; nie można ich zapisać jako filtr.
 

@@ -34,6 +34,35 @@ export const dateKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 export const localInput = (date: Date) =>
   `${dateKey(date)}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+// All-day values describe calendar dates in the API, not browser-local instants.
+export const eventDate = (event: CalendarEvent, name: 'start' | 'end' = 'start') =>
+  new Date(event.all_day ? event[name].slice(0, 19) : event[name]);
+export const eventInput = (event: CalendarEvent, name: 'start' | 'end') =>
+  event.all_day ? event[name].slice(0, 16) : localInput(eventDate(event, name));
+export function eventDateValue(
+  value: string,
+  allDay: boolean,
+  original?: { event: CalendarEvent; name: 'start' | 'end' },
+) {
+  if (allDay) return value;
+  // Preserve seconds and the second occurrence of a repeated DST hour on an untouched field.
+  if (original && !original.event.all_day && eventInput(original.event, original.name) === value)
+    return original.event[original.name];
+  const date = new Date(value);
+  const repeated = [-1, 1].some((direction) => {
+    const offset = new Date(date.getTime() + direction * 86400000).getTimezoneOffset();
+    return (
+      offset !== date.getTimezoneOffset() &&
+      localInput(new Date(date.getTime() + (offset - date.getTimezoneOffset()) * 60000)) ===
+        value.slice(0, 16)
+    );
+  });
+  if (Number.isNaN(date.getTime()) || localInput(date) !== value.slice(0, 16) || repeated)
+    throw new Error(
+      'Wybierz prawidłową datę i godzinę. Ta godzina nie istnieje lub występuje dwukrotnie po zmianie czasu.',
+    );
+  return date.toISOString();
+}
 export function weekStart(date: Date) {
   return addDays(day(date), -((date.getDay() + 6) % 7));
 }
@@ -67,8 +96,8 @@ export const formatDate = (date: Date, long = false) =>
 export const time = (date: Date) =>
   date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 export function occurs(event: CalendarEvent, date: Date) {
-  const start = new Date(event.start),
-    end = new Date(event.end),
+  const start = eventDate(event),
+    end = eventDate(event, 'end'),
     from = day(date);
   // Task deadlines are points; timed events use an exclusive end boundary.
   const point = start.getTime() === end.getTime() && start >= from;

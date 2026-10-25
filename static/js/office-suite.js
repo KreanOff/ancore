@@ -109,7 +109,7 @@
         const csrf = root.querySelector('[name=csrfmiddlewaretoken]').value;
         initTitle(root, csrf);
         const frame = root.querySelector('[data-board-frame]');
-        let revision = Number(root.dataset.revision), pending = false, boardDirty = false;
+        let saveReceipt = Number(root.dataset.saveReceipt), pending = false, boardDirty = false;
         function fail(message, canRetry = false) { errorMessage.textContent = message; retry.hidden = !canRetry; error.hidden = false; }
         function clearError() { error.hidden = true; retry.hidden = true; }
         if (frame) {
@@ -164,8 +164,8 @@
                     return;
                 }
                 if (data.save_error) { queued = false; fail('Nie udało się zapisać pliku w Ancore. Pozostaw edytor otwarty i spróbuj zapisać ponownie.', true); return; }
-                if (data.revision > revision) {
-                    revision = data.revision;
+                if (data.save_receipt > saveReceipt) {
+                    saveReceipt = data.save_receipt;
                     pending = false;
                     clearError();
                     status.textContent = savingGeneration === editGeneration ? `Zapisano w Ancore ${data.saved_at}` : 'Nowsze zmiany w edytorze';

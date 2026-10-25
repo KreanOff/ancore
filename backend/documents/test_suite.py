@@ -175,6 +175,41 @@ class FullEditorTests(TestCase):
         self.assertEqual(Client().get(url).status_code, 404)
 
     @patch('documents.office_service.download_result')
+    def test_metadata_does_not_acknowledge_content_save(self, download):
+        item = self.file()
+        state_url = self.base + f'{item.pk}/state/'
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], 0)
+        response = self.client.post(self.base + f'{item.pk}/', {
+            'title': 'Nowa nazwa', 'folder': '', 'revision': item.revision,
+        })
+        self.assertEqual(response.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.revision, 2)
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], 0)
+
+        download.return_value = docx_bytes('<p>Potwierdzony zapis treści</p>')
+        payload = self.payload(item)
+        self.assertEqual(self.callback(item, payload).json(), {'error': 0})
+        receipt = item.save_receipts.get()
+        confirmed = self.client.get(state_url).json()
+        self.assertEqual(confirmed['save_receipt'], receipt.pk)
+        self.assertEqual(self.callback(item, payload).json(), {'error': 0})
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], receipt.pk)
+
+        for base in (self.base, '/office/'):
+            editor = self.client.get(base + f'{item.pk}/editor/', follow=True)
+            self.assertContains(editor, f'data-save-receipt="{receipt.pk}"')
+            self.assertEqual(editor.context['frontend_bootstrap']['data']['save_receipt'], receipt.pk)
+        item.refresh_from_db()
+        response = self.client.post(self.base + f'{item.pk}/', {
+            'title': 'Jeszcze inna nazwa', 'folder': '', 'revision': item.revision,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], receipt.pk)
+        self.assertEqual(self.client.get(state_url).json()['saved_at'], confirmed['saved_at'])
+        self.assertEqual(download.call_count, 1)
+
+    @patch('documents.office_service.download_result')
     def test_force_save_writes_file_and_deduplicates_replay(self, download):
         item = self.file(); old_name = item.file.name; old_key = item.office_key
         content = docx_bytes('<p>Nowa treść</p>'); download.return_value = content

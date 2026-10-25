@@ -62,7 +62,7 @@ function deferred() {
 async function flush() {
   for (let index = 0; index < 60; index++) await Promise.resolve();
 }
-function harness(implementation) {
+function harness(implementation, initialReceipt = 0) {
   const timers = new Map(),
     posts = [],
     effects = [],
@@ -73,7 +73,13 @@ function harness(implementation) {
     retry = target({ hidden: true }),
     config = { document: { key: 'doc-key' } },
     control = {
-      state: { key: 'doc-key', revision: 1, save_error: false, saved_at: '12:00' },
+      state: {
+        key: 'doc-key',
+        revision: 1,
+        save_receipt: initialReceipt,
+        save_error: false,
+        saved_at: '12:00',
+      },
       post: () => ({ pending: true }),
       get: () => control.state,
     };
@@ -83,7 +89,13 @@ function harness(implementation) {
     destroyed = 0;
   const holder = { dataset: { apiUrl: '/onlyoffice/api.js' } },
     root = {
-      dataset: { revision: '1', stateUrl: '/state/', saveUrl: '/save/', backUrl: '/documents/' },
+      dataset: {
+        revision: '1',
+        saveReceipt: String(initialReceipt),
+        stateUrl: '/state/',
+        saveUrl: '/save/',
+        backUrl: '/documents/',
+      },
       querySelector(selector) {
         return {
           '[data-suite-status]': status,
@@ -159,7 +171,13 @@ function harness(implementation) {
   if (implementation === 'hook') {
     vm.runInNewContext(hook.outputFiles[0].text, context);
     const office = module.exports.useOffice(
-      { editor_config: config, revision: 1, state_url: '/state/', save_url: '/save/' },
+      {
+        editor_config: config,
+        revision: 1,
+        save_receipt: initialReceipt,
+        state_url: '/state/',
+        save_url: '/save/',
+      },
       'token',
     );
     cleanup = effects[0]();
@@ -213,6 +231,51 @@ function harness(implementation) {
 }
 
 for (const implementation of ['hook', 'adapter']) {
+  test(`${implementation}: an existing receipt cannot confirm edits made after opening`, async () => {
+    const app = harness(implementation, 7);
+    app.edit();
+    await app.advance(4000);
+    assert.doesNotMatch(app.status, /Zapisano w Ancore/);
+    app.control.state.save_receipt = 8;
+    await app.advance(4000);
+    assert.match(app.status, /Zapisano w Ancore/);
+    app.cleanup();
+  });
+
+  test(`${implementation}: moving a file cannot acknowledge a pending content save`, async () => {
+    const app = harness(implementation);
+    app.edit();
+    await app.advance(1500);
+    app.control.state.revision = 2;
+    app.control.state.saved_at = '12:01';
+    await app.advance(2500);
+    assert.doesNotMatch(app.status, /Zapisano w Ancore/);
+    await app.advance(30000);
+    assert.match(app.error, /Zapis nie został jeszcze potwierdzony/);
+    assert.equal(app.retry, true);
+    assert.equal(app.posts.length, 1);
+    app.cleanup();
+  });
+
+  test(`${implementation}: only a new content receipt releases queued edits after a move`, async () => {
+    const app = harness(implementation);
+    app.edit();
+    await app.advance(1500);
+    app.edit();
+    await app.advance(1500);
+    app.control.state.revision = 20;
+    await app.advance(1000);
+    assert.equal(app.posts.length, 1);
+    app.control.state.save_receipt = 1;
+    await app.advance(4000);
+    assert.equal(app.posts.length, 2);
+    app.control.state.save_receipt = 2;
+    await app.advance(4000);
+    assert.match(app.status, /Zapisano w Ancore/);
+    assert.equal(app.error, '');
+    app.cleanup();
+  });
+
   test(`${implementation}: a newer edit saves after the pending revision is confirmed`, async () => {
     const app = harness(implementation);
     app.edit();
@@ -223,10 +286,10 @@ for (const implementation of ['hook', 'adapter']) {
     app.edit();
     await app.advance(1500);
     assert.equal(app.posts.length, 1);
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     await app.advance(1000);
     assert.equal(app.posts.length, 2);
-    app.control.state.revision = 3;
+    app.control.state.save_receipt = 2;
     await app.advance(4000);
     assert.match(app.status, /Zapisano w Ancore/);
     assert.equal(app.error, '');
@@ -243,7 +306,7 @@ for (const implementation of ['hook', 'adapter']) {
     app.save();
     app.events.onDocumentStateChange({ data: false });
     await app.advance(1500);
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     await app.advance(1000);
     await app.advance(60000);
     assert.equal(app.posts.length, 1);
@@ -259,7 +322,7 @@ for (const implementation of ['hook', 'adapter']) {
     await app.advance(1500);
     app.edit();
     await app.advance(1500);
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     await app.advance(1000);
     assert.equal(app.posts.length, 1);
     app.control.post = () => ({ pending: true });
@@ -306,7 +369,7 @@ for (const implementation of ['hook', 'adapter']) {
     app.save();
     await flush();
     assert.equal(app.posts.length, 2);
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     await app.advance(4000);
     assert.match(app.status, /Zapisano w Ancore/);
     app.cleanup();
@@ -327,7 +390,7 @@ for (const implementation of ['hook', 'adapter']) {
     await flush();
     assert.equal(app.posts.length, 2);
     app.control.state.save_error = false;
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     await app.advance(4000);
     assert.match(app.status, /Zapisano w Ancore/);
     assert.equal(app.error, '');
@@ -340,7 +403,7 @@ for (const implementation of ['hook', 'adapter']) {
     await app.advance(1500);
     app.edit();
     await app.advance(1500);
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     app.control.state.save_error = true;
     await app.advance(1000);
     assert.match(app.error, /Nie udało się zapisać pliku/);
@@ -367,7 +430,7 @@ for (const implementation of ['hook', 'adapter']) {
     assert.match(app.error, /Brak potwierdzenia zapisu/);
     assert.equal(app.posts.length, 1);
     app.control.get = () => app.control.state;
-    app.control.state.revision = 2;
+    app.control.state.save_receipt = 1;
     await app.advance(4000);
     assert.equal(app.posts.length, 2);
     assert.equal(app.error, '');
@@ -428,7 +491,7 @@ for (const implementation of ['hook', 'adapter']) {
     app.control.get = () => ({ ...app.control.state, key: 'replacement-key' });
     await app.advance(4000);
     assert.equal(app.status, 'Sesja dokumentu zmieniła się');
-    response.resolve({ ...app.control.state, revision: 2 });
+    response.resolve({ ...app.control.state, save_receipt: 1 });
     await flush();
     assert.equal(app.status, 'Sesja dokumentu zmieniła się');
     assert.equal(app.posts.length, 1);

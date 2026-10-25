@@ -88,7 +88,7 @@ export function useOffice(data: SuiteData, token: string) {
       return () => life.abort();
     }
     const config = { ...data.editor_config };
-    let revision = data.revision,
+    let saveReceipt = data.save_receipt,
       pending = false,
       requesting = false,
       queued = false,
@@ -105,6 +105,7 @@ export function useOffice(data: SuiteData, token: string) {
         const state = await documentRequest<{
           key: string;
           revision: number;
+          save_receipt: number;
           save_error: boolean;
           saved_at: string;
         }>(data.state_url, token, life.signal);
@@ -128,8 +129,8 @@ export function useOffice(data: SuiteData, token: string) {
           );
           return;
         }
-        if (state.revision > revision) {
-          revision = state.revision;
+        if (state.save_receipt > saveReceipt) {
+          saveReceipt = state.save_receipt;
           pending = false;
           clear();
           setStatus(

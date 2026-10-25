@@ -441,6 +441,32 @@ class TaskFilterTests(TestCase):
                                                       'sort': 'priority_desc', 'mode': 'basic'})
         self.assertEqual([item.task_id for item in response.context['items']], [self.urgent.pk, self.high.pk])
 
+    def test_basic_conversion_rejects_repeated_text_conditions_including_aliases(self):
+        for source in [
+            'text ~ "logowanie" AND text ~ "Błąd"',
+            'summary ~ "logowanie" AND text ~ "Błąd"',
+            'status = new AND (text ~ "logowanie" AND summary ~ "Błąd")',
+        ]:
+            with self.subTest(source=source):
+                self.assertIsNone(parse_query(source).basic())
+        source = 'summary ~ "logowanie" ORDER BY created DESC'
+        self.assertEqual(basic_query(parse_query(source).basic()), 'text ~ "logowanie" ORDER BY created DESC')
+
+    def test_repeated_text_conditions_keep_advanced_search_and_precise_results(self):
+        matching = SpaceTask.objects.create(space=self.space, title='Błąd logowanie', created_by=self.owner)
+        source = 'text ~ "logowanie" AND text ~ "Błąd" ORDER BY created DESC'
+        self.saved.query = source
+        self.saved.save(update_fields=['query'])
+        for suffix, params in [('search/', {'jql': source}), (f'{self.saved.pk}/', {})]:
+            for mode in ['', 'basic']:
+                with self.subTest(suffix=suffix, mode=mode):
+                    response = self.client.get(self.url(suffix), {**params, 'mode': mode})
+                    self.assertEqual(response.status_code, 200)
+                    self.assertFalse(response.context['basic_available'])
+                    self.assertEqual(response.context['mode'], 'advanced')
+                    self.assertEqual(response.context['jql'], source)
+                    self.assertEqual([item.task_id for item in response.context['items']], [matching.pk])
+
     def test_option_previews_keep_values_and_visibility_scope(self):
         self.member.profile_photo = 'profile_photos/dropdown-member.png'
         self.member.save(update_fields=['profile_photo'])

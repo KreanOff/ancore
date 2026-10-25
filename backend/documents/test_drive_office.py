@@ -149,6 +149,41 @@ class DriveOfficeTests(TestCase):
         self.assertEqual(Client().get(url.replace('drive-office-service/', 'office-service/')).status_code, 404)
 
     @patch('documents.office_service.download_result')
+    def test_moves_do_not_acknowledge_content_save(self, download):
+        item = self.file()
+        target = DocumentLibrary.objects.create(owner=self.user, workplace=self.workplace, name='Drugi dysk')
+        state_url = f'{self.base}{item.pk}/state/'
+        initial_key, initial_name = service.document_key(item), item.file.name
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], 0)
+        response = self.client.post(f'{self.base}{item.pk}/move/', {'target': f'library:{target.pk}'})
+        self.assertEqual(response.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual((item.revision, item.file.name, service.document_key(item)), (2, initial_name, initial_key))
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], 0)
+
+        download.return_value = docx_bytes('<p>Treść zapisana po przeniesieniu</p>')
+        payload = self.payload(item)
+        self.assertEqual(self.callback(item, payload).json(), {'error': 0})
+        receipt = item.save_receipts.get()
+        confirmed = self.client.get(state_url).json()
+        self.assertEqual(confirmed['save_receipt'], receipt.pk)
+        for base in (self.base, '/documents/'):
+            editor = self.client.get(f'{base}{item.pk}/editor/', follow=True)
+            self.assertContains(editor, f'data-save-receipt="{receipt.pk}"')
+            self.assertEqual(editor.context['frontend_bootstrap']['data']['save_receipt'], receipt.pk)
+
+        response = self.client.post(f'{self.base}{item.pk}/move/', {'target': f'folder:{self.folder.pk}'})
+        self.assertEqual(response.status_code, 302)
+        # Moving the containing folder to another drive also updates document metadata.
+        response = self.client.post(f'{self.base}folders/{self.folder.pk}/move/', {'target': f'library:{target.pk}'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], receipt.pk)
+        self.assertEqual(self.client.get(state_url).json()['saved_at'], confirmed['saved_at'])
+        self.assertEqual(self.callback(item, payload).json(), {'error': 0})
+        self.assertEqual(self.client.get(state_url).json()['save_receipt'], receipt.pk)
+        self.assertEqual(download.call_count, 1)
+
+    @patch('documents.office_service.download_result')
     def test_save_and_final_callback_persist_on_drive_and_deduplicate(self, download):
         for kind in service.OFFICE_FORMATS:
             item = self.file(kind)

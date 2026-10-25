@@ -1,10 +1,16 @@
 """Guests can read legacy text documents while shared writes stay forbidden."""
+import json
+import tempfile
+from unittest.mock import patch
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core.files.storage import FileSystemStorage
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
 
-from documents.models import WorkspaceDocument
+from documents.models import Document, DocumentLibrary, WorkspaceDocument
+from documents import office_service
 from .models import WorkplaceMembership, create_workplace_for_user
 from .services import scoped_workplace_app_path
 
@@ -120,3 +126,129 @@ class ReadOnlyTextDocumentTests(TestCase):
                     self.assertEqual(response.status_code, 200)
                     self.document.refresh_from_db()
                     self.assertEqual(response.json()['revision'], self.document.revision)
+
+
+@override_settings(ONLYOFFICE_URL='http://office.test', ONLYOFFICE_INTERNAL_URL='http://office-internal',
+                   ONLYOFFICE_ANCORE_URL='http://ancore.test', ONLYOFFICE_JWT_SECRET='test-only-' * 8)
+class OfficeRoleDowngradeTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        users = get_user_model()
+        cls.owner = users.objects.create_user(username='office-role-owner', email='office-role-owner@example.test')
+        cls.editor = users.objects.create_user(username='office-role-editor', email='office-role-editor@example.test')
+        cls.workspace = create_workplace_for_user(cls.owner, 'Wspólna edycja')
+        cls.other_workspace = create_workplace_for_user(cls.owner, 'Oddzielne dokumenty')
+        cls.membership = WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.editor)
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        storage = FileSystemStorage(directory.name)
+        for model in (Document, WorkspaceDocument):
+            field = model._meta.get_field('file')
+            self.addCleanup(setattr, field, 'storage', field.storage)
+            field.storage = storage
+        self.documents = self.make_documents(self.workspace)
+        self.other_documents = self.make_documents(self.other_workspace)
+        self.client.force_login(self.owner)
+        session = self.client.session
+        session['active_workplace_id'] = self.workspace.pk
+        session.save()
+
+    def make_documents(self, workplace):
+        library = DocumentLibrary.objects.create(owner=self.owner, workplace=workplace, name='Pliki zespołu')
+        drive = Document(owner=self.owner, workplace=workplace, library=library,
+                         title='Dokument Dysku', filename='dysk.docx')
+        office = WorkspaceDocument(owner=self.owner, workplace=workplace, kind=WorkspaceDocument.Kind.FILE,
+                                   title='Dokument Office', filename='office.docx')
+        for item in (drive, office):
+            content = office_service.blank_file('word')
+            item.file_size = content.size
+            item.file.save(item.filename, content, save=False)
+            item.save()
+        return (('documents', drive), ('office', office))
+
+    def snapshot(self, item):
+        values = type(item).objects.filter(pk=item.pk).values().get()
+        values.pop('office_key')
+        with item.file.open('rb') as stream:
+            return values, stream.read()
+
+    def endpoint(self, target, transport):
+        if transport == 'html':
+            return target
+        api = '/api/v1/page/' if transport == 'api' else scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        return api + '?' + urlencode({'url': target})
+
+    def change_role(self, role, transport):
+        target = reverse('workplaces:member-update', args=[self.workspace.pk, self.membership.pk])
+        response = self.client.post(self.endpoint(target, transport), {'action': 'role', 'role': role})
+        self.assertEqual(response.status_code, 302 if transport == 'html' else 200)
+        self.membership.refresh_from_db()
+        self.assertEqual(self.membership.role, role)
+
+    def test_downgrade_blocks_old_coauthor_callbacks_sources_and_save_keys(self):
+        for role in ('member', 'admin'):
+            for transport in ('html', 'api', 'scoped-api'):
+                with self.subTest(role=role, transport=transport):
+                    self.membership.role = role
+                    self.membership.save(update_fields=['role'])
+                    before = {item.pk: (item.office_key, self.snapshot(item))
+                              for _, item in (*self.documents, *self.other_documents)}
+                    configs = {item.pk: [(actor, office_service.editor_config(item, actor))
+                                        for actor in (self.owner, self.editor)]
+                               for _, item in self.documents}
+                    self.change_role('guest', transport)
+                    for app, item in self.documents:
+                        item.refresh_from_db()
+                        old_key, previous = before[item.pk]
+                        self.assertNotEqual(item.office_key, old_key)
+                        self.assertEqual(self.snapshot(item), previous)
+                        for actor, config in configs[item.pk]:
+                            self.assertEqual(Client().get(config['document']['url']).status_code, 404)
+                            payload = {'key': config['document']['key'], 'status': 6, 'forcesavetype': 1,
+                                       'filetype': 'docx', 'users': [str(self.editor.pk)],
+                                       'url': 'http://office.test/cache/files/stale/result.docx'}
+                            with patch('documents.office_service.download_result') as download:
+                                response = Client().post(config['editorConfig']['callbackUrl'],
+                                    json.dumps(payload), content_type='application/json',
+                                    headers={'Authorization': 'Bearer ' + office_service.sign({'payload': payload})})
+                            self.assertEqual(response.status_code, 409)
+                            download.assert_not_called()
+                            self.assertFalse(item.save_receipts.exists())
+                            self.assertEqual(self.snapshot(item), previous)
+                        old_editor_key = configs[item.pk][0][1]['document']['key']
+                        for base in (f'/{app}/', scoped_workplace_app_path(self.workspace, app)):
+                            state = self.client.get(base + f'{item.pk}/state/', follow=True)
+                            self.assertEqual(state.json()['key'], office_service.document_key(item))
+                            for api_transport in ('html', 'api', 'scoped-api'):
+                                response = self.client.post(self.endpoint(base + f'{item.pk}/save/', api_transport),
+                                                            HTTP_X_OFFICE_KEY=old_editor_key)
+                                self.assertEqual(response.status_code, 409)
+                        fresh = office_service.editor_config(item, self.editor)
+                        self.assertFalse(fresh['document']['permissions']['edit'])
+                        source = Client().get(fresh['document']['url'])
+                        self.assertEqual(source.status_code, 200)
+                        self.assertEqual(b''.join(source.streaming_content), previous[1])
+                    for _, item in self.other_documents:
+                        item.refresh_from_db()
+                        self.assertEqual((item.office_key, self.snapshot(item)), before[item.pk])
+
+    def test_other_role_changes_keep_existing_sessions(self):
+        for old_role, new_role, active in (
+            ('member', 'admin', True), ('admin', 'member', True),
+            ('guest', 'member', True), ('guest', 'admin', True), ('guest', 'guest', True),
+            ('member', 'guest', False),
+        ):
+            for transport in ('html', 'api', 'scoped-api'):
+                with self.subTest(old=old_role, new=new_role, active=active, transport=transport):
+                    self.membership.role, self.membership.is_active = old_role, active
+                    self.membership.save(update_fields=['role', 'is_active'])
+                    before = {item.pk: (item.office_key, self.snapshot(item)) for _, item in self.documents}
+                    tokens = {item.pk: office_service.capability(item, 'callback', self.owner)
+                              for _, item in self.documents}
+                    self.change_role(new_role, transport)
+                    for _, item in self.documents:
+                        item.refresh_from_db()
+                        self.assertEqual((item.office_key, self.snapshot(item)), before[item.pk])
+                        self.assertTrue(office_service.check_capability(item, tokens[item.pk], 'callback'))

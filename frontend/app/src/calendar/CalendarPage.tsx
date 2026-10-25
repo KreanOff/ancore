@@ -10,6 +10,7 @@ import {
   colors,
   dateKey,
   day,
+  eventDate,
   formatDate,
   lanes,
   monthBounds,
@@ -71,7 +72,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
         setEvents(data.events);
         if (pendingEvent.current) {
           const event = data.events.find((item) => item.id === pendingEvent.current);
-          if (event) setEditor({ event, date: new Date(event.start) });
+          if (event) setEditor({ event, date: eventDate(event) });
           pendingEvent.current = null;
         }
       })
@@ -99,7 +100,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
   const onDay = (date: Date) => visible.filter((event) => occurs(event, date));
   function open(event: CalendarEvent) {
     if (event.url) navigate(event.url);
-    else setEditor({ event, date: new Date(event.start) });
+    else setEditor({ event, date: eventDate(event) });
   }
   function newEvent(date = selected, allDay = false, keepTime = false) {
     if (initial.read_only) return;
@@ -138,7 +139,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
         key={event.id}
         className={`calendar-event calendar-event--${event.color} ${className}`}
         style={style}
-        title={`${event.title} · ${formatDate(new Date(event.start))} · ${event.all_day ? 'Cały dzień' : time(new Date(event.start))}`}
+        title={`${event.title} · ${formatDate(eventDate(event))} · ${event.all_day ? 'Cały dzień' : time(eventDate(event))}`}
         onClick={(e) => {
           e.stopPropagation();
           open(event);
@@ -586,7 +587,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                             <span className="calendar-list-title">{event.title}</span>
                             <span className="calendar-list-date">
                               {event.url ? 'Termin · ' : ''}
-                              {formatDate(new Date(event.start))}
+                              {formatDate(eventDate(event))}
                               {event.all_day
                                 ? ''
                                 : ` · ${time(new Date(event.start))} – ${time(new Date(event.end))}`}
