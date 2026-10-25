@@ -13,6 +13,8 @@ export interface Workspace {
   role: string;
   can_manage: boolean;
   active: boolean;
+  is_default: boolean;
+  default_url: string;
   switch_url: string;
 }
 export interface Person {

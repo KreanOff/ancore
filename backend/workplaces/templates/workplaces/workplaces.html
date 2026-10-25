@@ -75,6 +75,11 @@
                                         <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="workplace-{{ workplace.pk }}-actions" aria-controls="workplace-{{ workplace.pk }}-actions" aria-expanded="false" aria-label="Działania: {{ workplace.name }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
                                         <div id="workplace-{{ workplace.pk }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" tabindex="-1" aria-label="Działania: {{ workplace.name }}" data-row-actions-panel>
                                             <div class="documents-menu-actions">
+                                                <form method="post" action="{% url 'workplaces:set-default' workplace.pk %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="{% if request.user.default_workplace_id == workplace.pk %}remove{% else %}set{% endif %}">
+                                                    <button type="submit" class="tasks-project-menu-button"><i data-icon="{% if request.user.default_workplace_id == workplace.pk %}check{% else %}home{% endif %}" aria-hidden="true"></i><span>{% if request.user.default_workplace_id == workplace.pk %}Usuń ustawienie domyślne{% else %}Ustaw jako domyślny{% endif %}</span></button>
+                                                </form>
                                                 <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;tab=main" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="main"><i data-icon="{% if workplace.can_manage_team %}pencil{% else %}info{% endif %}" aria-hidden="true"></i><span>{% if workplace.can_manage_team %}Edytuj miejsce pracy{% else %}Informacje{% endif %}</span></a>
                                                 <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="members"><i data-icon="users" aria-hidden="true"></i><span>Członkowie</span></a>
                                                 {% if workplace.can_manage_team %}
@@ -94,6 +99,9 @@
                                             <a class="tasks-row-title-text workplaces-management__select" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;tab=main" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="main" aria-haspopup="dialog" aria-label="Zarządzaj {{ workplace.name }}">{{ workplace.name }}</a>
                                             {% if active_workplace and workplace.id == active_workplace.id %}
                                             <span class="workplace-row__current-badge" data-workplace-current-badge>Bieżący</span>
+                                            {% endif %}
+                                            {% if request.user.default_workplace_id == workplace.pk %}
+                                            <span class="workplace-row__current-badge" title="Otwierany po zalogowaniu">Domyślny</span>
                                             {% endif %}
                                         </span>
                                     </span>

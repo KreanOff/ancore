@@ -54,7 +54,7 @@ SCREENS = {
 VIEWS = {
     'workplaces.invitations': {'create_link', 'revoke_link', 'resend_email'},
     'accounts.views': {'profile'},
-    'workplaces.views': {'workplaces', 'update_workplace', 'delete_workplace', 'switch_workplace', 'toggle_sidebar_favorite', 'reorder_sidebar_favorites'},
+    'workplaces.views': {'workplaces', 'update_workplace', 'delete_workplace', 'switch_workplace', 'set_default_workplace', 'toggle_sidebar_favorite', 'reorder_sidebar_favorites'},
     'workplaces.team_views': {'team', 'invitation_candidates', 'member_update', 'invitation_cancel', 'invitation_response'},
     'planner.views': {'index', 'events_list', 'create_event', 'update_event', 'delete_event'},
     'dashboard.views': {'for_you', 'settings', 'home', 'global_search', 'notifications', 'notification_action'},

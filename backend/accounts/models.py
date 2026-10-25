@@ -39,6 +39,10 @@ class User(AbstractUser):
         default=PresenceStatus.INACTIVE,
     )
     last_seen_at = models.DateTimeField(null=True, blank=True)
+    default_workplace = models.ForeignKey(
+        'workplaces.Workplace', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']

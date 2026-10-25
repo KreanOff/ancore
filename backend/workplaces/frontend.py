@@ -93,6 +93,8 @@ def directory_page(request, context):
         'rows': [{'id': str(item.pk), 'name': item.name, 'code': item.code, 'description': item.description,
                   'avatar': workplace_avatar(item), 'members': item.team_member_count, 'role': item.viewer_role_label,
                   'can_manage': item.can_manage_team, 'active': item.pk == getattr(context['active_workplace'], 'pk', None),
+                  'is_default': item.pk == request.user.default_workplace_id,
+                  'default_url': path('set-default', item.pk),
                   'switch_url': path('switch', item.pk)} for item in context['workplaces']],
         'create_form': schema(context['form']), 'create_open': context['workplace_create_modal_open'],
         'edit_open': context['workplace_edit_modal_open'], 'tab': context['workplace_edit_tab'], 'team': team,

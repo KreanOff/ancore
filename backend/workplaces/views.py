@@ -12,6 +12,7 @@ from core.frontend import render
 from django.template.loader import render_to_string
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+from core.api import api_error
 
 from .forms import WorkplaceForm
 from .models import SidebarFavorite, create_workplace_for_user
@@ -152,6 +153,28 @@ def switch_workplace(request, workplace_id):
     next_url = scoped_workplace_app_path(workplace, 'for-you')
     messages.success(request, f'Przełączono na {workplace.name}.')
     return redirect(next_url)
+
+
+@login_required
+@require_POST
+def set_default_workplace(request, workplace_id):
+    workplace = get_object_or_404(workplaces_for_user(request.user), pk=workplace_id)
+    action = request.POST.get('action')
+    if action not in {'set', 'remove'}:
+        return api_error('Nieprawidłowa operacja domyślnego Workspace.', 400)
+    users = get_user_model().objects.filter(pk=request.user.pk)
+    if action == 'set':
+        users.update(default_workplace=workplace)
+    else:
+        # A stale menu cannot remove a preference saved for another Workspace.
+        users.filter(default_workplace=workplace).update(default_workplace=None)
+    request.user.refresh_from_db(fields=['default_workplace'])
+    if getattr(request, '_react_api', False):
+        return JsonResponse({'default_workplace_id': (
+            str(request.user.default_workplace_id) if request.user.default_workplace_id else None
+        )})
+    messages.success(request, 'Zaktualizowano domyślny Workspace.')
+    return redirect('workplaces:workplaces')
 
 
 @login_required

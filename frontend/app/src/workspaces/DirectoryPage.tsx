@@ -48,6 +48,7 @@ export default function DirectoryPage(props: PageProps) {
         String(row.members),
         row.role,
         row.active ? 'Aktywny' : 'Dostępny',
+        row.is_default ? 'Domyślny' : '',
       ]
         .join(' ')
         .toLocaleLowerCase('pl')
@@ -132,6 +133,37 @@ export default function DirectoryPage(props: PageProps) {
   function closeEdit() {
     setEdit(false);
     setPageLocation(data.base_url + '?workspace=' + data.team?.id + '&view=workspaces');
+  }
+  async function setDefault(row: Workspace) {
+    if (sending.current) return;
+    sending.current = true;
+    setBusy(true);
+    setError('');
+    retry.current = '';
+    const body = new FormData();
+    body.set('action', row.is_default ? 'remove' : 'set');
+    try {
+      const result = await pageRequest<{ default_workplace_id: string | null }>(
+        props.initial.api_url,
+        row.default_url,
+        props.csrfToken,
+        life.current.signal,
+        body,
+      );
+      if (!life.current.signal.aborted)
+        setData((current) => ({
+          ...current,
+          rows: current.rows.map((item) => ({
+            ...item,
+            is_default: item.id === result.default_workplace_id,
+          })),
+        }));
+    } catch (e) {
+      if (!life.current.signal.aborted) setError(errorMessage(e));
+    } finally {
+      sending.current = false;
+      setBusy(false);
+    }
   }
   const link = (event: MouseEvent, row: Workspace, desired: Tab) => {
     if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
@@ -441,6 +473,23 @@ export default function DirectoryPage(props: PageProps) {
                             >
                               {(close) => (
                                 <div className="documents-menu-actions">
+                                  <button
+                                    type="button"
+                                    className="tasks-project-menu-button"
+                                    role="menuitem"
+                                    disabled={busy}
+                                    onClick={() => {
+                                      close();
+                                      void setDefault(row);
+                                    }}
+                                  >
+                                    <Icon name={row.is_default ? 'check' : 'home'} />
+                                    <span>
+                                      {row.is_default
+                                        ? 'Usuń ustawienie domyślne'
+                                        : 'Ustaw jako domyślny'}
+                                    </span>
+                                  </button>
                                   {(
                                     [
                                       'main',
@@ -507,6 +556,14 @@ export default function DirectoryPage(props: PageProps) {
                               </a>
                               {row.active ? (
                                 <span className="workplace-row__current-badge">Bieżący</span>
+                              ) : null}
+                              {row.is_default ? (
+                                <span
+                                  className="workplace-row__current-badge"
+                                  title="Otwierany po zalogowaniu"
+                                >
+                                  Domyślny
+                                </span>
                               ) : null}
                             </span>
                           </span>

@@ -18,7 +18,7 @@ from core.api import api_error
 from core.frontend import render
 from workplaces.forms import RegistrationWorkspaceForm
 from workplaces.models import Workplace, create_workplace_for_user
-from workplaces.services import workplaces_for_user, set_active_workplace, enable_workspace_url_scope, scoped_workplace_app_path
+from workplaces.services import default_workplace_for_user, workplaces_for_user, set_active_workplace, enable_workspace_url_scope, scoped_workplace_app_path
 from .avatar import account_avatar as _account_avatar
 from .forms import UserProfileForm, UserRegistrationForm
 from .presence import mark_user_inactive, mark_user_seen
@@ -44,6 +44,11 @@ class AccountLoginView(LoginView):
         invitation = pending_join_url(self.request)
         if invitation:
             return invitation
+        default_workplace = default_workplace_for_user(self.request.user)
+        if default_workplace:
+            set_active_workplace(self.request, default_workplace)
+            enable_workspace_url_scope(self.request)
+            return scoped_workplace_app_path(default_workplace, 'for-you')
         if not workplaces_for_user(self.request.user).exists():
             return reverse('register_workspace')
         return super().get_success_url()

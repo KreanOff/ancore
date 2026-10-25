@@ -87,12 +87,20 @@ def workplace_people(workplace, user=None):
     ).distinct().order_by('first_name', 'last_name', 'email')
 
 
+def default_workplace_for_user(user):
+    """A saved preference never grants access after membership is revoked."""
+    workplace_id = getattr(user, 'default_workplace_id', None)
+    if not workplace_id:
+        return None
+    return workplaces_for_user(user).filter(pk=workplace_id).first()
+
+
 def ensure_default_workplace(user):
     if not user or not getattr(user, 'is_authenticated', False):
         return None
 
     # Selecting a context never creates business data. Setup requires an explicit POST.
-    return workplaces_for_user(user).first()
+    return default_workplace_for_user(user) or workplaces_for_user(user).first()
 
 
 def set_active_workplace(request, workplace):
