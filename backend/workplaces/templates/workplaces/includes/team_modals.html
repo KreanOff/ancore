@@ -1,18 +1,19 @@
 {% if can_manage_team %}
-<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact{% if invite_form.errors %} is-open{% endif %}" id="team-invite-modal" role="dialog" aria-modal="true" aria-labelledby="team-invite-title" aria-describedby="team-invite-description" aria-hidden="{% if invite_form.errors %}false{% else %}true{% endif %}" data-team-modal>
-    <div class="tasks-modal__dialog"><form method="post" action="{% url 'workplaces:team' team_workplace.pk %}?view=invitations" class="tasks-modal__form" data-team-invite-form>
+<div class="tasks-modal tasks-form-modal app-modal-panel app-modal-panel--compact{% if add_form.errors %} is-open{% endif %}" id="team-add-modal" role="dialog" aria-modal="true" aria-labelledby="team-add-title" aria-describedby="team-add-description" aria-hidden="{% if add_form.errors %}false{% else %}true{% endif %}" data-team-modal>
+    <div class="tasks-modal__dialog"><form method="post" action="{% url 'workplaces:team' team_workplace.pk %}?view=members" class="tasks-modal__form" data-team-add-form>
         {% csrf_token %}
-        <header class="tasks-modal__header"><h2 id="team-invite-title">Zaproś osobę · {{ team_workplace.name }}</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
+        <header class="tasks-modal__header"><h2 id="team-add-title">Dodaj osobę · {{ team_workplace.name }}</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
         <div class="tasks-modal__body">
-            <p id="team-invite-description" class="workplace-team__hint">Zaproszenie pojawi się na ekranie Workspace wskazanej osoby. Jest ważne przez 7 dni i daje dostęp do całego Workspace.</p>
-            {% if invite_form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{% for error in invite_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+            <p id="team-add-description" class="workplace-team__hint">Wybierz istniejące konto Ancore. Osoba od razu uzyska dostęp do Workspace. Gość ma dostęp tylko do odczytu.</p>
+            {% if add_form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{% for error in add_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
             <div class="workplace-invite__fields">
-            {% for field in invite_form %}
-            <div class="tasks-form-field"{% if field.name == 'email' %} data-team-invite-picker data-candidates-url="{% url 'workplaces:invitation-candidates' team_workplace.pk %}"{% endif %}>
+            {% for field in add_form %}
+            <div class="tasks-form-field"{% if field.name == 'user_id' %} data-team-invite-picker data-existing-accounts data-selected-label="Dodajesz" data-candidates-url="{% url 'workplaces:member-candidates' team_workplace.pk %}"{% endif %}>
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
-                {% if field.name == 'email' %}
+                {% if field.name == 'user_id' %}
+                <input class="form-input" data-team-invite-search aria-label="Istniejące konto Ancore" placeholder="Wpisz imię, nazwisko, ID Ancore lub e-mail" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="team-invite-results" aria-describedby="team-invite-search-status" hidden>
                 <p id="team-invite-search-status" class="workplace-invite__status" role="status" aria-live="polite">Wpisz co najmniej 2 znaki, aby wyszukać osobę.</p>
-                <div id="team-invite-results" class="workplace-invite__results" role="listbox" aria-label="Osoby, które możesz zaprosić" hidden></div>
+                <div id="team-invite-results" class="workplace-invite__results" role="listbox" aria-label="Istniejące konta, które możesz dodać" hidden></div>
                 <div class="workplace-invite__selected" data-team-invite-selected hidden></div>
                 {% endif %}
                 {% if field.errors %}<div class="tasks-modal__errors" role="alert">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
@@ -20,7 +21,7 @@
             {% endfor %}
             </div>
         </div>
-        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zaproś do Workspace</button></footer>
+        <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Dodaj do Workspace</button></footer>
     </form></div>
 </div>
 {% endif %}
@@ -29,7 +30,7 @@
     <div class="tasks-modal__dialog"><form method="post" class="tasks-modal__form" data-team-role-form>
         {% csrf_token %}<input type="hidden" name="action" value="role">
         <header class="tasks-modal__header"><h2 id="team-role-title">Zmień rolę</h2><button type="button" class="tasks-modal__close" data-close-modal aria-label="Zamknij"></button></header>
-        <div class="tasks-modal__body"><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="team-member-role">Rola</label><select id="team-member-role" name="role" class="form-select"><option value="member" data-ancore-option-icon="user-round">Członek</option><option value="admin" data-ancore-option-icon="shield-check">Administrator</option></select></div></div>
+        <div class="tasks-modal__body"><p class="workplace-team__hint" data-team-role-person></p><div class="tasks-form-field"><label for="team-member-role">Rola</label><select id="team-member-role" name="role" class="form-select"><option value="member" data-ancore-option-icon="user-round">Członek</option><option value="admin" data-ancore-option-icon="shield-check">Administrator</option><option value="guest" data-ancore-option-icon="eye">Gość — tylko odczyt</option></select></div></div>
         <footer class="tasks-modal__footer"><button type="button" class="btn btn-secondary" data-close-modal>Anuluj</button><button type="submit" class="tasks-modal__submit">Zapisz rolę</button></footer>
     </form></div>
 </div>

@@ -8,7 +8,6 @@
     let refreshTimer = null;
     let revision = null;
     let previousUnread = null;
-    let previousPending = null;
     let inertElements = [];
     const isOpen = () => panel.classList.contains('is-open');
     const icons = scope => window.AncoreIcons?.render(scope);
@@ -19,35 +18,24 @@
 
     function updateSummary(payload) {
         const unread = Number(payload.unread_count);
-        const pending = Number(payload.pending_invitation_count);
-        if (!Number.isInteger(unread) || !Number.isInteger(pending)) return;
-        const label = `Nieprzeczytane: ${unread}. Oczekujące zaproszenia: ${pending}.`;
+        if (!Number.isInteger(unread)) return;
+        const label = `Nieprzeczytane: ${unread}.`;
         const indicator = document.querySelector('[data-notifications-pending]');
-        if (indicator) indicator.hidden = unread === 0 || pending > 0;
-        const invitationBadge = document.querySelector('[data-notifications-invitation-badge]');
-        if (invitationBadge) {
-            invitationBadge.textContent = pending > 9 ? '9+' : String(pending);
-            invitationBadge.hidden = pending === 0;
-        }
-        document.querySelectorAll('[data-notifications-invitation-count]').forEach(node => {
-            node.textContent = String(pending);
-            node.hidden = pending === 0;
-            node.closest('[data-notification-filter]').title = `Oczekujące zaproszenia ze wszystkich Workspace: ${pending}`;
-        });
-        document.querySelector('[data-notifications-invitation-status]').textContent = label;
+        if (indicator) indicator.hidden = unread === 0;
+        const summaryStatus = document.querySelector('[data-notifications-unread-status]');
+        if (summaryStatus) summaryStatus.textContent = label;
         toggle.title = `Powiadomienia · ${label}`;
         document.querySelectorAll('[data-notifications-unread-count]').forEach(node => {
             node.textContent = String(unread);
         });
         const nextRevision = JSON.stringify(payload.revision);
-        if (revision !== null && (revision !== nextRevision || previousUnread !== unread || previousPending !== pending)) {
+        if (revision !== null && (revision !== nextRevision || previousUnread !== unread)) {
             controllers.forEach((controller, root) => {
                 if (!root.hidden && root.getAttribute('aria-hidden') !== 'true' && controller.loaded) root.querySelector('[data-notification-new-items]').hidden = false;
             });
         }
         revision = nextRevision;
         previousUnread = unread;
-        previousPending = pending;
     }
 
     async function refreshSummary() {
@@ -238,7 +226,7 @@
                 message: (action === 'delete_all'
                     ? `Usuniesz powiadomienia z wybranego widoku (${deletable}), również ze starszych stron. `
                     : 'Usuniesz to powiadomienie ze swojej listy. ')
-                    + 'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian. Oczekujące zaproszenia pozostaną w powiadomieniach do czasu podjęcia decyzji lub wygaśnięcia.',
+                    + 'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian.',
                 confirmText: action === 'delete_all' ? 'Usuń wszystkie' : 'Usuń',
                 onConfirm: () => mutate(action, key, null, actionSnapshot),
             });

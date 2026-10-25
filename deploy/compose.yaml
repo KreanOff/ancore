@@ -50,13 +50,6 @@ services:
       DB_HOST: postgres
       DB_PORT: '5432'
       DB_NAME: ancore
-      EMAIL_HOST: ${EMAIL_HOST:-}
-      EMAIL_PORT: ${EMAIL_PORT:-587}
-      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
-      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
-      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
-      EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Ancore <noreply@localhost>}
       DB_USER: ancore
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Wygeneruj hasło bazy}
       MEDIA_ROOT: /data/media

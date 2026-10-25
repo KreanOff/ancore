@@ -34,6 +34,25 @@ według tego samego wzorca co Pulpity: dotychczasowi odbiorcy są obserwatorami
 z nieznaną datą, a nowe udostępnienia zapisują datę. Cofnięcie usuwa dodatkowe
 kolumny, zachowując relacje. Po backupie zastosuj `manage.py migrate`.
 
+## Usunięcie zaproszeń e-mail (25.10.2026)
+
+`dashboard.0007_remove_workspace_invitations` usuwa osobiste stany dawnych
+zaproszeń i relację `NotificationState.invitation`. Komentarze, przypomnienia
+i ich stany pozostają zachowane. `workplaces.0005_remove_email_invitations`
+usuwa `WorkplaceInvitation` i pole domeny linków. Linki mające wcześniej
+ograniczenie domeny zostają unieważnione, aby usunięcie warunku nie poszerzyło
+ich zamierzonego dostępu; zwykłe linki i rejestr użyć pozostają zachowane.
+Konta, aktywne członkostwa, role, zadania, dokumenty i identyfikatory Workspace
+nie zmieniają się. Stare zaproszenia nie są przekształcane w członkostwa.
+Cofnięcie migracji odtwarza schemat, ale nie przywraca usuniętych zaproszeń
+ani stanów; odzyskanie tych danych wymaga backupu sprzed zmiany.
+
+Migracje są przyrostowe dla bieżącego schematu. Przed zastosowaniem wykonaj
+backup i sprawdź `manage.py migrate --plan`, następnie `manage.py migrate`.
+Test `workplaces.test_email_retirement_migration` sprawdza upgrade istniejących
+danych oraz zachowanie dostępu i zawartości. Testy nie stosują migracji do
+lokalnej bazy użytkownika.
+
 ## Zakres
 
 Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele
@@ -49,7 +68,7 @@ obsługę katalogu tagów i współdzielone szablony. Tagi nadal należą do Prz
 Tablice Kanban i Scrum w Przestrzeniach działają na `SpaceTask`/`WorkItem`.
 
 `NotificationState` wskazuje dokładnie jedno źródło: komentarz Przestrzeni,
-przypomnienie Przestrzeni albo zaproszenie Workspace. Dostęp i edycja
+przypomnienie Przestrzeni. Dostęp i edycja
 korzystają bezpośrednio z `spaces.access`. Zmiana Workspace nie wykonuje
 backfillu dawnych danych.
 

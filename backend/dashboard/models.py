@@ -198,7 +198,6 @@ class NotificationState(models.Model):
     space_activity = models.ForeignKey('spaces.SpaceTaskActivity', null=True, blank=True, on_delete=models.CASCADE)
     space_reminder = models.ForeignKey('spaces.SpaceTaskReminder', null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    invitation = models.ForeignKey('workplaces.WorkplaceInvitation', null=True, blank=True, on_delete=models.CASCADE)
     is_read = models.BooleanField(default=True)
     is_archived = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
@@ -206,11 +205,9 @@ class NotificationState(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(condition=(
-                models.Q(space_activity__isnull=False, space_reminder__isnull=True, invitation__isnull=True)
-                | models.Q(space_activity__isnull=True, space_reminder__isnull=False, invitation__isnull=True)
-                | models.Q(space_activity__isnull=True, space_reminder__isnull=True, invitation__isnull=False)
+                models.Q(space_activity__isnull=False, space_reminder__isnull=True)
+                | models.Q(space_activity__isnull=True, space_reminder__isnull=False)
             ), name='notification_exactly_one_source'),
-            models.UniqueConstraint(fields=['user', 'invitation'], name='notification_user_invite_unique'),
             models.UniqueConstraint(fields=['user', 'space_activity'], name='notification_user_space_activity_unique'),
             models.UniqueConstraint(fields=['user', 'space_reminder'], name='notification_user_space_reminder_unique'),
         ]

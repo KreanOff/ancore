@@ -49,21 +49,14 @@ def directory_page(request, context):
             'can_manage': manager, 'is_owner': owner, 'avatar': workplace_avatar(selected),
             'form': schema(context['avatar_edit_form']) if manager else None,
             'update_url': path('update', selected.pk) if manager else '',
-            'invite_url': path('team', selected.pk) + '?view=invitations' if manager else '',
-            'candidates_url': path('invitation-candidates', selected.pk) if manager else '',
-            'invite_form': schema(context['invite_form']) if manager else None,
+            'add_url': path('team', selected.pk) if manager else '',
+            'candidates_url': path('member-candidates', selected.pk) if manager else '',
+            'add_form': schema(context['add_form']) if manager else None,
             'members': [{**person(member.user), 'id': str(member.pk), 'role': member.role,
                          'role_label': member.get_role_display(), 'self': member.user_id == request.user.pk,
                          'date': date(timezone.localtime(member.created_at), 'd.m.Y'),
                          'change_url': path('member-update', selected.pk, member.pk) if member.can_change else '',
                          'can_role': owner and member.can_change} for member in context['members']],
-            'invitations': [{**(person(invitation.recipient) if invitation.recipient else {'name': invitation.email, 'email': invitation.email, 'avatar': {}}), 'id': str(invitation.pk), 'role': invitation.role,
-                             'share_url': request.build_absolute_uri(path('join-email', invitation.token)),
-                             'resend_url': path('invitation-resend', selected.pk, invitation.pk) if owner or invitation.role != 'admin' else '',
-                             'email_sent': bool(invitation.email_sent_at),
-                             'role_label': invitation.get_role_display(), 'date': date(timezone.localtime(invitation.expires_at), 'd.m.Y'),
-                             'cancel_url': path('invitation-cancel', selected.pk, invitation.pk) if owner or invitation.role in {'member', 'guest'} else ''}
-                            for invitation in context['team_invitations']],
         }
         if manager:
             from .invitations import InviteLinkForm
@@ -71,23 +64,11 @@ def directory_page(request, context):
             team['link_create_url'] = path('invite-link-create', selected.pk)
             team['invite_links'] = [{
                 'id': str(link.pk), 'url': request.build_absolute_uri(path('join-link', link.token)),
-                'role': link.get_role_display(), 'domain': link.email_domain,
+                'role': link.get_role_display(),
                 'uses': link.uses, 'limit': link.max_uses,
                 'date': date(timezone.localtime(link.expires_at), 'd.m.Y H:i'),
                 'revoke_url': path('invite-link-revoke', selected.pk, link.pk),
             } for link in selected.invite_links.filter(revoked_at__isnull=True, expires_at__gt=timezone.now()).order_by('-pk')]
-    invitation = context.get('response_invitation') if context['invitation_modal_open'] else None
-    incoming = None
-    if invitation:
-        def invitation_url(item):
-            return (path('workplaces') + f'?view=workspaces&invitation={item.pk}'
-                    + (f'&workspace={selected.pk}' if selected else '')) if item else ''
-        incoming = {'name': invitation.workplace.name,
-                    'invited_by': invitation.invited_by.get_full_name() or invitation.invited_by.username if invitation.invited_by else 'System',
-                    'role': invitation.get_role_display(), 'date': date(timezone.localtime(invitation.expires_at), 'd.m.Y'),
-                    'action': path('invitation-response', invitation.pk), 'position': context['invitation_position'],
-                    'count': len(context['pending_invitations']), 'previous': invitation_url(context['previous_invitation']),
-                    'next': invitation_url(context['next_invitation'])}
     return {'type': 'workspace-directory', 'title': 'Workspace', 'data': {
         'base_url': path('workplaces'),
         'rows': [{'id': str(item.pk), 'name': item.name, 'code': item.code, 'description': item.description,
@@ -98,6 +79,5 @@ def directory_page(request, context):
                   'switch_url': path('switch', item.pk)} for item in context['workplaces']],
         'create_form': schema(context['form']), 'create_open': context['workplace_create_modal_open'],
         'edit_open': context['workplace_edit_modal_open'], 'tab': context['workplace_edit_tab'], 'team': team,
-        'invite_open': bool(context['invite_form'].errors) if context.get('invite_form') else False,
-        'incoming': incoming,
+        'add_open': bool(context['add_form'].errors) if context.get('add_form') else False,
     }}

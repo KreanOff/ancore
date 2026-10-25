@@ -21,7 +21,6 @@ def global_panels_bootstrap(context):
         'user_id': str(request.user.pk), 'api_url': api_url(request),
         'search_url': reverse('global_search'), 'notifications_url': reverse('notifications'),
         'action_url': reverse('notification_action'),
-        'pending_invitation_count': context.get('pending_notification_invitation_count', 0),
         'shell': shell_payload(request, context.flatten()), 'messages': messages_payload(request),
     }
 

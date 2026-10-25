@@ -9,7 +9,7 @@ from django.utils import timezone
 from dashboard.models import NotificationState
 from spaces.models import SpaceTask, SpaceTaskActivity
 from spaces.testing import make_space
-from workplaces.models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
+from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
 
@@ -30,7 +30,6 @@ class GlobalPanelsApiTests(TestCase):
         cls.hidden = SpaceTask.objects.create(space=cls.private, created_by=cls.owner, title='Tajne zadanie', assignee=cls.member)
         cls.comment = SpaceTaskActivity.objects.create(task=cls.task, actor=cls.owner, kind='comment', action='commented', message='Komentarz <script>tekst</script>')
         cls.secret = SpaceTaskActivity.objects.create(task=cls.hidden, actor=cls.owner, kind='comment', message='Tajny komentarz')
-        cls.invitation = WorkplaceInvitation.objects.create(workplace=cls.foreign, recipient=cls.member, invited_by=cls.outsider)
 
     def setUp(self):
         self.client.force_login(self.member)
@@ -106,11 +105,13 @@ class GlobalPanelsApiTests(TestCase):
         self.assertNotIn('html', typed)
         self.assertEqual(typed['total'], legacy['total'])
         self.assertEqual(typed['unread_count'], legacy['unread_count'])
-        self.assertEqual(typed['items'][0]['key'], f'workplace:{self.invitation.pk}')
+        self.assertEqual(typed['items'][0]['key'], f'spaces:{self.comment.pk}')
+        self.assertNotIn('pending_invitation_count', typed)
         for item in typed['items']:
             self.assertIn('created_at', item)
             self.assertIn('actor_avatar', item)
             self.assertIn('details', item)
+            self.assertNotIn('is_invitation', item)
             self.assertIn(f'data-notification-key="{item["key"]}"', legacy['html'])
         self.assertTrue(typed['snapshot'])
         self.assertNotIn(f'spaces:{self.secret.pk}', [item['key'] for item in typed['items']])
@@ -126,9 +127,10 @@ class GlobalPanelsApiTests(TestCase):
         self.assertNotIn(f'spaces:{self.comment.pk}', [item['key'] for item in response.json()['items']])
 
     def test_all_filters_validate_and_mentions_use_actual_metadata(self):
-        for view in ('all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived'):
+        for view in ('all', 'unread', 'reminders', 'mentions', 'following', 'archived'):
             self.assertEqual(self.api(params={'view': view}).status_code, 200)
         self.assertEqual(self.api(params={'view': 'bad'}).status_code, 400)
+        self.assertEqual(self.api(params={'view': 'invitations'}).status_code, 400)
         self.comment.metadata = {'mentions': [{'user_id': self.member.pk}]}; self.comment.save()
         self.assertEqual(self.api(params={'view': 'mentions'}).json()['items'][0]['key'], f'spaces:{self.comment.pk}')
         self.assertEqual(self.api(params={'view': 'following'}).json()['total'], 0)
@@ -139,7 +141,7 @@ class GlobalPanelsApiTests(TestCase):
         first = self.api().json()
         second = self.api(params={'cursor': first['next_cursor']}).json()
         self.assertEqual(len(first['items']), 12)
-        self.assertEqual(first['total'], 16)
+        self.assertEqual(first['total'], 15)
         self.assertFalse(set(i['key'] for i in first['items']) & set(i['key'] for i in second['items']))
         self.assertEqual(self.api(params={'cursor': first['next_cursor'], 'view': 'unread'}).status_code, 400)
         self.client.force_login(self.owner)
@@ -161,15 +163,11 @@ class GlobalPanelsApiTests(TestCase):
         for key in (f'spaces:{self.secret.pk}', f'spaces:{self.task.activities.filter(kind="system").first().pk}'):
             self.assertEqual(self.action('read', key=key).status_code, 404)
 
-    def test_invitation_cannot_be_archived_or_deleted(self):
-        key = f'workplace:{self.invitation.pk}'
-        self.assertEqual(self.action('archive', key=key).status_code, 400)
-        self.assertEqual(self.action('delete', key=key).status_code, 400)
-        payload = self.api(params={'view': 'invitations'}).json()
-        self.assertEqual(payload['pending_invitation_count'], 1)
-        self.assertEqual(payload['deletable_count'], 0)
-        self.assertEqual(payload['items'][0]['key'], key)
-        self.assertTrue(WorkplaceInvitation.objects.filter(pk=self.invitation.pk, status='pending').exists())
+    def test_retired_invitation_keys_cannot_be_mutated(self):
+        for action in ('read', 'unread', 'archive', 'restore', 'delete'):
+            self.assertEqual(self.action(action, key='workplace:1').status_code, 404)
+        self.assertFalse(NotificationState.objects.exists())
+        self.assertEqual(self.api().json()['total'], 1)
 
     def test_bulk_read_snapshot_excludes_newer_items(self):
         snapshot = self.api(params={'view': 'unread'}).json()['snapshot']
@@ -180,11 +178,17 @@ class GlobalPanelsApiTests(TestCase):
 
     def test_bulk_delete_uses_filtered_snapshot_and_rejects_tampering(self):
         self.assertEqual(self.action('delete_all', snapshot='bad').status_code, 400)
-        snapshot = self.api(params={'view': 'invitations'}).json()['snapshot']
+        self.task.assignee = self.member
+        self.task.reminder_at = timezone.now() - timedelta(minutes=1)
+        self.task.save(update_fields=['assignee', 'reminder_at'])
+        reminders = self.api(params={'view': 'reminders'}).json()
+        self.assertEqual(reminders['total'], 1)
+        snapshot = reminders['snapshot']
         self.assertEqual(self.action('delete_all', snapshot=snapshot).status_code, 200)
-        self.assertEqual(self.api().json()['total'], 2)
+        self.assertEqual(self.api().json()['total'], 1)
         self.assertTrue(SpaceTaskActivity.objects.filter(pk=self.comment.pk).exists())
-        self.assertTrue(WorkplaceInvitation.objects.filter(pk=self.invitation.pk).exists())
+        self.assertFalse(NotificationState.objects.filter(user=self.member, space_activity=self.comment).exists())
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_reminder__task=self.task).is_deleted)
 
     def test_reminder_uses_current_domain_and_summary_is_json(self):
         self.task.assignee = self.member
@@ -196,4 +200,5 @@ class GlobalPanelsApiTests(TestCase):
         summary = self.api(params={'summary': '1'})
         self.assertEqual(summary.status_code, 200)
         self.assertNotIn('html', summary.json())
+        self.assertNotIn('pending_invitation_count', summary.json())
         self.assertEqual(summary['Cache-Control'], 'no-store')

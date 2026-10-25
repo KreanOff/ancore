@@ -11,7 +11,9 @@ class PulpitRoleMigrationTests(TransactionTestCase):
         leaves = executor.loader.graph.leaf_nodes()
         try:
             executor.migrate(before)
-            apps = executor.loader.project_state(before).apps
+            # Other apps retain newer columns; historical fixtures must match the full applied schema.
+            loader = MigrationExecutor(connection).loader
+            apps = loader.project_state(list(loader.applied_migrations)).apps
             User = apps.get_model('accounts', 'User')
             Workplace = apps.get_model('workplaces', 'Workplace')
             Dashboard = apps.get_model('dashboard', 'Dashboard')
@@ -28,7 +30,8 @@ class PulpitRoleMigrationTests(TransactionTestCase):
                 table_oid = cursor.fetchone()[0]
             executor = MigrationExecutor(connection)
             executor.migrate(after)
-            apps = executor.loader.project_state(after).apps
+            loader = MigrationExecutor(connection).loader
+            apps = loader.project_state(list(loader.applied_migrations)).apps
             Membership = apps.get_model('dashboard', 'DashboardMembership')
             self.assertEqual(list(Membership.objects.values('id', 'dashboard_id', 'user_id')), old_rows)
             row = Membership.objects.get()
@@ -43,7 +46,8 @@ class PulpitRoleMigrationTests(TransactionTestCase):
                                   .shared_with.order_by('pk').values_list('pk', flat=True)), [reader.pk, another.pk])
             executor = MigrationExecutor(connection)
             executor.migrate(before)
-            apps = executor.loader.project_state(before).apps
+            loader = MigrationExecutor(connection).loader
+            apps = loader.project_state(list(loader.applied_migrations)).apps
             self.assertEqual(list(apps.get_model('dashboard', 'Dashboard').shared_with.through.objects
                                   .order_by('id').values('id', 'dashboard_id', 'user_id')), old_rows)
             with connection.cursor() as cursor:

@@ -3,7 +3,6 @@
     <div class="notifications-tabs" role="group" aria-label="Filtr powiadomień">
         <button type="button" data-notification-filter="all" aria-pressed="{% if not notification_filters.view or notification_filters.view == 'all' %}true{% else %}false{% endif %}">Wszystkie</button>
         <button type="button" data-notification-filter="unread" aria-pressed="{% if notification_filters.view == 'unread' %}true{% else %}false{% endif %}">Nieprzeczytane <span data-notifications-unread-count>{{ unread_count|default:0 }}</span></button>
-        <button type="button" data-notification-filter="invitations" aria-pressed="{% if notification_filters.view == 'invitations' %}true{% else %}false{% endif %}" title="Oczekujące zaproszenia ze wszystkich Workspace: {{ pending_invitation_count|default:0 }}">Zaproszenia <span data-notifications-invitation-count{% if not pending_invitation_count %} hidden{% endif %}>{{ pending_invitation_count|default:0 }}</span></button>
         <button type="button" data-notification-filter="reminders" aria-pressed="{% if notification_filters.view == 'reminders' %}true{% else %}false{% endif %}">Przypomnienia</button>
         <button type="button" data-notification-filter="mentions" aria-pressed="{% if notification_filters.view == 'mentions' %}true{% else %}false{% endif %}">Wzmianki</button>
         <button type="button" data-notification-filter="following" aria-pressed="{% if notification_filters.view == 'following' %}true{% else %}false{% endif %}">Obserwowane</button>

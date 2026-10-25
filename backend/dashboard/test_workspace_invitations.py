@@ -1,166 +1,126 @@
-from datetime import timedelta
+"""Retired email invitations cannot reappear as inbox sources or access grants."""
+from uuid import uuid4
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
+from django.core import signing
+from django.core.exceptions import FieldDoesNotExist
+from django.db import connection
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
-from dashboard.views import DASHBOARD_NOTIFICATION_LIMIT, _dashboard_notifications
+from dashboard.models import NotificationState
+from dashboard.notification_service import SIGNING_SALT
 from spaces.models import SpaceTaskActivity
 from spaces.testing import make_task
-from workplaces.models import WorkplaceInvitation, create_workplace_for_user
-from workplaces.services import workplaces_for_user
+from workplaces.models import WorkplaceInviteLink, create_workplace_for_user
+from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 
 
-class WorkspaceInvitationNotificationTests(TestCase):
+class RetiredWorkspaceInvitationTests(TestCase):
     def setUp(self):
         users = get_user_model().objects
-        self.owner = users.create_user(username='inviter', email='inviter@example.test')
-        self.recipient = users.create_user(username='recipient', email='recipient@example.test')
-        self.other = users.create_user(username='other', email='other@example.test')
-        self.workspace = create_workplace_for_user(self.owner, 'Zapraszający zespół')
+        self.owner = users.create_user(username='retired-inviter', email='retired-inviter@example.test')
+        self.recipient = users.create_user(username='retired-recipient', email='retired-recipient@example.test')
+        self.workspace = create_workplace_for_user(self.owner, 'Niedostępny Workspace')
         self.personal = create_workplace_for_user(self.recipient, 'Osobisty Workspace')
-        self.invitation = WorkplaceInvitation.objects.create(
-            workplace=self.workspace, recipient=self.recipient, invited_by=self.owner, role='admin',
-        )
+        self.task = make_task(user=self.recipient, workplace=self.personal, title='Bieżące zadanie')
+        self.comment = SpaceTaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', message='Bieżący komentarz')
         self.client.force_login(self.recipient)
         session = self.client.session
         session['active_workplace_id'] = self.personal.pk
         session.save()
 
-    def panel(self):
-        return self.client.get(reverse('notifications'), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    def panel(self, **params):
+        return self.client.get(reverse('notifications'), params, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
     def summary(self):
         return self.client.get(reverse('notifications'), {'summary': '1'})
 
-    def test_invitation_is_visible_before_membership_and_links_to_decision(self):
-        response = self.panel()
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload['pending_invitation_count'], 1)
-        self.assertEqual(payload['count'], 1)
-        for text in ('inviter', 'zaprasza Cię do Workspace', self.workspace.name, 'Administrator',
-                     'Przyjmij lub odrzuć zaproszenie', f'?invitation={self.invitation.pk}'):
-            self.assertIn(text, payload['html'])
-        self.assertEqual(response['Cache-Control'], 'no-store')
+    def test_email_model_table_and_receipt_relation_are_removed(self):
+        with self.assertRaises(LookupError):
+            apps.get_model('workplaces', 'WorkplaceInvitation')
+        with self.assertRaises(FieldDoesNotExist):
+            NotificationState._meta.get_field('invitation')
+        self.assertNotIn('workplaces_workplaceinvitation', connection.introspection.table_names())
+        with connection.cursor() as cursor:
+            columns = connection.introspection.get_table_description(cursor, NotificationState._meta.db_table)
+        self.assertNotIn('invitation_id', [column.name for column in columns])
+
+    def test_retired_route_names_and_urls_do_not_grant_access(self):
+        retired = [('join-email', [uuid4()]), ('invitation-response', [1]),
+                   ('invitation-resend', [self.workspace.pk, 1]), ('invitation-cancel', [self.workspace.pk, 1]),
+                   ('invitation-candidates', [self.workspace.pk])]
+        for name, args in retired:
+            with self.subTest(name=name), self.assertRaises(NoReverseMatch):
+                reverse('workplaces:' + name, args=args)
+        urls = [f'/workplaces/invite/{uuid4()}/', '/workplaces/invitations/1/respond/',
+                f'/workplaces/{self.workspace.pk}/invitations/1/resend/',
+                f'/workplaces/{self.workspace.pk}/invitations/1/cancel/']
+        for url in urls:
+            for method in ('get', 'post'):
+                with self.subTest(url=url, method=method):
+                    self.assertEqual(getattr(self.client, method)(url, {'action': 'accept'}).status_code, 404)
         self.assertNotIn(self.workspace, workplaces_for_user(self.recipient))
-        response = self.client.get(reverse('workplaces:team', args=[self.personal.pk]), follow=True)
-        self.assertEqual(response.context['pending_workspace_invitation_count'], 1)
-        self.assertContains(response, 'data-notifications-invitation-badge aria-hidden="true">1</span>')
-        self.assertContains(response, 'data-notifications-invitation-count>1</span>')
-        response = self.client.get(reverse('workplaces:workplaces'))
-        self.assertNotContains(response, 'aria-label="Otrzymane zaproszenia: 1"')
-        self.assertNotContains(response, '?view=received')
-        self.assertNotContains(response, 'workplace-invitations__row')
-        self.assertFalse(response.context['invitation_modal_open'])
-        response = self.client.get(reverse('workplaces:workplaces'), {'invitation': self.invitation.pk})
-        self.assertTrue(response.context['invitation_modal_open'])
-        self.assertEqual(response.context['response_invitation'], self.invitation)
-        self.assertContains(response, 'data-team-response-form')
-        self.assertNotIn(self.workspace, workplaces_for_user(self.recipient))
+        self.assertFalse(NotificationState.objects.exists())
 
-    def test_invitations_are_recipient_only_in_panel_and_summary(self):
-        for user in (self.owner, self.other):
-            with self.subTest(user=user.username):
-                self.client.force_login(user)
-                self.assertEqual(self.panel().json()['pending_invitation_count'], 0)
-                self.assertNotIn('zaprasza Cię do Workspace', self.panel().json()['html'])
-                self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
+    def test_retired_source_and_filter_are_rejected_without_changing_comments(self):
+        for action in ('read', 'unread', 'archive', 'restore', 'delete'):
+            response = self.client.post(reverse('notification_action'), {'action': action, 'key': 'workplace:1'})
+            self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.panel(view='invitations').status_code, 400)
+        payload = self.panel().json()
+        self.assertEqual((payload['count'], payload['total'], payload['deletable_count']), (1, 1, 1))
+        self.assertIn(f'data-notification-key="spaces:{self.comment.pk}"', payload['html'])
+        self.assertFalse(NotificationState.objects.exists())
 
-    def test_inactive_and_expired_invitations_disappear_from_all_surfaces(self):
-        for status in ('accepted', 'declined', 'revoked'):
-            with self.subTest(status=status):
-                self.invitation.status = status
-                self.invitation.save(update_fields=['status'])
-                self.assertEqual(self.panel().json()['count'], 0)
-                self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
-                response = self.client.get(reverse('workplaces:workplaces'))
-                self.assertNotContains(response, 'data-invitation-response-modal')
-                self.assertContains(response, 'data-notifications-pending aria-hidden="true" hidden')
-                self.assertContains(response, 'data-notifications-invitation-badge aria-hidden="true" hidden>0</span>')
-                self.assertContains(response, 'data-notifications-invitation-count hidden>0</span>')
-        self.invitation.status = 'pending'
-        self.invitation.expires_at = timezone.now() - timedelta(seconds=1)
-        self.invitation.save(update_fields=['status', 'expires_at'])
-        self.assertEqual(self.panel().json()['count'], 0)
-        self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
+    def test_old_invitation_snapshots_and_cursors_are_rejected(self):
+        token = signing.dumps({'user': self.recipient.pk, 'asof': timezone.now().isoformat(),
+                               'filters': {'view': 'invitations', 'workspace': ''}}, salt=SIGNING_SALT, compress=True)
+        self.assertEqual(self.panel(cursor=token).status_code, 400)
+        for action in ('read_all', 'delete_all'):
+            response = self.client.post(reverse('notification_action'), {'action': action, 'snapshot': token})
+            self.assertEqual(response.status_code, 400)
+        self.assertFalse(NotificationState.objects.exists())
+        self.assertEqual(self.panel().json()['total'], 1)
 
-    def test_pending_invitation_stays_ahead_of_newer_task_comments(self):
-        task = make_task(user=self.recipient, workplace=self.personal, title='Aktywne zadanie')
-        for _ in range(DASHBOARD_NOTIFICATION_LIMIT + 1):
-            SpaceTaskActivity.objects.create(task=task, actor=self.recipient, kind='comment', action='commented', message='Nowy komentarz')
-        notifications = _dashboard_notifications(self.recipient)
-        self.assertEqual(len(notifications), DASHBOARD_NOTIFICATION_LIMIT)
-        self.assertEqual(notifications[0]['source'], 'workplace')
-        self.assertEqual(notifications[0]['object_id'], self.invitation.pk)
-        self.assertTrue(any(item['source'] == 'spaces' for item in notifications))
-
-    def test_accepting_clears_indicator_and_grants_access_only_after_post(self):
-        url = reverse('workplaces:invitation-response', args=[self.invitation.pk])
-        self.assertEqual(self.client.get(url).status_code, 405)
-        self.assertNotIn(self.workspace, workplaces_for_user(self.recipient))
-        self.assertEqual(self.client.post(url, {'action': 'accept'}).status_code, 302)
-        self.assertIn(self.workspace, workplaces_for_user(self.recipient))
-        self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
-        self.assertNotIn('zaprasza Cię do Workspace', self.panel().json()['html'])
-        self.assertEqual(self.client.post(url, {'action': 'accept'}).status_code, 404)
-
-    def test_declining_clears_indicator_without_granting_access(self):
-        url = reverse('workplaces:invitation-response', args=[self.invitation.pk])
-        self.assertEqual(self.client.post(url, {'action': 'decline'}).status_code, 302)
-        self.assertEqual(self.summary().json()['pending_invitation_count'], 0)
+    def test_current_invite_links_do_not_create_inbox_sources_or_unrelated_memberships(self):
+        link = WorkplaceInviteLink.objects.create(workplace=self.workspace, created_by=self.owner)
+        before = self.summary().json()
+        directory = self.client.get(reverse('workplaces:workplaces'), {'invitation': '1'})
+        self.assertEqual(directory.status_code, 200)
+        self.assertNotIn('response_invitation', directory.context)
+        self.assertNotContains(directory, 'data-invitation-response-modal')
+        self.assertEqual(self.summary().json(), before)
+        self.assertEqual(self.panel().json()['total'], 1)
+        self.assertTrue(WorkplaceInviteLink.objects.filter(pk=link.pk).exists())
         self.assertNotIn(self.workspace, workplaces_for_user(self.recipient))
 
-    def test_summary_is_private_and_does_not_render_activity(self):
+    def test_payload_summary_and_shell_have_no_email_invitation_indicators(self):
+        payload = self.panel().json()
+        self.assertNotIn('pending_invitation_count', payload)
+        self.assertNotIn('data-notifications-invitation', payload['html'])
+        api = scoped_workplace_app_path(self.personal, 'api', 'v1/page/')
+        typed = self.client.get(api, {'url': reverse('notifications')}).json()
+        self.assertNotIn('pending_invitation_count', typed)
+        self.assertTrue(typed['items'])
+        self.assertTrue(all('is_invitation' not in item for item in typed['items']))
+        page = self.client.get(scoped_workplace_app_path(self.personal, 'spaces'))
+        self.assertEqual(page.status_code, 200)
+        for key in ('pending_workspace_invitation_count', 'pending_notification_invitation_count'):
+            self.assertNotIn(key, page.context)
+        self.assertContains(page, 'data-notifications-unread-status')
+        for marker in ('data-notifications-invitation-badge',
+                       'data-notifications-invitation-count', 'data-invitation-response-modal'):
+            self.assertNotContains(page, marker)
+
+    def test_summary_remains_private_json_and_requires_authentication(self):
         response = self.summary()
-        self.assertEqual(response.json()['pending_invitation_count'], 1)
         self.assertEqual(response.json()['unread_count'], 1)
+        self.assertNotIn('pending_invitation_count', response.json())
         self.assertNotIn('html', response.json())
         self.assertEqual(response['Cache-Control'], 'no-store')
         self.client.logout()
         self.assertEqual(self.summary().status_code, 302)
         self.assertEqual(self.panel().status_code, 302)
-
-    def test_invitation_dialog_rejects_foreign_invalid_and_expired_links(self):
-        url = reverse('workplaces:workplaces')
-        self.client.force_login(self.other)
-        response = self.client.get(url, {'invitation': self.invitation.pk})
-        self.assertRedirects(response, url)
-        self.client.force_login(self.recipient)
-        for value in ('invalid', '99999999999999999999999999999999', ''):
-            self.assertRedirects(self.client.get(url, {'invitation': value}), url)
-        self.invitation.expires_at = timezone.now() - timedelta(seconds=1)
-        self.invitation.save(update_fields=['expires_at'])
-        response = self.client.get(url, {'invitation': self.invitation.pk}, follow=True)
-        self.assertContains(response, 'To zaproszenie nie jest już dostępne.')
-        self.assertNotContains(response, 'data-invitation-response-modal')
-
-    def test_dialog_navigation_contains_only_recipients_pending_invitations(self):
-        second = create_workplace_for_user(self.owner, 'Drugi zapraszający zespół')
-        invitation = WorkplaceInvitation.objects.create(workplace=second, recipient=self.recipient, invited_by=self.owner)
-        foreign = create_workplace_for_user(self.owner, 'Niewidoczny zespół')
-        WorkplaceInvitation.objects.create(workplace=foreign, recipient=self.other, invited_by=self.owner)
-        url = reverse('workplaces:workplaces')
-        response = self.client.get(url, {'invitation': invitation.pk})
-        self.assertEqual(response.context['invitation_position'], 1)
-        self.assertIsNone(response.context['previous_invitation'])
-        self.assertEqual(response.context['next_invitation'], self.invitation)
-        self.assertNotContains(response, foreign.name)
-        response = self.client.get(url, {'invitation': self.invitation.pk})
-        self.assertEqual(response.context['invitation_position'], 2)
-        self.assertEqual(response.context['previous_invitation'], invitation)
-        self.assertIsNone(response.context['next_invitation'])
-
-    def test_count_includes_invitations_beyond_panel_limit_and_deleted_actor_is_safe(self):
-        self.invitation.invited_by = None
-        self.invitation.save(update_fields=['invited_by'])
-        self.assertIn('System', self.panel().json()['html'])
-        for index in range(DASHBOARD_NOTIFICATION_LIMIT):
-            workplace = create_workplace_for_user(self.owner, f'Zespół {index}')
-            WorkplaceInvitation.objects.create(workplace=workplace, recipient=self.recipient, invited_by=self.owner)
-        self.assertEqual(self.summary().json()['pending_invitation_count'], DASHBOARD_NOTIFICATION_LIMIT + 1)
-        self.assertEqual(self.panel().json()['count'], DASHBOARD_NOTIFICATION_LIMIT)
-        response = self.client.get(reverse('home'))
-        self.assertContains(response, 'data-notifications-invitation-badge aria-hidden="true">9+</span>')
-        self.assertContains(response, f'data-notifications-invitation-count>{DASHBOARD_NOTIFICATION_LIMIT + 1}</span>')

@@ -8,9 +8,9 @@ from django.utils import timezone
 
 from dashboard.models import NotificationState
 from dashboard.notification_service import DASHBOARD_NOTIFICATION_LIMIT, notification_page
-from spaces.models import SpaceTaskActivity
+from spaces.models import SpaceTaskActivity, SpaceTaskReminder
 from spaces.testing import make_task
-from workplaces.models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
+from workplaces.models import WorkplaceMembership, create_workplace_for_user
 
 
 class NotificationCenterTests(TestCase):
@@ -38,6 +38,13 @@ class NotificationCenterTests(TestCase):
     def summary(self):
         return self.client.get(reverse('notifications'), {'summary': '1'}).json()
 
+    def reminder(self, task=None, pk=None):
+        task = task or self.task
+        task.assignee = self.member
+        task.reminder_at = timezone.now() - timedelta(minutes=1)
+        task.save(update_fields=['assignee', 'reminder_at'])
+        return SpaceTaskReminder.objects.create(task=task, recipient=self.member, scheduled_at=task.reminder_at, **({'pk': pk} if pk else {}))
+
     def test_history_is_excluded_from_every_view_and_summary(self):
         before = self.summary()
         keys = []
@@ -45,7 +52,7 @@ class NotificationCenterTests(TestCase):
         keys.append(f'spaces:{history.pk}')
         NotificationState.objects.create(user=self.member, space_activity=history, is_read=False)
         for workspace in ['', str(self.workspace.pk)]:
-            for view in ['all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived']:
+            for view in ['all', 'unread', 'reminders', 'mentions', 'following', 'archived']:
                 with self.subTest(workspace=workspace, view=view):
                     payload = self.feed(view=view, workspace=workspace).json()
                     self.assertEqual(payload['total'], 1 if view in {'all', 'unread'} else 0)
@@ -83,7 +90,7 @@ class NotificationCenterTests(TestCase):
             self.assertEqual(payload['total'], 0)
             self.assertEqual(payload['unread_count'], 0)
             self.assertIn('Brak nowych powiadomień.', payload['html'])
-            self.assertIn('Zaproszenia, komentarze, wzmianki i przypomnienia', payload['html'])
+            self.assertIn('Komentarze, wzmianki i przypomnienia', payload['html'])
 
     def test_opening_is_read_only_and_own_actions_do_not_count_as_unread(self):
         self.assertEqual(self.summary()['unread_count'], 1)
@@ -140,23 +147,10 @@ class NotificationCenterTests(TestCase):
         for workspace in (self.other_workspace.pk, 'bad', '9' * 100):
             self.assertEqual(self.feed(workspace=workspace).status_code, 404)
         self.assertEqual(self.feed(view='invalid').status_code, 400)
+        self.assertEqual(self.feed(view='invitations').status_code, 400)
 
-    def test_invitation_read_is_separate_from_decision_and_cannot_be_archived(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        key = f'workplace:{invitation.pk}'
-        self.assertEqual(self.feed(view='invitations').json()['count'], 1)
-        self.assertEqual(self.act('read', key).status_code, 200)
-        self.assertEqual(self.summary()['pending_invitation_count'], 1)
-        self.assertEqual(self.act('archive', key).status_code, 400)
-        self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.other_workspace, user=self.member).exists())
-        invitation.expires_at = timezone.now() - timedelta(seconds=1)
-        invitation.save(update_fields=['expires_at'])
-        self.assertEqual(self.act('read', key).status_code, 404)
-        self.assertEqual(self.feed(view='invitations').json()['count'], 0)
-
-    def test_foreign_invitation_and_invalid_keys_rejected(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.workspace, invited_by=self.owner, recipient=self.outsider)
-        for key in (f'workplace:{invitation.pk}', 'tasks:0', 'tasks:abc', 'tasks:' + '9' * 100, 'users:1'):
+    def test_retired_sources_and_invalid_keys_rejected(self):
+        for key in ('workplace:1', 'tasks:0', 'tasks:abc', 'tasks:' + '9' * 100, 'users:1'):
             self.assertEqual(self.act('read', key).status_code, 404)
         self.assertEqual(self.act('invalid-action').status_code, 400)
 
@@ -176,53 +170,10 @@ class NotificationCenterTests(TestCase):
         self.assertIn(f'data-notification-key="spaces:{self.activity.pk}"', self.feed().json()['html'])
         self.assertFalse(NotificationState.objects.filter(user=self.owner).exists())
 
-    def test_pending_invitation_cannot_be_deleted_and_remains_reachable(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        self.assertEqual(self.act('delete', f'workplace:{invitation.pk}').status_code, 400)
-        payload = self.feed(view='invitations').json()
-        self.assertEqual(payload['total'], 1)
-        self.assertEqual(payload['deletable_count'], 0)
-        self.assertNotIn('data-notification-action="delete"', payload['html'])
-        self.assertEqual(self.summary()['pending_invitation_count'], 1)
-        page = self.client.get(reverse('home'))
-        self.assertEqual(page.context['pending_workspace_invitation_count'], 1)
-        self.assertEqual(page.context['pending_notification_invitation_count'], 1)
-        invitation.refresh_from_db()
-        self.assertEqual(invitation.status, 'pending')
-        self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.other_workspace, user=self.member).exists())
-        response = self.client.get(reverse('workplaces:workplaces'), {'invitation': invitation.pk})
-        self.assertEqual(response.context['response_invitation'], invitation)
-
-    def test_previously_deleted_invitation_reappears_until_decision_or_expiry(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        state = NotificationState.objects.create(user=self.member, invitation=invitation, is_read=True, is_deleted=True)
-        payload = self.feed(view='invitations').json()
-        self.assertIn(f'?invitation={invitation.pk}', payload['html'])
-        self.assertEqual(self.summary()['pending_invitation_count'], 1)
-        self.assertEqual(self.act('unread', f'workplace:{invitation.pk}').status_code, 200)
-        self.assertEqual(self.summary()['unread_count'], 2)
-        invitation.status = 'declined'
-        invitation.save(update_fields=['status'])
-        self.assertEqual(self.feed(view='invitations').json()['total'], 0)
-        self.assertEqual(self.summary()['pending_invitation_count'], 0)
-        state.refresh_from_db()
-        self.assertFalse(state.is_read)
-
-    def test_bulk_delete_preserves_invitation_and_counts_only_deletable_items(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        payload = self.feed().json()
-        self.assertEqual((payload['total'], payload['deletable_count']), (2, 1))
-        self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 200)
-        self.assertEqual(self.feed().json()['total'], 1)
-        self.assertEqual(self.summary()['pending_invitation_count'], 1)
-        self.assertFalse(NotificationState.objects.filter(user=self.member, invitation=invitation).exists())
-        self.assertTrue(NotificationState.objects.get(user=self.member, space_activity=self.activity).is_deleted)
-
     def test_delete_rechecks_access_and_rejects_foreign_keys(self):
         foreign = make_task(user=self.owner, workplace=self.other_workspace, title='Prywatne')
         foreign_comment = foreign.activities.create(actor=self.owner, kind='comment', action='commented')
-        invitation = WorkplaceInvitation.objects.create(workplace=self.workspace, invited_by=self.owner, recipient=self.outsider)
-        for key in (f'spaces:{foreign_comment.pk}', f'workplace:{invitation.pk}', 'tasks:bad', 'tasks:' + '9' * 100):
+        for key in (f'spaces:{foreign_comment.pk}', 'workplace:1', 'tasks:bad', 'tasks:' + '9' * 100):
             self.assertEqual(self.act('delete', key).status_code, 404)
         snapshot = self.feed(workspace=self.workspace.pk).json()['snapshot']
         self.membership.is_active = False
@@ -230,6 +181,18 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.act('delete').status_code, 404)
         self.assertEqual(self.act('delete_all', snapshot=snapshot).status_code, 404)
         self.assertFalse(NotificationState.objects.filter(user=self.member).exists())
+
+    def test_bulk_delete_includes_comments_and_reminders_and_preserves_sources(self):
+        reminder = self.reminder()
+        payload = self.feed().json()
+        self.assertEqual((payload['total'], payload['deletable_count']), (2, 2))
+        self.assertEqual(self.act('delete_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertEqual(self.feed().json()['total'], 0)
+        self.assertEqual(self.summary()['unread_count'], 0)
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_activity=self.activity).is_deleted)
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_reminder=reminder).is_deleted)
+        self.assertTrue(SpaceTaskActivity.objects.filter(pk=self.activity.pk).exists())
+        self.assertTrue(SpaceTaskReminder.objects.filter(pk=reminder.pk).exists())
 
     def test_bulk_delete_covers_all_pages_but_preserves_archived_and_new_items(self):
         self.act('archive')
@@ -264,15 +227,6 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
         self.assertNotIn('Wdrożenie', self.feed().json()['html'])
 
-    def test_bulk_read_includes_invitation_without_accepting_it(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        payload = self.feed().json()
-        self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
-        self.assertEqual(self.summary()['unread_count'], 0)
-        self.assertEqual(self.summary()['pending_invitation_count'], 1)
-        invitation.refresh_from_db()
-        self.assertEqual(invitation.status, 'pending')
-
     def test_bulk_read_uses_snapshot_and_filters_and_preserves_new_arrivals(self):
         payload = self.feed(workspace=self.workspace.pk).json()
         new = SpaceTaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', action='commented', message='Nowa wiadomość')
@@ -284,6 +238,15 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.act('read_all', snapshot='invalid').status_code, 400)
         self.client.force_login(self.outsider)
         self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 400)
+
+    def test_bulk_read_includes_comments_and_reminders(self):
+        reminder = self.reminder()
+        payload = self.feed().json()
+        self.assertEqual(payload['total'], 2)
+        self.assertEqual(self.act('read_all', snapshot=payload['snapshot']).status_code, 200)
+        self.assertEqual(self.summary()['unread_count'], 0)
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_activity=self.activity).is_read)
+        self.assertTrue(NotificationState.objects.get(user=self.member, space_reminder=reminder).is_read)
 
     def test_bulk_read_handles_more_than_one_page(self):
         SpaceTaskActivity.objects.bulk_create([SpaceTaskActivity(task=self.task, actor=self.owner, kind='comment', action='commented', message=f'Komentarz {i}') for i in range(30)])
@@ -323,16 +286,34 @@ class NotificationCenterTests(TestCase):
         self.assertEqual(self.feed(cursor='bad').status_code, 400)
         self.assertEqual(self.feed(cursor=first['next_cursor'], view='unread').status_code, 400)
 
-    def test_invitations_paginate_before_activity(self):
-        for i in range(14):
-            workspace = create_workplace_for_user(self.owner, f'Zapraszający {i}')
-            WorkplaceInvitation.objects.create(workplace=workspace, invited_by=self.owner, recipient=self.member)
-        filters = {'view': 'all', 'workspace': ''}
-        first = notification_page(self.member, filters)
-        self.assertTrue(all(item['source'] == 'workplace' for item in first['dashboard_notifications']))
-        second = notification_page(self.member, filters, first['next_cursor'])
-        self.assertEqual([item['source'] for item in second['dashboard_notifications'][:2]], ['workplace', 'workplace'])
-        self.assertEqual(len(second['dashboard_notifications']), 3)
+    def test_cursor_keeps_global_order_across_reminders_and_comments_with_equal_ids_and_dates(self):
+        # Both source tables can contain the same PK; the source is the final tie breaker.
+        comments = [self.activity]
+        comments += SpaceTaskActivity.objects.bulk_create([
+            SpaceTaskActivity(task=self.task, actor=self.owner, kind='comment', message=f'Komentarz {index}')
+            for index in range(15)
+        ])
+        reminders = []
+        for index, comment in enumerate(comments):
+            task = make_task(user=self.owner, workplace=self.workspace, space=self.task.space, title=f'Przypomnienie {index}')
+            reminders.append(self.reminder(task, pk=comment.pk))
+        moment = timezone.now() - timedelta(days=1)
+        SpaceTaskActivity.objects.filter(pk__in=[item.pk for item in comments]).update(created_at=moment)
+        SpaceTaskReminder.objects.filter(pk__in=[item.pk for item in reminders]).update(created_at=moment)
+        expected = [key for pk in sorted((item.pk for item in comments), reverse=True)
+                    for key in (f'space-reminders:{pk}', f'spaces:{pk}')]
+        filters = {'view': 'all', 'workspace': str(self.workspace.pk)}
+        page = notification_page(self.member, filters)
+        newer = SpaceTaskActivity.objects.create(task=self.task, actor=self.owner, kind='comment', message='Po otwarciu')
+        seen = []
+        while True:
+            self.assertEqual(page['dashboard_notification_count'], len(expected))
+            seen.extend(item['key'] for item in page['dashboard_notifications'])
+            if not page['next_cursor']:
+                break
+            page = notification_page(self.member, filters, page['next_cursor'])
+        self.assertEqual(seen, expected)
+        self.assertNotIn(f'spaces:{newer.pk}', seen)
 
     def test_deleted_source_cleans_receipt(self):
         self.act('read')
@@ -340,13 +321,16 @@ class NotificationCenterTests(TestCase):
         self.assertFalse(NotificationState.objects.exists())
 
     def test_receipt_constraints_require_one_unique_source(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.other_workspace, invited_by=self.owner, recipient=self.member)
-        for values in ({}, {'space_activity': self.activity, 'invitation': invitation}):
+        reminder = self.reminder()
+        for values in ({}, {'space_activity': self.activity, 'space_reminder': reminder}):
             with self.assertRaises(IntegrityError), transaction.atomic():
                 NotificationState.objects.create(user=self.member, **values)
         self.act('read')
         with self.assertRaises(IntegrityError), transaction.atomic():
             NotificationState.objects.create(user=self.member, space_activity=self.activity)
+        NotificationState.objects.create(user=self.member, space_reminder=reminder)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            NotificationState.objects.create(user=self.member, space_reminder=reminder)
 
     def test_html_escapes_content_and_links_include_stable_pk_and_workspace(self):
         self.activity.message = '<script>alert("x")</script>'

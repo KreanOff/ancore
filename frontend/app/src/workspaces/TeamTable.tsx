@@ -6,13 +6,11 @@ import { EmptyState } from '../shared/EmptyState';
 import type { Person } from './types';
 export default function TeamTable({
   rows,
-  invitations = false,
   busy,
   onRole,
   onAction,
 }: {
   rows: Person[];
-  invitations?: boolean;
   busy: boolean;
   onRole: (person: Person) => void;
   onAction: (person: Person) => void;
@@ -32,31 +30,18 @@ export default function TeamTable({
       return next;
     });
   }
-  if (!rows.length)
-    return invitations ? (
-      <EmptyState
-        illustration="people"
-        title="Brak oczekujących zaproszeń."
-        description="Nowe osoby możesz dodać przyciskiem „Zaproś osobę”."
-      />
-    ) : (
-      <EmptyState illustration="people" title="Brak członków." />
-    );
+  if (!rows.length) return <EmptyState illustration="people" title="Brak członków." />;
   return (
     <div
       className={
         'tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet ' +
-        (invitations ? 'workplace-invitations-sheet' : 'workplace-members-sheet')
+        'workplace-members-sheet'
       }
       tabIndex={0}
       role="region"
-      aria-label={invitations ? 'Wysłane zaproszenia — tabela' : 'Członkowie — tabela'}
+      aria-label="Członkowie — tabela"
     >
-      <section
-        className="tasks-directory-group"
-        role="table"
-        aria-label={invitations ? 'Oczekujące zaproszenia' : 'Członkowie zespołu'}
-      >
+      <section className="tasks-directory-group" role="table" aria-label="Członkowie zespołu">
         <div
           className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
           role="row"
@@ -73,11 +58,7 @@ export default function TeamTable({
               ref={all}
               type="checkbox"
               className="tasks-row-checkbox"
-              aria-label={
-                invitations
-                  ? 'Zaznacz wszystkie wysłane zaproszenia'
-                  : 'Zaznacz wszystkich członków'
-              }
+              aria-label="Zaznacz wszystkich członków"
               checked={count === rows.length}
               onChange={(e) => setSelected(e.target.checked ? new Set(ids) : new Set())}
             />
@@ -92,11 +73,7 @@ export default function TeamTable({
             ['person', 'Nazwa', 'users'],
             ['email', 'E-mail', 'mail'],
             ['role', 'Rola', 'user-round'],
-            [
-              invitations ? 'expires' : 'joined',
-              invitations ? 'Ważne do' : 'Dołączono',
-              invitations ? 'calendar-clock' : 'calendar-days',
-            ],
+            ['joined', 'Dołączono', 'calendar-days'],
           ].map(([key, label, icon]) => (
             <span
               key={key}
@@ -130,11 +107,7 @@ export default function TeamTable({
                 <input
                   type="checkbox"
                   className="tasks-row-checkbox"
-                  aria-label={
-                    invitations
-                      ? 'Zaznacz zaproszenie dla ' + person.email
-                      : 'Zaznacz członka ' + person.name
-                  }
+                  aria-label={'Zaznacz członka ' + person.name}
                   checked={selected.has(person.id)}
                   onChange={() => toggle(person.id)}
                 />
@@ -144,13 +117,13 @@ export default function TeamTable({
                 data-column="action"
                 role="cell"
               >
-                {person.change_url || person.cancel_url ? (
+                {person.change_url ? (
                   <Dropdown
                     searchable={false}
                     className="documents-item-actions"
                     triggerClassName="tasks-project-sheet__edit-button"
                     menuClass="tasks-section-menu documents-item-menu"
-                    label={'Działania: ' + (invitations ? person.email : person.name)}
+                    label={'Działania: ' + person.name}
                     trigger={<Icon name="menu" />}
                   >
                     {(close) => (
@@ -180,8 +153,8 @@ export default function TeamTable({
                             onAction(person);
                           }}
                         >
-                          <Icon name={invitations ? 'x' : 'log-out'} />
-                          {invitations ? 'Anuluj zaproszenie' : 'Odbierz dostęp'}
+                          <Icon name="log-out" />
+                          Odbierz dostęp
                         </button>
                       </div>
                     )}
@@ -216,7 +189,7 @@ export default function TeamTable({
               </span>
               <span
                 className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                data-column={invitations ? 'expires' : 'joined'}
+                data-column="joined"
                 role="cell"
               >
                 {person.date}

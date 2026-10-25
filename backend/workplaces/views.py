@@ -17,7 +17,7 @@ from core.api import api_error
 from .forms import WorkplaceForm
 from .models import SidebarFavorite, create_workplace_for_user
 from .navigation import SIDEBAR_FAVORITE_KEYS, sidebar_favorites_for_request
-from .services import can_manage_team, enable_workspace_url_scope, pending_invitations_for_user, scoped_workplace_app_path, set_active_workplace, workplaces_for_user, workplace_management_url
+from .services import can_manage_team, enable_workspace_url_scope, scoped_workplace_app_path, set_active_workplace, workplaces_for_user, workplace_management_url
 from .team_views import team_context
 
 
@@ -53,16 +53,7 @@ def workplaces(request):
     return render_workplaces(request, form=form, workplace_create_modal_open=workplace_create_modal_open)
 
 
-def render_workplaces(request, *, form=None, workplace_create_modal_open=False, team_workplace=None, invite_form=None, edit_form=None):
-    pending_invitations = list(pending_invitations_for_user(request.user).select_related('workplace', 'invited_by'))
-    selected_invitation_id = request.GET.get('invitation') if request.method == 'GET' else None
-    invitation_index = next((index for index, invitation in enumerate(pending_invitations)
-                             if str(invitation.pk) == selected_invitation_id), None)
-    if selected_invitation_id is not None and invitation_index is None:
-        messages.info(request, 'To zaproszenie nie jest już dostępne.')
-        return redirect('workplaces:workplaces')
-    invitation_index = invitation_index if invitation_index is not None else 0
-
+def render_workplaces(request, *, form=None, workplace_create_modal_open=False, team_workplace=None, add_form=None, edit_form=None):
     active_workplace = getattr(request, 'workplace', None)
     user_workplaces = workplaces_for_user(request.user)
     if active_workplace is not None:
@@ -93,43 +84,35 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
     else:
         team_workplace = next((workplace for workplace in user_workplaces if active_workplace and workplace.pk == active_workplace.pk), None)
         team_workplace = team_workplace or next(iter(user_workplaces), None)
-    selected_team_context = team_context(request, team_workplace, invite_form) if team_workplace else {}
-    default_view = 'workspaces' if selected_invitation_id else ('members' if selected_id is not None else 'workspaces')
+    selected_team_context = team_context(request, team_workplace, add_form) if team_workplace else {}
+    default_view = 'members' if selected_id is not None else 'workspaces'
     management_view = request.GET.get('view', default_view)
-    if management_view == 'received':
-        management_view = 'workspaces'
-    if management_view not in {'workspaces', 'members', 'invitations'}:
+    if management_view not in {'workspaces', 'members', 'links'}:
         management_view = default_view
     if workplace_create_modal_open:
         management_view = 'workspaces'
-    if invite_form is not None:
-        management_view = 'invitations'
+    if add_form is not None:
+        management_view = 'members'
     if edit_form is not None:
-        management_view = 'invitations' if request.POST.get('view') == 'invitations' else 'workspaces'
-    if management_view == 'invitations' and not selected_team_context.get('can_manage_team'):
+        management_view = 'links' if request.POST.get('view') == 'links' else 'workspaces'
+    if management_view == 'links' and not selected_team_context.get('can_manage_team'):
         management_view = 'workspaces'
-    workplace_edit_modal_open = management_view in {'members', 'invitations'} or edit_form is not None
+    workplace_edit_modal_open = management_view in {'members', 'links'} or edit_form is not None
     workplace_edit_tab = (
         'main' if not workplace_edit_modal_open or request.GET.get('tab') == 'main' or edit_form is not None
         else management_view
     )
-    if management_view in {'members', 'invitations'}:
+    if management_view in {'members', 'links'}:
         management_view = 'workspaces'
     avatar_edit_form = edit_form
     if avatar_edit_form is None and team_workplace is not None:
         avatar_edit_form = WorkplaceForm(
             instance=team_workplace, user=team_workplace.owner, auto_id='workplace-edit-%s',
         )
-    invalid = any(bound is not None and bound.is_bound and bound.errors for bound in (form, invite_form, edit_form))
+    invalid = any(bound is not None and bound.is_bound and bound.errors for bound in (form, add_form, edit_form))
     return render(request, 'workplaces/workplaces.html', {
         'sidebar_mode': 'workplaces',
         'workplaces_management_mode': True,
-        'pending_invitations': pending_invitations,
-        'response_invitation': pending_invitations[invitation_index] if pending_invitations else None,
-        'invitation_modal_open': selected_invitation_id is not None,
-        'invitation_position': invitation_index + 1,
-        'previous_invitation': pending_invitations[invitation_index - 1] if invitation_index > 0 else None,
-        'next_invitation': pending_invitations[invitation_index + 1] if invitation_index + 1 < len(pending_invitations) else None,
         'workplaces': user_workplaces,
         'form': form if form is not None else WorkplaceForm(user=request.user),
         'active_workplace': active_workplace,
@@ -140,7 +123,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         'avatar_edit_form': avatar_edit_form,
         **selected_team_context,
         'management_view': management_view,
-        'show_invitations': workplace_edit_tab == 'invitations',
+        'show_links': workplace_edit_tab == 'links',
     }, status=400 if invalid and getattr(request, '_react_api', False) else 200)
 
 

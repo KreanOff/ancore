@@ -52,10 +52,10 @@ SCREENS = {
     'documents/office/suite.html': ('documents.frontend', 'suite_page'),
 }
 VIEWS = {
-    'workplaces.invitations': {'create_link', 'revoke_link', 'resend_email'},
+    'workplaces.invitations': {'create_link', 'revoke_link'},
     'accounts.views': {'profile'},
     'workplaces.views': {'workplaces', 'update_workplace', 'delete_workplace', 'switch_workplace', 'set_default_workplace', 'toggle_sidebar_favorite', 'reorder_sidebar_favorites'},
-    'workplaces.team_views': {'team', 'invitation_candidates', 'member_update', 'invitation_cancel', 'invitation_response'},
+    'workplaces.team_views': {'team', 'member_candidates', 'member_update'},
     'planner.views': {'index', 'events_list', 'create_event', 'update_event', 'delete_event'},
     'dashboard.views': {'for_you', 'settings', 'home', 'global_search', 'notifications', 'notification_action'},
     'dashboard.filter_views': {'index', 'manage', 'search', 'lookup', 'edit', 'save_query', 'favorite', 'delete'},

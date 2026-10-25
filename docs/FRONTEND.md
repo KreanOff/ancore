@@ -24,8 +24,8 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
   podglądy, przenoszenie, gwiazdki, kosz, szablony, edytor tekstowy Ancore
   i powłoka pełnych edytorów z edycją nazwy oraz stanem zapisu.
 - **Zarządzanie Workspace:** katalog, tworzenie, ustawienia, awatary/kadrowanie,
-  członkowie i role, wysyłanie/anulowanie zaproszeń, przeglądanie otrzymanych
-  zaproszeń oraz przyjęcie/odrzucenie i jawne przełączanie kontekstu.
+  członkowie i role, ręczne dodawanie istniejących kont, linki do dołączenia
+  z potwierdzeniem oraz jawne przełączanie kontekstu.
 - **Konta:** logowanie, rejestracja, dodawanie konta, profil i edycja danych,
   30 awatarów użytkownika oraz zdjęcie z kadrowaniem, status obecności,
   przełączanie i usuwanie kont z sesji.
@@ -401,18 +401,23 @@ Workspace. Wyszukiwanie, strony i zaznaczenia katalogu pozostają lokalne,
 jak w dotychczasowym ekranie. Wybrany Workspace do zarządzania jest niezależny
 od aktywnego kontekstu danych. API wskazuje jawne adresy z identyfikatorem
 Workspace, a oryginalne widoki sprawdzają dostęp i role przy każdym zapisie.
-Tylko jawne przełączenie lub przyjęcie zaproszenia zmienia aktywny Workspace.
+Jawne przełączenie lub potwierdzenie linku zmienia aktywny Workspace; ręczne
+dodanie osoby nie zmienia kontekstu zarządzającego.
 Zarządzanie innym dostępnym Workspace może korzystać z API aktywnego kontekstu;
 nie udostępnia obcych Workspace ani nie rozszerza ACL Przestrzeni.
 
 Dane obejmują ograniczone schematy formularzy, awatary i dozwolone akcje.
-Członek otrzymuje ustawienia tylko do odczytu i skład zespołu, bez wysłanych
-zaproszeń, schematu zapraszania i zapisu ustawień. Administrator nie może
-zarządzać administratorem/właścicielem ani zapraszać nowych administratorów.
-Podpowiedzi osób przez API zawierają nazwę, e-mail i dane awatara; nie zawierają
-HTML. Dotychczasowa końcówka podpowiedzi zachowuje HTML dla starszych odbiorców.
-Błędny formularz daje HTTP 400 z zachowanym oknem i polami. Nie ma nowego
-mechanizmu zaproszeń ani dodatkowej wysyłki e-mail.
+Członek otrzymuje ustawienia tylko do odczytu i skład zespołu, bez formularza
+dodawania i tokenów linków. Administrator dodaje wyłącznie członków i gości;
+nie zarządza właścicielem ani administratorami, także nieaktywnymi.
+`add_form`, `add_url` i `add_open` opisują ręczne dodawanie przez POST `user_id`
+i `role`; wybrane `user_id` jest identyfikatorem konta z pickera. Bez JS można
+wpisać dokładne ID Ancore. Serwer odrzuca niejednoznaczne lub nieaktywne konta.
+Podpowiedzi wymagają co najmniej 2 znaków i mają limit 10; zawierają `id`, nazwę,
+e-mail i awatar, bez HTML w API Reacta. Formularz nie serializuje całego katalogu
+kont. Błędny zapis daje HTTP 400 z zachowanym oknem i polami.
+Zakładka `links` korzysta z `link_form`, `link_create_url` i `invite_links`;
+nie zawiera domeny e-mail. Nie ma `incoming`, wysyłania ani odbioru zaproszeń e-mail.
 
 Awatar jest odizolowaną wyspą DOM używającą istniejących `AncorePhotoEditors`
 i `AncoreWorkplaceAvatars`. Zachowuje 30 ilustracji, wybór automatyczny,
@@ -482,7 +487,7 @@ Panele `src/shell/` korzystają z tego samego, uwierzytelnionego API ekranów.
 Jawna lista `dashboard.views` obejmuje `global_search`, `notifications` oraz
 `notification_action`. Wywołanie przez scoped API utrzymuje Workspace wyszukiwania,
 nawet gdy inna karta zmieni aktywny kontekst sesji. Dotychczasowe ACL, limity
-wyników, historia ostatnich i semantyka zaproszeń pozostają w usługach Django.
+wyników i historia ostatnich pozostają w usługach Django.
 
 Lista powiadomień dla Reacta zawiera `items`, jawne pola kart, daty, szczegóły,
 aktualnie dostępne Workspace z awatarami, liczniki, podpisany `snapshot`
@@ -490,10 +495,10 @@ i `next_cursor`; serializer `backend/dashboard/notification_frontend.py` nie ren
 fragmentów HTML. Starszy endpoint XHR zachowuje kontrakt HTML dla zgodności.
 Wszystkie filtry, osobisty odczyt, archiwum, usunięcie i operacje zbiorcze używają
 oryginalnego `notification_service`. Każdy odczyt/zapis ponawia kontrolę dostępu.
-Oczekujące zaproszenia nie mają akcji usuwania ani archiwizacji; zbiorcze
-usuwanie je pomija. `deletable_count` podaje liczbę usuwalnych wpisów wszystkich
-stron bieżącego filtra i steruje przyciskiem oraz potwierdzeniem usunięcia.
-Starszy stan `is_deleted` nie ukrywa nadal ważnego zaproszenia.
+Powiadomienia obejmują komentarze i osobiste przypomnienia Przestrzeni.
+Nie ma źródła ani filtra zaproszeń, `is_invitation` ani licznika oczekujących.
+`deletable_count` podaje liczbę usuwalnych wpisów wszystkich stron bieżącego
+filtra i steruje przyciskiem oraz potwierdzeniem usunięcia.
 
 React obsługuje stan paneli, anulowanie pobrań i limit czasu, menu kart,
 potwierdzenia oraz ponowienie błędu. Dzwonek odpytuje serwer co 30 sekund

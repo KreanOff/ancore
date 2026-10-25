@@ -37,7 +37,7 @@ def accounts_api(request):
     if not name:
         try:
             match = resolve(parsed.path)
-            if match.view_name in {'workplaces:join-link', 'workplaces:join-email'}:
+            if match.view_name == 'workplaces:join-link':
                 name = 'join'
         except Http404:
             pass

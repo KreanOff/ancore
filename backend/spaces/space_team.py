@@ -13,14 +13,24 @@ from django.views.decorators.http import require_GET, require_http_methods
 from accounts.avatar import account_avatar
 from workplaces.models import Workplace
 from workplaces.services import workplace_people
-from workplaces.team_views import InvitationForm
+from workplaces.team_views import TeamRoleSelect
 from .models import Space, SpaceMembership
 from .services import manage_space
 
 
-class ShareForm(InvitationForm):
+class ShareForm(forms.Form):
+    email = forms.EmailField(label='Konto Ancore', widget=forms.TextInput(attrs={
+        'class': 'form-input', 'autocomplete': 'off', 'spellcheck': 'false',
+        'placeholder': 'Wpisz imię, nazwisko, ID Ancore lub e-mail',
+        'data-team-invite-search': '', 'role': 'combobox', 'aria-autocomplete': 'list',
+        'aria-expanded': 'false', 'aria-controls': 'team-invite-results',
+        'aria-describedby': 'team-invite-search-status',
+    }))
+    role = forms.ChoiceField(label='Rola', choices=SpaceMembership._meta.get_field('role').choices,
+                             widget=TeamRoleSelect(attrs={'class': 'form-select'}))
+
     def __init__(self, *args, space, actor, **kwargs):
-        forms.Form.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.space = space
         self.fields['role'].choices = list(SpaceMembership._meta.get_field('role').choices)
         self.fields['role'].help_text = 'Obserwator może tylko przeglądać przestrzeń i jej zawartość.'

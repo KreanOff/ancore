@@ -1,4 +1,4 @@
-"""Permission-scoped inbox of comments, invitations and personal reminders."""
+"""Permission-scoped inbox of comments and personal reminders."""
 from datetime import datetime
 from itertools import islice
 
@@ -7,21 +7,19 @@ from django.db import transaction
 from django.db.models import BooleanField, Case, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from django.http import Http404
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
 
 from accounts.avatar import account_avatar
-from workplaces.services import pending_invitations_for_user, scoped_workplace_app_path, workplaces_for_user
+from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from .models import NotificationState
 from .reminders import space_reminders_for_user
 from spaces.models import SpaceTaskActivity
 from spaces.access import visible_to as space_visible_to
 
 DASHBOARD_NOTIFICATION_LIMIT = 12
-INVITATION_SOURCES = {'workplace'}
-SOURCES = {'workplace': 'invitation', 'spaces': 'space_activity', 'space-reminders': 'space_reminder'}
-VIEWS = {'all', 'unread', 'invitations', 'reminders', 'mentions', 'following', 'archived'}
+SOURCES = {'spaces': 'space_activity', 'space-reminders': 'space_reminder'}
+VIEWS = {'all', 'unread', 'reminders', 'mentions', 'following', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'
 
 
@@ -101,7 +99,6 @@ def notification_filters(user, params):
 
 def notification_sources(user, workspace='', *, include_deleted=False):
     sources = {
-        'workplace': pending_invitations_for_user(user),
         'space-reminders': space_reminders_for_user(user),
         'spaces': space_visible_to(SpaceTaskActivity.objects.filter(kind='comment'), user),
     }
@@ -109,12 +106,9 @@ def notification_sources(user, workspace='', *, include_deleted=False):
         if source == 'spaces':
             queryset = queryset.annotate(inbox_mentioned=Case(When(Q(metadata__mentions__contains=[{'user_id': user.pk}]) & ~Q(actor_id=user.pk), then=Value(True)), default=Value(False), output_field=BooleanField()), inbox_followed=Value(False, output_field=BooleanField()))
         if workspace:
-            field = 'workplace_id' if source == 'workplace' else 'task__workplace_id'
-            if source in {'spaces', 'space-reminders'}:
-                field = 'task__space__workplace_id'
-            queryset = queryset.filter(**{field: workspace})
+            queryset = queryset.filter(task__space__workplace_id=workspace)
         state = NotificationState.objects.filter(user=user, **{SOURCES[source]: OuterRef('pk')})
-        default_read = Value(False) if source in INVITATION_SOURCES | {'space-reminders'} else Case(
+        default_read = Value(False) if source == 'space-reminders' else Case(
             When(actor_id=user.pk, then=Value(True)), default=Value(False), output_field=BooleanField(),
         )
         sources[source] = queryset.annotate(
@@ -122,8 +116,7 @@ def notification_sources(user, workspace='', *, include_deleted=False):
             inbox_archived=Coalesce(Subquery(state.values('is_archived')[:1]), Value(False)),
             inbox_deleted=Coalesce(Subquery(state.values('is_deleted')[:1]), Value(False)),
         )
-        # Pending invitations remain reachable, including receipts hidden by older clients.
-        if not include_deleted and source not in INVITATION_SOURCES:
+        if not include_deleted:
             sources[source] = sources[source].filter(inbox_deleted=False)
     return sources
 
@@ -137,11 +130,7 @@ def filtered_sources(user, filters, asof=None, sources=None):
             if source != 'spaces':
                 continue
             queryset = queryset.filter(**{'inbox_mentioned' if view == 'mentions' else 'inbox_followed': True})
-        if view == 'invitations' and source not in INVITATION_SOURCES:
-            continue
         if view == 'reminders' and source != 'space-reminders':
-            continue
-        if view == 'archived' and source in INVITATION_SOURCES:
             continue
         queryset = queryset.filter(inbox_archived=(view == 'archived'))
         if view == 'unread':
@@ -154,10 +143,9 @@ def filtered_sources(user, filters, asof=None, sources=None):
 def notification_summary(user):
     sources = notification_sources(user)
     unread = sum(qs.filter(inbox_read=False, inbox_archived=False).count() for qs in sources.values())
-    pending = sum(sources[source].count() for source in INVITATION_SOURCES)
     # A signature lets the UI announce new items even when the unread count stays equal.
     latest = [qs.order_by('-created_at', '-pk').values_list('pk', flat=True).first() for qs in sources.values()]
-    return {'unread_count': unread, 'pending_invitation_count': pending, 'revision': latest}
+    return {'unread_count': unread, 'revision': latest}
 
 
 def _token_data(token, user):
@@ -175,29 +163,11 @@ def _token_data(token, user):
 
 
 def _sort_key(source, row):
-    return (0 if source in INVITATION_SOURCES else 1, -row.created_at.timestamp(), -row.pk, source)
+    return (-row.created_at.timestamp(), -row.pk, source)
 
 
 def _serialize(source, row):
-    if source in INVITATION_SOURCES:
-        workplace = row.workplace
-        name = workplace.name
-        item = {
-            'source': source, 'source_label': 'Workspace', 'is_invitation': True, 'object_id': row.pk,
-            'title': name, 'actor_label': _actor_label(row.invited_by),
-            'actor_avatar': account_avatar(row.invited_by),
-            'action_message': 'zaprasza Cię do Workspace',
-            'detail_lines': [
-                _detail_line('Rola', value=row.get_role_display()),
-                _detail_line('Ważne do', value=date_format(timezone.localtime(row.expires_at), 'd.m.Y')),
-            ],
-            'location_label': name, 'created_at': row.created_at,
-            'url': reverse('workplaces:workplaces') + f'?invitation={row.pk}',
-            'action_label': 'Przyjmij lub odrzuć zaproszenie',
-        }
-        item['group_label'] = 'Wymagają Twojej decyzji'
-        item['event_label'] = 'Zaproszenie'
-    elif source in {'spaces', 'space-reminders'}:
+    if source in {'spaces', 'space-reminders'}:
         from spaces.services import space_url
         task = row.task
         workplace = task.space.workplace
@@ -235,11 +205,10 @@ def notification_page(user, filters, cursor=''):
     for source, queryset in filtered_sources(user, filters, asof, sources=sources):
         count = queryset.count()
         total += count
-        if source not in INVITATION_SOURCES:
-            deletable += count
+        deletable += count
         unread += queryset.filter(inbox_read=False).count()
         if anchor:
-            rank = 0 if source in INVITATION_SOURCES else 1
+            rank = 1
             if rank < anchor[0]:
                 continue
             if rank == anchor[0]:
@@ -248,7 +217,7 @@ def notification_page(user, filters, cursor=''):
                 if source > anchor[3]:
                     older |= Q(created_at=created, pk=anchor[2])
                 queryset = queryset.filter(older)
-        relations = ['workplace', 'invited_by'] if source in INVITATION_SOURCES else [
+        relations = [
             'task__space__workplace', 'task__work_item',
         ] + (['actor'] if source == 'spaces' else [])
         rows = queryset.select_related(*relations).order_by('-created_at', '-pk')[:DASHBOARD_NOTIFICATION_LIMIT + 1]
@@ -259,7 +228,7 @@ def notification_page(user, filters, cursor=''):
     next_cursor = ''
     if len(candidates) > DASHBOARD_NOTIFICATION_LIMIT:
         source, row = visible[-1]
-        data['anchor'] = [0 if source in INVITATION_SOURCES else 1, row.created_at.isoformat(), row.pk, source]
+        data['anchor'] = [1, row.created_at.isoformat(), row.pk, source]
         next_cursor = signing.dumps(data, salt=SIGNING_SALT, compress=True)
     items = [_serialize(source, row) for source, row in visible]
     return {'dashboard_notifications': items, 'dashboard_notification_count': total,
@@ -280,8 +249,6 @@ def change_notification_state(user, params):
         if action == 'delete_all':
             values['is_deleted'] = True
         for source, queryset in filtered_sources(user, data['filters'], data['asof']):
-            if action == 'delete_all' and source in INVITATION_SOURCES:
-                continue
             field = SOURCES[source]
             if action == 'read_all':
                 queryset = queryset.filter(inbox_read=False)
@@ -300,8 +267,6 @@ def change_notification_state(user, params):
     row = notification_sources(user, include_deleted=(action == 'delete'))[source].filter(pk=int(pk)).first()
     if row is None:
         raise Http404
-    if source in INVITATION_SOURCES and action in {'archive', 'restore', 'delete'}:
-        raise ValueError('Oczekujące zaproszenie wymaga przyjęcia lub odrzucenia.')
     values = {'is_read': action == 'read'} if action in {'read', 'unread'} else {'is_archived': action == 'archive'}
     if action == 'archive':
         values['is_read'] = True

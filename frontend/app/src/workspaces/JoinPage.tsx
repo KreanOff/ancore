@@ -55,7 +55,7 @@ export default function JoinPage({ initial, csrfToken }: PageProps) {
                     );
                     if (response.redirect) location.assign(response.redirect);
                     else {
-                      setError(response.data?.error || 'Zaproszenie jest niedostępne.');
+                      setError(response.data?.error || 'Link do dołączenia jest niedostępny.');
                       setPending(false);
                     }
                   } catch (reason) {
@@ -71,7 +71,7 @@ export default function JoinPage({ initial, csrfToken }: PageProps) {
               </form>
             ) : (
               <>
-                <p>Zaloguj się lub utwórz konto, aby przyjąć zaproszenie.</p>
+                <p>Zaloguj się lub utwórz konto, aby dołączyć do Workspace.</p>
                 <p>
                   <a href={data.urls.login}>Zaloguj się</a> ·{' '}
                   <a href={data.urls.register}>Utwórz konto</a>

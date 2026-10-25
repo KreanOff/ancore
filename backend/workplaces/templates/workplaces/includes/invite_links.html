@@ -1,0 +1,20 @@
+<section class="workplace-invite-links" aria-label="Linki do dołączenia">
+    <h3>Linki do dołączenia</h3>
+    {% for link in invite_links %}
+    <div class="workplace-invite-link">
+        <span>{{ link.get_role_display }} · {{ link.uses }}/{{ link.max_uses }} użyć · ważny do {{ link.expires_at|date:'d.m.Y H:i' }}</span>
+        <input class="form-input" aria-label="Link do Workspace {{ team_workplace.name }}" value="{{ request.scheme }}://{{ request.get_host }}{% url 'workplaces:join-link' link.token %}" readonly>
+        <button type="button" class="btn btn-secondary" data-workplace-copy-link>Kopiuj link</button>
+        <form method="post" action="{% url 'workplaces:invite-link-revoke' team_workplace.pk link.pk %}">{% csrf_token %}<button type="submit" class="btn btn-secondary">Unieważnij link</button></form>
+    </div>
+    {% empty %}<p class="workplace-team__hint">Brak aktywnych linków do dołączenia.</p>{% endfor %}
+    <p class="workplace-team__hint" data-workplace-copy-status role="status"></p>
+    <details>
+        <summary>Utwórz link do dołączenia</summary>
+        <form class="workplace-invite-link-form" method="post" action="{% url 'workplaces:invite-link-create' team_workplace.pk %}">
+            {% csrf_token %}
+            {% for field in link_form %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+            <button type="submit" class="btn btn-primary">Utwórz link</button>
+        </form>
+    </details>
+</section>

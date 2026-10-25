@@ -10,15 +10,24 @@ from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_GET, require_http_methods
 from workplaces.models import Workplace
-from workplaces.team_views import InvitationForm
+from workplaces.team_views import TeamRoleSelect
 from .access import editable_to, task_people
 from .models import Space, SpaceTask, SpaceTaskMembership
 from .services import space_url, record
 
 
-class ShareForm(InvitationForm):
+class ShareForm(forms.Form):
+    email = forms.EmailField(label='Konto Ancore', widget=forms.TextInput(attrs={
+        'class': 'form-input', 'autocomplete': 'off', 'spellcheck': 'false',
+        'placeholder': 'Wpisz imię, nazwisko, ID Ancore lub e-mail',
+        'data-team-invite-search': '', 'role': 'combobox', 'aria-autocomplete': 'list',
+        'aria-expanded': 'false',
+    }))
+    role = forms.ChoiceField(label='Rola', choices=SpaceTaskMembership._meta.get_field('role').choices,
+                             widget=TeamRoleSelect(attrs={'class': 'form-select'}))
+
     def __init__(self, *args, task, actor, **kwargs):
-        forms.Form.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.task = task
         self.fields['email'].widget.attrs.update({'id': 'task-team-person-search', 'aria-controls': 'task-team-invite-results', 'aria-describedby': 'task-team-invite-search-status'})
         self.fields['role'].widget.attrs['id'] = 'task-team-invite-role'

@@ -8,11 +8,9 @@ export interface PanelsConfig {
   search_url: string;
   notifications_url: string;
   action_url: string;
-  pending_invitation_count: number;
 }
 export interface Summary {
   unread_count: number;
-  pending_invitation_count: number;
   revision: (number | null)[];
 }
 export interface SearchPayload {
@@ -53,7 +51,6 @@ export interface NotificationItem {
   action_label: string;
   is_read: boolean;
   is_archived: boolean;
-  is_invitation: boolean;
   created_at: string;
   time: string;
   details: { label: string; from_label: string; text: string }[];

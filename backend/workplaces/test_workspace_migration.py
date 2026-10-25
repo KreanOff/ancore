@@ -9,6 +9,7 @@ class WorkspaceSystemMigrationTests(TransactionTestCase):
         executor = MigrationExecutor(connection)
         old_target = [('workplaces', '0001_initial')]
         latest = [('workplaces', '0004_workplaceinvitation_unique_pending_workspace_email')]
+        restore_target = executor.loader.graph.leaf_nodes()
         executor.migrate(old_target)
         try:
             old = executor.loader.project_state(old_target).apps
@@ -30,4 +31,4 @@ class WorkspaceSystemMigrationTests(TransactionTestCase):
             self.assertEqual((restored.pk, restored.code, restored.slug), identity)
             self.assertEqual(restored.disabled_modules, [])
         finally:
-            MigrationExecutor(connection).migrate(latest)
+            MigrationExecutor(connection).migrate(restore_target)

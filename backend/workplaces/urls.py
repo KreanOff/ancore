@@ -7,15 +7,11 @@ app_name = 'workplaces'
 
 urlpatterns = [
     path('join/<uuid:token>/', invitations.join, name='join-link'),
-    path('invite/<uuid:token>/', invitations.join, {'email': True}, name='join-email'),
     path('<int:workplace_id>/invite-links/', invitations.create_link, name='invite-link-create'),
     path('<int:workplace_id>/invite-links/<int:link_id>/revoke/', invitations.revoke_link, name='invite-link-revoke'),
-    path('<int:workplace_id>/invitations/<int:invitation_id>/resend/', invitations.resend_email, name='invitation-resend'),
-    path('<int:workplace_id>/team/candidates/', team_views.invitation_candidates, name='invitation-candidates'),
+    path('<int:workplace_id>/team/candidates/', team_views.member_candidates, name='member-candidates'),
     path('<int:workplace_id>/team/', team_views.team, name='team'),
     path('<int:workplace_id>/team/<int:member_id>/', team_views.member_update, name='member-update'),
-    path('<int:workplace_id>/invitations/<int:invitation_id>/cancel/', team_views.invitation_cancel, name='invitation-cancel'),
-    path('invitations/<int:invitation_id>/respond/', team_views.invitation_response, name='invitation-response'),
     path('', views.workplaces, name='workplaces'),
     path('<int:workplace_id>/switch/', views.switch_workplace, name='switch'),
     path('<int:workplace_id>/default/', views.set_default_workplace, name='set-default'),

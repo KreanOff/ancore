@@ -6,7 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from workplaces.models import create_workplace_for_user
-from workplaces.team_views import InvitationForm
+from workplaces.team_views import AddMemberForm
 from .forms import UserRegistrationForm, UserProfileForm
 from .views import _save_user_form
 
@@ -56,12 +56,12 @@ class EmailIdentityTests(TestCase):
         self.assertIn('email', form.errors)
         self.assertEqual(get_user_model().objects.filter(email__iexact='new@example.test').count(), 1)
 
-    def test_invitation_finds_unique_recipient_regardless_of_email_case(self):
+    def test_manual_membership_uses_account_identity_instead_of_email(self):
         owner = get_user_model().objects.create_user(username='team-owner', email='team@example.test')
         workspace = create_workplace_for_user(owner, 'Email test')
-        form = InvitationForm(data={'email': 'ANNA@example.test', 'role': 'member'}, workplace=workspace, actor=owner)
+        form = AddMemberForm(data={'user_id': str(self.user.pk), 'email': 'ANNA@example.test', 'role': 'member'}, workplace=workspace, actor=owner)
         self.assertTrue(form.is_valid(), form.errors)
-        self.assertEqual(form.recipient, self.user)
+        self.assertEqual(form.cleaned_data['user_id'], self.user)
 
     def test_authentication_and_login_accept_email_case_variants(self):
         password = 'email-authentication-83!'

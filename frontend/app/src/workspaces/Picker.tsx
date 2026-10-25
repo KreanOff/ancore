@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { pageRequest } from '../shared/page';
 interface Candidate {
+  id?: string | number;
   name: string;
   email: string;
   avatar: AvatarData;
@@ -28,6 +29,8 @@ export default function Picker({
   value,
   onChange,
   sharing = false,
+  existingOnly = false,
+  onSelect,
 }: {
   api: string;
   url: string;
@@ -35,6 +38,8 @@ export default function Picker({
   value: string;
   onChange: (value: string) => void;
   sharing?: boolean;
+  existingOnly?: boolean;
+  onSelect?: (person: Candidate) => void;
 }) {
   const [people, setPeople] = useState<Candidate[]>([]),
     [selected, setSelected] = useState<Candidate | null>(null),
@@ -60,8 +65,9 @@ export default function Picker({
     close();
     wanted.current = person.email;
     onChange(person.email);
+    onSelect?.(person);
     setSelected(person);
-    setStatus((sharing ? 'Udostępniasz: ' : 'Zapraszasz: ') + person.name + '.');
+    setStatus((sharing ? 'Udostępniasz: ' : 'Dodajesz: ') + person.name + '.');
     input.current?.focus();
   }
   function search(text: string) {
@@ -100,16 +106,14 @@ export default function Picker({
           !result.results.length
             ? sharing
               ? 'Brak pasujących osób. Wybierz członka Workspace, który nie ma jeszcze dostępu.'
-              : 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
+              : 'Nie znaleziono istniejącego konta, które można dodać. Obecni członkowie nie pojawiają się na liście.'
             : result.has_more
               ? 'Pokazano 10 osób. Doprecyzuj wyszukiwanie lub wybierz osobę.'
               : 'Wybierz osobę z listy.',
         );
       } catch {
         if (!controller.signal.aborted && current === version.current)
-          setStatus(
-            'Nie udało się pobrać podpowiedzi. Wpisz adres e-mail lub zmień tekst, aby spróbować ponownie.',
-          );
+          setStatus('Nie udało się pobrać osób. Zmień tekst wyszukiwania, aby spróbować ponownie.');
       }
     }, 250);
   }
@@ -130,12 +134,14 @@ export default function Picker({
       <input
         ref={input}
         id={id + '-input'}
-        name="email"
+        name={existingOnly ? undefined : 'email'}
         className="form-input"
         autoComplete="off"
         spellCheck={false}
         placeholder="Wpisz imię, nazwisko, ID Ancore lub e-mail"
-        aria-label="Osoba lub adres e-mail konta Ancore"
+        aria-label={
+          existingOnly ? 'Istniejące konto Ancore' : 'Osoba lub adres e-mail konta Ancore'
+        }
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={open}
@@ -186,7 +192,9 @@ export default function Picker({
         id={id + '-results'}
         className="workplace-invite__results"
         role="listbox"
-        aria-label={sharing ? 'Osoby, którym możesz udostępnić' : 'Osoby, które możesz zaprosić'}
+        aria-label={
+          sharing ? 'Osoby, którym możesz udostępnić' : 'Istniejące konta, które możesz dodać'
+        }
         hidden={!open}
       >
         {people.map((person, i) => (

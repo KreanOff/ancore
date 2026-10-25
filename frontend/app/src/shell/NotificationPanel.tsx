@@ -12,7 +12,6 @@ import type { Inbox, NotificationItem, PanelsConfig, Summary } from './types';
 const filters = [
   ['all', 'Wszystkie'],
   ['unread', 'Nieprzeczytane'],
-  ['invitations', 'Zaproszenia'],
   ['reminders', 'Przypomnienia'],
   ['mentions', 'Wzmianki'],
   ['following', 'Obserwowane'],
@@ -21,13 +20,9 @@ const filters = [
 const empty: Record<string, [string, string]> = {
   all: [
     'Brak nowych powiadomień.',
-    'Zaproszenia, komentarze, wzmianki i przypomnienia pojawią się w tym miejscu.',
+    'Komentarze, wzmianki i przypomnienia pojawią się w tym miejscu.',
   ],
   unread: ['Wszystko przeczytane', 'Jesteś na bieżąco. Nowe powiadomienia pojawią się tutaj.'],
-  invitations: [
-    'Brak oczekujących zaproszeń',
-    'Tutaj znajdziesz zaproszenia do Workspace, które czekają na Twoją decyzję.',
-  ],
   reminders: [
     'Brak przypomnień',
     'Ustaw datę przypomnienia w zadaniu. Pojawi się tutaj o wybranej porze — dla wykonawcy, a bez wykonawcy dla właściciela Workspace.',
@@ -195,7 +190,7 @@ export default function NotificationPanel({
         (kind === 'delete_all'
           ? `Usuniesz powiadomienia z wybranego widoku (${payload?.deletable_count || 0}), również ze starszych stron. `
           : 'Usuniesz to powiadomienie ze swojej listy. ') +
-        'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian. Oczekujące zaproszenia pozostaną w powiadomieniach do czasu podjęcia decyzji lub wygaśnięcia.',
+        'Usuniętych powiadomień nie można przywrócić. Historia zadań pozostanie bez zmian.',
       confirmText: kind === 'delete_all' ? 'Usuń wszystkie' : 'Usuń',
       cancelText: 'Anuluj',
       onConfirm: () => void action(kind, key, '', snapshot),
@@ -208,8 +203,8 @@ export default function NotificationPanel({
   }
   const fresh =
     payload &&
-    JSON.stringify([payload.revision, payload.unread_count, payload.pending_invitation_count]) !==
-      JSON.stringify([summary.revision, summary.unread_count, summary.pending_invitation_count]);
+    JSON.stringify([payload.revision, payload.unread_count]) !==
+      JSON.stringify([summary.revision, summary.unread_count]);
   let previousGroup = '';
   return (
     <Modal
@@ -254,19 +249,10 @@ export default function NotificationPanel({
                 key={key}
                 aria-pressed={view === key}
                 disabled={mutating}
-                title={
-                  key === 'invitations'
-                    ? `Oczekujące zaproszenia ze wszystkich Workspace: ${summary.pending_invitation_count}`
-                    : undefined
-                }
                 onClick={() => setPreferences({ view: key, workspace })}
               >
                 {label}
-                {key === 'unread' ? (
-                  <span>{summary.unread_count}</span>
-                ) : key === 'invitations' && summary.pending_invitation_count ? (
-                  <span>{summary.pending_invitation_count}</span>
-                ) : null}
+                {key === 'unread' ? <span>{summary.unread_count}</span> : null}
               </button>
             ))}
           </div>
@@ -362,11 +348,7 @@ export default function NotificationPanel({
                       </div>
                     ) : null}
                     <article
-                      className={
-                        'notification-card' +
-                        (!item.is_read ? ' is-unread' : '') +
-                        (item.is_invitation ? ' notification-card--invitation' : '')
-                      }
+                      className={'notification-card' + (!item.is_read ? ' is-unread' : '')}
                       role="listitem"
                       data-notification-key={item.key}
                     >
@@ -411,9 +393,7 @@ export default function NotificationPanel({
                         <div className="notification-card__footer">
                           <span className="notification-card__location" title={item.location_label}>
                             {item.workplace_label}
-                            {!item.is_invitation
-                              ? ` · ${item.source_label} · #${item.object_id}`
-                              : ''}
+                            {` · ${item.source_label} · #${item.object_id}`}
                           </span>
                           <Dropdown
                             label={'Działania powiadomienia: ' + item.title}
@@ -442,39 +422,32 @@ export default function NotificationPanel({
                                       : 'Oznacz jako przeczytane'}
                                   </span>
                                 </button>
-                                {!item.is_invitation ? (
-                                  <button
-                                    type="button"
-                                    className="tasks-project-menu-button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      close();
-                                      void action(
-                                        item.is_archived ? 'restore' : 'archive',
-                                        item.key,
-                                      );
-                                    }}
-                                  >
-                                    <Icon name={item.is_archived ? 'rotate-ccw' : 'archive'} />
-                                    <span>
-                                      {item.is_archived ? 'Przywróć z archiwum' : 'Archiwizuj'}
-                                    </span>
-                                  </button>
-                                ) : null}
-                                {!item.is_invitation ? (
-                                  <button
-                                    type="button"
-                                    className="tasks-project-menu-button"
-                                    role="menuitem"
-                                    onClick={() => {
-                                      close();
-                                      confirm('delete', item.key);
-                                    }}
-                                  >
-                                    <Icon name="trash-2" />
-                                    <span>Usuń powiadomienie</span>
-                                  </button>
-                                ) : null}
+                                <button
+                                  type="button"
+                                  className="tasks-project-menu-button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    close();
+                                    void action(item.is_archived ? 'restore' : 'archive', item.key);
+                                  }}
+                                >
+                                  <Icon name={item.is_archived ? 'rotate-ccw' : 'archive'} />
+                                  <span>
+                                    {item.is_archived ? 'Przywróć z archiwum' : 'Archiwizuj'}
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="tasks-project-menu-button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    close();
+                                    confirm('delete', item.key);
+                                  }}
+                                >
+                                  <Icon name="trash-2" />
+                                  <span>Usuń powiadomienie</span>
+                                </button>
                               </>
                             )}
                           </Dropdown>

@@ -140,9 +140,9 @@ i strzałki oraz neutralnego hover/fokusu; dłuższa lista ma własne przewijani
 Pusta lista wyświetla „Brak dostępnych Workspace.”. Wybór wysyła standardowy
 POST z CSRF do przełącznika Workspace i otwiera jego „Dla ciebie”. Ten sam
 układ i działanie zachowuje pierwszy render Django bez JavaScriptu.
-Publiczny ekran zaproszenia korzysta z tej samej
-powłoki: logowanie/rejestracja, rola, potwierdzenie dołączenia albo komunikat
-wygasłego lub niedopasowanego zaproszenia. GET nie nadaje dostępu.
+Publiczny ekran linku do dołączenia korzysta z tej samej powłoki: nazwa
+Workspace, rola, logowanie/rejestracja i potwierdzenie przez POST albo komunikat
+niedostępnego linku. Link nie jest przypisany do adresu e-mail. GET nie nadaje dostępu.
 
 Profil używa istniejącego układu szczegółów zadania, listy kont w sesji,
 panelu właściwości i menu „Edytuj”. React renderuje formularz edycji we
@@ -197,7 +197,7 @@ Szablony Django zachowują ten sam kontrakt klas i grafik.
 Wzorzec obejmuje katalogi i zarządzanie Przestrzeniami, Pulpitami i Filtrami,
 pusty pulpit, Zasoby, Tagi przestrzeni, listy i wyszukiwanie zadań, oś czasu,
 Zespoły, Dysk (dyski, foldery, kosz, ulubione), Dokumenty (także szablony),
-katalog Workspace i puste tabele członków/zaproszeń. Puste rekomendowane
+katalog Workspace i pustą tabelę członków. Puste rekomendowane
 przestrzenie oraz główny pusty wynik zakładki „Dla ciebie” korzystają z niego
 z własną ilustracją. Puste stany nie zawierają
 przycisków ani linków akcji, również w rekomendowanych przestrzeniach,
@@ -965,7 +965,8 @@ zaznaczenie, menu, avatar i nazwa, e-mail, rola, data dołączenia. Parametr
 Wyszukiwanie obejmuje aktywnych członków Workspace poza obecnymi uczestnikami.
 Po zapisie osoba od razu trafia do tabeli członków, a projekt jest dla niej
 widoczny przy kolejnym odczycie listy. Nie ma zakładki wysłanych zaproszeń ani
-okna akceptacji projektu/grupy. Zaproszenia do Workspace zachowują własny przepływ.
+okna akceptacji projektu/grupy. Workspace dodaje istniejące konta lub udostępnia
+link do dołączenia, zgodnie z sekcją zarządzania Workspace.
 
 Menu członka pozwala zmienić rolę i odebrać dostęp zgodnie z uprawnieniami.
 Checkboxy zaznaczają wiersze. Publiczny projekt pokazuje zespół Workspace
@@ -2239,8 +2240,7 @@ bez osobnego przewijania listy. Okna mają stałą stopkę „Zamknij” oraz
 dotychczasowe zamykanie krzyżykiem i Escape, fokus i obsługę zapisu.
 
 Małe okna formularzy używają `app-modal-panel app-modal-panel--compact`,
-jak „Utwórz pulpit”, „Zaproś osobę”, „Zmień rolę”, „Zaproszenie do Workspace”
-oraz wybór awatara. Są wyśrodkowane poziomo i przylegają do górnej krawędzi
+jak „Utwórz pulpit”, „Dodaj osobę”, „Zmień rolę” oraz wybór awatara. Są wyśrodkowane poziomo i przylegają do górnej krawędzi
 ekranu, z wysokością dopasowaną do treści oraz szerokością do 760px.
 Wysuwają się od góry i chowają w górę w 320ms, z tą samą krzywą ruchu
 co duże panele. `--app-panel-enter-offset` określa kierunek: `100%` dla
@@ -2251,7 +2251,7 @@ po panelu „Edytuj miejsce pracy”.
 zanim moduł usunie jego HTML. Ponowne otwarcie anuluje poprzednie sprzątanie
 i zachowuje pierwotny punkt powrotu fokusu.
 Ma jasnoszare tło, białą przewijaną treść i akcje po lewej. Etykiety pozostają
-nad kontrolkami; w zaproszeniu osoba i rola są obok siebie. Długi tytuł zawija się.
+nad kontrolkami; w formularzu dodawania osoby konto i rola są obok siebie. Długi tytuł zawija się.
 Na telefonie zachowuje margines od krawędzi, a stopka może zawijać akcje.
 Potwierdzenia `showConfirmModal` i edytory zdjęć konta, firmy oraz logo Workspace
 korzystają z tego samego małego panelu przy górnej krawędzi oraz reguł
@@ -2527,7 +2527,7 @@ domyślnym powrotem jest Dashboard aktywnego Workspace. Menu nie zawiera
 dodatkowych pozycji przestrzeni ani Ustawień Ancore.
 Treść zajmuje całą szerokość obok głównego paska; nie zawiera dodatkowego menu
 ustawień. `render_workplaces` zachowuje ten tryb również dla okien zespołu,
-zaproszeń i błędów formularzy. Istniejący `layout.js` synchronizuje osobne menu
+linków do dołączenia i błędów formularzy. Istniejący `layout.js` synchronizuje osobne menu
 każdego ekranu przy częściowej nawigacji i przejściach Wstecz/Dalej.
 Powrót zachowuje pełny adres poprzedniego widoku, kategorię ustawień,
 filtry i pozycję przewinięcia. Punkt wejścia jest zapisany w historii i
@@ -2585,176 +2585,78 @@ cofnąć szkic obrazu przy anulowaniu okna awatara i wyświetlić błąd odczytu
 Spóźniony odczyt anulowanego obrazu nie otwiera ponownie kadrowania.
 
 
-Oczekujące zaproszenia odbiorcy są widoczne w istniejącym panelu powiadomień,
-przed aktywnością zadań. Karta podaje autora, Workspace, rolę, termin i przycisk
-„Przyjmij lub odrzuć zaproszenie”. Dzwonek pokazuje jasnofioletowy licznik oczekujących
-zaproszeń `notifications-toggle__invitation-count` (do 9, potem „9+”). Pełna liczba
-jest dostępna w opisie i podpowiedzi. Tło licznika używa `--primary-button-bg`,
-tak jak liczniki zakładek powiadomień, a tekst `--text-primary`.
-Gdy nie ma zaproszeń, nieprzeczytane wpisy
-sygnalizuje kropka `notifications-toggle__indicator`. Opis czytnika ekranu
-rozróżnia obie liczby. Znaczniki zaproszeń są renderowane także przed uruchomieniem JS.
-
-Link powiadomienia `?invitation=<pk>` otwiera okno konkretnego zaproszenia nad
-katalogiem Workspace.
-Include `workplaces/includes/invitation_response_modal.html` korzysta z
-`tasks-modal`, standardowej stopki i kompaktowej listy szczegółów
-`workplace-invitation__details`. Akcje „Później”, „Odrzuć” i „Przyjmij” są razem
-w stopce; wspólne przyciski paginacji pozwalają przejść do innych zaproszeń.
-`workplace-team.js` obsługuje ten modal także na stronie Workspace przez
-`data-team-modal-page`, zachowując inert, fokus i inicjalizację po częściowej
-nawigacji. Zamknięcie usuwa parametr zaproszenia z adresu i przywraca fokus
-polu „Szukaj Workspace” w pasku katalogu. Formularz nadal wymaga POST i CSRF.
-
 Ekran `/workplaces/` rozszerza `core/base.html` i pokazuje katalog Workspace.
-Nazwa Workspace może się powtarzać. Kolumna „Kod miejsca pracy” pokazuje stały
-losowy identyfikator `w_` + 26 małych liter/cyfr. Minimalna szerokość kolumny kodu
-wynosi 250px, aby pomieścić cały identyfikator; `title` udostępnia pełną wartość.
-W tworzeniu pole jest tylko do
-odczytu i pokazuje „Generowany automatycznie”; kod jest nadawany przy zapisie.
-W edycji i podglądzie pole pozostaje tylko do odczytu dla każdej roli i pokazuje
-zapisany identyfikator. Pola kodu nie są wysyłane w formularzach, a backend
-ignoruje próby jego nadpisania. Zmiana nazwy nie zmienia kodu ani adresu.
-Powłoka, klasy pól i obsługa modali pozostają wspólne z Projektami.
-Widoczny tytuł „Workspace” na górnym pasku ma rozmiar 17px i grubość 700.
-Nie ma zakładki, tabeli ani licznika otrzymanych zaproszeń; są dostępne
-przez panel powiadomień. Dawny parametr `view=received` pokazuje katalog.
-Pasek nie ma osobnego przycisku „Workspace” ani separatora po nim.
-Pasek ma odstępy, przyciski i menu takie jak Dokumenty.
-Katalog ma dwa wspólne paski, jak Dokumenty i Projekty:
-`tasks-topbar--directory` z tytułem i akcjami oraz `tasks-filterbar--directory`
-(`management_toolbar.html`) z wyszukiwaniem i paginacją katalogu.
-Wysłane zaproszenia i przycisk „Zaproś osobę” są w oknie miejsca pracy.
-W katalogu wyszukiwanie i kompaktowa paginacja znajdują się po prawej stronie
-drugiego paska. Paginacja używa wspólnych klas `tasks-project-pagination--toolbar`,
-zachowując filtrowanie i zmianę strony w przeglądarce; zakres i liczba wyników
-zastępują osobny dolny pasek z numerami stron. Pod paskami zaczyna się tabela.
+Nazwa może się powtarzać. Kolumna „Kod miejsca pracy” pokazuje stały losowy
+identyfikator `w_` + 26 małych liter/cyfr; ma minimum 250px i pełną wartość
+w `title`. Tworzenie pokazuje „Generowany automatycznie”, a edycja zapisany
+kod tylko do odczytu. Zmiana nazwy nie zmienia kodu ani adresu.
+Tytuł „Workspace” ma rozmiar 17px i grubość 700. Dwa wspólne paski
+`tasks-topbar--directory` oraz `tasks-filterbar--directory` zachowują tytuł,
+akcje, wyszukiwanie i kompaktową paginację po prawej. Paginacja używa
+`tasks-project-pagination--toolbar`, a tabela zaczyna się pod paskami.
 
-„Workspace” pokazuje pełną listę, wyszukiwanie, dodawanie, ustawienia i paginację.
-Znacznik „Bieżący” wskazuje aktywną przestrzeń. Nazwa otwiera „Główną” w oknie
-miejsca pracy, a liczba członków — zakładkę „Członkowie”. Kolumna „Działania”
-(40px, pusty wizualnie nagłówek) zastępuje kolumnę koła zębatego. Przycisk
-trzech pasków korzysta ze wspólnego `row-actions.js` i popovera Dokumentów.
-Menu otwiera edycję, członków i wysłane zaproszenia; zwykły członek widzi
-informacje tylko do odczytu oraz członków. Zamknięcie menu przez Escape
-i zamknięcie otwartego z niego okna przywracają fokus przyciskowi menu.
-Kliknięcie pozostałej części wiersza (także kodu, opisu, roli i statusu)
-otwiera tę samą „Główną” przez link nazwy. Enter i Spacja na wierszu działają
-tak samo. Checkbox, przełączanie, menu i link członków zachowują własne
-akcje; zaznaczanie tekstu nie otwiera okna. Obsługa w `workplace-team.js`
-działa także po częściowej nawigacji, bez powielania listenerów.
-Ikony przełączania i menu w tabeli używają podświetlenia
-całej komórki, tak jak ikony projektów: `rgba(var(--system-accent-rgb), 0.24)`
-na delikatnym fioletowym tle wiersza. Hover i fokus klawiatury zachowują
-siatkę tabeli, bez dodatkowego obrysu i cienia. Komórki ikon mają jedną
-kolumnę `minmax(0, 1fr)`, aby przycisk wypełniał ich szerokość. Wyłączone
-przełączanie bieżącego Workspace nie otrzymuje tego podświetlenia.
-`team_panel.html` renderuje tabelę składu lub wysłanych zaproszeń wewnątrz
-osobnych zakładek okna. Workspace wybieramy przez katalog.
+Nazwa Workspace otwiera „Główną” w oknie miejsca pracy, liczba członków —
+„Członkowie”. Komórka „Działania” ma 40px i dostępny, wizualnie pusty nagłówek;
+menu udostępnia ustawienia, członków i uprawnionym osobom linki do dołączenia.
+Znacznik „Bieżący” oraz przycisk przełączenia zachowują oddzielne działanie.
+Kliknięcie reszty wiersza, Enter i Spacja otwierają „Główną”; zaznaczenie tekstu,
+checkboxy, menu i pozostałe linki zachowują własne akcje. Hover i fokus ikon
+wypełniają komórkę istniejącym akcentem bez zmiany siatki tabeli.
 
-Pasek filtrów zachowuje wysokość wiersza z polem wyszukiwania Dokumentów
-(`--dropdown-control-height` plus wspólny padding i ramka) oraz zawijanie
-na telefonie.
-`team_modals.html` dostarcza istniejące okna zaproszenia
-i roli. Przełączenie zakładki lub wybór Workspace nie zmienia aktywnej
-przestrzeni pracy. Ustawienia wracają po zapisie do katalogu.
+Okno `workplace-edit-modal` ma zakładki „Główna” (`main`), „Członkowie” (`members`)
+i — tylko dla zarządzających — „Linki do dołączenia” (`links`). Używa
+`notifications-tabs tasks-issue-tabs`, tekstu 15px/400, fioletowego podkreślenia
+oraz relacji `tablist`/`tab`/`tabpanel`. Strzałki, Home i End przenoszą fokus;
+na telefonie pasek przewija aktywną zakładkę. Zmiana zakładki zachowuje szkic
+ustawień. „Zapisz zmiany” jest na „Głównej”, a „Dodaj osobę” nad członkami.
+Członek i gość mają odczyt „Głównej” oraz członków bez przycisków zarządzania.
+Ustawienia i formularze akcji pozostają oddzielone. Błąd zachowuje formularz;
+zamknięcie okna usuwa żądanie otwarcia z URL i przywraca fokus.
 
-Okno w `edit_modal.html` ma zakładki „Główna”, „Członkowie” i — tylko dla
-zarządzających — „Wysłane zaproszenia”, korzystające
-z `notifications-tabs tasks-issue-tabs`, jak szczegóły zadania: tekst 15px/400
-i fioletowe podkreślenie. Zmiana zakładki zachowuje wpisane ustawienia;
-strzałki, Home i End przełączają treść oraz fokus. Zakładki mają role i relacje
-`tablist`/`tab`/`tabpanel`. Przycisk „Zapisz zmiany” jest widoczny na „Głównej”,
-a „Zaproś osobę” nad tabelami członków i wysłanych zaproszeń. Formularz ustawień jest oddzielony od
-formularzy akcji członków, aby uniknąć zagnieżdżania formularzy.
-Błąd ustawień otwiera „Główną” z wartościami i komunikatami walidacji.
-Dla zwykłego członka pola są tylko do odczytu, bez przycisku zapisu.
+Tabela członków używa `tasks-directory-board tasks-directory-sheet
+tasks-project-sheet workplace-team-sheet` oraz sześciu kolumn: zaznaczenie
+40px, działania 40px, nazwa z awatarem, e-mail, rola i data dołączenia.
+Zachowuje wiersze 35px, tekst 13px/400, cienką siatkę, jasnofioletowe
+podświetlenie oraz awatary 30×30px. Checkbox nagłówka obejmuje własną tabelę
+i pokazuje stan częściowy; zaznaczenie nie wykonuje operacji. Nazwa i e-mail
+mają ellipsis i pełną treść w `title`. Na telefonie tabela przewija się poziomo
+we własnym kontenerze. Pusty stan korzysta ze wspólnego komponentu.
+Menu właściciela pozwala zmienić rolę innej osoby i odebrać dostęp;
+administrator może odebrać dostęp członkowi lub gościowi, bez operacji na
+administratorze lub właścicielu. Własność jest chroniona.
 
-Serwer renderuje jeden modal wybranego Workspace. Link do innego Workspace
-pobiera jego kontekst; ponowne otwarcie bieżącego okna działa lokalnie.
-Stare linki `view=members` otwierają skład nad katalogiem. Zamknięcie okna
-usuwa żądanie otwarcia z adresu, więc reload pozostawia katalog.
-`workplace-team.js` obsługuje zakładki, fokus i inert ostatniego otwartego okna,
-a wspólny `AncoreTaskModals` zamykanie oraz klawiaturę. Zamknięcie okna roli
-lub zaproszenia odsłania nadal otwartą zakładkę. Przy błędzie wysyłania
-okno zaproszenia jest nad „Wysłane zaproszenia”; zamknięcie przywraca fokus
-widocznemu przyciskowi tej zakładki. Inicjalizacja działa
-również po `ancore:content-loaded` bez powielania listenerów.
+„Dodaj osobę” i „Zmień rolę” używają `tasks-modal app-modal-panel
+app-modal-panel--compact`, pól `tasks-form-field` i wspólnej stopki.
+Pole istniejącego konta jest obok roli w `workplace-invite__fields`;
+kolumna roli ma 180px, a do 600px pola przechodzą do jednej kolumny.
+Picker wyszukuje od 2 znaków imienia, drugiego imienia, nazwiska, ID Ancore
+lub e-maila i pokazuje do 10 aktywnych kont z nazwą, adresem oraz awatarem.
+Wybór zapisuje `user_id`; zmiana tekstu czyści wybrane konto. Komunikat
+„Dodajesz” potwierdza wybór, a „Dodaj do Workspace” natychmiast nadaje dostęp.
+Sam wpisany e-mail nie jest zaproszeniem ani tożsamością zapisu.
+Właściciel wybiera `admin`, `member` lub `guest`, administrator tylko
+`member` lub `guest`; podpowiedzi i zapis blokują mu także nieaktywnych
+administratorów. Lista zachowuje combobox/listbox/option, strzałki, Enter,
+Escape, anulowanie starszych pobrań i stan błędu. Bez JavaScriptu zakładka
+„Członkowie” zawiera natywny formularz z dokładnym ID Ancore (`@username`)
+i rolą. Zapis wymaga POST i CSRF; błąd zachowuje dane i punkt powrotu fokusu.
 
-Tabele członków (`members_table.html`) i wysłanych zaproszeń
-(`invitations_table.html`) korzystają z tego samego komponentu
-co „Projekty”: `tasks-directory-board tasks-directory-sheet
-tasks-project-sheet`, wspólnych nagłówków, komórek i wierszy. Wariant
-`workplace-team-sheet` określa wyłącznie układ sześciu kolumn: zaznaczenie
-(40px), działania (40px), nazwa z avatarem, e-mail, rola i data dołączenia
-lub ważności zaproszenia. Nagłówki danych mają ikony; nagłówek kolumny
-działań jest pusty wizualnie i zachowuje etykietę dostępną „Działania”.
-Wiersze zachowują wysokość 35px, tekst 13px/400, cienką siatkę i jasnofioletowe
-podświetlenie z paskiem po lewej. Avatary członków i odbiorców zaproszeń mają
-30×30px, jak na liście Kontaktów, również na wąskich ekranach. Stały rozmiar
-obejmuje zdjęcia oraz ikonę zastępczą i nie kurczy się przy długiej nazwie.
-Menu członka lub zaproszenia jest w osobnej komórce działań,
-z takim samym przyciskiem wypełniającym komórkę jak akcje projektów.
-Tabela ma role `table`/`rowgroup`/`row`/`columnheader`/`cell`.
-Układ kolumn skaluje się z oknem; `data-directory-resize="false"` wyłącza
-zapamiętywanie i ręczne rozszerzanie kolumn przez mechanizm katalogu projektów.
-Checkboxy używają `tasks-project-sheet--selectable` i `tasks-row-checkbox`,
-tak jak „Projekty”. Nagłówek zaznacza wszystkie wiersze wyłącznie
-swojej tabeli i pokazuje stan częściowego wyboru. Kliknięcie pustego miejsca
-w kolumnie zaznaczenia też przełącza checkbox. `workplace-team.js`
-synchronizuje podświetlenie i nagłówek niezależnie dla obu zakładek, również
-po `ancore:content-loaded`. Przełączanie zakładek zachowuje wybór;
-zaznaczenie nie wykonuje operacji na członkach ani zaproszeniach.
+„Linki do dołączenia” pokazuje adres do skopiowania, rolę, wykorzystanie
+limitu, ważność i „Unieważnij link”. Formularz „Utwórz link do dołączenia”
+wybiera `member` lub `guest`, 1–30 dni i 1–1000 użyć. Nie ma pola domeny e-mail.
+Posiadacz linku loguje się lub rejestruje i potwierdza dołączenie przez POST.
+Wygasły, unieważniony lub wykorzystany do limitu link pokazuje niedostępność;
+nie ma dopasowywania do adresu odbiorcy. `workplace-invite-links` oraz
+`workplace-invite-link` zachowują zawijanie adresu i akcji na telefonie.
 
-Nazwa i e-mail pozostają w jednym wierszu z ellipsis oraz pełną treścią
-w `title`. Na telefonie obie tabele zachowują kolumny i wiersze, przewijając
-się poziomo we własnym kontenerze o minimalnej szerokości zawartości 890px.
-Pusty stan członków używa `tasks-empty-state`, a wysłanych zaproszeń
-`documents-empty documents-grid-empty`; oba mieszczą się w szerokości okna
-i nie wyświetlają pustych nagłówków tabeli.
-Wspólny pusty stan `documents-empty` centruje ikonę nad tytułem i opisem
-przez blokowe SVG z automatycznymi marginesami bocznymi, zachowując 16px
-odstępu pod ikoną. Reguła obowiązuje też w pustych katalogach Dokumentów.
-
-Parametr `view=invitations` otwiera zakładkę „Wysłane zaproszenia” w oknie;
-po wysłaniu lub anulowaniu zaproszenia użytkownik wraca do tej zakładki.
-Na wąskim ekranie wspólny pasek zakładek można przewijać poziomo; klawiatura
-przewija go do aktywnej pozycji.
-
-Menu trzech pasków używa wspólnego mechanizmu akcji wiersza: w tabeli
-członków i wysłanych zaproszeń zajmuje osobną kolumnę. Wspólny `row-actions.js`, ładowany w `core/base.html`,
-obsługuje zarówno `data-document-actions`, jak i `data-row-actions`. Zachowuje
-popover, pozycjonowanie względem viewportu i skali UI, obsługę klawiatury,
-zamykanie przy przewijaniu oraz inicjalizację po `ancore:content-loaded`.
-W Zespole menu zawiera zmianę roli, odebranie dostępu lub anulowanie zaproszenia,
-zależnie od uprawnień. Właściciel nie ma akcji zmiany swojej roli ani usunięcia.
-
-Zaproszenie, odpowiedź na zaproszenie i zmiana roli używają wspólnej powłoki
-`tasks-modal app-modal-panel app-modal-panel--compact`, pól
-`tasks-form-field` i stopki z `tasks-modal__submit`. `workplace-team.js` zarządza
-otwarciem, `inert` tła, fokusem i blokadą ponownego wysłania; `tasks.js` obsługuje
-zamykanie i pułapkę fokusu, a listy wyboru korzystają z `AncoreCustomSelect`
-i `AncoreDropdownLayer`. Błąd zaproszenia otwiera ten sam modal z wpisanymi danymi.
-Formularz zaproszenia ma pole osoby po lewej i „Rolę” po prawej, w jednym
-wierszu `workplace-invite__fields`. Kolumna roli ma 180px, a pole osoby zajmuje
-pozostałą szerokość; etykiety są nad kontrolkami. Podpowiedzi i podgląd pozostają
-pod polem osoby. Do 600px pola przechodzą do jednej kolumny, zgodnie ze wzorcem
-formularzy kontaktowych.
-Pole osoby w zaproszeniu ma podpowiedzi od 2 znaków imienia, nazwiska, ID Ancore
-lub e-maila. Wariant `workplace-invite__results` pokazuje przewijaną listę pod
-polem, w białej treści modala; korzysta ze wspólnych przycisków menu, układu
-tożsamości `tasks-responsible-select__person` i avatara 30px. Po wyborze pozostaje
-nazwa i e-mail odbiorcy z komunikatem „Zapraszasz”. Pełny pasujący e-mail także
-pokazuje odbiorcę. Lista ma role combobox/listbox/option; strzałki wybierają,
-Enter zatwierdza osobę, Escape najpierw zamyka podpowiedzi. Zmiana tekstu usuwa
-poprzedni wybór. Obsługa anuluje nieaktualne żądania oraz sprząta je przy zamknięciu
-i częściowej nawigacji. Status komunikuje ładowanie, brak wyników, limit i błąd;
-przy błędzie nadal można ręcznie wpisać adres. Dopiero przycisk zaproszenia zapisuje.
-Odebranie dostępu wymaga `showConfirmModal` wyjaśniającego wpływ na Office.
-Zapis nadal używa POST, CSRF i komunikatów aplikacji.
-
-Ustawienia prowadzą do wspólnego panelu przez „Zarządzaj Workspace”. Funkcje i role opisuje
-[TEAMWORK.md](TEAMWORK.md).
+Nie ma zakładek otrzymanych/wysłanych zaproszeń, formularza wysyłki e-mail,
+okna przyjęcia/odrzucenia e-maila ani licznika takich zaproszeń pod dzwonkiem.
+Dawne parametry `view=received`, `view=invitations` i `invitation` nie otwierają
+wycofanych ekranów. Odebranie dostępu nadal wymaga `showConfirmModal`
+wyjaśniającego wpływ na sesje Office. React oraz szablony zgodności zachowują
+wspólny fokus, `inert`, Escape i inicjalizację po `ancore:content-loaded`.
+Ustawienia prowadzą do katalogu przez „Zarządzaj Workspace”.
+[Funkcje, role i migracje](TEAMWORK.md).
 
 ## 13. Centrum powiadomień
 
@@ -2770,27 +2672,27 @@ paginację „Pokaż starsze”, gdy są dalsze wpisy. Wariant `notifications-pa
 układa filtry i niezależnie przewijaną listę pionowo we wspólnej białej powierzchni.
 Avatary kont, przyciski, ikony i tokeny kolorów pozostają wspólne.
 Białe karty mają delikatne ramki; nieprzeczytane dodatkowo kropkę i 5% akcentu
-w tle. Zaproszenia mają przycisk prowadzący do istniejącego modala decyzji.
+w tle. Dzwonek sygnalizuje nieprzeczytane wpisy kropką
+`notifications-toggle__indicator` i opisem dostępnym dla czytnika ekranu.
 
-Zakładki „Wszystkie”, „Nieprzeczytane”, „Zaproszenia”, „Przypomnienia”, „Archiwum” używają
-przycisków z `aria-pressed`; filtr Workspace korzysta ze wspólnego selecta.
-„Zaproszenia” pokazuje pełną liczbę oczekujących zaproszeń z centrum powiadomień,
-ze wszystkich Workspace, podobnie jak globalny licznik nieprzeczytanych.
-Licznik na zakładce i dzwonku pozostaje po oznaczeniu zaproszenia jako przeczytane.
-Jest ukryty przy zerze; korzysta z istniejącego `pending_invitation_count`, więc
-nie obejmuje zaproszeń rozpatrzonych, cofniętych, wygasłych ani usuniętych z powiadomień.
-Wspólne odświeżanie aktualizuje oba miejsca po operacji, powrocie na stronę i pollingu;
-zmiana liczby oczekujących także sygnalizuje potrzebę odświeżenia otwartej listy.
+Zakładki „Wszystkie”, „Nieprzeczytane”, „Przypomnienia”, „Wzmianki”,
+„Obserwowane” i „Archiwum” używają przycisków z `aria-pressed`; filtr Workspace
+korzysta ze wspólnego selecta. Źródłami są komentarze Przestrzeni (`spaces`)
+i osobiste przypomnienia (`space-reminders`). Nie ma źródła ani filtra
+zaproszeń; summary nie zawiera `pending_invitation_count`, a karty nie mają
+pola `is_invitation`. Odświeżanie po operacji, powrocie do karty i pollingu
+aktualizuje stan nieprzeczytanych oraz sygnalizuje nowe wpisy.
 Filtr Workspace zachowuje zwykłą cienką ramkę po najechaniu, uzyskaniu fokusu
 i otwarciu listy, bez dodatkowego obrysu ani poświaty, tak jak pola w modalach.
-Karty grupują się według daty, pokazują podgląd komentarza, szczegóły zaproszenia
-lub przypomnienia, Workspace, moduł, numer rekordu i czas z pełną datą w tooltipie.
+Karty pokazują podgląd komentarza lub przypomnienia, Workspace, moduł, klucz
+zadania i czas z pełną datą w tooltipie. Komentarze grupują się według daty,
+a przypomnienia zachowują własną etykietę grupy.
 Wpisy historii zmian nie pojawiają się w żadnym filtrze ani liczniku panelu.
 Puste stany „Wszystkie” i „Obserwowane” opisują komentarze i pozostałe dostępne
 typy powiadomień, bez zapowiadania historii zmian.
 Na każdej karcie jest jeden stale widoczny przycisk z trzema paskami (`menu`).
 Otwiera wspólny React `Dropdown` z akcją odczytu, archiwizacji/przywrócenia
-i usunięcia; zaproszenia nie mają akcji archiwizacji ani usunięcia. Menu korzysta z
+i usunięcia. Menu korzysta z
 `tasks-section-menu`, `tasks-project-menu-button` i wspólnej warstwy dropdownu,
 więc nie jest przycinane przez przewijaną listę. Ma szare stany interakcji,
 obsługuje strzałki, Home/End i Escape z powrotem fokusu na przycisk.
@@ -2800,10 +2702,10 @@ otwarte menu; zapis blokuje przyciski i przywraca fokus na widoczny przycisk kar
 „Oznacz wszystkie jako przeczytane” obejmuje bieżący filtr, również starsze strony;
 przycisk jest nieaktywny, gdy wszystkie wpisy w tym widoku są przeczytane.
 Kosz w pasku usuwa powiadomienia z bieżącego filtra, także ze starszych
-stron, z pominięciem oczekujących zaproszeń. Jest nieaktywny, gdy filtr nie ma
+stron. Jest nieaktywny, gdy filtr nie ma
 usuwalnych wpisów. „Usuń powiadomienie” w menu karty usuwa tylko ten wpis.
 Obie akcje otwierają `showConfirmModal` z informacją o osobistym zakresie,
-zachowaniu historii i pozostawieniu zaproszeń w powiadomieniach.
+zachowaniu komentarzy i zapisów przypomnień w danych źródłowych.
 Potwierdzenie zbiorcze pokazuje liczbę wpisów i zachowuje snapshot z chwili otwarcia.
 Tab i Escape dotyczą wtedy potwierdzenia, bez zamykania panelu pod spodem.
 Zapis blokuje ponowne wysłanie; błąd zachowuje wpis i umożliwia ponowienie.
@@ -3250,8 +3152,8 @@ nową kartę; blokada popupu pokazuje jeden link do zapisanego dokumentu.
 Zarządzanie Workspace renderuje `src/workspaces/`. Zachowuje katalog, lokalne
 wyszukiwanie/paginację, zaznaczenia bieżącej strony i oddzielne przełączanie
 kontekstu. Okna używają istniejących klas `workplace-create-modal`,
-`workplace-edit-modal`, zakładek, tabel członków i zaproszeń oraz kompaktowych
-okien ról/zapraszania. Zmiana zakładki zachowuje szkic ustawień; zamknięcie
+`workplace-edit-modal`, zakładek „Główna”, „Członkowie”, „Linki do dołączenia”,
+tabeli członków oraz kompaktowych okien dodawania osoby i zmiany roli. Zmiana zakładki zachowuje szkic ustawień; zamknięcie
 zagnieżdżonego okna wraca do rodzica. `shared/Modal` ma opcjonalny nagłówek
 i klasy dialogu dla powłoki Projektów, z tą samą obsługą fokusu i Escape.
 Picker awatara/kadrowania jest wyspą DOM z dotychczasowym wyglądem i helperami.

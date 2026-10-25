@@ -15,7 +15,7 @@
                     <div class="notifications-tabs tasks-issue-tabs" role="tablist" aria-label="Miejsce pracy">
                         <button type="button" id="workplace-tab-main" role="tab" aria-controls="workplace-panel-main" aria-selected="{% if workplace_edit_tab == 'main' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'main' %}0{% else %}-1{% endif %}" data-workplace-tab="main">Główna</button>
                         <button type="button" id="workplace-tab-members" role="tab" aria-controls="workplace-panel-members" aria-selected="{% if workplace_edit_tab == 'members' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'members' %}0{% else %}-1{% endif %}" data-workplace-tab="members">Członkowie</button>
-                        {% if can_manage_team %}<button type="button" id="workplace-tab-invitations" role="tab" aria-controls="workplace-panel-invitations" aria-selected="{% if workplace_edit_tab == 'invitations' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'invitations' %}0{% else %}-1{% endif %}" data-workplace-tab="invitations">Wysłane zaproszenia</button>{% endif %}
+                        {% if can_manage_team %}<button type="button" id="workplace-tab-links" role="tab" aria-controls="workplace-panel-links" aria-selected="{% if workplace_edit_tab == 'links' %}true{% else %}false{% endif %}" tabindex="{% if workplace_edit_tab == 'links' %}0{% else %}-1{% endif %}" data-workplace-tab="links">Linki do dołączenia</button>{% endif %}
                     </div>
                 </div>
                 <section id="workplace-panel-main" role="tabpanel" aria-labelledby="workplace-tab-main" data-workplace-tab-panel="main"{% if workplace_edit_tab != 'main' %} hidden{% endif %}>
@@ -52,17 +52,21 @@
                 <section id="workplace-panel-members" role="tabpanel" aria-labelledby="workplace-tab-members" data-workplace-tab-panel="members"{% if workplace_edit_tab != 'members' %} hidden{% endif %}>
                     <div class="workplace-edit-modal__team-toolbar">
                         <span class="workplaces-management__count">{{ workplace.name }} · Członkowie: {{ members|length }}</span>
-                        {% if can_manage_team %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-invite-modal" aria-haspopup="dialog" aria-controls="team-invite-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Zaproś osobę</span></button>{% endif %}
+                        {% if can_manage_team %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-add-modal" aria-haspopup="dialog" aria-controls="team-add-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj osobę</span></button>{% endif %}
                     </div>
-                    {% include 'workplaces/includes/team_panel.html' with show_invitations=False %}
+                    {% include 'workplaces/includes/team_panel.html' %}
+                    {% if can_manage_team %}<noscript>
+                        <form method="post" action="{% url 'workplaces:team' team_workplace.pk %}?view=members" class="documents-form">
+                            {% csrf_token %}
+                            <div class="tasks-form-field"><label for="native-team-user">ID konta Ancore</label><input id="native-team-user" name="user_id" class="form-input" placeholder="@jan.nowak" maxlength="150" required><small>Wpisz ID istniejącego konta. Osoba od razu uzyska dostęp do Workspace.</small></div>
+                            <div class="tasks-form-field"><label for="native-team-role">Rola</label><select id="native-team-role" name="role" class="form-select">{% for value, label in add_form.role.field.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                            <button type="submit" class="btn btn-primary">Dodaj do Workspace</button>
+                        </form>
+                    </noscript>{% endif %}
                 </section>
                 {% if can_manage_team %}
-                <section id="workplace-panel-invitations" role="tabpanel" aria-labelledby="workplace-tab-invitations" data-workplace-tab-panel="invitations"{% if workplace_edit_tab != 'invitations' %} hidden{% endif %}>
-                    <div class="workplace-edit-modal__team-toolbar">
-                        <span class="workplaces-management__count">{{ workplace.name }} · Wysłane zaproszenia: {{ team_invitations|length }}</span>
-                        <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-invite-modal" aria-haspopup="dialog" aria-controls="team-invite-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Zaproś osobę</span></button>
-                    </div>
-                    {% include 'workplaces/includes/team_panel.html' with show_invitations=True %}
+                <section id="workplace-panel-links" role="tabpanel" aria-labelledby="workplace-tab-links" data-workplace-tab-panel="links"{% if workplace_edit_tab != 'links' %} hidden{% endif %}>
+                    {% include 'workplaces/includes/invite_links.html' %}
                 </section>
                 {% endif %}
             </div>

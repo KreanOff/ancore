@@ -1,14 +1,11 @@
-from datetime import timedelta
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 
-from .models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
+from .models import WorkplaceMembership, create_workplace_for_user
 
 
-class InvitationCandidateTests(TestCase):
+class MemberCandidateTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         users = get_user_model()
@@ -24,7 +21,7 @@ class InvitationCandidateTests(TestCase):
         cls.foreign = create_workplace_for_user(cls.person, 'Foreign')
         WorkplaceMembership.objects.create(workplace=cls.selected, user=cls.admin, role='admin')
         WorkplaceMembership.objects.create(workplace=cls.selected, user=cls.member)
-        cls.url = reverse('workplaces:invitation-candidates', args=[cls.selected.pk])
+        cls.url = reverse('workplaces:member-candidates', args=[cls.selected.pk])
 
     def setUp(self):
         self.client.force_login(self.owner)
@@ -38,6 +35,7 @@ class InvitationCandidateTests(TestCase):
                 response = self.client.get(self.url, {'q': query})
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual([p['email'] for p in response.json()['results']], [self.person.email])
+                self.assertEqual(response.json()['results'][0]['id'], str(self.person.pk))
                 self.assertEqual(response.json()['results'][0]['name'], 'Jan Adam Nowak')
                 self.assertIn('no-store', response.headers['Cache-Control'])
         self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
@@ -55,7 +53,7 @@ class InvitationCandidateTests(TestCase):
                 self.client.force_login(user)
                 self.assertEqual(self.client.get(self.url, {'q': 'jan'}).status_code, status)
         self.client.force_login(self.owner)
-        foreign_url = reverse('workplaces:invitation-candidates', args=[self.foreign.pk])
+        foreign_url = reverse('workplaces:member-candidates', args=[self.foreign.pk])
         self.assertEqual(self.client.get(foreign_url, {'q': 'jan'}).status_code, 404)
         self.assertEqual(self.client.post(self.url, {'q': 'jan'}).status_code, 405)
 
@@ -64,26 +62,17 @@ class InvitationCandidateTests(TestCase):
         WorkplaceMembership.objects.filter(workplace=self.selected, user=self.admin).update(is_active=False)
         self.assertEqual(self.client.get(self.url, {'q': 'jan'}).status_code, 404)
 
-    def test_excludes_current_team_pending_invites_and_inactive_accounts(self):
+    def test_excludes_current_team_and_inactive_accounts(self):
         users = get_user_model()
         users.objects.create_user(username='inactive', email='inactive@example.test', is_active=False)
-        WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.person, invited_by=self.owner)
+        WorkplaceMembership.objects.create(workplace=self.selected, user=self.person)
         self.assertEqual(self.client.get(self.url, {'q': 'example.test'}).json()['results'], [])
 
     def test_candidates_follow_selected_team_not_active_team(self):
         WorkplaceMembership.objects.create(workplace=self.active, user=self.person)
-        WorkplaceInvitation.objects.create(workplace=self.active, recipient=self.person, invited_by=self.owner)
         WorkplaceMembership.objects.create(workplace=self.selected, user=self.person, is_active=False)
-        invitation = WorkplaceInvitation.objects.create(
-            workplace=self.selected, recipient=self.person, invited_by=self.owner,
-            expires_at=timezone.now() - timedelta(seconds=1),
-        )
         self.assertEqual(self.client.get(self.url, {'q': 'jan'}).json()['results'][0]['email'], self.person.email)
-        invitation.expires_at = timezone.now() + timedelta(days=1)
-        for status in ['revoked', 'declined', 'accepted']:
-            invitation.status = status
-            invitation.save()
-            self.assertEqual(len(self.client.get(self.url, {'q': 'jan'}).json()['results']), 1)
+        self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
 
     def test_results_are_limited_and_html_is_escaped(self):
         users = get_user_model()
@@ -98,15 +87,27 @@ class InvitationCandidateTests(TestCase):
         self.assertIn('&lt;img', html)
         self.assertNotIn('<img src=x', html)
 
-    def test_lookup_does_not_invite_and_submit_revalidates_selected_person(self):
+    def test_lookup_does_not_add_and_submit_revalidates_selected_person(self):
         self.client.get(self.url, {'q': self.person.email})
-        self.assertFalse(WorkplaceInvitation.objects.exists())
+        self.assertFalse(self.selected.memberships.filter(user=self.person).exists())
         WorkplaceMembership.objects.create(workplace=self.selected, user=self.person)
         response = self.client.post(reverse('workplaces:team', args=[self.selected.pk]), {
-            'email': self.person.email, 'role': 'member',
+            'user_id': self.person.pk, 'role': 'member',
         })
         self.assertContains(response, 'Ta osoba jest już członkiem Workspace.')
-        self.assertFalse(WorkplaceInvitation.objects.exists())
+        self.assertIn('user_id', response.context['add_form'].errors)
+        self.assertEqual(self.selected.memberships.filter(user=self.person).count(), 1)
+
+    def test_submit_rejects_an_account_disabled_after_lookup(self):
+        person = self.client.get(self.url, {'q': self.person.email}).json()['results'][0]
+        self.person.is_active = False
+        self.person.save(update_fields=['is_active'])
+        response = self.client.post(reverse('workplaces:team', args=[self.selected.pk]), {
+            'user_id': person['id'], 'role': 'member',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('user_id', response.context['add_form'].errors)
+        self.assertFalse(self.selected.memberships.filter(user=self.person).exists())
 
     def test_exact_email_is_not_hidden_by_the_result_limit(self):
         for number in range(11):

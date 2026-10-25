@@ -3,7 +3,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
 <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261025-module-cards-muted">
-<script src="{% static 'js/workplace-team.js' %}?v=20261016-react-workspace" defer></script>
+<script src="{% static 'js/workplace-team.js' %}?v=20261025-existing-members-copy" defer></script>
 {% endblock %}
 
 {% block title %}Workspace | ancore{% endblock %}
@@ -83,7 +83,7 @@
                                                 <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;tab=main" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="main"><i data-icon="{% if workplace.can_manage_team %}pencil{% else %}info{% endif %}" aria-hidden="true"></i><span>{% if workplace.can_manage_team %}Edytuj miejsce pracy{% else %}Informacje{% endif %}</span></a>
                                                 <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="members"><i data-icon="users" aria-hidden="true"></i><span>Członkowie</span></a>
                                                 {% if workplace.can_manage_team %}
-                                                <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;view=invitations" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="invitations"><i data-icon="mail" aria-hidden="true"></i><span>Wysłane zaproszenia</span></a>
+                                                <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;view=links" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="links"><i data-icon="link" aria-hidden="true"></i><span>Linki do dołączenia</span></a>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -487,5 +487,4 @@
 
 {% block page_modals %}
 {% if team_workplace %}{% include 'workplaces/includes/team_modals.html' %}{% endif %}
-{% if response_invitation %}{% include 'workplaces/includes/invitation_response_modal.html' %}{% endif %}
 {% endblock %}

@@ -12,7 +12,7 @@ import type { DirectoryData, Team, Tab, Person } from './types';
 export default function TeamDialog({
   team,
   initialTab,
-  inviteOpen,
+  addOpen,
   api,
   token,
   onClose,
@@ -21,7 +21,7 @@ export default function TeamDialog({
 }: {
   team: Team;
   initialTab: Tab;
-  inviteOpen: boolean;
+  addOpen: boolean;
   api: string;
   token: string;
   onClose: () => void;
@@ -37,7 +37,7 @@ export default function TeamDialog({
     [dirty, setDirty] = useState(!!team.form?.bound),
     [pending, setPending] = useState(false),
     [error, setError] = useState(''),
-    [child, setChild] = useState<'invite' | Person | null>(inviteOpen ? 'invite' : null);
+    [child, setChild] = useState<'add' | Person | null>(addOpen ? 'add' : null);
   const life = useRef(new AbortController()),
     sending = useRef(false),
     tabs = useRef<HTMLDivElement>(null);
@@ -75,9 +75,7 @@ export default function TeamDialog({
       onConfirm: () => void act(person.change_url!, { action: 'remove' }),
     });
   }
-  const available: Tab[] = team.can_manage
-    ? ['main', 'members', 'invitations']
-    : ['main', 'members'];
+  const available: Tab[] = team.can_manage ? ['main', 'members', 'links'] : ['main', 'members'];
   return (
     <>
       <Modal
@@ -134,7 +132,7 @@ export default function TeamDialog({
                       ? 'Główna'
                       : key === 'members'
                         ? 'Członkowie'
-                        : 'Wysłane zaproszenia'}
+                        : 'Linki do dołączenia'}
                   </button>
                 ))}
               </div>
@@ -202,156 +200,117 @@ export default function TeamDialog({
                 </fieldset>
               </form>
             </section>
-            {(['members', 'invitations'] as const)
-              .filter((key) => key !== 'invitations' || team.can_manage)
-              .map((key) => (
-                <section
-                  key={key}
-                  id={'workspace-panel-' + key}
-                  role="tabpanel"
-                  aria-labelledby={'workspace-tab-' + key}
-                  data-workplace-tab-panel={key}
-                  hidden={tab !== key}
-                >
-                  <div className="workplace-edit-modal__team-toolbar">
-                    <span className="workplaces-management__count">
-                      {team.name} · {key === 'members' ? 'Członkowie' : 'Wysłane zaproszenia'}:{' '}
-                      {key === 'members' ? team.members.length : team.invitations.length}
-                    </span>
-                    {team.can_manage ? (
+            <section
+              id="workspace-panel-members"
+              role="tabpanel"
+              aria-labelledby="workspace-tab-members"
+              hidden={tab !== 'members'}
+            >
+              <div className="workplace-edit-modal__team-toolbar">
+                <span className="workplaces-management__count">
+                  {team.name} · Członkowie: {team.members.length}
+                </span>
+                {team.can_manage ? (
+                  <button
+                    type="button"
+                    className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                    disabled={pending}
+                    onClick={() => setChild('add')}
+                  >
+                    <Icon name="plus" />
+                    <span>Dodaj osobę</span>
+                  </button>
+                ) : null}
+              </div>
+              <TeamTable rows={team.members} busy={pending} onRole={setChild} onAction={remove} />
+            </section>
+            {team.can_manage ? (
+              <section
+                id="workspace-panel-links"
+                role="tabpanel"
+                aria-labelledby="workspace-tab-links"
+                hidden={tab !== 'links'}
+              >
+                <section className="workplace-invite-links" aria-label="Linki do dołączenia">
+                  <h3>Linki do dołączenia</h3>
+                  {!team.invite_links?.length ? (
+                    <p className="workplace-team__hint">Brak aktywnych linków do dołączenia.</p>
+                  ) : null}
+                  {team.invite_links?.map((link) => (
+                    <div key={link.id} className="workplace-invite-link">
+                      <span>
+                        {link.role} · {link.uses}/{link.limit} użyć · ważny do {link.date}
+                      </span>
+                      <input
+                        className="form-input"
+                        aria-label={'Link do Workspace ' + team.name}
+                        value={link.url}
+                        readOnly
+                      />
                       <button
                         type="button"
-                        className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                        className="btn btn-secondary"
                         disabled={pending}
-                        onClick={() => setChild('invite')}
+                        onClick={(event) => {
+                          const input = event.currentTarget
+                            .closest('.workplace-invite-link')
+                            ?.querySelector<HTMLInputElement>('input');
+                          const selectLink = () => {
+                            input?.focus();
+                            input?.select();
+                            setError(
+                              'Automatyczne kopiowanie jest niedostępne. Skopiuj zaznaczony adres z pola.',
+                            );
+                          };
+                          if (!navigator.clipboard?.writeText) {
+                            selectLink();
+                            return;
+                          }
+                          void navigator.clipboard.writeText(link.url).catch(selectLink);
+                        }}
                       >
-                        <Icon name="plus" />
-                        <span>Zaproś osobę</span>
+                        Kopiuj link
                       </button>
-                    ) : null}
-                  </div>
-                  <TeamTable
-                    rows={key === 'members' ? team.members : team.invitations}
-                    invitations={key === 'invitations'}
-                    busy={pending}
-                    onRole={setChild}
-                    onAction={
-                      key === 'members' ? remove : (person) => void act(person.cancel_url!, {})
-                    }
-                  />
-                  {key === 'invitations' && team.can_manage ? (
-                    <section className="workplace-invite-links" aria-label="Linki zaproszeń">
-                      <h3>Zaproszenia e-mail</h3>
-                      {team.invitations.map((invitation) => (
-                        <div key={invitation.id} className="workplace-invite-link">
-                          <span>
-                            {invitation.email} ·{' '}
-                            {invitation.email_sent ? 'E-mail wysłany' : 'E-mail niewysłany'}
-                          </span>
-                          <input
-                            className="form-input"
-                            aria-label={'Link zaproszenia dla ' + invitation.email}
-                            value={invitation.share_url || ''}
-                            readOnly
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={pending}
-                            onClick={() => {
-                              navigator.clipboard
-                                .writeText(invitation.share_url || '')
-                                .catch(() =>
-                                  setError(
-                                    'Nie udało się skopiować linku. Zaznacz i skopiuj adres z pola.',
-                                  ),
-                                );
-                            }}
-                          >
-                            Kopiuj link
-                          </button>
-                          {invitation.resend_url ? (
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              disabled={pending}
-                              onClick={() => void act(invitation.resend_url!, {})}
-                            >
-                              Wyślij ponownie
-                            </button>
-                          ) : null}
-                        </div>
-                      ))}
-                      <h3>Linki do dołączenia</h3>
-                      {team.invite_links?.map((link) => (
-                        <div key={link.id} className="workplace-invite-link">
-                          <span>
-                            {link.role} · {link.uses}/{link.limit} użyć · ważny do {link.date}
-                            {link.domain ? ' · @' + link.domain : ''}
-                          </span>
-                          <input
-                            className="form-input"
-                            aria-label={'Link do Workspace ' + team.name}
-                            value={link.url}
-                            readOnly
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={pending}
-                            onClick={() => {
-                              navigator.clipboard
-                                .writeText(link.url)
-                                .catch(() =>
-                                  setError(
-                                    'Nie udało się skopiować linku. Zaznacz i skopiuj adres z pola.',
-                                  ),
-                                );
-                            }}
-                          >
-                            Kopiuj link
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            disabled={pending}
-                            onClick={() => void act(link.revoke_url, {})}
-                          >
-                            Unieważnij link
-                          </button>
-                        </div>
-                      ))}
-                      {team.link_form ? (
-                        <details>
-                          <summary>Utwórz link zaproszenia</summary>
-                          <form
-                            className="workplace-invite-link-form"
-                            onSubmit={(event) => {
-                              event.preventDefault();
-                              void act(
-                                team.link_create_url!,
-                                Object.fromEntries(new FormData(event.currentTarget)) as Record<
-                                  string,
-                                  string
-                                >,
-                              );
-                            }}
-                          >
-                            <fieldset className="resources-react-fieldset" disabled={pending}>
-                              {team.link_form.fields.map((field) => (
-                                <FieldControl key={field.name} field={field} />
-                              ))}
-                            </fieldset>
-                            <button className="btn btn-primary" type="submit" disabled={pending}>
-                              Utwórz link
-                            </button>
-                          </form>
-                        </details>
-                      ) : null}
-                    </section>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={pending}
+                        onClick={() => void act(link.revoke_url, {})}
+                      >
+                        Unieważnij link
+                      </button>
+                    </div>
+                  ))}
+                  {team.link_form ? (
+                    <details>
+                      <summary>Utwórz link do dołączenia</summary>
+                      <form
+                        className="workplace-invite-link-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void act(
+                            team.link_create_url!,
+                            Object.fromEntries(new FormData(event.currentTarget)) as Record<
+                              string,
+                              string
+                            >,
+                          );
+                        }}
+                      >
+                        <fieldset className="resources-react-fieldset" disabled={pending}>
+                          {team.link_form.fields.map((field) => (
+                            <FieldControl key={field.name} field={field} />
+                          ))}
+                        </fieldset>
+                        <button className="btn btn-primary" type="submit" disabled={pending}>
+                          Utwórz link
+                        </button>
+                      </form>
+                    </details>
                   ) : null}
                 </section>
-              ))}
+              </section>
+            ) : null}
           </div>
           <footer className="tasks-modal__footer tasks-project-edit-modal__footer tasks-issue-modal__footer workplace-edit-modal__footer">
             <button
@@ -381,7 +340,7 @@ export default function TeamDialog({
       </Modal>
       {child ? (
         <TeamAction
-          key={typeof child === 'string' ? 'invite' : child.id}
+          key={typeof child === 'string' ? 'add' : child.id}
           team={team}
           person={typeof child === 'string' ? undefined : child}
           api={api}
@@ -390,7 +349,7 @@ export default function TeamDialog({
           onSaved={async (url) => {
             await reload(url);
             setChild(null);
-            setTab(typeof child === 'string' ? 'invitations' : 'members');
+            setTab('members');
           }}
         />
       ) : null}
@@ -412,10 +371,9 @@ function TeamAction({
   onClose: () => void;
   onSaved: (url: string) => Promise<void>;
 }) {
-  const [schema, setSchema] = useState<FormSchema>(team.invite_form!),
-    [email, setEmail] = useState(
-      String(team.invite_form?.fields.find((field) => field.name === 'email')?.value || ''),
-    ),
+  const [schema, setSchema] = useState<FormSchema>(team.add_form!),
+    [query, setQuery] = useState(''),
+    [userId, setUserId] = useState(''),
     [pending, setPending] = useState(false),
     [dirty, setDirty] = useState(false),
     [error, setError] = useState('');
@@ -429,7 +387,7 @@ function TeamAction({
   );
   return (
     <Modal
-      title={person ? 'Zmień rolę' : 'Zaproś osobę · ' + team.name}
+      title={person ? 'Zmień rolę' : 'Dodaj osobę · ' + team.name}
       className="app-modal-panel--compact"
       dirty={dirty}
       pending={pending}
@@ -440,7 +398,7 @@ function TeamAction({
         onChange={() => setDirty(true)}
         onSubmit={async (e) => {
           e.preventDefault();
-          if (sending.current) return;
+          if (sending.current || (!person && !userId)) return;
           sending.current = true;
           const body = new FormData(e.currentTarget);
           if (person) body.set('action', 'role');
@@ -449,7 +407,7 @@ function TeamAction({
           try {
             const result = await pageRequest<{ redirect: string }>(
               api,
-              person?.change_url || team.invite_url,
+              person?.change_url || team.add_url,
               token,
               life.current.signal,
               body,
@@ -464,7 +422,7 @@ function TeamAction({
             if (!life.current.signal.aborted) {
               if (e instanceof PageError) {
                 const corrected = ((e.data as unknown as Page).data as DirectoryData)?.team
-                  ?.invite_form;
+                  ?.add_form;
                 if (corrected) setSchema(corrected);
               }
               setError(errorMessage(e));
@@ -496,25 +454,29 @@ function TeamAction({
           ) : (
             <>
               <p className="workplace-team__hint">
-                Zaproszenie jest ważne przez 7 dni. Osoba otrzyma link e-mailem, a po zalogowaniu
-                zobaczy je również w powiadomieniach. Gość ma dostęp tylko do odczytu.
+                Wybierz istniejące konto Ancore. Osoba od razu uzyska dostęp do Workspace. Gość ma
+                dostęp tylko do odczytu.
               </p>
               <fieldset className="resources-react-fieldset" disabled={pending}>
                 <div className="workplace-invite__fields">
                   <div className="tasks-form-field">
-                    <label>Osoba lub adres e-mail</label>
+                    <label>Istniejące konto Ancore</label>
+                    <input type="hidden" name="user_id" value={userId} />
                     <Picker
                       api={api}
                       url={team.candidates_url}
                       token={token}
-                      value={email}
+                      value={query}
+                      existingOnly
+                      onSelect={(person) => setUserId(String(person.id || ''))}
                       onChange={(value) => {
-                        setEmail(value);
+                        setQuery(value);
+                        setUserId('');
                         setDirty(true);
                       }}
                     />
                     {schema.fields
-                      .find((f) => f.name === 'email')
+                      .find((f) => f.name === 'user_id')
                       ?.errors.map((message, index) => (
                         <p className="tasks-modal__errors" role="alert" key={index}>
                           {message}
@@ -538,8 +500,12 @@ function TeamAction({
           >
             Anuluj
           </button>
-          <button type="submit" className="tasks-modal__submit" disabled={pending}>
-            {pending ? 'Zapisywanie…' : person ? 'Zapisz rolę' : 'Zaproś do Workspace'}
+          <button
+            type="submit"
+            className="tasks-modal__submit"
+            disabled={pending || (!person && !userId)}
+          >
+            {pending ? 'Zapisywanie…' : person ? 'Zapisz rolę' : 'Dodaj do Workspace'}
           </button>
         </footer>
       </form>

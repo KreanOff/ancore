@@ -28,10 +28,6 @@ export interface Person {
   self?: boolean;
   change_url?: string;
   can_role?: boolean;
-  cancel_url?: string;
-  share_url?: string;
-  resend_url?: string;
-  email_sent?: boolean;
 }
 export interface Team {
   id: string;
@@ -43,36 +39,23 @@ export interface Team {
   avatar: AvatarData;
   form: WorkspaceForm | null;
   update_url: string;
-  invite_url: string;
+  add_url: string;
   candidates_url: string;
-  invite_form: FormSchema | null;
+  add_form: FormSchema | null;
   members: Person[];
-  invitations: Person[];
   link_form?: FormSchema;
   link_create_url?: string;
   invite_links?: {
     id: string;
     url: string;
     role: string;
-    domain: string;
     date: string;
     uses: number;
     limit: number;
     revoke_url: string;
   }[];
 }
-export interface Incoming {
-  name: string;
-  invited_by: string;
-  role: string;
-  date: string;
-  action: string;
-  position: number;
-  count: number;
-  previous: string;
-  next: string;
-}
-export type Tab = 'main' | 'members' | 'invitations';
+export type Tab = 'main' | 'members' | 'links';
 export interface DirectoryData {
   base_url: string;
   rows: Workspace[];
@@ -81,6 +64,5 @@ export interface DirectoryData {
   edit_open: boolean;
   tab: Tab;
   team: Team | null;
-  invite_open: boolean;
-  incoming: Incoming | null;
+  add_open: boolean;
 }

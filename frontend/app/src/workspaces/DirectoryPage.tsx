@@ -5,13 +5,12 @@ import { flushSync } from 'react-dom';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { Dropdown } from '../shared/Dropdown';
-import { Modal } from '../shared/Modal';
 import { navigate, pageRequest, type Page, type PageProps } from '../shared/page';
 import { errorMessage } from '../shared/api';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
 import CreateDialog from './WorkspaceForm';
 import TeamDialog from './TeamDialog';
-import type { DirectoryData, Incoming, Tab, Workspace } from './types';
+import type { DirectoryData, Tab, Workspace } from './types';
 const columns = [
   ['name', 'Nazwa', 'briefcase-business'],
   ['code', 'Kod miejsca pracy', 'hash'],
@@ -28,7 +27,6 @@ export default function DirectoryPage(props: PageProps) {
     [selected, setSelected] = useState<Set<string>>(new Set()),
     [create, setCreate] = useState(data.create_open),
     [edit, setEdit] = useState(data.edit_open),
-    [incoming, setIncoming] = useState(data.incoming),
     [tab, setTab] = useState<Tab>(data.tab),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -82,7 +80,7 @@ export default function DirectoryPage(props: PageProps) {
       data.base_url +
       '?workspace=' +
       row.id +
-      (desired === 'main' ? '&tab=main' : desired === 'invitations' ? '&view=invitations' : '');
+      (desired === 'main' ? '&tab=main' : desired === 'links' ? '&view=links' : '');
     retry.current = url;
     retryTab.current = desired;
     try {
@@ -494,7 +492,7 @@ export default function DirectoryPage(props: PageProps) {
                                     [
                                       'main',
                                       'members',
-                                      ...(row.can_manage ? ['invitations'] : []),
+                                      ...(row.can_manage ? ['links'] : []),
                                     ] as Tab[]
                                   ).map((key) => (
                                     <button
@@ -526,7 +524,7 @@ export default function DirectoryPage(props: PageProps) {
                                             : 'Informacje'
                                           : key === 'members'
                                             ? 'Członkowie'
-                                            : 'Wysłane zaproszenia'}
+                                            : 'Linki do dołączenia'}
                                       </span>
                                     </button>
                                   ))}
@@ -651,7 +649,7 @@ export default function DirectoryPage(props: PageProps) {
           key={data.team.id}
           team={data.team}
           initialTab={tab}
-          inviteOpen={data.invite_open}
+          addOpen={data.add_open}
           api={props.initial.api_url}
           token={props.csrfToken}
           onClose={closeEdit}
@@ -661,165 +659,6 @@ export default function DirectoryPage(props: PageProps) {
           }}
         />
       ) : null}
-      {incoming ? (
-        <IncomingDialog
-          key={incoming.action}
-          data={incoming}
-          api={props.initial.api_url}
-          token={props.csrfToken}
-          onClose={() => {
-            setIncoming(null);
-            const url = new URL(location.href);
-            url.searchParams.delete('invitation');
-            if (url.searchParams.has('workspace')) url.searchParams.set('view', 'workspaces');
-            setPageLocation(url);
-            search.current?.focus();
-          }}
-          onBrowse={async (url) => {
-            const next = await load(url);
-            setIncoming(next.incoming);
-            setPageLocation(url);
-          }}
-        />
-      ) : null}
     </div>
-  );
-}
-function IncomingDialog({
-  data,
-  api,
-  token,
-  onClose,
-  onBrowse,
-}: {
-  data: Incoming;
-  api: string;
-  token: string;
-  onClose: () => void;
-  onBrowse: (url: string) => Promise<void>;
-}) {
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState(''),
-    life = useRef(new AbortController()),
-    sending = useRef(false);
-  useEffect(() => () => life.current.abort(), []);
-  async function browse(url: string) {
-    if (sending.current) return;
-    sending.current = true;
-    setPending(true);
-    setError('');
-    try {
-      await onBrowse(url);
-    } catch (e) {
-      if (!life.current.signal.aborted) setError(errorMessage(e));
-    } finally {
-      sending.current = false;
-      setPending(false);
-    }
-  }
-  async function respond(action: string) {
-    if (sending.current) return;
-    sending.current = true;
-    setPending(true);
-    setError('');
-    try {
-      const form = new FormData();
-      form.set('action', action);
-      const result = await pageRequest<{ redirect: string }>(
-        api,
-        data.action,
-        token,
-        life.current.signal,
-        form,
-      );
-      if (life.current.signal.aborted) return;
-      flushSync(() => setPending(false));
-      await navigate(result.redirect);
-    } catch (e) {
-      if (!life.current.signal.aborted) setError(errorMessage(e));
-    } finally {
-      sending.current = false;
-      setPending(false);
-    }
-  }
-  return (
-    <Modal
-      title="Zaproszenie do Workspace"
-      className="app-modal-panel--compact"
-      pending={pending}
-      onClose={onClose}
-    >
-      <div className="tasks-modal__form">
-        <div className="tasks-modal__body">
-          {error ? (
-            <div className="tasks-modal__errors" role="alert">
-              {error}
-            </div>
-          ) : null}
-          <dl className="workplace-invitation__details">
-            {[
-              ['Workspace', data.name],
-              ['Zaprasza', data.invited_by],
-              ['Twoja rola', data.role],
-              ['Ważne do', data.date],
-            ].map(([label, value]) => (
-              <div className="react-invitation-detail" key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="workplace-team__hint">
-            Po przyjęciu uzyskasz dostęp do danych zespołu w tym Workspace.
-          </p>
-          {data.count > 1 ? (
-            <nav className="tasks-project-pagination__pages" aria-label="Przeglądanie zaproszeń">
-              <button
-                type="button"
-                className="tasks-project-pagination__button"
-                aria-label="Poprzednie zaproszenie"
-                disabled={!data.previous || pending}
-                onClick={() => void browse(data.previous)}
-              >
-                <Icon name="chevron-left" />
-              </button>
-              <span>
-                {data.position} z {data.count}
-              </span>
-              <button
-                type="button"
-                className="tasks-project-pagination__button"
-                aria-label="Następne zaproszenie"
-                disabled={!data.next || pending}
-                onClick={() => void browse(data.next)}
-              >
-                <Icon name="chevron-right" />
-              </button>
-            </nav>
-          ) : null}
-        </div>
-        <footer className="tasks-modal__footer">
-          <button type="button" className="btn btn-secondary" disabled={pending} onClick={onClose}>
-            Później
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={pending}
-            onClick={() => void respond('decline')}
-          >
-            Odrzuć
-          </button>
-          <button
-            type="button"
-            className="tasks-modal__submit"
-            disabled={pending}
-            onClick={() => void respond('accept')}
-          >
-            Przyjmij
-          </button>
-        </footer>
-      </div>
-    </Modal>
   );
 }

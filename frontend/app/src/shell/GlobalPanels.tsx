@@ -12,7 +12,6 @@ export default function GlobalPanels({ config, token }: { config: PanelsConfig; 
   const [preferences, setPreferences] = useState({ view: 'all', workspace: '' });
   const [summary, setSummary] = useState<Summary>({
     unread_count: 0,
-    pending_invitation_count: config.pending_invitation_count,
     revision: [],
   });
   const summaryRequest = useRef<AbortController>(),
@@ -23,7 +22,6 @@ export default function GlobalPanels({ config, token }: { config: PanelsConfig; 
     if (alive.current)
       setSummary({
         unread_count: data.unread_count,
-        pending_invitation_count: data.pending_invitation_count,
         revision: data.revision,
       });
   }, []);
@@ -81,7 +79,7 @@ export default function GlobalPanels({ config, token }: { config: PanelsConfig; 
         window.removeEventListener(name, close);
     };
   }, [refresh]);
-  const label = `Nieprzeczytane: ${summary.unread_count}. Oczekujące zaproszenia: ${summary.pending_invitation_count}.`;
+  const label = `Nieprzeczytane: ${summary.unread_count}.`;
   return (
     <>
       <div id="app-global-modals" style={{ display: 'contents' }} />
@@ -97,7 +95,7 @@ export default function GlobalPanels({ config, token }: { config: PanelsConfig; 
           aria-label="Powiadomienia"
           aria-controls="notifications-panel"
           aria-expanded={open}
-          aria-describedby="notifications-invitation-status"
+          aria-describedby="notifications-unread-status"
           title={'Powiadomienia · ' + label}
           onClick={() => {
             if (!open) window.dispatchEvent(new CustomEvent('ancore:notifications-open'));
@@ -108,16 +106,9 @@ export default function GlobalPanels({ config, token }: { config: PanelsConfig; 
           <span
             className="notifications-toggle__indicator"
             aria-hidden="true"
-            hidden={!summary.unread_count || summary.pending_invitation_count > 0}
+            hidden={!summary.unread_count}
           />
-          <span
-            className="notifications-toggle__invitation-count"
-            aria-hidden="true"
-            hidden={!summary.pending_invitation_count}
-          >
-            {summary.pending_invitation_count > 9 ? '9+' : summary.pending_invitation_count}
-          </span>
-          <span id="notifications-invitation-status" className="u-sr-only">
+          <span id="notifications-unread-status" className="u-sr-only">
             {label}
           </span>
         </button>,

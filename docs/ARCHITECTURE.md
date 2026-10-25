@@ -177,8 +177,8 @@ słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym
 - `tasks.TaskTag` i `TaskTagNote` obsługują katalogi tagów Przestrzeni.
 - `planner` łączy wydarzenia z terminami bieżących zadań, bez kopiowania rekordów.
 - `dashboard` integruje pulpity, filtry, wyszukiwanie, komentarze Przestrzeni,
-  zaproszenia Workspace i osobiste przypomnienia `SpaceTaskReminder`.
-  `NotificationState` zapisuje osobisty stan tych trzech źródeł.
+  osobiste przypomnienia `SpaceTaskReminder`.
+  `NotificationState` zapisuje osobisty stan komentarzy i przypomnień.
 - `documents` i `resources` zachowują niezależne modele oraz wspólny kontekst Workspace.
 - `core` dostarcza powłokę, JSON API, walidację i obsługę plików.
 

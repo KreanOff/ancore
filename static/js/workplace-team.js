@@ -8,6 +8,18 @@
         const menu = picker.querySelector('[role="listbox"]');
         const status = picker.querySelector('[role="status"]');
         const selected = picker.querySelector('[data-team-invite-selected]');
+        const account = picker.querySelector('[name="user_id"]');
+        if (account) {
+            account.required = false;
+            account.hidden = true;
+            account.closest('.ancore-custom-select')?.setAttribute('hidden', '');
+            input.hidden = false;
+            input.required = true;
+            input.id = account.id + '-search';
+            picker.querySelector('label')?.setAttribute('for', input.id);
+            input.value = account.value ? (account instanceof HTMLSelectElement ? account.selectedOptions[0]?.textContent || '' : account.value) : '';
+            input.setCustomValidity(account.value ? '' : 'Wybierz istniejące konto z listy.');
+        }
         let timer, request, version = 0, activeIndex = -1, people = [], selectedEmail = '';
         function cancelRequest() {
             clearTimeout(timer);
@@ -28,16 +40,24 @@
         function choose(person) {
             close();
             input.value = person.email;
+            if (account) {
+                account.value = String(person.id);
+                input.setCustomValidity('');
+            }
             selectedEmail = person.email;
             selected.innerHTML = person.html;
             window.AncoreIcons?.render(selected);
             selected.hidden = false;
-            status.textContent = `${picker.dataset.selectedLabel || 'Zapraszasz'}: ${person.name}.`;
+            status.textContent = `${picker.dataset.selectedLabel || 'Dodajesz'}: ${person.name}.`;
             input.focus({ preventScroll: true });
         }
         function search() {
             close();
             selectedEmail = '';
+            if (account) {
+                account.value = '';
+                input.setCustomValidity('Wybierz istniejące konto z listy.');
+            }
             selected.hidden = true;
             selected.replaceChildren();
             people = [];
@@ -83,13 +103,13 @@
                     status.textContent = !people.length
                         ? picker.hasAttribute('data-sharing-picker')
                             ? 'Nie znaleziono osoby, której można udostępnić. Sprawdź dane; obecni członkowie nie pojawiają się na liście.'
-                            : 'Nie znaleziono osoby, którą można zaprosić. Sprawdź dane; członkowie i osoby z oczekującym zaproszeniem nie pojawiają się na liście.'
+                            : 'Nie znaleziono istniejącego konta, które można dodać. Obecni członkowie nie pojawiają się na liście.'
                         : data.has_more ? 'Pokazano 10 osób. Doprecyzuj wyszukiwanie lub wybierz osobę.'
                             : 'Wybierz osobę z listy.';
                 } catch (error) {
                     if (error.name === 'AbortError' || currentVersion !== version) return;
                     delete status.dataset.loading;
-                    status.textContent = 'Nie udało się pobrać podpowiedzi. Wpisz adres e-mail lub zmień tekst, aby spróbować ponownie.';
+                    status.textContent = 'Nie udało się pobrać osób. Zmień tekst wyszukiwania, aby spróbować ponownie.';
                 }
             }, 250);
         }
@@ -244,7 +264,7 @@
                         || page.querySelector(`[data-workplace-row-modal="${modal.id}"] [data-row-actions-toggle]`)
                         || [...page.querySelectorAll(`[data-workplace-edit-open="${modal.id}"]`)]
                             .find(trigger => trigger.getClientRects().length)
-                        || page.querySelector('[data-team-invitation-return]'));
+                        || page.querySelector('[data-team-member-return]'));
                 if (target?.isConnected) target.focus({ preventScroll: true });
             }
         }
@@ -264,6 +284,25 @@
             link.click();
         }
         page.addEventListener('click', event => {
+            const copy = event.target.closest('[data-workplace-copy-link]');
+            if (copy) {
+                const link = copy.closest('.workplace-invite-link').querySelector('input');
+                const status = copy.closest('.workplace-invite-links').querySelector('[data-workplace-copy-status]');
+                const selectLink = () => {
+                    link.focus();
+                    link.select();
+                    status.textContent = 'Automatyczne kopiowanie jest niedostępne. Skopiuj zaznaczony adres z pola.';
+                };
+                if (!navigator.clipboard?.writeText) {
+                    selectLink();
+                    return;
+                }
+                navigator.clipboard.writeText(link.value).then(
+                    () => { status.textContent = 'Link skopiowany.'; },
+                    selectLink,
+                );
+                return;
+            }
             const row = event.target.closest('[data-workplace-row-modal]');
             if (row && !event.defaultPrevented && event.button === 0
                 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
@@ -318,20 +357,10 @@
                 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
             selectTab(modal, tabs[next].dataset.workplaceTab, true);
         }, options);
-        document.querySelectorAll('[data-team-invite-form], [data-team-role-form], [data-team-response-form]').forEach(form => {
+        document.querySelectorAll('[data-team-add-form], [data-team-role-form]').forEach(form => {
             form.addEventListener('submit', event => {
                 if (form.dataset.submitting) { event.preventDefault(); return; }
                 form.dataset.submitting = 'true';
-                if (form.matches('[data-team-response-form]')) {
-                    const action = document.createElement('input');
-                    action.type = 'hidden';
-                    action.name = 'action';
-                    action.value = event.submitter?.value || '';
-                    form.appendChild(action);
-                    form.querySelectorAll('[type="submit"]').forEach(button => { button.disabled = true; });
-                    if (event.submitter) event.submitter.textContent = 'Zapisywanie…';
-                    return;
-                }
                 const button = form.querySelector('[type="submit"]');
                 button.disabled = true;
                 button.textContent = 'Zapisywanie…';

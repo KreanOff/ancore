@@ -5,8 +5,6 @@ import uuid
 from django.conf import settings
 from django.core.validators import FileExtensionValidator
 from django.db import IntegrityError, models, router, transaction
-from django.db.models import Q
-from django.db.models.functions import Lower
 from django.utils import timezone
 from datetime import timedelta
 
@@ -122,38 +120,11 @@ def invitation_expiry():
     return timezone.now() + timedelta(days=7)
 
 
-class WorkplaceInvitation(models.Model):
-    class Status(models.TextChoices):
-        PENDING = 'pending', 'Oczekuje'
-        ACCEPTED = 'accepted', 'Przyjęte'
-        DECLINED = 'declined', 'Odrzucone'
-        REVOKED = 'revoked', 'Anulowane'
-
-    workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='invitations')
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='workplace_invitations', null=True, blank=True)
-    email = models.EmailField(blank=True)
-    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    email_sent_at = models.DateTimeField(null=True, blank=True)
-    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_workplace_invitations')
-    role = models.CharField(max_length=20, choices=[('admin', 'Administrator'), ('member', 'Członek'), ('guest', 'Gość — tylko odczyt')], default='member')
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(default=invitation_expiry)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['workplace', 'recipient'], condition=Q(status='pending'), name='unique_pending_workplace_invite'),
-            models.UniqueConstraint(Lower('email'), 'workplace', condition=Q(status='pending') & ~Q(email=''), name='unique_pending_workspace_email'),
-        ]
-        ordering = ['-created_at', '-pk']
-
-
 class WorkplaceInviteLink(models.Model):
     workplace = models.ForeignKey(Workplace, on_delete=models.CASCADE, related_name='invite_links')
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     role = models.CharField(max_length=20, choices=[('member', 'Członek'), ('guest', 'Gość — tylko odczyt')], default='member')
-    email_domain = models.CharField(max_length=253, blank=True)
     max_uses = models.PositiveIntegerField(default=10)
     uses = models.PositiveIntegerField(default=0)
     expires_at = models.DateTimeField(default=invitation_expiry)

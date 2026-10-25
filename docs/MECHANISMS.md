@@ -93,8 +93,8 @@ literami. Hasło i aktywność konta nadal sprawdza Django. Historyczny
 `ModelBackend` pozostaje dostępny dla istniejących sesji.
 Ograniczenie `accounts_user_email_ci_unique` na `Lower(email)` chroni również
 równoczesne zapisy i operacje ORM. Konflikt pomiędzy walidacją a zapisem
-wraca jako błąd pola e-mail, bez błędu HTTP 500. Zaproszenia wymagają
-jednoznacznego odbiorcy; starsze duplikaty są odrzucane.
+wraca jako błąd pola e-mail, bez błędu HTTP 500. Sam adres e-mail nie nadaje
+dostępu do Workspace; ręczne dodawanie wskazuje istniejące konto.
 Przy rejestracji kolizja wygenerowanego `username` powoduje ponowny wybór
 unikatowego ID i zapis w osobnym savepoincie (maksymalnie pięć prób).
 Równoczesne rejestracje osób o takich samych imionach i nazwiskach mogą
@@ -131,11 +131,11 @@ osobnego workera obecności.
 Panel `/workplaces/?workspace=<pk>` wybiera przestrzeń do zarządzania niezależnie
 od aktywnego Workspace. `render_workplaces()` sprawdza wybór w `workplaces_for_user()`;
 `team_context()` buduje skład i akcje według roli w wybranej przestrzeni.
-`management_view` rozdziela katalog, członków i zaproszenia otrzymane/wysłane.
+`management_view` rozdziela katalog, członków i linki do dołączenia.
 `workplace_management_url()` zachowuje wybór po zapisie i dopuszcza wyłącznie
 znane wartości `view`; ustawienia odtwarzają zakładkę z formularza. Oglądanie i edycja zespołu
 nie wywołują `set_active_workplace()`; utworzenie nowego Workspace, jawne przełączenie,
-scoped URL modułu i przyjęcie zaproszenia zachowują dotychczasowe działanie.
+scoped URL modułu i potwierdzenie linku do dołączenia zmieniają aktywny kontekst.
 
 Źródło: [workplaces/services.py](../backend/workplaces/services.py).
 
@@ -504,16 +504,14 @@ w localStorage. Zwykłe puste i jednoznakowe zapytania nadal nie wykonują wyszu
 
 `SpaceTaskActivity` przechowuje komentarze i historię; do inbox trafiają
 wyłącznie dostępne komentarze. `NotificationState` wskazuje dokładnie jedno źródło:
-komentarz, `SpaceTaskReminder` albo `WorkplaceInvitation`. Nie ma dawnych dostaw
+komentarz albo `SpaceTaskReminder`. Nie ma dawnych dostaw
 Tasks/Kanbana, projektów i grup ani modeli subskrypcji.
 
 `dashboard.notification_service` sprawdza bieżące ACL przy liście, licznikach
 i każdej akcji. Odczyt, archiwum i usunięcie są osobiste i nie kasują źródła.
-Zaproszenia wymagają przyjęcia lub odrzucenia; do wygaśnięcia nie można ich
-ukryć przez archiwizację ani usunięcie powiadomienia. Usuwanie zbiorcze pomija
-zaproszenia, także dla wcześniej podpisanych snapshotów. Dawny `is_deleted`
-nie ukrywa nadal oczekującego zaproszenia. `deletable_count` liczy usuwalne
-wpisy wszystkich stron aktualnego filtra.
+Zaproszenia e-mail i ich stany zostały usunięte. Link do dołączenia nie jest
+źródłem powiadomień. `deletable_count` liczy usuwalne wpisy wszystkich stron
+aktualnego filtra.
 Lista ma stronicowanie kursorem i podpisany snapshot; operacje zbiorcze obejmują
 wszystkie strony aktualnego filtra do czasu snapshotu, bez późniejszych wpisów.
 Kursor i snapshot są związane z użytkownikiem, czasem i filtrem Workspace.
@@ -848,9 +846,9 @@ tablicy pozostają poza listą proxy. Powłoka React pełnego edytora używa
 oryginalnych endpointów JSON i niszczy wyspę edytora przy odmontowaniu.
 
 Zarządzanie Workspace serializuje `backend/workplaces/frontend.py`. Jawnie dopuszczone
-operacje API wywołują te same widoki zarządzania i zaproszeń. Wybrany Workspace
+operacje API wywołują te same widoki zarządzania, ręcznego dodawania i linków. Wybrany Workspace
 jest autoryzowany niezależnie od aktywnej sesji, bez automatycznego przełączania
-przy odczycie/edycji. Role i ograniczenia zaproszeń nadal sprawdzają formularze
+przy odczycie/edycji. Role i aktywność wybranego konta sprawdzają formularze
 oraz blokowane transakcje; kod Workspace jest nieedytowalny. Podpowiedzi API
 zwracają dane awatara bez fragmentu HTML. Favorites należą do trwałej powłoki
 React i korzystają z jawnie dopuszczonych operacji API ekranów. [Pełny kontrakt](FRONTEND.md).

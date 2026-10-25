@@ -7,6 +7,6 @@
 {% elif user.is_authenticated %}
 <form method="post" class="auth-form">{% csrf_token %}
 <button class="auth-submit" type="submit">Dołącz do Workspace</button></form>
-{% else %}<p>Zaloguj się lub utwórz konto, aby przyjąć zaproszenie.</p>
+{% else %}<p>Zaloguj się lub utwórz konto, aby dołączyć do Workspace.</p>
 <p><a href="{% url 'login' %}">Zaloguj się</a> · <a href="{% url 'register' %}">Utwórz konto</a></p>{% endif %}
 {% endblock %}

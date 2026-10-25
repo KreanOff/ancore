@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.utils import timezone
 from django.urls import reverse
 
-from .models import Workplace, WorkplaceInvitation, WorkplaceMembership
+from .models import Workplace, WorkplaceMembership
 
 
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
@@ -15,21 +14,9 @@ SCOPED_WORKPLACE_APPS = {'calendar', 'documents', 'office', 'resources', 'for-yo
 def workplace_management_url(workplace, view='members'):
     """Management selection never changes the active business-data Workspace."""
     url = f'{reverse("workplaces:workplaces")}?workspace={workplace.pk}'
-    if view == 'received':
-        view = 'workspaces'
-    if view in {'invitations', 'workspaces'}:
+    if view in {'links', 'workspaces'}:
         url += f'&view={view}'
     return url
-
-
-def pending_invitations_for_user(user):
-    """Incoming invitations are visible before membership, across Workspaces."""
-    if not user or not getattr(user, 'is_authenticated', False) or not user.is_active:
-        return WorkplaceInvitation.objects.none()
-    return WorkplaceInvitation.objects.filter(
-        Q(recipient=user) | Q(email__iexact=user.email), status=WorkplaceInvitation.Status.PENDING,
-        expires_at__gt=timezone.now(),
-    )
 
 
 def workplaces_for_user(user):

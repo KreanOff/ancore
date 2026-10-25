@@ -15,7 +15,7 @@ from documents import office_service
 from planner.models import CalendarEvent
 from spaces.models import SpaceTask, SpaceTaskFile
 from spaces.testing import make_task
-from .models import WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
+from .models import WorkplaceMembership, create_workplace_for_user
 from .services import workplaces_for_user, scoped_workplace_app_path
 
 
@@ -185,45 +185,50 @@ class TeamAccessTests(TestCase):
         self.task.refresh_from_db()
         self.assertEqual(self.task.status, 'new')
 
-    def test_invitation_acceptance_requires_recipient_and_is_single_use(self):
+    def test_manual_addition_is_immediate_and_preserves_the_managers_active_workspace(self):
         self.client.force_login(self.owner)
-        response = self.client.post(reverse('workplaces:team', args=[self.team.pk]), {'email': self.outsider.email.upper(), 'role': 'member'})
+        session = self.client.session
+        session['active_workplace_id'] = self.private.pk
+        session.save()
+        self.assertFalse(self.team.memberships.filter(user=self.outsider).exists())
+        response = self.client.post(reverse('workplaces:team', args=[self.team.pk]), {'user_id': self.outsider.pk, 'role': 'member'})
         self.assertEqual(response.status_code, 302)
-        invitation = WorkplaceInvitation.objects.get(recipient=self.outsider)
-        response_url = reverse('workplaces:invitation-response', args=[invitation.pk])
-        self.assertEqual(self.client.post(response_url, {'action': 'accept'}).status_code, 404)
+        self.assertTrue(self.team.memberships.filter(user=self.outsider, role='member', is_active=True).exists())
+        self.assertEqual(self.client.session['active_workplace_id'], self.private.pk)
         self.client.force_login(self.outsider)
-        self.assertContains(self.client.get(reverse('workplaces:workplaces')), self.team.name)
-        self.assertEqual(self.client.post(response_url, {'action': 'accept'}).status_code, 302)
-        self.assertTrue(self.team.memberships.filter(user=self.outsider, role='member').exists())
-        self.assertEqual(self.client.post(response_url, {'action': 'accept'}).status_code, 404)
         self.assertEqual(self.client.get(self.url()).status_code, 200)
 
-    def test_expired_cancelled_and_declined_invitations_do_not_grant_access(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.team, recipient=self.outsider, invited_by=self.owner, expires_at=timezone.now()-timedelta(seconds=1))
-        self.client.force_login(self.outsider)
-        url = reverse('workplaces:invitation-response', args=[invitation.pk])
-        self.assertEqual(self.client.post(url, {'action': 'accept'}).status_code, 404)
-        invitation.expires_at = timezone.now()+timedelta(days=1)
-        invitation.save()
-        self.assertEqual(self.client.post(url, {'action': 'decline'}).status_code, 302)
-        self.assertEqual(self.client.post(url, {'action': 'accept'}).status_code, 404)
+    def test_manual_addition_requires_an_existing_active_account_identity(self):
+        inactive = get_user_model().objects.create_user(username='inactive-add', email='inactive-add@team.test', is_active=False)
+        self.client.force_login(self.owner)
+        url = reverse('workplaces:team', args=[self.team.pk])
+        for values in [
+            {'user_id': '999999999'}, {'user_id': 'bad'}, {'user_id': inactive.pk},
+            {'user_id': self.owner.pk}, {'email': self.outsider.email},
+        ]:
+            with self.subTest(values=values):
+                response = self.client.post(url, {**values, 'role': 'member'})
+                self.assertEqual(response.status_code, 200)
+                self.assertIn('user_id', response.context['add_form'].errors)
         self.assertFalse(self.team.memberships.filter(user=self.outsider).exists())
+        self.assertFalse(self.team.memberships.filter(user=inactive).exists())
 
     def test_role_escalation_and_workspace_management_are_blocked(self):
         team_url = reverse('workplaces:team', args=[self.team.pk])
-        self.assertEqual(self.client.post(team_url, {'email': self.outsider.email, 'role': 'admin'}).status_code, 403)
+        self.assertEqual(self.client.post(team_url, {'user_id': self.outsider.pk, 'role': 'admin'}).status_code, 403)
         self.assertEqual(self.client.post(reverse('workplaces:update', args=[self.team.pk]), {'name': 'Zmiana'}).status_code, 403)
         self.assertEqual(self.client.post(reverse('workplaces:delete', args=[self.team.pk])).status_code, 404)
         self.client.force_login(self.admin)
-        self.assertEqual(self.client.post(team_url, {'email': self.outsider.email, 'role': 'admin'}).status_code, 200)
-        self.assertFalse(WorkplaceInvitation.objects.filter(recipient=self.outsider).exists())
+        response = self.client.post(team_url, {'user_id': self.outsider.pk, 'role': 'admin'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('role', response.context['add_form'].errors)
+        self.assertFalse(self.team.memberships.filter(user=self.outsider).exists())
         self.assertEqual(self.client.post(reverse('workplaces:member-update', args=[self.team.pk, self.admin_membership.pk]), {'action': 'role', 'role': 'owner'}).status_code, 403)
-        self.assertEqual(self.client.post(team_url, {'email': self.outsider.email, 'role': 'member'}).status_code, 302)
-        invitation = WorkplaceInvitation.objects.get(recipient=self.outsider)
-        self.assertEqual(self.client.post(reverse('workplaces:invitation-cancel', args=[self.team.pk, invitation.pk])).status_code, 302)
-        invitation.refresh_from_db()
-        self.assertEqual(invitation.status, 'revoked')
+        self.assertEqual(self.client.post(team_url, {'user_id': self.outsider.pk, 'role': 'member'}).status_code, 302)
+        membership = self.team.memberships.get(user=self.outsider)
+        self.assertEqual(membership.role, 'member')
+        self.assertEqual(self.client.post(reverse('workplaces:member-update', args=[self.team.pk, membership.pk]), {'action': 'remove'}).status_code, 302)
+        self.assertFalse(self.team.memberships.filter(user=self.outsider).exists())
 
     def test_owner_can_promote_and_admin_can_remove_member_but_not_owner(self):
         self.client.force_login(self.owner)
@@ -268,13 +273,19 @@ class TeamAccessTests(TestCase):
         self.assertFalse(office_service.check_capability(self.office, token, 'callback'))
         self.assertTrue(office_service.check_capability(self.office, office_service.capability(self.office, 'callback', self.owner), 'callback'))
 
-    def test_inactive_historical_membership_requires_an_invitation(self):
+    def test_manager_can_reactivate_membership_without_changing_active_workspace(self):
         self.membership.is_active = False
         self.membership.save(update_fields=['is_active'])
         self.assertNotIn(self.team, workplaces_for_user(self.member))
         self.assertEqual(self.client.get(self.url()).status_code, 302)
-        invitation = WorkplaceInvitation.objects.create(workplace=self.team, recipient=self.member, invited_by=self.owner)
-        self.assertEqual(self.client.post(reverse('workplaces:invitation-response', args=[invitation.pk]), {'action': 'accept'}).status_code, 302)
+        self.client.force_login(self.owner)
+        session = self.client.session
+        session['active_workplace_id'] = self.private.pk
+        session.save()
+        self.assertEqual(self.client.post(reverse('workplaces:team', args=[self.team.pk]), {'user_id': self.member.pk, 'role': 'member'}).status_code, 302)
+        self.assertEqual(self.client.session['active_workplace_id'], self.private.pk)
         self.membership.refresh_from_db()
         self.assertTrue(self.membership.is_active)
+        self.assertEqual(self.membership.role, 'member')
+        self.client.force_login(self.member)
         self.assertEqual(self.client.get(self.url()).status_code, 200)

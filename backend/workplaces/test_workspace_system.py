@@ -1,12 +1,10 @@
 """Workspace capabilities are enforced on direct routes and delegated APIs."""
 import json
 from datetime import timedelta
-from unittest.mock import patch
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
-from django.core import mail
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -15,11 +13,10 @@ from documents.models import WorkspaceDocument
 from documents import office_service
 from spaces.models import SpaceMembership
 from spaces.testing import make_space, make_task
-from .models import Workplace, WorkplaceInvitation, WorkplaceInviteLink, WorkplaceMembership, create_workplace_for_user
+from .models import Workplace, WorkplaceInviteLink, WorkplaceMembership, create_workplace_for_user
 from .services import scoped_workplace_app_path
 
 
-@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class WorkspaceSystemTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -123,38 +120,24 @@ class WorkspaceSystemTests(TestCase):
         self.workspace.disabled_modules = ['office']; self.workspace.save()
         self.assertFalse(office_service.check_capability(document, office_service.capability(document, 'source', self.owner), 'source'))
 
-    def test_external_email_invitation_is_delivered_and_bound_to_email(self):
-        response = self.client.post(reverse('workplaces:team', args=[self.workspace.pk]), {'email': 'new@example.test', 'role': 'guest'})
-        self.assertEqual(response.status_code, 302)
-        invitation = WorkplaceInvitation.objects.get(email='new@example.test')
-        self.assertIsNone(invitation.recipient)
-        self.assertIsNotNone(invitation.email_sent_at)
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertEqual(self.client.get(reverse('workplaces:workplaces'), {'workspace': self.workspace.pk, 'view': 'invitations'}).status_code, 200)
-        url = reverse('workplaces:join-email', args=[invitation.token])
-        self.assertIn(url, mail.outbox[0].body)
-        self.client.force_login(self.other)
-        self.assertEqual(self.client.post(url).status_code, 400)
-        self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.workspace, user=self.other).exists())
-        user = get_user_model().objects.create_user(username='external', email='NEW@example.test')
+    def test_email_string_cannot_add_or_claim_workspace_access(self):
+        response = self.client.post(reverse('workplaces:team', args=[self.workspace.pk]), {'email': 'new@example.test', 'role': 'admin'})
+        self.assertContains(response, 'To pole jest wymagane.')
+        user = get_user_model().objects.create_user(username='self-declared', email='new@example.test')
         self.client.force_login(user)
-        self.assertEqual(self.client.get(url).status_code, 200)
-        self.assertFalse(WorkplaceMembership.objects.filter(user=user).exists())
-        self.assertEqual(self.client.post(url).status_code, 302)
-        self.assertEqual(WorkplaceMembership.objects.get(user=user).role, 'guest')
-        invitation.refresh_from_db(); self.assertEqual(invitation.status, 'accepted')
+        for target in ('/workplaces/invitations/1/respond/', '/workplaces/1/invitations/1/cancel/', '/workplaces/1/invitations/1/resend/'):
+            self.assertEqual(self.client.post(target, {'action': 'accept'}).status_code, 404)
+            self.assertEqual(self.api(target, {'action': 'accept'}).status_code, 404)
+        self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.workspace, user=user).exists())
 
-    def test_failed_email_delivery_preserves_link_and_can_be_retried(self):
-        with patch('workplaces.invitations.send_mail', side_effect=OSError('SMTP unavailable')):
-            response = self.client.post(reverse('workplaces:team', args=[self.workspace.pk]), {'email': self.other.email, 'role': 'member'})
+    def test_manager_manually_adds_selected_existing_account(self):
+        response = self.client.post(reverse('workplaces:team', args=[self.workspace.pk]), {'user_id': self.other.pk, 'role': 'member'})
         self.assertEqual(response.status_code, 302)
-        invitation = WorkplaceInvitation.objects.get(email=self.other.email)
-        self.assertIsNone(invitation.email_sent_at)
-        self.client.post(reverse('workplaces:invitation-resend', args=[self.workspace.pk, invitation.pk]))
-        invitation.refresh_from_db(); self.assertIsNotNone(invitation.email_sent_at)
+        self.assertEqual(WorkplaceMembership.objects.get(workplace=self.workspace, user=self.other).role, 'member')
+        self.assertEqual(self.client.session['active_workplace_id'], self.workspace.pk)
 
-    def test_shareable_link_capacity_domain_and_revocation(self):
-        link = WorkplaceInviteLink.objects.create(workplace=self.workspace, created_by=self.owner, role='guest', max_uses=1, email_domain='example.test')
+    def test_shareable_link_capacity_and_revocation(self):
+        link = WorkplaceInviteLink.objects.create(workplace=self.workspace, created_by=self.owner, role='guest', max_uses=1)
         url = reverse('workplaces:join-link', args=[link.token])
         self.client.force_login(self.other)
         self.assertEqual(self.client.get(url).status_code, 200)
@@ -163,8 +146,7 @@ class WorkspaceSystemTests(TestCase):
         link.refresh_from_db(); self.assertEqual(link.uses, 1)
         self.assertEqual(WorkplaceMembership.objects.get(user=self.other).role, 'guest')
         self.assertEqual(self.client.post(url).status_code, 400)
-        fresh = WorkplaceInviteLink.objects.create(workplace=self.workspace, role='member', email_domain='company.test')
-        self.assertEqual(self.client.post(reverse('workplaces:join-link', args=[fresh.token])).status_code, 400)
+        fresh = WorkplaceInviteLink.objects.create(workplace=self.workspace, role='member')
         fresh.revoked_at = timezone.now(); fresh.save()
         self.assertContains(self.client.get(reverse('workplaces:join-link', args=[fresh.token])), 'niedostępne')
 
@@ -182,6 +164,7 @@ class WorkspaceSystemTests(TestCase):
     def test_only_managers_create_links_and_cannot_grant_owner_or_admin_by_link(self):
         url = reverse('workplaces:invite-link-create', args=[self.workspace.pk])
         self.assertEqual(self.client.post(url, {'role': 'owner', 'days': '7', 'max_uses': '10'}).status_code, 400)
+        self.assertEqual(self.client.post(url, {'role': 'member', 'days': '7', 'max_uses': '10', 'email_domain': 'company.test'}).status_code, 400)
         self.client.force_login(self.guest)
         self.assertEqual(self.client.post(url, {'role': 'member', 'days': '7', 'max_uses': '10'}).status_code, 403)
         self.assertFalse(WorkplaceInviteLink.objects.exists())

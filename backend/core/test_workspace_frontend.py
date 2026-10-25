@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from documents.models import WorkspaceDocument
-from workplaces.models import Workplace, WorkplaceInvitation, WorkplaceMembership, create_workplace_for_user
+from workplaces.models import Workplace, WorkplaceInviteLink, WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=')
@@ -119,47 +119,43 @@ class ReactWorkspaceTests(TestCase):
         self.assertFalse(self.selected.workplace_photo.storage.exists(photo))
         self.assertEqual(self.selected.avatar, 'leaf')
 
-    def test_member_cannot_read_sent_invitations_or_write_settings(self):
-        WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.outside, invited_by=self.owner)
+    def test_member_cannot_read_links_or_write_settings(self):
+        link = WorkplaceInviteLink.objects.create(workplace=self.selected)
         self.login(self.member)
-        data = self.get(self.base+f'?workspace={self.selected.pk}&view=invitations').json()['data']
+        data = self.get(self.base+f'?workspace={self.selected.pk}&view=links').json()['data']
         self.assertFalse(data['team']['can_manage'])
         self.assertIsNone(data['team']['form'])
-        self.assertIsNone(data['team']['invite_form'])
-        self.assertEqual(data['team']['invitations'], [])
-        self.assertNotIn(self.outside.email, str(data))
-        self.assertTrue(all(not p['change_url'] for p in data['team']['members']))
+        self.assertIsNone(data['team']['add_form'])
+        self.assertNotIn('invite_links', data['team'])
+        self.assertNotIn(str(link.token), str(data))
+        self.assertTrue(all(not person['change_url'] for person in data['team']['members']))
         self.assertEqual(self.post(self.target('update', self.selected.pk), {'name': 'Nie'}).status_code, 403)
-        self.assertEqual(self.get(self.target('invitation-candidates', self.selected.pk)+'?q=Osoba').status_code, 403)
+        self.assertEqual(self.get(self.target('member-candidates', self.selected.pk)+'?q=Osoba').status_code, 403)
 
-    def test_candidates_are_data_without_html_and_are_revalidated_on_invite(self):
-        target = self.target('invitation-candidates', self.selected.pk)
+    def test_candidates_are_data_and_revalidated_on_manual_add(self):
+        target = self.target('member-candidates', self.selected.pk)
         results = self.get(target+'?q=Osoba').json()['results']
-        self.assertEqual(results[0]['name'], '<Osoba>')
+        self.assertEqual((results[0]['name'], results[0]['id']), ('<Osoba>', str(self.outside.pk)))
         self.assertIn('avatar', results[0])
         self.assertNotIn('html', results[0])
-        invitation = self.post(self.target('team', self.selected.pk), {'email': self.outside.email, 'role': 'admin'})
-        self.assertEqual(invitation.status_code, 200)
-        created = WorkplaceInvitation.objects.get(recipient=self.outside)
-        self.assertEqual((created.invited_by, created.role), (self.owner, 'admin'))
+        response = self.post(self.target('team', self.selected.pk), {'user_id': self.outside.pk, 'role': 'admin'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(WorkplaceMembership.objects.get(workplace=self.selected, user=self.outside).role, 'admin')
         self.assertEqual(self.get(target+'?q=Osoba').json()['results'], [])
-        duplicate = self.post(self.target('team', self.selected.pk), {'email': self.outside.email, 'role': 'member'})
+        duplicate = self.post(self.target('team', self.selected.pk), {'user_id': self.outside.pk, 'role': 'member'})
         self.assertEqual(duplicate.status_code, 400)
-        self.assertTrue(duplicate.json()['data']['invite_open'])
+        self.assertTrue(duplicate.json()['data']['add_open'])
         self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
 
-    def test_admin_cannot_promote_or_remove_admin_or_cancel_admin_invitation(self):
-        invitation = WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.outside, invited_by=self.owner, role='admin')
+    def test_admin_cannot_add_or_promote_another_admin(self):
         self.login(self.admin)
         data = self.get(self.base+f'?workspace={self.selected.pk}').json()['data']['team']
-        self.assertEqual([c['value'] for f in data['invite_form']['fields'] if f['name']=='role' for c in f['choices']], ['member', 'guest'])
-        self.assertFalse(next(p for p in data['members'] if p['id']==str(self.administrator.pk))['change_url'])
-        self.assertFalse(next(p for p in data['invitations'] if p['id']==str(invitation.pk))['cancel_url'])
+        self.assertEqual([choice['value'] for field in data['add_form']['fields'] if field['name']=='role' for choice in field['choices']], ['member', 'guest'])
+        self.assertFalse(next(person for person in data['members'] if person['id']==str(self.administrator.pk))['change_url'])
         self.assertEqual(self.post(self.target('member-update', self.selected.pk, self.membership.pk), {'action':'role','role':'admin'}).status_code, 403)
-        self.assertEqual(self.post(self.target('invitation-cancel', self.selected.pk, invitation.pk), {}).status_code, 403)
-        self.assertEqual(self.post(self.target('team', self.selected.pk), {'email':self.outside.email,'role':'admin'}).status_code, 400)
+        self.assertEqual(self.post(self.target('team', self.selected.pk), {'user_id':self.outside.pk,'role':'admin'}).status_code, 400)
 
-    def test_owner_role_removal_and_cancel_keep_domain_effects(self):
+    def test_owner_role_and_removal_keep_domain_effects(self):
         target = self.target('member-update', self.selected.pk, self.membership.pk)
         self.assertEqual(self.post(target, {'action':'role','role':'admin'}).status_code, 200)
         self.membership.refresh_from_db()
@@ -170,40 +166,25 @@ class ReactWorkspaceTests(TestCase):
         self.assertFalse(WorkplaceMembership.objects.filter(pk=self.membership.pk).exists())
         item.refresh_from_db()
         self.assertNotEqual(key, item.office_key)
-        invitation = WorkplaceInvitation.objects.create(workplace=self.selected, recipient=self.outside, invited_by=self.owner)
-        self.assertEqual(self.post(self.target('invitation-cancel', self.selected.pk, invitation.pk), {}).status_code, 200)
-        invitation.refresh_from_db()
-        self.assertEqual(invitation.status,'revoked')
         self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
 
-    def test_incoming_invitation_is_recipient_only_and_accept_switches(self):
-        incoming = WorkplaceInvitation.objects.create(workplace=self.foreign, recipient=self.owner, invited_by=self.outside)
-        another = create_workplace_for_user(self.outside, 'Drugie zaproszenie')
-        WorkplaceInvitation.objects.create(workplace=another, recipient=self.owner, invited_by=self.outside)
-        data = self.get(self.base+f'?invitation={incoming.pk}&workspace={self.selected.pk}').json()['data']['incoming']
-        self.assertEqual(data['name'], self.foreign.name)
-        self.assertEqual(data['role'], 'Członek')
-        navigation = data['previous'] or data['next']
-        self.assertIn(f'workspace={self.selected.pk}', navigation)
-        self.assertIn('view=workspaces', navigation)
+    def test_link_management_contract_keeps_current_context(self):
+        link = WorkplaceInviteLink.objects.create(workplace=self.selected, role='guest')
+        data = self.get(self.base+f'?workspace={self.selected.pk}&view=links').json()['data']
+        self.assertEqual(data['tab'], 'links')
+        self.assertTrue(data['edit_open'])
+        self.assertNotIn('incoming', data)
+        self.assertNotIn('invitations', data['team'])
+        self.assertIn(str(link.token), data['team']['invite_links'][0]['url'])
+        self.assertNotIn('email_domain', [field['name'] for field in data['team']['link_form']['fields']])
         self.assertEqual(self.client.session['active_workplace_id'], self.active.pk)
-        self.assertEqual(self.post(data['action'], {'action':'accept'}).status_code, 200)
-        self.assertEqual(self.client.session['active_workplace_id'], self.foreign.pk)
-        self.assertTrue(WorkplaceMembership.objects.filter(workplace=self.foreign, user=self.owner, is_active=True).exists())
-        self.assertEqual(self.post(data['action'], {'action':'accept'}).status_code, 404)
-        self.login(self.member)
-        self.assertEqual(self.post(data['action'], {'action':'decline'}).status_code, 404)
 
-    def test_expired_declined_and_missing_invitations_do_not_grant_access(self):
-        incoming = WorkplaceInvitation.objects.create(workplace=self.foreign, recipient=self.owner, invited_by=self.outside)
-        response = self.post(self.target('invitation-response', incoming.pk), {'action':'decline'})
-        self.assertEqual(response.status_code, 200)
-        incoming.refresh_from_db()
-        self.assertEqual(incoming.status,'declined')
-        expired = WorkplaceInvitation.objects.create(workplace=self.foreign, recipient=self.owner, invited_by=self.outside, expires_at=timezone.now()-timedelta(days=1))
-        self.assertEqual(self.post(self.target('invitation-response', expired.pk), {'action':'accept'}).status_code, 404)
-        self.assertIn('redirect', self.get(self.base+'?invitation=999999').json())
-        self.assertFalse(WorkplaceMembership.objects.filter(workplace=self.foreign, user=self.owner).exists())
+    def test_retired_email_operations_are_not_delegated(self):
+        for target in ('/workplaces/invitations/1/respond/', '/workplaces/1/invitations/1/resend/', '/workplaces/1/invitations/1/cancel/', '/workplaces/invite/00000000-0000-0000-0000-000000000001/'):
+            self.assertEqual(self.post(target, {'action':'accept'}).status_code, 404)
+        data = self.get(self.base+'?invitation=1').json()['data']
+        self.assertNotIn('incoming', data)
+        self.assertNotIn('invite_open', data)
 
     def test_explicit_switch_delete_last_owner_guard_and_foreign_targets(self):
         self.assertEqual(self.post(self.target('switch', self.selected.pk), {}).status_code, 200)

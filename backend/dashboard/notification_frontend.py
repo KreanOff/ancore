@@ -16,7 +16,6 @@ def notification_payload(user, context):
                 'group_label', 'event_label', 'full_date', 'action_label',
             )},
             'is_read': bool(item.get('is_read')), 'is_archived': bool(item.get('is_archived')),
-            'is_invitation': bool(item.get('is_invitation')),
             'created_at': item['created_at'].isoformat(),
             'time': timezone.localtime(item['created_at']).strftime('%H:%M'),
             'details': [{

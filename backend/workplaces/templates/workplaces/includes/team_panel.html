@@ -1,8 +1,4 @@
-<section class="workplace-team workplaces-management__team" id="workspace-team-{% if show_invitations %}invitations{% else %}members{% endif %}" aria-labelledby="workspace-team-title-{% if show_invitations %}invitations{% else %}members{% endif %}" data-workplace-team>
-    <h2 id="workspace-team-title-{% if show_invitations %}invitations{% else %}members{% endif %}" class="u-sr-only">{% if show_invitations %}Wysłane zaproszenia{% else %}Członkowie{% endif %} · {{ team_workplace.name }}</h2>
-    {% if show_invitations %}
-        {% include 'workplaces/includes/invitations_table.html' %}
-    {% else %}
-        {% include 'workplaces/includes/members_table.html' %}
-    {% endif %}
+<section class="workplace-team workplaces-management__team" id="workspace-team-members" aria-labelledby="workspace-team-title-members" data-workplace-team>
+    <h2 id="workspace-team-title-members" class="u-sr-only">Członkowie · {{ team_workplace.name }}</h2>
+    {% include 'workplaces/includes/members_table.html' %}
 </section>

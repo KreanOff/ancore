@@ -85,8 +85,8 @@ potwierdzenia dołączenia, bez tworzenia osobistego Workspace.
 [nawigacja](../backend/workplaces/navigation.py).
 
 **Funkcje:** katalog Workspace oraz zakładki „Główna”, „Członkowie”
-i „Wysłane zaproszenia” w oknie edycji miejsca pracy. Otrzymane zaproszenia
-są dostępne przez powiadomienia. Utworzenie, edycja, usunięcie i przełączenie;
+i „Linki do dołączenia” w oknie edycji miejsca pracy. Członków dodaje się
+ręcznie przez wybór istniejącego konta albo przez potwierdzenie linku. Utworzenie, edycja, usunięcie i przełączenie;
 nazwa, opis i awatar; stały losowy kod oraz ulubione miejsca w nawigacji i ich kolejność.
 Nazwy mogą się powtarzać. Kod `w_` + 26 małych liter/cyfr jest globalnie unikatowy,
 nadawany automatycznie i tylko do odczytu. Jest także segmentem adresu Workspace;
@@ -114,8 +114,8 @@ inicjalizacji ani osobnego serwera/bazy dla każdego Workspace.
 
 `WorkplaceMembership` obsługuje role owner/admin/member/guest. Gość odczytuje
 dostępne dane; prywatność Przestrzeni i zadań nadal obowiązuje. `disabled_modules`
-przechowuje wyłączone moduły, zachowując ich dane. Linki i e-maile zaproszeń,
-terminy, limity, domeny oraz role opisuje [Praca zespołowa](TEAMWORK.md#system-workspace-25102026).
+przechowuje wyłączone moduły, zachowując ich dane. Ręczne dodawanie, linki,
+terminy, limity i role opisuje [Praca zespołowa](TEAMWORK.md#system-workspace-25102026).
 
 `SidebarFavorite` zapisuje w bazie parę użytkownik–Workspace, klucz miejsca
 nawigacji i pozycję. Katalog dozwolonych miejsc jest w
@@ -544,7 +544,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Sekcja Preferencje jest usunięta; zwijanie menu i powiadomienia są dostępne
   przez kontrolki wspólnej powłoki aplikacji.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
-- **Powiadomienia:** centrum zaproszeń, przypomnień oraz komentarzy Zadań,
+- **Powiadomienia:** centrum przypomnień oraz komentarzy Zadań,
   z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
   Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
@@ -563,8 +563,7 @@ odczyt, archiwum i usunięcie osobno dla konta. Własna aktywność jest domyśl
 „Oznacz wszystkie jako przeczytane” i zbiorcze usuwanie obejmują bieżący filtr
 oraz starsze strony listy. Usunięcie wymaga potwierdzenia i nie ma akcji przywracania;
 historia obiektów oraz powiadomienia innych osób pozostają bez zmian.
-Usunięte powiadomienie o zaproszeniu nie usuwa zaproszenia z katalogu Workspace.
-Zaproszenia czekają na decyzję także po odczytaniu. Centrum obejmuje dostępne
+Centrum obejmuje dostępne
 Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
 się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego
 odczytu: [Mechanizmy](MECHANISMS.md#11-historia-a-powiadomienia).
