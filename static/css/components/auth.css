@@ -4,7 +4,8 @@ body.auth-page {
     --auth-ink: var(--text-primary);
     --auth-muted: var(--system-interaction);
     --auth-border: var(--border-color);
-    --auth-input-bg: color-mix(in srgb, var(--system-accent) 3%, var(--card-bg));
+    --auth-input-border: color-mix(in srgb, var(--system-interaction) 80%, var(--card-bg));
+    --auth-input-bg: var(--card-bg);
     --auth-radius: 10px;
     --auth-control-height: 48px;
     width: 100%;
@@ -77,6 +78,22 @@ body.auth-page .auth-form-panel {
     box-shadow: var(--shadow-lg);
 }
 
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    body.auth-page .auth-form-panel {
+        background: color-mix(in srgb, var(--card-bg) 59%, transparent);
+        -webkit-backdrop-filter: blur(20px) saturate(115%);
+        backdrop-filter: blur(20px) saturate(115%);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    body.auth-page .auth-form-panel {
+        background: var(--card-bg);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
 body.auth-page .auth-form-inner {
     width: 100%;
     min-width: 0;
@@ -96,7 +113,7 @@ body.auth-page .auth-tab {
     display: block;
     padding: 0 0 9px;
     border-bottom: 2px solid transparent;
-    font-size: 14px;
+    font-size: 18px;
     line-height: 1.4;
     text-decoration: none;
     transition: color 150ms ease, border-color 150ms ease;
@@ -159,7 +176,7 @@ body.auth-page .auth-form .form-input {
     height: var(--auth-control-height);
     margin: 0;
     padding: 0 14px;
-    border: 1px solid var(--auth-border);
+    border: 1px solid var(--auth-input-border);
     border-radius: var(--auth-radius);
     background: var(--auth-input-bg);
     color: var(--auth-ink) !important;
@@ -196,7 +213,7 @@ body.auth-page .auth-password-control {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 44px;
     overflow: hidden;
-    border: 1px solid var(--auth-border);
+    border: 1px solid var(--auth-input-border);
     border-radius: var(--auth-radius);
     background: var(--auth-input-bg);
     transition: border-color 150ms ease, background 150ms ease;

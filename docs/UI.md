@@ -54,10 +54,16 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 Logowanie, rejestracja i dodanie konta renderują `src/accounts/AuthPage.tsx`
 w powłoce `accounts/auth_base.html`. Pełnoekranowa, lokalna tapeta
 `static/img/auth/wallpaper-violet-dunes-light-4k.webp` jest wspólnym tłem:
-jasną, perłowo-lawendową wersją wcześniejszych wydm. Biały panel formularza
+jasną, perłowo-lawendową wersją wcześniejszych wydm. Jasny panel formularza
 ma szerokość 520px, wysokość dopasowaną do treści i jest wyśrodkowany pionowo
 po prawej stronie. Korzysta z `--card-bg`, `--border-color` i `--shadow-lg`.
-Panel i pola mają pełne krycie. Wariant zachowuje szare teksty `--text-primary`
+Panel ma efekt matowego szkła: 59% krycia koloru `--card-bg` (41% przezroczystości),
+rozmycie tapety 20px i nasycenie 115% przez `backdrop-filter` (również z prefiksem WebKit).
+Przy braku obsługi filtra lub preferencji `prefers-reduced-transparency: reduce`
+wraca do pełnego krycia. Pola mają pełne białe wypełnienie `--card-bg`
+i wyraźniejsze szare obramowanie (80% `--system-interaction` z `--card-bg`).
+Hover i fokus zachowują `--system-interaction`, a fokus dodatkowy obrys 1px.
+Wariant zachowuje szare teksty `--text-primary`
 i neutralne interakcje `--system-interaction`. Przycisk ma lokalny wariant
 `--primary-button-bg: var(--system-accent)` z białym tekstem; hover delikatnie
 przyciemnia fiolet. Aktywna zakładka ma fioletowe podkreślenie.
@@ -70,11 +76,12 @@ Tapeta ma 3840×2160px i bezstratny zapis WebP;
 to eksport powiększonego obrazu Image Gen, nie natywna generacja w 4K.
 [Pochodzenie i prompt](../static/img/auth/README.md).
 Logo Ancore pozostaje w lewym górnym rogu.
-Wariant `auth-tabs` przełącza zwykłymi linkami „Rejestrację” i „Logowanie”;
-aktywny adres ma `aria-current="page"` i fioletowe podkreślenie. Nad zakładkami
+Wariant `auth-tabs` przełącza zwykłymi linkami „Rejestrację” i „Logowanie”.
+Napisy zakładek mają rozmiar 18px, z zachowaniem odstępu 24px między nimi.
+Aktywny adres ma `aria-current="page"` i fioletowe podkreślenie. Nad zakładkami
 jest widoczny nagłówek „Witaj ponownie” lub „Utwórz konto”. Pola mają widoczne
 etykiety i wysokość 48px. Email ma placeholder `email@firma.pl`; pozostałe pola
-nie powtarzają etykiet wewnątrz. Subtelnie fioletowe tło pól obejmuje także
+nie powtarzają etykiet wewnątrz. Białe tło pól obejmuje także
 przycisk podglądu hasła; reguły `:autofill`/`:-webkit-autofill` ujednolicają
 kolor autouzupełnienia przeglądarki i tekstu. Imię i nazwisko
 są w jednym wierszu, opcjonalne drugie imię poniżej; hasła są ułożone pionowo.
