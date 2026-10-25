@@ -65,7 +65,7 @@ export default function TeamsPage(props: PageProps) {
             <h1 className="tasks-topbar-title">{initial.title}</h1>
           </div>
           <div className="tasks-titlebar-actions">
-            {directory || t.can_manage ? (
+            {(directory && d.create_url) || t.can_manage ? (
               <button
                 type="button"
                 className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"

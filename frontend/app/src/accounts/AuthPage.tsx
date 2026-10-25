@@ -69,7 +69,11 @@ function Input({
                 (field.name === 'username' ? 'email@firma.pl' : 'Wpisz hasło')
           }
           aria-invalid={field.errors.length ? true : undefined}
-          aria-describedby={field.errors.length ? id + '-errors' : undefined}
+          aria-describedby={
+            [field.attrs['aria-describedby'], field.errors.length ? id + '-errors' : '']
+              .filter(Boolean)
+              .join(' ') || undefined
+          }
         />
         {password && modern ? (
           <button
@@ -105,8 +109,10 @@ function Input({
 export default function AuthPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as AuthData,
     register = data.mode === 'register',
+    workspace = data.mode === 'workspace',
     add = data.mode === 'add';
   const [schema, setSchema] = useState(data.form),
+    [hasWorkspaces, setHasWorkspaces] = useState(Boolean(data.has_workspaces)),
     [message, setMessage] = useState(''),
     [pending, setPending] = useState(false);
   const busy = useRef(false),
@@ -138,9 +144,11 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
       location.assign(result.redirect);
     } catch (error) {
       if (abort.signal.aborted) return;
-      if (error instanceof PageError && error.data.type === 'account-auth')
-        setSchema(((error.data as unknown as Page).data as AuthData).form);
-      else setMessage(errorMessage(error));
+      if (error instanceof PageError && error.data.type === 'account-auth') {
+        const responseData = (error.data as unknown as Page).data as AuthData;
+        setSchema(responseData.form);
+        setHasWorkspaces(Boolean(responseData.has_workspaces));
+      } else setMessage(errorMessage(error));
       busy.current = false;
       setPending(false);
     }
@@ -158,7 +166,13 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
       />
     );
   };
-  const title = register ? 'Utwórz konto' : add ? 'Dodaj konto' : 'Zaloguj się';
+  const title = workspace
+    ? 'Utwórz Workspace'
+    : register
+      ? 'Utwórz konto'
+      : add
+        ? 'Dodaj konto'
+        : 'Zaloguj się';
   return (
     <main className="auth-shell" data-react-screen="account-auth">
       <header className="auth-topbar">
@@ -170,12 +184,14 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
       <div className="auth-content">
         <section className="auth-form-panel" aria-labelledby="auth-form-title">
           <div className="auth-form-inner">
-            {add ? (
+            {add || workspace ? (
               <header className="auth-form-header">
                 <h1 id="auth-form-title" tabIndex={-1}>
                   {title}
                 </h1>
-                <p className="auth-form-subtitle">Dodaj konto do szybkiego przełączania</p>
+                {add ? (
+                  <p className="auth-form-subtitle">Dodaj konto do szybkiego przełączania</p>
+                ) : null}
               </header>
             ) : (
               <>
@@ -210,18 +226,25 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
               aria-busy={pending}
             >
               <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+              {workspace && hasWorkspaces ? (
+                <input type="hidden" name="create_another" value="1" />
+              ) : null}
               {message || invalid ? (
                 <div ref={alert} className="auth-alert" role="alert" tabIndex={-1}>
                   {message ||
-                    (register
+                    (register || workspace
                       ? 'Sprawdź oznaczone pola.'
                       : add
                         ? 'Nieprawidłowy email lub hasło.'
                         : 'Email lub hasło są nieprawidłowe. Spróbuj ponownie.')}
-                  {register ? schema.errors.map((text, i) => <span key={i}>{text}</span>) : null}
+                  {register || workspace
+                    ? schema.errors.map((text, i) => <span key={i}>{text}</span>)
+                    : null}
                 </div>
               ) : null}
-              {register ? (
+              {workspace ? (
+                renderField('name', 'Nazwa Workspace', true)
+              ) : register ? (
                 <>
                   <div className="auth-field-row auth-field-row--names">
                     {renderField('first_name', 'Imię', true)}
@@ -247,15 +270,20 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
               >
                 <span className="auth-submit-label">
                   {pending
-                    ? 'Zapisywanie…'
-                    : register
-                      ? 'Utwórz konto'
-                      : add
-                        ? 'Dodaj konto'
-                        : 'Zaloguj się'}
+                    ? workspace
+                      ? 'Przygotowywanie Workspace…'
+                      : 'Zapisywanie…'
+                    : workspace
+                      ? 'Utwórz Workspace'
+                      : title}
                 </span>
               </button>
             </form>
+            {workspace ? (
+              <p className="auth-footer auth-footer--workspace">
+                Masz już Workspace? <a href={data.urls.select_workspace}>Wybierz Workspace</a>
+              </p>
+            ) : null}
             {add ? (
               <p className="auth-footer">
                 <a href={data.urls.profile}>Wróć do profilu</a>

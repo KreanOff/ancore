@@ -14,6 +14,7 @@ let latestJSON = '', savedJSON = '', timer, inFlight = false, conflict = false;
 const notify = (type, message, dirty = false) => parent.postMessage({ source: 'ancore-board', type, message, dirty }, location.origin);
 const sceneJSON = () => JSON.stringify(latest);
 function onChange(elements, state, files) {
+    if (config.readOnly) return;
     const nextSignature = elements.map(item => `${item.id}:${item.version}:${item.versionNonce}`).join('|') + state.viewBackgroundColor + Object.keys(files).join('|');
     if (nextSignature === signature) return;
     const first = signature === null;
@@ -30,6 +31,7 @@ function onChange(elements, state, files) {
     timer = setTimeout(() => { latestJSON = sceneJSON(); persist(); }, 1200);
 }
 async function persist() {
+    if (config.readOnly) return;
     latestJSON = sceneJSON();
     if (inFlight || conflict) return;
     if (latestJSON === savedJSON) { notify('status', 'Wszystkie zmiany zapisane'); return; }
@@ -77,7 +79,7 @@ window.addEventListener('beforeunload', event => {
     if (signature !== null && sceneJSON() !== savedJSON) { event.preventDefault(); event.returnValue = ''; }
 });
 function Board() {
-    return <Excalidraw initialData={initialData} onChange={onChange} langCode="pl-PL" name={config.name}
+    return <Excalidraw initialData={initialData} onChange={onChange} langCode="pl-PL" name={config.name} viewModeEnabled={!!config.readOnly}
         autoFocus validateEmbeddable={false} UIOptions={{canvasActions: {export: {saveFileToDisk: true}}}}
         onLinkOpen={(element, event) => { if (!/^(https?:\/\/|mailto:)/i.test(element.link || '')) event.preventDefault(); }}>
         <MainMenu>

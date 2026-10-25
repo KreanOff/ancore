@@ -38,6 +38,58 @@
 .tasks-modal [data-project-access-panel][hidden],
 .tasks-modal [data-project-access-panel] [hidden] { display: none; }
 .workplace-team__hint { margin: 0 0 var(--app-modal-field-gap); font-size: var(--font-size-sm); line-height: 1.5; }
+.workplace-invite-links, .workplace-invite-link-form { display: grid; gap: var(--app-modal-field-gap); margin-top: var(--app-modal-padding-y); }
+.workplace-invite-link { display: flex; gap: var(--app-modal-field-gap); align-items: center; flex-wrap: wrap; }
+.workplace-invite-link > span { width: 100%; font-size: var(--font-size-sm); }
+.workplace-invite-link > input { flex: 1 1 240px; min-width: 0; }
+.workplace-module-fields { gap: var(--app-modal-field-gap); }
+.workplace-module-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--app-modal-field-gap);
+}
+.workplace-module-fields .workplace-module-card {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) 42px;
+    align-items: start;
+    gap: var(--app-modal-field-gap);
+    min-width: 0;
+    margin: 0;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--panel-bg);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    cursor: pointer;
+}
+.workplace-module-card:has(input:checked) { background: var(--card-bg); }
+.workplace-module-card:has(input:not(:checked)) > :is(svg, i, .workplace-module-card__body) { opacity: 0.55; }
+.workplace-module-card:has(input:enabled):hover { border-color: var(--system-interaction); }
+.workplace-module-card:has(input:focus-visible) { box-shadow: inset 0 0 0 2px var(--system-interaction); }
+.workplace-module-card:has(input:disabled) { opacity: 0.55; cursor: default; }
+.workplace-module-card > :is(svg, i) { width: 20px; height: 20px; margin-top: 2px; }
+.workplace-module-card__body { display: grid; gap: 6px; min-width: 0; }
+.workplace-module-card__name,
+.workplace-module-card__description { overflow-wrap: anywhere; }
+.workplace-module-card__description { font-size: var(--font-size-sm); opacity: 0.72; }
+.workplace-module-card__toggle { position: relative; margin-top: 1px; }
+.tasks-modal .workplace-module-card input[type="checkbox"] {
+    width: 42px;
+    height: 24px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+.workplace-module-card__toggle input:disabled + span { cursor: default; }
+@media (max-width: 767px) {
+    .workplace-module-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .workplace-module-card__toggle span,
+    .workplace-module-card__toggle span::before { transition: none; }
+}
+.workspace-read-only-hint { margin: 0; padding: 6px 16px; color: var(--text-secondary); font-size: var(--font-size-sm); }
 .workplace-invitation__details { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: var(--app-modal-field-gap); margin: 0 0 var(--app-modal-padding-y); font-size: var(--font-size-sm); }
 .workplace-invitation__details :is(dt, dd) { margin: 0; overflow-wrap: anywhere; }
 

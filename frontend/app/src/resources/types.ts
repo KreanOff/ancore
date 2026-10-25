@@ -40,6 +40,7 @@ export interface Editor {
 }
 export type Errors = Record<string, { message: string; code: string }[]>;
 export interface Directory {
+  read_only?: boolean;
   results: Resource[];
   list_url: string;
   base_url: string;

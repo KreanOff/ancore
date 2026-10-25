@@ -163,7 +163,7 @@ export default function Sidebar({
       <>
         <h2 className="sidebar-menu-section-title">Ustawienia Ancore</h2>
         <a
-          href={data.links.spaces.url}
+          href={data.links.spaces?.url || data.links['for-you'].url}
           className="nav-link sidebar-primary-link sidebar-primary-link--standalone"
         >
           <Icon name="arrow-left" className="nav-icon" />

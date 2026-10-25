@@ -27,6 +27,9 @@ export interface Person {
   change_url?: string;
   can_role?: boolean;
   cancel_url?: string;
+  share_url?: string;
+  resend_url?: string;
+  email_sent?: boolean;
 }
 export interface Team {
   id: string;
@@ -43,6 +46,18 @@ export interface Team {
   invite_form: FormSchema | null;
   members: Person[];
   invitations: Person[];
+  link_form?: FormSchema;
+  link_create_url?: string;
+  invite_links?: {
+    id: string;
+    url: string;
+    role: string;
+    domain: string;
+    date: string;
+    uses: number;
+    limit: number;
+    revoke_url: string;
+  }[];
 }
 export interface Incoming {
   name: string;

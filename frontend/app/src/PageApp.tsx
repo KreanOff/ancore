@@ -22,6 +22,8 @@ const loaders: Record<string, () => Promise<{ default: React.ComponentType<PageP
   'office-text': () => import('./documents/TextPage'),
   'office-suite': () => import('./documents/SuitePage'),
   'account-auth': () => import('./accounts/AuthPage'),
+  'account-workspace-picker': () => import('./accounts/WorkspacePickerPage'),
+  'account-join': () => import('./workspaces/JoinPage'),
   'account-profile': () => import('./accounts/ProfilePage'),
 };
 const components = Object.fromEntries(
@@ -46,6 +48,11 @@ export default function PageApp(props: PageProps) {
       }
     >
       <Component {...props} />
+      {props.initial.read_only ? (
+        <p className="workspace-read-only-hint" role="status">
+          Gość · dostęp tylko do odczytu
+        </p>
+      ) : null}
     </Suspense>
   );
 }

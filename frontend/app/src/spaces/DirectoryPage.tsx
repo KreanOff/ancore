@@ -130,7 +130,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
             <button
               type="button"
               className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={busy}
+              disabled={busy || !data.create_url}
               aria-haspopup="dialog"
               onClick={() => void openForm(data.create_url)}
             >

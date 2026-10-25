@@ -5,7 +5,60 @@ import { Icon } from '../shared/Icon';
 import { errorMessage } from '../shared/api';
 import { PageError, pageRequest, type Page } from '../shared/page';
 import AvatarControl from './AvatarControl';
+import type { Field } from '../forms/FormDialog';
 import type { DirectoryData, WorkspaceForm as Schema } from './types';
+
+function ModuleFields({ field, id }: { field: Field; id: string }) {
+  const selected = new Set(Array.isArray(field.value) ? field.value : []);
+  return (
+    <div className="tasks-form-field workplace-module-fields">
+      <span id={id + '-modules-label'}>{field.label}</span>
+      <input type="hidden" name="modules_submitted" value="1" />
+      <div
+        className="workplace-module-grid"
+        role="group"
+        aria-labelledby={id + '-modules-label'}
+        aria-describedby={field.help_text ? id + '-modules-hint' : undefined}
+      >
+        {(field.choices || []).map((choice) => {
+          const controlId = id + '-module-' + choice.value;
+          return (
+            <label key={choice.value} className="workplace-module-card" htmlFor={controlId}>
+              <Icon name={choice.icon || 'layers'} />
+              <span className="workplace-module-card__body">
+                <span className="workplace-module-card__name" id={controlId + '-label'}>
+                  {choice.label}
+                </span>
+                <span
+                  className="workplace-module-card__description"
+                  id={controlId + '-description'}
+                >
+                  {choice.description}
+                </span>
+              </span>
+              <span className="tasks-toggle workplace-module-card__toggle">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  name={field.name}
+                  id={controlId}
+                  value={choice.value}
+                  defaultChecked={selected.has(choice.value)}
+                  disabled={field.disabled}
+                  aria-labelledby={controlId + '-label'}
+                  aria-describedby={controlId + '-description'}
+                  aria-invalid={field.errors.length > 0}
+                />
+                <span aria-hidden="true" />
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      {field.help_text ? <small id={id + '-modules-hint'}>{field.help_text}</small> : null}
+    </div>
+  );
+}
 export function ErrorList({ schema, message = '' }: { schema?: Schema | null; message?: string }) {
   const errors = [
     ...(message ? [message] : []),
@@ -77,6 +130,7 @@ export function SettingsFields({
   readonly?: boolean;
   create?: boolean;
 }) {
+  const modules = schema?.fields.find((field) => field.name === 'enabled_modules');
   return (
     <div className="workplace-modal__content" data-profile-photo-layout>
       {schema && !readonly ? <AvatarControl schema={schema} formId={id} create={create} /> : null}
@@ -139,6 +193,7 @@ export function SettingsFields({
             </label>
           </div>
         </section>
+        {modules && !readonly ? <ModuleFields field={modules} id={id} /> : null}
       </div>
     </div>
   );

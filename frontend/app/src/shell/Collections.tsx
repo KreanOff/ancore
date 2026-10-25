@@ -86,7 +86,7 @@ export function CollectionContents({
         </span>
         <Icon name="chevron-right" className="sidebar-spaces-more__chevron" />
       </button>
-      {flyout ? (
+      {flyout && group.create_url ? (
         <>
           <a
             href={group.create_url}
@@ -239,7 +239,7 @@ export function CollectionGroup({
             {group.label}
           </span>
         </button>
-        <div className="sidebar-header-actions sidebar-group-actions">
+        <div className="sidebar-header-actions sidebar-group-actions" hidden={!group.create_url}>
           <a
             className="sidebar-header-action"
             href={group.create_url}

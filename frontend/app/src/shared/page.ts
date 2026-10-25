@@ -5,6 +5,7 @@ export interface Page {
   api_url: string;
   data: unknown;
   styles?: string[];
+  read_only?: boolean;
 }
 export interface PageProps {
   initial: Page;

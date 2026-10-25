@@ -102,6 +102,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
     else setEditor({ event, date: new Date(event.start) });
   }
   function newEvent(date = selected, allDay = false, keepTime = false) {
+    if (initial.read_only) return;
     const next = new Date(date);
     if (allDay) next.setHours(0, 0, 0, 0);
     else if (!keepTime) next.setHours(9, 0, 0, 0);
@@ -395,6 +396,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
               type="button"
               className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
               aria-haspopup="dialog"
+              disabled={initial.read_only}
               onClick={() => newEvent()}
             >
               <Icon name="plus" />
@@ -623,6 +625,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
       </section>
       {editor ? (
         <EventEditor
+          readOnly={!!initial.read_only}
           event={editor.event}
           date={editor.date}
           allDay={editor.allDay}

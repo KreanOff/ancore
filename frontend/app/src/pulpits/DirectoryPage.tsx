@@ -57,7 +57,7 @@ export default function DirectoryPage(props: PageProps) {
           <div className="tasks-titlebar-actions">
             <button
               className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={actions.busy}
+              disabled={actions.busy || !data.create_url}
               onClick={() => void actions.open(data.create_url)}
             >
               <Icon name="plus" />

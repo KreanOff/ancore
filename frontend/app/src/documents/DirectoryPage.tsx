@@ -164,7 +164,7 @@ export default function DirectoryPage(props: PageProps) {
             <h1 className="tasks-topbar-title">{props.initial.title}</h1>
           )}
         </div>
-        {!data.office ? (
+        {!data.office && !props.initial.read_only ? (
           <div className="tasks-titlebar-actions">
             {!data.library ? (
               <button
@@ -262,7 +262,7 @@ export default function DirectoryPage(props: PageProps) {
             }
           >
             <div className="documents-menu-actions">
-              {!data.office ? (
+              {!data.office && !props.initial.read_only ? (
                 <a
                   className="tasks-project-menu-button"
                   role="menuitem"
@@ -366,7 +366,7 @@ export default function DirectoryPage(props: PageProps) {
           ) : null}
         </div>
       ) : null}
-      {data.office && data.view !== 'trash' ? (
+      {data.office && data.view !== 'trash' && !props.initial.read_only ? (
         <section className="office-quick-create" aria-label="Tworzenie dokumentów">
           <ul className="office-quick-create-list">
             {[

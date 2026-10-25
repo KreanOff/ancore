@@ -239,6 +239,117 @@ export default function TeamDialog({
                       key === 'members' ? remove : (person) => void act(person.cancel_url!, {})
                     }
                   />
+                  {key === 'invitations' && team.can_manage ? (
+                    <section className="workplace-invite-links" aria-label="Linki zaproszeń">
+                      <h3>Zaproszenia e-mail</h3>
+                      {team.invitations.map((invitation) => (
+                        <div key={invitation.id} className="workplace-invite-link">
+                          <span>
+                            {invitation.email} ·{' '}
+                            {invitation.email_sent ? 'E-mail wysłany' : 'E-mail niewysłany'}
+                          </span>
+                          <input
+                            className="form-input"
+                            aria-label={'Link zaproszenia dla ' + invitation.email}
+                            value={invitation.share_url || ''}
+                            readOnly
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={pending}
+                            onClick={() => {
+                              navigator.clipboard
+                                .writeText(invitation.share_url || '')
+                                .catch(() =>
+                                  setError(
+                                    'Nie udało się skopiować linku. Zaznacz i skopiuj adres z pola.',
+                                  ),
+                                );
+                            }}
+                          >
+                            Kopiuj link
+                          </button>
+                          {invitation.resend_url ? (
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={pending}
+                              onClick={() => void act(invitation.resend_url!, {})}
+                            >
+                              Wyślij ponownie
+                            </button>
+                          ) : null}
+                        </div>
+                      ))}
+                      <h3>Linki do dołączenia</h3>
+                      {team.invite_links?.map((link) => (
+                        <div key={link.id} className="workplace-invite-link">
+                          <span>
+                            {link.role} · {link.uses}/{link.limit} użyć · ważny do {link.date}
+                            {link.domain ? ' · @' + link.domain : ''}
+                          </span>
+                          <input
+                            className="form-input"
+                            aria-label={'Link do Workspace ' + team.name}
+                            value={link.url}
+                            readOnly
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={pending}
+                            onClick={() => {
+                              navigator.clipboard
+                                .writeText(link.url)
+                                .catch(() =>
+                                  setError(
+                                    'Nie udało się skopiować linku. Zaznacz i skopiuj adres z pola.',
+                                  ),
+                                );
+                            }}
+                          >
+                            Kopiuj link
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={pending}
+                            onClick={() => void act(link.revoke_url, {})}
+                          >
+                            Unieważnij link
+                          </button>
+                        </div>
+                      ))}
+                      {team.link_form ? (
+                        <details>
+                          <summary>Utwórz link zaproszenia</summary>
+                          <form
+                            className="workplace-invite-link-form"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              void act(
+                                team.link_create_url!,
+                                Object.fromEntries(new FormData(event.currentTarget)) as Record<
+                                  string,
+                                  string
+                                >,
+                              );
+                            }}
+                          >
+                            <fieldset className="resources-react-fieldset" disabled={pending}>
+                              {team.link_form.fields.map((field) => (
+                                <FieldControl key={field.name} field={field} />
+                              ))}
+                            </fieldset>
+                            <button className="btn btn-primary" type="submit" disabled={pending}>
+                              Utwórz link
+                            </button>
+                          </form>
+                        </details>
+                      ) : null}
+                    </section>
+                  ) : null}
                 </section>
               ))}
           </div>
@@ -385,13 +496,13 @@ function TeamAction({
           ) : (
             <>
               <p className="workplace-team__hint">
-                Zaproszenie pojawi się na ekranie Workspace wskazanej osoby. Jest ważne przez 7 dni
-                i daje dostęp do całego Workspace.
+                Zaproszenie jest ważne przez 7 dni. Osoba otrzyma link e-mailem, a po zalogowaniu
+                zobaczy je również w powiadomieniach. Gość ma dostęp tylko do odczytu.
               </p>
               <fieldset className="resources-react-fieldset" disabled={pending}>
                 <div className="workplace-invite__fields">
                   <div className="tasks-form-field">
-                    <label>Osoba lub adres e-mail konta Ancore</label>
+                    <label>Osoba lub adres e-mail</label>
                     <Picker
                       api={api}
                       url={team.candidates_url}

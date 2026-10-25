@@ -39,6 +39,7 @@ export interface Field {
     avatar?: AvatarData;
     group?: string;
     icon?: string;
+    description?: string;
     photo_url?: string;
     space_avatar?: AvatarData;
     status_category?: string;

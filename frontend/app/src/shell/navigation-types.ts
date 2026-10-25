@@ -39,6 +39,8 @@ export interface Collection {
 export interface ShellData {
   account_id: string;
   workplace_id: string;
+  read_only?: boolean;
+  disabled_modules?: string[];
   mode: string;
   url: string;
   navigation_url: string;

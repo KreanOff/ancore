@@ -78,7 +78,7 @@ export default function ResourcesApp({
   }, [query, data.query, editor]);
 
   async function open(id: number | null) {
-    if (operation.current || busy || editor) return;
+    if (operation.current || busy || editor || data.read_only) return;
     operation.current = true;
     setBusy(true);
     setError('');
@@ -138,7 +138,7 @@ export default function ResourcesApp({
   }
 
   function remove(resource: Resource) {
-    if (operation.current || busy || editor) return;
+    if (operation.current || busy || editor || data.read_only) return;
     window.showConfirmModal({
       title: 'Usuń zasób',
       message: window.escapeHtmlForModal(
@@ -186,7 +186,7 @@ export default function ResourcesApp({
             <button
               type="button"
               className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={busy}
+              disabled={busy || data.read_only}
               aria-haspopup="dialog"
               onClick={() => void open(null)}
             >
@@ -388,7 +388,7 @@ export default function ResourcesApp({
             search={search}
             open={(id) => void open(id)}
             remove={remove}
-            busy={busy}
+            busy={busy || !!data.read_only}
           />
         ) : (
           <EmptyState

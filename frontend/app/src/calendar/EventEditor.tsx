@@ -15,6 +15,7 @@ export function EventEditor({
   csrfToken,
   onClose,
   onSaved,
+  readOnly = false,
 }: {
   event: CalendarEvent | null;
   date: Date;
@@ -24,6 +25,7 @@ export function EventEditor({
   csrfToken: string;
   onClose: () => void;
   onSaved: (message: string) => void;
+  readOnly?: boolean;
 }) {
   const form = useRef<HTMLFormElement>(null);
   const [dirty, setDirty] = useState(false),
@@ -124,6 +126,17 @@ export function EventEditor({
         {errors[name].join(' ')}
       </p>
     ) : null;
+  if (readOnly)
+    return (
+      <Modal title="Wydarzenie" onClose={onClose}>
+        <div className="tasks-modal__body">
+          <h3>{event?.title}</h3>
+          <p>{event?.description}</p>
+          <p>{event ? new Date(event.start).toLocaleString('pl-PL') : ''}</p>
+          <p>Gość ma dostęp tylko do odczytu.</p>
+        </div>
+      </Modal>
+    );
   return (
     <Modal
       title={event ? 'Edytuj wydarzenie' : 'Nowe wydarzenie'}
