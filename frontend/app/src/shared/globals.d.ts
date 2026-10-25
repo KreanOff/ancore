@@ -41,7 +41,8 @@ declare global {
     escapeHtmlForModal: (message: string) => string;
     showConfirmModal: (options: {
       title: string;
-      message: string;
+      message?: string;
+      messageText?: string;
       confirmText: string;
       cancelText: string;
       confirmClass?: string;

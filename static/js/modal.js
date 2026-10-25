@@ -19,6 +19,7 @@ window.showConfirmModal = function (options) {
     const {
         title = 'Potwierdzenie',
         message = 'Czy na pewno chcesz wykonać tę operację?',
+        messageText,
         confirmText = 'Potwierdź',
         cancelText = 'Anuluj',
         confirmClass = 'btn-danger',
@@ -64,7 +65,7 @@ window.showConfirmModal = function (options) {
         </header>
         <div class="confirm-modal__body">
             <div class="confirm-modal__content">
-                <p class="confirm-modal__message" id="${messageId}">${message}</p>
+                <p class="confirm-modal__message" id="${messageId}">${messageText === undefined ? message : window.escapeHtmlForModal(messageText)}</p>
             </div>
         </div>
         <div class="confirm-modal__footer">

@@ -2364,7 +2364,10 @@ i Dokumentów grupuje wskazówki oraz wybór plików w `documents-upload-control
 z jedną delikatną ramką i listą wybranych plików poniżej.
 
 `showConfirmModal` używa wspólnego nagłówka, treści i stopki opartej na tych
-samych tokenach. Potwierdzenia usunięcia notatki projektu/grupy/tagu i kontaktu
+samych tokenach. Dynamiczne nazwy i inne dane użytkownika przekazuj przez
+`messageText`, które escapuje tekst przed wstawieniem do HTML. `message`
+pozostaje wariantem dla zaufanego, stałego HTML; nie interpoluj w nim nazw
+Workspace, przestrzeni, filtrów ani pulpitów. Potwierdzenia usunięcia notatki projektu/grupy/tagu i kontaktu
 lub firmy korzystają z niego zamiast natywnego `confirm()`. Delegacja działa
 także dla nowych notatek oraz po `ancore:content-loaded`. Escape zamyka
 najwyższe potwierdzenie, zachowując okno notatek pod nim; ponowne kliknięcie

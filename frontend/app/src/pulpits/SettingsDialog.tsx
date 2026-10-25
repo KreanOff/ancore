@@ -246,7 +246,7 @@ export default function SettingsDialog({
                       onRemove={(member) =>
                         window.showConfirmModal({
                           title: 'Odbierz dostęp',
-                          message: `Odebrać dostęp do pulpitu osobie ${member.name}?`,
+                          messageText: `Odebrać dostęp do pulpitu osobie ${member.name}?`,
                           confirmText: 'Odbierz dostęp',
                           cancelText: 'Anuluj',
                           onConfirm: () => void removeMember(member),
