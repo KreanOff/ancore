@@ -9,7 +9,8 @@ server {
     ${ANCORE_TLS_SETTINGS}
     server_name ${ANCORE_HOST};
     server_tokens off;
-    client_max_body_size 25m;
+    # 20 files x 10 MiB, plus form fields and multipart boundaries.
+    client_max_body_size 225m;
     # Query strings can contain signed ONLYOFFICE capabilities.
     access_log off;
     error_log /dev/stderr warn;

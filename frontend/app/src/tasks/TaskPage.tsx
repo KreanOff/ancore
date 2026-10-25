@@ -807,6 +807,7 @@ export default function TaskPage(props: PageProps) {
                   <Members
                     members={data.team.members}
                     isOwner={data.team.is_owner}
+                    canEditRoles={data.team.can_manage}
                     busy={busy}
                     onRole={(member) =>
                       void openDialog({

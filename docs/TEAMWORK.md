@@ -205,6 +205,10 @@ Udostępnienie zadania nie udostępnia przestrzeni ani rodziców.
 
 Właściciel prywatnego zadania zmienia widoczność i administratorów;
 administrator zadania zarządza zwykłymi członkami i obserwatorami.
+Zakładka „Członkowie” zadania pokazuje „Zmień rolę” i „Odbierz dostęp”
+w dozwolonych wierszach zarówno właścicielowi, jak i administratorowi.
+Administrator nie ma tych działań wobec właściciela ani innych administratorów;
+członek i obserwator widzą tabelę bez operacji zarządzania.
 Kandydat jest aktywną osobą Workspace z dostępem do przestrzeni i rodziców.
 Endpoint po blokadzie ponownie sprawdza autora, kandydata i zakres.
 Zmiana widoczności na dziedziczoną czyści członkostwa samego zadania,

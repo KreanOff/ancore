@@ -1,5 +1,34 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Granice uploadu, role zadania i północ w Kalendarzu (25.10.2026)
+
+Publiczny limit Nginx wynosi 225 MiB i mieści obsługiwaną paczkę 20 plików
+po 10 MiB, pola formularza oraz narzut multipart. Walidacja plików pozostaje
+w Django; wewnętrzny listener ONLYOFFICE zachowuje 25 MiB.
+[Konfiguracja proxy](PRODUCTION.md). Test `core.test_production` porównuje
+limit z rzeczywistą granicą formularza i rozmiarem zakodowanego multipart.
+
+Zakładka „Członkowie” zadania przekazuje uprawnienie zarządzania rolami do
+wspólnej tabeli. Administrator zmienia członka w obserwatora i odwrotnie;
+chronione wiersze właściciela i administratorów nadal nie mają jego operacji.
+[Zasady](TEAMWORK.md#dostęp-do-niezależnych-zadań-przestrzeni-10102026).
+Kalendarz traktuje koniec wydarzenia jako wyłączny: koniec o północy nie
+tworzy pozycji następnego dnia. Punktowe terminy zadań zachowują swój dzień.
+[Frontend i testy](FRONTEND.md#budowanie-i-uruchamianie).
+
+Przeszło **1242/1242 testów Django** przez `scripts/run_tests.py --parallel 4`
+na izolowanych bazach i storage oraz **21 testów frontendu**, w tym regresje
+rzeczywistego renderu TaskPage dla czterech ról i dat kalendarza z DST.
+Build z TypeScriptem i Prettier przeszły. Browser plugin był niedostępny;
+Playwright z lokalnym Chrome na osobnej bazie QA sprawdził zmianę ról,
+zapis i reload, ochronę pozostałych ról, kalendarz miesiąca i dnia, terminy
+punktowe, całodzienne, pusty filtr, kontrolowany błąd zapisu i ponowienie,
+ponowne wejście oraz referencyjne ustawienia Przestrzeni. Szerokości:
+1440, 1024, 390 i 320 px. Zrzuty obejrzano. Nie wykonywano wdrożenia ani
+testu żywego Nginx (brak daemona Docker), ONLYOFFICE, Safari lub Firefoksa.
+Kontrola Django, aktualność indeksu, lokalne linki zmienionej dokumentacji
+i `git diff --check` przeszły. Serwer QA zatrzymano, jego bazę i storage usunięto.
+
 ## Poprawki po przeglądzie i dostęp Workspace (25.10.2026)
 
 Usunięto zaproszenia e-mail: model, trasy bezpośrednie i delegowane API,

@@ -152,7 +152,7 @@ Jeżeli HTTPS obsługuje istniejący reverse proxy:
 ```
 
 Bez `--tls-dir` Ancore nasłuchuje na `127.0.0.1:8080`. Zewnętrzny proxy powinien
-przekazywać publiczny Host, WebSockety i uploady co najmniej 25 MiB na ten port.
+przekazywać publiczny Host, WebSockety i uploady do 225 MiB na ten port.
 HTTPS włącza bezpieczne ciasteczka, przekierowania i HSTS. Powrót do HTTP:
 
 ```sh
@@ -176,6 +176,11 @@ bez superuser/CREATEDB. Osobne hasło administratora PostgreSQL widzi wyłączni
 usługa bazy. Nginx ma dostęp do static oraz dozwolonych awatarów JPG/JPEG/PNG/WebP;
 prywatne dokumenty i załączniki wydaje Django po kontroli dostępu. Nie ma
 publicznego aliasu całego katalogu mediów ani dokumentów.
+
+Publiczny Nginx przyjmuje żądania do 225 MiB: paczkę do 20 plików po 10 MiB,
+pola formularza i narzut multipart. Django nadal sprawdza limit oraz zawartość
+każdego pliku i liczbę plików. Wewnętrzny listener ONLYOFFICE zachowuje limit
+25 MiB. Zewnętrzny reverse proxy powinien przepuszczać ten sam limit publiczny.
 
 Backend nie publikuje portu. `TRUST_PROXY_HEADERS=true` zakłada zaufany Nginx,
 który nadpisuje `X-Forwarded-Proto` na podstawie skonfigurowanego schematu.

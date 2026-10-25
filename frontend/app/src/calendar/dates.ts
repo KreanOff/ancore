@@ -66,8 +66,14 @@ export const formatDate = (date: Date, long = false) =>
   });
 export const time = (date: Date) =>
   date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
-export const occurs = (event: CalendarEvent, date: Date) =>
-  new Date(event.start) < addDays(day(date), 1) && new Date(event.end) >= day(date);
+export function occurs(event: CalendarEvent, date: Date) {
+  const start = new Date(event.start),
+    end = new Date(event.end),
+    from = day(date);
+  // Task deadlines are points; timed events use an exclusive end boundary.
+  const point = start.getTime() === end.getTime() && start >= from;
+  return start < addDays(from, 1) && (end > from || point);
+}
 export function lanes(events: CalendarEvent[], date: Date) {
   const positioned = events
     .filter((event) => !event.all_day && occurs(event, date))

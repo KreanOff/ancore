@@ -2,6 +2,7 @@
 import fcntl
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -9,13 +10,17 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.db import DatabaseError
-from django.core.exceptions import DisallowedHost
+from django.core.exceptions import DisallowedHost, ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse, StreamingHttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
+from django.test.client import encode_multipart
 
 from core.health import readiness
 from core.maintenance import BackupMaintenanceMiddleware
 from core.hosts import ServerAddressMiddleware
+from core.upload_validation import DEFAULT_ATTACHMENT_MAX_SIZE
+from documents.forms import MultipleFileField
 
 
 class BackupMaintenanceTests(SimpleTestCase):
@@ -73,6 +78,35 @@ class BackupMaintenanceTests(SimpleTestCase):
 
 
 class ProductionConfigurationTests(SimpleTestCase):
+    @override_settings(MAX_ATTACHMENT_SIZE=DEFAULT_ATTACHMENT_MAX_SIZE, DATA_UPLOAD_MAX_MEMORY_SIZE=20 * 1024 * 1024)
+    def test_public_proxy_accepts_maximum_file_batch_with_multipart_overhead(self):
+        template = (settings.BASE_DIR / 'deploy/web/nginx.conf.template').read_text()
+        public_server = re.split(r'\nserver\s*\{', template)[1]
+        limit = re.search(r'client_max_body_size\s+(\d+)([kmg]?)\s*;', public_server)
+        self.assertIsNotNone(limit)
+        proxy_bytes = int(limit[1]) * {'': 1, 'k': 1024, 'm': 1024**2, 'g': 1024**3}[limit[2]]
+
+        # Discover the batch boundary through the same field used by Drive/Office.
+        field = MultipleFileField()
+        files = []
+        for number in range(1, 101):
+            candidate = SimpleUploadedFile(f'{number}-' + 'ą' * 240 + '.pdf', b'%PDF-1.7\n')
+            try:
+                field.clean([*files, candidate])
+            except ValidationError:
+                break
+            files.append(candidate)
+        else:
+            self.fail('The upload field must bound the number of files.')
+        self.assertTrue(files)
+
+        body = encode_multipart('ancore-upload-boundary', {'files': files, 'csrfmiddlewaretoken': 'x' * 64})
+        multipart_overhead = len(body) - sum(file.size for file in files)
+        self.assertGreater(multipart_overhead, 0)
+        required_bytes = (len(files) * settings.MAX_ATTACHMENT_SIZE
+                          + settings.DATA_UPLOAD_MAX_MEMORY_SIZE + multipart_overhead)
+        self.assertGreaterEqual(proxy_bytes, required_bytes)
+
     def test_explicit_http_origin_uses_its_public_port(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

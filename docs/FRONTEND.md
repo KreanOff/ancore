@@ -49,6 +49,12 @@ walidację, ORM i PostgreSQL. React obsługuje stan i renderowanie przeniesioneg
 modułu oraz komunikuje się z JSON API. Wspólny origin pozwala zachować obecną
 sesję bez nowego systemu tokenów ani konfiguracji CORS.
 
+Kalendarz przypisuje wydarzenia do lokalnych dni z wyłączną granicą końca:
+wydarzenie kończące się o północy nie pojawia się w następnym dniu ani jego
+kolumnie godzinowej. Punktowe terminy zadań (`start == end`), również o północy,
+pozostają widoczne w dniu terminu. Granice dni zachowują zmianę czasu letniego
+i zimowego; wydarzenia całodzienne pozostają poza siatką godzinową.
+
 ## Okno ustawień Przestrzeni
 
 `spaces/SettingsDialog.tsx` łączy pola główne, członków, awatar oraz konfigurację

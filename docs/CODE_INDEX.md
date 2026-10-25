@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 37 | 0 | 20 | 224 |
+| [backend/core](../backend/core) | 37 | 0 | 20 | 225 |
 | [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 153 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -1474,9 +1474,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/TeamTable.tsx](../frontend/app/src/workspaces/TeamTable.tsx)
 - [frontend/app/src/workspaces/WorkspaceForm.tsx](../frontend/app/src/workspaces/WorkspaceForm.tsx)
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
+- [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
+- [frontend/app/tests/task-members.test.mjs](../frontend/app/tests/task-members.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ### React — frontend/board
@@ -1548,7 +1550,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/core/test_production.py](../backend/core/test_production.py).
 
 - `BackupMaintenanceTests`: 5 metod testowych.
-- `ProductionConfigurationTests`: 6 metod testowych.
+- `ProductionConfigurationTests`: 7 metod testowych.
 - `ServerAddressTests`: 2 metod testowych.
 
 ### backend/core/test_production_installer.py
