@@ -1,39 +1,28 @@
 {% extends 'dashboard/filters/base.html' %}
 {% block work_title %}{% if saved_filter %}{{ saved_filter.name }}{% else %}Wyszukaj zadania{% endif %}{% endblock %}
-{% block work_heading %}{% if saved_filter %}{% include 'dashboard/filters/favorite.html' with item=saved_filter %}{% endif %}<h1 class="tasks-topbar-title">{% if saved_filter %}{{ saved_filter.name }}{% else %}Wyszukaj zadania{% endif %}</h1>{% if changed %}<span class="work-caption">Zmienione warunki</span>{% endif %}{% endblock %}
+{% block work_header %}<div class="work-space-header">{{ block.super }}</div>{% endblock %}
+{% block work_heading %}{% if saved_filter %}{% include 'dashboard/filters/favorite.html' with item=saved_filter %}{% endif %}<h1 class="tasks-topbar-title work-space-title">{% if saved_filter %}{{ saved_filter.name }}{% else %}Wyszukaj zadania{% endif %}</h1>{% if changed %}<span class="work-caption">Zmienione warunki</span>{% endif %}{% endblock %}
 {% block work_actions %}
-    {% if changed and saved_filter.editable and can_save %}<form action="{{ saved_filter.url }}save/" method="post" data-filter-action>{% csrf_token %}<input type="hidden" name="jql" value="{{ jql }}"><input type="hidden" name="revision" value="{{ saved_filter.revision }}"><button class="tasks-filter-button" type="submit">Zapisz</button></form>{% endif %}
-    {% if can_save %}<a class="tasks-filter-button" href="{{ save_as_url }}" data-filter-open><i data-icon="filter" aria-hidden="true"></i>{% if saved_filter %}Zapisz jako{% else %}Zapisz filtr{% endif %}</a>{% endif %}
+    {% if changed and saved_filter.query_editable and can_save %}<form action="{{ saved_filter.url }}save/" method="post" data-filter-action>{% csrf_token %}<input type="hidden" name="jql" value="{{ jql }}"><input type="hidden" name="revision" value="{{ saved_filter.revision }}"><button class="tasks-filter-button" type="submit">Zapisz</button></form>{% endif %}
+    {% if can_save %}<a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" href="{{ save_as_url }}" data-filter-open><i data-icon="filter" aria-hidden="true"></i>{% if saved_filter %}Zapisz jako{% else %}Zapisz filtr{% endif %}</a>{% endif %}
     {% if saved_filter.editable %}<a class="tasks-filter-button" href="{{ saved_filter.edit_url }}" data-filter-open><i data-icon="settings" aria-hidden="true"></i>Edytuj filtr</a>{% endif %}
 {% endblock %}
 {% block work_navigation %}
-<nav class="notifications-tabs work-tabs" aria-label="Tryb wyszukiwania">
-    {% if basic_available %}<a href="{{ basic_url }}"{% if mode == 'basic' %} class="is-active" aria-current="page"{% endif %}>Podstawowy</a>{% else %}<span class="task-filter-disabled" title="Tych warunków nie można przedstawić w trybie podstawowym.">Podstawowy</span>{% endif %}
-    <a href="{{ advanced_url }}"{% if mode == 'advanced' %} class="is-active" aria-current="page"{% endif %}>Zaawansowany</a>
+<nav class="notifications-tabs work-tabs work-tabs--views" aria-label="Tryb wyszukiwania">
+    {% if basic_available %}<a href="{{ basic_url }}"{% if mode == 'basic' %} class="is-active" aria-current="page"{% endif %}><i data-icon="list-filter" aria-hidden="true"></i>Podstawowy</a>{% else %}<span class="task-filter-disabled" title="Tych warunków nie można przedstawić w trybie podstawowym.">Podstawowy</span>{% endif %}
+    <a href="{{ advanced_url }}"{% if mode == 'advanced' %} class="is-active" aria-current="page"{% endif %}><i data-icon="sliders-horizontal" aria-hidden="true"></i>Zaawansowany</a>
 </nav>
 {% endblock %}
-{% block work_toolbar %}
+{% block work_content_class %} work-content--items work-content--tasks{% endblock %}
+{% block work_content %}
+{% if mode == 'basic' %}{% include 'dashboard/filters/search_toolbar.html' %}{% else %}
 <form class="task-filter-search" method="get" action="{{ search_url }}" data-filter-search>
     <input type="hidden" name="mode" value="{{ mode }}">
-    {% if mode == 'basic' %}
-    <input type="hidden" name="basic" value="1">
-    <div class="tasks-filterbar tasks-filterbar--directory task-filter-controls">
-        <div class="tasks-filterbar-left">
-            {% for field in search_form %}{% if field.name != 'q' and field.name != 'sort' and field.name != 'tag' and field.name != 'team' %}<div class="task-filter-control">{{ field }}{% if field.errors %}<span class="tasks-modal__errors" role="alert">{{ field.errors }}</span>{% endif %}</div>{% endif %}{% endfor %}
-            <button class="tasks-filter-button" type="submit"><i data-icon="search" aria-hidden="true"></i>Szukaj</button>
-        </div>
-    </div>
-    <div class="tasks-filterbar tasks-filterbar--directory task-filter-controls">
-        <div class="tasks-filterbar-left"><label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i>{{ search_form.q }}</label><div class="task-filter-control">{{ search_form.tag }}</div><div class="task-filter-control">{{ search_form.team }}</div></div>
-        <div class="tasks-filterbar-right"><div class="task-filter-control">{{ search_form.sort }}</div><a class="tasks-filter-button" href="{{ clear_url }}">Wyczyść</a></div>
-    </div>
-    {% else %}
     <div class="task-filter-advanced"><label for="filter-jql" class="u-sr-only">Zapytanie zaawansowane</label><textarea id="filter-jql" name="jql" class="form-input" rows="2" maxlength="4000" placeholder="assignee = currentUser() AND category != closed ORDER BY created DESC"{% if search_error %} aria-invalid="true" aria-describedby="filter-query-error"{% endif %}>{{ jql }}</textarea><button type="submit" class="tasks-filter-button"><i data-icon="search" aria-hidden="true"></i>Szukaj</button><a class="tasks-filter-button" href="{{ clear_url }}">Wyczyść</a></div>
     <details class="task-filter-help"><summary>Pomoc składni wyszukiwania</summary><p>Pola: <code>space</code> (alias <code>project</code>), <code>status</code>, <code>type</code>, <code>priority</code>, <code>assignee</code>, <code>reporter</code>, <code>tag</code>, <code>team</code>, <code>sprint</code>, <code>key</code>, <code>text</code>, <code>created</code>, <code>due</code>, <code>category</code>.</p><p>Łącz warunki przez <code>AND</code>, <code>OR</code>, <code>NOT</code> i nawiasy. Użyj <code>=</code>, <code>!=</code>, <code>IN</code>, <code>NOT IN</code>, <code>IS EMPTY</code>, <code>IS NOT EMPTY</code>. Tekst wyszukasz przez <code>~</code>; daty porównasz przez <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>. Wartości ze spacjami otocz cudzysłowem.</p><p>Przykład: <code>assignee = currentUser() AND due &lt; startOfDay() AND category != closed ORDER BY priority DESC, due ASC</code>. Daty: <code>2026-10-10</code> lub <code>-7d</code>. <code>currentUser()</code> zawsze oznacza osobę oglądającą filtr.</p><p>Obsługiwana jest powyższa składnia inspirowana JQL. Pozostałe pola i funkcje Jira nie są dostępne.</p></details>
-    {% endif %}
 </form>
+<span class="work-caption" role="status">Zadania: {{ page.paginator.count }}{% if saved_filter %} · {{ saved_filter.get_visibility_display }}{% endif %}</span>
+{% endif %}
 {% if search_error %}<div class="task-filter-query-error tasks-modal__errors" id="filter-query-error" role="alert">{{ search_error }}</div>{% endif %}
-<div class="tasks-filterbar tasks-filterbar--directory"><div class="tasks-filterbar-left"><span role="status">Zadania: {{ page.paginator.count }}{% if saved_filter %} · {{ saved_filter.get_visibility_display }}{% endif %}</span></div></div>
+{% include 'dashboard/filters/results.html' %}
 {% endblock %}
-{% block work_content_class %} work-content--tasks{% endblock %}
-{% block work_content %}{% include 'dashboard/filters/results.html' %}{% endblock %}

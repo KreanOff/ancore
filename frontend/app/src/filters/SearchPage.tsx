@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react';
-import { FieldControl, FormDialog } from '../forms/FormDialog';
+import { FormDialog } from '../forms/FormDialog';
 import { ForYouTaskRow } from '../dashboard/ForYouPage';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
@@ -9,6 +9,7 @@ import { StatusGroup } from '../shared/StatusGroup';
 import { usePageActions } from '../shared/usePageActions';
 import type { SearchData } from './types';
 import type { Item } from '../spaces/types';
+import { SearchToolbar } from './SearchToolbar';
 
 export default function SearchPage(props: PageProps) {
   const { initial, csrfToken } = props,
@@ -35,132 +36,104 @@ export default function SearchPage(props: PageProps) {
         ),
     );
   }
-  const field = (name: string) => {
-    const schema = data.form.fields.find((item) => item.name === name);
-    return schema ? <FieldControl field={schema} bare inline /> : null;
-  };
   return (
     <div
       className="tasks-page tasks-list-page work-page task-filters-page"
       data-react-screen="filter-search"
     >
       <section className="tasks-workspace" aria-busy={actions.busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            {saved ? (
-              <button
-                type="button"
-                className={`tasks-icon-button ${saved.favorite ? 'is-active' : ''}`}
-                aria-label={`${saved.favorite ? 'Usuń z' : 'Dodaj do'} ulubionych: ${saved.name}`}
-                aria-pressed={saved.favorite}
-                disabled={actions.busy}
-                onClick={() => void actions.act(saved.favorite_url, { return_to: data.list_url })}
-              >
-                <Icon name="star" />
-              </button>
-            ) : null}
-            <h1 className="tasks-topbar-title">{initial.title}</h1>
-            {data.changed ? <span className="work-caption">Zmienione warunki</span> : null}
+        <header className="work-space-header">
+          <div className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
+            <div className="tasks-titlebar-left">
+              {saved ? (
+                <button
+                  type="button"
+                  className={`tasks-icon-button ${saved.favorite ? 'is-active' : ''}`}
+                  aria-label={`${saved.favorite ? 'Usuń z' : 'Dodaj do'} ulubionych: ${saved.name}`}
+                  aria-pressed={saved.favorite}
+                  disabled={actions.busy}
+                  onClick={() => void actions.act(saved.favorite_url, { return_to: data.list_url })}
+                >
+                  <Icon name="star" />
+                </button>
+              ) : null}
+              <h1 className="tasks-topbar-title work-space-title">{initial.title}</h1>
+              {data.changed ? <span className="work-caption">Zmienione warunki</span> : null}
+            </div>
+            <div className="tasks-titlebar-actions">
+              {data.changed && saved?.query_editable && data.can_save ? (
+                <button
+                  className="tasks-filter-button"
+                  disabled={actions.busy}
+                  onClick={() =>
+                    void actions.act(saved.url + 'save/', {
+                      jql: data.jql,
+                      revision: String(saved.revision),
+                    })
+                  }
+                >
+                  Zapisz
+                </button>
+              ) : null}
+              {data.can_save ? (
+                <button
+                  className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                  disabled={actions.busy}
+                  onClick={() => void actions.open(data.save_as_url)}
+                >
+                  <Icon name="filter" />
+                  {saved ? 'Zapisz jako' : 'Zapisz filtr'}
+                </button>
+              ) : null}
+              {saved?.editable ? (
+                <button
+                  className="tasks-filter-button"
+                  disabled={actions.busy}
+                  onClick={() => void actions.open(saved.edit_url)}
+                >
+                  <Icon name="settings" />
+                  Edytuj filtr
+                </button>
+              ) : null}
+            </div>
           </div>
-          <div className="tasks-titlebar-actions">
-            {data.changed && saved?.editable && data.can_save ? (
-              <button
-                className="tasks-filter-button"
-                disabled={actions.busy}
-                onClick={() =>
-                  void actions.act(saved.url + 'save/', {
-                    jql: data.jql,
-                    revision: String(saved.revision),
-                  })
-                }
-              >
-                Zapisz
-              </button>
-            ) : null}
-            {data.can_save ? (
-              <button
-                className="tasks-filter-button"
-                disabled={actions.busy}
-                onClick={() => void actions.open(data.save_as_url)}
-              >
-                <Icon name="filter" />
-                {saved ? 'Zapisz jako' : 'Zapisz filtr'}
-              </button>
-            ) : null}
-            {saved?.editable ? (
-              <button
-                className="tasks-filter-button"
-                disabled={actions.busy}
-                onClick={() => void actions.open(saved.edit_url)}
-              >
-                <Icon name="settings" />
-                Edytuj filtr
-              </button>
-            ) : null}
-          </div>
-        </header>
-        <nav className="notifications-tabs work-tabs" aria-label="Tryb wyszukiwania">
-          {data.basic_available ? (
-            <a
-              href={data.basic_url}
-              className={data.mode === 'basic' ? 'is-active' : ''}
-              aria-current={data.mode === 'basic' ? 'page' : undefined}
-            >
-              Podstawowy
-            </a>
-          ) : (
-            <span
-              className="task-filter-disabled"
-              title="Tych warunków nie można przedstawić w trybie podstawowym."
-            >
-              Podstawowy
-            </span>
-          )}
-          <a
-            href={data.advanced_url}
-            className={data.mode === 'advanced' ? 'is-active' : ''}
-            aria-current={data.mode === 'advanced' ? 'page' : undefined}
+          <nav
+            className="notifications-tabs work-tabs work-tabs--views"
+            aria-label="Tryb wyszukiwania"
           >
-            Zaawansowany
-          </a>
-        </nav>
-        <form className="task-filter-search" action={data.search_url} onSubmit={search}>
-          <input type="hidden" name="mode" value={data.mode} />
+            {data.basic_available ? (
+              <a
+                href={data.basic_url}
+                className={data.mode === 'basic' ? 'is-active' : ''}
+                aria-current={data.mode === 'basic' ? 'page' : undefined}
+              >
+                <Icon name="list-filter" />
+                Podstawowy
+              </a>
+            ) : (
+              <span
+                className="task-filter-disabled"
+                title="Tych warunków nie można przedstawić w trybie podstawowym."
+              >
+                Podstawowy
+              </span>
+            )}
+            <a
+              href={data.advanced_url}
+              className={data.mode === 'advanced' ? 'is-active' : ''}
+              aria-current={data.mode === 'advanced' ? 'page' : undefined}
+            >
+              <Icon name="sliders-horizontal" />
+              Zaawansowany
+            </a>
+          </nav>
+        </header>
+        <div className="work-content work-content--items work-content--tasks">
           {data.mode === 'basic' ? (
-            <>
-              <input type="hidden" name="basic" value="1" />
-              <div className="tasks-filterbar tasks-filterbar--directory task-filter-controls">
-                <div className="tasks-filterbar-left">
-                  {['space', 'type', 'status', 'priority', 'assignee'].map((name) => (
-                    <div className="task-filter-control" key={name}>
-                      {field(name)}
-                    </div>
-                  ))}
-                  <button className="tasks-filter-button" type="submit">
-                    <Icon name="search" />
-                    Szukaj
-                  </button>
-                </div>
-              </div>
-              <div className="tasks-filterbar tasks-filterbar--directory task-filter-controls">
-                <div className="tasks-filterbar-left">
-                  <label className="tasks-search-field tasks-project-search">
-                    <Icon name="search" />
-                    {field('q')}
-                  </label>
-                  <div className="task-filter-control">{field('tag')}</div>
-                  <div className="task-filter-control">{field('team')}</div>
-                </div>
-                <div className="tasks-filterbar-right">
-                  <div className="task-filter-control">{field('sort')}</div>
-                  <a className="tasks-filter-button" href={data.clear_url}>
-                    Wyczyść
-                  </a>
-                </div>
-              </div>
-            </>
+            <SearchToolbar data={data} />
           ) : (
-            <>
+            <form className="task-filter-search" action={data.search_url} onSubmit={search}>
+              <input type="hidden" name="mode" value="advanced" />
               <div className="task-filter-advanced">
                 <label htmlFor="filter-jql" className="u-sr-only">
                   Zapytanie zaawansowane
@@ -185,32 +158,26 @@ export default function SearchPage(props: PageProps) {
                 </a>
               </div>
               <QueryHelp />
-            </>
+              <span role="status" className="work-caption">
+                Zadania: {data.pagination.count}
+                {saved ? ` · ${saved.visibility_label}` : ''}
+              </span>
+            </form>
           )}
-        </form>
-        {data.search_error ? (
-          <div
-            className="task-filter-query-error tasks-modal__errors"
-            id="filter-query-error"
-            role="alert"
-          >
-            {data.search_error}
-          </div>
-        ) : null}
-        {actions.error ? (
-          <div className="task-filter-query-error tasks-modal__errors" role="alert">
-            {actions.error}
-          </div>
-        ) : null}
-        <div className="tasks-filterbar tasks-filterbar--directory">
-          <div className="tasks-filterbar-left">
-            <span role="status">
-              Zadania: {data.pagination.count}
-              {saved ? ` · ${saved.visibility_label}` : ''}
-            </span>
-          </div>
-        </div>
-        <div className="work-content work-content--tasks">
+          {data.search_error ? (
+            <div
+              className="task-filter-query-error tasks-modal__errors"
+              id="filter-query-error"
+              role="alert"
+            >
+              {data.search_error}
+            </div>
+          ) : null}
+          {actions.error ? (
+            <div className="task-filter-query-error tasks-modal__errors" role="alert">
+              {actions.error}
+            </div>
+          ) : null}
           <div
             className={`tasks-table-wrap tasks-board work-item-list ${data.items.length ? '' : 'tasks-board--empty'}`}
           >

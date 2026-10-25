@@ -111,7 +111,7 @@ def page_styles(page):
         names += ['components/task-filters.css', 'components/pulpits.css']
     if kind == 'settings':
         names += ['components/settings.css']
-    if kind == 'workspace-directory' or kind.startswith(('space-', 'pulpit')) or kind == 'form':
+    if kind == 'workspace-directory' or kind.startswith(('space-', 'pulpit', 'filter')) or kind == 'form':
         names += ['components/workplace-team.css']
     if kind.startswith(('document', 'office')):
         names += ['components/office.css']

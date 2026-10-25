@@ -90,8 +90,9 @@ class SavedTaskFilterForm(forms.ModelForm):
     def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
         self.request = request
-        self.fields['shared_with'].queryset = workplace_people(request.workplace, request.user).exclude(pk=request.user.pk)
-        self.fields['shared_with'].label_from_instance = lambda person: person.get_full_name() or person.email
+        if 'shared_with' in self.fields:
+            self.fields['shared_with'].queryset = workplace_people(request.workplace, request.user).exclude(pk=request.user.pk)
+            self.fields['shared_with'].label_from_instance = lambda person: person.get_full_name() or person.email
         self.fields['visibility'].help_text = 'Udostępnienie filtra zachowuje uprawnienia odbiorców do przestrzeni i zadań.'
         self.fields['query'].help_text = 'Puste warunki pokazują wszystkie dostępne zadania.'
         self.initial['revision'] = self.instance.revision
@@ -113,8 +114,34 @@ class SavedTaskFilterForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
+        if 'shared_with' not in self.fields:
+            return data
         if data.get('visibility') == SavedTaskFilter.Visibility.SELECTED and not data.get('shared_with'):
             self.add_error('shared_with', 'Wybierz co najmniej jedną osobę.')
         elif data.get('visibility') != SavedTaskFilter.Visibility.SELECTED:
             data['shared_with'] = self.fields['shared_with'].queryset.none()
         return data
+
+
+class FilterSettingsForm(SavedTaskFilterForm):
+    class Meta(SavedTaskFilterForm.Meta):
+        fields = ['name', 'description', 'query', 'visibility']
+
+    def __init__(self, *args, request, **kwargs):
+        super().__init__(*args, request=request, **kwargs)
+        self.fields['visibility'].choices = [
+            ('private', 'Prywatny — wybrane osoby'), ('workspace', 'Cały Workspace'),
+        ]
+        self.fields['visibility'].required = False
+        self.fields['visibility'].disabled = bool(self.instance.pk and self.instance.created_by_id != request.user.pk)
+        self.fields['visibility'].help_text = 'Osobami i rolami zarządzaj w zakładce „Udostępnienia”. Widoczność zmienia właściciel filtra.'
+        if self.instance.visibility == SavedTaskFilter.Visibility.SELECTED:
+            self.initial['visibility'] = 'private'
+
+    def clean_visibility(self):
+        value = self.cleaned_data.get('visibility')
+        if not value:
+            return self.instance.visibility
+        if value == 'private' and self.instance.pk and self.instance.shared_with.exists():
+            return SavedTaskFilter.Visibility.SELECTED
+        return value

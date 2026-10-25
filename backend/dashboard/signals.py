@@ -4,9 +4,12 @@ from django.dispatch import receiver
 
 @receiver(post_delete, sender='workplaces.WorkplaceMembership')
 def removed_workspace_member(sender, instance, using, **kwargs):
-    from .models import DashboardMembership
+    from .models import DashboardMembership, SavedTaskFilterMembership
     DashboardMembership.objects.using(using).filter(
         dashboard__workplace_id=instance.workplace_id, user_id=instance.user_id,
+    ).delete()
+    SavedTaskFilterMembership.objects.using(using).filter(
+        savedtaskfilter__workplace_id=instance.workplace_id, user_id=instance.user_id,
     ).delete()
 
 

@@ -27,6 +27,13 @@ otrzymują datę i wybraną rolę. [Wzorzec migracji Django](https://docs.django
 Po backupie zastosuj `manage.py migrate`. Cofnięcie zachowuje odbiorców,
 ale usuwa dodatkowe kolumny ról i dat.
 
+`dashboard.0006_saved_filter_membership_roles` przejmuje istniejącą tabelę
+`dashboard_savedtaskfilter_shared_with` przez `SavedTaskFilterMembership`,
+zachowując jej identyfikator, PK relacji i odbiorców. Dodaje role i datę
+według tego samego wzorca co Pulpity: dotychczasowi odbiorcy są obserwatorami
+z nieznaną datą, a nowe udostępnienia zapisują datę. Cofnięcie usuwa dodatkowe
+kolumny, zachowując relacje. Po backupie zastosuj `manage.py migrate`.
+
 ## Zakres
 
 Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele

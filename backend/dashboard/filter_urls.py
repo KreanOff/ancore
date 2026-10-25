@@ -1,5 +1,6 @@
 from django.urls import path
 from . import filter_views as views
+from . import filter_sharing
 
 app_name = 'filters'
 urlpatterns = [
@@ -12,6 +13,8 @@ urlpatterns = [
     path('new/', views.edit, name='create'),
     path('<int:pk>/', views.search, name='detail'),
     path('<int:pk>/edit/', views.edit, name='edit'),
+    path('<int:pk>/team/', filter_sharing.team, name='team'),
+    path('<int:pk>/team/candidates/', filter_sharing.candidates, name='team_candidates'),
     path('<int:pk>/save/', views.save_query, name='save'),
     path('<int:pk>/favorite/', views.favorite, name='favorite'),
     path('<int:pk>/delete/', views.delete, name='delete'),

@@ -155,18 +155,33 @@ a szablon zgodności korzysta z tej samej ilustracji. Teksty zależne
 od zakładki lub kryteriów pozostają zachowane; akcje są poza pustym stanem.
 
 Podstawowe pola korzystają z AncoreCustomSelect, tekstowego wyszukiwania
-i istniejących przycisków. Zaawansowany tryb ma pole zapytania i pomoc
+i istniejących przycisków. Nagłówek wyników łączy tytuł, działania i zakładki
+trybu w `work-space-header`, z jedną dolną ramką, jak w otwartej Przestrzeni.
+Wspólny `work-content--items` wyrównuje pasek i listę. Pasek podstawowy
+(`filters/SearchToolbar.tsx`) ma menu „Sortowanie” i „Filtrowanie” z istniejącego
+wzorca `tasks-project-query-*` oraz licznik wyników w tym samym wierszu.
+Panel filtrów zachowuje wszystkie pola i wielokrotny wybór, przewijaną treść
+oraz stale dostępną stopkę „Szukaj”; aktywne kryteria oznacza licznik przy menu.
+Zmiana sortowania zachowuje bieżące warunki, a „Wyczyść” korzysta z dotychczasowego
+adresu. Pierwszy render Django używa tego samego układu i formularza GET
+z menu `details`. Zaawansowany tryb ma pole zapytania i pomoc
 ze składnią. Tworzenie i ustawienia filtra używają dużego wspólnego `app-modal-panel`,
-z zakładkami `notifications-tabs` „Główna” (nazwa, opis, warunki) i „Dostępy”
-(widoczność, osoby). Powłokę renderuje `filters/SettingsDialog.tsx`.
-Zakładki obsługują strzałki, Home i End. Wspólny `EmbeddedForm` zachowuje jeden
-formularz i zamontowane pola obu paneli; stopka zapisuje całą definicję,
-podczas edycji pozostawiając okno otwarte. Błędy oraz natywna walidacja odsłaniają właściwy
-panel i ustawiają fokus. Wariant `filter-settings-*` dodaje wyłącznie układ
-zakładek, paneli i istniejących wierszy etykieta/pole przy szerokości od 1100px.
-Na telefonie pola układają się pionowo. Tworzenie i „Zapisz jako” używają tych
-samych zakładek; po zapisie zamykają okno i przechodzą do utworzonego filtra
-albo wracają do zwykłego katalogu.
+z zakładkami `notifications-tabs` „Ustawienia” i „Udostępnienia”.
+Powłokę renderuje `filters/SettingsDialog.tsx`; `EmbeddedForm` zachowuje szkic
+nazwy, opisu, warunków i widoczności, a fieldset korzysta z `display: contents`
+bez dodatkowej widocznej ramki. Pola na desktopie używają istniejących wierszy
+etykieta/kontrolka; na telefonie układają się pionowo.
+
+Udostępnienia używają tych samych `shared/Members`, `shared/SharingDialog`
+i stylów `workplace-team.css` co Przestrzenie. Właściciel jest chroniony;
+pozostałe wiersze mają awatar, e-mail, rolę, datę i dozwolone menu działań.
+Picker wyszukuje aktywne osoby Workspace, a kompaktowy dialog nadaje/zmienia
+rolę. Odebranie dostępu wymaga potwierdzenia. Operacje działają od razu,
+z obsługą błędu i ponowienia, zachowując szkic ustawień i kontrolę rewizji.
+Przy widoczności Workspace tabela pokazuje dziedziczenie bez przycisku
+udostępnienia. Przed utworzeniem filtra zakładka wyjaśnia potrzebę pierwszego
+zapisu; po nim to samo okno przechodzi do tabeli osób. Zapis ustawień także
+pozostawia okno otwarte. Zakładki obsługują strzałki, Home i End.
 Formularz zapisu/edycji korzysta z AncoreTaskModals:
 fokus, inert, Escape, potwierdzenie odrzucenia zmian i błędy w dialogu.
 Skrypt task-filters.js czeka przy pierwszym ładowaniu na wspólny

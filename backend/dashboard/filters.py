@@ -1,8 +1,8 @@
-from django.db.models import Case, Exists, OuterRef, Q, When
+from django.db.models import Case, Exists, OuterRef, Q, Subquery, When
 
 from spaces.services import app_url
 from workplaces.services import workspace_owner
-from .models import SavedTaskFilter
+from .models import SavedTaskFilter, SavedTaskFilterMembership
 from .recent import recent_views
 
 
@@ -13,7 +13,27 @@ def filter_url(request, suffix=''):
 def visible_filters(request):
     return SavedTaskFilter.objects.filter(owner=workspace_owner(request), workplace=request.workplace).filter(
         Q(created_by=request.user) | Q(visibility='workspace') | Q(visibility='selected', shared_with=request.user),
-    ).distinct()
+    ).annotate(_viewer_role=Subquery(SavedTaskFilterMembership.objects.filter(
+        savedtaskfilter_id=OuterRef('pk'), user=request.user).values('role')[:1])).distinct()
+
+
+def filter_role(request, item):
+    if item.created_by_id == request.user.pk:
+        return 'owner'
+    if item.visibility == SavedTaskFilter.Visibility.SELECTED:
+        role = getattr(item, '_viewer_role', None)
+        if role is None:
+            role = item.memberships.filter(user=request.user).values_list('role', flat=True).first()
+        return role if role in SavedTaskFilterMembership.Role.values else ''
+    return 'observer' if item.visibility == SavedTaskFilter.Visibility.WORKSPACE else ''
+
+
+def can_manage_filter(request, item):
+    return filter_role(request, item) in {'owner', 'admin'}
+
+
+def can_edit_filter_query(request, item):
+    return filter_role(request, item) in {'owner', 'admin', 'member'}
 
 
 def decorate_filter(request, item, favorites=None):
@@ -21,7 +41,9 @@ def decorate_filter(request, item, favorites=None):
     item.edit_url = item.url + 'edit/'
     item.favorite_url = item.url + 'favorite/'
     item.delete_url = item.url + 'delete/'
-    item.editable = item.created_by_id == request.user.pk
+    item.editable = can_manage_filter(request, item)
+    item.query_editable = can_edit_filter_query(request, item)
+    item.deletable = item.created_by_id == request.user.pk
     item.favorite = item.pk in favorites if favorites is not None else item.favorited_by.filter(pk=request.user.pk).exists()
     return item
 

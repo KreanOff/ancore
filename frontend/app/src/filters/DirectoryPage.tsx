@@ -207,7 +207,7 @@ export default function DirectoryPage(props: PageProps) {
                                 <Icon name="copy" />
                                 Użyj w nowym wyszukiwaniu
                               </a>
-                              {item.editable ? (
+                              {item.deletable ? (
                                 <button
                                   className="tasks-project-menu-button tasks-project-menu-button--danger"
                                   disabled={actions.busy}

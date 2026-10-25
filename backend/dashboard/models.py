@@ -19,7 +19,7 @@ class SavedTaskFilter(models.Model):
     description = models.TextField('Opis', blank=True, max_length=2000)
     query = models.TextField('Warunki wyszukiwania', blank=True, max_length=4000)
     visibility = models.CharField('Widoczność', max_length=10, choices=Visibility.choices, default=Visibility.PRIVATE)
-    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='shared_task_filters')
+    shared_with = models.ManyToManyField(settings.AUTH_USER_MODEL, through='SavedTaskFilterMembership', blank=True, related_name='shared_task_filters')
     favorited_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='favorite_task_filters')
     revision = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,6 +31,24 @@ class SavedTaskFilter(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class SavedTaskFilterMembership(models.Model):
+    class Role(models.TextChoices):
+        ADMIN = 'admin', 'Administrator'
+        MEMBER = 'member', 'Członek'
+        OBSERVER = 'observer', 'Obserwator'
+
+    savedtaskfilter = models.ForeignKey(SavedTaskFilter, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_filter_memberships')
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.OBSERVER, db_default=Role.OBSERVER)
+    created_at = models.DateTimeField(default=timezone.now, null=True, blank=True)
+
+    class Meta:
+        db_table = 'dashboard_savedtaskfilter_shared_with'
+        unique_together = [('savedtaskfilter', 'user')]
+        constraints = [models.CheckConstraint(condition=models.Q(role__in=['admin', 'member', 'observer']),
+                                              name='task_filter_member_role_valid')]
 
 
 class Dashboard(models.Model):

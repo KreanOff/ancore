@@ -269,16 +269,21 @@ adapter, więc nie mogą przełączyć odpowiedzi API na fragment HTML.
 
 Tworzenie i edycja filtra otrzymują odpowiednio `filter_settings: "create"`
 lub `"edit"` i schemat bez wariantu kompaktowego. `FormDialog` deleguje je do
-`filters/SettingsDialog.tsx`, który
-łączy „Główna” i „Dostępy” przez sekcje wspólnego `EmbeddedForm`. Ukryte panele
-pozostają zamontowane. Zapis wysyła wszystkie pola z rewizją; odpowiedź API
-zwraca świeży schemat `form`, używany przez `EmbeddedForm` przed kolejną edycją.
+`filters/SettingsDialog.tsx`, który zachowuje zamontowany `EmbeddedForm`
+w zakładce „Ustawienia”, a w „Udostępnieniach” używa `shared/Members`
+i `shared/SharingDialog`. Modal edycji zawiera `filter_team` z adresem `team/`
+i autoryzowaną tabelą. Utworzenie zwraca `filter_modal` pozwalający przejść
+do udostępniania bez zamykania okna. Zapisy ustawień zwracają świeży `form`.
+Operacja udostępnienia zwraca poprzednią i nową rewizję; `EmbeddedForm`
+aktualizuje sam token tylko przy zgodności poprzedniej wartości, zachowując
+szkic i wykrywanie zewnętrznych konfliktów. Endpointy `filter_sharing`
+sprawdzają role oraz aktywny Workspace tak samo jak zwykły routing.
 Walidacja odsłania panel błędnego pola, również dla wymaganych pól HTML.
 Po zapisie edycji okno pozostaje otwarte. Zamknięcie odświeża odpowiedni widok,
 zachowując filtry katalogu; menu boczne otwiera okno nad bieżącym ekranem.
 Bezpośrednie URL korzystają z tej samej powłoki. Tworzenie i „Zapisz jako”
-zamykają okno po sukcesie i zachowują dotychczasowy adres powrotu; ponowny
-zapis nie może utworzyć drugiej definicji w tym samym oknie.
+przechodzą po sukcesie do udostępnień zapisanej definicji w tym samym oknie,
+zachowując adres powrotu; kolejny zapis edytuje ją bez tworzenia duplikatu.
 Globalne menu Filtrów, jego picker i wyszukiwanie definicji renderuje
 `src/shell`; wyniki API zachowują ten sam zakres widoczności.
 

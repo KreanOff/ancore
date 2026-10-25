@@ -7,11 +7,17 @@
 .task-filters-page form { margin: 0; }
 .task-filters-page .tasks-filter-button { text-decoration: none; }
 .task-filters-page .tasks-filterbar-left, .task-filters-page .tasks-filterbar-right { flex-wrap: wrap; }
-.task-filter-control { width: 160px; min-width: 0; }
-.task-filter-control > .ancore-custom-select { width: 100%; }
 .task-filter-search { flex-shrink: 0; }
-.task-filter-controls { row-gap: 8px; }
-.task-filter-controls .tasks-search-field { width: 280px; max-width: 100%; }
+.work-content--items > .task-filter-search .task-filter-advanced { padding: 0; }
+.work-content--items > .task-filter-search .task-filter-help { padding: 8px 0; }
+.work-content--items > .task-filter-query-error { margin: 0; }
+.tasks-project-filter-builder.is-open > .task-filter-search-panel,
+.tasks-project-filter-builder[open] > .task-filter-search-panel { display: flex; flex-direction: column; overflow: hidden; }
+.task-filter-search-panel { max-height: min(440px, calc(100dvh - 300px)); }
+.task-filter-search-fields { min-height: 0; overflow-y: auto; }
+.task-filter-search-field { display: grid; gap: 4px; min-width: 0; }
+.task-filter-search-field .ancore-custom-select { width: 100%; }
+.task-filter-search-footer { display: flex; justify-content: flex-end; padding: 8px; border-top: 1px solid var(--border-color); flex-shrink: 0; }
 .task-filter-advanced { display: flex; align-items: flex-start; gap: 8px; padding: 14px var(--work-space-inline-padding, 22px) 8px; }
 .task-filter-advanced textarea { flex: 1; min-width: 0; resize: vertical; font-family: monospace; }
 .task-filter-advanced .tasks-filter-button { flex-shrink: 0; }
@@ -29,6 +35,8 @@
 .filter-settings-tabs svg { width: 18px; height: 18px; }
 .filter-settings-panel { display: flex; flex-direction: column; gap: var(--app-modal-field-gap); min-width: 0; }
 .filter-settings-panel[hidden] { display: none !important; }
+.filter-settings-content { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.filter-settings-content[hidden] { display: none !important; }
 .filter-settings-message { margin: 8px var(--app-panel-gutter); }
 .filter-settings-modal .task-filter-form { align-content: start; }
 @media (min-width: 1100px) {
@@ -47,9 +55,6 @@
 @media (max-width: 767px) {
     .task-filters-page .tasks-topbar { align-items: flex-start; gap: 10px; }
     .task-filters-page .tasks-titlebar-actions { justify-content: flex-start; width: 100%; max-width: 100%; }
-    .task-filter-controls .tasks-filterbar-left, .task-filter-controls .tasks-filterbar-right { width: 100%; }
-    .task-filter-control { width: calc(50% - 4px); flex: 1 1 140px; }
-    .task-filter-controls .tasks-search-field { width: 100%; flex-basis: 100%; }
     .task-filter-advanced { flex-wrap: wrap; }
     .task-filter-advanced textarea { flex-basis: 100%; }
 }

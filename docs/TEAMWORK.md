@@ -60,6 +60,25 @@ jego udostępnienia Pulpitów; ponowne dołączenie nie przywraca dawnych ról.
 Dotychczasowi odbiorcy pozostają obserwatorami po migracji. Pulpitu domyślnego
 nadal nie można usunąć. Role nie rozszerzają dostępu do Przestrzeni ani Filtrów.
 
+## Role Filtrów
+
+Role konkretnej definicji przechowuje `SavedTaskFilterMembership` w dotychczasowej
+tabeli `dashboard_savedtaskfilter_shared_with`. Właścicielem jest twórca
+`created_by`, a `owner` pozostaje granicą danych Workspace.
+
+| Rola Filtra | Uprawnienia |
+| --- | --- |
+| Właściciel | Ustawienia, warunki, wszystkie role, widoczność i usunięcie; chroniony wiersz |
+| Administrator | Ustawienia, warunki oraz udostępnianie i zmiana/odebranie ról członka i obserwatora; bez operacji na właścicielu/administratorach, widoczności i usuwaniu |
+| Członek | Zapis warunków wyszukiwania; bez ustawień i zarządzania dostępem |
+| Obserwator | Odczyt definicji i uruchamianie wyników we własnym zakresie danych |
+
+Widoczność Workspace daje pozostałym osobom wyłącznie odczyt. Każda rola
+wymaga aktywnego członkostwa Workspace; jego usunięcie/wyłączenie czyści role.
+Cofnięcie roli obowiązuje przy kolejnym żądaniu, także z otwartego formularza.
+Udostępnienie nigdy nie rozszerza dostępu do Przestrzeni i zadań.
+Migracja zachowuje dotychczasowych odbiorców jako obserwatorów.
+
 ## Widoczność projektów Zadań
 
 Dawne projekty usunięto. Bieżący zakres wyznaczają `SpaceMembership` i `spaces.access`.

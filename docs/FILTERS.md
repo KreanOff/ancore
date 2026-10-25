@@ -13,6 +13,12 @@ wykonawca, tekst, tagi, zespół i sortowanie. Wiele wartości jednego pola łą
 się alternatywą, a różne pola koniunkcją. Wykonawca ma dodatkowe wartości
 „Przypisane do mnie” i „Nieprzypisane”.
 
+Nagłówek tytułu i trybów wyszukiwania oraz kompaktowy pasek pod nim mają
+układ otwartej Przestrzeni. Podstawowy formularz mieści kryteria w menu
+„Filtrowanie”, ze wspólnymi kontrolkami wielokrotnego wyboru i przyciskiem
+„Szukaj”. Sąsiednie menu „Sortowanie” zmienia kolejność, zachowując warunki.
+Licznik aktywnych pól jest przy menu, a liczba wyników w tym samym pasku.
+
 Samodzielny ekran „Wszystkie zadania” i jego pozycja menu są wycofane.
 Zapisane osobiste skróty `tasks-all` pozostają w bazie, ale nie są wyświetlane
 ani dostępne do dodania. Dawne `/spaces/items/` i scoped odpowiednik
@@ -39,18 +45,24 @@ zmienić również nazwę, opis i udostępnianie. „Wyczyść” zmienia bież�
 wyszukiwanie; definicja pozostaje zapisana do użycia „Zapisz”.
 Wyniki są odczytywane na nowo przy każdym otwarciu filtra.
 
-Tworzenie i ustawienia filtra otwierają duże wspólne okno, tak jak ustawienia
-Przestrzeni i Pulpitów. Zakładka „Główna” zawiera nazwę, opis i warunki
-wyszukiwania; „Dostępy” widoczność i odbiorców. Obie należą do jednego formularza:
-przełączanie zachowuje szkice, a „Zapisz” atomowo zapisuje całą definicję i
-podczas edycji pozostawia okno otwarte. Odpowiedź zawiera aktualną rewizję, więc kolejny zapis
-w tym samym oknie zachowuje kontrolę konfliktów. Błąd odsłania właściwą zakładkę
-i skupia nieprawidłowe pole; Escape i zamknięcie chronią niezapisany szkic.
-Po zamknięciu zapisanych ustawień katalog odświeża się z zachowanymi kryteriami,
-a wejście z menu bocznego zachowuje bieżący ekran. Zwykłe/scoped adresy edycji
-oraz wariant zarządzania otwierają tę samą powłokę. Tworzenie i „Zapisz jako”
-korzystają z tych samych zakładek; po utworzeniu zamykają okno i otwierają
-zapisany filtr albo wracają do zwykłego katalogu z jego kryteriami.
+Tworzenie i ustawienia filtra używają wspólnego dużego okna Przestrzeni,
+bez dodatkowej ramki wokół pól. Zakładka „Ustawienia” zawiera nazwę, opis,
+warunki i widoczność „Prywatny — wybrane osoby” lub „Cały Workspace”.
+„Udostępnienia” pokazuje wspólną tabelę `Members`: awatar, nazwę, e-mail,
+rolę, datę oraz menu zmiany roli i odebrania dostępu. Właściciel ma chroniony
+wiersz. „Udostępnij” otwiera wspólny picker aktywnych osób Workspace
+z wyborem Administrator/Członek/Obserwator. Zapis działa od razu; odebranie
+wymaga potwierdzenia. Widoczność Workspace pokazuje dostęp odziedziczony.
+
+Nowy filtr najpierw zapisuje się w „Ustawieniach”. Okno pozostaje otwarte
+i przechodzi do „Udostępnień”, gdzie można wybrać osoby. Kolejne zapisy
+ustawień również pozostawiają okno otwarte. Przełączanie zakładek i operacje
+udostępniania zachowują szkic ustawień. Rewizja formularza przesuwa się po
+udostępnieniu tylko wtedy, gdy odpowiada wcześniejszej rewizji tej operacji;
+starszy szkic po zewnętrznej edycji nadal jest odrzucany. Błędy skupiają pole,
+a Escape i zamknięcie chronią niezapisany szkic. Zwykłe/scoped adresy oraz
+starsze adresy zarządzania otwierają tę samą powłokę. Zamknięcie po zapisie
+odświeża właściwy ekran z zachowaniem kontekstu katalogu.
 
 Katalog „Filtry” zawiera zakładki Ulubione, Moje filtry, Udostępnione
 i Wszystkie, wyszukiwanie nazw/opisów i paginację. Gwiazdka jest osobista.
@@ -61,7 +73,7 @@ w zwykłym katalogu. Poprawna jawna zakładka, wyszukiwanie i numer strony pozos
 zachowane; dawne filtry widoczności/gwiazdki są ignorowane. API strony
 oraz nawigacji zwracają ten sam docelowy adres.
 Starsze `manage/new/` i `manage/<pk>/edit/` nadal obsługują formularze
-z dotychczasową kontrolą twórcy i Workspace. W tle jest zwykły katalog,
+z kontrolą roli i Workspace. W tle jest zwykły katalog,
 a zapis/anulowanie zachowują jego zakładkę i wyszukiwanie. Adres `return_to`
 prowadzący do wycofanego katalogu jest normalizowany również przy gwiazdce
 oraz usuwaniu. Pozostałe zabezpieczenia lokalnego przekierowania są zachowane.
@@ -74,7 +86,7 @@ zwiniętym. Osobny skrót „Wyszukaj zadania” nadal prowadzi do wyszukiwania.
 Skróty mają wspólny limit sześciu pozycji; ulubione mają pierwszeństwo.
 Ostatnie są układane według osobistych odwiedzin w aktywnym Workspace,
 następnie według daty utworzenia. Wiersze pozwalają zmienić gwiazdkę
-oraz otworzyć ustawienia własnego filtra. Operacja gwiazdki zachowuje
+oraz otworzyć ustawienia filtra zgodnie z rolą. Operacja gwiazdki zachowuje
 bieżący ekran, także poza modułem Filtry. „Więcej filtrów” korzysta ze wspólnego panelu
 wyszukiwania Przestrzeni i prowadzi do wszystkich dostępnych definicji.
 Usunięcie filtra usuwa jego definicję i ulubione, zachowując zadania.
@@ -85,8 +97,16 @@ Usunięcie filtra usuwa jego definicję i ulubione, zachowując zadania.
 aktywny Workspace, faktycznego twórcę, nazwę, opis, zapytanie, widoczność,
 odbiorców, ulubione, rewizję i daty. Widoczność może być prywatna,
 dla wybranych aktywnych osób Workspace albo dla całego Workspace.
-Wyłącznie twórca może edytować lub usuwać filtr; pozostali odbiorcy mogą
-go uruchamiać, oznaczać gwiazdką i tworzyć własną kopię.
+Role `SavedTaskFilterMembership` są niezależne od roli Workspace.
+Właściciel (`created_by`) zarządza wszystkim, widocznością i usunięciem.
+Administrator zmienia ustawienia i zarządza członkami/obserwatorami;
+nie zmienia właściciela, administratorów ani widoczności i nie usuwa filtra.
+Członek może zapisywać warunki przez „Zapisz” w wynikach. Obserwator oraz
+pozostali odbiorcy widoczności Workspace korzystają z filtra w trybie odczytu.
+Każdy dostępny odbiorca może używać osobistej gwiazdki i tworzyć własną kopię.
+Usunięcie lub wyłączenie członkostwa Workspace usuwa udostępnione role.
+Migracja `dashboard.0006_saved_filter_membership_roles` zachowuje dotychczasową
+tabelę M2M i odbiorców, nadając im rolę obserwatora; dawna data pozostaje nieznana.
 
 Definicje są ograniczone przez właściciela i aktywny Workspace.
 Udostępnienie definicji nie przyznaje dostępu do zadań. Wynik zawsze zaczyna
@@ -160,6 +180,7 @@ Adresy zwykłe i scoped są równoważne:
 - /filters/new/ — utworzenie;
 - /filters/<pk>/ — wynik zapisanej definicji;
 - /filters/<pk>/edit/ — edycja;
+- /filters/<pk>/team/ i team/candidates/ — tabela, udostępnianie, role i picker;
 - /filters/<pk>/save/, favorite/, delete/ — akcje POST;
 - /workplaces/<slug>/filters/... — wariant aktywnego Workspace.
 

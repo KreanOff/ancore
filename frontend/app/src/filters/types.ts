@@ -1,5 +1,6 @@
 import type { FormDialogData, FormSchema } from '../forms/FormDialog';
 import type { PaginationData } from '../shared/Pagination';
+import type { MemberRow } from '../shared/Members';
 import type { Item } from '../spaces/types';
 export interface SavedFilter {
   id: number;
@@ -12,6 +13,8 @@ export interface SavedFilter {
   revision: number;
   favorite: boolean;
   editable: boolean;
+  query_editable: boolean;
+  deletable: boolean;
   url: string;
   edit_url: string;
   favorite_url: string;
@@ -47,4 +50,15 @@ export interface SearchData {
   items: Item[];
   pagination: PaginationData;
   modal: FormDialogData | null;
+}
+
+export interface FilterTeam {
+  name: string;
+  can_manage: boolean;
+  is_owner: boolean;
+  members: MemberRow[];
+  share_form: FormSchema;
+  visibility: string;
+  revision: number;
+  previous_revision?: number;
 }

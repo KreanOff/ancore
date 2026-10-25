@@ -11,6 +11,7 @@ def filter_payload(item):
         'visibility': item.visibility, 'visibility_label': item.get_visibility_display(),
         'author': item.created_by.get_full_name() or item.created_by.email,
         'revision': item.revision, 'favorite': item.favorite, 'editable': item.editable,
+        'query_editable': item.query_editable, 'deletable': item.deletable,
         **{key: getattr(item, key) for key in ('url', 'edit_url', 'favorite_url', 'delete_url')},
     }
 
@@ -21,11 +22,14 @@ def filter_form_payload(form):
     return schema
 
 
-def modal_payload(context):
+def modal_payload(request, context):
     modal = context.get('modal')
     if not modal:
         return None
-    return {'title': modal['title'], 'action': modal['action'], 'return_url': context['list_url'],
+    from .filter_sharing import payload, team_url
+    item = modal['form'].instance
+    return {'filter_team': {'url': team_url(request, item), 'data': payload(request, item)} if item.pk else None,
+            'title': modal['title'], 'action': modal['action'], 'return_url': context['list_url'],
             'values': {'return_to': context['list_url']}, 'form': filter_form_payload(modal['form']),
             'filter_settings': 'edit' if modal['form'].instance.pk else 'create'}
 
@@ -36,7 +40,7 @@ def catalog_page(request, context):
         'results': [filter_payload(item) for item in context['filters']],
         'pagination': pagination_payload(request, context['page'], context['filters_url']),
         'illustration': static('img/empty-states/filters-empty.webp'),
-        'modal': modal_payload(context),
+        'modal': modal_payload(request, context),
     }}
 
 
@@ -49,5 +53,5 @@ def search_page(request, context):
         'form': form_payload(context['search_form']),
         'items': [item_payload(item) for item in context['items']],
         'pagination': pagination_payload(request, context['page'], context['search_url']),
-        'modal': modal_payload(context),
+        'modal': modal_payload(request, context),
     }}

@@ -16,6 +16,7 @@ import { Modal } from '../shared/Modal';
 import { type PageProps, navigate, PageError, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
 import AvatarControl, { type AvatarForm } from '../shared/AvatarControl';
+import type { FilterTeam } from '../filters/types';
 
 export interface Field {
   name: string;
@@ -89,6 +90,7 @@ export interface FormSection {
 
 export interface FormDialogData {
   filter_settings?: 'create' | 'edit';
+  filter_team?: { url: string; data: FilterTeam } | null;
   space_settings?: { space_url: string; tab: 'main' | 'members' | 'avatar' };
   title: string;
   action: string;
@@ -414,16 +416,18 @@ export function EmbeddedForm({
   sections,
   activeSection,
   onInvalidSection,
+  revisionChange,
 }: {
   openAvatar?: boolean;
   data: FormDialogData;
   api: string;
   csrfToken: string;
-  onSaved: (url: string) => void;
+  onSaved: (url: string, result?: { filter_modal?: FormDialogData }) => void;
   onStateChange: (dirty: boolean, pending: boolean) => void;
   sections?: FormSection[];
   activeSection?: string;
   onInvalidSection?: (id: string) => void;
+  revisionChange?: { previous: number; current: number };
 }) {
   const [schema, setSchema] = useState(data.form),
     [pending, setPending] = useState(false),
@@ -456,6 +460,12 @@ export function EmbeddedForm({
   useLayoutEffect(() => {
     if (form.current) window.AncoreCustomSelect?.refresh(form.current);
   }, [visibility, dataScope, schema]);
+  useLayoutEffect(() => {
+    const input = form.current?.querySelector<HTMLInputElement>('input[name="revision"]');
+    // Only advance the form we actually shared from; an older external edit must still conflict.
+    if (input && revisionChange && input.value === String(revisionChange.previous))
+      input.value = String(revisionChange.current);
+  }, [revisionChange]);
   useEffect(() => {
     const element = form.current!,
       changed = (event: Event) => {
@@ -499,6 +509,7 @@ export function EmbeddedForm({
         saved?: boolean;
         url?: string;
         form?: FormSchema;
+        filter_modal?: FormDialogData;
       }>(api, data.action, csrfToken, controller.current.signal, values);
       flushSync(() => {
         if (result.form) setSchema(result.form);
@@ -506,7 +517,7 @@ export function EmbeddedForm({
         setPending(false);
         onStateChange(false, false);
       });
-      await onSaved(result.redirect || result.url || data.return_url);
+      await onSaved(result.redirect || result.url || data.return_url, result);
     } catch (exception) {
       if (controller.current.signal.aborted) return;
       if (exception instanceof PageError) {
@@ -655,7 +666,7 @@ export function EmbeddedForm({
             />
           </fieldset>
         ) : schema.layout === 'filter' ? (
-          <fieldset className="resources-react-fieldset task-filter-form" disabled={pending}>
+          <fieldset className="resources-react-fieldset" disabled={pending}>
             {sections
               ? sections.map((section) => (
                   <section

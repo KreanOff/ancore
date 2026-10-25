@@ -22,7 +22,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/accounts](../backend/accounts) | 24 | 1 | 9 | 73 |
 | [backend/workplaces](../backend/workplaces) | 24 | 1 | 13 | 113 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 49 | 5 | 41 | 255 |
+| [backend/dashboard](../backend/dashboard) | 52 | 6 | 42 | 267 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 7 |
 | [backend/documents](../backend/documents) | 37 | 2 | 31 | 200 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
@@ -136,10 +136,21 @@ Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `creat
 | `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='workspace_task_filters' |
 | `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='task_filters' |
 | `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='created_task_filters' |
-| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_filters' |
+| `shared_with` | `settings.AUTH_USER_MODEL` | related_name='shared_task_filters'; through='SavedTaskFilterMembership' |
 | `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_task_filters' |
 
 Metody/properties: `__str__`.
+
+### `SavedTaskFilterMembership`
+
+Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
+
+Pola zadeklarowane tutaj: `savedtaskfilter` (ForeignKey), `user` (ForeignKey), `role` (CharField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `savedtaskfilter` | `SavedTaskFilter` | on_delete=models.CASCADE; related_name='memberships' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='task_filter_memberships' |
 
 ### `Dashboard`
 
@@ -874,16 +885,17 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/admin.py](../backend/dashboard/admin.py)
 - [backend/dashboard/apps.py](../backend/dashboard/apps.py) — `DashboardConfig`
 - [backend/dashboard/collaboration.py](../backend/dashboard/collaboration.py) — `mention_handle`, `mention_label`, `mention_choices`, `comment_mention_metadata`, `mention_people`
-- [backend/dashboard/filter_forms.py](../backend/dashboard/filter_forms.py) — `BasicTaskSearchForm`, `SavedTaskFilterForm`
+- [backend/dashboard/filter_forms.py](../backend/dashboard/filter_forms.py) — `BasicTaskSearchForm`, `SavedTaskFilterForm`, `FilterSettingsForm`
 - [backend/dashboard/filter_frontend.py](../backend/dashboard/filter_frontend.py) — `filter_payload`, `filter_form_payload`, `modal_payload`, `catalog_page`, `search_page`
 - [backend/dashboard/filter_search.py](../backend/dashboard/filter_search.py) — `QueryError`, `quote`, `SearchQuery`, `Parser`, `parse_query`, `date_value`, `Compiler`, `apply_query`, `basic_query`
+- [backend/dashboard/filter_sharing.py](../backend/dashboard/filter_sharing.py) — `ShareForm`, `payload`, `team_url`, `team`, `candidates`
 - [backend/dashboard/filter_urls.py](../backend/dashboard/filter_urls.py)
 - [backend/dashboard/filter_views.py](../backend/dashboard/filter_views.py) — `get_filter`, `directory_url`, `catalog_context`, `search_context`, `index`, `manage`, `search`, `lookup`, `mutation_response`, `return_url`, `edit`, `save_query`, `favorite`, `delete`
-- [backend/dashboard/filters.py](../backend/dashboard/filters.py) — `filter_url`, `visible_filters`, `decorate_filter`, `sidebar_filters`
+- [backend/dashboard/filters.py](../backend/dashboard/filters.py) — `filter_url`, `visible_filters`, `filter_role`, `can_manage_filter`, `can_edit_filter_query`, `decorate_filter`, `sidebar_filters`
 - [backend/dashboard/for_you.py](../backend/dashboard/for_you.py) — `for_you_context`
 - [backend/dashboard/frontend.py](../backend/dashboard/frontend.py) — `for_you_page`, `settings_page`
 - [backend/dashboard/identifiers.py](../backend/dashboard/identifiers.py) — `DashboardSlugConverter`, `unique_dashboard_slug`
-- [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `Dashboard`, `DashboardMembership`, `DashboardGadget`, `NotificationState`
+- [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `SavedTaskFilterMembership`, `Dashboard`, `DashboardMembership`, `DashboardGadget`, `NotificationState`
 - [backend/dashboard/notification_frontend.py](../backend/dashboard/notification_frontend.py) — `notification_payload`
 - [backend/dashboard/notification_service.py](../backend/dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
 - [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `configure_preferences`, `DashboardPreferencesMixin`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
@@ -1070,6 +1082,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/templates/dashboard/filters/row_actions.html](../backend/dashboard/templates/dashboard/filters/row_actions.html)
 - [backend/dashboard/templates/dashboard/filters/search.html](../backend/dashboard/templates/dashboard/filters/search.html)
 - [backend/dashboard/templates/dashboard/filters/search_results.html](../backend/dashboard/templates/dashboard/filters/search_results.html)
+- [backend/dashboard/templates/dashboard/filters/search_toolbar.html](../backend/dashboard/templates/dashboard/filters/search_toolbar.html)
 - [backend/dashboard/templates/dashboard/filters/sidebar.html](../backend/dashboard/templates/dashboard/filters/sidebar.html)
 - [backend/dashboard/templates/dashboard/filters/sidebar_navigation.html](../backend/dashboard/templates/dashboard/filters/sidebar_navigation.html)
 - [backend/dashboard/templates/dashboard/filters/sidebar_picker.html](../backend/dashboard/templates/dashboard/filters/sidebar_picker.html)
@@ -1344,6 +1357,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/documents/useOffice.ts](../frontend/app/src/documents/useOffice.ts)
 - [frontend/app/src/filters/DirectoryPage.tsx](../frontend/app/src/filters/DirectoryPage.tsx)
 - [frontend/app/src/filters/SearchPage.tsx](../frontend/app/src/filters/SearchPage.tsx)
+- [frontend/app/src/filters/SearchToolbar.tsx](../frontend/app/src/filters/SearchToolbar.tsx)
 - [frontend/app/src/filters/SettingsDialog.tsx](../frontend/app/src/filters/SettingsDialog.tsx)
 - [frontend/app/src/filters/types.ts](../frontend/app/src/filters/types.ts)
 - [frontend/app/src/forms/FormDialog.tsx](../frontend/app/src/forms/FormDialog.tsx)
@@ -1675,6 +1689,18 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/dashboard/test_default_pulpit.py](../backend/dashboard/test_default_pulpit.py).
 
 - `DefaultPulpitTests`: 7 metod testowych.
+
+### backend/dashboard/test_filter_role_migration.py
+
+Źródło: [backend/dashboard/test_filter_role_migration.py](../backend/dashboard/test_filter_role_migration.py).
+
+- `FilterRoleMigrationTests`: 1 metod testowych.
+
+### backend/dashboard/test_filter_sharing.py
+
+Źródło: [backend/dashboard/test_filter_sharing.py](../backend/dashboard/test_filter_sharing.py).
+
+- `FilterSharingTests`: 11 metod testowych.
 
 ### backend/dashboard/test_filters.py
 
@@ -2057,6 +2083,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/dashboard/migrations/0003_dashboard_preferences.py](../backend/dashboard/migrations/0003_dashboard_preferences.py)
 - [backend/dashboard/migrations/0004_dashboard_emoji_library.py](../backend/dashboard/migrations/0004_dashboard_emoji_library.py)
 - [backend/dashboard/migrations/0005_dashboard_membership_roles.py](../backend/dashboard/migrations/0005_dashboard_membership_roles.py)
+- [backend/dashboard/migrations/0006_saved_filter_membership_roles.py](../backend/dashboard/migrations/0006_saved_filter_membership_roles.py)
 
 ### planner
 
