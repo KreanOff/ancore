@@ -1,5 +1,6 @@
 import base64
 import binascii
+import codecs
 import mimetypes
 import os
 
@@ -92,25 +93,21 @@ def _detect_image_extension(data):
     return ''
 
 
-def _looks_like_text(data):
-    if b'\x00' in data:
+def _looks_like_text(data, *, truncated=False):
+    encoding = 'utf-16' if data.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)) else 'utf-8'
+    try:
+        # A bounded sample may end inside a UTF-8 character or UTF-16 surrogate pair.
+        text = codecs.getincrementaldecoder(encoding)().decode(data, final=not truncated)
+    except UnicodeDecodeError:
         return False
-    if not data:
-        return True
-    for encoding in ('utf-8', 'utf-16'):
-        try:
-            data.decode(encoding)
-            return True
-        except UnicodeDecodeError:
-            continue
-    return False
+    return '\x00' not in text
 
 
 def _looks_like_tar(data):
     return len(data) > 262 and data[257:262] == b'ustar'
 
 
-def _validate_attachment_signature(extension, data):
+def _validate_attachment_signature(extension, data, *, truncated=False):
     if extension in {'.jpg', '.jpeg'}:
         return _detect_image_extension(data) == 'jpg'
     if extension == '.png':
@@ -122,7 +119,7 @@ def _validate_attachment_signature(extension, data):
     if extension == '.pdf':
         return data.startswith(b'%PDF-')
     if extension in {'.txt', '.csv'}:
-        return _looks_like_text(data)
+        return _looks_like_text(data, truncated=truncated)
     if extension == '.rtf':
         return data.startswith(b'{\\rtf')
     if extension in {'.doc', '.xls', '.ppt'}:
@@ -204,7 +201,7 @@ def validate_attachment_upload(uploaded_file):
         raise ValidationError('Załącznik może mieć maksymalnie 10 MB.')
 
     sample = _read_start(uploaded_file, 4096)
-    if not _validate_attachment_signature(extension, sample):
+    if not _validate_attachment_signature(extension, sample, truncated=uploaded_file.size > len(sample)):
         raise ValidationError('Załącznik ma nieprawidłową zawartość.')
 
     return uploaded_file

@@ -1,3 +1,4 @@
+import codecs
 from types import SimpleNamespace
 
 from django.contrib.auth.models import AnonymousUser
@@ -17,6 +18,38 @@ class UploadValidationTests(SimpleTestCase):
         uploaded_file = SimpleUploadedFile('notatka.txt', b'tresc', content_type='text/plain')
 
         self.assertIs(validate_attachment_upload(uploaded_file), uploaded_file)
+
+    def test_accepts_utf8_and_bom_marked_utf16_text_attachments(self):
+        text = 'Nazwa;Opis\r\nPrzykład;Zażółć gęślą jaźń 🙂\r\n'
+        contents = [text.encode('utf-8'), text.encode('utf-8-sig'),
+                    codecs.BOM_UTF16_LE + text.encode('utf-16-le'),
+                    codecs.BOM_UTF16_BE + text.encode('utf-16-be')]
+        for extension in ('txt', 'csv'):
+            for content in contents:
+                with self.subTest(extension=extension, prefix=content[:4]):
+                    uploaded = SimpleUploadedFile(f'example.{extension}', content)
+                    uploaded.seek(7)
+                    self.assertIs(validate_attachment_upload(uploaded), uploaded)
+                    self.assertEqual(uploaded.tell(), 7)
+
+    def test_rejects_binary_null_and_incomplete_text_attachments(self):
+        contents = [b'text\x00content', b'\xff\xfe\x00\x00', b'\xff\xff\xff\xff',
+                    b'\xff\xfea', b'\xff\xfe\x00\xd8', b'\xfe\xff\xd8\x00',
+                    b'incomplete\xc4', b'invalid\xc4a']
+        for extension in ('txt', 'csv'):
+            for content in contents:
+                with self.subTest(extension=extension, content=content):
+                    with self.assertRaises(ValidationError):
+                        validate_attachment_upload(SimpleUploadedFile(f'example.{extension}', content))
+
+    def test_text_sample_may_end_inside_a_character(self):
+        contents = [b'a' * 4095 + 'ż'.encode('utf-8') + b'end',
+                    codecs.BOM_UTF16_LE + ('a' * 2046 + '🙂end').encode('utf-16-le'),
+                    codecs.BOM_UTF16_BE + ('a' * 2046 + '🙂end').encode('utf-16-be')]
+        for content in contents:
+            with self.subTest(prefix=content[:4]):
+                uploaded = SimpleUploadedFile('example.txt', content)
+                self.assertIs(validate_attachment_upload(uploaded), uploaded)
 
     def test_rejects_disallowed_svg_attachment(self):
         uploaded_file = SimpleUploadedFile(

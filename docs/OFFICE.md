@@ -28,6 +28,8 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
 - **Tablica:** tekst, kształty, strzałki, rysowanie, obrazy PNG/JPG/WebP,
   cofanie, powiększenie, import `.excalidraw`, eksport sceny oraz PNG/SVG.
 - Wysłane DOCX/XLSX/PPTX/PDF otwierają się bezpośrednio w odpowiednim edytorze.
+  Upload TXT i CSV w Dysku oraz Dokumentach przyjmuje UTF-8 i UTF-16 z BOM
+  (little-endian lub big-endian); zapisuje oryginalne bajty pliku.
   ONLYOFFICE i tablica BOARD otwierają się w osobnej karcie przeglądarki,
   na pełną szerokość bez nawigacji bocznej. Dotyczy to listy, kafelków,
   wyszukiwarki, tworzenia pliku, odnośnika w metadanych oraz konwersji.
