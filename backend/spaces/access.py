@@ -4,6 +4,7 @@ from django.db import connections
 from django.db.models import F, Func, JSONField, Q
 from django.db.models.expressions import RawSQL
 
+from workplaces.models import WorkplaceMembership
 from workplaces.services import workplaces_for_user
 from .models import Space, SpaceTask
 
@@ -19,9 +20,8 @@ def spaces_for(viewer):
 
 def editable_spaces(viewer):
     observed = Space.objects.filter(visibility='private', memberships__user=viewer, memberships__role='observer').exclude(private_owner=viewer)
-    return spaces_for(viewer).exclude(pk__in=observed.values('pk')).exclude(
-        workplace__memberships__user=viewer, workplace__memberships__role='guest', workplace__memberships__is_active=True,
-    )
+    guest_workplaces = WorkplaceMembership.objects.filter(user=viewer, role='guest', is_active=True).values('workplace_id')
+    return spaces_for(viewer).exclude(pk__in=observed.values('pk')).exclude(workplace_id__in=guest_workplaces)
 
 
 def tree_ids(roots):

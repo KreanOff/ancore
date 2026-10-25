@@ -52,9 +52,19 @@ def check_access(request):
             raise PermissionDenied('Gość ma dostęp tylko do odczytu.')
         if request.method in {'GET', 'HEAD'} and request.resolver_match:
             action = request.resolver_match.func.__name__
+            # The legacy text document shares its read page with the edit view.
+            # Keep creation and uploaded-file metadata forms unavailable to guests.
+            readable_text = False
+            if module == 'office' and name == 'edit':
+                from documents.models import WorkspaceDocument
+                readable_text = WorkspaceDocument.objects.filter(
+                    pk=request.resolver_match.kwargs.get('pk'), workplace=workplace,
+                    owner_id=workplace.owner_id, kind=WorkspaceDocument.Kind.TEXT,
+                    deleted_at__isnull=True,
+                ).exists()
             if action in {'create', 'edit', 'new', 'upload', 'configuration', 'gadgets', 'gadget_edit',
                           'library_create', 'library_edit', 'folder_create', 'folder_edit', 'import_text',
-                          'manage_create', 'manage_edit', 'members', 'team'}:
+                          'manage_create', 'manage_edit', 'members', 'team'} and not readable_text:
                 raise PermissionDenied('Gość ma dostęp tylko do odczytu.')
 
 

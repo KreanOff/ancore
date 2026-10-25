@@ -2019,6 +2019,14 @@ Escape i powrót fokusu obsługuje istniejący `documents.js`.
 Typ nadal można zmienić w formularzu, a zapis otwiera edytor w osobnej karcie.
 `office-suite.js` inicjalizuje ekran także po `ancore:content-loaded`;
 `data-app-full-navigation` wymusza bezpieczne opuszczanie aktywnych edytorów.
+Tekstowy Dokument Ancore otwierany przez gościa ma tytuł „Podgląd dokumentu”,
+nieedytowalną nazwę i treść oraz status „Dostęp tylko do odczytu”. Brakuje
+przycisku zapisu, narzędzi formatowania i konwersji; Ctrl/⌘+S nie zapisuje.
+Pobranie DOCX pozostaje dostępne. Treść HTML przechodzi przez `clean_content`,
+również w pierwszym renderze Django. Wyjątek odczytu tekstu nie odblokowuje
+formularzy tworzenia ani metadanych plików; serwer odrzuca zapis także przez API.
+Obecność gościa nie wyłącza edycji pozostałym uprawnionym osobom.
+
 Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
 scenę i pozwala pobrać bieżącą kopię; jej iframe przyjmuje wyłącznie komunikaty
 z okna rodzica tego samego originu.

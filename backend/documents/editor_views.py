@@ -20,6 +20,7 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from workplaces.services import workspace_owner
+from workplaces.policy import read_only
 
 from core.upload_validation import attachment_download_response
 from workplaces.services import scoped_workplace_app_path
@@ -32,7 +33,7 @@ from .query import (
     DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, SIZE_OPTIONS,
     apply_date_filter, apply_text_filters, choice_field, order_results, query_context, text_field,
 )
-from .rich_text import docx_bytes, text_to_content
+from .rich_text import clean_content, docx_bytes, text_to_content
 from .views import _form_success
 
 
@@ -238,10 +239,13 @@ def edit(request, pk=None):
             return _form_success(request, target)
     if request.method == 'POST' and (request.headers.get('X-Office-Editor') == 'true' or (getattr(request, '_react_api', False) and instance.kind == Document.Kind.TEXT)):
         return JsonResponse({'errors': form.errors.get_json_data()}, status=409 if conflict else 400)
-    context = {**_context(request), 'form': form, 'document': instance, 'is_new': is_new, 'form_status': 409 if conflict else 400}
+    context = {**_context(request), 'form': form, 'document': instance, 'is_new': is_new,
+               'office_read_only': read_only(request), 'form_status': 409 if conflict else 400}
     if instance.kind != Document.Kind.TEXT:
         context.update({'form_title': 'Dane dokumentu', 'submit_label': 'Zapisz zmiany'})
         return _modal(request, context)
+    if context['office_read_only']:
+        context['office_preview_content'] = clean_content(instance.content)
     response = render(request, 'documents/office/editor.html', context)
     response['Cache-Control'] = 'private, no-store'
     return response

@@ -6,12 +6,86 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.db import close_old_connections
-from django.test import RequestFactory, TransactionTestCase
+from django.test import Client, RequestFactory, TestCase, TransactionTestCase
+from urllib.parse import urlencode
 
 from django.db.models.query import QuerySet
 from .models import SpaceTask, Space, SpaceMembership
+from .access import editable_to
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
+from workplaces.services import scoped_workplace_app_path
 from . import views
+
+
+class SpaceWorkspaceRoleTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        users = get_user_model()
+        cls.owner = users.objects.create_user(username='role-owner', email='role-owner@example.test')
+        cls.workspace = create_workplace_for_user(cls.owner, 'Role Workspace')
+        for role in ('admin', 'member', 'guest'):
+            person = users.objects.create_user(username='role-' + role, email=role + '@example.test')
+            setattr(cls, role, person)
+            WorkplaceMembership.objects.create(workplace=cls.workspace, user=person, role=role)
+        cls.public = make_space(user=cls.owner, workplace=cls.workspace, name='Publiczna')
+        cls.private = make_space(user=cls.owner, workplace=cls.workspace, name='Prywatna',
+                                 visibility='private', private_owner=cls.owner)
+        for person in (cls.admin, cls.member, cls.guest):
+            SpaceMembership.objects.create(space=cls.private, user=person, role='admin')
+        cls.tasks = [SpaceTask.objects.create(space=space, title=space.name, created_by=cls.owner)
+                     for space in (cls.public, cls.private)]
+        cls.child = SpaceTask.objects.create(space=cls.private, parent=cls.tasks[1],
+                                             title='Podzadanie', created_by=cls.owner)
+
+    def client_for(self, person):
+        client = Client()
+        client.force_login(person)
+        session = client.session
+        session['active_workplace_id'] = self.workspace.pk
+        session.save()
+        return client
+
+    def test_active_or_inactive_guest_does_not_block_other_workspace_roles(self):
+        for active in (True, False):
+            membership = WorkplaceMembership.objects.get(workplace=self.workspace, user=self.guest)
+            membership.is_active = active
+            membership.save(update_fields=['is_active'])
+            for person in (self.owner, self.admin, self.member):
+                with self.subTest(active=active, person=person.username):
+                    self.assertCountEqual(editable_to(Space.objects.all(), person), [self.public, self.private])
+                    self.assertCountEqual(editable_to(SpaceTask.objects.all(), person), [*self.tasks, self.child])
+            self.assertFalse(editable_to(Space.objects.all(), self.guest).exists())
+            self.assertFalse(editable_to(SpaceTask.objects.all(), self.guest).exists())
+
+    def test_owner_admin_and_member_can_write_with_a_guest_in_the_workspace(self):
+        for person in (self.owner, self.admin, self.member):
+            client = self.client_for(person)
+            for task in self.tasks:
+                with self.subTest(person=person.username, space=task.space.name):
+                    base = scoped_workplace_app_path(self.workspace, 'space', task.space.slug + '/')
+                    response = client.post(base + 'items/create/', {
+                        'title': 'Nowe zadanie ' + person.username,
+                        'work_type': 'task', 'priority': 'medium',
+                    })
+                    self.assertEqual(response.status_code, 302)
+                    self.assertTrue(task.space.tasks.filter(title='Nowe zadanie ' + person.username).exists())
+                    action = base + f'tasks/{task.work_item.key}/action/'
+                    self.assertEqual(client.post(action, {'action': 'status', 'status': 'in_progress'}).status_code, 302)
+                    for api in ('/api/v1/page/', scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')):
+                        response = client.post(api + '?' + urlencode({'url': action}),
+                                               {'action': 'status', 'status': 'new'})
+                        self.assertEqual(response.status_code, 200)
+                    task.refresh_from_db()
+                    self.assertEqual(task.status, 'new')
+
+    def test_guest_cannot_write_even_with_private_space_admin_role(self):
+        task = self.tasks[1]
+        request = RequestFactory().post('/space/action/', {'action': 'status', 'status': 'closed'})
+        request.user, request.workplace = self.guest, self.workspace
+        with self.assertRaises(PermissionDenied):
+            views.item_action(request, pk=task.work_item.pk)
+        task.refresh_from_db()
+        self.assertEqual(task.status, 'new')
 
 
 class SpaceWriteAccessRaceTests(TransactionTestCase):

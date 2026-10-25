@@ -28,18 +28,23 @@ const commands = [
 ];
 export default function TextPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as TextData,
+    readOnly = !!initial.read_only,
     field = (name: string) => data.form.fields.find((field) => field.name === name);
   const [title, setTitle] = useState(String(field('title')?.value || '')),
     [revision, setRevision] = useState(String(field('revision')?.value || 1)),
     [action, setAction] = useState(data.action),
     [isNew, setNew] = useState(data.is_new),
-    [dirty, setDirty] = useState(data.form.bound),
+    [dirty, setDirty] = useState(!readOnly && data.form.bound),
     [pending, setPending] = useState(false),
     [error, setError] = useState(
       [...data.form.errors, ...data.form.fields.flatMap((field) => field.errors)].join(' '),
     ),
     [status, setStatus] = useState(
-      data.is_new ? 'Niezapisany dokument' : `Zapisano ${data.document?.datetime}`,
+      readOnly
+        ? 'Dostęp tylko do odczytu'
+        : data.is_new
+          ? 'Niezapisany dokument'
+          : `Zapisano ${data.document?.datetime}`,
     ),
     [words, setWords] = useState(0),
     [block, setBlock] = useState('p'),
@@ -57,7 +62,7 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
     return JSON.stringify([titleValue.current, editor.current?.innerHTML || '']);
   }
   function update() {
-    const changed = signature() !== saved.current;
+    const changed = !readOnly && signature() !== saved.current;
     setDirty(changed);
     const text = editor.current?.innerText.trim() || '';
     setWords(text ? text.split(/\s+/u).length : 0);
@@ -88,7 +93,7 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
       setBlock(['p', 'h1', 'h2', 'h3', 'blockquote'].includes(next) ? next : 'p');
     };
     const key = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      if (!readOnly && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault();
         saveRef.current();
       }
@@ -102,6 +107,7 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
     };
   }, []);
   function command(name: string, value?: string) {
+    if (readOnly) return;
     editor.current?.focus();
     if (range.current && editor.current?.contains(range.current.commonAncestorContainer)) {
       const selection = getSelection();
@@ -113,7 +119,7 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
   }
   async function save(event?: FormEvent) {
     event?.preventDefault();
-    if (sending.current || !form.current?.reportValidity()) return;
+    if (readOnly || sending.current || !form.current?.reportValidity()) return;
     update();
     const sent = signature(),
       body = new FormData();
@@ -177,7 +183,9 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
           <a className="tasks-icon-button" href={data.back_url} aria-label="Wróć do dokumentów">
             <Icon name="arrow-left" />
           </a>
-          <h1 className="tasks-topbar-title">{isNew ? 'Nowy dokument' : 'Edytuj dokument'}</h1>
+          <h1 className="tasks-topbar-title">
+            {readOnly ? 'Podgląd dokumentu' : isNew ? 'Nowy dokument' : 'Edytuj dokument'}
+          </h1>
         </div>
         <div className="tasks-titlebar-actions">
           <span className="documents-muted office-save-status" role="status">
@@ -199,12 +207,14 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
               Pobierz DOCX
             </a>
           ) : null}
-          <button type="submit" className="btn btn-primary" disabled={pending}>
-            Zapisz
-          </button>
+          {!readOnly ? (
+            <button type="submit" className="btn btn-primary" disabled={pending}>
+              Zapisz
+            </button>
+          ) : null}
         </div>
       </header>
-      {!isNew ? (
+      {!isNew && !readOnly ? (
         <div className="documents-results-hint">
           Ten dokument korzysta z edytora tekstu Ancore.{' '}
           <button
@@ -246,6 +256,7 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
               maxLength={255}
               required
               value={title}
+              readOnly={readOnly}
               onChange={(event) => {
                 titleValue.current = event.target.value;
                 setTitle(event.target.value);
@@ -260,61 +271,65 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
           </div>
         ) : null}
         <div className="office-paper">
-          <div className="office-formatbar" role="toolbar" aria-label="Formatowanie dokumentu">
-            <Select
-              label="Styl akapitu"
-              hideLabel
-              value={block}
-              options={[
-                ['p', 'Zwykły tekst'],
-                ['h1', 'Nagłówek 1'],
-                ['h2', 'Nagłówek 2'],
-                ['h3', 'Nagłówek 3'],
-                ['blockquote', 'Cytat'],
-              ]}
-              onChange={(value) => command('formatBlock', value)}
-            />
-            {commands.map(([key, label, icon], index) => (
-              <span key={key} className="react-icon">
-                {index === 3 || index === 6 ? (
-                  <span className="office-format-separator" aria-hidden="true" />
-                ) : null}
-                <button
-                  type="button"
-                  className="tasks-icon-button"
-                  aria-label={label}
-                  title={label}
-                  aria-pressed={index < 5 ? !!pressed[key] : undefined}
-                  data-office-command={key}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => command(key)}
-                >
-                  {key === 'bold' ? (
-                    <b aria-hidden="true">B</b>
-                  ) : key === 'italic' ? (
-                    <i aria-hidden="true">I</i>
-                  ) : key === 'underline' ? (
-                    <u aria-hidden="true">U</u>
-                  ) : icon.length <= 2 ? (
-                    icon
-                  ) : (
-                    <Icon name={icon} />
-                  )}
-                </button>
-              </span>
-            ))}
-          </div>
+          {!readOnly ? (
+            <div className="office-formatbar" role="toolbar" aria-label="Formatowanie dokumentu">
+              <Select
+                label="Styl akapitu"
+                hideLabel
+                value={block}
+                options={[
+                  ['p', 'Zwykły tekst'],
+                  ['h1', 'Nagłówek 1'],
+                  ['h2', 'Nagłówek 2'],
+                  ['h3', 'Nagłówek 3'],
+                  ['blockquote', 'Cytat'],
+                ]}
+                onChange={(value) => command('formatBlock', value)}
+              />
+              {commands.map(([key, label, icon], index) => (
+                <span key={key} className="react-icon">
+                  {index === 3 || index === 6 ? (
+                    <span className="office-format-separator" aria-hidden="true" />
+                  ) : null}
+                  <button
+                    type="button"
+                    className="tasks-icon-button"
+                    aria-label={label}
+                    title={label}
+                    aria-pressed={index < 5 ? !!pressed[key] : undefined}
+                    data-office-command={key}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => command(key)}
+                  >
+                    {key === 'bold' ? (
+                      <b aria-hidden="true">B</b>
+                    ) : key === 'italic' ? (
+                      <i aria-hidden="true">I</i>
+                    ) : key === 'underline' ? (
+                      <u aria-hidden="true">U</u>
+                    ) : icon.length <= 2 ? (
+                      icon
+                    ) : (
+                      <Icon name={icon} />
+                    )}
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div
             ref={editor}
             className="office-content"
-            contentEditable
+            contentEditable={!readOnly}
             suppressContentEditableWarning
             role="textbox"
             aria-multiline="true"
+            aria-readonly={readOnly || undefined}
             aria-label="Treść dokumentu"
             data-placeholder="Zacznij pisać…"
             onInput={update}
             onPaste={(event) => {
+              if (readOnly) return;
               event.preventDefault();
               document.execCommand('insertText', false, event.clipboardData.getData('text/plain'));
               update();
@@ -324,7 +339,7 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
           />
           <footer className="office-paper-footer">
             <span>Liczba słów: {words}</span>
-            <span>Zapisz: Ctrl+S / ⌘S</span>
+            <span>{readOnly ? 'Dostęp tylko do odczytu' : 'Zapisz: Ctrl+S / ⌘S'}</span>
           </footer>
         </div>
       </div>

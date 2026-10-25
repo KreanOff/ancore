@@ -600,3 +600,12 @@ Błąd zapisu zachowuje potwierdzoną kolejność. Brak localStorage nie blokuje
 Pozostają tylko dla szablonów zgodności. Historyczne systemy Tasks/Kanban
 usunięto również z modeli, migracji i routingu. Nowe funkcje rozwijaj w istniejących komponentach
 React i usługach Django, z aktualnym ACL oraz wspólnym systemem UI.
+
+## Poprawki bezpieczeństwa po przeglądzie (25.10.2026)
+
+Dynamiczne nazwy w potwierdzeniach odebrania dostępu przechodzą przez
+`showConfirmModal({messageText: ...})`; helper escapuje tekst przed wstawieniem do HTML.
+Dotychczasowe kontrolowane komunikaty HTML zachowują osobny parametr `message`.
+Gość otwiera istniejący dokument tekstowy w trybie odczytu: React i pierwszy
+render nie pokazują zapisu, konwersji ani edytowalnej treści. Stary HTML jest
+sanityzowany; serwer nadal odrzuca zapisy. [Uprawnienia](TEAMWORK.md).
