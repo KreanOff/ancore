@@ -324,6 +324,12 @@ ustawień i konfiguracji renderują tę samą powłokę. Szczegóły:
 Menu wierszy Przestrzeni w nawigacji i katalogu nie zawierają „Dodaj osoby”.
 Udostępnianie pozostaje w zakładce „Udostępnienia” okna ustawień przestrzeni.
 
+Przycisk z trzema kreskami w `work-item-actions` ma przezroczyste tło,
+także w podświetlonym wierszu zadania. Najechanie, fokus klawiatury i otwarte
+menu wyróżniają sam przycisk neutralnym `--system-interaction-soft`.
+Reguła obejmuje listę, backlog i karty tablicy w React oraz pierwszym renderze
+Django; rozmiar i obszar kliknięcia pozostają bez zmian.
+
 Zakładka „Udostępnienia” używa wspólnego Reactowego `shared/Members`: zaznaczanie,
 menu działań, awatar i nazwa, e-mail, rola i data. Model członkostwa Przestrzeni
 nie zapisuje daty dołączenia; brak tej daty jest pokazany jako „—”. Właściciel
@@ -474,12 +480,18 @@ Nie ma osobnego nagłówka „Planowanie sprintów” ani stałego paska zaznacz
 pokazuje liczbę zaznaczonych zadań, przyciski i `AncoreCustomSelect`.
 Odznaczenie ostatniego zadania lub „Odznacz” ukrywa cały pasek; fokus wraca
 do checkboxu wiersza. Zadania tylko do odczytu są pomijane.
-Nagłówki sprintów i Backlogu nie mają checkboxów. Zachowują dotychczasowe kolory,
+Nagłówki sprintów i Backlogu nie mają checkboxów. Zachowują kolory według stanu,
 zwijanie i licznik strony, dodając `work-planning-summary` dla pełnych
 agregacji po filtrach. Sekcje mają link do wspólnego modalnego tworzenia
 zadania z wybranym backlogiem/sprintem. „Utwórz sprint” znajduje się po prawej
 stronie nagłówka sekcji Backlog, przed licznikiem, i pozostaje
 widoczne po jej zwinięciu; przycisk widzi osoba zarządzająca przestrzenią Scrum.
+Akcje edycji, rozpoczęcia/zakończenia oraz tworzenia sprintu w nagłówkach
+mają kompaktową wysokość 28px, jak przycisk zwijania, przezroczyste tło i ramkę.
+Ikony mają 16px, a przyciski tekstowe odstęp wewnętrzny 8px po bokach.
+Najechanie i fokus klawiatury dodają neutralne `--system-interaction-soft`;
+niedostępna akcja ma 45% krycia i nie podświetla się. Wariant dotyczy wyłącznie
+bezpośrednich przycisków nagłówków backlogu/sprintów w React i renderze Django.
 Formularze sprintu używają tej samej powłoki, z opcjonalnym podsumowaniem
 `work-sprint-preview` i etykietą zapisu.
 Bezpośredni adres formularza pokazuje go nad pełnym backlogiem; Escape wraca
@@ -493,8 +505,10 @@ i nagłówka `tasks/includes/issue_group_header.html` co Lista zadań.
 Treść ma wariant `work-content--tasks`, bez dodatkowego paddingu paneli;
 wiersze dochodzą do krawędzi sekcji. Nagłówki mają standardową wysokość 40px,
 przycisk zwijania i licznik zadań bieżącej strony po filtrach.
-Sprint planowany korzysta z koloru kategorii `new`, aktywny z `in_progress`,
-a Backlog z neutralnego nagłówka grupy i ikony warstw. Wspólny include obsługuje
+Sprint planowany korzysta z koloru kategorii `new`, a aktywny z jasnego zielonego
+tła (`#e8eee4`, jak w kategorii `resolved`), zachowując ikonę zegara `in_progress`.
+Lokalna reguła `work-sprint` obejmuje React i pierwszy render Django; nie zmienia
+kolorów statusów zadań. Backlog ma szary nagłówek grupy i ikonę warstw. Wspólny include obsługuje
 opcjonalne `label_suffix` i `details_template`; sprint dodaje nimi stan, daty
 i dotychczasową akcję rozpoczęcia/zakończenia. Na wąskim ekranie nagłówek
 zawija metadane i przyciski, a wiersze przewijają się poziomo wewnątrz sekcji.

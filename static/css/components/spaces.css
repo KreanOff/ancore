@@ -393,6 +393,8 @@
 .work-issue-row .tasks-row-title:hover { text-decoration: none; }
 .work-item-key { color: var(--text-secondary); font-size: var(--font-size-sm); flex-shrink: 0; }
 .work-issue-row > .tasks-row-checkbox { opacity: 1; }
+.work-item-actions > :is(.tasks-filter-button, .tasks-icon-button) { background: transparent; }
+.work-item-actions > :is(.tasks-filter-button, .tasks-icon-button):is(:hover, :focus-visible, [aria-expanded="true"]):not(:disabled) { background: var(--system-interaction-soft); }
 .work-kanban-card .tasks-kanban-card__title { display: block; text-decoration: none; }
 .work-kanban-card .tasks-kanban-card__title:hover { text-decoration: underline; }
 .work-kanban-card > .tasks-kanban-card__header > .work-item-actions { position: absolute; top: 4px; right: 4px; }
@@ -439,6 +441,13 @@
 .work-sprint-card-context { grid-column: 1 / -1; }
 .work-backlog { flex: none; }
 .work-backlog-group > .tasks-issue-group-header { height: auto; min-height: 40px; flex-wrap: wrap; padding-block: 4px; }
+.work-backlog-group > .tasks-issue-group-header > :is(.tasks-icon-button, .tasks-filter-button) { height: 28px; min-height: 28px; border-color: transparent; border-radius: var(--dropdown-menu-item-radius); background: transparent; box-shadow: none; font-size: var(--font-size-sm); white-space: nowrap; }
+.work-backlog-group > .tasks-issue-group-header > .tasks-icon-button { width: 28px; padding: 0; }
+.work-backlog-group > .tasks-issue-group-header > .tasks-filter-button { gap: 6px; padding: 0 8px; }
+.work-backlog-group > .tasks-issue-group-header > :is(.tasks-icon-button, .tasks-filter-button) > svg { width: 16px; height: 16px; }
+.work-backlog-group > .tasks-issue-group-header > :is(.tasks-icon-button, .tasks-filter-button):is(:hover, :focus-visible):not(:disabled) { background: var(--system-interaction-soft); }
+.work-backlog-group > .tasks-issue-group-header > :is(.tasks-icon-button, .tasks-filter-button):disabled { background: transparent; opacity: .45; cursor: not-allowed; }
+.work-sprint > .tasks-status-block-header--in_progress { --tasks-status-background: #e8eee4; border-color: #d2ddcc; }
 .work-backlog-group > .tasks-issue-group-header > :is(.status-indicator, .tasks-issue-group-label) { min-width: 0; overflow-wrap: anywhere; }
 .work-backlog-group .tasks-issue-group-label { display: inline-flex; align-items: center; gap: 8px; }
 .work-backlog-group .tasks-issue-group-label [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
