@@ -30,7 +30,15 @@ export function ItemType({ item }: { item: Item }) {
     </span>
   );
 }
-function Planning({ item, scrum }: { item: Item; scrum: boolean }) {
+function Planning({
+  item,
+  scrum,
+  showAssigneeName = false,
+}: {
+  item: Item;
+  scrum: boolean;
+  showAssigneeName?: boolean;
+}) {
   return (
     <>
       {scrum ? (
@@ -41,12 +49,18 @@ function Planning({ item, scrum }: { item: Item; scrum: boolean }) {
           {item.points ?? '—'}
         </span>
       ) : null}
-      <span className="work-backlog-assignee" title={item.assignee?.label || 'Brak wykonawcy'}>
+      <span
+        className={`work-backlog-assignee${showAssigneeName ? ' work-backlog-assignee--named' : ''}`}
+        title={item.assignee?.label || 'Brak wykonawcy'}
+      >
         {item.assignee ? (
           <Avatar data={item.assignee.avatar} className="tasks-issue-mini-avatar" />
         ) : (
           <Icon name="user" />
         )}
+        {showAssigneeName ? (
+          <span className="work-assignee-name">{item.assignee?.label || 'Nie przypisano'}</span>
+        ) : null}
       </span>
     </>
   );
@@ -214,6 +228,40 @@ export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
     </Dropdown>
   );
 }
+function ItemIdentity({ item }: { item: Item }) {
+  return (
+    <>
+      <Priority value={item.priority} label={item.priority_label} />
+      <span
+        className={`status-indicator status-${item.category}`}
+        title={item.status_label}
+        aria-label={item.status_label}
+      />
+      <a
+        href={item.url}
+        className="tasks-row-title"
+        title={`${item.key} · ${item.title} · ${item.type_label}`}
+      >
+        <span className="tasks-row-title-content">
+          <span className="tasks-row-title-main">
+            <span className="work-item-key">{item.key}</span>
+            <span className="tasks-row-title-text">{item.title}</span>
+          </span>
+        </span>
+      </a>
+    </>
+  );
+}
+export function TimelineItemRow({ item }: { item: Item }) {
+  return (
+    <article
+      className={`tasks-issue-row work-issue-row work-issue-row--timeline ${item.category === 'closed' ? 'completed' : ''}`}
+    >
+      <ItemIdentity item={item} />
+      <Planning item={item} scrum={false} showAssigneeName />
+    </article>
+  );
+}
 interface RowProps extends ActionsProps {
   selected: boolean;
   select: (checked: boolean) => void;
@@ -250,24 +298,7 @@ export function ItemRow(props: RowProps) {
         disabled={planning && !item.editable}
         onChange={(event) => select(event.target.checked)}
       />
-      <Priority value={item.priority} label={item.priority_label} />
-      <span
-        className={`status-indicator status-${item.category}`}
-        title={item.status_label}
-        aria-label={item.status_label}
-      />
-      <a
-        href={item.url}
-        className="tasks-row-title"
-        title={`${item.key} · ${item.title} · ${item.type_label}`}
-      >
-        <span className="tasks-row-title-content">
-          <span className="tasks-row-title-main">
-            <span className="work-item-key">{item.key}</span>
-            <span className="tasks-row-title-text">{item.title}</span>
-          </span>
-        </span>
-      </a>
+      <ItemIdentity item={item} />
       <ItemType item={item} />
       <Planning item={item} scrum={data.space.template === 'scrum'} />
       <Counts item={item} />

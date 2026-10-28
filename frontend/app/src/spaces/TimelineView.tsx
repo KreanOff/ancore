@@ -7,13 +7,13 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Avatar } from '../shared/Avatar';
 import { EmptyState } from '../shared/EmptyState';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { errorMessage, request } from '../shared/api';
 import { navigate } from '../shared/page';
 import { ItemToolbar } from './ItemToolbar';
+import { TimelineItemRow } from './Item';
 import type { DetailData, Item } from './types';
 import {
   dayKey,
@@ -26,6 +26,7 @@ import {
   todayDay,
   type DayRange,
   type TimelineScale,
+  type TimelineWindow,
 } from './timeline';
 
 const SCALES: [TimelineScale, string][] = [
@@ -33,6 +34,62 @@ const SCALES: [TimelineScale, string][] = [
   ['months', 'Miesiące'],
   ['quarters', 'Kwartały'],
 ];
+function TimelineCalendarHeader({ window, today }: { window: TimelineWindow; today: number }) {
+  const element = useRef<HTMLDivElement>(null);
+  const [leadingWidth, setLeadingWidth] = useState(0);
+  const headers = useMemo(() => timelineHeaders(window, leadingWidth), [window, leadingWidth]);
+  useLayoutEffect(() => {
+    const header = element.current;
+    if (!header) return;
+    const measure = () => {
+      setLeadingWidth(
+        parseFloat(getComputedStyle(header).getPropertyValue('--timeline-meta')) || 0,
+      );
+    };
+    measure();
+    const resize = new ResizeObserver(measure);
+    resize.observe(header);
+    return () => resize.disconnect();
+  }, []);
+  const todayVisible = today >= (headers.minor[0]?.start ?? window.start) && today < window.end;
+  const todayLeft = (today - window.start + 0.5) * window.dayWidth;
+  return (
+    <div className="work-timeline-calendar-header" ref={element}>
+      <div className="work-timeline-major">
+        {headers.major.map((segment) => (
+          <span
+            key={segment.start}
+            style={{ left: `calc(var(--timeline-meta) + ${segment.left}px)`, width: segment.width }}
+            title={segment.title}
+          >
+            <span className="work-timeline-major-label">{segment.label}</span>
+          </span>
+        ))}
+      </div>
+      <div className="work-timeline-minor">
+        {headers.minor.map((segment) => (
+          <span
+            key={segment.start}
+            className={segment.weekend ? 'is-weekend' : ''}
+            style={{ left: `calc(var(--timeline-meta) + ${segment.left}px)`, width: segment.width }}
+            title={segment.title}
+          >
+            {segment.label}
+          </span>
+        ))}
+      </div>
+      {todayVisible ? (
+        <span
+          className="work-timeline-today-label"
+          style={{ left: `calc(var(--timeline-meta) + ${todayLeft}px)` }}
+          title={`Dzisiaj: ${dayLabel(today)}`}
+        >
+          {window.scale === 'weeks' ? new Date(dayKey(today)).getUTCDate() : 'Dziś'}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 function itemRange(item: Item): DayRange | null {
   const start = parseDay(item.start_on),
     end = parseDay(item.end_on ?? null);
@@ -270,8 +327,8 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
       .flatMap((segment) => [
         `transparent ${segment.left}px`,
         `transparent ${Math.max(segment.left, segment.left + segment.width - 1)}px`,
-        `var(--border-color) ${Math.max(segment.left, segment.left + segment.width - 1)}px`,
-        `var(--border-color) ${segment.left + segment.width}px`,
+        `var(--timeline-grid-color) ${Math.max(segment.left, segment.left + segment.width - 1)}px`,
+        `var(--timeline-grid-color) ${segment.left + segment.width}px`,
       ])
       .join(', ')})`,
   } as CSSProperties;
@@ -306,6 +363,32 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
           </button>
         </form>
         <ItemToolbar data={data} url={url} />
+        <div
+          className="tasks-segments work-timeline-navigation work-timeline-scales"
+          role="group"
+          aria-label="Nawigacja osi czasu"
+        >
+          <button
+            type="button"
+            className="tasks-filter-button"
+            disabled={locked}
+            onClick={() => focusDay(todayDay())}
+          >
+            Dzisiaj
+          </button>
+          {SCALES.map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`tasks-filter-button${scale === value ? ' is-active' : ''}`}
+              aria-pressed={scale === value}
+              disabled={locked}
+              onClick={() => focusDay(visibleDay(), value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       {error && !editing ? (
         <div className="tasks-modal__errors work-timeline-error" role="alert">
@@ -323,24 +406,6 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
           </button>
         </div>
       ) : null}
-      <div className="work-timeline-navigation">
-        <div className="work-timeline-navigation-group">
-          <div className="work-timeline-scales" role="group" aria-label="Skala osi czasu">
-            {SCALES.map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className="tasks-filter-button"
-                aria-pressed={scale === value}
-                disabled={locked}
-                onClick={() => focusDay(visibleDay(), value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
       <p className="u-sr-only" id="timeline-keyboard-help">
         Kliknij pasek, aby edytować daty. Przeciągnij pasek, aby przesunąć zadanie, lub jego
         krawędzie, aby zmienić czas trwania. Strzałki w lewo i w prawo przesuwają pasek o dzień;
@@ -359,53 +424,13 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
           <table className={`work-timeline-table work-timeline-table--${scale}`}>
             <colgroup>
               <col className="work-timeline-work-col" />
-              <col className="work-timeline-assignee-col" />
               <col style={{ width: window.width }} />
             </colgroup>
             <thead>
               <tr>
-                <th scope="col" className="work-timeline-heading">
-                  Praca <span>{data.items.length}</span>
-                </th>
-                <th scope="col" className="work-timeline-assignee">
-                  Wykonawca
-                </th>
-                <th scope="col" className="work-timeline-calendar-heading">
-                  <span className="u-sr-only">Kalendarz</span>
-                  <div className="work-timeline-calendar-header">
-                    <div className="work-timeline-major">
-                      {headers.major.map((segment) => (
-                        <span
-                          key={segment.start}
-                          style={{ left: segment.left, width: segment.width }}
-                          title={segment.title}
-                        >
-                          {segment.label}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="work-timeline-minor">
-                      {headers.minor.map((segment) => (
-                        <span
-                          key={segment.start}
-                          className={segment.weekend ? 'is-weekend' : ''}
-                          style={{ left: segment.left, width: segment.width }}
-                          title={segment.title}
-                        >
-                          {segment.label}
-                        </span>
-                      ))}
-                    </div>
-                    {todayVisible ? (
-                      <span
-                        className="work-timeline-today-label"
-                        style={{ left: todayLeft }}
-                        title={`Dzisiaj: ${dayLabel(today)}`}
-                      >
-                        {scale === 'weeks' ? new Date(dayKey(today)).getUTCDate() : 'Dziś'}
-                      </span>
-                    ) : null}
-                  </div>
+                <th scope="colgroup" colSpan={2} className="work-timeline-calendar-heading">
+                  <span className="u-sr-only">Zadania i kalendarz</span>
+                  <TimelineCalendarHeader window={window} today={today} />
                 </th>
               </tr>
             </thead>
@@ -420,9 +445,6 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
                         <Icon name="calendar-range" />
                         <span title={sprint.name}>{sprint.name}</span>
                       </span>
-                    </td>
-                    <td className="work-timeline-assignee">
-                      <span className="work-caption">Sprint</span>
                     </td>
                     <td className="work-timeline-calendar-cell">
                       <div className="work-timeline-lane">
@@ -461,41 +483,7 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
                     className={`${selected === item.id ? 'is-selected' : ''} ${saving === item.id ? 'is-saving' : ''}`}
                   >
                     <td className="work-timeline-heading">
-                      <div className="work-timeline-task">
-                        <span className="work-timeline-type" title={item.type_label}>
-                          <Icon name={item.type_icon} />
-                        </span>
-                        <a href={item.url} title={`${item.key} · ${item.title}`}>
-                          <span className="work-timeline-key">{item.key}</span>
-                          <span className="work-timeline-title">{item.title}</span>
-                        </a>
-                        {canEdit ? (
-                          <button
-                            type="button"
-                            className="tasks-filter-button work-timeline-edit"
-                            disabled={locked}
-                            onClick={() => edit(item)}
-                            aria-label={`Zmień daty ${item.key}`}
-                          >
-                            <Icon name="calendar-range" />
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="work-timeline-assignee">
-                      <span
-                        className="work-timeline-person"
-                        title={item.assignee?.label || 'Nie przypisano'}
-                      >
-                        {item.assignee ? (
-                          <Avatar data={item.assignee.avatar} className="tasks-issue-mini-avatar" />
-                        ) : (
-                          <span className="work-timeline-unassigned">
-                            <Icon name="user-round" />
-                          </span>
-                        )}
-                        <span>{item.assignee?.label || 'Nie przypisano'}</span>
-                      </span>
+                      <TimelineItemRow item={item} />
                     </td>
                     <td className="work-timeline-calendar-cell">
                       <div className="work-timeline-lane">

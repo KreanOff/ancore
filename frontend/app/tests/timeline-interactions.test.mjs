@@ -300,7 +300,7 @@ test('pending guard blocks two callbacks before rerender and unlocks after the r
 
 test('date editor retains dirty values and server error, then retries the same source snapshot', async () => {
   const app = harness();
-  byClass(app.render(), 'work-timeline-edit').props.onClick();
+  byClass(app.render(), 'work-timeline-bar-body').props.onClick();
   let editing = dialog(app.render()),
     form = app.renderDialog(editing.props);
   assert.equal(form.props.dirty, false);
@@ -388,7 +388,6 @@ test('date editor validates the interval, clears dates, and exposes pending stat
 test('observer has no date mutation controls, and keyboard/pointer cannot schedule', async () => {
   const app = harness(item({ editable: false }));
   let tree = app.render();
-  assert.equal(byClass(tree, 'work-timeline-edit'), undefined);
   assert.equal(byClass(tree, 'work-timeline-handle'), undefined);
   const bar = byClass(tree, 'work-timeline-bar-body'),
     target = pointerTarget();

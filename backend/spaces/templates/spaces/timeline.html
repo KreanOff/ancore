@@ -2,7 +2,7 @@
     {% if items %}
     <div class="table-container">
         <table class="data-table">
-            <thead><tr><th scope="col">Praca</th><th scope="col">Wykonawca</th><th scope="col">Rozpoczęcie</th><th scope="col">Termin</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+            <thead><tr><th scope="col"><span class="u-sr-only">Zadania</span></th><th scope="col">Wykonawca</th><th scope="col">Rozpoczęcie</th><th scope="col">Termin</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
             <tbody>{% for item in items %}<tr>
                 <td><a href="{{ item.url }}">{{ item.key }} · {{ item.task.title }}</a></td>
                 <td>{% if item.task.assignee %}{{ item.task.assignee.get_full_name|default:item.task.assignee.email }}{% else %}Nieprzypisane{% endif %}</td>
