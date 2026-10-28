@@ -130,9 +130,13 @@ export function shiftAnchor(anchor: number, scale: TimelineScale, direction: num
 
 type HeaderUnit = 'day' | 'week' | 'month' | 'quarter' | 'year' | number;
 
-function segments(window: TimelineWindow, unit: HeaderUnit): TimelineSegment[] {
+function segments(
+  window: TimelineWindow,
+  unit: HeaderUnit,
+  start = window.start,
+): TimelineSegment[] {
   const output: TimelineSegment[] = [];
-  let cursor = window.start;
+  let cursor = start;
   while (cursor < window.end) {
     const current = date(cursor);
     let end: number;
@@ -182,12 +186,20 @@ function segments(window: TimelineWindow, unit: HeaderUnit): TimelineSegment[] {
   return output;
 }
 
-export function timelineHeaders(window: TimelineWindow): {
+export function timelineHeaders(
+  window: TimelineWindow,
+  leadingWidth = 0,
+): {
   major: TimelineSegment[];
   minor: TimelineSegment[];
 } {
   // Fitted windows may cover millennia. Choose calendar units before building
   // the arrays, so neither the DOM nor this calculation grows with every day.
+  // Leading dates extend the header without changing units or the calendar origin.
+  const start = Math.max(
+    MIN_DAY,
+    window.start - Math.ceil(Math.max(0, leadingWidth) / window.dayWidth),
+  );
   const standard =
     window.scale === 'weeks' && window.days <= 84
       ? { major: 'month' as const, minor: 'day' as const }
@@ -199,15 +211,18 @@ export function timelineHeaders(window: TimelineWindow): {
             ? { major: 'year' as const, minor: 'quarter' as const }
             : null;
   if (standard)
-    return { major: segments(window, standard.major), minor: segments(window, standard.minor) };
+    return {
+      major: segments(window, standard.major, start),
+      minor: segments(window, standard.minor, start),
+    };
   const years = date(window.end - 1).getUTCFullYear() - date(window.start).getUTCFullYear() + 1;
   const targetCount = Math.max(2, Math.min(48, Math.floor(window.width / 70)));
   const desiredStep = Math.max(1, years / targetCount);
   const power = 10 ** Math.floor(Math.log10(desiredStep));
   const step = [1, 2, 5, 10].find((value) => value * power >= desiredStep)! * power;
   return {
-    major: segments(window, step * 5),
-    minor: segments(window, step),
+    major: segments(window, step * 5, start),
+    minor: segments(window, step, start),
   };
 }
 

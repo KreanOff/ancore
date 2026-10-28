@@ -129,6 +129,91 @@ test('every header row fully covers the same range with no gaps, overlaps or dri
   assert.equal(headers.minor[0].title, '12.10.2026');
 });
 
+test('leading headers cover the metadata width and remain continuous through the calendar origin', () => {
+  for (const scale of ['weeks', 'months', 'quarters']) {
+    const window = Object.freeze(timelineWindow(scale, parseDay('2027-02-01')));
+    for (const leadingWidth of [190, 430, 560]) {
+      const headers = timelineHeaders(window, leadingWidth);
+      for (const row of [headers.major, headers.minor]) {
+        assert.ok(row[0].left <= -leadingWidth);
+        assert.ok(row[0].left > -leadingWidth - window.dayWidth);
+        assert.equal(row[0].start, window.start + row[0].left / window.dayWidth);
+        let cursor = row[0].start;
+        let left = row[0].left;
+        for (const cell of row) {
+          assert.equal(cell.start, cursor);
+          assert.equal(cell.left, left);
+          assert.ok(cell.end > cell.start);
+          assert.equal(cell.width, (cell.end - cell.start) * window.dayWidth);
+          cursor = cell.end;
+          left += cell.width;
+        }
+        assert.equal(cursor, window.end);
+        assert.equal(left, window.width);
+        const origin = row.find((cell) => cell.start <= window.start && cell.end > window.start);
+        assert.ok(origin);
+        assert.equal(origin.left + (window.start - origin.start) * window.dayWidth, 0);
+      }
+    }
+  }
+});
+
+test('leading dates preserve header units and alignment with task bars at every scale', () => {
+  for (const scale of ['weeks', 'months', 'quarters']) {
+    const window = timelineWindow(scale, parseDay('2027-02-01'));
+    const original = timelineHeaders(window);
+    for (const leadingWidth of [190, 430, 560]) {
+      const extended = timelineHeaders(window, leadingWidth);
+      for (const name of ['major', 'minor'])
+        assert.deepEqual(
+          plain(extended[name].filter((cell) => cell.start > window.start)),
+          plain(original[name].filter((cell) => cell.start > window.start)),
+        );
+      if (scale === 'weeks') {
+        assert.ok(extended.minor.every((cell) => cell.end - cell.start === 1));
+        assert.equal(extended.minor.find((cell) => cell.start === window.start).left, 0);
+      }
+      for (const day of [window.start, window.start + 15, window.end - 1]) {
+        const bar = taskGeometry({ start: day, end: day }, window);
+        const cell = extended.minor.find((segment) => segment.start <= day && segment.end > day);
+        assert.equal(cell.left + (day - cell.start) * window.dayWidth, bar.left);
+        assert.equal(bar.width, window.dayWidth);
+      }
+    }
+    for (const width of [0, -1, -560])
+      assert.deepEqual(plain(timelineHeaders(window, width)), plain(original));
+  }
+});
+
+test('leading headers clamp to the first supported day without moving the calendar origin', () => {
+  for (const [scale, nearStart] of [
+    ['weeks', '0001-01-22'],
+    ['months', '0001-03-01'],
+    ['quarters', '0001-07-01'],
+  ]) {
+    const earliest = timelineWindow(scale, MIN_DAY);
+    const window = timelineWindow(scale, parseDay(nearStart));
+    for (const leadingWidth of [190, 430, 560]) {
+      assert.deepEqual(
+        plain(timelineHeaders(earliest, leadingWidth)),
+        plain(timelineHeaders(earliest)),
+      );
+      const headers = timelineHeaders(window, leadingWidth);
+      for (const row of [headers.major, headers.minor]) {
+        assert.ok(row[0].start >= MIN_DAY);
+        assert.equal(row[0].left, (row[0].start - window.start) * window.dayWidth);
+        if (leadingWidth === 560) {
+          assert.equal(row[0].start, MIN_DAY);
+          assert.ok(row[0].left > -leadingWidth);
+        }
+        const last = row[row.length - 1];
+        assert.equal(last.end, window.end);
+        assert.equal(last.left + last.width, window.width);
+      }
+    }
+  }
+});
+
 test('calendar navigation preserves day where possible and clamps short months and supported years', () => {
   assert.equal(dayKey(shiftAnchor(parseDay('2026-10-28'), 'weeks', 1)), '2026-11-25');
   assert.equal(dayKey(shiftAnchor(parseDay('2026-10-28'), 'weeks', -1)), '2026-09-30');
