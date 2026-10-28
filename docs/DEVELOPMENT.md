@@ -1,5 +1,75 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Oś czasu bez kolumny Status (28.10.2026)
+
+Usunięto nagłówek i komórki Status z osi czasu w React oraz pierwszym
+renderze Django, także z wierszy sprintów. Wykonawca jest przypięty bezpośrednio
+za Pracą, a kalendarz wykorzystuje zwolnioną szerokość. Usunięto nieużywane
+style i callback zmiany statusu tej tabeli. Kategorie nadal określają kolory
+pasków; pozostałe widoki i filtr statusu zachowują swoje działanie.
+
+Build TypeScript, 11 testów interakcji osi, istniejący test szablonu Django,
+indeks i kontrola diff przeszły. Nie zmieniono modeli ani uprawnień.
+Krótki smoke Playwright/Chrome: 6/6, bez błędów konsoli i JavaScriptu.
+Sprawdzono 1440/1024/390/320px, brak pustej kolumny, przypięcie wykonawcy,
+skale/Dopasuj, zapis dat i odświeżenie oraz brak kolumny w HTML bez JavaScriptu.
+Referencyjna Lista zadań zachowała statusy. Środowisko QA i bazę usunięto;
+Safari/Firefox i produkcji nie sprawdzano.
+
+## Usunięcie dolnych pasków osi czasu (28.10.2026)
+
+Oś czasu nie wyświetla już dolnej legendy „Dzisiaj”, podpowiedzi przeciągania
+ani paska z zakresem wyników i numerami stron. React i pierwszy render Django
+wczytują wszystkie dostępne zadania po filtrach; `page` jest ignorowany,
+`pagination` wynosi `null`. Dzięki temu zadania ponad dawnym limitem 100
+pozostają dostępne. „Dopasuj” obejmuje cały wynik. Linia dzisiejszego dnia,
+przycisk nawigacji i pomoc dla czytników ekranu pozostają dostępne.
+
+Przeszło 28/28 testów `spaces.test_timeline` i `spaces.test_list_window`
+na izolowanych bazach PostgreSQL oraz 12/12 testów interakcji osi czasu.
+Build TypeScript, indeks dokumentacji i kontrola diff są poprawne.
+Krótki smoke Playwright/Chrome: 6/6 scenariuszy, brak błędów konsoli/JS.
+Potwierdzono brak obu pasków w React i bez JavaScriptu, pełne 125 zadań przy
+`page=2`, zwykły/pusty wynik, zmianę skali i zapis dat. Przy 1440×1000,
+390×844 i 320×844 tabela wykorzystuje zwolnione miejsce bez overflow.
+Baza/storage/sesje QA usunięte; serwer zatrzymany. Safari/Firefox i produkcji
+nie testowano.
+Pełny odczyt zwiększa rozmiar odpowiedzi i DOM wraz z liczbą zadań.
+
+## Interaktywna oś czasu (28.10.2026)
+
+Przestrzenie mają kalendarz z przypiętą tabelą, skalami tygodni/miesięcy/kwartałów,
+znacznikiem dzisiaj, sprintami oraz planowaniem zadania przez formularz,
+przeciąganie i klawiaturę. „Dopasuj” uwzględnia cały zakres bieżącej strony,
+także wieloletni; nagłówki mają ograniczoną liczbę segmentów. Oś zawiera
+również zadania bez dat, zachowując paginację 100, filtry i granice dostępu.
+Nowy endpoint zapisuje tylko daty z historią, zachowaniem godziny terminu,
+walidacją DST i ochroną przed równoległą zmianą. Modele/migracje bez zmian.
+
+Przeszło 58 różnych testów PostgreSQL na izolowanych bazach przez
+`scripts/run_tests.py`: `spaces.test_timeline`, `spaces.test_write_access`,
+`spaces.test_list_window` i `core.test_frontend`. Po dodaniu dwóch przypadków
+skrajnych dat ponowiono cały moduł osi: 16/16. Frontend: 216/216 testów,
+build TypeScript, Django check, kontrola indeksu i diff poprawne. Nowe testy
+frontendu obejmują geometrię kalendarza, DST, lata 0001–9999, dopasowanie,
+snapshot zapisu, CSRF, oczekiwanie/ponowienie, szkic formularza, readonly,
+przeciąganie/anulowanie, CSS zoom, niepełne daty i odpowiedź po odmontowaniu.
+
+Playwright/Chrome na tymczasowej bazie PostgreSQL potwierdził 23/23 scenariusze:
+zapis/usunięcie dat, walidację, zachowanie godziny, oba uchwyty resize,
+przesuwanie, serię klawiszy bez utraty fokusu, Escape, błąd HTTP 503 i retry,
+statusy, wyszukiwanie poza pierwszą setką, filtry/sortowanie, stronicowanie,
+zwykłe/scoped URL, obserwatora i prywatne dane, częściową nawigację oraz
+trwałość po odświeżeniu. Dopasowanie pokazało pełen zakres 2023–2028.
+Sprawdzono także referencyjną Listę zadań, puste wyniki i render bez JavaScriptu.
+Rozdzielczości: 1440×1000, 1024×900, 390×844 i 320×844; obejrzane zrzuty
+potwierdziły brak przepełnienia oraz działanie przypiętych kolumn i modali.
+Naprawiono utratę fokusu paska podczas zapisu klawiaturą i ponowiono scenariusz.
+Brak błędów wykonania JavaScriptu; jedyny błąd konsoli dotyczył celowego 503.
+Plugin Browser był niedostępny, wykorzystano zainstalowany Playwright/Chrome.
+Serwer QA zatrzymano, bazę/storage/sesje usunięto. Nie testowano Safari,
+Firefoksa, natywnych gestów dotykowych ani wdrożenia produkcyjnego.
+
 ## Doładowywanie backlogu i sprintów (28.10.2026)
 
 Backlog oraz każdy otwarty sprint wczytują niezależnie po 20 zadań i używają

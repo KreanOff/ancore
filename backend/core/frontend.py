@@ -67,6 +67,7 @@ VIEWS = {
     'spaces.task_team': {'team', 'candidates'},
     'spaces.space_team': {'team', 'candidates'},
     'spaces.dashboard': {'save_layout'},
+    'spaces.timeline': {'update_dates'},
     'spaces.teams': {'index', 'detail', 'edit', 'members', 'remove_member'},
     'documents.views': {'library', 'library_create', 'library_edit', 'library_delete', 'upload', 'folder_create', 'folder_edit', 'folder_delete', 'folder_star', 'detail', 'preview', 'star', 'trash', 'restore'},
     'documents.editor_views': {'index', 'upload', 'edit', 'preview', 'import_text', 'action'},

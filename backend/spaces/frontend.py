@@ -2,6 +2,7 @@ import json
 
 from django.templatetags.static import static
 from django.utils.html import strip_tags
+from django.utils import timezone
 
 from core.frontend import form_payload, pagination_payload
 from .avatars import space_avatar
@@ -49,6 +50,7 @@ def item_payload(item):
     return {
         'id': item.pk, 'task_id': task.pk, 'key': item.key, 'title': task.title,
         'url': item.url, 'edit_url': item.edit_url, 'action_url': item.action_url,
+        'update_dates_url': item.update_dates_url,
         'editable': item.editable, 'rank': item.rank, 'sprint_id': item.sprint_id,
         'status': item.status, 'status_label': item.status_label,
         'category': task.status, 'status_order': item.status_order, 'transitions': item.transitions,
@@ -59,6 +61,7 @@ def item_payload(item):
         'team': item.team.name if item.team_id else '', 'tags_count': item.tags_count,
         'attachments_count': item.attachments_count, 'due_at': task.due_at, 'due_urgency': task.due_urgency,
         'start_on': item.start_on,
+        'end_on': timezone.localtime(task.due_at).date() if task.due_at else None,
         'timeline': {key: getattr(item, 'timeline_' + key, None) for key in ('start', 'end', 'left', 'width')},
     }
 

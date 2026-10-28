@@ -1,0 +1,18 @@
+<section class="work-panel" aria-label="Oś czasu">
+    {% if items %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead><tr><th scope="col">Praca</th><th scope="col">Wykonawca</th><th scope="col">Rozpoczęcie</th><th scope="col">Termin</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+            <tbody>{% for item in items %}<tr>
+                <td><a href="{{ item.url }}">{{ item.key }} · {{ item.task.title }}</a></td>
+                <td>{% if item.task.assignee %}{{ item.task.assignee.get_full_name|default:item.task.assignee.email }}{% else %}Nieprzypisane{% endif %}</td>
+                <td>{{ item.start_on|date:'d.m.Y'|default:'Nie ustawiono' }}</td>
+                <td>{{ item.task.due_at|date:'d.m.Y H:i'|default:'Nie ustawiono' }}</td>
+                <td>{% if item.editable %}<a class="tasks-filter-button" href="{{ item.edit_url }}" data-work-open aria-label="Zmień daty {{ item.key }}"><i data-icon="pencil" aria-hidden="true"></i></a>{% endif %}</td>
+            </tr>{% endfor %}</tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="tasks-empty-state tasks-empty-state--illustrated" role="status"><span class="tasks-empty-state__illustration tasks-empty-state__illustration--work" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>Brak zadań na osi czasu</h2><p>{% if query or item_filter_count %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz zadanie, aby rozpocząć planowanie.{% endif %}</p></div></div>
+    {% endif %}
+</section>

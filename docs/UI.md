@@ -173,8 +173,8 @@ jako zwykłe linki.
 Wariant `work-pagination` rozszerza wspólne klasy `tasks-project-pagination`
 w `spaces.css`. Na wąskim ekranie zakres i przyciski mogą przejść do dwóch
 wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami,
-oś czasu, Zespoły oraz katalog/wyniki Filtrów.
-Podsumowanie, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
+Zespoły oraz katalog/wyniki Filtrów.
+Podsumowanie, oś czasu, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
 Tagi przestrzeni zachowują osobny mechanizm `directory_pagination_toolbar.html`.
 
 Tablica Przestrzeni nie pokazuje dolnego paska z zakresem i numerami stron,
@@ -207,6 +207,38 @@ zaznaczenia, zwinięcia sekcji i pozycję przewijania; filtry i sortowanie
 resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
 „Na stronie”. Sprint zawierający wyłącznie ukończone zadania pokazuje
 „Wszystkie zadania w tym sprincie są ukończone.”.
+
+## Oś czasu Przestrzeni
+
+`spaces/TimelineView.tsx` rozszerza istniejący ekran o tabelę i wspólną siatkę
+kalendarza. Kontrolki, ikony, awatary i kolory statusów pochodzą ze wspólnych
+komponentów; lokalne reguły `work-timeline-*` są w `spaces.css`. Nagłówek
+kalendarza pozostaje widoczny przy przewijaniu pionowym, a kolumny Praca
+i Wykonawca przy poziomym. Oś nie ma osobnej kolumny Status; kategorie nadal
+określają kolory pasków, a zmiana statusu jest dostępna w szczegółach zadania. Tygodnie pokazują dni i przygaszone weekendy;
+miesiące i kwartały rzeczywiste granice okresów. Linia i znacznik bieżącego
+dnia używają fioletowego akcentu. Pasy sprintów mają obrys, a paski zadań
+wypełnienie kategorii statusu; pojedyncza data ma przerywany obrys.
+
+Wyszukiwanie działa po zatwierdzeniu Enterem lub przyciskiem i obejmuje cały
+przefiltrowany zbiór. Zachowano menu Sortowanie/Filtrowanie. Oś wczytuje wszystkie
+dostępne wyniki bez podziału na strony. Nie ma
+dolnego paska paginacji, legendy „Dzisiaj” ani widocznej podpowiedzi przeciągania.
+Linia bieżącego dnia i pomoc dla czytników ekranu pozostają w kalendarzu.
+Nad tabelą są tylko przełączniki skali po prawej; nie ma licznika „Zaplanowane”,
+przycisku „Dopasuj”, strzałek okresu, przycisku „Dzisiaj” ani osobnej nazwy miesiąca. Zakres można
+przewijać poziomo, a daty odczytać z nagłówków kalendarza.
+Niezaplanowany wiersz ma „Zaplanuj zadanie”; data poza oknem przycisk powrotu
+do jej okresu. Kliknięcie paska lub ikony kalendarza otwiera wspólny kompaktowy
+`Modal` z polami dat, czasem trwania, usunięciem dat i ochroną szkicu.
+Przeciąganie oraz skróty klawiatury mają alternatywę w formularzu.
+Błąd nie zmienia zapisanych dat; formularz zachowuje wpisane wartości.
+
+Do 1000px ukryta jest kolumna wykonawcy; tytuł i klucz pozostają przypięte, a daty przewijają się wewnątrz tabeli. Przyciski skali
+zawijają się w obrębie ekranu. Pełne właściwości zadania pozostają dostępne
+po otwarciu jego szczegółów. Pusty wynik korzysta ze wspólnego `EmptyState`.
+Pierwszy render Django w `spaces/timeline.html` ma statyczną tabelę dat,
+wykonawców z linkiem edycji; interaktywny kalendarz wymaga Reacta.
 
 ## Wspólny wzorzec pustej strony
 
@@ -376,7 +408,7 @@ fokus, Escape, `inert` oraz ochronę niezapisanych zmian. Style tabeli i pickera
 pochodzą z istniejącego `workplace-team.css`.
 
 Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
-„Sortowanie” i „Filtrowanie”. Nie ma osobnego pola wyszukiwania zadań.
+„Sortowanie” i „Filtrowanie”. Lista, Tablica i Backlog nie mają osobnego pola wyszukiwania zadań; Oś czasu dodaje wyszukiwanie opisane poniżej.
 W otwartej Przestrzeni pasek jest pierwszą częścią obszaru zadań
 `work-content--items`, a w Liście i Backlogu przewija się razem z wynikami.
 Wspólny kontener wyrównuje menu i treść do tych samych marginesów strony,

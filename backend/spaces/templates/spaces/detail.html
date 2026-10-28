@@ -11,7 +11,7 @@
 </nav>
 {% endblock %}
 {% block work_content_class %}{% if view == 'overview' or view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %} work-content--items{% endif %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% endblock %}
-{% block work_pagination %}{% if view == 'timeline' %}{% include 'spaces/pagination.html' %}{% endif %}{% endblock %}
+{% block work_pagination %}{% endblock %}
 {% block work_content %}
 {% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/item_toolbar.html' %}{% endif %}
 {% if view == 'overview' %}
@@ -42,6 +42,6 @@
         </div>
     {% elif view == 'backlog' %}
         {% include 'spaces/backlog.html' %}
-    {% elif view == 'timeline' %}<section class="work-panel"><h2>Oś czasu</h2><p>Zaplanowane daty dostępnych zadań.</p>{% if timeline %}<div class="work-timeline-scale"><span>{{ timeline.start|date:"d.m.Y" }}</span><span>{{ timeline.end|date:"d.m.Y" }}</span></div>{% endif %}{% for item in items %}<div class="work-timeline-row"><a href="{{ item.url }}">{{ item.key }} · {{ item.task.title }}</a><span>{{ item.start_on|date:'d.m.Y'|default:'Bez daty rozpoczęcia' }}</span><i data-icon="arrow-right" aria-hidden="true"></i><span>{{ item.task.due_at|date:'d.m.Y'|default:'Bez terminu' }}</span>{% if item.editable %}<a class="tasks-filter-button" href="{{ item.edit_url }}" data-work-open aria-label="Zmień daty {{ item.key }}"><i data-icon="pencil" aria-hidden="true"></i></a>{% endif %}<div class="work-timeline-track" aria-label="{{ item.timeline_start|date:'d.m.Y' }} – {{ item.timeline_end|date:'d.m.Y' }}"><span style="left:{{ item.timeline_left }}%;width:{{ item.timeline_width }}%"></span></div></div>{% empty %}<div class="tasks-empty-state tasks-empty-state--illustrated" role="status"><span class="tasks-empty-state__illustration tasks-empty-state__illustration--work" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>Brak zaplanowanych terminów</h2><p>Ustaw datę rozpoczęcia lub termin w edycji zadania.</p></div></div>{% endfor %}</section>{% endif %}
+    {% elif view == 'timeline' %}{% include 'spaces/timeline.html' %}{% endif %}
 {% endif %}
 {% endblock %}

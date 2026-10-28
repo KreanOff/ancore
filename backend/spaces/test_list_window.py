@@ -208,18 +208,29 @@ class ListWindowTests(TestCase):
         response = self.client.get(self.url(view='board', page=2, q='Brak takiego zadania'))
         self.assertNotContains(response, 'work-pagination')
 
-    def test_timeline_keeps_its_existing_pagination(self):
+    def test_timeline_loads_all_visible_filtered_tasks_without_pagination(self):
         WorkItem.objects.filter(space=self.space).update(start_on=date(2026, 10, 1))
-        for view in ('timeline',):
-            for scoped in (True, False):
-                with self.subTest(view=view, scoped=scoped):
-                    data = self.page(scoped=scoped, view=view, list_limit_new=120, page=2)
-                    self.assertEqual(data['pagination']['page'], 2)
-                    self.assertEqual(data['pagination']['count'], 163)
-                    self.assertEqual(len(data['items']), 63)
-                    self.assertTrue(all('more_url' not in column for column in data['columns']))
-                    response = self.client.get(self.url(scoped, view=view, page=2), follow=True)
-                    self.assertContains(response, 'work-pagination', count=1)
+        for scoped in (True, False):
+            with self.subTest(scoped=scoped):
+                data = self.page(scoped=scoped, view='timeline', list_limit_new=120, page=2)
+                self.assertIsNone(data['pagination'])
+                self.assertEqual(len(data['items']), 163)
+                self.assertEqual(data['stats']['all'], 163)
+                self.assertTrue(all('more_url' not in column for column in data['columns']))
+                task_ids = [item['task_id'] for item in data['items']]
+                self.assertFalse(self.hidden_ids.intersection(task_ids))
+                self.assertNotIn(self.foreign.pk, task_ids)
+                initial = self.page(scoped=scoped, view='timeline')
+                self.assertEqual([item['task_id'] for item in initial['items']], task_ids)
+                filtered = self.page(scoped=scoped, view='timeline', page=2, q='Praca new', sort='title_desc')
+                self.assertEqual([item['task_id'] for item in filtered['items']], [task.pk for task in reversed(self.tasks['new'])])
+                self.assertEqual(self.columns(filtered)['new']['count'], 121)
+                self.assertIsNone(filtered['pagination'])
+                response = self.client.get(self.url(scoped, view='timeline', page=2), follow=True)
+                self.assertIsNone(response.context['page'])
+                self.assertEqual(len(response.context['items']), 163)
+                self.assertNotContains(response, 'work-pagination')
+                self.assertNotContains(response, 'work-timeline-footer')
 
     def test_html_sort_and_filter_links_restart_groups_without_javascript(self):
         response = self.client.get(self.url(list_limit_new=60, list_limit_in_progress=21,

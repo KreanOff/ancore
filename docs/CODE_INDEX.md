@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 55 | 3 | 41 | 320 |
+| [backend/spaces](../backend/spaces) | 57 | 3 | 42 | 338 |
 
 ## 2. Modele i relacje
 
@@ -793,6 +793,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'space/<slug:space_pk>/tasks/<slug:key>/'` | `task_views.detail` | 'task_detail' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/edit/'` | `views.item_edit` | 'task_edit' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/action/'` | `views.item_action` | 'task_action' |
+| `'space/<slug:space_pk>/tasks/<slug:key>/dates/'` | `timeline.update_dates` | 'task_dates' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/team/'` | `task_team.team` | 'task_team' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/team/candidates/'` | `task_team.candidates` | 'task_candidates' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/members/'` | `task_views.members` | 'task_members' |
@@ -1027,6 +1028,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templatetags/__init__.py](../backend/spaces/templatetags/__init__.py)
 - [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
+- [backend/spaces/timeline.py](../backend/spaces/timeline.py) — `local_end`, `posted_date`, `posted_source_due`, `serialized_precision`, `scheduled_due`, `error_response`, `update_dates`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
 - [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
@@ -1251,6 +1253,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/team_avatar.html](../backend/spaces/templates/spaces/team_avatar.html)
 - [backend/spaces/templates/spaces/teams.html](../backend/spaces/templates/spaces/teams.html)
 - [backend/spaces/templates/spaces/template_picker.html](../backend/spaces/templates/spaces/template_picker.html)
+- [backend/spaces/templates/spaces/timeline.html](../backend/spaces/templates/spaces/timeline.html)
 
 ## 7. Zasoby frontendowe
 
@@ -1483,7 +1486,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/SummaryDistribution.tsx](../frontend/app/src/spaces/SummaryDistribution.tsx)
 - [frontend/app/src/spaces/SummaryWidgetControls.tsx](../frontend/app/src/spaces/SummaryWidgetControls.tsx)
 - [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
+- [frontend/app/src/spaces/TimelineView.tsx](../frontend/app/src/spaces/TimelineView.tsx)
 - [frontend/app/src/spaces/summaryLayout.ts](../frontend/app/src/spaces/summaryLayout.ts)
+- [frontend/app/src/spaces/timeline.ts](../frontend/app/src/spaces/timeline.ts)
 - [frontend/app/src/spaces/types.ts](../frontend/app/src/spaces/types.ts)
 - [frontend/app/src/spaces/useItemMotion.ts](../frontend/app/src/spaces/useItemMotion.ts)
 - [frontend/app/src/spaces/useSummaryMotion.ts](../frontend/app/src/spaces/useSummaryMotion.ts)
@@ -1526,6 +1531,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/task-actions.test.mjs](../frontend/app/tests/task-actions.test.mjs)
 - [frontend/app/tests/task-members.test.mjs](../frontend/app/tests/task-members.test.mjs)
 - [frontend/app/tests/task-refresh.test.mjs](../frontend/app/tests/task-refresh.test.mjs)
+- [frontend/app/tests/timeline-interactions.test.mjs](../frontend/app/tests/timeline-interactions.test.mjs)
+- [frontend/app/tests/timeline.test.mjs](../frontend/app/tests/timeline.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ### React — frontend/board
@@ -2211,6 +2218,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `TaskOwnerMembershipTests`: 8 metod testowych.
 
+### backend/spaces/test_timeline.py
+
+Źródło: [backend/spaces/test_timeline.py](../backend/spaces/test_timeline.py).
+
+- `TimelineTests`: 16 metod testowych.
+
 ### backend/spaces/test_urls.py
 
 Źródło: [backend/spaces/test_urls.py](../backend/spaces/test_urls.py).
@@ -2229,7 +2242,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_write_access.py](../backend/spaces/test_write_access.py).
 
 - `SpaceWorkspaceRoleTests`: 3 metod testowych.
-- `SpaceWriteAccessRaceTests`: 5 metod testowych.
+- `SpaceWriteAccessRaceTests`: 7 metod testowych.
 
 ### backend/spaces/tests.py
 

@@ -310,8 +310,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   Backlog korzysta z tego samego paska „Pokaż więcej”, osobno dla każdego
   sprintu i kolejki bez sprintu (`spaces/backlog_window.py`). Zachowuje limity
   grup w URL, zaznaczenia i zwinięcia sekcji; ignoruje stary `page`.
-  Oś czasu ma dolny pasek z zakresem wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
-  treścią, zachowuje filtry i działa również dla jednej strony/pustego wyniku.
+  Oś czasu pokazuje wszystkie dostępne wyniki bez dolnego paska stron.
   Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
   podsumowanie, raporty i ustawienia nie pokazują stron wyników.
 - Podsumowanie jest konfigurowalnym, osobistym pulpitem Przestrzeni.
@@ -370,7 +369,27 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności,
   wyświetlana w tej samej zwijanej sekcji Zadań.
 
-- Oś czasu: paski pomiędzy początkiem i terminem; zadania bez dat są pomijane.
+- Oś czasu: przypięta tabela pracy i wykonawców obok wspólnego
+  kalendarza. Pokazuje także zadania bez dat (akcja „Zaplanuj zadanie”), zachowuje
+  filtry i wyszukiwanie. Wczytuje wszystkie dostępne wyniki bez paginacji;
+  stary parametr `page` jest ignorowany. Skale tygodni, miesięcy i kwartałów
+  zmieniają szczegółowość kalendarza. Nad tabelą nie ma licznika „Zaplanowane”,
+  przycisku „Dopasuj”, strzałek okresu, przycisku „Dzisiaj” ani osobnej nazwy
+  miesiąca. Scrum pokazuje dodatkowo pasy otwartych sprintów z obiema datami.
+  Paski zadań można przesuwać i rozciągać; formularz pozwala ustawić pojedynczą
+  datę, obie daty lub usunąć plan. Przesunięcie zachowuje brakującą datę;
+  rozciągnięcie może ją ustawić. Strzałki przesuwają o dzień, Shift+strzałka
+  zmienia koniec, Escape anuluje gest. Kliknięcie klucza otwiera zadanie.
+  Kolumna Status nie jest wyświetlana na osi; status można zmienić w szczegółach
+  zadania. Obserwatorzy mogą przeglądać kalendarz bez kontrolek zapisu.
+  `spaces.timeline.update_dates` zapisuje tylko `WorkItem.start_on` i
+  `SpaceTask.due_at`, po ponownym sprawdzeniu Workspace, prywatnych rodziców
+  i edycji wewnątrz transakcji. Snapshot poprzednich dat chroni przed utratą
+  równoległej edycji (409). Zachowana jest lokalna godzina istniejącego terminu;
+  nowy termin ma 23:59 w strefie aplikacji. Nieistniejące/niejednoznaczne godziny
+  przy zmianie czasu są odrzucane. Operacja zapisuje historię z faktycznym
+  autorem; nie zmienia statusu ani dat zakończenia. Brak zmian nie tworzy historii.
+  Pierwszy render bez Reacta zachowuje tabelę dat i link do istniejącej edycji.
 - Raporty: aktualne liczby statusów, zakończone i zaległe zadania oraz sprinty.
 - Konfiguracja: typy, pola tekst/liczba/data, wymagane pola, statusy i dozwolone
   przejścia. Każdy status ma jeden z pięciu stanów `SpaceTask`.

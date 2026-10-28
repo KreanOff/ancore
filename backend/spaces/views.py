@@ -1,5 +1,5 @@
 from urllib.parse import urlencode
-from datetime import timedelta
+from datetime import date, timedelta
 import hashlib
 import json
 import logging
@@ -59,6 +59,7 @@ def decorate_items(request, items):
         item.url = task_url(request, item.task)
         item.edit_url = space_url(request, item.space, f'tasks/{item.key}/edit/')
         item.action_url = space_url(request, item.space, f'tasks/{item.key}/action/')
+        item.update_dates_url = space_url(request, item.space, f'tasks/{item.key}/dates/')
         if request.GET:
             item.action_url += '?' + request.GET.urlencode()
             item.edit_url += '?' + request.GET.urlencode()
@@ -248,15 +249,13 @@ def detail_context(request, space, view):
     active_sprint = space.sprints.filter(state='active').first()
     all_items = items
     items = items_for_view(space, items, view, active_sprint)
-    if view == 'timeline':
-        items = items.filter(Q(start_on__isnull=False) | Q(task__due_at__isnull=False))
     items = order_items(request, items, view)
     counts = dict(all_items.order_by().values_list('status').annotate(n=Count('pk')))
     column_counts = counts if view == 'list' else dict(items.order_by().values_list('status').annotate(n=Count('pk')))
     if view == 'list':
         page = None
         rows = decorate_items(request, list_window(request, space, items, column_counts))
-    elif view == 'board':
+    elif view in {'board', 'timeline'}:
         page = None
         rows = decorate_items(request, items)
     elif view == 'backlog':
@@ -266,17 +265,20 @@ def detail_context(request, space, view):
         page = Paginator(items, 100).get_page(request.GET.get('page'))
         rows = decorate_items(request, page.object_list)
     timeline = None
-    if view == 'timeline' and rows:
+    if view == 'timeline':
         dates = []
         for item in rows:
             due = timezone.localtime(item.task.due_at).date() if item.task.due_at else None
             item.timeline_start = item.start_on or due
-            item.timeline_end = max(item.timeline_start, due or item.timeline_start)
-            dates.extend([item.timeline_start, item.timeline_end])
-        start, end = min(dates), max(dates)
-        duration = max((end - start).days + 1, 7)
-        timeline = {'start': start, 'end': start + timedelta(days=duration - 1)}
+            item.timeline_end = max(item.timeline_start, due or item.timeline_start) if item.timeline_start else None
+            if item.timeline_start:
+                dates.extend([item.timeline_start, item.timeline_end])
+        start, end = (min(dates), max(dates)) if dates else (timezone.localdate(), timezone.localdate() + timedelta(days=27))
+        duration = min(max((end - start).days + 1, 7), (date.max - start).days + 1)
+        timeline = {'start': start, 'end': start + timedelta(days=duration - 1), 'today': timezone.localdate()}
         for item in rows:
+            if not item.timeline_start:
+                continue
             item.timeline_left = str(round((item.timeline_start - start).days / duration * 100, 2))
             item.timeline_width = str(round(max((item.timeline_end - item.timeline_start).days + 1, 1) / duration * 100, 2))
     columns = [{**s, 'items': [i for i in rows if i.status == s['key']], 'count': column_counts.get(s['key'], 0)} for s in space.statuses]

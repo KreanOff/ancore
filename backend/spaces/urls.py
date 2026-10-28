@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, task_views, task_team, space_team, dashboard
+from . import views, task_views, task_team, space_team, dashboard, timeline
 
 app_name = 'spaces'
 urlpatterns = [
@@ -18,6 +18,7 @@ urlpatterns = [
     path('space/<slug:space_pk>/tasks/<slug:key>/', task_views.detail, name='task_detail'),
     path('space/<slug:space_pk>/tasks/<slug:key>/edit/', views.item_edit, name='task_edit'),
     path('space/<slug:space_pk>/tasks/<slug:key>/action/', views.item_action, name='task_action'),
+    path('space/<slug:space_pk>/tasks/<slug:key>/dates/', timeline.update_dates, name='task_dates'),
     path('space/<slug:space_pk>/tasks/<slug:key>/team/', task_team.team, name='task_team'),
     path('space/<slug:space_pk>/tasks/<slug:key>/team/candidates/', task_team.candidates, name='task_candidates'),
     path('space/<slug:space_pk>/tasks/<slug:key>/members/', task_views.members, name='task_members'),

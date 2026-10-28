@@ -40,6 +40,8 @@ export interface Item {
   due_at: string | null;
   due_urgency: string;
   start_on: string | null;
+  end_on?: string | null;
+  update_dates_url?: string;
   timeline: { start: string; end: string; left: string; width: string };
 }
 export interface Totals {

@@ -3,7 +3,6 @@ import { type DragEvent, useEffect, useLayoutEffect, useRef, useState } from 're
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
-import { Pagination } from '../shared/Pagination';
 import { Select } from '../shared/Select';
 import { StatusGroup } from '../shared/StatusGroup';
 import { FormDialog, type FormDialogData } from '../forms/FormDialog';
@@ -16,6 +15,7 @@ import SettingsDialog from './SettingsDialog';
 import { SpaceHeader } from './SpaceHeader';
 import { dateLabel, type DetailData, type Item, type Sprint, type Status } from './types';
 import { useItemMotion } from './useItemMotion';
+import Timeline from './TimelineView';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
     [modal, setModal] = useState<FormDialogData | null>((initial.data as DetailData).modal),
@@ -538,11 +538,13 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           onPointerDownCapture={motion.pointerDown}
           onDragOverCapture={motion.over}
           onDragEnterCapture={motion.over}
-          className={`work-content ${tableView || data.view === 'overview' ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''}`}
+          className={`work-content ${tableView || data.view === 'overview' ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''} ${data.view === 'timeline' ? 'work-content--timeline' : ''}`}
         >
           {tableView ? (
             <>
-              <ItemToolbar data={data} url={currentUrl.current} />
+              {data.view !== 'timeline' ? (
+                <ItemToolbar data={data} url={currentUrl.current} />
+              ) : null}
               {data.filters.summary ? (
                 <div className="work-summary-filter" role="status">
                   <span>{data.summary_filter_label}</span>
@@ -738,53 +740,18 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             </>
           ) : null}
           {data.view === 'timeline' ? (
-            <section className="work-panel">
-              <h2>Oś czasu</h2>
-              <p>Zaplanowane daty dostępnych zadań.</p>
-              {data.timeline ? (
-                <div className="work-timeline-scale">
-                  <span>{dateLabel(data.timeline.start)}</span>
-                  <span>{dateLabel(data.timeline.end)}</span>
-                </div>
-              ) : null}
-              {data.items.length ? (
-                data.items.map((item) => (
-                  <div className="work-timeline-row" key={item.id}>
-                    <a href={item.url}>
-                      {item.key} · {item.title}
-                    </a>
-                    <span>{dateLabel(item.start_on) || 'Bez daty rozpoczęcia'}</span>
-                    <Icon name="arrow-right" />
-                    <span>{dateLabel(item.due_at) || 'Bez terminu'}</span>
-                    {item.editable ? (
-                      <button
-                        type="button"
-                        className="tasks-filter-button"
-                        disabled={busy}
-                        aria-label={`Zmień daty ${item.key}`}
-                        onClick={() => void openForm(item.edit_url)}
-                      >
-                        <Icon name="pencil" />
-                      </button>
-                    ) : null}
-                    <div
-                      className="work-timeline-track"
-                      aria-label={`${dateLabel(item.timeline.start)} – ${dateLabel(item.timeline.end)}`}
-                    >
-                      <span
-                        style={{ left: `${item.timeline.left}%`, width: `${item.timeline.width}%` }}
-                      />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <EmptyState
-                  illustration="work"
-                  title="Brak zaplanowanych terminów"
-                  description="Ustaw datę rozpoczęcia lub termin w edycji zadania."
-                />
-              )}
-            </section>
+            <Timeline
+              data={data}
+              url={currentUrl.current}
+              csrfToken={csrfToken}
+              busy={busy}
+              onUpdate={(item) =>
+                setData((current) => ({
+                  ...current,
+                  items: current.items.map((row) => (row.id === item.id ? item : row)),
+                }))
+              }
+            />
           ) : null}
           {data.view === 'reports' ? (
             <div className="work-overview">
@@ -844,7 +811,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             />
           ) : null}
         </div>
-        {data.view === 'timeline' ? <Pagination data={data.pagination} /> : null}
       </section>
       {modal ? (
         <FormDialog

@@ -70,7 +70,8 @@ Domyślnie wczytuje 20 zadań na status. Parametry `list_limit_<klucz statusu>`
 określają liczbę pozycji danej grupy; serwer ogranicza je do liczby dostępnych
 wyników. `spaces/list_window.py` stosuje `ROW_NUMBER()` po statusie już po
 widoczności, filtrowaniu i sortowaniu. Stary parametr `page` jest ignorowany
-na tej liście. Oś czasu i inni odbiorcy paginacji zachowują dotychczasowy kontrakt.
+na tej liście. Oś czasu także ignoruje `page` i zwraca cały dostępny zbiór
+z `pagination: null`. Pozostali odbiorcy paginacji zachowują swój kontrakt.
 
 Backlog (`view=backlog`) również zwraca `pagination: null`. Wczytuje po 20
 otwartych zadań osobno dla kolejki bez sprintu i każdego otwartego sprintu.
@@ -752,3 +753,26 @@ Dotychczasowe kontrolowane komunikaty HTML zachowują osobny parametr `message`.
 Gość otwiera istniejący dokument tekstowy w trybie odczytu: React i pierwszy
 render nie pokazują zapisu, konwersji ani edytowalnej treści. Stary HTML jest
 sanityzowany; serwer nadal odrzuca zapisy. [Uprawnienia](TEAMWORK.md).
+
+## Interaktywna oś czasu Przestrzeni
+
+`spaces/TimelineView.tsx` korzysta z `DetailData.items`, również pozycji bez dat.
+`item_payload` dodaje `end_on` (lokalna data terminu) i `update_dates_url`;
+`start_on` oraz pełny `due_at` pozostają źródłem snapshotu. Zakres jest
+ograniczany na serwerze przez te same filtry/ACL co inne widoki. Oś zwraca
+wszystkie pasujące zadania i `pagination: null`; `page` jest ignorowany.
+`spaces/timeline.ts` liczy dni kalendarzowe w UTC, bez przesunięć DST, nagłówki,
+paski, dopasowanie i granice resize. Dzisiejszy dzień jest wyznaczany dla
+Europe/Warsaw. Nie dodano biblioteki wykresów ani modeli danych.
+
+POST do zwykłego/scoped `space/<slug>/tasks/<key>/dates/` przyjmuje formularz:
+`start_on`, `end_on`, `source_start_on`, `source_due_at`. Daty mają format
+`YYYY-MM-DD`, brak wartości to pusty ciąg; source_due_at to poprzedni ISO timestamp.
+Wszystkie cztery pola są wymagane. Endpoint jest również zarejestrowany w page API.
+Odpowiedź 200: `saved`, `changed`, `start_on`, `end_on`, `due_at`, `due_urgency`;
+400 walidacja, 409 konflikt dat, 403/404 brak uprawnień. Błędy mają `message`
+i `error`. Po zapisie React aktualizuje wiersz bez przestawiania przewiniętej
+listy; ponowne wejście stosuje aktualne sortowanie. Stan oczekiwania chroni
+przed równoległym wysłaniem, a błąd pozostawia poprzednie daty i szkic formularza.
+Oś nie renderuje kolumny Status ani akcji zmiany statusu; dane kategorii
+pozostają używane do kolorowania pasków i filtrowania.
