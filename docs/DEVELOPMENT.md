@@ -1,5 +1,135 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Wspólny pasek Dzisiaj i skali osi (28.10.2026)
+
+„Dzisiaj”, „Tygodnie”, „Miesiące” i „Kwartały” są czterema przyciskami jednego
+`tasks-segments`, ze wspólnym tłem i zaokrąglonym obrysem. Grupa zawija się
+w całości; zachowano callbacki, zaznaczenie skali i blokadę podczas zapisu.
+Przeszły build TypeScript, 25 testów osi, formatowanie, indeks i diff.
+Chrome/Playwright na tymczasowej bazie: 1440/1024/768/390/320px, wspólna ramka,
+wyrównanie przycisków, brak przepełnienia, „Dzisiaj” we wszystkich skalach,
+klawiatura, przejście przez Listę, ponowne wejście i pusty wynik. Obejrzano
+desktop i telefon; brak błędów JavaScriptu. Plugin Browser był niedostępny;
+użyto lokalnego Playwright/Chrome. Innych przeglądarek i produkcji nie sprawdzano.
+
+## Pływający panel zadań osi czasu (28.10.2026)
+
+Przypięte komórki tworzą wspólną powierzchnię z odstępem 5px (na telefonie
+4px), obrysem, cieniem i narożnikami 8px. Pseudoelementy zachowują wiersze
+40px; cień jest przycięty między wierszami, a zachodzące o 1px powierzchnie
+zapobiegają prześwitom przy powiększeniu powłoki 0.98. Tło interakcji należy
+do panelu; sprinty i pojedynczy wynik mają prawidłowe zewnętrzne narożniki.
+
+Chrome/Playwright na tymczasowej bazie: szerokości 1440/1024/768/390/320px,
+przewijanie poziome/pionowe i przypięcie, geometria wierszy, hover/fokus,
+otwarcie edycji dat, wszystkie skale i „Dzisiaj”, Lista referencyjna, ponowne
+wejście, jeden wynik i pusty wynik. Obejrzano desktop, telefon, dół panelu,
+pojedynczy wiersz, fokus oraz Listę. Brak błędów JavaScriptu i przepełnienia.
+W skrypcie QA poprawiono tolerancję pomiaru subpikseli i selektor tekstu;
+końcowy przebieg przeszedł w całości. Kontrola indeksu i diff przeszły.
+Zmiana obejmuje CSS, wersję zasobu i dokumentację; nie wymagała nowego builda
+ani testów logiki. Plugin Browser był niedostępny; użyto lokalnego Playwright
+i Chrome. Innych przeglądarek ani produkcji nie sprawdzano.
+
+## Ciągły nagłówek dat osi czasu (28.10.2026)
+
+Jeden nagłówek kalendarza obejmuje całą szerokość tabeli, także nad zadaniami.
+Nie ma osobnego pola zakresu po lewej. `TimelineCalendarHeader` mierzy
+szerokość metadanych przez `ResizeObserver`, a `timelineHeaders` uzupełnia
+daty poprzedzające kalendarz bez zmiany skali i początku obliczeń pasków.
+Miesiące/lata i dni/okresy zachowują dwa poziomy; etykieta miesiąca pozostaje
+widoczna podczas przewijania w obrębie swojego okresu. Observer jest sprzątany
+przy wyjściu; przewijanie nie wymaga listenera ani aktualizacji stanu Reacta.
+
+Przeszły build TypeScript, 218/218 testów frontendu (w tym trzy nowe testy
+uzupełniania nagłówka), formatowanie, kontrola indeksu i diff.
+Chrome/Playwright na izolowanej bazie: ciągłość dat, wyrównanie z paskami zadań
+i linią „Dzisiaj”, przewijanie w obu kierunkach, wszystkie skale i „Dzisiaj”,
+szerokości 1440/1024/768/390/320px, otwarcie edycji dat, powrót z Listy
+oraz pusty wynik. Obejrzano desktop i telefon; brak błędów JavaScriptu
+i przepełnienia. Nie sprawdzano innych przeglądarek ani produkcji.
+
+## Pionowe odstępy treści Przestrzeni — 5px (28.10.2026)
+
+Wspólny `work-content--items` ma po 5px wewnętrznego odstępu na górze
+i dole; usunięto nadpisanie dolnego odstępu osi czasu. Zmiana dotyczy także
+Listy, Tablicy, Backlogu, Podsumowania i wyników Filtrów. Odstępy między
+częściami pozostają 8px, a boczne 15px.
+Chrome/Playwright na izolowanej bazie: pięć widoków Przestrzeni przy
+1440/390/320px, pomiary paddingu i rzeczywistych krawędzi osi, brak
+przepełnienia, ponowne wejście oraz pusty wynik. Wyniki Filtrów również
+mają 5px. Obejrzano zrzuty desktopu i telefonu; brak błędów JavaScriptu.
+Kontrola indeksu i `git diff --check` przeszły. Zmieniono tylko CSS,
+wersję zasobu i dokumentację; nie uruchamiano builda ani testów logiki.
+Innych przeglądarek i produkcji nie sprawdzano.
+
+## Nazwa wykonawcy na osi czasu (28.10.2026)
+
+`Planning` ma opcjonalne `showAssigneeName`, używane tylko przez oś czasu.
+Obok awatara pokazuje istniejące `assignee.label` albo „Nie przypisano”.
+Przypięta część ma 560px (430px do 1000px); na telefonie zachowuje 190px,
+przenosząc awatar 16px i nazwę pod tytuł, w dotychczasowym wierszu 40px.
+Przeszły build TypeScript, kontrola formatowania, indeksu oraz diff.
+Chrome/Playwright na tymczasowej bazie: szerokości 1440/1024/768/390/320px,
+nazwy i brak wykonawcy, geometria awatara/wierszy, brak przepełnienia,
+referencyjna Lista, ponowne wejście i pusty wynik. Obejrzano desktop i telefon;
+brak błędów konsoli. Innych przeglądarek i produkcji nie testowano.
+
+## Kompaktowe wiersze osi czasu (28.10.2026)
+
+Przypięta kolumna korzysta z `TimelineItemRow`, współdzieląc z Listą zadań
+priorytet, status, klucz/tytuł i awatar. Nie renderuje checkboxów, typu,
+estymacji, liczników tagów/załączników, ikony terminu ani menu działań.
+Kolumna ma 440px, do 1000px — 360px, do 650px — 190px; awatar pozostaje
+widoczny na telefonie. Daty edytuje się przez pasek lub „Zaplanuj zadanie”.
+Lista zadań zachowuje swój pełny zestaw kontrolek.
+
+Przeszły build TypeScript oraz 215/215 testów frontendu, w tym 22 testy osi.
+Test otwarcia edycji korzysta teraz z paska zadania. Kontrola indeksu,
+formatowania zmienionego TypeScriptu/testu i `git diff --check` są poprawne.
+Chrome/Playwright na izolowanej bazie PostgreSQL: sprawdzono szerokości
+1440/1024/768/390/320px, brak usuniętych kontrolek w DOM, cztery kolumny,
+awatar, wiersze 40px, brak przepełnienia i przypięcie przy przewijaniu.
+Potwierdzono zapis dat z paska i odświeżenie, okno planowania zadania bez dat,
+skale/Dzisiaj, pełne kontrolki Listy i powrót na oś, pusty wynik oraz
+ograniczenia obserwatora. Dwa początkowe błędy skryptu QA (nazwa etykiety
+terminu i brak oczekiwania na nawigację) poprawiono; powtórzone scenariusze
+przeszły. Brak błędów konsoli/JavaScriptu. Obejrzano zrzuty desktopu,
+telefonu i referencyjnej Listy. Tymczasową bazę i pliki testowe usunięto.
+Safari, Firefox, natywny dotyk i produkcja nie były testowane.
+
+## Przycisk Dzisiaj na osi czasu (28.10.2026)
+
+Przed przełącznikami skali dodano wspólny przycisk „Dzisiaj”. Korzysta
+z istniejącego `focusDay`, zachowuje skalę i ponownie przewija do bieżącego dnia
+także po ręcznym przesunięciu kalendarza. Jest wyłączony podczas zapisu.
+Build TypeScript, 22 testy osi oraz kontrola indeksu i diff przeszły.
+Chrome/Playwright na tymczasowej bazie: powrót do dzisiaj we wszystkich trzech
+skalach, powtórne kliknięcie, szerokości 1440/390/320px, powrót z Listy zadań
+i pusty stan; brak przepełnienia oraz błędów konsoli/JavaScriptu.
+Innych przeglądarek ani natywnego dotyku nie sprawdzano.
+
+## Oś czasu w stylistyce aplikacji (28.10.2026)
+
+Skala osi czasu jest w jednym zawijanym pasku z wyszukiwaniem i filtrami.
+Korzysta ze wspólnego `tasks-segments`, z jasnym tłem aktywnej skali.
+Paski mają pastelowe tła kategorii takie jak grupy Listy zadań, wiersze 40px,
+lżejszą siatkę oraz wspólne podświetlenie z bocznym znacznikiem. Biały tekst
+dzisiejszej daty i podpowiedzi przeciągania uwzględnia globalną kaskadę kolorów.
+Kontrolki zachowują widoczny fokus. Nie zmieniono logiki dat ani backendu.
+
+Wykonano build z TypeScript, 22/22 istniejące testy `timeline.test.mjs`
+i `timeline-interactions.test.mjs`, kontrolę indeksu oraz `git diff --check`.
+Chrome/Playwright na izolowanej bazie PostgreSQL: 6/6 scenariuszy, szerokości
+1440/1024/390/320px; porównano Listę zadań, przypięcie kolumn i przewijanie,
+trzy skale, wyszukiwanie bez wyników, pustą Przestrzeń i ponowne wejście.
+Sprawdzono modal dat, celowy błąd HTTP 503, zachowanie szkicu, ponowienie,
+zapis po odświeżeniu, Escape/fokus, przeciąganie oraz zablokowane skale podczas
+zapisu. Brak nieoczekiwanych błędów konsoli i JavaScriptu. Pomiary wysokości
+uwzględniają ułamkowe zaokrąglenia wynikające ze wspólnego `zoom: 0.98`.
+Plugin Browser był niedostępny; użyto zainstalowanego Playwright/Chrome.
+Nie sprawdzano Safari, Firefoksa, natywnego dotyku ani produkcji.
+
 ## Oś czasu bez kolumny Status (28.10.2026)
 
 Usunięto nagłówek i komórki Status z osi czasu w React oraz pierwszym

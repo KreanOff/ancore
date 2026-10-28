@@ -213,29 +213,68 @@ resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
 `spaces/TimelineView.tsx` rozszerza istniejący ekran o tabelę i wspólną siatkę
 kalendarza. Kontrolki, ikony, awatary i kolory statusów pochodzą ze wspólnych
 komponentów; lokalne reguły `work-timeline-*` są w `spaces.css`. Nagłówek
-kalendarza pozostaje widoczny przy przewijaniu pionowym, a kolumny Praca
-i Wykonawca przy poziomym. Oś nie ma osobnej kolumny Status; kategorie nadal
-określają kolory pasków, a zmiana statusu jest dostępna w szczegółach zadania. Tygodnie pokazują dni i przygaszone weekendy;
+kalendarza pozostaje widoczny przy przewijaniu pionowym, a kolumna zadań
+przy poziomym. Lista zadań tworzy jeden pływający panel z obrysem,
+cieniem `--shadow-md` i narożnikami `--radius` (8px) na początku i końcu.
+Od siatki oddziela ją 5px odstępu (na telefonie 4px). Sprinty są częścią
+tej samej powierzchni. Tła podświetlenia i separatory mieszczą się w panelu;
+wysokość wierszy i wyrównanie z paskami kalendarza pozostają bez zmian.
+Jeden ciągły pasek dat obejmuje całą szerokość tabeli,
+również nad przypiętymi zadaniami. Zachowuje poziomy miesiąca/roku i dni/okresów;
+nie ma wydzielonego pola zakresu, napisu „Praca” ani licznika. Wcześniejsze
+daty wypełniają część nad zadaniami, a daty nad kalendarzem pozostają wyrównane
+z paskami. Nagłówek przewija się poziomo razem z kalendarzem; etykieta
+miesiąca/roku utrzymuje się przy lewej krawędzi w granicach swojego okresu.
+Wspólna komórka ma nazwę „Zadania i kalendarz” dla czytników ekranu;
+statyczny pierwszy render Django ma osobne kolumny i ukrytą nazwę „Zadania”.
+Kompaktowy `TimelineItemRow` z `spaces/Item.tsx` współdzieli
+z Listą zadań priorytet, wskaźnik statusu, klucz/tytuł i awatar wykonawcy.
+Obok awatara pokazuje imię i nazwisko z `assignee.label` (lub e-mail, gdy
+profil nie ma nazwy); brak przypisania opisuje „Nie przypisano”. Wariant
+`work-backlog-assignee--named` zachowuje wspólny awatar, skraca długi tekst
+wielokropkiem i udostępnia całą nazwę w podpowiedzi.
+Nie renderuje zaznaczenia, typu, estymacji, liczników tagów/załączników,
+ikony terminu ani menu działań. Nie ma osobnej kolumny Wykonawca ani Status.
+Kategorie nadal określają kolory pasków; kliknięcie tytułu otwiera szczegóły
+zadania. Wiersze zachowują uprawnienia i bieżące sortowanie osi.
+Tygodnie pokazują dni i przygaszone weekendy;
 miesiące i kwartały rzeczywiste granice okresów. Linia i znacznik bieżącego
 dnia używają fioletowego akcentu. Pasy sprintów mają obrys, a paski zadań
-wypełnienie kategorii statusu; pojedyncza data ma przerywany obrys.
+wypełnienie `--tasks-status-background`, takie jak nagłówki grup Listy zadań,
+z delikatnym obrysem kategorii; pojedyncza data ma przerywany obrys.
+Wiersze mają 40px wysokości. Najechanie, fokus i wybrany wiersz korzystają
+z tego samego 8% tła akcentu i znacznika 3px przy lewej krawędzi co Lista zadań.
+Siatka kalendarza jest lżejsza od poziomych separatorów. Znacznik dzisiaj
+oraz dymek przeciągania ustawiają `--app-text-color`, zachowując biały tekst
+również przy globalnych regułach typografii. Kontrolki mają widoczny fokus klawiatury.
 
 Wyszukiwanie działa po zatwierdzeniu Enterem lub przyciskiem i obejmuje cały
 przefiltrowany zbiór. Zachowano menu Sortowanie/Filtrowanie. Oś wczytuje wszystkie
 dostępne wyniki bez podziału na strony. Nie ma
 dolnego paska paginacji, legendy „Dzisiaj” ani widocznej podpowiedzi przeciągania.
 Linia bieżącego dnia i pomoc dla czytników ekranu pozostają w kalendarzu.
-Nad tabelą są tylko przełączniki skali po prawej; nie ma licznika „Zaplanowane”,
-przycisku „Dopasuj”, strzałek okresu, przycisku „Dzisiaj” ani osobnej nazwy miesiąca. Zakres można
+„Dzisiaj” i trzy przełączniki skali tworzą jeden `tasks-segments` w wariancie
+`work-timeline-scales`: wspólna zaokrąglona ramka i tło, jasne fioletowe tło
+aktywnej skali i szare najechanie. Cała grupa jest wyrównana do prawej
+w pasku wyszukiwania i filtrów; przy braku miejsca przechodzi razem do
+kolejnego wiersza. Grupa ma nazwę „Nawigacja osi czasu”; tylko skale
+używają `aria-pressed`. Przycisk „Dzisiaj” przewija kalendarz do bieżącego dnia, zachowując
+wybraną skalę. Działa także po ręcznym przewinięciu osi i jest wyłączony podczas zapisu.
+Nie ma licznika „Zaplanowane”,
+przycisku „Dopasuj”, strzałek okresu ani osobnej nazwy miesiąca. Zakres można
 przewijać poziomo, a daty odczytać z nagłówków kalendarza.
 Niezaplanowany wiersz ma „Zaplanuj zadanie”; data poza oknem przycisk powrotu
-do jej okresu. Kliknięcie paska lub ikony kalendarza otwiera wspólny kompaktowy
+do jej okresu. Kliknięcie paska otwiera wspólny kompaktowy
 `Modal` z polami dat, czasem trwania, usunięciem dat i ochroną szkicu.
 Przeciąganie oraz skróty klawiatury mają alternatywę w formularzu.
 Błąd nie zmienia zapisanych dat; formularz zachowuje wpisane wartości.
 
-Do 1000px ukryta jest kolumna wykonawcy; tytuł i klucz pozostają przypięte, a daty przewijają się wewnątrz tabeli. Przyciski skali
-zawijają się w obrębie ekranu. Pełne właściwości zadania pozostają dostępne
+Kolumna zadań ma 560px, w tym 160px na wykonawcę; do 1000px zwęża się do
+430px z 130px na wykonawcę, a do 650px do 190px. Na telefonie klucz i tytuł
+zajmują pierwszy wiersz, a awatar 16px i nazwa wykonawcy drugi. Priorytet
+i status obejmują oba wiersze; wysokość całego wiersza tabeli pozostaje 40px.
+Wiersze pozostają przypięte, a daty przewijają się wewnątrz tabeli. Wspólny pasek
+„Dzisiaj” i skali mieści się w obrębie telefonu. Pełne właściwości zadania pozostają dostępne
 po otwarciu jego szczegółów. Pusty wynik korzysta ze wspólnego `EmptyState`.
 Pierwszy render Django w `spaces/timeline.html` ma statyczną tabelę dat,
 wykonawców z linkiem edycji; interaktywny kalendarz wymaga Reacta.
@@ -412,7 +451,9 @@ Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
 W otwartej Przestrzeni pasek jest pierwszą częścią obszaru zadań
 `work-content--items`, a w Liście i Backlogu przewija się razem z wynikami.
 Wspólny kontener wyrównuje menu i treść do tych samych marginesów strony,
-z odstępem 8px od nagłówka i między częściami. Tabele nie dodają drugiego
+z wewnętrznym odstępem 5px u góry i dołu oraz 8px między częściami.
+Pionowe 5px obowiązuje również w Podsumowaniu i wynikach Filtrów korzystających
+z `work-content--items`, także na telefonie. Tabele nie dodają drugiego
 wewnętrznego paddingu. Pasek nie ma osobnej ramki ani separatora;
 ramki przycisków i separator pod nagłówkiem Przestrzeni pozostają zachowane.
 Ten sam układ obejmuje Tablicę i Oś czasu oraz pierwszy render Django.
@@ -999,8 +1040,8 @@ przenoszą się pod etykiety. Długie nazwy zadań, epików i wykonawców zachow
 pełny tekst w `title`; aktywność i dłuższe listy przewijają się w panelu.
 Całe podsumowanie przewija się we wspólnym `work-content`.
 Korzysta z tego samego wariantu `work-content--items` co lista zadań:
-8px nad paskiem filtrów, wspólny odstęp boczny `--work-space-inline-padding`
-i 20px na dole. Pomiędzy paskiem a pierwszym rzędem gadżetów jest 8px,
+5px nad paskiem filtrów i na dole oraz wspólny odstęp boczny
+`--work-space-inline-padding`. Pomiędzy paskiem a pierwszym rzędem gadżetów jest 8px,
 tak jak pomiędzy paskiem a listą zadań.
 
 Pasek Podsumowania zawiera to samo menu „Filtrowanie” co w zadaniach

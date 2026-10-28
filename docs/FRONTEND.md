@@ -774,5 +774,29 @@ Odpowiedź 200: `saved`, `changed`, `start_on`, `end_on`, `due_at`, `due_urgency
 i `error`. Po zapisie React aktualizuje wiersz bez przestawiania przewiniętej
 listy; ponowne wejście stosuje aktualne sortowanie. Stan oczekiwania chroni
 przed równoległym wysłaniem, a błąd pozostawia poprzednie daty i szkic formularza.
-Oś nie renderuje kolumny Status ani akcji zmiany statusu; dane kategorii
-pozostają używane do kolorowania pasków i filtrowania.
+Przypięta kolumna zadań renderuje kompaktowy `TimelineItemRow` z `Item.tsx`.
+Jej pływającą powierzchnię tworzą pseudoelementy komórek `work-timeline-heading`:
+wspólny obrys, cień przycięty między wierszami i zaokrąglenia pierwszej/ostatniej
+komórki `tbody`, także przy sprintach i pojedynczym wyniku. Przezroczyste komórki
+zachowują `sticky` i oryginalną geometrię; tło najechania/fokusu należy do
+powierzchni panelu. Nie ma drugiej listy, scrolla ani dodatkowych listenerów.
+Nagłówek tabeli ma jedną komórkę obejmującą obie kolumny, z nazwą
+„Zadania i kalendarz” dla czytników ekranu. `TimelineCalendarHeader`
+mierzy szerokość przypiętych danych przez `ResizeObserver` i przekazuje ją
+do `timelineHeaders(window, leadingWidth)`. Wcześniejsze daty wypełniają
+lewą część paska, zachowując jednostki oryginalnego okna i współrzędne
+względem początku kalendarza. CSS dodaje szerokość danych do etykiet
+i znacznika dzisiaj; nagłówek przewija się razem z tabelą bez listenera
+przewijania ani renderowania zadań. Obserwator jest usuwany przy wyjściu.
+Wspólny z `ItemRow` komponent `ItemIdentity` zachowuje priorytet, status oraz
+klucz/tytuł; `Planning` bez estymacji i z `showAssigneeName` pokazuje awatar
+oraz pełną nazwę wykonawcy z `assignee.label` lub „Nie przypisano”. Pozostałe
+widoki zachowują domyślny wariant samego awatara. Kompaktowy
+wiersz nie renderuje zaznaczenia, typu, liczników, ikony terminu ani menu.
+Nie wymaga stanu zaznaczeń ani akcji z `DetailPage`. Kliknięcie paska lub
+„Zaplanuj zadanie” nadal otwiera okno dat z dotychczasową blokadą zapisu.
+Nie ma oddzielnej kolumny Wykonawca ani Status. Kategorie nadal kolorują paski
+i służą filtrowaniu.
+„Dzisiaj” i trzy skale są bezpośrednimi przyciskami jednej grupy
+`tasks-segments` o nazwie „Nawigacja osi czasu”. Tylko skale mają `aria-pressed`;
+wspólny kontener zachowuje istniejące callbacki i blokadę podczas zapisu.

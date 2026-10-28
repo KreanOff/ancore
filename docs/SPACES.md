@@ -369,12 +369,25 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności,
   wyświetlana w tej samej zwijanej sekcji Zadań.
 
-- Oś czasu: przypięta tabela pracy i wykonawców obok wspólnego
-  kalendarza. Pokazuje także zadania bez dat (akcja „Zaplanuj zadanie”), zachowuje
+- Oś czasu: przypięte kompaktowe wiersze obok wspólnego kalendarza.
+  Lista tworzy pływający panel z zaokrąglonymi rogami, obrysem i delikatnym
+  cieniem. Zachowuje wspólne przewijanie pionowe i wyrównanie z paskami zadań.
+  Współdzielą z Listą zadań priorytet, status, klucz/tytuł i awatar wykonawcy.
+  Obok awatara jest imię i nazwisko; bez wykonawcy — „Nie przypisano”.
+  Na telefonie awatar i nazwa wykonawcy są pod tytułem zadania.
+  Nagłówek jest jednym ciągłym paskiem dat na całej szerokości tabeli,
+  także nad zadaniami, bez osobnego pola zakresu. Daty nad kalendarzem
+  pozostają wyrównane z paskami przy przewijaniu i zmianie skali.
+  Nie pokazują zaznaczenia, typu, estymacji, liczników tagów/załączników,
+  ikony terminu ani menu działań. Daty edytuje się po kliknięciu paska.
+  Pokazuje także zadania bez dat (akcja „Zaplanuj zadanie”), zachowuje
   filtry i wyszukiwanie. Wczytuje wszystkie dostępne wyniki bez paginacji;
   stary parametr `page` jest ignorowany. Skale tygodni, miesięcy i kwartałów
-  zmieniają szczegółowość kalendarza. Nad tabelą nie ma licznika „Zaplanowane”,
-  przycisku „Dopasuj”, strzałek okresu, przycisku „Dzisiaj” ani osobnej nazwy
+  zmieniają szczegółowość kalendarza. „Dzisiaj” i trzy skale mają jedną wspólną
+  zaokrągloną ramkę; grupa przechodzi w całości do kolejnego wiersza na telefonie.
+  Przycisk „Dzisiaj” przewija
+  kalendarz do bieżącego dnia bez zmiany skali. Nad tabelą nie ma licznika „Zaplanowane”,
+  przycisku „Dopasuj”, strzałek okresu ani osobnej nazwy
   miesiąca. Scrum pokazuje dodatkowo pasy otwartych sprintów z obiema datami.
   Paski zadań można przesuwać i rozciągać; formularz pozwala ustawić pojedynczą
   datę, obie daty lub usunąć plan. Przesunięcie zachowuje brakującą datę;
