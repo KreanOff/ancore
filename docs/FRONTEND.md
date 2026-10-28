@@ -70,10 +70,25 @@ Domyślnie wczytuje 20 zadań na status. Parametry `list_limit_<klucz statusu>`
 określają liczbę pozycji danej grupy; serwer ogranicza je do liczby dostępnych
 wyników. `spaces/list_window.py` stosuje `ROW_NUMBER()` po statusie już po
 widoczności, filtrowaniu i sortowaniu. Stary parametr `page` jest ignorowany
-na tej liście. Backlog, tablica, oś czasu i inni odbiorcy paginacji zachowują
-dotychczasowy kontrakt.
+na tej liście. Oś czasu i inni odbiorcy paginacji zachowują dotychczasowy kontrakt.
 
-`DetailPage` pobiera rozszerzony obraz listy z `more_url` przez istniejący
+Backlog (`view=backlog`) również zwraca `pagination: null`. Wczytuje po 20
+otwartych zadań osobno dla kolejki bez sprintu i każdego otwartego sprintu.
+`spaces/backlog_window.py` stosuje okno SQL po `sprint_id` po ograniczeniu
+widoczności, filtrów i kolejności. Parametry `backlog_limit_backlog` oraz
+`backlog_limit_sprint_<id>` rozszerzają wyłącznie wskazaną grupę, ignorując `page`.
+API zwraca `backlog_loaded_count` i `backlog_more_url`, a sprinty mają
+`loaded_count` i `more_url`. Pełny licznik sprintu w kolejce planowania to
+`visible_count - finished_count`; ukończone zadania pozostają w podsumowaniu
+postępu. Planowanie zbiorcze i zmiana kolejności walidują ten sam wczytany
+zakres. Limit pojedynczej operacji zbiorczej nadal wynosi 100 zadań.
+
+Tablica (`view=board`) również zwraca `pagination: null` i ignoruje `page`,
+ale wczytuje od razu wszystkie dostępne, przefiltrowane zadania tablicy.
+React i pierwszy render Django nie pokazują dolnego paska stron.
+Przeciąganie i menu kolejności używają tego samego pełnego zakresu tablicy.
+
+`DetailPage` pobiera rozszerzony obraz listy lub backlogu z `more_url` przez istniejący
 `pageRequest`, bez ponownego montowania grup/wierszy. Jednoczesne odczyty
 i zapisy są blokowane, a odejście ze strony anuluje żądanie. Dopiero sukces
 aktualizuje URL, liczniki i dane; błąd pozwala powtórzyć ten sam odczyt.

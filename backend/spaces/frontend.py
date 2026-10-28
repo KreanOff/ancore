@@ -70,6 +70,7 @@ def sprint_payload(sprint):
         **{key: getattr(sprint, key, '') for key in ('action_url', 'edit_url', 'start_url', 'complete_url', 'create_item_url')},
         'planning': getattr(sprint, 'planning', {}),
         'visible_count': getattr(sprint, 'visible_count', 0), 'finished_count': getattr(sprint, 'finished_count', 0),
+        **({'loaded_count': sprint.loaded_count, 'more_url': sprint.more_url} if hasattr(sprint, 'loaded_count') else {}),
     }
 
 
@@ -90,6 +91,7 @@ def detail_page(request, context):
         'sprints': [sprint_payload(sprint) for sprint in context.get('sprints', [])],
         'active_sprint': sprint_payload(context['active_sprint']) if context.get('active_sprint') else None,
         'backlog_totals': context.get('backlog_totals'), 'timeline': context.get('timeline'),
+        'backlog_loaded_count': context.get('backlog_loaded_count', 0), 'backlog_more_url': context.get('backlog_more_url', ''),
         'pagination': pagination_payload(request, context.get('page')),
         'filters': {key: request.GET.get(key, '') for key in ('q', 'work_type', 'assignee', 'team', 'status', 'priority', 'summary')},
         'summary_filter_label': context.get('summary_filter_label', ''),

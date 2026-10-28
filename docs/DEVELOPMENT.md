@@ -1,9 +1,78 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Doładowywanie backlogu i sprintów (28.10.2026)
+
+Backlog oraz każdy otwarty sprint wczytują niezależnie po 20 zadań i używają
+tego samego paska „Pokaż więcej” co Lista zadań. Nagłówki pokazują pełne
+liczniki po filtrach; brak dolnego paska numerów stron. SQL ogranicza grupy
+po ACL, filtrowaniu i sortowaniu. Planowanie zbiorcze, przeciąganie i menu
+kolejności używają tego samego wczytanego zakresu, także powyżej 100 pozycji;
+jedna operacja zbiorcza nadal obejmuje najwyżej 100 zadań.
+[Kontrakt API](FRONTEND.md#doładowywanie-listy-zadań-przestrzeni),
+[UI](UI.md#dolny-pasek-stron-przestrzeni), [planowanie](SPACES.md#planowanie-w-backlogu).
+
+Sprawdzono 105 różnych testów PostgreSQL na izolowanych bazach przez
+`scripts/run_tests.py`: `spaces.test_backlog_window`, `spaces.test_backlog_planning`,
+`spaces.test_backlog_drag`, `spaces.test_item_query`, `spaces.test_list_window`,
+`spaces.test_write_access`, `spaces.test_urls` i `core.test_frontend`.
+W końcowym przebiegu przeszły 93 testy; 12 niezmienionych testów listy przeszło
+we wcześniejszym przebiegu. Ich ponowne równoległe wykonanie przerwano z powodu
+wolnych zapytań ACL; nie zgłoszono błędu ani blokady bazy. Runner zakończył się
+wynikiem `Ran 93 tests — OK`, a bazy testowe i procesy zostały posprzątane.
+Wcześniejszą asercję cofniętego dostępu poprawiono, aby uwzględniała kanoniczne
+przekierowanie przed 404; ponowny test przeszedł.
+Przeszły 193 testy frontendu, build TypeScript, Django check oraz kontrola
+indeksu i diff. Testy callbacków obejmują niezależność grup, zachowanie
+zaznaczeń i URL, błędy/ponowienie oraz reset zakresu przez filtry i sortowanie.
+
+Playwright z lokalnym Chrome i osobną bazą PostgreSQL potwierdził
+20→40→125, sprint 20→25, pełne liczniki, niezależność grup, zachowanie
+zaznaczenia, zwinięcia, fokusu i przewijania, odświeżenie rozszerzonego URL,
+reset filtrów/sortowania, błąd HTTP 503 i ponowienie, stan pusty oraz sprint
+z wyłącznie ukończonymi zadaniami. Wykonano zmianę kolejności i przeniesienie
+zbiorcze zadania ponad dawną granicą 100, sprawdzono Scrum/Kanban,
+zwykły/scoped adres, ponowne wejście oraz referencyjną Listę zadań.
+Przy 1440×1000, 1024×900, 390×844 i 320×844 kontrolka mieści się w ekranie;
+jej typografia, tło i wysokość odpowiadają wzorcowi listy. Pierwszy render
+bez JavaScriptu zachowuje niezależne linki doładowania (60→80 wierszy).
+Nie było błędów wykonania JavaScriptu; jedyny błąd HTTP 503 zasymulowano celowo.
+Łącznie przeszło 16 scenariuszy przeglądarki; po korekcie opisu sprintu
+powtórzono pierwszy render w świeżym procesie. Serwer QA zatrzymano,
+tymczasową bazę, storage i dane sesji usunięto. Plugin Browser był niedostępny,
+użyto zainstalowanego Playwright/Chrome. Nie testowano Safari, Firefoksa ani
+wdrożenia produkcyjnego. Modele i migracje pozostały bez zmian.
+
+## Tablica bez dolnego paska stron (28.10.2026)
+
+Tablica Przestrzeni w React i pierwszym renderze Django nie pokazuje zakresu
+wyników ani paginacji. Odczyt oraz zmiana kolejności obejmują wszystkie
+dostępne zadania po filtrach, także ponad dawny limit 100; `page` jest ignorowany.
+Backlog doładowuje grupy przez „Pokaż więcej” (opis poniżej i w aktualnym
+kontrakcie API); oś czasu zachowuje paginację.
+
+Przeszły 72 testy PostgreSQL na izolowanych bazach przez `scripts/run_tests.py`:
+`spaces.test_board_order`, `spaces.test_list_window`, `spaces.test_item_query`,
+`spaces.test_backlog_drag` i `core.test_frontend`. Obejmują 163 zadania,
+Scrum/Kanban, zwykłe/scoped adresy, prywatnych rodziców, filtry, sortowanie,
+przestawianie ponad dawną granicą strony oraz zachowane stronicowanie innych
+widoków. Przeszły też 182 testy frontendu, build z TypeScriptem i Django check.
+
+Playwright/Chrome na jednorazowej bazie QA potwierdził brak paska przy
+1440×1000, 390×844 i 320×844, powrót z referencyjnego Backlogu,
+125 kart przy starym `page=2`, sortowanie, odświeżenie, zmianę kolejności,
+pusty wynik, błąd zapisu i udane ponowienie. Sprawdzono również pierwszy
+render bez JavaScriptu. Nie było błędów wykonania aplikacji; jedyny błąd
+HTTP 503 był celowo zasymulowany. Plugin Browser był niedostępny.
+Nie sprawdzano Safari/Firefox ani wydajności tablic z tysiącami kart;
+pełny odczyt zwiększa rozmiar odpowiedzi i DOM wraz z liczbą zadań.
+Indeks i kontrola diff przeszły. Modele i migracje pozostały bez zmian.
+
 ## Doładowywanie listy zadań (28.10.2026)
 
 Lista Przestrzeni wczytuje po 20 zadań na status, z pełnymi licznikami
-i paskiem „Pokaż więcej”. Pozostałe widoki zachowują paginację.
+i paskiem „Pokaż więcej”. Backlog korzysta z tego samego mechanizmu
+osobno dla sprintów i kolejki; oś czasu zachowuje paginację;
+tablica pokazuje wszystkie pasujące zadania bez dolnego paska stron.
 [Kontrakt API](FRONTEND.md#doładowywanie-listy-zadań-przestrzeni),
 [wygląd i stany](UI.md#dolny-pasek-stron-przestrzeni).
 

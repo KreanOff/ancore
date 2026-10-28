@@ -224,16 +224,18 @@ Backlog Scrum pokazuje aktywny sprint jako pierwszy, następnie sprinty planowan
 i kolejkę bez sprintu. Wiersze mają estymację (zero jest wartością, „—” oznacza
 brak estymacji) oraz wykonawcę. Nagłówki pokazują punkty, brakujące estymacje
 i postęp ukończenia. Agregacje obejmują wszystkie dostępne zadania po filtrach,
-również poza stroną; licznik wierszy dotyczy bieżącej strony, a różnica jest
-opisana jako „Na stronie”. Zakończone zadania nie należą do kolejki planowania.
+również jeszcze niewczytane; licznik nagłówka pokazuje wszystkie nieukończone
+zadania. Backlog i każdy sprint wczytują niezależnie po 20 pozycji. Pasek
+„Pokaż więcej” rozszerza wybraną grupę o kolejne 20 i pokazuje wczytaną oraz
+pełną liczbę zadań. Zakończone zadania nie należą do kolejki planowania.
 
-Checkboxy wierszy zaznaczają wyłącznie zadania bieżącej strony,
+Checkboxy wierszy zaznaczają wyłącznie wczytane zadania,
 do których użytkownik ma prawo edycji. Nie ma górnego checkboxu ani nagłówka
 „Planowanie sprintów”; pasek operacji pojawia się po zaznaczeniu zadania
 i znika po odznaczeniu ostatniego. „Przenieś zaznaczone” przenosi od 1 do
 100 zadań do otwartego sprintu lub backlogu, w dotychczasowej kolejności,
 na koniec grupy docelowej. Kanban pozwala przenieść zaznaczenie na tablicę.
-`backlog/plan/` sprawdza pełne zaznaczenie, filtry, stronę, ACL i zapamiętane
+`backlog/plan/` sprawdza pełne zaznaczenie, filtry, wczytany zakres, ACL i zapamiętane
 położenia przed zapisem. Konflikt lub brak prawa do jednego zadania wycofuje
 całą operację. Pozostałe zadania zachowują kolejność; statusy i daty zakończenia
 nie zmieniają się, a historia wskazuje faktycznego autora.
@@ -297,14 +299,18 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   data rozpoczęcia i termin. Ręczne przestawianie i przeciąganie wymagają
   rosnącej kolejności ręcznej; zmiana statusu oraz planowanie zbiorcze
   pozostają dostępne przy innym sortowaniu. Walidacja planowania zbiorczego
-  korzysta z tej samej posortowanej, widocznej strony co odczyt.
+  korzysta z tego samego posortowanego, wczytanego zakresu co odczyt.
   Lista zadań ładuje po 20 wyników na status, a „Pokaż więcej (20 / 21)”
   zwiększa zakres wybranej grupy o kolejne 20. Nagłówki pokazują pełne liczby
   dostępnych zadań po filtrach. Limity grup zapisane w URL zachowują się po
   odświeżeniu oraz zapisie zadania; filtry i sortowanie resetują zakres.
   `spaces/list_window.py` ogranicza wyniki w SQL po ustaleniu widoczności,
-  filtrów i kolejności. Backlog, tablica i oś czasu mają wspólny dolny pasek z zakresem
-  wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
+  filtrów i kolejności. Tablica wczytuje wszystkie dostępne zadania pasujące
+  do filtrów i nie ma dolnego paska stron; stary parametr `page` jest ignorowany.
+  Backlog korzysta z tego samego paska „Pokaż więcej”, osobno dla każdego
+  sprintu i kolejki bez sprintu (`spaces/backlog_window.py`). Zachowuje limity
+  grup w URL, zaznaczenia i zwinięcia sekcji; ignoruje stary `page`.
+  Oś czasu ma dolny pasek z zakresem wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
   treścią, zachowuje filtry i działa również dla jednej strony/pustego wyniku.
   Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
   podsumowanie, raporty i ustawienia nie pokazują stron wyników.
@@ -379,9 +385,9 @@ filtry. URL akcji oraz powrót zachowują wyszukiwanie i filtry listy. Odczyt li
 i zmiana kolejności korzystają z tych samych funkcji filtrujących.
 
 Przeciąganie (`backend/spaces/backlog.py`, akcja `plan` w `item_action`) waliduje
-zadanie i oba sąsiednie wiersze w zakresie filtrów oraz bieżącej strony
-100 wyników. Cel należy do tej samej przestrzeni; zakończone sprinty,
-zamknięte zadania, elementy na tablicy Kanbana i rekordy poza widoczną stroną
+zadanie i oba sąsiednie wiersze w zakresie filtrów oraz wczytanych partii
+backlogu i sprintów. Cel należy do tej samej przestrzeni; zakończone sprinty,
+zamknięte zadania, elementy na tablicy Kanbana i rekordy poza wczytanym zakresem
 są odrzucane. Akcja planowania w backlogu Kanbana nie przyjmuje sprintów ani kart z tablicy.
 Serwer porównuje również przestrzeń, sprint źródłowy i zapamiętaną kolejność
 zadania; stare położenie wymaga odświeżenia listy. Blokady właściciela,
@@ -391,18 +397,18 @@ lub daty zakończenia zadania; historia zapisuje rzeczywistego autora.
 Nowa pozycja korzysta z wolnego numeru pomiędzy sąsiadami. Gdy brak miejsca
 między całkowitymi numerami, rotuje dostępne numery bieżącej grupy, sprawdzając
 prawo edycji każdego zmienianego rekordu. Zadania ukryte, pominięte filtrami
-lub poza stroną zachowują swoje numery. Zapis jest atomowy i wymaga CSRF.
+lub poza wczytanym zakresem zachowują swoje numery. Zapis jest atomowy i wymaga CSRF.
 
 Tablica (`backend/spaces/board.py`, akcja `position` w `item_action`) korzysta z tych
 samych numerów `WorkItem.rank` i funkcji wyznaczania wolnego miejsca.
 Obsługuje kolejność w statusie i wstawienie między sąsiadami innego statusu;
 menu „Przesuń wyżej/niżej” działa w bieżącej kolumnie. Źródło i sąsiedzi muszą
-należeć do aktualnej widocznej, przefiltrowanej strony 100 wyników. Scrum
+należeć do aktualnej widocznej, przefiltrowanej tablicy, bez limitu 100 wyników. Scrum
 ogranicza operację do aktywnego sprintu, a pozostałe tablice do zadań poza
 backlogiem. Porównanie przestrzeni, źródłowego statusu, sprintu, numeru
 kolejności oraz numerów obu sąsiadów odrzuca nieaktualne położenie.
 Zapis zachowuje Workspace, ACL, CSRF i blokady jak planowanie; ukryte,
-wykluczone i pozostałe strony nie są przestawiane. Czytelny sąsiad bez prawa
+wykluczone zadania nie są przestawiane. Czytelny sąsiad bez prawa
 edycji może wskazać miejsce, ale jego numer nie może zostać zmieniony.
 Zmiana statusu przechodzi przez `set_status`, z zachowaniem sygnałów zadania,
 dat zakończenia i historii rzeczywistego autora; cała operacja jest atomowa.

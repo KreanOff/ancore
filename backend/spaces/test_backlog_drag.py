@@ -186,12 +186,30 @@ class BacklogDragTests(TestCase):
         url = scoped_workplace_app_path(self.workspace, 'spaces', f'items/{self.first.pk}/action/')
         self.assertEqual(client.post(url, {'action': 'plan'}).status_code, 403)
 
-    def test_source_outside_the_displayed_page_is_rejected(self):
+    def test_source_and_anchor_outside_loaded_group_are_rejected_until_expanded(self):
         for number in range(98):
             SpaceTask.objects.create(created_by=self.owner, space=self.section, title=f'Extra {number}')
         outside = WorkItem.objects.filter(space=self.space).order_by('rank', 'pk').last()
         self.assertEqual(self.move(outside, before=self.first, query='?page=1').status_code, 400)
         self.assertEqual(self.move(self.first, before=outside, query='?page=1').status_code, 400)
+        self.assertEqual(self.move(outside, before=self.first, query='?page=2&backlog_limit_backlog=101').status_code, 200)
+        self.assertEqual(self.order()[0], outside.pk)
+
+    def test_up_down_respect_loaded_group_boundary(self):
+        for number in range(19):
+            SpaceTask.objects.create(created_by=self.owner, space=self.section, title=f'Extra {number}')
+        rows = list(WorkItem.objects.filter(space=self.space).order_by('rank', 'pk'))
+        item, unloaded = rows[19:21]
+        old_rank = item.rank
+        url = scoped_workplace_app_path(self.workspace, 'spaces', f'items/{item.pk}/action/')
+        response = self.client.post(url + '?view=backlog', {'action': 'down', 'return_view': 'backlog'}, HTTP_X_WORK_ACTION='true')
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.rank, old_rank)
+        response = self.client.post(url + '?view=backlog&backlog_limit_backlog=40', {'action': 'down', 'return_view': 'backlog'}, HTTP_X_WORK_ACTION='true')
+        self.assertEqual(response.status_code, 200)
+        item.refresh_from_db()
+        self.assertEqual(item.rank, unloaded.rank)
 
     def test_kanban_supports_reorder_but_rejects_sprints_and_board_items(self):
         self.space.template = 'kanban'

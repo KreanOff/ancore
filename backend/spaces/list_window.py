@@ -9,7 +9,11 @@ LIST_BATCH_SIZE = 20
 
 
 def status_limit(request, key, total):
-    value = request.GET.get(f'list_limit_{key}', '')
+    return group_limit(request, f'list_limit_{key}', total)
+
+
+def group_limit(request, parameter, total):
+    value = request.GET.get(parameter, '')
     if not value.isascii() or not value.isdecimal():
         return min(LIST_BATCH_SIZE, total)
     # Clamp before converting arbitrary input to int; every existing row remains

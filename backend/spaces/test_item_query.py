@@ -88,20 +88,23 @@ class ItemQueryTests(TestCase):
         item.refresh_from_db()
         self.assertEqual(item.rank, self.tasks[0].work_item.rank)
 
-    def test_sorted_pagination_and_bulk_planning_use_the_same_visible_page(self):
+    def test_sorted_loading_and_bulk_planning_use_the_same_loaded_group(self):
         for index in range(100):
             SpaceTask.objects.create(space=self.space, created_by=self.owner, title=f'Zadanie {index:03}')
         last = SpaceTask.objects.create(space=self.space, created_by=self.owner, title='AAA pierwsze po sortowaniu').work_item
         params = {'view': 'backlog', 'sort': 'title_asc'}
         first = self.client.get(self.url(), params)
-        second = self.client.get(self.url(), {**params, 'page': 2})
+        expanded = self.client.get(first.context['backlog_more_url'])
         self.assertEqual(first.context['items'][0].pk, last.pk)
-        self.assertEqual(first.context['page'].paginator.count, 106)
+        self.assertIsNone(first.context['page'])
+        self.assertEqual(first.context['backlog_totals']['total'], 106)
+        self.assertEqual(len(first.context['items']), 20)
         first_ids = {row.pk for row in first.context['items']}
-        second_ids = {row.pk for row in second.context['items']}
-        self.assertFalse(first_ids & second_ids)
+        expanded_ids = {row.pk for row in expanded.context['items']}
+        self.assertTrue(first_ids < expanded_ids)
+        self.assertEqual(len(expanded_ids), 40)
         numbered = self.client.get(self.url(), {'view': 'backlog', 'sort': 'number_desc'})
-        self.assertEqual([row.number for row in numbered.context['items']], list(range(last.number, last.number - 100, -1)))
+        self.assertEqual([row.number for row in numbered.context['items']], list(range(last.number, last.number - 20, -1)))
         sprint = Sprint.objects.create(space=self.space, name='Plan', start_on=date(2026, 10, 1), end_on=date(2026, 10, 14))
         response = self.client.post(first.context['bulk_plan_url'], {
             'item_ids': [str(last.pk)], 'destination': str(sprint.pk),
@@ -110,7 +113,7 @@ class ItemQueryTests(TestCase):
         self.assertEqual(response.status_code, 200)
         last.refresh_from_db()
         self.assertEqual(last.sprint_id, sprint.pk)
-        outside = second.context['items'][0]
+        outside = expanded.context['items'][-1]
         response = self.client.post(first.context['bulk_plan_url'], {
             'item_ids': [str(outside.pk)], 'destination': str(sprint.pk),
             'positions': json.dumps({str(outside.pk): [outside.sprint_id, outside.rank]}),

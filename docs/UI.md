@@ -173,9 +173,14 @@ jako zwykłe linki.
 Wariant `work-pagination` rozszerza wspólne klasy `tasks-project-pagination`
 w `spaces.css`. Na wąskim ekranie zakres i przyciski mogą przejść do dwóch
 wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami,
-backlog, tablica, oś czasu, Zespoły oraz katalog/wyniki Filtrów.
+oś czasu, Zespoły oraz katalog/wyniki Filtrów.
 Podsumowanie, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
 Tagi przestrzeni zachowują osobny mechanizm `directory_pagination_toolbar.html`.
+
+Tablica Przestrzeni nie pokazuje dolnego paska z zakresem i numerami stron,
+również w pierwszym renderze Django. Wczytuje wszystkie dostępne zadania
+pasujące do filtrów, bez podziału po 100 wyników; karty przewijają się
+w dotychczasowych kolumnach. Nagłówki statusów zachowują liczniki.
 
 Lista zadań otwartej Przestrzeni ładuje osobno po 20 pozycji w każdym statusie.
 Nagłówek grupy pokazuje pełną liczbę dostępnych wyników po filtrowaniu.
@@ -192,6 +197,16 @@ React zachowuje pozycję przewijania, zaznaczenia nadal dostępnych zadań
 i zwinięcia grup podczas doładowania. Zmiana filtrów/sortowania zaczyna od
 20 pozycji. Lista nie ma dolnego paska numerów stron. Pierwszy render
 `spaces/task_list.html` zachowuje wygląd i zwykłe linki do rozszerzonej listy.
+
+Backlog korzysta z tego samego paska `work-list-more`, wspólnej obsługi
+Reacta i szablonu `spaces/load_more.html`. Każdy otwarty sprint i sekcja
+Backlog wczytują niezależnie po 20 pozycji; ich nagłówki pokazują pełną liczbę
+nieukończonych zadań po filtrach. Pasek jest pod wierszami i akcją tworzenia,
+poza poziomym przewijaniem wierszy, także na telefonie. Doładowanie zachowuje
+zaznaczenia, zwinięcia sekcji i pozycję przewijania; filtry i sortowanie
+resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
+„Na stronie”. Sprint zawierający wyłącznie ukończone zadania pokazuje
+„Wszystkie zadania w tym sprincie są ukończone.”.
 
 ## Wspólny wzorzec pustej strony
 
@@ -520,7 +535,7 @@ Backlog i otwarte sprinty używają `spaces/backlog.html` oraz tej samej powłok
 i nagłówka `tasks/includes/issue_group_header.html` co Lista zadań.
 Treść ma wariant `work-content--tasks`, bez dodatkowego paddingu paneli;
 wiersze dochodzą do krawędzi sekcji. Nagłówki mają standardową wysokość 40px,
-przycisk zwijania i licznik zadań bieżącej strony po filtrach.
+przycisk zwijania i pełny licznik nieukończonych zadań po filtrach.
 Sprint planowany korzysta z koloru kategorii `new`, a aktywny z jasnego zielonego
 tła (`#e8eee4`, jak w kategorii `resolved`), zachowując ikonę zegara `in_progress`.
 Lokalna reguła `work-sprint` obejmuje React i pierwszy render Django; nie zmienia
@@ -546,6 +561,8 @@ z „Aktywnym sprintem”. Dotyczy to Kanbana, Scrum, Zarządzania zadaniami,
 Marketingu, Rekrutacji i Obsługi zgłoszeń. Kolumny rozszerzają
 `tasks-issue-group tasks-status-block` z Listy zadań. Mają te same kolory
 kategorii, wysokość nagłówka 40px, ikony statusów, liczniki i przyciski zwijania.
+Szerokość kolumny dodaje 10px do wspólnego `--tasks-kanban-column-width`:
+zakres wynosi 240–310px, z dotychczasową responsywnością i przewijaniem poziomym.
 Karta `tasks-issue-row work-issue-row work-sprint-card` zawiera priorytet,
 status, klucz i zawijany tytuł w pierwszym wierszu, menu działań po prawej
 oraz metadane poniżej: typ, wykonawcę, tagi, załączniki i oznaczenie terminu.
@@ -555,7 +572,7 @@ Opcjonalny zespół pozostaje opisem. Każdy kafelek ma białą powierzchnię, p
 a odstęp nagłówka od listy `0.65rem`. Karty mają `flex: 0 0 auto`, dzięki
 czemu długa lista przewija się bez ściskania metadanych. Pusty stan ma własną
 ramkę, a cała wysokość kolumny przyjmuje upuszczenie. Powłoka ogranicza tablicę
-do miejsca między paskiem sortowania/filtrowania a dolną paginacją. Widok
+do dostępnego miejsca pod paskiem sortowania/filtrowania. Widok
 „Aktywny sprint” nie pokazuje dodatkowego wiersza z nazwą, datami i celem sprintu;
 te informacje pozostają w Backlogu. Przy braku aktywnego sprintu nadal pokazuje
 komunikat z linkiem do Backlogu. Na wąskim ekranie kolumny przewijają się poziomo.

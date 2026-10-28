@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 53 | 3 | 40 | 307 |
+| [backend/spaces](../backend/spaces) | 55 | 3 | 41 | 320 |
 
 ## 2. Modele i relacje
 
@@ -1004,6 +1004,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/apps.py](../backend/spaces/apps.py) — `SpacesConfig`
 - [backend/spaces/avatars.py](../backend/spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`, `save_space_avatar`
 - [backend/spaces/backlog.py](../backend/spaces/backlog.py) — `append_planned_items`, `bulk_plan_items`, `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
+- [backend/spaces/backlog_window.py](../backend/spaces/backlog_window.py) — `limit_parameter`, `backlog_window`, `backlog_more_url`
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
 - [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `issue_type_icon`, `template_settings`
@@ -1011,7 +1012,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
-- [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `list_window`, `more_url`, `list_url`
+- [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `group_limit`, `list_window`, `more_url`, `list_url`
 - [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
@@ -1229,6 +1230,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/item_list.html](../backend/spaces/templates/spaces/item_list.html)
 - [backend/spaces/templates/spaces/item_planning.html](../backend/spaces/templates/spaces/item_planning.html)
 - [backend/spaces/templates/spaces/item_toolbar.html](../backend/spaces/templates/spaces/item_toolbar.html)
+- [backend/spaces/templates/spaces/load_more.html](../backend/spaces/templates/spaces/load_more.html)
 - [backend/spaces/templates/spaces/pagination.html](../backend/spaces/templates/spaces/pagination.html)
 - [backend/spaces/templates/spaces/row.html](../backend/spaces/templates/spaces/row.html)
 - [backend/spaces/templates/spaces/search_results.html](../backend/spaces/templates/spaces/search_results.html)
@@ -2098,7 +2100,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_backlog_drag.py](../backend/spaces/test_backlog_drag.py).
 
-- `BacklogDragTests`: 18 metod testowych.
+- `BacklogDragTests`: 19 metod testowych.
 
 ### backend/spaces/test_backlog_ordering.py
 
@@ -2110,7 +2112,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_backlog_planning.py](../backend/spaces/test_backlog_planning.py).
 
-- `BacklogPlanningTests`: 22 metod testowych.
+- `BacklogPlanningTests`: 23 metod testowych.
+
+### backend/spaces/test_backlog_window.py
+
+Źródło: [backend/spaces/test_backlog_window.py](../backend/spaces/test_backlog_window.py).
+
+- `BacklogWindowTests`: 9 metod testowych.
 
 ### backend/spaces/test_board_order.py
 
@@ -2152,7 +2160,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_list_window.py](../backend/spaces/test_list_window.py).
 
-- `ListWindowTests`: 10 metod testowych.
+- `ListWindowTests`: 12 metod testowych.
 
 ### backend/spaces/test_management.py
 

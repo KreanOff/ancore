@@ -213,12 +213,18 @@ class BoardOrderTests(TestCase):
         target = self.create_item('Other status', status='resolved')
         self.assertEqual(self.move(self.first, before=target).status_code, 400)
 
-    def test_off_page_sources_and_anchors_are_rejected(self):
+    def test_sources_and_anchors_beyond_one_hundred_remain_reorderable(self):
         for number in range(98):
             self.create_item(f'Extra {number}')
-        outside = WorkItem.objects.filter(space=self.space).order_by('rank', 'pk').last()
-        self.assertEqual(self.move(outside, before=self.first, query='?page=1').status_code, 400)
-        self.assertEqual(self.move(self.first, after=outside, query='?page=1').status_code, 400)
+        original = self.order()
+        outside = WorkItem.objects.get(pk=original[-1])
+        previous = WorkItem.objects.get(pk=original[-2])
+        self.assertEqual(self.move(outside, before=self.first, query='?page=1').status_code, 200)
+        self.assertEqual(self.order(), [outside.pk, *original[:-1]])
+        self.assertEqual(self.move(outside, after=previous, query='?page=2').status_code, 200)
+        self.assertEqual(self.order(), original)
+        self.assertEqual(self.move(self.first, after=outside, query='?page=2').status_code, 200)
+        self.assertEqual(self.order(), [*original[1:], self.first.pk])
 
     def test_kanban_reorders_and_never_moves_backlog_items(self):
         self.space.template = 'kanban'

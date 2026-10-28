@@ -43,7 +43,9 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       listScroll.current = null;
     }
   }, [data]);
-  async function loadMore(column: Status) {
+  async function loadMore(
+    column: Pick<Status, 'key' | 'label' | 'count' | 'loaded_count' | 'more_url'>,
+  ) {
     if (pending.current || !column.more_url) return;
     pending.current = true;
     setBusy(true);
@@ -58,7 +60,11 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       );
       if (life.current.signal.aborted) return;
       const next = page.data as DetailData;
-      if (page.type !== 'space-detail' || next.view !== 'list' || next.space.id !== data.space.id)
+      if (
+        page.type !== 'space-detail' ||
+        next.view !== data.view ||
+        next.space.id !== data.space.id
+      )
         throw new Error('Nie udało się wczytać zadań. Spróbuj ponownie.');
       listScroll.current = motion.root.current?.scrollTop ?? null;
       currentUrl.current = column.more_url;
@@ -66,7 +72,20 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       setData(next);
       const visible = new Set(next.items.map((item) => item.id));
       setSelected((current) => new Set([...current].filter((id) => visible.has(id))));
-      const group = next.columns.find((item) => item.key === column.key);
+      const group =
+        next.view === 'list'
+          ? next.columns.find((item) => item.key === column.key)
+          : column.key === 'backlog'
+            ? { loaded_count: next.backlog_loaded_count, count: next.backlog_totals.total }
+            : (() => {
+                const sprint = next.sprints.find((item) => `sprint_${item.id}` === column.key);
+                return sprint
+                  ? {
+                      loaded_count: sprint.loaded_count,
+                      count: sprint.visible_count - sprint.finished_count,
+                    }
+                  : undefined;
+              })();
       setNotice(
         `${column.label}: wczytano ${group?.loaded_count ?? 0} z ${group?.count ?? 0} zadań.`,
       );
@@ -348,9 +367,42 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       </>
     );
   }
+  function moreControl(
+    column: Pick<Status, 'key' | 'label' | 'count' | 'loaded_count' | 'more_url'>,
+  ) {
+    return (
+      <>
+        {column.more_url || (column.loaded_count ?? 0) > 20 ? (
+          <button
+            type="button"
+            className="tasks-filter-button work-list-more"
+            aria-label={`${loadingStatus === column.key ? 'Wczytywanie zadań' : column.more_url ? 'Pokaż więcej' : 'Wszystkie zadania'}: ${column.label} (${column.loaded_count} / ${column.count})`}
+            aria-disabled={busy || !column.more_url}
+            aria-busy={loadingStatus === column.key}
+            onClick={() => void loadMore(column)}
+          >
+            {loadingStatus === column.key
+              ? 'Wczytywanie…'
+              : column.more_url
+                ? 'Pokaż więcej'
+                : 'Wszystkie zadania'}
+            <span className="work-list-more__count">
+              ({column.loaded_count} / {column.count})
+            </span>
+          </button>
+        ) : null}
+        {listError?.key === column.key ? (
+          <div className="tasks-modal__errors work-list-more-error" role="alert">
+            {listError.message} Kliknij „Pokaż więcej”, aby ponowić.
+          </div>
+        ) : null}
+      </>
+    );
+  }
   function backlogGroup(sprint: Sprint | null) {
     const rows = data.items.filter((item) => item.sprint_id === (sprint?.id ?? null)),
-      totals = sprint?.planning || data.backlog_totals;
+      totals = sprint?.planning || data.backlog_totals,
+      count = totals.total - totals.finished;
     return (
       <StatusGroup
         key={sprint?.id ?? 'backlog'}
@@ -360,7 +412,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
         label={sprint?.name || 'Backlog'}
         labelSuffix={sprint?.state_label}
         category={sprint ? (sprint.state === 'active' ? 'in_progress' : 'new') : undefined}
-        count={rows.length}
+        count={count}
         className={`work-backlog-group ${sprint ? 'work-sprint' : ''}`}
         details={
           sprint ? (
@@ -373,11 +425,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                     <span>{totals.points} pkt</span>
                     {totals.unestimated ? <span>{totals.unestimated} bez estymacji</span> : null}
                   </>
-                ) : null}
-                {totals.total !== rows.length ? (
-                  <span>
-                    Na stronie: {rows.length} z {totals.total}
-                  </span>
                 ) : null}
               </span>
               {data.space.template === 'scrum' && data.can_manage ? (
@@ -401,13 +448,13 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             rows.map(row)
           ) : (
             <div className="tasks-empty-section" role="status">
-              {totals.total
-                ? 'Zadania znajdują się na innej stronie wyników.'
-                : filtered
-                  ? 'Brak zadań pasujących do filtrów.'
-                  : sprint
-                    ? 'Przeciągnij zadania lub zaznacz je i wybierz ten sprint.'
-                    : 'Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.'}
+              {filtered
+                ? 'Brak zadań pasujących do filtrów.'
+                : sprint
+                  ? sprint.finished_count
+                    ? 'Wszystkie zadania w tym sprincie są ukończone.'
+                    : 'Przeciągnij zadania lub zaznacz je i wybierz ten sprint.'
+                  : 'Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.'}
             </div>
           )}
           {data.can_edit ? (
@@ -422,6 +469,13 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             </button>
           ) : null}
         </div>
+        {moreControl({
+          key: sprint ? `sprint_${sprint.id}` : 'backlog',
+          label: sprint?.name || 'Backlog',
+          count,
+          loaded_count: sprint ? sprint.loaded_count : data.backlog_loaded_count,
+          more_url: sprint ? sprint.more_url : data.backlog_more_url,
+        })}
       </StatusGroup>
     );
   }
@@ -499,7 +553,10 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       url.searchParams.delete('summary');
                       url.searchParams.delete('page');
                       [...url.searchParams.keys()]
-                        .filter((key) => key.startsWith('list_limit_'))
+                        .filter(
+                          (key) =>
+                            key.startsWith('list_limit_') || key.startsWith('backlog_limit_'),
+                        )
                         .forEach((key) => url.searchParams.delete(key));
                       return url.pathname + url.search;
                     })()}
@@ -548,30 +605,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       <div className="tasks-issue-list">
                         {data.items.filter((item) => item.status === column.key).map(row)}
                       </div>
-                      {column.more_url || (column.loaded_count ?? 0) > 20 ? (
-                        <button
-                          type="button"
-                          className="tasks-filter-button work-list-more"
-                          aria-label={`${loadingStatus === column.key ? 'Wczytywanie zadań' : column.more_url ? 'Pokaż więcej' : 'Wszystkie zadania'}: ${column.label} (${column.loaded_count} / ${column.count})`}
-                          aria-disabled={busy || !column.more_url}
-                          aria-busy={loadingStatus === column.key}
-                          onClick={() => void loadMore(column)}
-                        >
-                          {loadingStatus === column.key
-                            ? 'Wczytywanie…'
-                            : column.more_url
-                              ? 'Pokaż więcej'
-                              : 'Wszystkie zadania'}
-                          <span className="work-list-more__count">
-                            ({column.loaded_count} / {column.count})
-                          </span>
-                        </button>
-                      ) : null}
-                      {listError?.key === column.key ? (
-                        <div className="tasks-modal__errors work-list-more-error" role="alert">
-                          {listError.message} Kliknij „Pokaż więcej”, aby ponowić.
-                        </div>
-                      ) : null}
+                      {moreControl(column)}
                     </StatusGroup>
                   ))
               ) : (
@@ -810,7 +844,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             />
           ) : null}
         </div>
-        {tableView && data.view !== 'list' ? <Pagination data={data.pagination} /> : null}
+        {data.view === 'timeline' ? <Pagination data={data.pagination} /> : null}
       </section>
       {modal ? (
         <FormDialog

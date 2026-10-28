@@ -1,10 +1,10 @@
-"""Backlog planning inside the caller's filtered, visible page."""
+"""Backlog planning inside the caller's filtered, loaded groups."""
 import json
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.core.paginator import Paginator
 from django.db.models import Max
 
 from .access import editable_to
+from .backlog_window import backlog_window
 from .models import SpaceTask
 from .models import Sprint, WorkItem
 from .services import record
@@ -37,14 +37,14 @@ def bulk_plan_items(request, space, scope):
         raise ValidationError('Ta przestrzeń nie korzysta z backlogu.')
     selected = request.POST.getlist('item_ids')
     if not selected or len(selected) > 100 or any(not value.isascii() or not value.isdecimal() or len(value) > 18 for value in selected):
-        raise ValidationError('Zaznacz od 1 do 100 zadań na bieżącej stronie.')
+        raise ValidationError('Zaznacz od 1 do 100 załadowanych zadań.')
     ids = {int(value) for value in selected}
     if len(ids) != len(selected):
         raise ValidationError('Nieprawidłowe zaznaczenie zadań.')
-    rows = list(Paginator(order_items(request, scope, 'backlog'), 100).get_page(request.GET.get('page')).object_list)
+    rows = list(backlog_window(request, order_items(request, scope, 'backlog')))
     items = [item for item in rows if item.pk in ids]
     if len(items) != len(ids):
-        raise ValidationError('Zaznaczone zadania nie są już dostępne na tej stronie. Odśwież backlog.')
+        raise ValidationError('Zaznaczone zadania nie są już dostępne w załadowanym backlogu. Odśwież listę.')
     allowed = set(editable_to(SpaceTask.objects.filter(pk__in=[item.task_id for item in items]), request.user).values_list('pk', flat=True))
     if any(item.task_id not in allowed for item in items):
         raise PermissionDenied
@@ -147,9 +147,9 @@ def move_backlog_item(request, space, item, scope):
             raise ValidationError('Sprint jest niedostępny lub został zakończony. Odśwież backlog.')
     before = posted_number(request, 'before', optional=True)
     after = posted_number(request, 'after', optional=True)
-    rows = list(Paginator(scope.order_by('rank', 'pk'), 100).get_page(request.GET.get('page')).object_list)
+    rows = list(backlog_window(request, scope.order_by('rank', 'pk')))
     if not any(row.pk == item.pk for row in rows):
-        raise ValidationError('Zadanie nie jest już widoczne na tej stronie backlogu. Odśwież listę.')
+        raise ValidationError('Zadanie nie jest już widoczne w załadowanym backlogu. Odśwież listę.')
     target_rows = [row for row in rows if row.sprint_id == target_id and row.pk != item.pk]
     positions = {row.pk: index for index, row in enumerate(target_rows)}
     if before is not None and before not in positions:

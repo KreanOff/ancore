@@ -65,6 +65,8 @@ export interface Sprint {
   planning: Totals;
   visible_count: number;
   finished_count: number;
+  loaded_count: number;
+  more_url: string;
 }
 interface Distribution {
   key?: string;
@@ -131,6 +133,8 @@ export interface DetailData {
   sprints: Sprint[];
   active_sprint: Sprint | null;
   backlog_totals: Totals;
+  backlog_loaded_count: number;
+  backlog_more_url: string;
   timeline: { start: string; end: string } | null;
   pagination: PaginationData | null;
   filters: Record<string, string>;

@@ -28,6 +28,7 @@ from workplaces.models import Workplace
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import save_space_avatar
 from .backlog import bulk_plan_items, move_backlog_item
+from .backlog_window import backlog_more_url, backlog_window
 from .board import move_board_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .dashboard import dashboard_payload
@@ -176,6 +177,7 @@ def items_for_view(space, items, view, active_sprint=None):
 def backlog_url(request, space, suffix=''):
     params = request.GET.copy()
     params.pop('planning_sprint', None)
+    params.pop('page', None)
     params['view'] = 'backlog'
     return space_url(request, space, suffix + '?') + params.urlencode()
 
@@ -223,7 +225,7 @@ def detail_context(request, space, view):
     items, summary_filters = filtered_space_items(request, space, items, now)
     item_query_params = request.GET.copy()
     for key in list(item_query_params):
-        if key.startswith('list_limit_'):
+        if key.startswith(('list_limit_', 'backlog_limit_')):
             item_query_params.pop(key)
     filter_context = {
         **summary_filters, 'query': query, 'assignee_options': assignee_options,
@@ -254,6 +256,12 @@ def detail_context(request, space, view):
     if view == 'list':
         page = None
         rows = decorate_items(request, list_window(request, space, items, column_counts))
+    elif view == 'board':
+        page = None
+        rows = decorate_items(request, items)
+    elif view == 'backlog':
+        page = None
+        rows = decorate_items(request, backlog_window(request, items))
     else:
         page = Paginator(items, 100).get_page(request.GET.get('page'))
         rows = decorate_items(request, page.object_list)
@@ -297,9 +305,16 @@ def detail_context(request, space, view):
         sprint.visible_count = sprint.planning['total']
         sprint.finished_count = sprint.planning['finished']
         sprint.open_count = sprint.visible_count - sprint.finished_count
+        if view == 'backlog':
+            sprint.loaded_count = len(sprint.visible_items)
+            sprint.more_url = backlog_more_url(request, space, sprint.pk, sprint.loaded_count, sprint.open_count)
     backlog_context = {'backlog_totals': planning_totals(items.filter(sprint__isnull=True)),
                        'bulk_plan_url': backlog_url(request, space, 'backlog/plan/'),
                        'backlog_create_url': backlog_url(request, space, 'items/create/')} if view == 'backlog' else {}
+    if view == 'backlog':
+        backlog_context['backlog_loaded_count'] = sum(item.sprint_id is None for item in rows)
+        backlog_context['backlog_more_url'] = backlog_more_url(
+            request, space, None, backlog_context['backlog_loaded_count'], backlog_context['backlog_totals']['total'])
     sort = item_sort(request, view)
     toolbar_context = {'item_sort': sort, 'can_reorder': sort['manual']}
     create_item_url = (backlog_url(request, space, 'items/create/') if view == 'backlog'
@@ -646,7 +661,7 @@ def item_action(request, pk=None, space_pk=None, key=None):
                 space = space_object(request, item.space_id)
                 candidates, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
                 candidates = items_for_view(space, candidates, 'backlog').filter(sprint_id=item.sprint_id)
-                ordered = list(candidates.order_by('rank', 'pk'))
+                ordered = list(backlog_window(request, candidates.order_by('rank', 'pk')))
                 index = next((i for i, row in enumerate(ordered) if row.pk == item.pk), None)
                 if index is None:
                     raise ValidationError('Zadanie nie jest już widoczne w tym backlogu. Odśwież listę.')
@@ -668,6 +683,8 @@ def item_action(request, pk=None, space_pk=None, key=None):
         messages.error(request, ' '.join(error.messages))
     params = request.GET.copy()
     params['view'] = request.POST.get('return_view') if request.POST.get('return_view') in {'list', 'board', 'backlog', 'timeline'} else 'board'
+    if params['view'] == 'backlog':
+        params.pop('page', None)
     url = space_url(request, item.space, '?') + params.urlencode()
     if getattr(request, '_react_api', False) or request.headers.get('X-Work-Action') == 'true':
         return JsonResponse({'saved': True, 'url': url})

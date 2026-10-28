@@ -1,0 +1,5 @@
+{% if more_url %}
+<a class="tasks-filter-button work-list-more" href="{{ more_url }}" aria-label="Pokaż więcej: {{ label }} ({{ loaded_count }} / {{ count }})">Pokaż więcej <span class="work-list-more__count">({{ loaded_count }} / {{ count }})</span></a>
+{% elif loaded_count > 20 %}
+<span class="tasks-filter-button work-list-more" aria-disabled="true">Wszystkie zadania <span class="work-list-more__count">({{ loaded_count }} / {{ count }})</span></span>
+{% endif %}

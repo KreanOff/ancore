@@ -1,6 +1,5 @@
-"""Persist card placement inside the caller's visible board page."""
+"""Persist card placement inside the caller's visible, filtered board."""
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator
 
 from .backlog import free_rank, posted_number, redistribute_ranks
 from .models import WorkItem
@@ -16,9 +15,9 @@ def move_board_item(request, space, item, scope):
     target = request.POST.get('status')
     if target not in {status['key'] for status in space.statuses} or not transition_allowed(item, target):
         raise ValidationError('To przejście statusu nie jest dozwolone w tej przestrzeni.')
-    rows = list(Paginator(scope.order_by('rank', 'pk'), 100).get_page(request.GET.get('page')).object_list)
+    rows = list(scope.order_by('rank', 'pk'))
     if not any(row.pk == item.pk for row in rows):
-        raise ValidationError('Zadanie nie jest już widoczne na tej stronie tablicy. Odśwież listę.')
+        raise ValidationError('Zadanie nie jest już widoczne na tablicy. Odśwież listę.')
     target_rows = [row for row in rows if row.status == target and row.pk != item.pk]
     original_rows = [row.pk for row in rows if row.status == target]
     direction = request.POST.get('direction', '')
@@ -49,7 +48,7 @@ def move_board_item(request, space, item, scope):
     if item.status == target and original_rows == new_rows:
         return
 
-    # Inaccessible, filtered and off-page rows bound the gap but are never edited.
+    # Inaccessible and filtered rows bound the gap but are never edited.
     full_scope = WorkItem.objects.filter(space=space, status=target)
     if space.template == 'scrum':
         full_scope = full_scope.filter(sprint_id=item.sprint_id)

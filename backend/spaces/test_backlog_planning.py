@@ -108,11 +108,22 @@ class BacklogPlanningTests(TestCase):
         session['active_workplace_id'] = other_workspace.pk; session.save()
         self.assertEqual(self.client.post(f'/space/{self.space.slug}/backlog/plan/', {'item_ids': [self.first.pk]}).status_code, 404)
 
-    def test_selection_outside_page_cannot_be_used(self):
+    def test_selection_outside_loaded_group_cannot_be_used_until_expanded(self):
         for number in range(100):
             SpaceTask.objects.create(space=self.space, created_by=self.owner, title=f'Extra {number}')
         last = WorkItem.objects.filter(space=self.space).last()
         self.assertEqual(self.bulk([self.first, last], self.planned.pk, query='page=1').status_code, 400)
+        response = self.bulk([self.first, last], self.planned.pk, query='page=2&backlog_limit_backlog=103')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['changed'], 2)
+        self.assertEqual(parse_qs(urlsplit(response.json()['url']).query), {'backlog_limit_backlog': ['103'], 'view': ['backlog']})
+
+    def test_expanding_backlog_does_not_raise_the_bulk_selection_cap(self):
+        for number in range(98):
+            SpaceTask.objects.create(space=self.space, created_by=self.owner, title=f'Extra {number}')
+        self.assertEqual(self.bulk(list(WorkItem.objects.filter(space=self.space)), self.planned.pk,
+                                   query='backlog_limit_backlog=101').status_code, 400)
+        self.assertFalse(self.planned.items.exists())
 
     def test_kanban_batch_moves_to_board_without_sprint(self):
         self.space.template = 'kanban'; self.space.save()
@@ -143,13 +154,13 @@ class BacklogPlanningTests(TestCase):
         self.assertEqual(page.context['backlog_totals']['total'], 2)
         self.assertEqual(self.client.get(self.url(query='view=backlog&q=Pierwsze')).context['backlog_totals']['unestimated'], 0)
 
-    def test_totals_include_all_pages_and_closed_sprint_is_not_planned(self):
+    def test_totals_include_unloaded_items_and_closed_sprint_is_not_planned(self):
         for number in range(100):
             SpaceTask.objects.create(space=self.space, created_by=self.owner, title=f'Extra {number}')
         self.planned.state = 'closed'; self.planned.save()
         page = self.client.get(self.url())
         self.assertEqual(page.context['backlog_totals']['total'], 103)
-        self.assertEqual(len(page.context['items']), 100)
+        self.assertEqual(len(page.context['items']), 20)
         self.assertEqual(page.context['sprints'], [])
 
     def test_contextual_create_defaults_and_return_to_backlog(self):

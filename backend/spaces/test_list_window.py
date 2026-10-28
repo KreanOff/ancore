@@ -1,4 +1,5 @@
-"""Per-status loading through the real HTML and React page endpoints."""
+"""Task view loading through the real HTML and React page endpoints."""
+from datetime import date
 from html import unescape
 import re
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -8,7 +9,7 @@ from django.test import TestCase
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
-from .models import SpaceMembership, SpaceTask
+from .models import SpaceMembership, SpaceTask, Sprint, WorkItem
 from .testing import make_space
 
 
@@ -171,12 +172,54 @@ class ListWindowTests(TestCase):
         self.assertTrue(response.json()['saved'])
         self.assertEqual(parse_qs(urlsplit(response.json()['url']).query), expected)
 
-    def test_backlog_and_board_keep_their_existing_pagination(self):
-        for view in ('backlog', 'board'):
-            data = self.page(view=view, list_limit_new=120, page=2)
-            self.assertIsNotNone(data['pagination'])
-            self.assertTrue(all('more_url' not in column for column in data['columns']))
-        self.assertEqual(self.page(view='backlog', page=2)['pagination']['page'], 2)
+    def test_board_loads_every_visible_item_without_pagination_even_with_stale_page(self):
+        sprint = Sprint.objects.create(space=self.space, name='Aktywny', state='active',
+                                       start_on=date(2026, 10, 1), end_on=date(2026, 10, 31))
+        WorkItem.objects.filter(space=self.space).update(sprint=sprint, in_backlog=False)
+        expected = {task.pk for tasks in self.tasks.values() for task in tasks}
+        for template in ('scrum', 'kanban'):
+            self.space.template = template
+            self.space.save(update_fields=['template'])
+            for scoped in (True, False):
+                with self.subTest(template=template, scoped=scoped):
+                    data = self.page(scoped=scoped, view='board', page=2, list_limit_new=20)
+                    self.assertIsNone(data['pagination'])
+                    self.assertEqual({item['task_id'] for item in data['items']}, expected)
+                    self.assertEqual(len(data['items']), 163)
+                    self.assertEqual(self.columns(data)['new']['count'], 121)
+                    self.assertTrue(all('more_url' not in column for column in data['columns']))
+                    response = self.client.get(self.url(scoped, view='board', page=99), follow=True)
+                    self.assertIsNone(response.context['page'])
+                    self.assertEqual({item.task_id for item in response.context['items']}, expected)
+                    self.assertContains(response, 'data-work-card', count=163)
+                    self.assertNotContains(response, 'work-pagination')
+
+    def test_board_keeps_filters_and_sort_and_has_no_footer_when_empty(self):
+        self.space.template = 'kanban'
+        self.space.save(update_fields=['template'])
+        WorkItem.objects.filter(space=self.space).update(in_backlog=False)
+        data = self.page(view='board', page=2, q='Praca new', sort='title_desc')
+        self.assertEqual(self.group_ids(data), [task.pk for task in reversed(self.tasks['new'])])
+        self.assertEqual(self.columns(data)['new']['count'], 121)
+        self.assertTrue(all(item['status'] == 'new' for item in data['items']))
+        empty = self.page(view='board', page=2, q='Brak takiego zadania')
+        self.assertEqual(empty['items'], [])
+        self.assertIsNone(empty['pagination'])
+        response = self.client.get(self.url(view='board', page=2, q='Brak takiego zadania'))
+        self.assertNotContains(response, 'work-pagination')
+
+    def test_timeline_keeps_its_existing_pagination(self):
+        WorkItem.objects.filter(space=self.space).update(start_on=date(2026, 10, 1))
+        for view in ('timeline',):
+            for scoped in (True, False):
+                with self.subTest(view=view, scoped=scoped):
+                    data = self.page(scoped=scoped, view=view, list_limit_new=120, page=2)
+                    self.assertEqual(data['pagination']['page'], 2)
+                    self.assertEqual(data['pagination']['count'], 163)
+                    self.assertEqual(len(data['items']), 63)
+                    self.assertTrue(all('more_url' not in column for column in data['columns']))
+                    response = self.client.get(self.url(scoped, view=view, page=2), follow=True)
+                    self.assertContains(response, 'work-pagination', count=1)
 
     def test_html_sort_and_filter_links_restart_groups_without_javascript(self):
         response = self.client.get(self.url(list_limit_new=60, list_limit_in_progress=21,
