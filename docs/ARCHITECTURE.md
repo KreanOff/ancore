@@ -244,10 +244,15 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   `DashboardMembership` przechowuje role w dotychczasowej tabeli udostępnień;
   ustawienia i dostępy wymagają właściciela lub administratora, a obserwator ma odczyt. Bezpośrednie formularze
   gadżetów otwierają modal nad edytorem, a zapis wraca do edytora.
-  Panel katalogu w edytorze dodaje wyłącznie „Postęp pracy” przez POST `gadgets/quick-add/`
-  (również zarządzanie/scoped), zwracający HTML rzeczywistego gadżetu i rewizję.
-  Blokada rekordu pulpitu chroni limit oraz układ przed równoczesnymi zmianami. Warianty
-  zarządzania zachowują filtry katalogu; wszystkie adresy mają scoped odpowiedniki.
+  Katalog w modalu dodaje „Postęp pracy” do lokalnego szkicu. Wspólny
+  `DashboardCanvas` obsługuje siatkę 12 kolumn jak w Podsumowaniu Przestrzeni.
+  `arrange` przyjmuje `{revision, widgets: [{id,x,y,w,h,kind?}]}` i zapisuje
+  geometrię, nowe oraz usunięte gadżety w jednej transakcji. `Anuluj` odrzuca
+  szkic bez zapisu. Migracja `dashboard.0008_dashboard_gadget_grid` zachowuje
+  istniejące gadżety i przenosi ich kolumny na pola `x/y/w/h`.
+  Blokada rekordu pulpitu chroni limit i rewizję przed równoczesnymi zmianami.
+  Starsze `gadgets/quick-add/` oraz kolumnowy format `arrange` pozostają zgodne;
+  warianty zarządzania zachowują filtry, wszystkie adresy mają scoped odpowiedniki.
 - `/for-you/` oraz `/workplaces/<slug>/for-you/` pokazują osobisty widok
   „Dla ciebie”, składany przez `backend/dashboard/for_you.py` z dostępnych danych.
   `backend/dashboard/recent.py` zapisuje identyfikatory oglądanych elementów w sesji;

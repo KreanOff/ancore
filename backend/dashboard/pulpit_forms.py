@@ -28,15 +28,6 @@ class DashboardVisibilitySelect(forms.Select):
         return option
 
 
-class DashboardLayoutSelect(forms.Select):
-    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-        option = super().create_option(name, value, label, selected, index, subindex, attrs)
-        if value in Dashboard.Layout.values:
-            field_id = (attrs or {}).get('id', name)
-            option['attrs']['data-ancore-option-preview'] = f'{field_id}_preview_{value}'
-        return option
-
-
 class DashboardAccessForm(forms.ModelForm):
     class Meta:
         model = Dashboard
@@ -118,12 +109,11 @@ class DashboardPreferencesMixin:
 
 class DashboardForm(DashboardPreferencesMixin, DashboardAccessForm):
     class Meta(DashboardAccessForm.Meta):
-        fields = ['name', 'description', *PREFERENCE_FIELDS, 'visibility', 'shared_with', 'layout']
+        fields = ['name', 'description', *PREFERENCE_FIELDS, 'visibility', 'shared_with']
         widgets = {
             **DashboardAccessForm.Meta.widgets,
             **PREFERENCE_WIDGETS,
             'description': forms.Textarea(attrs={'rows': 3}),
-            'layout': DashboardLayoutSelect,
         }
 
     def __init__(self, *args, request, **kwargs):

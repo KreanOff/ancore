@@ -94,7 +94,8 @@ class ReactPulpitTests(TestCase):
     def test_detail_does_not_expose_unavailable_source_or_counts(self):
         data = self.get(self.path(self.dashboard.slug + '/')).json()['data']
         self.assertEqual(data['columns'][0][0]['count'], 1)
-        self.assertEqual(data['columns'][0][0]['edit_url'], '')
+        self.assertEqual(data['columns'][0][0]['edit_url'],
+                         self.path(f'{self.dashboard.slug}/gadgets/{self.gadget.pk}/edit/'))
         unavailable = data['columns'][1][0]
         self.assertTrue(unavailable['unavailable'])
         for key in ('count', 'closed_count', 'percent', 'statuses', 'caption', 'space'):
@@ -119,19 +120,19 @@ class ReactPulpitTests(TestCase):
         modal = self.get(target, HTTP_X_PULPIT_MODAL='true').json()['data']['modal']
         fields = {row['name']: row for row in modal['form']['fields']}
         self.assertEqual(modal['form']['layout'], 'pulpit')
-        self.assertEqual(len(fields['layout']['choices']), 5)
-        self.assertTrue(all(row['layout_preview'] == row['value'] for row in fields['layout']['choices']))
+        self.assertNotIn('layout', fields)
         self.assertEqual([row['value'] for row in fields['shared_with']['choices']], [str(self.owner.pk)])
         self.assertIn('q=React', modal['return_url'])
-        invalid = self.post(target, {'name': 'Nowy pulpit React', 'layout': 'equal', 'visibility': 'selected'})
+        invalid = self.post(target, {'name': 'Nowy pulpit React', 'visibility': 'selected'})
         self.assertEqual(invalid.status_code, 400)
         self.assertTrue(next(row for row in invalid.json()['data']['modal']['form']['fields'] if row['name'] == 'shared_with')['errors'])
-        self.assertEqual(self.post(target, {'name': 'Niedozwolony', 'layout': 'equal', 'visibility': 'selected', 'shared_with': [self.foreign.pk]}).status_code, 400)
-        saved = self.post(target, {'name': 'Nowy pulpit React', 'description': '<b>Opis</b>', 'layout': 'equal', 'visibility': 'selected', 'shared_with': [self.owner.pk]}, HTTP_X_PULPIT_MODAL='true')
+        self.assertEqual(self.post(target, {'name': 'Niedozwolony', 'visibility': 'selected', 'shared_with': [self.foreign.pk]}).status_code, 400)
+        saved = self.post(target, {'name': 'Nowy pulpit React', 'description': '<b>Opis</b>', 'visibility': 'selected', 'shared_with': [self.owner.pk]}, HTTP_X_PULPIT_MODAL='true')
         self.assertEqual(saved.status_code, 200)
         self.assertIn('q=React', saved.json()['redirect'])
         item = Dashboard.objects.get(name='Nowy pulpit React')
         self.assertEqual((item.owner_id, item.created_by_id, item.workplace_id), (self.owner.pk, self.member.pk, self.workspace.pk))
+        self.assertEqual(item.layout, 'equal')
         self.assertEqual(list(item.shared_with.all()), [self.owner])
         self.assertTrue(item.favorited_by.filter(pk=self.member.pk).exists())
 

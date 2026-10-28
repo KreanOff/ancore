@@ -182,6 +182,11 @@ class DashboardGadget(models.Model):
     assignee = models.CharField('Przypisanie', max_length=10, default='all')
     column = models.PositiveSmallIntegerField(default=0)
     position = models.PositiveSmallIntegerField(default=0)
+    # Null coordinates retain compatibility with older/programmatic creators.
+    x = models.PositiveSmallIntegerField(null=True, blank=True)
+    y = models.PositiveSmallIntegerField(null=True, blank=True)
+    w = models.PositiveSmallIntegerField(null=True, blank=True)
+    h = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['column', 'position', 'pk']

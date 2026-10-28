@@ -1,16 +1,18 @@
-import { type DragEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FormDialog } from '../forms/FormDialog';
+import { DashboardCanvas } from '../shared/DashboardCanvas';
+import { EmptyState } from '../shared/EmptyState';
 import { Icon } from '../shared/Icon';
 import { Emoji } from '../shared/Emoji';
-import { Dropdown } from '../shared/Dropdown';
 import { errorMessage } from '../shared/api';
-import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
+import { type Page, type PageProps, pageRequest, setPageLocation } from '../shared/page';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
 import { usePageActions } from '../shared/usePageActions';
+import { addWidget, layoutsEqual } from '../spaces/summaryLayout';
 import { DashboardActions, confirmDelete } from './Actions';
-import Catalog, { readCatalog } from './Catalog';
-import GadgetCard, { LayoutPreview } from './Gadget';
-import type { DetailData, Gadget, Layout } from './types';
+import Catalog from './Catalog';
+import GadgetCard from './Gadget';
+import type { DetailData, Gadget } from './types';
 import { startAutoRefresh } from './autoRefresh';
 
 export default function DetailPage(props: PageProps) {
@@ -19,30 +21,30 @@ export default function DetailPage(props: PageProps) {
 
 export function DashboardView(props: PageProps) {
   const { initial, csrfToken } = props;
-  const [data, setData] = useState(initial.data as DetailData),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [notice, setNotice] = useState(''),
-    [dragged, setDragged] = useState<number | null>(null),
-    [dropColumn, setDropColumn] = useState<number | null>(null);
-  const catalogKey = 'ancore:pulpit-catalog:' + new URL(data.editor_url, location.origin).pathname;
-  const [catalog, setCatalog] = useState(() => readCatalog(catalogKey));
+  const [data, setData] = useState(initial.data as DetailData);
+  const [draft, setDraft] = useState(data.grid.widgets);
+  const [editing, setEditing] = useState(data.editing);
+  const [catalog, setCatalog] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const actions = usePageActions(props, data.modal);
-  const life = useRef(new AbortController()),
-    pending = useRef(false),
-    dragId = useRef<number | null>(null),
-    opener = useRef<HTMLElement | null>(null),
-    catalogButton = useRef<HTMLButtonElement>(null),
-    layoutButton = useRef<HTMLDivElement>(null);
-  useDirtyGuard(false, busy);
-  const locked = busy || actions.busy || !!actions.modal,
-    dashboard = data.dashboard;
+  const life = useRef(new AbortController());
+  const pending = useRef(false);
+  const nextDraftId = useRef(0);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const dashboard = data.dashboard;
+  const dirty = !layoutsEqual(data.grid.widgets, draft);
+  const locked = busy || actions.busy || !!actions.modal;
+  useDirtyGuard(editing && dirty, busy || actions.busy);
   const automaticRefresh = useRef<() => Promise<void>>();
   automaticRefresh.current = async () => {
     if (
       pending.current ||
+      editing ||
       locked ||
-      dragId.current !== null ||
+      catalog ||
       document.querySelector('.tasks-modal.is-open') ||
       !navigator.onLine
     )
@@ -50,53 +52,34 @@ export function DashboardView(props: PageProps) {
     await refresh(true);
   };
   useEffect(() => {
-    if (data.editing) return;
+    if (editing) return;
     return startAutoRefresh(dashboard.refresh_interval, () => automaticRefresh.current!());
-  }, [data.editing, dashboard.refresh_interval]);
+  }, [editing, dashboard.refresh_interval]);
   useEffect(() => () => life.current.abort(), []);
   useEffect(() => {
-    document.title = `${data.dashboard.name} | ancore`;
-  }, [data.dashboard.name]);
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(catalogKey, JSON.stringify(catalog));
-    } catch {
-      /* Optional UI preference. */
-    }
-  }, [catalog, catalogKey]);
-  useEffect(() => {
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && dragId.current !== null) {
-        dragId.current = null;
-        setDragged(null);
-        setDropColumn(null);
-      }
-    };
-    document.addEventListener('keydown', escape);
-    return () => document.removeEventListener('keydown', escape);
-  }, []);
-  function toggleCatalog(element: HTMLElement) {
-    opener.current = element;
-    setCatalog((current) => ({ ...current, open: !current.open }));
-    if (catalog.open)
-      requestAnimationFrame(() =>
-        (opener.current?.isConnected ? opener.current : catalogButton.current)?.focus({
-          preventScroll: true,
-        }),
-      );
+    document.title = `${dashboard.name} | ancore`;
+  }, [dashboard.name]);
+
+  function accept(next: DetailData) {
+    setData(next);
+    setDraft(next.grid.widgets);
   }
-  function closeCatalog() {
-    setCatalog((current) => ({ ...current, open: false }));
-    requestAnimationFrame(() =>
-      (opener.current?.isConnected ? opener.current : catalogButton.current)?.focus({
-        preventScroll: true,
-      }),
-    );
+  function finishEditing() {
+    setEditing(false);
+    setCatalog(false);
+    setPageLocation(dashboard.url);
+    requestAnimationFrame(() => editButton.current?.focus());
   }
-  async function load(target: string) {
+  function cancel() {
+    setDraft(data.grid.widgets);
+    setError('');
+    setNotice('Anulowano zmiany układu.');
+    finishEditing();
+  }
+  async function read(target: string) {
     const page = await pageRequest<Page>(initial.api_url, target, csrfToken, life.current.signal);
     if (page.type !== 'pulpit-detail') throw new Error('Nie udało się odświeżyć pulpitu.');
-    if (!life.current.signal.aborted) setData(page.data as DetailData);
+    return page.data as DetailData;
   }
   async function refresh(automatic = false) {
     if (pending.current) return;
@@ -104,275 +87,95 @@ export function DashboardView(props: PageProps) {
     setBusy(true);
     setError('');
     try {
-      await load(data.list_url);
-      if (!life.current.signal.aborted && !automatic) setNotice('Pulpit odświeżony.');
+      const next = await read(editing ? data.editor_url : dashboard.url);
+      if (!life.current.signal.aborted) {
+        accept(next);
+        if (!automatic) setNotice('Pulpit odświeżony.');
+      }
     } catch (exception) {
       if (!life.current.signal.aborted) setError(errorMessage(exception));
     } finally {
       pending.current = false;
-      setBusy(false);
+      if (!life.current.signal.aborted) setBusy(false);
     }
   }
-  async function arrange(layout: Layout, columns: Gadget[][], focus?: HTMLElement | null) {
-    if (pending.current || !data.editing || actions.modal) return;
-    const ids = (rows: Gadget[][]) => rows.map((column) => column.map((item) => item.id));
-    if (
-      layout === dashboard.layout &&
-      JSON.stringify(ids(columns)) === JSON.stringify(ids(data.columns))
-    )
+  async function save() {
+    if (pending.current || locked) return;
+    if (!dirty) {
+      finishEditing();
       return;
-    const before = data;
+    }
     pending.current = true;
     setBusy(true);
     setError('');
-    setNotice('Zapisywanie układu…');
-    setData({ ...data, columns, dashboard: { ...dashboard, layout } });
     try {
-      const result = await pageRequest<{ revision: number }>(
+      const result = await pageRequest<{ page: Page }>(
         initial.api_url,
-        data.arrange_url,
+        data.grid.save_url,
         csrfToken,
         life.current.signal,
-        { layout, columns: ids(columns), revision: dashboard.revision },
-      );
-      if (!life.current.signal.aborted) {
-        setData((current) => ({
-          ...current,
-          dashboard: { ...current.dashboard, revision: result.revision },
-        }));
-        setNotice('Układ pulpitu zapisany.');
-      }
-    } catch (exception) {
-      if (!life.current.signal.aborted) {
-        setData(before);
-        setError(errorMessage(exception));
-        setNotice('Układ nie został zapisany. Przywrócono poprzedni układ.');
-      }
-    } finally {
-      pending.current = false;
-      setBusy(false);
-      requestAnimationFrame(() => {
-        if (focus?.isConnected) focus.focus({ preventScroll: true });
-      });
-    }
-  }
-  function changeLayout(value: Layout) {
-    const count = value === 'single' ? 1 : value === 'three' ? 3 : 2;
-    const columns: Gadget[][] = Array.from({ length: count }, () => []);
-    data.columns.forEach((column, index) => columns[Math.min(index, count - 1)].push(...column));
-    void arrange(value, columns, layoutButton.current?.querySelector('button'));
-  }
-  function move(item: Gadget, column: number, index: number, direction: string) {
-    const columns = data.columns.map((row) => [...row]);
-    if (direction === 'column') {
-      if (columns.length < 2) return;
-      columns[column].splice(index, 1);
-      columns[(column + 1) % columns.length].push(item);
-    } else {
-      const destination = index + (direction === 'up' ? -1 : 1);
-      if (destination < 0 || destination >= columns[column].length) return;
-      columns[column].splice(index, 1);
-      columns[column].splice(destination, 0, item);
-    }
-    const focus = document.querySelector<HTMLElement>(
-      `[data-gadget-id="${item.id}"] .documents-item-actions > button`,
-    );
-    void arrange(dashboard.layout, columns, focus);
-  }
-  async function add(kind: string) {
-    if (pending.current || locked || !data.editing) return;
-    pending.current = true;
-    setBusy(true);
-    setError('');
-    setNotice('Dodawanie gadżetu…');
-    try {
-      const result = await pageRequest<{ gadget: Gadget; column: number; revision: number }>(
-        initial.api_url,
-        data.quick_add_url,
-        csrfToken,
-        life.current.signal,
-        { kind, revision: dashboard.revision },
-      );
-      if (!life.current.signal.aborted) {
-        setData((current) => ({
-          ...current,
-          columns: current.columns.map((column, index) =>
-            index === result.column ? [...column, result.gadget] : column,
+        {
+          revision: data.grid.revision,
+          widgets: draft.map((widget) =>
+            widget.id.startsWith('new-') ? { ...widget, kind: 'progress' } : widget,
           ),
-          dashboard: { ...current.dashboard, revision: result.revision },
-        }));
-        setNotice('Gadżet dodany i zapisany.');
-      }
-    } catch (exception) {
-      if (!life.current.signal.aborted) {
-        setError(errorMessage(exception));
-        setNotice('Gadżet nie został dodany.');
-      }
-    } finally {
-      pending.current = false;
-      setBusy(false);
-    }
-  }
-  async function remove(item: Gadget) {
-    if (pending.current) return;
-    pending.current = true;
-    setBusy(true);
-    setError('');
-    try {
-      const result = await pageRequest<{ redirect: string }>(
-        initial.api_url,
-        item.delete_url,
-        csrfToken,
-        life.current.signal,
-        new FormData(),
+        },
       );
-      await load(result.redirect);
-      if (!life.current.signal.aborted) setNotice('Gadżet usunięty.');
+      if (!life.current.signal.aborted) {
+        accept(result.page.data as DetailData);
+        setNotice('Układ pulpitu zapisany.');
+        finishEditing();
+      }
     } catch (exception) {
       if (!life.current.signal.aborted) setError(errorMessage(exception));
     } finally {
       pending.current = false;
-      setBusy(false);
+      if (!life.current.signal.aborted) setBusy(false);
     }
   }
-  function endDrag() {
-    dragId.current = null;
-    setDragged(null);
-    setDropColumn(null);
-  }
-  function drop(event: DragEvent, column: number) {
-    if (dragId.current === null || locked) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const id = dragId.current,
-      item = data.columns.flat().find((row) => row.id === id);
-    const element =
-      event.target instanceof Element
-        ? event.target.closest<HTMLElement>('[data-gadget-id]')
-        : null;
-    if (!item || Number(element?.dataset.gadgetId) === id) {
-      endDrag();
+  function add() {
+    if (locked || !editing || draft.length >= data.max_gadgets) return;
+    const next = addWidget(draft, { id: `new-${++nextDraftId.current}`, w: 6, h: 8 });
+    if (next === draft) {
+      setNotice('Brak miejsca na kolejny gadżet.');
       return;
     }
-    const columns = data.columns.map((row) => row.filter((gadget) => gadget.id !== id));
-    const target = element
-      ? columns[column].findIndex((row) => row.id === Number(element.dataset.gadgetId))
-      : -1;
-    const bounds = element?.getBoundingClientRect();
-    const after = !!bounds && event.clientY >= bounds.top + bounds.height / 2;
-    columns[column].splice(target < 0 ? columns[column].length : target + (after ? 1 : 0), 0, item);
-    const focus = document.querySelector<HTMLElement>(
-      `[data-gadget-id="${item.id}"] .pulpit-drag-handle`,
-    );
-    endDrag();
-    void arrange(dashboard.layout, columns, focus);
+    setDraft(next);
+    setNotice('Dodano gadżet. Zapisz układ, aby zachować zmiany.');
   }
-  const count = data.columns.reduce((total, column) => total + column.length, 0);
-  const canvas = (
-    <div className="dashboard-main">
-      {dashboard.description ? <p className="pulpit-intro">{dashboard.description}</p> : null}
-      {error || actions.error ? (
-        <div className="tasks-modal__errors" role="alert">
-          {error || actions.error}
-          {error ? (
-            <button
-              type="button"
-              className="tasks-filter-button"
-              disabled={locked}
-              onClick={() => void refresh()}
-            >
-              <Icon name="refresh-cw" />
-              Odśwież pulpit
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-      {count || data.editing ? (
-        <div className={`pulpit-grid pulpit-grid--${dashboard.layout}`} aria-busy={busy}>
-          {data.columns.map((column, columnIndex) => (
-            <section
-              key={columnIndex}
-              className={`pulpit-column ${!column.length && data.editing ? 'is-empty' : ''} ${dropColumn === columnIndex ? 'is-drop-target' : ''}`}
-              aria-label={`Kolumna ${columnIndex + 1}`}
-              onDragOver={(event) => {
-                if (dragId.current !== null && !locked) {
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = 'move';
-                  setDropColumn(columnIndex);
-                }
-              }}
-              onDrop={(event) => drop(event, columnIndex)}
-            >
-              {column.map((item, index) => (
-                <GadgetCard
-                  key={item.id}
-                  data={item}
-                  editing={data.editing}
-                  busy={locked}
-                  first={index === 0}
-                  last={index === column.length - 1}
-                  single={data.columns.length === 1}
-                  dragging={dragged === item.id}
-                  open={() => void actions.open(item.edit_url)}
-                  move={(direction) => move(item, columnIndex, index, direction)}
-                  remove={() => confirmDelete('Usuń gadżet', item.label, () => void remove(item))}
-                  dragStart={(event) => {
-                    if (locked) {
-                      event.preventDefault();
-                      return;
-                    }
-                    dragId.current = item.id;
-                    setDragged(item.id);
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', String(item.id));
-                  }}
-                  dragEnd={endDrag}
-                />
-              ))}
-              {!column.length && data.editing ? (
-                <div className="pulpit-column-placeholder">
-                  <img
-                    className="pulpit-column-placeholder__illustration"
-                    src={data.column_illustration}
-                    alt=""
-                    width={720}
-                    height={540}
-                    draggable={false}
-                  />
-                  <span>Przeciągnij gadżet do tej kolumny</span>
-                </div>
-              ) : null}
-            </section>
-          ))}
-        </div>
-      ) : (
-        <section
-          className="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated pulpit-empty-state"
-          role="status"
-        >
-          <img
-            className="tasks-empty-state__illustration pulpit-empty-state__illustration"
-            src={data.illustration}
-            alt=""
-            width={1448}
-            height={1086}
-            draggable={false}
-          />
-          <div className="tasks-empty-state__copy">
-            <h2>Ten pulpit jest pusty.</h2>
-            <p>
-              {dashboard.editable
-                ? 'Otwórz edycję pulpitu, aby dodać pierwszy gadżet.'
-                : 'Twórca pulpitu nie dodał jeszcze gadżetów.'}
-            </p>
-          </div>
-        </section>
-      )}
-    </div>
-  );
+  async function configured() {
+    // Configuration is available only with a saved layout. Read its new revision
+    // without navigating away from the editor or losing its focus context.
+    const next = await read(data.editor_url);
+    if (!life.current.signal.aborted) {
+      accept(next);
+      actions.close();
+      setNotice('Konfiguracja gadżetu zapisana.');
+    }
+  }
+  const gadgets = new Map(data.columns.flat().map((gadget) => [String(gadget.id), gadget]));
+  const progress = data.gadget_catalog.find((entry) => entry.kind === 'progress');
+  const widgetCatalog = draft.map((widget) => ({
+    id: widget.id,
+    label: gadgets.get(widget.id)?.label || progress?.name || 'Postęp pracy',
+    icon: gadgets.get(widget.id)?.icon || progress?.icon || 'chart-no-axes-combined',
+    min_w: 4,
+    min_h: 5,
+  }));
+  const reload = () => {
+    if (dirty)
+      window.showConfirmModal({
+        title: 'Odśwież pulpit',
+        message: 'Odrzucić niezapisany układ i wczytać aktualną wersję?',
+        confirmText: 'Odrzuć i odśwież',
+        cancelText: 'Wróć do edycji',
+        onConfirm: () => void refresh(),
+      });
+    else void refresh();
+  };
   return (
     <div
-      className={`dashboard-page dashboard-overview pulpits-page ${data.editing ? 'pulpit-editor-page' : ''} ${data.editing && catalog.open ? 'has-catalog' : ''}`}
+      className={`dashboard-page dashboard-overview pulpits-page pulpit-grid-page ${editing ? 'pulpit-editor-page' : ''}`}
       data-react-screen="pulpit-detail"
     >
       <header className="tasks-topbar tasks-topbar--project-directory pulpit-topbar">
@@ -383,74 +186,8 @@ export function DashboardView(props: PageProps) {
           </h1>
         </div>
         <div className="tasks-titlebar-actions">
-          {data.editing ? (
+          {!editing ? (
             <>
-              <button
-                ref={catalogButton}
-                type="button"
-                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                aria-controls="pulpit-catalog"
-                aria-expanded={catalog.open}
-                onClick={(event) => toggleCatalog(event.currentTarget)}
-              >
-                <Icon name="plus" />
-                <span>Dodaj gadżet</span>
-              </button>
-              <div className="pulpit-layout-control" ref={layoutButton}>
-                <Dropdown
-                  label="Zmień układ"
-                  role="group"
-                  triggerClassName="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                  menuClass="tasks-section-menu documents-item-menu pulpit-layout-menu"
-                  trigger={
-                    <>
-                      <LayoutPreview value={dashboard.layout} />
-                      <span>Zmień układ</span>
-                    </>
-                  }
-                >
-                  {(close) =>
-                    data.layout_choices.map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        className="tasks-project-menu-button"
-                        disabled={locked}
-                        aria-pressed={dashboard.layout === value}
-                        onClick={() => {
-                          close();
-                          changeLayout(value);
-                        }}
-                      >
-                        <LayoutPreview value={value} />
-                        <span>{label}</span>
-                        <Icon name="check" className="pulpit-layout-check" />
-                      </button>
-                    ))
-                  }
-                </Dropdown>
-              </div>
-              <a
-                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                href={dashboard.url}
-                aria-label="Gotowe — wróć do pulpitu"
-              >
-                <Icon name="check" />
-                <span>Gotowe</span>
-                <span className="u-sr-only"> · Wróć do pulpitu</span>
-              </a>
-            </>
-          ) : (
-            <>
-              {dashboard.editable ? (
-                <a
-                  className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                  href={dashboard.gadgets_url}
-                >
-                  <Icon name="pencil" />
-                  <span>Edytuj pulpit</span>
-                </a>
-              ) : null}
               <button
                 type="button"
                 className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
@@ -464,7 +201,7 @@ export function DashboardView(props: PageProps) {
                 <DashboardActions
                   item={dashboard}
                   busy={locked}
-                  favorite={() => void actions.act(dashboard.favorite_url, { next: data.list_url })}
+                  favorite={() => void actions.act(dashboard.favorite_url, { next: dashboard.url })}
                   remove={() =>
                     confirmDelete(
                       'Usuń pulpit',
@@ -475,36 +212,184 @@ export function DashboardView(props: PageProps) {
                 />
               ) : null}
             </>
-          )}
+          ) : null}
         </div>
       </header>
-      <span className="u-sr-only" role="status" aria-live="polite">
-        {notice || (data.editing ? 'Zmiany układu zapisują się automatycznie.' : '')}
-      </span>
-      {data.editing ? (
-        <div className="pulpit-editor-body">
-          {canvas}
-          <Catalog
-            data={data}
-            state={catalog}
-            change={setCatalog}
-            busy={locked}
-            count={count}
-            add={(kind) => void add(kind)}
-            close={closeCatalog}
-            error={error}
-          />
+      <div className="dashboard-main work-content">
+        {dashboard.description ? <p className="pulpit-intro">{dashboard.description}</p> : null}
+        <div className={`work-summary-dashboard ${editing ? 'is-editing' : ''}`} aria-busy={busy}>
+          <div className="work-summary-toolbar">
+            <div className="work-summary-toolbar-title">
+              {editing ? (
+                <span className="work-caption">{dirty ? 'Niezapisane zmiany' : 'Tryb edycji'}</span>
+              ) : null}
+            </div>
+            <div className="work-summary-toolbar-actions">
+              {editing ? (
+                <>
+                  <button
+                    ref={addButton}
+                    type="button"
+                    className="tasks-filter-button"
+                    disabled={locked}
+                    onClick={() => setCatalog(true)}
+                  >
+                    <Icon name="plus" />
+                    Dodaj gadżet
+                  </button>
+                  <button
+                    type="button"
+                    className="tasks-filter-button"
+                    disabled={locked}
+                    onClick={cancel}
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    type="button"
+                    className="tasks-filter-button work-summary-save"
+                    disabled={locked}
+                    onClick={() => void save()}
+                  >
+                    <Icon name="check" />
+                    {busy ? 'Zapisywanie…' : 'Zapisz układ'}
+                  </button>
+                </>
+              ) : dashboard.editable ? (
+                <button
+                  ref={editButton}
+                  type="button"
+                  className="tasks-filter-button"
+                  disabled={locked}
+                  onClick={() => {
+                    setEditing(true);
+                    setError('');
+                    setPageLocation(data.editor_url);
+                    setNotice('Włączono edycję pulpitu.');
+                  }}
+                >
+                  <Icon name="pencil" />
+                  Edytuj pulpit
+                </button>
+              ) : null}
+            </div>
+          </div>
+          {editing ? (
+            <p className="work-caption work-summary-edit-hint">
+              <span className="work-summary-edit-hint-desktop">
+                Przeciągnij kafelek za uchwyt, a jego rozmiar zmień w prawym dolnym rogu. Możesz też
+                użyć strzałek na uchwycie lub menu kafelka.
+              </span>
+              <span className="work-summary-edit-hint-mobile">
+                Dodawaj gadżety, a ich kolejność i rozmiar zmieniaj przez menu kafelka.
+              </span>
+            </p>
+          ) : null}
+          {error || actions.error ? (
+            <div className="tasks-modal__errors work-summary-error" role="alert">
+              <span>{error || actions.error}</span>
+              <button
+                type="button"
+                className="tasks-filter-button"
+                disabled={locked}
+                onClick={reload}
+              >
+                Wczytaj aktualny układ
+              </button>
+            </div>
+          ) : null}
+          <span className="u-sr-only" role="status" aria-live="polite">
+            {notice}
+          </span>
+          {draft.length ? (
+            <DashboardCanvas
+              widgets={draft}
+              catalog={widgetCatalog}
+              editing={editing}
+              busy={locked}
+              onChange={setDraft}
+              onNotice={setNotice}
+              emptyFocusRef={addButton}
+              ariaLabel="Gadżety pulpitu"
+              onRemove={(id: string) => {
+                setDraft((current) => current.filter((widget) => widget.id !== id));
+                setNotice('Usunięto gadżet. Zapisz układ, aby zachować zmiany.');
+              }}
+              renderActions={(id: string, close: () => void) => {
+                const gadget = gadgets.get(id);
+                return (
+                  <button
+                    type="button"
+                    className="tasks-project-menu-button"
+                    disabled={locked || dirty || !gadget?.edit_url}
+                    title={dirty || !gadget ? 'Zapisz układ, aby skonfigurować gadżet.' : undefined}
+                    onClick={() => {
+                      if (gadget) {
+                        close();
+                        void actions.open(gadget.edit_url);
+                      }
+                    }}
+                  >
+                    <Icon name="settings-2" />
+                    <span>Konfiguruj</span>
+                    {dirty || !gadget ? (
+                      <span className="u-sr-only"> — zapisz najpierw układ</span>
+                    ) : null}
+                  </button>
+                );
+              }}
+              renderWidget={(id: string) => {
+                const gadget = gadgets.get(id);
+                return (
+                  <GadgetCard
+                    data={
+                      gadget ||
+                      ({
+                        id: 0,
+                        kind: 'progress',
+                        label: progress?.name || 'Postęp pracy',
+                        icon: progress?.icon || 'chart-no-axes-combined',
+                        unavailable: false,
+                        edit_url: '',
+                        delete_url: '',
+                      } as Gadget)
+                    }
+                    preview={!gadget}
+                  />
+                );
+              }}
+            />
+          ) : (
+            <EmptyState
+              title="Ten pulpit jest pusty."
+              description={
+                dashboard.editable
+                  ? editing
+                    ? 'Wybierz „Dodaj gadżet”, aby uzupełnić pulpit.'
+                    : 'Otwórz edycję pulpitu i wybierz gadżety, które chcesz tutaj wyświetlać.'
+                  : 'Twórca pulpitu nie dodał jeszcze gadżetów.'
+              }
+              src={data.illustration}
+            />
+          )}
         </div>
-      ) : (
-        canvas
-      )}
+      </div>
+      {catalog ? (
+        <Catalog
+          data={data}
+          count={draft.length}
+          busy={locked}
+          add={add}
+          close={() => setCatalog(false)}
+        />
+      ) : null}
       {actions.modal ? (
         <FormDialog
           data={actions.modal}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={actions.close}
-          onSaved={navigate}
+          onSaved={configured}
         />
       ) : null}
     </div>

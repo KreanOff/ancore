@@ -4646,7 +4646,7 @@ function initTasksPage() {
         if (e.key === 'Tab' && openModalEl) {
             const focusable = Array.from(openModalEl.querySelectorAll(
                 'button, a[href], input, select, textarea, [tabindex]'
-            )).filter(element => !element.disabled && element.tabIndex >= 0 && element.getClientRects().length);
+            )).filter(element => !element.disabled && element.tabIndex >= 0 && !element.closest('[inert]') && element.getClientRects().length);
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
             if (first && (e.shiftKey ? document.activeElement === first : document.activeElement === last)) {

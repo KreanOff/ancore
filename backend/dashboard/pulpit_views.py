@@ -22,6 +22,7 @@ from .pulpit_forms import DashboardAccessForm, DashboardForm, DashboardSettingsF
 from .pulpits import (GADGET_CATALOG, MAX_GADGETS, app_url, decorate_dashboard, decorate_gadget,
                       can_edit_dashboard, can_manage_dashboard, dashboard_url, default_dashboard, detail_context, gadget_data, visible_dashboards)
 from .recent import remember_view
+from .pulpit_grid import GRID_FIELDS, legacy_widgets, place_new_gadget, validate_widgets
 
 
 def get_dashboard(request, pk, edit=False, lock=False, manage=False, creator=False):
@@ -310,6 +311,13 @@ def gadget_edit(request, pk, gadget_pk=None, management=False):
             gadget = form.save(commit=False)
             if not gadget_pk:
                 gadget.position = dashboard.gadgets.count()
+                try:
+                    place_new_gadget(dashboard, gadget)
+                except ValueError as error:
+                    form.add_error(None, str(error))
+                    return form_response(request, form, 'Dodaj gadżet',
+                        management_url(request, f'{dashboard.slug}/gadgets/') if management else app_url(request, f'{dashboard.slug}/gadgets/'),
+                        dashboard, True, status=400, management=management)
             gadget.save()
             dashboard.revision += 1
             dashboard.save(update_fields=['revision', 'updated_at'])
@@ -340,7 +348,7 @@ def gadget_quick_add(request, pk, management=False):
         payload = json.loads(request.body)
         if not isinstance(payload, dict) or type(payload.get('revision')) is not int:
             raise ValueError
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, UnicodeDecodeError):
         return JsonResponse({'error': 'Nieprawidłowe dane gadżetu.'}, status=400)
     if payload['revision'] != dashboard.revision:
         return JsonResponse({'error': 'Pulpit zmieniono w innym oknie. Odśwież stronę przed dodaniem gadżetu.'}, status=409)
@@ -357,6 +365,10 @@ def gadget_quick_add(request, pk, management=False):
     gadget.column = column
     last = dashboard.gadgets.filter(column=column).order_by('-position').first()
     gadget.position = last.position + 1 if last else 0
+    try:
+        place_new_gadget(dashboard, gadget)
+    except ValueError as error:
+        return JsonResponse({'error': str(error)}, status=400)
     gadget.save()
     dashboard.revision += 1
     dashboard.save(update_fields=['revision', 'updated_at'])
@@ -366,6 +378,7 @@ def gadget_quick_add(request, pk, management=False):
         gadget.delete_url = management_url(request, f'{dashboard.slug}/gadgets/{gadget.pk}/delete/')
     tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
     data = gadget_data(request, gadget, tasks, set(visible_spaces(request).values_list('pk', flat=True)))
+    gadget.grid = {'id': str(gadget.pk), **{field: getattr(gadget, field) for field in GRID_FIELDS}}
     if getattr(request, '_react_api', False):
         from .pulpit_frontend import gadget_payload
         return JsonResponse({'saved': True, 'gadget': gadget_payload(data, editable=True),
@@ -383,6 +396,10 @@ def arrange(request, pk):
     dashboard = get_dashboard(request, pk, edit=True, lock=True)
     try:
         payload = json.loads(request.body)
+        if not isinstance(payload, dict) or type(payload.get('revision')) is not int or payload['revision'] < 0:
+            raise ValueError
+        if 'widgets' in payload:
+            return arrange_grid(request, dashboard, payload)
         layout, columns, revision = payload['layout'], payload['columns'], payload['revision']
         if layout not in Dashboard.Layout.values or not isinstance(columns, list) or type(revision) is not int:
             raise ValueError
@@ -392,14 +409,41 @@ def arrange(request, pk):
         ids = [pk for column in columns for pk in column]
         if any(type(pk) is not int for pk in ids) or len(ids) != len(set(ids)) or set(ids) != set(dashboard.gadgets.values_list('pk', flat=True)):
             raise ValueError
-    except (ValueError, KeyError, TypeError):
+    except (ValueError, KeyError, TypeError, UnicodeDecodeError):
         return JsonResponse({'error': 'Nieprawidłowy układ pulpitu.'}, status=400)
     if revision != dashboard.revision:
         return JsonResponse({'error': 'Pulpit zmieniono w innym oknie. Odśwież stronę przed kolejną zmianą.'}, status=409)
+    rectangles = {widget['id']: widget for widget in legacy_widgets(layout, columns)}
     for column, gadgets in enumerate(columns):
         for position, gadget_pk in enumerate(gadgets):
-            dashboard.gadgets.filter(pk=gadget_pk).update(column=column, position=position)
+            rectangle = rectangles[str(gadget_pk)]
+            dashboard.gadgets.filter(pk=gadget_pk).update(column=column, position=position,
+                **{field: rectangle[field] for field in GRID_FIELDS})
     dashboard.layout = layout
     dashboard.revision += 1
     dashboard.save(update_fields=['layout', 'revision', 'updated_at'])
     return JsonResponse({'saved': True, 'revision': dashboard.revision})
+
+
+def arrange_grid(request, dashboard, payload):
+    """Apply one complete draft while the caller holds the dashboard row lock."""
+    if payload['revision'] != dashboard.revision:
+        return JsonResponse({'error': 'Pulpit zmieniono w innym oknie. Odśwież stronę przed kolejną zmianą.'}, status=409)
+    existing = {str(gadget.pk): gadget for gadget in dashboard.gadgets.all()}
+    widgets = validate_widgets(payload['widgets'], existing)
+    kept = []
+    for position, widget in enumerate(widgets):
+        gadget = existing.get(widget['id']) or DashboardGadget(dashboard=dashboard, kind=DashboardGadget.Kind.PROGRESS)
+        for field in GRID_FIELDS:
+            setattr(gadget, field, widget[field])
+        # Keep the compatibility column API usable without affecting grid placement.
+        gadget.column = min(dashboard.column_count - 1, widget['x'] * dashboard.column_count // 12)
+        gadget.position = position
+        gadget.save()
+        kept.append(gadget.pk)
+    dashboard.gadgets.exclude(pk__in=kept).delete()
+    dashboard.revision += 1
+    dashboard.save(update_fields=['revision', 'updated_at'])
+    from .pulpit_frontend import detail_page
+    return JsonResponse({'saved': True, 'revision': dashboard.revision,
+                         'page': detail_page(request, editor_context(request, dashboard))})

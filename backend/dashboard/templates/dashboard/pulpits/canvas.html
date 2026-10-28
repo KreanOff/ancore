@@ -1,20 +1,12 @@
 {% load static %}
 {% with has_gadgets=dashboard.gadgets.exists %}
-<div class="dashboard-main">
+<div class="dashboard-main work-summary-dashboard{% if editing_gadgets %} is-editing{% endif %}">
     {% if dashboard.description %}<p class="pulpit-intro">{{ dashboard.description|linebreaksbr }}</p>{% endif %}
     <div class="tasks-modal__errors" role="alert" data-pulpit-page-error hidden></div>
-    <div class="pulpit-grid pulpit-grid--{{ dashboard.layout }}" data-pulpit-grid data-layout="{{ dashboard.layout }}"{% if editing_gadgets %} data-editable="true"{% endif %}{% if not has_gadgets and not editing_gadgets %} hidden{% endif %}>
-        {% for column in columns %}<section class="pulpit-column" data-pulpit-column="{{ forloop.counter0 }}" aria-label="Kolumna {{ forloop.counter }}">{% for data in column %}{% include 'dashboard/pulpits/gadget.html' %}{% endfor %}</section>{% endfor %}
+    <div class="work-summary-canvas pulpit-summary-canvas" style="--summary-row-height: 48px; --summary-grid-gap: 12px" data-pulpit-grid data-layout="{{ dashboard.layout }}" aria-label="Gadżety pulpitu"{% if editing_gadgets %} data-editable="true"{% endif %}{% if not has_gadgets %} hidden{% endif %}>
+        {% for data in grid_gadgets %}{% include 'dashboard/pulpits/gadget.html' %}{% endfor %}
     </div>
-    {% if editing_gadgets %}
-    <template data-pulpit-placeholder-template>
-        <div class="pulpit-column-placeholder" data-pulpit-placeholder>
-            <img class="pulpit-column-placeholder__illustration" src="{% static 'img/empty-states/gadget-column-empty.webp' %}" alt="" width="720" height="540" draggable="false">
-            <span>Przeciągnij gadżet do tej kolumny</span>
-        </div>
-    </template>
-    {% endif %}
-    {% if not has_gadgets and not editing_gadgets %}
+    {% if not has_gadgets %}
     <section class="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated pulpit-empty-state" role="status">
         <img class="tasks-empty-state__illustration pulpit-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">
         <div class="tasks-empty-state__copy">

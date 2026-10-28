@@ -57,7 +57,7 @@ class PulpitTests(TestCase):
         return f'/dashboards/{dashboard.slug}/{suffix}'
 
     def form_data(self, **kwargs):
-        return {'name': 'Mój pulpit', 'description': 'Opis pulpitu', 'visibility': 'private', 'layout': 'equal', **kwargs}
+        return {'name': 'Mój pulpit', 'description': 'Opis pulpitu', 'visibility': 'private', **kwargs}
 
     def test_create_member_uses_workspace_owner_and_actual_creator(self):
         self.login(self.member)
@@ -80,6 +80,7 @@ class PulpitTests(TestCase):
                     self.assertEqual(response.status_code, 200 if modal else 302)
                     detail_url = response.json()['url'] if modal else response['Location']
                     dashboard = Dashboard.objects.get(slug=detail_url.rstrip('/').rsplit('/', 1)[-1])
+                    self.assertEqual(dashboard.layout, 'equal')
                     self.assertFalse(dashboard.gadgets.exists())
                     for _ in range(2):
                         response = self.client.get(detail_url)
@@ -125,9 +126,10 @@ class PulpitTests(TestCase):
             editor = self.client.get(f'{prefix}{dashboard.slug}/gadgets/')
             self.assertTemplateUsed(editor, 'dashboard/pulpits/gadgets.html')
             self.assertTrue(editor.context['pulpits_management_mode'])
-            for control in ['data-editable="true"', 'data-pulpit-drag', 'data-pulpit-move', 'data-pulpit-layout', 'Dodaj gadżet', 'Wróć do pulpitu']:
+            for control in ['data-editable="true"', 'work-summary-widget-tools', 'Konfiguruj', 'Dodaj gadżet', 'Anuluj']:
                 self.assertContains(editor, control)
-            self.assertContains(editor, 'Zmiany układu zapisują się automatycznie.')
+            self.assertNotContains(editor, 'data-pulpit-move')
+            self.assertNotContains(editor, 'work-summary-resize-handle')
 
     def test_editor_get_requires_creator_and_current_workspace(self):
         dashboard = self.dashboard(visibility='workspace')
@@ -174,10 +176,10 @@ class PulpitTests(TestCase):
             }), content_type='application/json')
             self.assertEqual(response.status_code, 200)
             editor = self.client.get(self.url(dashboard, 'gadgets/'))
-            self.assertContains(editor, f'value="{layout}" selected')
+            self.assertContains(editor, f'data-layout="{layout}"')
             self.assertContains(editor, 'data-pulpit-catalog')
             self.assertContains(editor, 'data-editable="true"')
-            self.assertNotContains(editor, 'data-editable="true" hidden')
+            self.assertContains(editor, 'Ten pulpit jest pusty.')
             self.assertFalse(dashboard.gadgets.exists())
 
     def test_selected_people_must_belong_to_active_workspace(self):

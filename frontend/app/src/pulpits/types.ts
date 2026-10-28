@@ -1,3 +1,4 @@
+import type { SummaryWidget } from '../spaces/summaryLayout';
 import type { FormDialogData, FormSchema } from '../forms/FormDialog';
 import type { PaginationData } from '../shared/Pagination';
 import type { EmojiArt } from '../shared/Emoji';
@@ -69,6 +70,7 @@ export interface DetailData {
   dashboard: Dashboard;
   editing: boolean;
   columns: Gadget[][];
+  grid: { widgets: SummaryWidget[]; revision: number; save_url: string; columns: number };
   layout_choices: [Layout, string][];
   add_gadget_url: string;
   arrange_url: string;

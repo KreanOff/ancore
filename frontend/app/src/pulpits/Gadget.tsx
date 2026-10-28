@@ -1,130 +1,18 @@
-import type { DragEvent } from 'react';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
-import type { Gadget as GadgetData, Layout } from './types';
-export function LayoutPreview({ value }: { value: Layout }) {
+import type { Gadget as GadgetData } from './types';
+export default function Gadget({ data, preview = false }: { data: GadgetData; preview?: boolean }) {
   return (
-    <span className={`pulpit-layout-preview pulpit-layout-preview--${value}`} aria-hidden="true">
-      <span />
-      <span />
-      <span />
-    </span>
-  );
-}
-export default function Gadget({
-  data,
-  editing,
-  busy,
-  first,
-  last,
-  single,
-  dragging,
-  open,
-  move,
-  remove,
-  dragStart,
-  dragEnd,
-}: {
-  data: GadgetData;
-  editing: boolean;
-  busy: boolean;
-  first: boolean;
-  last: boolean;
-  single: boolean;
-  dragging: boolean;
-  open: () => void;
-  move: (direction: string) => void;
-  remove: () => void;
-  dragStart: (event: DragEvent) => void;
-  dragEnd: () => void;
-}) {
-  return (
-    <article
-      className={`dashboard-panel pulpit-gadget ${dragging ? 'is-dragging' : ''}`}
-      data-gadget-id={data.id}
-    >
+    <article className="dashboard-panel pulpit-gadget" data-gadget-id={data.id || undefined}>
       <header className="dashboard-panel-header pulpit-gadget-header">
-        {editing ? (
-          <button
-            type="button"
-            className="tasks-icon-button pulpit-drag-handle"
-            draggable={!busy}
-            disabled={busy}
-            aria-label={`Przeciągnij gadżet: ${data.label}`}
-            title="Przeciągnij gadżet"
-            onDragStart={dragStart}
-            onDragEnd={dragEnd}
-          >
-            <Icon name="grip-vertical" />
-          </button>
-        ) : null}
         <h2>{data.label}</h2>
         <Icon name={data.icon} />
-        {editing ? (
-          <Dropdown
-            label={`Działania gadżetu: ${data.label}`}
-            className="documents-item-actions"
-            triggerClassName="tasks-icon-button documents-icon-button"
-            menuClass="tasks-section-menu documents-item-menu"
-            role="group"
-            trigger={<Icon name="ellipsis" />}
-          >
-            {(close) => (
-              <div className="documents-menu-actions">
-                <button
-                  type="button"
-                  className="tasks-project-menu-button"
-                  disabled={busy}
-                  onClick={() => {
-                    close();
-                    open();
-                  }}
-                >
-                  <Icon name="settings-2" />
-                  <span>Konfiguruj</span>
-                </button>
-                {[
-                  ['up', 'Przenieś wyżej', 'arrow-up'],
-                  ['down', 'Przenieś niżej', 'arrow-down'],
-                  ['column', 'Do następnej kolumny', 'arrow-right'],
-                ].map(([direction, label, icon]) => (
-                  <button
-                    key={direction}
-                    type="button"
-                    className="tasks-project-menu-button"
-                    disabled={
-                      busy ||
-                      (direction === 'up' && first) ||
-                      (direction === 'down' && last) ||
-                      (direction === 'column' && single)
-                    }
-                    onClick={() => {
-                      close();
-                      move(direction);
-                    }}
-                  >
-                    <Icon name={icon} />
-                    <span>{label}</span>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="tasks-project-menu-button"
-                  disabled={busy}
-                  onClick={() => {
-                    close();
-                    remove();
-                  }}
-                >
-                  <Icon name="trash-2" />
-                  <span>Usuń gadżet</span>
-                </button>
-              </div>
-            )}
-          </Dropdown>
-        ) : null}
       </header>
-      {data.unavailable ? (
+      {preview ? (
+        <div className="pulpit-gadget-body pulpit-gadget-empty-state">
+          <Icon name={data.icon} className="pulpit-gadget-empty-icon" />
+          <p className="pulpit-gadget-empty">Dane pojawią się po zapisaniu układu.</p>
+        </div>
+      ) : data.unavailable ? (
         <div className="pulpit-gadget-body">
           <div className="pulpit-gadget-empty-state">
             <Icon name="lock" className="pulpit-gadget-empty-icon" />

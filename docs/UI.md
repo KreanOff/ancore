@@ -2982,51 +2982,37 @@ Jedyny gadżet „Postęp pracy” rozszerza `dashboard-panel` i współdzieli
 „Zamknięte: X z Y”, wspólny `progress`, opis zakresu i pięć liczników
 z istniejącymi kolorowymi `status-indicator`. Pusty zakres nadal pokazuje wszystkie
 statusy z zerami, bez ilustracji zastępującej dane. Ikona wykresu jest po prawej
-stronie nagłówka; uchwyt i menu występują wyłącznie w edytorze. Nagłówek pulpitu
-pokazuje samą nazwę po lewej, a „Edytuj pulpit” (dla właściciela, administratora i członka),
-odświeżenie i menu działań zgodne z rolą po prawej. „Kopiuj pulpit” jest usunięte ze wszystkich menu;
-przegląd odbiorcy udostępnionego pulpitu nie pokazuje pustego menu działań.
-„Edytuj pulpit” i „Odśwież” używają wspólnego
-białego wariantu `tasks-tag-topbar-button--secondary` z delikatną ramką,
-tak samo jak przyciski nagłówka edytora. Nawigacja i gwiazdki są dostępne w bocznym menu
-oraz katalogu pulpitów. Pod nagłówkiem nie ma osobnego wiersza widoczności,
-autora ani wyboru układu. Przegląd nie pokazuje uchwytów ani menu gadżetów,
-także twórcy. „Edytuj pulpit” włącza edytor w głównej treści strony,
-z zachowaniem wspólnego menu bocznego. Układ nie otwiera się w modalu.
-Edytor ma w głównym nagłówku „Dodaj gadżet”, „Zmień układ” oraz „Gotowe”
-(powrót do przeglądu). Wszystkie trzy używają wspólnego białego wariantu
-`tasks-tag-topbar-button--secondary` z delikatną ramką. Pod nagłówkiem zaczyna się siatka gadżetów;
-nie ma dodatkowego paska trybu edycji ani licznika. Komunikaty automatycznego
-zapisu pozostają w regionie live dostępnym dla czytnika ekranu, a błędy są
-widoczne nad siatką. Wariant `pulpit-layout-control` korzysta ze wspólnych
-tokenów. „Zmień układ” otwiera wspólny popover
-`row-actions.js` z pięcioma miniaturami i zaznaczeniem aktualnego układu.
-Na telefonie przyciski nagłówka zawijają się,
-a wszystkie kolumny wyświetlają się pionowo. Puste kolumny edytora mają
-przerywaną ramkę, kolorową ilustrację 3D i podpowiedź przeciągania.
-Widoczność zmienia się w zakładce „Ustawienia” okna ustawień pulpitu,
-a osoby i ich role w zakładce „Udostępnienia”. Menu gadżetu
-w edytorze zapewnia konfigurację, przeniesienie wyżej/niżej/do
-następnej kolumny i usunięcie. Przeciąganie zaczyna się wyłącznie od uchwytu,
-więc nie zakłóca linków i zaznaczania tekstu. Niedostępne kierunki przeniesienia
-są wyłączone. Zapis aktualizuje żywy komunikat i blokuje kolejne zmiany oraz
-wyjście do zakończenia żądania; błąd przywraca poprzednie pozycje i układ,
-wartość selecta oraz pokazuje alert. Wspólny `canvas.html` zachowuje ten sam
-odczyt danych w przeglądzie i edytorze.
+stronie nagłówka. Przegląd pokazuje nazwę pulpitu, odświeżenie i menu działań
+zgodne z rolą; „Edytuj pulpit” jest na pasku nad siatką, jak w Podsumowaniu.
+Menu nie zawiera „Kopiuj pulpit”. Nawigacja i gwiazdki pozostają w menu bocznym
+oraz katalogu. Podgląd nie pokazuje uchwytów ani opcji układu.
+
+Aktywny edytor React współdzieli `DashboardCanvas`, `SummaryWidgetControls`
+i klasy `work-summary-*` z Podsumowaniem Przestrzeni. Siatka ma 12 kolumn,
+wiersz 48px i odstępy 12px. W edycji pokazuje kropkowane tło, nagłówek
+z uchwytem, menu pozycji/rozmiaru i uchwyt w prawym dolnym rogu.
+Toolbar zawiera „Tryb edycji”/„Niezapisane zmiany”, „Dodaj gadżet”, „Anuluj”
+i „Zapisz układ”, z tymi samymi przyciskami i podpowiedzią co Podsumowanie.
+Nie ma wyboru pięciu gotowych układów ani automatycznego zapisu geometrii.
+Menu zachowuje pozycję przy zmianie rozmiaru kafelka i obsługuje strzałki,
+suwaki, miniaturę, skróty szerokości oraz usunięcie. Kafelki na wąskim ekranie
+układają się pionowo; menu góra/dół zmienia ich rzeczywistą kolejność.
+
+Dodawanie, usuwanie, pozycja i rozmiar tworzą jeden szkic. „Zapisz układ”
+zapisuje go razem, „Anuluj” przywraca poprzedni stan. Błąd zachowuje szkic,
+a pobranie aktualnej wersji wymaga potwierdzenia jego odrzucenia. Nawigacja
+chroni niezapisane zmiany. „Konfiguruj” w menu gadżetu jest dostępne po zapisaniu
+układu i otwiera istniejący formularz źródła, tytułu i filtrów. Zapis konfiguracji
+odświeża dane oraz rewizję bez opuszczania edytora. Nowa karta przed zapisem
+wyświetla informację, że dane pojawią się po zapisaniu układu.
 
 Pozycje menu edytora i nagłówki gadżetów mają dekoracyjne ikony z `AncoreIcons`:
 aplikacje dla układu, osoby dla dostępu, ustawienia dla konfiguracji
 i `chart-no-axes-combined` dla „Postępu pracy”. `GadgetKindSelect` przekazuje te same ikony do
 wspólnego dropdownu przez `data-ancore-option-icon`.
-`pulpit-layout-preview` pokazuje miniaturę aktualnego układu kolumn i zmienia
-ją razem z selectem, również przy przywracaniu układu po błędzie zapisu.
-Include `dashboard/pulpits/layout_preview.html` jest wspólny dla menu
-„Zmień układ” i pola „Układ” w tworzeniu pulpitu. `DashboardLayoutSelect`
-przekazuje pięć miniatur przez `data-ancore-option-preview`; pole pokazuje
-podgląd 32×23px przy wybranej wartości i 44×32px w wierszach listy o wysokości
-48px. Lokalny limit wysokości menu 320px mieści pięć wariantów i wyszukiwarkę;
-wspólna warstwa dropdownów ogranicza go do dostępnego miejsca na ekranie.
-Pole zachowuje wyszukiwarkę, checkbox zaznaczenia i zapis natywnego selecta.
+Tworzenie pulpitu nie wymaga wybrania dawnego układu kolumn. Aktywny
+edytor steruje geometrią w menu kafelka; miniatura położenia pochodzi ze
+wspólnego `SummaryWidgetControls`.
 Formularz rodzaju gadżetu zawiera `pulpit-gadget-preview`: miniaturę z ikoną
 oraz krótki opis, aktualizowane po wyborze rodzaju. Niedostępne źródło ma ikonę
 kłódki i komunikat bez nazwy przestrzeni oraz liczników. Opisy oraz standardowa
@@ -3035,15 +3021,8 @@ walidacja formularza pozostają tekstowe.
 Pusty pulpit używa wariantu `pulpit-empty-state` wspólnego `tasks-empty-state`:
 kolorowa ilustracja `static/img/empty-states/dashboard-empty.webp` i opis
 są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przegląd kieruje do edycji.
-Edytor pokazuje pustą siatkę z miejscem na przeciągany gadżet.
-Katalog otwiera przycisk „Dodaj gadżet” w nagłówku.
-Każda pusta kolumna używa dekoracyjnej, przezroczystej ilustracji
-`static/img/empty-states/gadget-column-empty.webp` o maksymalnej szerokości 240px.
-Obraz przedstawia kolorowe kafelki gadżetów i wolne miejsce do ich dodania,
-w tym samym stylu 3D co pusty pulpit. `canvas.html` udostępnia wzorzec `<template>`
-z adresem wygenerowanym przez `{% static %}`; `pulpits.js` klonuje go po zmianie
-układu i opróżnieniu kolumny oraz usuwa po dodaniu gadżetu. Obraz ma `alt=""`
-i `draggable="false"`, więc przeciąganie nadal dotyczy uchwytów gadżetów.
+Edytor pokazuje wspólny pusty stan po usunięciu wszystkich gadżetów.
+Katalog otwiera przycisk „Dodaj gadżet” na pasku nad siatką.
 Ilustracja przeglądu pulpitu ma przezroczyste tło i wspólne pole 440×330px,
 tak jak puste katalogi Przestrzeni i Pulpitów. Skaluje się do dostępnej szerokości
 i wraz z opisem jest wyśrodkowana w treści. Jest dekoracyjna (`alt=""`,
@@ -3052,7 +3031,6 @@ Typografia pustego pulpitu nawiązuje do wskazanego wzorca Jiry: nagłówek
 28px/700 (24px na telefonie), opis 16px z interlinią 1,6 i odstępem 16px
 od nagłówka. Używa wspólnego Atlassian Sans i koloru `--text-primary`.
 Lokalna waga nagłówka nadpisuje globalne 400 wyłącznie w tym pustym stanie.
-Siatka pustych kolumn pozostaje widoczna w edytorze po zmianie układu.
 Przegląd pustego pulpitu zachowuje wyśrodkowaną ilustrację.
 W trybie tylko do odczytu ilustracja pozostaje, a opis dotyczy twórcy pulpitu.
 
@@ -3189,36 +3167,28 @@ Zamknięcie przez Escape, tło lub przycisk chroni szkice wszystkich zakładek.
 Zamknięcie po zapisie odświeża także otwarty edytor i jego rewizję.
 Widoczność używa wspólnego selecta z ikonami: `lock` dla „Prywatny”, `users`
 dla „Wybrane osoby” i `building-2` dla „Cały Workspace”. Pole „Osoby z dostępem”
-pojawia się po wyborze „Wybrane osoby”. Gadżety, ich katalog i pięć układów
-korzystają z `DashboardView` bezpośrednio na stronie; zapis układu pozostaje
-automatyczny. „Gadżety i układ” w menu otwiera ten sam edytor.
-Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego;
-po zapisie wraca do siatki. „Gotowe” w nagłówku kończy edycję układu.
+pojawia się po wyborze „Wybrane osoby”. Gadżety i ich układ korzystają
+z `DashboardView` bezpośrednio na stronie; „Gadżety i układ” otwiera ten sam
+edytor. Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego.
 
-
-Panel katalogu gadżetów (`catalog.html`) jest dokowany po prawej stronie
-edytora, ma niezależne przewijanie, wyszukiwarkę ignorującą wielkość liter
-oraz polskie znaki, kategorię Statystyki i stan bez wyników. Katalog oraz
-liczniki „Wszystkie”/„Statystyki” obejmują wyłącznie jeden rodzaj „Postęp pracy”.
-Miniatury `catalog_preview.html` korzystają z istniejących ikon i tokenów,
-a przyciski z klas wspólnych kontrolek. `pulpit-editor-body` rozszerza powłokę
-Dashboardu bez zmian na innych ekranach. Na telefonie katalog pojawia się
-nad siatką i ma ograniczoną wysokość z przewijaną listą. Przy średniej szerokości
-otwarty katalog układa gadżety pionowo, zachowując zapisane kolumny.
-Escape i zamknięcie katalogu przywracają fokus do przycisku otwarcia;
-otwarcie skupia wyszukiwarkę. Stan otwarcia i filtrów jest zapamiętywany
-w `sessionStorage` osobno dla adresu edytora, również po konfiguracji i reload.
-
-„Dodaj” zapisuje gadżet z domyślnymi filtrami i dołącza go do najmniej
-zapełnionej zapisanej kolumny bez nawigacji i zamykania katalogu. Formularz
-„Konfiguruj” służy do dopasowania źródła i filtrów. Bez JS link nagłówka nadal
-otwiera standardowy formularz dodawania. W trakcie żądania dodawanie, zmiana
-układu i wyjście są blokowane. Osiągnięcie limitu 24 wyłącza przyciski katalogu
-oraz pokazuje opis. Błąd sieci i konflikt rewizji wyświetlają alert bez dokładania
-pozornego gadżetu; przy niepewnym wyniku żądania należy odświeżyć pulpit.
-Po zakończeniu dodawania przycisk odzyskuje fokus utracony podczas blokady,
-również po błędzie; przy osiągnięciu limitu fokus przechodzi do zamknięcia katalogu.
-Nowe menu gadżetów inicjalizują się przez `ancore:modals-loaded`.
+Katalog aktywnego Reacta i Podsumowania korzysta ze wspólnego
+`shared/WidgetCatalog.tsx` oraz `Modal`. Każdy wiersz pokazuje miniaturę
+rzeczywistego komponentu gadżetu, nazwę, opis i osobny przycisk „Dodaj”.
+Pulpity oferują „Postęp pracy” z jawnie oznaczonymi danymi przykładowymi;
+Podsumowanie pokazuje swoje dostępne gadżety z danymi bieżącej Przestrzeni
+i stanem „Dodano”. Podglądy są nieinteraktywne (`inert`, `aria-hidden`)
+i skalują się przez `ResizeObserver`; kontrolki miniatur nie przejmują fokusu.
+Wariant `widget-catalog-modal` ma do 900px szerokości i 840px wysokości,
+przewijaną listę pod stałą wyszukiwarką oraz jednokolumnowe wiersze poniżej 620px.
+Wyszukiwanie ignoruje wielkość liter i polskie znaki; brak dopasowań ma osobny stan.
+Można dodać wiele kart tego samego rodzaju; limit 24 wyłącza dalsze dodawanie.
+Katalog pozostaje otwarty po dodaniu. Escape i zamknięcie przywracają fokus
+przycisku, a otwarcie skupia wyszukiwarkę. Wspólna pułapka fokusu pomija
+potomków `inert`. Katalog nie zmniejsza szerokości
+siatki i nie zapisuje stanu w sessionStorage. Dawny `catalog.html` oraz
+kolumnowy kontroler pozostają tylko adapterami zgodności starszych wejść;
+React przejmuje pełną edycję siatki. Pierwszy render Django pokazuje zapisane
+pozycje i zachowuje formularze konfiguracji/usuwania.
 
 ## Ekrany React podczas migracji
 

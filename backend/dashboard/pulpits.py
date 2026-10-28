@@ -9,8 +9,8 @@ from workplaces.services import scoped_workplace_app_path, workspace_owner
 from .models import Dashboard, DashboardGadget, DashboardMembership
 from .filters import visible_filters
 from .filter_search import QueryError, apply_query
+from .pulpit_grid import MAX_GADGETS, resolved_widgets
 
-MAX_GADGETS = 24
 AVAILABLE_GADGET_KINDS = tuple(DashboardGadget.Kind)
 GADGET_ICONS = {
     DashboardGadget.Kind.PROGRESS: 'chart-no-axes-combined',
@@ -149,10 +149,19 @@ def detail_context(request, dashboard):
     spaces = set(visible_spaces(request).values_list('pk', flat=True))
     scope = dashboard_data_scope(request, dashboard, tasks, spaces)
     columns = [[] for _ in range(dashboard.column_count)]
-    for gadget in dashboard.gadgets.select_related('space'):
+    gadgets = list(dashboard.gadgets.select_related('space'))
+    dashboard.gadget_count = len(gadgets)
+    grid = resolved_widgets(dashboard, gadgets)
+    grid_by_id = {widget['id']: widget for widget in grid}
+    for gadget in gadgets:
         decorate_gadget(request, gadget)
+        gadget.grid = grid_by_id[str(gadget.pk)]
         columns[min(gadget.column, dashboard.column_count - 1)].append(gadget_data(request, gadget, tasks, spaces, scope))
+    data_by_id = {str(data['gadget'].pk): data for column in columns for data in column}
     return {'dashboard': dashboard, 'columns': columns, 'dashboards_url': app_url(request),
+            'grid_gadgets': [data_by_id[widget['id']] for widget in grid],
+            'grid_widgets': grid, 'gadget_count': len(gadgets), 'max_gadgets': MAX_GADGETS,
+            'gadget_catalog': GADGET_CATALOG if dashboard.can_edit else [],
             'layout_choices': Dashboard.Layout.choices,
             'add_gadget_url': app_url(request, f'{dashboard.slug}/gadgets/add/'),
             'arrange_url': app_url(request, f'{dashboard.slug}/arrange/')}

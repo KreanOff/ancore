@@ -141,3 +141,12 @@
     .pulpit-topbar .tasks-titlebar-left { max-width: 100%; }
     .pulpit-topbar .tasks-titlebar-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* Saved dashboards share the Summary grid and its editing controls. */
+.pulpit-grid-page .dashboard-main { display: block; padding: 8px var(--dashboard-inline-padding) 20px; }
+.pulpit-grid-page .pulpit-intro { margin-bottom: 12px; }
+.pulpit-grid-page .work-summary-dashboard { min-height: 100%; }
+.pulpit-grid-page .work-summary-widget-body > .pulpit-gadget { min-height: 100%; border: 0; border-radius: inherit; }
+.pulpit-grid-page .work-summary-toolbar:has(.work-summary-toolbar-actions:empty) { display: none; }
+.pulpit-grid-page .work-summary-dashboard > .tasks-empty-state { min-height: min(620px, 70vh); }
+.pulpit-grid-page .pulpit-gadget-header { border-radius: var(--radius) var(--radius) 0 0; }

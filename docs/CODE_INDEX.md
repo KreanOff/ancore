@@ -22,7 +22,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 52 | 7 | 42 | 263 |
+| [backend/dashboard](../backend/dashboard) | 54 | 8 | 42 | 277 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
@@ -199,7 +199,7 @@ Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `user` (ForeignKey), `role` 
 
 Źródło: [backend/dashboard/models.py](../backend/dashboard/models.py).
 
-Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `kind` (CharField), `title` (CharField), `space` (ForeignKey), `assignee` (CharField), `column` (PositiveSmallIntegerField), `position` (PositiveSmallIntegerField).
+Pola zadeklarowane tutaj: `dashboard` (ForeignKey), `kind` (CharField), `title` (CharField), `space` (ForeignKey), `assignee` (CharField), `column` (PositiveSmallIntegerField), `position` (PositiveSmallIntegerField), `x` (PositiveSmallIntegerField), `y` (PositiveSmallIntegerField), `w` (PositiveSmallIntegerField), `h` (PositiveSmallIntegerField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -935,12 +935,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/models.py](../backend/dashboard/models.py) — `SavedTaskFilter`, `SavedTaskFilterMembership`, `Dashboard`, `DashboardMembership`, `DashboardGadget`, `NotificationState`
 - [backend/dashboard/notification_frontend.py](../backend/dashboard/notification_frontend.py) — `notification_payload`
 - [backend/dashboard/notification_service.py](../backend/dashboard/notification_service.py) — `notification_filters`, `notification_sources`, `filtered_sources`, `notification_summary`, `notification_page`, `change_notification_state`
-- [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardLayoutSelect`, `DashboardAccessForm`, `configure_preferences`, `DashboardPreferencesMixin`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
+- [backend/dashboard/pulpit_forms.py](../backend/dashboard/pulpit_forms.py) — `style_fields`, `DashboardVisibilitySelect`, `DashboardAccessForm`, `configure_preferences`, `DashboardPreferencesMixin`, `DashboardForm`, `DashboardSettingsForm`, `GadgetKindSelect`, `GadgetForm`
 - [backend/dashboard/pulpit_frontend.py](../backend/dashboard/pulpit_frontend.py) — `dashboard_payload`, `gadget_payload`, `pulpit_form_payload`, `modal_payload`, `directory_page`, `detail_page`, `edit_page`
+- [backend/dashboard/pulpit_grid.py](../backend/dashboard/pulpit_grid.py) — `overlaps`, `free_position`, `legacy_widgets`, `resolved_widgets`, `place_new_gadget`, `validate_widgets`
 - [backend/dashboard/pulpit_navigation.py](../backend/dashboard/pulpit_navigation.py) — `sidebar_dashboards`
 - [backend/dashboard/pulpit_sharing.py](../backend/dashboard/pulpit_sharing.py) — `ShareForm`, `payload`, `team_url`, `team`, `candidates`
 - [backend/dashboard/pulpit_urls.py](../backend/dashboard/pulpit_urls.py)
-- [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`
+- [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`, `arrange_grid`
 - [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `dashboard_role`, `can_edit_dashboard`, `can_manage_dashboard`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `dashboard_data_scope`, `gadget_data`, `detail_context`
 - [backend/dashboard/recent.py](../backend/dashboard/recent.py) — `remember_view`, `recent_views`
 - [backend/dashboard/reminders.py](../backend/dashboard/reminders.py) — `space_reminders_for_user`
@@ -1427,6 +1428,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/resources/types.ts](../frontend/app/src/resources/types.ts)
 - [frontend/app/src/shared/Avatar.tsx](../frontend/app/src/shared/Avatar.tsx)
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
+- [frontend/app/src/shared/DashboardCanvas.tsx](../frontend/app/src/shared/DashboardCanvas.tsx)
 - [frontend/app/src/shared/DirectoryColumns.tsx](../frontend/app/src/shared/DirectoryColumns.tsx)
 - [frontend/app/src/shared/Dropdown.tsx](../frontend/app/src/shared/Dropdown.tsx)
 - [frontend/app/src/shared/Emoji.tsx](../frontend/app/src/shared/Emoji.tsx)
@@ -1439,6 +1441,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/Select.tsx](../frontend/app/src/shared/Select.tsx)
 - [frontend/app/src/shared/SharingDialog.tsx](../frontend/app/src/shared/SharingDialog.tsx)
 - [frontend/app/src/shared/StatusGroup.tsx](../frontend/app/src/shared/StatusGroup.tsx)
+- [frontend/app/src/shared/WidgetCatalog.tsx](../frontend/app/src/shared/WidgetCatalog.tsx)
 - [frontend/app/src/shared/api.ts](../frontend/app/src/shared/api.ts)
 - [frontend/app/src/shared/clipboard.ts](../frontend/app/src/shared/clipboard.ts)
 - [frontend/app/src/shared/globals.d.ts](../frontend/app/src/shared/globals.d.ts)
@@ -1502,11 +1505,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/calendar-save.test.mjs](../frontend/app/tests/calendar-save.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
+- [frontend/app/tests/dashboard-canvas.test.mjs](../frontend/app/tests/dashboard-canvas.test.mjs)
 - [frontend/app/tests/dropdown-layer.test.mjs](../frontend/app/tests/dropdown-layer.test.mjs)
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
 - [frontend/app/tests/item-filtering.test.mjs](../frontend/app/tests/item-filtering.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
+- [frontend/app/tests/pulpit-grid-editor.test.mjs](../frontend/app/tests/pulpit-grid-editor.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
 - [frontend/app/tests/suite-read-only.test.mjs](../frontend/app/tests/suite-read-only.test.mjs)
 - [frontend/app/tests/summary-distribution.test.mjs](../frontend/app/tests/summary-distribution.test.mjs)
@@ -1853,6 +1858,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/dashboard/test_pulpit_editor.py](../backend/dashboard/test_pulpit_editor.py).
 
 - `PulpitEditorTests`: 7 metod testowych.
+
+### backend/dashboard/test_pulpit_grid.py
+
+Źródło: [backend/dashboard/test_pulpit_grid.py](../backend/dashboard/test_pulpit_grid.py).
+
+- `PulpitGridTests`: 13 metod testowych.
+- `PulpitGridMigrationTests`: 1 metod testowych.
 
 ### backend/dashboard/test_pulpit_group_retirement.py
 
@@ -2238,6 +2250,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/dashboard/migrations/0005_dashboard_membership_roles.py](../backend/dashboard/migrations/0005_dashboard_membership_roles.py)
 - [backend/dashboard/migrations/0006_saved_filter_membership_roles.py](../backend/dashboard/migrations/0006_saved_filter_membership_roles.py)
 - [backend/dashboard/migrations/0007_remove_workspace_invitations.py](../backend/dashboard/migrations/0007_remove_workspace_invitations.py)
+- [backend/dashboard/migrations/0008_dashboard_gadget_grid.py](../backend/dashboard/migrations/0008_dashboard_gadget_grid.py)
 
 ### planner
 

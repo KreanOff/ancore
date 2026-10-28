@@ -1,5 +1,56 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Katalog gadżetów z rzeczywistymi podglądami (28.10.2026)
+
+Pulpity i Podsumowanie używają `shared/WidgetCatalog.tsx`: miniatury rzeczywistych
+komponentów, opisy, „Dodaj”/„Dodano”, wyszukiwanie i przewijana lista.
+Pulpity oznaczają dane przykładowe; Podsumowanie korzysta z bieżących danych
+Przestrzeni. `inert` wyłącza kontrolki w miniaturach, a wspólna pułapka fokusu
+je pomija. Nie zmieniono rodzajów gadżetów, API ani modeli.
+
+Przeszły build TypeScript, 164 testy frontendu i kontrola składni `tasks.js`.
+Playwright z lokalnym Chrome wykonał 12 sprawdzeń na osobnej bazie QA
+(plugin Browser niedostępny): rzeczywisty wygląd i rozmiar okna, wyszukiwanie
+z polskimi znakami i bez, stan pusty, ponowne dodanie, Escape/fokus, anulowanie,
+zapis/reload, komplet podglądów Podsumowania, „Dodano”, pomijanie kontrolek
+`inert`, przewijanie długiej listy i stała wyszukiwarka. Sprawdzono 1440, 390
+i 320px, obejrzano zrzuty; brak poziomego przepełnienia i błędów konsoli.
+Serwer QA zatrzymano, tymczasową bazę i storage usunięto.
+Nie testowano Safari ani Firefoksa.
+
+## Pulpity ze wspólną siatką Podsumowania (28.10.2026)
+
+Pulpity używają `shared/DashboardCanvas.tsx` wspólnie z Podsumowaniem:
+siatka 12 kolumn, przeciąganie, zmiana rozmiaru, menu i klawiatura.
+Dodawanie/usuwanie i geometria są szkicem zatwierdzanym przez „Zapisz układ”
+lub odrzucanym przez „Anuluj”. Katalog jest modalem; tworzenie pulpitu nie ma
+starego wyboru układu kolumn. [UI](UI.md#15-pulpity), [API](FRONTEND.md).
+Migracja `dashboard.0008_dashboard_gadget_grid` przenosi istniejące kolumny
+bez utraty gadżetów i konfiguracji. Została zastosowana także lokalnie.
+
+Przeszły 134 testy PostgreSQL na osobnych bazach: `dashboard.test_pulpit_grid`,
+`dashboard.test_pulpits`, `dashboard.test_pulpit_catalog`,
+`dashboard.test_pulpit_preferences`, `dashboard.test_pulpit_roles`,
+`dashboard.test_default_pulpit`, `dashboard.test_pulpit_editor`,
+`core.test_pulpit_frontend`, `spaces.test_dashboard`, `spaces.test_summary`.
+Sprawdzono transakcję szkicu, rewizje, granice, kolizje, role i źródła danych,
+scoped API oraz migrację wszystkich wcześniejszych układów. Przeszły 164 testy
+frontendu (`pnpm --dir frontend/app test`), build z TypeScriptem,
+format zmienionych plików, Django check, zgodność modeli i migracji,
+indeks oraz `git diff --check`.
+
+Playwright z lokalnym Chrome wykonał 22 sprawdzenia na osobnej bazie QA;
+plugin Browser był niedostępny. Potwierdzono nowe/domyślne/puste pulpity,
+dodawanie/usuwanie, wskaźnik i klawiaturę, granice, menu, anulowanie,
+zapis/reload/ponowne wejście, konfigurację, 503 i ponowienie, konflikt dwóch
+okien i odrzucenie szkicu, role członka/obserwatora, scoped i zwykłe adresy,
+pierwszy render bez JavaScriptu oraz referencyjne Podsumowanie. Szerokości:
+1440, 1024, 390 i 320px. Końcowy formularz tworzenia sprawdzono po usunięciu
+wyboru kolumn. Zrzuty obejrzano; brak przepełnienia, błędów wykonania
+i nieoczekiwanych błędów konsoli. Serwery QA zatrzymano, bazę i storage usunięto.
+Nie testowano Safari, Firefoksa ani wdrożenia produkcyjnego.
+
+
 ## Stała pozycja opcji gadżetu Przestrzeni (28.10.2026)
 
 Panel pozycji i rozmiaru zachowuje współrzędne z chwili otwarcia, gdy

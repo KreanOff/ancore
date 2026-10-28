@@ -3,6 +3,7 @@ from django.templatetags.static import static
 from django.utils.html import strip_tags
 
 from core.frontend import form_payload, pagination_payload
+from .pulpit_grid import COLUMNS, MAX_HEIGHT, MAX_ROWS, MIN_HEIGHT, MIN_WIDTH
 
 
 def dashboard_payload(item):
@@ -33,9 +34,6 @@ def pulpit_form_payload(form):
     result.update(layout='pulpit', compact=True)
     for field in result['fields']:
         field['label_required'] = form.fields[field['name']].required
-        if field['name'] == 'layout':
-            for choice in field['choices']:
-                choice['layout_preview'] = choice['value']
     if getattr(form, 'catalog', None):
         result['gadget_catalog'] = form.catalog
         result['illustration'] = static('img/empty-states/dashboard-empty.webp')
@@ -67,7 +65,10 @@ def detail_page(request, context):
     editing = bool(context.get('editing_gadgets'))
     return {'type': 'pulpit-detail', 'title': dashboard.name, 'data': {
         'dashboard': dashboard_payload(dashboard), 'editing': editing,
-        'columns': [[gadget_payload(data, editable=editing) for data in column] for column in context['columns']],
+        'columns': [[gadget_payload(data, editable=dashboard.can_edit) for data in column] for column in context['columns']],
+        'grid': {'widgets': context['grid_widgets'], 'revision': dashboard.revision, 'columns': COLUMNS,
+                 'min_w': MIN_WIDTH, 'min_h': MIN_HEIGHT, 'max_h': MAX_HEIGHT, 'max_rows': MAX_ROWS,
+                 'save_url': context['arrange_url']},
         'layout_choices': context['layout_choices'], 'add_gadget_url': context['add_gadget_url'],
         'arrange_url': context['arrange_url'], 'quick_add_url': context.get('quick_add_url', ''),
         'editor_url': context.get('editor_url', dashboard.gadgets_url),

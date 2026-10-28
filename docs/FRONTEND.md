@@ -19,7 +19,7 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
 - **Filtry zadań:** wyszukiwanie podstawowe i zaawansowane, katalog,
   zapis/edycja/kopia definicji, osobiste gwiazdki i udostępnianie.
 - **Pulpity:** katalog, pulpit domyślny, przegląd, ustawienia,
-  dostępy oraz edytor gadżetów z katalogiem, pięcioma układami i przeciąganiem.
+  dostępy oraz edytor gadżetów z katalogiem, siatką 12 kolumn, przeciąganiem i zmianą rozmiaru.
 - **Dysk i Dokumenty:** listy/kafelki, filtry i wyszukiwanie, formularze, upload,
   podglądy, przenoszenie, gwiazdki, kosz, szablony, edytor tekstowy Ancore
   i powłoka pełnych edytorów z edycją nazwy oraz stanem zapisu.
@@ -86,7 +86,8 @@ nad „Ustawienia”, zamiast osobnej zakładki. Lista członków w „Udostępn
 ## Konfigurowalny pulpit Przestrzeni
 
 `spaces/SummaryDashboard.tsx` zarządza szkicem i zapisem układu, katalogiem
-wspólnego `Modal`, uchwytami pointer/klawiatura, błędami oraz ochroną wyjścia.
+`shared/WidgetCatalog.tsx`, błędami oraz ochroną wyjścia. `shared/DashboardCanvas.tsx`
+współdzieli z Pulpitami uchwyty pointer/klawiatura, zmianę rozmiaru i panel opcji.
 `Summary.tsx` zachowuje źródła danych i interakcje wykresów;
 `SummaryWidgetControls.tsx` renderuje panel pozycji i rozmiaru, miniaturę
 oraz suwaki i skróty szerokości we wspólnym `Dropdown`. Pozostaje otwarty
@@ -368,8 +369,10 @@ Pulpit domyślny inicjalizuje oryginalny widok Django; usunięte gadżety nie s�
 odtwarzane podczas kolejnego wejścia.
 
 `src/pulpits/DetailPage.tsx` renderuje edycję gadżetów i układu bezpośrednio
-w głównej treści pulpitu. „Edytuj pulpit” oraz „Gadżety i układ” przechodzą
-do tego widoku przez nawigację JSON; bezpośrednie adresy działają tak samo.
+w głównej treści pulpitu. „Edytuj pulpit” przełącza szkic na tej samej stronie
+i aktualizuje adres przez adapter nawigacji; „Gadżety i układ” oraz bezpośrednie
+adresy otwierają ten sam edytor. `shared/DashboardCanvas.tsx` zapewnia siatkę
+12 kolumn, uchwyty, rozmiary, menu i mobilną kolejność jak w Podsumowaniu.
 `src/pulpits/SettingsDialog.tsx` zawiera tabelę dostępów i formularz ustawień
 w dużym wspólnym `Modal` z zakładkami „Ustawienia” i „Udostępnienia”, w tej kolejności. Serializer przekazuje
 `settings_tabs` z autoryzowanymi adresami i zachowanymi filtrami; dialog
@@ -397,17 +400,36 @@ Zamknięcie chroni wszystkie szkice i po zmianie odświeża stronę w tle.
 Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego
 nad edytorem; zapis wraca do siatki z aktualną rewizją.
 
-Wyłącznie `arrange` i `gadget_quick_add` zachowują oryginalne strukturalne JSON:
-odpowiednio `{layout, columns: [[id, ...], ...], revision}` i `{kind, revision}`.
-Jawna lista `JSON_BODY_VIEWS` przekazuje te dane do walidacji domenowej;
-pozostałe formularze JSON nadal przyjmują płaskie wartości. Rewizje, blokady,
-pełny zbiór ID i limit 24 chronią zapis przed konfliktem i częściową zmianą.
-React cofa niezapisany układ po błędzie i umożliwia odświeżenie danych.
-Formularze używają FormData. Adapter usuwa starsze nagłówki `X-Pulpit-Modal`
+`data.grid` zawiera `{widgets: [{id,x,y,w,h}], revision, save_url, columns}`
+i granice siatki. Edytor wysyła do `arrange` JSON `{revision, widgets}`;
+nowy gadżet ma tymczasowy identyfikator `new-*` oraz `kind: "progress"`.
+Brak istniejącego ID oznacza usunięcie, a odpowiedź `{saved, revision, page}`
+zawiera aktualne dane i trwałe ID. Dodanie, usunięcie oraz geometria są jednym
+zapisem; „Anuluj” odrzuca cały szkic. Błąd zachowuje szkic, a „Wczytaj aktualny
+układ” po potwierdzeniu pobiera wersję serwera. Konfiguracja istniejącego gadżetu
+jest dostępna po zapisaniu układu i odświeża rewizję bez opuszczania edytora.
+Nowe karty pokazują dane dopiero po zapisie. Katalog działa we wspólnym
+`shared/WidgetCatalog.tsx`: wyszukiwarka, przewijane wiersze z miniaturą,
+opisem i przyciskiem dodania. Miniatura Pulpitów używa `GadgetCard` z jawnymi
+danymi przykładowymi; Podsumowanie przekazuje te same `renderWidget` co siatka,
+z bieżącymi danymi i stanem „Dodano”. Podglądy nie wykonują dodatkowych żądań;
+`ResizeObserver` skaluje ich rzeczywiste komponenty, a `inert` i `aria-hidden`
+wyłączają interakcje. Wspólna pułapka fokusu w `tasks.js` pomija elementy
+wewnątrz `inert`. Ten sam rodzaj w Pulpitach można dodać wielokrotnie, do limitu 24.
+
+`dashboard.0008_dashboard_gadget_grid` dodaje `x/y/w/h` do `DashboardGadget`
+i przenosi dotychczasowe kolumny na siatkę, zachowując konfiguracje. Odczyt
+starszych rekordów bez geometrii ustala pozycje bez zapisu. Serwer sprawdza
+identyfikatory, kolizje, granice 12×200, rozmiary 4–12×5–16, limit i rewizję
+pod blokadą pulpitu. Role i widoczność źródeł pozostają sprawdzane osobno.
+Pierwszy render korzysta z tych samych prostokątów. Starsze API
+`{layout, columns, revision}` i `gadget_quick_add` pozostają zgodne i aktualizują
+geometrię; aktywny React nie używa kolumnowego autosave.
+Jawna lista `JSON_BODY_VIEWS` przekazuje strukturalny JSON do widoków domenowych;
+formularze nadal używają FormData. Adapter usuwa starsze nagłówki `X-Pulpit-Modal`
 i `X-Pulpit-Navigation`. Usunięcie przekazuje `invalidated_return_paths`
-do istniejącej powłoki przed nawigacją. Stan katalogu gadżetów zachowuje
-dotychczasowy klucz sessionStorage, a tabele dotychczasowe klucze szerokości.
-Menu boczne Pulpitów, picker i wyszukiwanie w menu pozostają częścią powłoki.
+do istniejącej powłoki przed nawigacją. Tabele zachowują dotychczasowe klucze
+szerokości. Menu boczne Pulpitów, picker i wyszukiwanie pozostają częścią powłoki.
 
 Ustawienia pulpitu obejmują ikonę z istniejącej biblioteki, domyślny zakres
 danych (Workspace, wybrane Przestrzenie albo zapisany filtr) i odświeżanie

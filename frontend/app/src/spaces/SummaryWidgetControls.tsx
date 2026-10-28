@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import {
@@ -23,6 +23,7 @@ export function SummaryWidgetControls({
   onMove,
   onResize,
   onRemove,
+  renderActions,
 }: {
   widget: SummaryWidget;
   layout: SummaryWidget[];
@@ -34,6 +35,7 @@ export function SummaryWidgetControls({
   onMove: (direction: WidgetDirection) => void;
   onResize: (size: WidgetSize) => void;
   onRemove: () => void;
+  renderActions?: (close: () => void) => ReactNode;
 }) {
   const rows = Math.max(8, ...layout.map((item) => item.y + item.h));
   const ordered = [...layout].sort((a, b) => a.y - b.y || a.x - b.x);
@@ -190,6 +192,7 @@ export function SummaryWidgetControls({
             </p>
           </section>
           <footer className="work-summary-controls-footer">
+            {renderActions?.(close)}
             <button
               type="button"
               className="tasks-row-action"

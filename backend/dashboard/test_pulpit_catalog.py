@@ -45,7 +45,7 @@ class GadgetCatalogTests(TestCase):
             self.assertEqual(gadget.column, revision % 3)
             self.assertEqual((result['revision'], result['gadget_count']), (revision + 1, revision + 1))
             self.assertIn(f'data-pulpit-gadget="{gadget.pk}"', result['html'])
-            self.assertIn('data-pulpit-drag', result['html'])
+            self.assertIn('work-summary-widget-tools', result['html'])
             self.assertEqual(gadget.assignee, 'all')
             self.assertIn('Zamknięte: 0 z 0', result['html'])
             self.assertIn('dashboard-overview-statuses', result['html'])

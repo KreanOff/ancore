@@ -1,22 +1,20 @@
-<article class="dashboard-panel pulpit-gadget" data-pulpit-gadget="{{ data.gadget.pk }}">
-    <header class="dashboard-panel-header pulpit-gadget-header">
-        {% if editing_gadgets %}<button type="button" class="tasks-icon-button pulpit-drag-handle" draggable="true" data-pulpit-drag aria-label="Przeciągnij gadżet: {{ data.gadget.label }}" title="Przeciągnij gadżet"><i data-icon="grip-vertical" aria-hidden="true"></i></button>{% endif %}
-        <h2>{{ data.gadget.label }}</h2>
-        <i data-icon="{{ data.gadget.icon }}" aria-hidden="true"></i>
-        {% if editing_gadgets %}<div class="documents-item-actions" data-row-actions>
-            <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="gadget-actions-{{ data.gadget.pk }}" aria-controls="gadget-actions-{{ data.gadget.pk }}" aria-expanded="false" aria-label="Działania gadżetu: {{ data.gadget.label }}"><i data-icon="ellipsis" aria-hidden="true"></i></button>
+<article class="work-summary-widget pulpit-summary-widget" data-pulpit-gadget="{{ data.gadget.pk }}" style="grid-column: {{ data.gadget.grid.x|add:1 }} / span {{ data.gadget.grid.w }}; grid-row: {{ data.gadget.grid.y|add:1 }} / span {{ data.gadget.grid.h }}">
+    {% if editing_gadgets %}<header class="work-summary-widget-tools">
+        <span>{{ data.gadget.label }}</span>
+        <div class="documents-item-actions" data-row-actions>
+            <button type="button" class="tasks-filter-button work-summary-widget-menu" data-row-actions-toggle popovertarget="gadget-actions-{{ data.gadget.pk }}" aria-controls="gadget-actions-{{ data.gadget.pk }}" aria-expanded="false" aria-label="Działania gadżetu: {{ data.gadget.label }}"><i data-icon="menu" aria-hidden="true"></i></button>
             <div id="gadget-actions-{{ data.gadget.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania gadżetu" data-row-actions-panel><div class="documents-menu-actions">
                 <a href="{{ data.gadget.edit_url }}" class="tasks-project-menu-button" data-pulpit-open><i data-icon="settings-2" aria-hidden="true"></i><span>Konfiguruj</span></a>
-                <button type="button" class="tasks-project-menu-button" data-pulpit-move="up"><i data-icon="arrow-up" aria-hidden="true"></i><span>Przenieś wyżej</span></button>
-                <button type="button" class="tasks-project-menu-button" data-pulpit-move="down"><i data-icon="arrow-down" aria-hidden="true"></i><span>Przenieś niżej</span></button>
-                <button type="button" class="tasks-project-menu-button" data-pulpit-move="column"><i data-icon="arrow-right" aria-hidden="true"></i><span>Do następnej kolumny</span></button>
                 <form method="post" action="{{ data.gadget.delete_url }}" data-pulpit-action data-confirm-title="Usuń gadżet" data-confirm-name="{{ data.gadget.label }}">{% csrf_token %}<button type="submit" class="tasks-project-menu-button">{% include 'core/includes/trash_icon.html' %}<span>Usuń gadżet</span></button></form>
             </div></div>
-        </div>{% endif %}
-    </header>
+        </div>
+    </header>{% endif %}
+    <div class="work-summary-widget-body"><section class="work-panel pulpit-summary-panel">
+    <div class="work-panel-heading"><h2>{{ data.gadget.label }}</h2><i data-icon="{{ data.gadget.icon }}" aria-hidden="true"></i></div>
     {% if data.unavailable %}
     <div class="pulpit-gadget-body"><div class="pulpit-gadget-empty-state"><i data-icon="lock" class="pulpit-gadget-empty-icon" aria-hidden="true"></i><p class="pulpit-gadget-empty">Nie masz dostępu do źródłowej przestrzeni tego gadżetu.</p></div></div>
     {% else %}
     {% include 'dashboard/includes/work_progress.html' with percent=data.percent closed=data.closed_count total=data.count statuses=data.statuses caption=data.caption only %}
     {% endif %}
+    </section></div>
 </article>

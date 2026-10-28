@@ -442,7 +442,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Każdy użytkownik ma osobną konfigurację w każdym Workspace; właścicielem danych
   pozostaje właściciel Workspace, twórcą zalogowana osoba. Przy pierwszym wejściu
   pulpit jest prywatny i zawiera jeden „Postęp pracy”. Używa tych samych gadżetów,
-  pięciu układów, konfiguracji źródła/przypisania, nazwy/opisu i dostępów co nowe
+  siatki 12 kolumn, konfiguracji źródła/przypisania, nazwy/opisu i dostępów co nowe
   pulpity. Zmiany oraz usunięcie wszystkich gadżetów pozostają po kolejnym wejściu.
   Nie można usunąć rekordu domyślnego pulpitu. Stałe liczniki, listy terminów,
   projektów i kalendarza starego Dashboardu nie są już renderowane na stronie głównej.
@@ -503,23 +503,21 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Uprawnienia wynikają z roli konkretnego Pulpitu, niezależnie od roli Workspace.
   Nowy pulpit jest pusty i otrzymuje gwiazdkę twórcy; gadżety dodaje się ręcznie
   przyciskiem „Dodaj gadżet”.
-  Pięć układów obejmuje jedną, dwie równe, dwie asymetryczne i trzy kolumny.
-  Gadżety można dodawać, konfigurować, usuwać i przenosić przez przeciąganie
-  lub przyciski menu bezpośrednio w treści pulpitu (`/<slug>/gadgets/`).
-  Przegląd pulpitu pozostaje widokiem do oglądania także dla twórcy; „Edytuj pulpit”
-  włącza edycję na stronie, z wyborem pięciu układów w nagłówku i katalogiem
-  gadżetów po prawej. „Gotowe” wraca do przeglądu.
-  Dodawanie, konfiguracja i usuwanie wracają
-  do edytora. Wariant `/manage/<slug>/gadgets/` zachowuje filtry zarządzania.
-  Konfiguracja i kolejność są zapisywane w PostgreSQL. Zmiana układu i kolejności
-  zapisuje się automatycznie, także dla pustego pulpitu; błąd lub konflikt rewizji
-  przywraca poprzedni układ i pokazuje komunikat. Dostęp do edytora mają właściciel,
-  administrator i członek Pulpitu; każda operacja ponownie weryfikuje rolę.
-  Katalog boczny oferuje jeden rodzaj gadżetu: „Postęp pracy”, w kategorii
-  Statystyki. Wyszukiwanie pomaga go znaleźć. „Dodaj” zapisuje domyślne filtry i dołącza gadżet
-  do najmniej zapełnionej kolumny, pozostawiając katalog otwarty. Menu „Konfiguruj”
-  pozwala następnie dopasować źródło, tytuł i filtry. Dodawanie sprawdza rewizję
-  konfiguracji, limit i aktualne uprawnienia; konflikt wymaga odświeżenia.
+  Edytor współdzieli z Podsumowaniem siatkę 12 kolumn, przeciąganie,
+  zmianę szerokości/wysokości, uchwyty klawiatury i menu pozycji/rozmiaru.
+  Przegląd pozostaje widokiem do oglądania; „Edytuj pulpit” włącza szkic
+  na tej samej stronie, a „Dodaj gadżet” otwiera katalog w modalu.
+  „Zapisz układ” zatwierdza razem pozycje, rozmiary, dodane i usunięte karty;
+  „Anuluj” odrzuca zmiany. Pusty układ pozostaje zapisany po ponownym wejściu.
+  Błąd lub konflikt rewizji zachowuje szkic i umożliwia wczytanie aktualnej
+  wersji po potwierdzeniu. Dostęp do edycji mają właściciel, administrator
+  i członek Pulpitu; każda operacja ponownie weryfikuje rolę.
+  Katalog oferuje „Postęp pracy” i wyszukiwanie. Nowa karta trafia w pierwsze
+  wolne miejsce i otrzymuje dane po zapisie. Menu „Konfiguruj” jest dostępne
+  po zapisaniu układu; dopasowuje źródło, tytuł i filtry we wspólnym modalu.
+  Na telefonie kafelki są ułożone pionowo, a menu pozwala zmieniać ich kolejność.
+  Migracja `dashboard.0008_dashboard_gadget_grid` przenosi istniejące kolumny
+  bez usuwania gadżetów ani ich konfiguracji.
   Filtry obejmują przestrzeń i wykonawcę (wszyscy, oglądający, bez wykonawcy).
   Gadżet pokazuje procent zamkniętych zadań, licznik „Zamknięte: X z Y”,
   pasek postępu i pięć kategorii statusu. Liczy wszystkie dostępne zadania główne
