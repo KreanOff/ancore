@@ -157,7 +157,7 @@
         }
 
         const rect = anchor.getBoundingClientRect();
-        if (anchorIsClipped(anchor, rect)) {
+        if (!active.fixedPosition && anchorIsClipped(anchor, rect)) {
             dismiss();
             return;
         }
@@ -179,10 +179,16 @@
         const below = Math.max(0, bottomEdge - rect.bottom - gap);
         const above = Math.max(0, rect.top - topEdge - gap);
         const openAbove = desiredHeight > below && above > below;
-        menu.style.setProperty('--dropdown-layer-height', `${Math.min(maxHeight, (openAbove ? above : below) / scale)}px`);
+        // Live configuration panels must not chase the item they are changing.
+        // Fit them to the viewport once, then keep their opening position.
+        const availableHeight = active.fixedPosition ? bottomEdge - topEdge : openAbove ? above : below;
+        menu.style.setProperty('--dropdown-layer-height', `${Math.min(maxHeight, availableHeight / scale)}px`);
         const bounds = menu.getBoundingClientRect();
-        const left = Math.max(leftEdge, Math.min(rect.left, rightEdge - bounds.width));
-        const top = Math.max(topEdge, Math.min(openAbove ? rect.top - gap - bounds.height : rect.bottom + gap, bottomEdge - bounds.height));
+        const preferredLeft = active.initialPosition?.left ?? rect.left;
+        const preferredTop = active.initialPosition?.top ?? (openAbove ? rect.top - gap - bounds.height : rect.bottom + gap);
+        const left = Math.max(leftEdge, Math.min(preferredLeft, rightEdge - bounds.width));
+        const top = Math.max(topEdge, Math.min(preferredTop, bottomEdge - bounds.height));
+        if (active.fixedPosition && !active.initialPosition) active.initialPosition = { left, top };
         menu.style.setProperty('--dropdown-layer-left', `${left / scale}px`);
         menu.style.setProperty('--dropdown-layer-top', `${top / scale}px`);
     }
@@ -212,7 +218,11 @@
             else schedulePosition();
         });
         const resizeObserver = new ResizeObserver(schedulePosition);
-        active = { menu, anchor, onClose, maxHeight, observer, resizeObserver, search, contentWidth: width };
+        active = {
+            menu, anchor, onClose, maxHeight, observer, resizeObserver, search, contentWidth: width,
+            fixedPosition: menu.getAttribute('data-dropdown-positioning') === 'fixed',
+            initialPosition: null,
+        };
         menu.classList.add('ancore-dropdown-layer');
         menu.setAttribute('popover', 'manual');
         menu.showPopover();

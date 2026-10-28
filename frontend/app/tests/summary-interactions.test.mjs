@@ -18,7 +18,7 @@ const bundle = await build({
   platform: 'node',
   format: 'cjs',
   jsx: 'automatic',
-  external: ['react', 'react/jsx-runtime'],
+  external: ['react', 'react/jsx-runtime', 'react-dom'],
   write: false,
 });
 const require = createRequire(import.meta.url);
@@ -97,6 +97,7 @@ function status(key, count, category = 'in_progress') {
     count,
     category,
     url: `/workplaces/w_test/space/produkt/?view=list&status=${key}`,
+    path: 'M 90 50 A 40 40 0 0 1 50 90',
     arc: '40',
     gap: '60',
     offset: '0',
@@ -291,18 +292,43 @@ test('priority preview uses refreshed counts and keeps empty categories reachabl
   assert.equal(text(byClass(tree, 'work-summary-insight')), 'Otwarte zadania1000');
 });
 
-function motion({ reduced = false, supported = true, element = true } = {}) {
+function motionPanel({ reveal = true, children = [] } = {}) {
+  const classes = new Set();
+  return {
+    nodeType: 1,
+    children,
+    classList: { add: (name) => classes.add(name), contains: (name) => classes.has(name) },
+    matches(selector) {
+      assert.equal(selector, '[data-summary-reveal]');
+      return reveal;
+    },
+    querySelectorAll(selector) {
+      assert.equal(selector, '[data-summary-reveal]');
+      return children.flatMap(motionNodes).filter((node) => node.matches?.(selector));
+    },
+  };
+}
+function motionNodes(node) {
+  return [node, ...(node.children || []).flatMap(motionNodes)];
+}
+function motion({
+  reduced = false,
+  supported = true,
+  mutationSupported = true,
+  element = true,
+} = {}) {
   const listeners = new Set(),
     observers = [],
-    panels = [new Set(), new Set()].map((classes) => ({
-      classList: { add: (name) => classes.add(name), contains: (name) => classes.has(name) },
-    })),
+    mutations = [],
+    panels = [motionPanel(), motionPanel()],
+    roots = [...panels],
     root = {
       dataset: {},
       querySelectorAll: (selector) => {
         assert.equal(selector, '[data-summary-reveal]');
-        return panels;
+        return roots.flatMap(motionNodes).filter((node) => node.matches?.(selector));
       },
+      contains: (node) => roots.flatMap(motionNodes).includes(node),
     },
     preference = {
       matches: reduced,
@@ -319,11 +345,13 @@ function motion({ reduced = false, supported = true, element = true } = {}) {
     constructor(callback) {
       this.callback = callback;
       this.observed = new Set();
+      this.observeCalls = [];
       this.disconnected = false;
       observers.push(this);
     }
     observe(panel) {
       this.observed.add(panel);
+      this.observeCalls.push(panel);
     }
     unobserve(panel) {
       this.observed.delete(panel);
@@ -333,6 +361,26 @@ function motion({ reduced = false, supported = true, element = true } = {}) {
       this.disconnected = true;
     }
   }
+  class MutationObserver {
+    constructor(callback) {
+      this.callback = callback;
+      this.disconnected = false;
+      mutations.push(this);
+    }
+    observe(element, options) {
+      assert.equal(element, root);
+      assert.equal(options.childList, true);
+      assert.equal(options.subtree, true);
+    }
+    disconnect() {
+      this.disconnected = true;
+    }
+  }
+  function mutate(records) {
+    for (const observer of mutations) {
+      if (!observer.disconnected) observer.callback(records);
+    }
+  }
   let effect;
   const window = {
       matchMedia: (query) => {
@@ -340,13 +388,14 @@ function motion({ reduced = false, supported = true, element = true } = {}) {
         return preference;
       },
       ...(supported ? { IntersectionObserver } : {}),
+      ...(mutationSupported ? { MutationObserver } : {}),
     },
     hook = load(
       {
         useRef: () => ({ current: element ? root : null }),
         useEffect: (callback) => (effect = callback),
       },
-      { window, IntersectionObserver },
+      { window, IntersectionObserver, MutationObserver },
     );
   const ref = hook.useSummaryMotion();
   const dispose = effect();
@@ -355,8 +404,18 @@ function motion({ reduced = false, supported = true, element = true } = {}) {
     ref,
     panels,
     observers,
+    mutations,
     listeners,
     dispose,
+    mutate,
+    append(node) {
+      roots.push(node);
+      mutate([{ addedNodes: [node], removedNodes: [] }]);
+    },
+    remove(node) {
+      roots.splice(roots.indexOf(node), 1);
+      mutate([{ addedNodes: [], removedNodes: [node] }]);
+    },
     change(reduced) {
       preference.matches = reduced;
       for (const listener of listeners) listener();
@@ -379,11 +438,43 @@ test('motion reveals intersecting panels once and disposes observation and prefe
   assert.deepEqual([...observer.observed], [app.panels[0]]);
   app.dispose();
   assert.equal(observer.disconnected, true);
+  assert.equal(app.mutations[0].disconnected, true);
   assert.equal(observer.observed.size, 0);
   assert.equal(app.listeners.size, 0);
   assert.equal(app.root.dataset.summaryMotion, undefined);
   app.change(false);
   assert.equal(app.observers.length, 1);
+});
+
+test('motion observes added widgets and nested charts once, including replacements', () => {
+  const app = motion(),
+    observer = app.observers[0],
+    added = motionPanel(),
+    nested = motionPanel(),
+    wrapper = motionPanel({ reveal: false, children: [nested] });
+  observer.callback([{ target: app.panels[1], isIntersecting: true }]);
+  app.append(added);
+  app.append(wrapper);
+  app.append({ nodeType: 3 });
+  assert.deepEqual([...observer.observed], [app.panels[0], added, nested]);
+  assert.deepEqual(observer.observeCalls, [...app.panels, added, nested]);
+  app.mutate([{ addedNodes: [wrapper, added, app.panels[1]], removedNodes: [] }]);
+  assert.deepEqual(observer.observeCalls, [...app.panels, added, nested]);
+  observer.callback([
+    { target: added, isIntersecting: true },
+    { target: nested, isIntersecting: true },
+  ]);
+  assert.equal(added.classList.contains('is-visible'), true);
+  assert.equal(nested.classList.contains('is-visible'), true);
+  app.remove(app.panels[0]);
+  assert.equal(observer.observed.size, 0);
+  const replacement = motionPanel();
+  app.append(replacement);
+  assert.deepEqual([...observer.observed], [replacement]);
+  app.dispose();
+  assert.equal(app.mutations[0].disconnected, true);
+  app.append(motionPanel());
+  assert.equal(observer.observeCalls.length, 5);
 });
 
 test('reduced-motion preference skips reveals and reacts to preference changes without duplicate observers', () => {
@@ -395,13 +486,31 @@ test('reduced-motion preference skips reveals and reacts to preference changes w
   assert.equal(app.observers.length, 1);
   app.change(true);
   assert.equal(app.observers[0].disconnected, true);
+  assert.equal(app.mutations[0].disconnected, true);
   assert.equal(app.root.dataset.summaryMotion, undefined);
+  const added = motionPanel();
+  app.append(added);
   app.change(false);
   assert.equal(app.observers.length, 2);
-  assert.equal(app.observers[1].observed.size, 2);
+  assert.equal(app.observers[1].observed.size, 3);
+  assert.equal(app.observers[1].observed.has(added), true);
+  assert.equal(app.mutations.length, 2);
   assert.equal(app.listeners.size, 1);
   app.dispose();
   assert.equal(app.observers[1].disconnected, true);
+  assert.equal(app.mutations[1].disconnected, true);
+  assert.equal(app.listeners.size, 0);
+});
+
+test('motion without MutationObserver preserves initial reveals and cleanup', () => {
+  const app = motion({ mutationSupported: false });
+  assert.equal(app.root.dataset.summaryMotion, 'ready');
+  assert.equal(app.mutations.length, 0);
+  assert.equal(app.observers[0].observed.size, 2);
+  app.append(motionPanel());
+  assert.equal(app.observers[0].observed.size, 2);
+  app.dispose();
+  assert.equal(app.observers[0].disconnected, true);
   assert.equal(app.listeners.size, 0);
 });
 
@@ -409,6 +518,7 @@ test('motion without IntersectionObserver leaves content visible and cleans up i
   const app = motion({ supported: false });
   assert.equal(app.root.dataset.summaryMotion, undefined);
   assert.equal(app.observers.length, 0);
+  assert.equal(app.mutations.length, 0);
   app.change(false);
   assert.equal(app.root.dataset.summaryMotion, undefined);
   app.dispose();

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, task_views, task_team, space_team
+from . import views, task_views, task_team, space_team, dashboard
 
 app_name = 'spaces'
 urlpatterns = [
@@ -14,6 +14,7 @@ urlpatterns = [
     path('spaces/items/<int:pk>/action/', views.item_action, name='item_action'),
     path('spaces/manage/<slug:pk>/edit/', views.edit, {'management': True}, name='manage_edit'),
     path('space/<slug:pk>/', views.detail, name='detail'),
+    path('space/<slug:pk>/dashboard/layout/', dashboard.save_layout, name='dashboard_layout'),
     path('space/<slug:space_pk>/tasks/<slug:key>/', task_views.detail, name='task_detail'),
     path('space/<slug:space_pk>/tasks/<slug:key>/edit/', views.item_edit, name='task_edit'),
     path('space/<slug:space_pk>/tasks/<slug:key>/action/', views.item_action, name='task_action'),
@@ -38,6 +39,7 @@ urlpatterns = [
     path('space/<slug:pk>/members/<int:member_pk>/remove/', views.remove_member, name='remove_member'),
     path('space/<slug:pk>/configuration/', views.configuration, name='configuration'),
     path('spaces/<int:pk>/', views.detail, name='detail'),
+    path('spaces/<int:pk>/dashboard/layout/', dashboard.save_layout, name='dashboard_layout'),
     path('spaces/<int:pk>/edit/', views.edit, name='edit'),
     path('spaces/<int:pk>/avatar/', views.avatar_edit, name='avatar'),
     path('spaces/<int:pk>/avatar/photo/', views.avatar_photo, name='avatar_photo'),

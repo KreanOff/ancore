@@ -1,6 +1,7 @@
 """Read-only space summary and drill-downs over the viewer's visible work items."""
 
 from datetime import timedelta
+from math import cos, pi, sin
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
@@ -24,6 +25,26 @@ SUMMARY_SCOPES = {
     'recent': 'Otwarte i zakończone w ostatnich 14 dniach',
     'open': 'Otwarte zadania',
 }
+
+
+def status_arc_path(start_percent, percent):
+    """Clockwise SVG centerline; the donut's parent rotates it by -90 degrees."""
+    if percent <= 0:
+        return ''
+
+    def point(position):
+        angle = (position % 100) * 2 * pi / 100
+        coordinates = (50 + 40 * cos(angle), 50 + 40 * sin(angle))
+        return ' '.join(f'{value:.8f}'.rstrip('0').rstrip('.') for value in coordinates)
+
+    start = point(start_percent)
+    if percent >= 100:
+        # An SVG arc with coincident endpoints is empty. Two semicircles form
+        # the full ring while retaining the same open-path stroke behavior.
+        opposite = point(start_percent + 50)
+        return f'M {start} A 40 40 0 0 1 {opposite} A 40 40 0 0 1 {start}'
+    end = point(start_percent + percent)
+    return f'M {start} A 40 40 0 {1 if percent > 50 else 0} 1 {end}'
 
 
 def summary_scope(items, scope, now):
@@ -119,6 +140,7 @@ def space_summary(request, space, items, now=None):
         percent = count * 100 / status_total if status_total else 0
         statuses.append({**status, 'count': count, 'percent': round(percent),
                          'arc': f'{percent:.4f}', 'gap': f'{100 - percent:.4f}', 'offset': f'{-offset:.4f}',
+                         'path': status_arc_path(offset, percent),
                          'url': list_url(summary='recent', status=status['key'])})
         offset += percent
 

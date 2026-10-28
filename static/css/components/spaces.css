@@ -65,6 +65,8 @@
 .work-summary-panel { min-width: 0; }
 .work-summary-panel .work-panel-heading { min-height: 24px; align-items: flex-start; }
 .work-summary-panel h2 { margin: 0; font-size: var(--font-size-lg); }
+/* Summary widget titles override the app-wide regular text weight. */
+.work-summary :is(.work-summary-metric-label, .work-panel-heading > h2, .work-summary-drag-handle > span, .work-summary-controls-heading > strong) { font-weight: 700 !important; }
 .work-summary-panel > .work-caption { margin: 8px 0 18px; }
 .work-summary-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; text-decoration: none; flex-shrink: 0; }
 .work-summary-link:hover { text-decoration: underline; }
@@ -73,8 +75,8 @@
 .work-summary-panel--status .work-panel-heading { flex-wrap: wrap; row-gap: 6px; }
 .work-summary-status { display: flex; align-items: center; justify-content: center; gap: 28px; min-height: 210px; flex: 1; }
 .work-summary-donut { width: 164px; max-width: 42%; aspect-ratio: 1; position: relative; flex-shrink: 0; }
-.work-summary-donut svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-.work-summary-donut circle { fill: none; stroke-width: 10; }
+.work-summary-donut svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.work-summary-donut :is(circle, path) { fill: none; stroke-width: 16; }
 .work-summary-donut-track { stroke: var(--panel-bg); }
 .work-summary :is(.work-summary-donut-arc, .work-summary-dot) { --work-summary-status-color: color-mix(in srgb, var(--tasks-status-background, var(--panel-bg)) 66.9%, var(--tasks-status-color, var(--system-accent)) 33.1%); filter: none; }
 .work-summary-donut-arc { stroke: var(--work-summary-status-color); }
@@ -144,6 +146,102 @@
 .work-summary-unassigned { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--system-interaction) 24%, var(--card-bg)); flex-shrink: 0; }
 .work-summary-unassigned [data-icon] { width: 16px; height: 16px; }
 .work-summary-filter { display: flex; align-items: center; gap: 12px; padding: 8px var(--work-space-inline-padding, var(--app-page-padding-x)); border-bottom: 1px solid var(--border-color); font-size: var(--font-size-sm); }
+/* Personal space dashboard: existing summary panels on an editable, responsive grid. */
+.work-summary-dashboard { container-type: inline-size; min-width: 0; }
+.work-summary-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.work-summary-toolbar-title, .work-summary-toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.work-summary-toolbar-title > .work-caption { margin-left: 8px; }
+.work-summary-toolbar .tasks-filter-button { gap: 6px; font-size: 12px; }
+.work-summary-toolbar .tasks-project-query-trigger { font-size: var(--font-size-sm); }
+.work-summary-toolbar .work-item-toolbar { display: flex; min-height: 0; margin: 0; padding: 0; border: 0; }
+.work-summary-toolbar .work-summary-save { background: var(--primary-button-bg); border-color: transparent; }
+.work-summary-edit-hint { margin: -4px 0 16px; }
+.work-summary-edit-hint-mobile { display: none; }
+.work-summary-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.work-summary-canvas { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: var(--summary-row-height); gap: var(--summary-grid-gap); min-width: 0; }
+.work-summary-dashboard.is-editing .work-summary-canvas { background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 12px 12px; border-radius: var(--radius); }
+.work-summary-widget { min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--card-bg); }
+.work-summary-widget.is-moving { border-color: var(--system-accent); box-shadow: 0 0 0 2px var(--system-accent); z-index: 2; }
+.work-summary-widget-body { min-width: 0; min-height: 0; flex: 1; overflow: auto; border-radius: inherit; }
+.work-summary-widget-body > .work-panel { border: 0; border-radius: inherit; min-height: 100%; padding: 16px; }
+.work-summary-widget-body > .work-summary-metric { height: 100%; gap: 6px; }
+.work-summary-widget-body > .work-summary-metric:is(:hover, :focus-visible) { transform: none; box-shadow: none; }
+.work-summary-widget-body .work-summary-metric-value strong { display: block; font-size: 28px; }
+.work-summary-widget-body .work-summary-activity { max-height: none; }
+.work-summary-widget-body .work-summary-workload { grid-column: auto; }
+.work-summary-widget-tools { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 2px 6px; min-height: 30px; border-bottom: 1px solid var(--border-color); background: var(--secondary-menu-bg); border-radius: var(--radius) var(--radius) 0 0; }
+.work-summary-drag-handle { min-width: 0; display: flex; align-items: center; gap: 6px; flex: 1; background: transparent; border: 0; padding: 4px 0; color: inherit; font: inherit; font-size: 11px; text-align: left; cursor: grab; touch-action: none; user-select: none; }
+.work-summary-drag-handle > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.work-summary-drag-handle > [data-icon] { width: 14px; height: 14px; flex-shrink: 0; }
+.work-summary-drag-handle:active { cursor: grabbing; }
+.work-summary-widget-menu.tasks-filter-button { width: 26px; min-height: 26px; height: 26px; padding: 4px; border: 0; background: transparent; }
+.work-summary-controls-menu { --dropdown-menu-min-width: 300; --dropdown-menu-max-width: 320; width: 300px; max-width: calc(100vw - 16px); padding: 0; }
+.work-summary-controls-heading { display: grid; gap: 4px; padding: 14px 14px 10px; }
+.work-summary-controls-heading strong { font-size: 13px; overflow-wrap: anywhere; }
+.work-summary-controls-heading .work-caption { font-size: 11px; }
+.work-summary-controls-position { display: grid; grid-template-columns: 108px minmax(0, 1fr); align-items: end; gap: 16px; padding: 0 14px 14px; }
+.work-summary-controls-location { display: grid; gap: 8px; }
+.work-summary-control-label { font-size: 12px; }
+.work-summary-direction-pad { display: grid; grid-template-columns: repeat(3, 32px); gap: 6px; }
+.work-summary-direction-pad .work-summary-direction { width: 32px; height: 32px; min-height: 32px; padding: 6px; }
+.work-summary-direction-pad .tasks-filter-button:disabled { opacity: .35; cursor: default; }
+.work-summary-direction-pad.is-stacked { grid-template-columns: repeat(2, 32px); }
+.work-summary-direction-pad.is-stacked .work-summary-direction { grid-area: auto; }
+.work-summary-direction-pad [data-icon] { width: 18px; height: 18px; }
+.work-summary-direction--up { grid-area: 1 / 2; }
+.work-summary-direction--left { grid-area: 2 / 1; }
+.work-summary-direction--down { grid-area: 2 / 2; }
+.work-summary-direction--right { grid-area: 2 / 3; }
+.work-summary-layout-preview { position: relative; width: 100%; height: 70px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--panel-bg); overflow: hidden; }
+.work-summary-layout-preview > span { position: absolute; border: 2px solid var(--panel-bg); border-radius: 3px; background: color-mix(in srgb, var(--system-interaction) 22%, var(--card-bg)); }
+.work-summary-layout-preview > .is-selected { background: var(--system-accent); z-index: 1; }
+.work-summary-controls-size { display: grid; gap: 12px; padding: 14px; border-top: 1px solid var(--border-color); }
+.work-summary-size-control { display: grid; gap: 4px; font-size: 12px; }
+.work-summary-size-control > span { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.work-summary-size-control output { color: var(--text-primary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.work-summary-size-control input[type="range"] { width: 100%; min-width: 0; height: 24px; padding: 0; margin: 0; accent-color: var(--system-accent); cursor: pointer; }
+.work-summary-width-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.work-summary-width-presets .tasks-filter-button { display: flex; flex-direction: column; justify-content: center; gap: 5px; height: auto; min-height: 46px; padding: 6px 4px; font-size: 11px; }
+.work-summary-width-presets .is-active { border-color: var(--system-accent); background: var(--primary-button-bg); }
+.work-summary-width-preview { display: block; width: 40px; height: 10px; border: 1px solid var(--border-color); border-radius: 2px; background: var(--card-bg); }
+.work-summary-width-preview > span { display: block; height: 100%; border-radius: 1px; background: var(--system-interaction); }
+.work-summary-width-presets .is-active .work-summary-width-preview > span { background: var(--system-accent); }
+.work-summary-controls-size .work-summary-size-mobile-note { display: none; margin: 0; font-size: 11px; line-height: 1.5; }
+.work-summary-controls-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border-color); }
+.work-summary-controls-footer > button { flex: 0 0 auto; width: auto; white-space: nowrap; }
+.work-summary-controls-footer .tasks-row-action { width: auto; padding: 6px 0; font-size: 12px; }
+.work-summary-controls-footer .tasks-row-action [data-icon] { width: 16px; height: 16px; }
+.work-summary-controls-footer .tasks-filter-button { font-size: 12px; }
+.work-summary-resize-handle { position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; padding: 4px; border: 0; border-radius: var(--radius) 0 var(--radius) 0; color: var(--text-primary); background: var(--card-bg); cursor: nwse-resize; touch-action: none; }
+.work-summary-resize-handle > [data-icon] { width: 16px; height: 16px; }
+.work-summary-dashboard.is-editing .work-summary-widget-body { padding-bottom: 12px; }
+.work-summary-dashboard.is-editing .is-metric .work-summary-widget-body { padding-bottom: 0; }
+.work-summary-dashboard.is-editing .is-metric .work-summary-metric { padding: 8px 12px; gap: 2px; }
+.work-summary-dashboard.is-editing .is-metric .work-summary-metric-value strong { font-size: 22px; }
+.work-summary-dashboard.is-editing .is-metric .work-summary-metric-label { font-size: 11px; }
+.work-summary-dashboard.is-editing .is-metric .work-summary-metric > .work-caption { font-size: 10px; }
+.work-summary-resize-handle > [data-icon] { transform: rotate(90deg); }
+.work-summary-catalog-dialog { max-width: 560px; }
+.work-summary-catalog { display: grid; gap: 16px; }
+.work-summary-catalog-list { display: grid; gap: 4px; }
+.work-summary-catalog-item { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--card-bg); color: inherit; text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+.work-summary-catalog-item:hover:not(:disabled) { background: var(--system-interaction-soft); }
+.work-summary-catalog-item:disabled { opacity: .6; cursor: default; }
+.work-summary-catalog-item > [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
+.work-summary-catalog-item > span:nth-child(2) { flex: 1; }
+@container (max-width: 699px) {
+    .work-summary-controls-size .work-summary-size-mobile-note { display: block; }
+    .work-summary-edit-hint-mobile { display: inline; }
+    .work-summary-edit-hint-desktop { display: none; }
+    .work-summary-canvas { display: flex; flex-direction: column; }
+    .work-summary-widget { min-height: 120px; }
+    .work-summary-widget-body { overflow: visible; }
+    .work-summary-widget-body > .work-panel { min-height: auto; }
+    .work-summary-widget.is-metric .work-summary-widget-body > .work-panel { min-height: 120px; }
+    .work-summary-drag-handle { touch-action: pan-y; cursor: default; }
+    .work-summary-resize-handle { display: none; }
+    .work-summary-toolbar-title > .work-caption { margin-left: 0; }
+}
 /* Interactive summary: keep the shared neutral controls and reporting palette. */
 .work-summary-metric { transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
 .work-summary-metric:is(:hover, :focus-visible) { transform: translateY(-2px); border-color: var(--system-interaction); box-shadow: var(--shadow-sm); }
@@ -157,9 +255,10 @@
 .work-summary-donut-total { pointer-events: none; }
 .work-summary-donut-total .work-summary-donut-label { max-width: 60%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-align: center; overflow-wrap: anywhere; line-height: 1.2; }
 .work-summary-donut-total .work-summary-donut-share { color: var(--system-interaction); font-size: 11px; }
-.work-summary-donut-arc { cursor: pointer; pointer-events: stroke; opacity: 1; transition: stroke-width 160ms ease, opacity 160ms ease; }
+.work-summary-donut-arc { cursor: pointer; pointer-events: stroke; opacity: 1; transform-box: view-box; transform-origin: 50% 50%; transform: scale(1); transition: transform 160ms ease, stroke-width 160ms ease, opacity 160ms ease; }
 .work-summary-status.has-active-status .work-summary-donut-arc:not(.is-active) { opacity: .3; }
-.work-summary-donut-arc.is-active { stroke-width: 18; }
+/* Scale the arc without changing its geometry; the visible inner radius stays 32. */
+.work-summary-donut-arc.is-active { transform: scale(1.1); stroke-width: calc(24px / 1.1); }
 .work-summary-dot { opacity: 1; transition: opacity 160ms ease; }
 .work-summary-status.has-active-status .work-summary-legend a:not(.is-active) .work-summary-dot { opacity: .3; }
 .work-summary-legend a { transition: background 160ms ease; }
@@ -221,6 +320,8 @@
     .work-summary-metric-action > span { display: none; }
     .work-summary-status { gap: 12px; min-height: 180px; }
     .work-summary-donut { width: 120px; max-width: 38%; }
+    .work-summary-status.has-active-status .work-summary-donut-total { gap: 0; }
+    .work-summary-status.has-active-status .work-summary-donut-total strong { font-size: 24px; }
     .work-summary-legend a { gap: 8px; padding-inline: 4px; }
     .work-summary-priority-label { flex-direction: column; gap: 6px; }
     .work-summary-bars a { grid-template-columns: minmax(0, 1fr) 28px; gap: 6px 10px; }

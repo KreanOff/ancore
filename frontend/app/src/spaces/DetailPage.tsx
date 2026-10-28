@@ -10,7 +10,7 @@ import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
 import { ItemCard, ItemRow } from './Item';
-import { ItemToolbar } from './ItemToolbar';
+import { ItemFiltering, ItemToolbar } from './ItemToolbar';
 import Summary from './Summary';
 import SettingsDialog from './SettingsDialog';
 import { SpaceHeader } from './SpaceHeader';
@@ -429,7 +429,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           onPointerDownCapture={motion.pointerDown}
           onDragOverCapture={motion.over}
           onDragEnterCapture={motion.over}
-          className={`work-content ${tableView ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''}`}
+          className={`work-content ${tableView || data.view === 'overview' ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''}`}
         >
           {tableView ? (
             <>
@@ -455,7 +455,23 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             </>
           ) : null}
           {data.view === 'overview' && data.summary ? (
-            <Summary data={data.summary} software={data.space.kind === 'software'} />
+            <Summary
+              data={data.summary}
+              filters={<ItemFiltering data={data} url={initial.url} />}
+              software={data.space.kind === 'software'}
+              api={initial.api_url}
+              csrfToken={csrfToken}
+              readOnly={!!initial.read_only}
+              refresh={async () => {
+                const page = await pageRequest<Page>(
+                  initial.api_url,
+                  initial.url,
+                  csrfToken,
+                  life.current.signal,
+                );
+                if (!life.current.signal.aborted) setData(page.data as DetailData);
+              }}
+            />
           ) : null}
           {data.view === 'list' ? (
             <div

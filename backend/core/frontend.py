@@ -66,6 +66,7 @@ VIEWS = {
     'spaces.task_views': {'detail', 'members'},
     'spaces.task_team': {'team', 'candidates'},
     'spaces.space_team': {'team', 'candidates'},
+    'spaces.dashboard': {'save_layout'},
     'spaces.teams': {'index', 'detail', 'edit', 'members', 'remove_member'},
     'documents.views': {'library', 'library_create', 'library_edit', 'library_delete', 'upload', 'folder_create', 'folder_edit', 'folder_delete', 'folder_star', 'detail', 'preview', 'star', 'trash', 'restore'},
     'documents.editor_views': {'index', 'upload', 'edit', 'preview', 'import_text', 'action'},
@@ -74,7 +75,8 @@ VIEWS = {
     'documents.office_extras': {'from_template', 'template_toggle'},
 }
 # These existing operations validate their structured JSON body themselves.
-JSON_BODY_VIEWS = {('dashboard.pulpit_views', 'gadget_quick_add'), ('dashboard.pulpit_views', 'arrange')}
+JSON_BODY_VIEWS = {('dashboard.pulpit_views', 'gadget_quick_add'), ('dashboard.pulpit_views', 'arrange'),
+                   ('spaces.dashboard', 'save_layout')}
 
 
 def api_url(request):

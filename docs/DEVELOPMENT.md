@@ -1,5 +1,68 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Stała pozycja opcji gadżetu Przestrzeni (28.10.2026)
+
+Panel pozycji i rozmiaru zachowuje współrzędne z chwili otwarcia, gdy
+zmiany parametrów przesuwają kafelek. Wariant wspólnej warstwy jest opcjonalny;
+pozostałe menu nadal śledzą kontrolkę. [Kontrakt](UI.md).
+
+Przeszły 152 testy frontendu, w tym 8 regresji rzeczywistego
+`dropdown-layer.js`: stała pozycja, domyślne śledzenie, clipping, ponowne
+otwarcie, viewport, Escape/fokus i sprzątanie obserwatorów. Przeszły build
+TypeScript, składnia JS, formatowanie i indeks. IAB na osobnej bazie QA
+potwierdziła niezmienione współrzędne po serii zmian szerokości, wysokości
+i położenia, także po przesunięciu kafelka poza ekran. Sprawdzono 1440×1000,
+390×844 i 320×568, ponowne otwarcie, Escape oraz referencyjne menu filtrowania
+listy zadań. Brak poziomego przepełnienia, błędów i ostrzeżeń konsoli.
+Nie sprawdzano pozostałych przeglądarek ani wdrożenia produkcyjnego.
+
+## Filtrowanie pulpitu Przestrzeni (28.10.2026)
+
+Podsumowanie współdzieli `ItemFiltering` z zadaniami i otrzymuje komplet
+opcji filtrowania przez istniejący page API. Pierwszy render korzysta
+z wariantu `filters_only` wspólnego formularza. [Opis UI](UI.md).
+
+Wykonano 55 testów PostgreSQL: `spaces.test_summary`, `spaces.test_dashboard`,
+`spaces.test_backlog_drag`, `core.test_space_settings_frontend` oraz
+`spaces.test_item_query`. Przeszło 127 testów frontendu (w tym 6 nowych
+regresji wspólnego menu), build TypeScript, kontrola Django i indeksu.
+IAB na odizolowanych danych QA przy 1440×1000 i 390×844 potwierdziła
+łączenie typu/priorytetu/wykonawcy, aktualizację danych, pusty wynik,
+czyszczenie, zachowanie filtrów po odświeżeniu i zgodność z menu listy zadań.
+Bez błędów konsoli i poziomego przepełnienia. Pozostałych przeglądarek
+oraz wdrożenia produkcyjnego nie sprawdzano; nie zmieniono modeli ani migracji.
+
+## Konfigurowalny pulpit Przestrzeni (28.10.2026)
+
+Podsumowanie ma osobisty zapis siatki, katalog istniejących gadżetów,
+przesuwanie i zmianę rozmiaru, szkic z zapisem/anulowaniem oraz obsługę
+konfliktów rewizji. [Funkcje](SPACES.md), [UI](UI.md), [API](FRONTEND.md).
+Wymagana migracja: `spaces.0003_space_dashboard_layout`.
+
+Sprawdzenia regresji:
+
+```sh
+.venv/bin/python scripts/run_tests.py spaces.test_dashboard spaces.test_summary core.test_space_settings_frontend core.test_schema_baseline
+pnpm --dir frontend/app test
+pnpm --dir frontend/app build
+python scripts/update_code_index.py --check
+```
+
+Wykonano 32 testy PostgreSQL i 121 testów frontendu, build TypeScript,
+kontrole Django/migracji i indeksu. Siatka jest testowana także przez 400
+deterministycznych zmian z niezależną kontrolą granic i kolizji.
+Przeglądarka IAB na odizolowanej bazie QA potwierdziła zapis i ponowne wejście,
+przeciąganie przez inne kafelki, resize wskaźnikiem i klawiaturą, dodawanie,
+usuwanie, wyszukiwanie/pusty katalog, Escape, anulowanie, pusty zapisany pulpit,
+konflikt dwóch okien oraz odczyt aktualnej wersji. Sprawdzono 1440×1000,
+bieżący widok 630px oraz 390×844, brak poziomego przepełnienia i błędów JS.
+Ekran referencyjny: Pulpit domyślny. Porównanie z dostarczonym ekranem obejmowało
+nawigację i polskie nazwy, font/skalę, kolory i ikony, zawartość wykresów,
+ramki/odstępy oraz mobilną kolejność. Celowo dodano toolbar i kontrolki edycji;
+domyślny układ jest ciaśniejszy, a na telefonie jednokolumnowy. Nie tworzono
+nowego kierunku wizualnego ani bitmapowej makiety. Nie sprawdzano pozostałych
+przeglądarek ani wdrożenia produkcyjnego.
+
 ## Cztery poprawki po pełnym przeglądzie (25.10.2026)
 
 Zmiana aktywnego administratora/członka na gościa unieważnia sesje Office

@@ -303,7 +303,24 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   treścią, zachowuje filtry i działa również dla jednej strony/pustego wyniku.
   Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
   podsumowanie, raporty i ustawienia nie pokazują stron wyników.
-- Podsumowanie: cztery liczniki zakończonych, zaktualizowanych i utworzonych
+- Podsumowanie jest konfigurowalnym, osobistym pulpitem Przestrzeni.
+  Można dodawać i usuwać dostępne gadżety, przeciągać je na siatce 12 kolumn
+  oraz zmieniać szerokość i wysokość. Edycję kończą „Zapisz układ” lub „Anuluj”;
+  panel pozycji i rozmiaru ze strzałkami, miniaturą i suwakami zapewnia
+  także obsługę klawiaturą. Szerokość można wybrać jednym z wizualnych
+  skrótów, m.in. „Cały wiersz”; cały czas widać wynik na pulpicie. Układ `SpaceDashboardLayout`
+  jest zapisywany dla pary użytkownik–Przestrzeń, nie zmienia widoku innych osób.
+  Odczyt i zapis sprawdzają aktualną widoczność Przestrzeni i Workspace;
+  gość nie zapisuje konfiguracji. Rewizja chroni przed nadpisaniem zmian
+  z innego okna, a usunięcie wszystkich gadżetów pozostaje zapisanym pustym
+  pulpitem. Na wąskim ekranie kafelki układają się pionowo, a strzałki góra/dół
+  zmieniają kolejność o jedną pozycję. Rozmiary dotyczą widoku na komputerze.
+  Menu „Filtrowanie” jest wspólne z zadaniami: typ zgłoszenia, wykonawca,
+  status, priorytet i zespół. Filtry łączą się, obejmują wszystkie liczniki,
+  wykresy i aktywność oraz zachowują warunki w odnośnikach do zadań.
+  Licznik pokazuje liczbę aktywnych filtrów; „Wyczyść” przywraca pełny dostępny
+  zakres. Zmiana filtrów nie zmienia osobistego układu gadżetów.
+  Domyślnie pokazuje cztery liczniki zakończonych, zaktualizowanych i utworzonych
   zadań w ostatnich 7 dniach oraz otwartych z terminem w najbliższych 7 dniach.
   Aktualizacja wynika z historii `SpaceTaskActivity` (dowolna akcja poza utworzeniem);
   wiele wpisów jednego zadania liczy się raz. Zakończenie opiera się na

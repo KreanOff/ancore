@@ -6,6 +6,7 @@ import { Priority } from './Item';
 import { SummaryDistribution } from './SummaryDistribution';
 import { dateLabel, type Summary as Data } from './types';
 import { useSummaryMotion } from './useSummaryMotion';
+import SummaryDashboard from './SummaryDashboard';
 
 function share(count: number, total: number) {
   if (!count || !total) return '0%';
@@ -48,16 +49,11 @@ function StatusChart({ data: s }: { data: Data }) {
               {s.statuses
                 .filter((status) => status.count)
                 .map((status) => (
-                  <circle
+                  <path
                     key={status.key}
                     data-status-key={status.key}
                     className={`work-summary-donut-arc status-${status.category} ${active?.key === status.key ? 'is-active' : ''}`}
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    pathLength="100"
-                    strokeDasharray={`${status.arc} ${status.gap}`}
-                    strokeDashoffset={status.offset}
+                    d={status.path}
                     onPointerEnter={() => setHovered(status.key)}
                     onPointerLeave={() => setHovered(null)}
                     onClick={() => navigate(status.url)}
@@ -185,7 +181,23 @@ function PriorityChart({ data: s }: { data: Data }) {
   );
 }
 
-export default function Summary({ data: s, software }: { data: Data; software: boolean }) {
+export default function Summary({
+  data: s,
+  software,
+  api,
+  csrfToken,
+  readOnly,
+  refresh,
+  filters,
+}: {
+  data: Data;
+  software: boolean;
+  api: string;
+  csrfToken: string;
+  readOnly: boolean;
+  refresh: () => Promise<void>;
+  filters?: ReactNode;
+}) {
   const root = useSummaryMotion();
   function panel(title: string, children: ReactNode, extra = '', description?: ReactNode) {
     return (
@@ -202,37 +214,38 @@ export default function Summary({ data: s, software }: { data: Data; software: b
       </section>
     );
   }
-  return (
-    <div className="work-overview work-summary" ref={root}>
-      <div className="work-metrics work-summary-metrics" aria-label="Aktywność przestrzeni">
-        {s.metrics.map((metric) => (
-          <a
-            key={metric.key}
-            className="work-panel work-summary-metric"
-            data-summary-reveal
-            href={metric.url}
-            aria-label={`${metric.label}: ${metric.count}. ${metric.key === 'due' ? 'Najbliższe' : 'Ostatnie'} 7 dni. Wyświetl zadania.`}
-          >
-            <span className="work-summary-metric-label">
-              <Icon name={metric.icon} />
-              {metric.label}
+  function renderWidget(id: string): ReactNode {
+    const metric = s.metrics.find((row) => row.key === id);
+    if (metric)
+      return (
+        <a
+          key={metric.key}
+          className="work-panel work-summary-metric"
+          data-summary-reveal
+          href={metric.url}
+          aria-label={`${metric.label}: ${metric.count}. ${metric.key === 'due' ? 'Najbliższe' : 'Ostatnie'} 7 dni. Wyświetl zadania.`}
+        >
+          <span className="work-summary-metric-label">
+            <Icon name={metric.icon} />
+            {metric.label}
+          </span>
+          <span className="work-summary-metric-value">
+            <strong>{metric.count}</strong>
+            <span className="work-summary-metric-action" aria-hidden="true">
+              <span>Wyświetl zadania</span>
+              <Icon name="arrow-up-right" />
             </span>
-            <span className="work-summary-metric-value">
-              <strong>{metric.count}</strong>
-              <span className="work-summary-metric-action" aria-hidden="true">
-                <span>Wyświetl zadania</span>
-                <Icon name="arrow-up-right" />
-              </span>
-            </span>
-            <span className="work-caption">
-              {metric.key === 'due' ? 'Najbliższe' : 'Ostatnie'} 7 dni
-            </span>
-          </a>
-        ))}
-      </div>
-      <div className="work-summary-grid">
-        <StatusChart data={s} />
-        {panel(
+          </span>
+          <span className="work-caption">
+            {metric.key === 'due' ? 'Najbliższe' : 'Ostatnie'} 7 dni
+          </span>
+        </a>
+      );
+    switch (id) {
+      case 'statuses':
+        return <StatusChart data={s} />;
+      case 'activity':
+        return panel(
           'Ostatnia aktywność',
           <ol className="work-summary-activity">
             {s.activities.length ? (
@@ -270,37 +283,45 @@ export default function Summary({ data: s, software }: { data: Data; software: b
           </ol>,
           '',
           'Najnowsze zmiany w zadaniach tej przestrzeni.',
-        )}
-        <PriorityChart data={s} />
-        <SummaryDistribution
-          title="Typy zgłoszeń"
-          rows={s.types}
-          total={s.total}
-          description={
-            <>
-              Podział wszystkich dostępnych zadań w przestrzeni.{' '}
-              <a className="work-summary-link" href={s.list_url}>
-                Wyświetl wszystkie zadania
-              </a>
-            </>
-          }
-        />
-        <SummaryDistribution
-          title="Obciążenie zespołu"
-          rows={s.workload}
-          total={s.open_total}
-          people
-          className={software ? '' : 'work-summary-workload'}
-          description={
-            <>
-              Rozkład {s.open_total} otwartych zadań według wykonawcy.{' '}
-              <a className="work-summary-link" href={s.list_url}>
-                Zmień przypisanie zadań
-              </a>
-            </>
-          }
-        />
-        {software
+        );
+      case 'priorities':
+        return <PriorityChart data={s} />;
+      case 'types':
+        return (
+          <SummaryDistribution
+            title="Typy zgłoszeń"
+            rows={s.types}
+            total={s.total}
+            description={
+              <>
+                Podział wszystkich dostępnych zadań w przestrzeni.{' '}
+                <a className="work-summary-link" href={s.list_url}>
+                  Wyświetl wszystkie zadania
+                </a>
+              </>
+            }
+          />
+        );
+      case 'workload':
+        return (
+          <SummaryDistribution
+            title="Obciążenie zespołu"
+            rows={s.workload}
+            total={s.open_total}
+            people
+            className={software ? '' : 'work-summary-workload'}
+            description={
+              <>
+                Rozkład {s.open_total} otwartych zadań według wykonawcy.{' '}
+                <a className="work-summary-link" href={s.list_url}>
+                  Zmień przypisanie zadań
+                </a>
+              </>
+            }
+          />
+        );
+      case 'epics':
+        return software
           ? panel(
               'Postęp epików',
               <ul className="work-summary-epics">
@@ -339,8 +360,22 @@ export default function Summary({ data: s, software }: { data: Data; software: b
               '',
               'Zakończone zadania w większych obszarach pracy.',
             )
-          : null}
-      </div>
+          : null;
+      default:
+        return null;
+    }
+  }
+  return (
+    <div className="work-overview work-summary" ref={root}>
+      <SummaryDashboard
+        initial={s.dashboard}
+        filters={filters}
+        api={api}
+        csrfToken={csrfToken}
+        readOnly={readOnly}
+        renderWidget={renderWidget}
+        refresh={refresh}
+      />
     </div>
   );
 }

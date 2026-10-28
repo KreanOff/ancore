@@ -1,15 +1,67 @@
 from .testing import make_space
 from datetime import timedelta
+from html import unescape
+from math import hypot, sqrt
+import re
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlencode, urljoin, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.db import connection
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
-from .models import SpaceTask, SpaceTaskActivity, SpaceTaskMembership, Space, SpaceMembership
+from .models import SpaceDashboardLayout, SpaceTask, SpaceTaskActivity, SpaceTaskMembership, Space, SpaceMembership, Team
+from .summary import status_arc_path
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
+
+
+class StatusArcGeometryTests(SimpleTestCase):
+    @staticmethod
+    def endpoints(path):
+        commands = path.split(' A ')
+        start = tuple(float(value) for value in commands[0][2:].split())
+        end = tuple(float(value) for value in commands[-1].split()[-2:])
+        return start, end
+
+    def test_zero_share_has_no_path(self):
+        self.assertEqual(status_arc_path(0, 0), '')
+        self.assertEqual(status_arc_path(75, 0), '')
+
+    def test_final_quarter_ends_exactly_at_the_first_segment_seam(self):
+        self.assertEqual(status_arc_path(75, 25), 'M 50 10 A 40 40 0 0 1 90 50')
+        self.assertEqual(self.endpoints(status_arc_path(75, 25))[1], self.endpoints(status_arc_path(0, 25))[0])
+        self.assertNotIn('Z', status_arc_path(75, 25))
+
+    def test_majority_share_uses_the_large_clockwise_arc(self):
+        self.assertEqual(status_arc_path(0, 75), 'M 90 50 A 40 40 0 1 1 50 10')
+        self.assertEqual(status_arc_path(25, 50), 'M 50 90 A 40 40 0 0 1 50 10')
+
+    def test_full_share_is_two_nonempty_semicircles(self):
+        self.assertEqual(status_arc_path(0, 100), 'M 90 50 A 40 40 0 0 1 10 50 A 40 40 0 0 1 90 50')
+        self.assertEqual(status_arc_path(25, 100), 'M 50 90 A 40 40 0 0 1 50 10 A 40 40 0 0 1 50 90')
+        start, end = self.endpoints(status_arc_path(0, 100))
+        self.assertEqual(start, end)
+
+    def test_fractional_share_keeps_points_on_the_circle(self):
+        start, end = self.endpoints(status_arc_path(12.5, 12.5))
+        self.assertAlmostEqual(start[0], 50 + 20 * sqrt(2), places=7)
+        self.assertAlmostEqual(start[1], 50 + 20 * sqrt(2), places=7)
+        self.assertEqual(end, (50, 90))
+        self.assertAlmostEqual(hypot(start[0] - 50, start[1] - 50), 40, places=7)
+
+    def test_fractional_segments_share_identical_boundaries_without_wrap_dashes(self):
+        offset = 0
+        paths = []
+        for count in (1, 3, 2, 1):
+            percent = count * 100 / 7
+            paths.append(status_arc_path(offset, percent))
+            offset += percent
+        for previous, following in zip(paths, paths[1:]):
+            self.assertEqual(self.endpoints(previous)[1], self.endpoints(following)[0])
+        self.assertEqual(self.endpoints(paths[-1])[1], self.endpoints(paths[0])[0])
+        self.assertTrue(all(path.count(' A ') == 1 for path in paths))
 
 
 class SpaceSummaryTests(TestCase):
@@ -50,6 +102,128 @@ class SpaceSummaryTests(TestCase):
     def response(self, url=None):
         with patch('spaces.views.timezone.now', return_value=self.now):
             return self.client.get(url or self.url(), follow=True)
+
+    def overview_url(self, filters=None, scoped=True):
+        base = scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/') if scoped else f'/space/{self.space.slug}/'
+        return base + ('?' + urlencode(filters) if filters else '')
+
+    def page_data(self, filters=None, scoped=True):
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') if scoped else '/api/v1/page/'
+        with patch('spaces.views.timezone.now', return_value=self.now):
+            response = self.client.get(api, {'url': self.overview_url(filters, scoped)})
+        self.assertEqual(response.status_code, 200)
+        return response.json()['data']
+
+    def filter_fixture(self):
+        first_team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Pierwszy zespół')
+        second_team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Drugi zespół')
+        first_team.spaces.add(self.space)
+        second_team.spaces.add(self.space)
+        selected = self.task(status='in_progress', priority='urgent', assignee=self.member, due_at=self.now + timedelta(days=1))
+        other = self.task(status='closed', priority='low')
+        hidden = self.task(status='in_progress', priority='urgent', assignee=self.member,
+                           due_at=self.now + timedelta(days=1), visibility='private', private_owner=self.owner)
+        self.task(assignee=self.other, visibility='private', private_owner=self.owner)
+        for task in (selected, hidden):
+            SpaceTask.objects.filter(pk=task.pk).update(title='Zadanie wybrane', created_at=self.now - timedelta(days=1))
+            type(task.work_item).objects.filter(pk=task.work_item.pk).update(work_type='bug', status='review', team=first_team)
+            activity = SpaceTaskActivity.objects.create(task=task, actor=self.member, action='updated')
+            SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(hours=1))
+        SpaceTask.objects.filter(pk=other.pk).update(title='Zadanie pozostałe', completion_date=self.now - timedelta(days=1))
+        type(other.work_item).objects.filter(pk=other.work_item.pk).update(team=second_team)
+        return selected, first_team, second_team
+
+    def test_common_overview_filters_scope_counters_charts_and_activity(self):
+        selected, team, _ = self.filter_fixture()
+        filters = [
+            {'work_type': 'bug'}, {'assignee': 'me'}, {'assignee': str(self.member.pk)},
+            {'status': 'review'}, {'priority': 'urgent'}, {'team': str(team.pk)}, {'q': 'wybrane'},
+            {'work_type': 'bug', 'assignee': 'me', 'status': 'review', 'priority': 'urgent', 'team': str(team.pk)},
+        ]
+        for scoped in (False, True):
+            for values in filters:
+                with self.subTest(scoped=scoped, filters=values):
+                    summary = self.response(self.overview_url(values, scoped)).context['summary']
+                    self.assertEqual((summary['total'], summary['open_total'], summary['status_total']), (1, 1, 1))
+                    self.assertEqual({row['key']: row['count'] for row in summary['metrics']},
+                                     {'completed': 0, 'updated': 1, 'created': 1, 'due': 1})
+                    self.assertEqual({row['key']: row['count'] for row in summary['statuses']}['review'], 1)
+                    self.assertEqual({row['key']: row['count'] for row in summary['types']}['bug'], 1)
+                    self.assertEqual({row['key']: row['count'] for row in summary['priorities']}['urgent'], 1)
+                    self.assertEqual([(row['label'], row['count']) for row in summary['workload']], [('Jan', 1)])
+                    self.assertEqual({row['key'] for row in summary['activities']}, {selected.work_item.key})
+            unassigned = self.response(self.overview_url({'assignee': 'unassigned'}, scoped)).context['summary']
+            self.assertEqual((unassigned['total'], unassigned['open_total']), (1, 0))
+            self.assertEqual({row['key']: row['count'] for row in unassigned['metrics']}['completed'], 1)
+
+    def test_overview_filter_menu_matches_task_list_with_visible_options(self):
+        _, first_team, second_team = self.filter_fixture()
+        foreign_team = Team.objects.create(owner=self.owner, workplace=self.second, name='Inny Workspace')
+        for scoped in (False, True):
+            for filters in ({}, {'work_type': 'bug', 'assignee': 'me', 'status': 'review', 'priority': 'urgent', 'team': str(first_team.pk)}):
+                with self.subTest(scoped=scoped, filters=filters):
+                    overview = self.page_data(filters, scoped)
+                    task_list = self.page_data({**filters, 'view': 'list'}, scoped)
+                    self.assertEqual(overview['filter_options'], task_list['filter_options'])
+                    self.assertEqual(overview['filters'], task_list['filters'])
+                    options = overview['filter_options']
+                    self.assertIn(['bug', 'Błąd'], options['work_type'])
+                    self.assertIn([str(self.member.pk), 'Jan'], options['assignee'])
+                    self.assertNotIn(str(self.other.pk), {value for value, _ in options['assignee']})
+                    self.assertIn(['review', 'Weryfikacja'], options['status'])
+                    self.assertEqual(len(options['priority']), len(SpaceTask.PRIORITY_CHOICES) + 1)
+                    self.assertEqual({value for value, _ in options['team']}, {'', str(first_team.pk), str(second_team.pk)})
+                    self.assertNotIn(str(foreign_team.pk), {value for value, _ in options['team']})
+                    html = self.response(self.overview_url(filters, scoped))
+                    self.assertContains(html, '<span>Filtrowanie</span>')
+                    self.assertContains(html, 'name="work_type"')
+                    self.assertContains(html, 'name="assignee"')
+                    self.assertContains(html, 'name="status"')
+                    self.assertContains(html, 'name="priority"')
+                    self.assertContains(html, 'name="team"')
+                    self.assertNotContains(html, 'tasks-project-sort-builder')
+                    self.assertEqual(html.context['item_filter_count'], len(filters))
+
+    def test_filtered_drilldowns_and_clear_keep_other_filters_and_access_scope(self):
+        selected, team, _ = self.filter_fixture()
+        filters = {'view': 'overview', 'q': 'Zadanie', 'work_type': 'bug', 'assignee': 'me',
+                   'status': 'review', 'priority': 'urgent', 'team': str(team.pk), 'summary': 'due', 'page': '2'}
+        for scoped in (False, True):
+            response = self.response(self.overview_url(filters, scoped))
+            summary = response.context['summary']
+            links = [*summary['metrics'], *[row for group in ('statuses', 'priorities', 'types', 'workload')
+                                          for row in summary[group] if row['count']]]
+            for row in links:
+                with self.subTest(scoped=scoped, drilldown=row['url']):
+                    result = self.response(row['url'])
+                    self.assertEqual(result.status_code, 200)
+                    self.assertEqual(result.context['page'].paginator.count, row['count'])
+                    self.assertTrue(all(item.task_id == selected.pk for item in result.context['page']))
+                    params = parse_qs(urlsplit(row['url']).query)
+                    for key in ('q', 'work_type', 'team', 'status', 'priority'):
+                        self.assertEqual(params[key], [filters[key]])
+                    self.assertIn(params['assignee'][0], ('me', str(self.member.pk)))
+                    self.assertNotIn('page', params)
+            clear = re.search(r'class="tasks-project-query-panel__clear" href="([^"]+)">Wyczyść', response.content.decode())
+            self.assertIsNotNone(clear)
+            clear_url = urljoin(self.overview_url(filters, scoped), unescape(clear.group(1)))
+            self.assertEqual(parse_qs(urlsplit(clear_url).query), {'view': ['overview'], 'q': ['Zadanie']})
+            cleared = self.response(clear_url)
+            self.assertEqual(cleared.context['summary']['total'], 2)
+            self.assertEqual(cleared.context['item_filter_count'], 0)
+
+    def test_empty_filter_result_and_clearing_leave_personal_layout_unchanged(self):
+        self.filter_fixture()
+        widgets = [{'id': 'statuses', 'x': 4, 'y': 7, 'w': 8, 'h': 6}]
+        layout = SpaceDashboardLayout.objects.create(space=self.space, user=self.member, widgets=widgets, revision=7)
+        for filters, total in (({'status': 'review', 'assignee': 'unassigned'}, 0), ({'team': '9999999'}, 0), ({}, 2)):
+            data = self.page_data(filters)
+            self.assertEqual(data['summary']['total'], total)
+            self.assertEqual(data['summary']['dashboard']['widgets'], widgets)
+            self.assertEqual(data['summary']['dashboard']['revision'], 7)
+            self.assertTrue(data['filter_options']['work_type'])
+        layout.refresh_from_db()
+        self.assertEqual((layout.widgets, layout.revision), (widgets, 7))
 
     def test_recent_counters_use_dates_and_count_each_updated_task_once(self):
         created = self.task()
@@ -96,6 +270,26 @@ class SpaceSummaryTests(TestCase):
         self.assertEqual(counts['review'], 1)
         self.assertEqual(counts['closed'], 1)
         self.assertAlmostEqual(sum(float(row['arc']) for row in summary['statuses']), 100, places=3)
+
+    def test_status_paths_render_exact_filtered_arcs_and_keep_legacy_fields(self):
+        for status in ('new', 'in_progress', 'reopened'):
+            self.task(status=status)
+        response = self.response()
+        statuses = response.context['summary']['statuses']
+        paths = [row['path'] for row in statuses if row['count']]
+        self.assertEqual(len(paths), 3)
+        self.assertTrue(all(row['path'] == '' for row in statuses if not row['count']))
+        for previous, following in zip(paths, paths[1:]):
+            self.assertEqual(StatusArcGeometryTests.endpoints(previous)[1], StatusArcGeometryTests.endpoints(following)[0])
+        self.assertEqual(StatusArcGeometryTests.endpoints(paths[-1])[1], (90, 50))
+        for row in statuses:
+            self.assertTrue({'arc', 'gap', 'offset', 'path'} <= row.keys())
+            if row['count']:
+                self.assertContains(response, f'd="{row["path"]}"')
+        self.assertNotContains(response, 'stroke-dasharray=')
+        filtered = self.response(self.overview_url({'status': 'new'})).context['summary']['statuses']
+        full = next(row['path'] for row in filtered if row['count'])
+        self.assertEqual(full.count(' A '), 2)
 
     def test_priority_type_and_workload_totals_include_all_pages_and_subtasks(self):
         parent = self.task(priority='high', assignee=self.member)

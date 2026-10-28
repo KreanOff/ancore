@@ -1,104 +1,21 @@
 <div class="work-overview work-summary">
-    <div class="work-metrics work-summary-metrics" aria-label="Aktywność przestrzeni">
-        {% for metric in summary.metrics %}
-        <a class="work-panel work-summary-metric" href="{{ metric.url }}" aria-label="{{ metric.label }}: {{ metric.count }}. {% if metric.key == 'due' %}Najbliższe 7 dni{% else %}Ostatnie 7 dni{% endif %}. Wyświetl zadania.">
-            <span class="work-summary-metric-label"><i data-icon="{{ metric.icon }}" aria-hidden="true"></i>{{ metric.label }}</span>
-            <strong>{{ metric.count }}</strong>
-            <span class="work-caption">{% if metric.key == 'due' %}Najbliższe 7 dni{% else %}Ostatnie 7 dni{% endif %}</span>
-        </a>
-        {% endfor %}
-    </div>
-
-    <div class="work-summary-grid">
-        <section class="work-panel work-summary-panel work-summary-panel--status" aria-labelledby="summary-status-title">
-            <header class="work-panel-heading"><h2 id="summary-status-title">Przegląd statusów</h2><a class="work-summary-link" href="{{ summary.list_url }}">Wyświetl zadania<i data-icon="arrow-up-right" aria-hidden="true"></i></a></header>
-            <p class="work-caption">Otwarte zadania i zakończone w ostatnich 14 dniach.</p>
-            <div class="work-summary-status">
-                <div class="work-summary-donut">
-                    <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-                        <circle class="work-summary-donut-track" cx="50" cy="50" r="40" />
-                        {% for status in summary.statuses %}{% if status.count %}<circle class="work-summary-donut-arc status-{{ status.category }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ status.arc }} {{ status.gap }}" stroke-dashoffset="{{ status.offset }}" />{% endif %}{% endfor %}
-                    </svg>
-                    <div class="work-summary-donut-total"><strong>{{ summary.status_total }}</strong><span>zadań</span></div>
-                </div>
-                <ul class="work-summary-legend">
-                    {% for status in summary.statuses %}<li><a href="{{ status.url }}"><span class="work-summary-label"><span class="work-summary-dot status-{{ status.category }}" aria-hidden="true"></span>{{ status.label }}</span><span class="work-summary-status-count">{{ status.count }}</span></a></li>{% endfor %}
-                </ul>
-            </div>
-            {% if not summary.total %}<p class="work-caption work-summary-note">Utwórz pierwsze zadanie, aby zobaczyć postęp pracy.</p>{% elif not summary.status_total %}<p class="work-caption work-summary-note">Brak otwartych ani niedawno zakończonych zadań.</p>{% endif %}
-        </section>
-
-        <section class="work-panel work-summary-panel" aria-labelledby="summary-activity-title">
-            <header class="work-panel-heading"><h2 id="summary-activity-title">Ostatnia aktywność</h2></header>
-            <p class="work-caption">Najnowsze zmiany w zadaniach tej przestrzeni.</p>
-            <ol class="work-summary-activity">
-                {% for activity in summary.activities %}
-                <li><a href="{{ activity.url }}">
-                    {% include 'accounts/includes/user_avatar.html' with avatar=activity.avatar avatar_class='tasks-issue-avatar' only %}
-                    <span class="work-summary-activity-copy"><span>{{ activity.actor }}</span><span class="work-caption">{{ activity.action }}</span><span class="work-summary-activity-task" title="{{ activity.key }} · {{ activity.title }}"><span class="work-item-key">{{ activity.key }}</span> {{ activity.title }}</span><time class="work-caption" datetime="{{ activity.created_at|date:'c' }}" title="{{ activity.created_at|date:'d.m.Y H:i' }}">{{ activity.created_at|timesince }} temu</time></span>
-                </a></li>
-                {% empty %}<li class="work-summary-empty"><i data-icon="history" aria-hidden="true"></i><p>Brak aktywności</p><span class="work-caption">Zmiany w zadaniach pojawią się tutaj.</span></li>{% endfor %}
-            </ol>
-        </section>
-
-        <section class="work-panel work-summary-panel" aria-labelledby="summary-priority-title">
-            <header class="work-panel-heading"><h2 id="summary-priority-title">Podział priorytetów</h2></header>
-            <p class="work-caption">Priorytety otwartych zadań.</p>
-            <div class="work-summary-priority-chart" aria-label="Liczba otwartych zadań według priorytetu">
-                <div class="work-summary-priority-axis" aria-hidden="true"><span>{{ summary.priority_axis.max }}</span><span>{{ summary.priority_axis.middle|floatformat:'-1' }}</span><span>0</span></div>
-                <div class="work-summary-priorities">
-                    {% for priority in summary.priorities %}
-                    <a href="{{ priority.url }}" class="work-summary-priority" aria-label="{{ priority.label }}: {{ priority.count }} otwartych zadań. Wyświetl zadania.">
-                        <span class="work-summary-priority-track"><span class="work-summary-priority-bar" style="--summary-bar-height: {{ priority.height }}%"><span class="work-summary-priority-count">{{ priority.count }}</span></span></span>
-                        <span class="work-summary-priority-label"><span class="tasks-row-priority priority-{{ priority.key }}">{% include 'core/includes/priority_icon.html' with priority=priority.key %}</span><span>{% if priority.key == 'none' %}Brak{% else %}{{ priority.label }}{% endif %}</span></span>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% if not summary.open_total %}<p class="work-caption work-summary-note">Brak otwartych zadań.</p>{% endif %}
-        </section>
-
-        <section class="work-panel work-summary-panel work-summary-panel--distribution" aria-labelledby="summary-types-title">
-            <header class="work-panel-heading"><h2 id="summary-types-title">Typy zgłoszeń</h2></header>
-            <p class="work-caption">Podział wszystkich dostępnych zadań w przestrzeni. <a class="work-summary-link" href="{{ summary.list_url }}">Wyświetl wszystkie zadania</a></p>
-            <div class="work-summary-distribution-heading" aria-hidden="true"><span>Typ</span><span>Rozkład</span></div>
-            <ul class="work-summary-bars work-summary-bars--distribution work-summary-bars--types">
-                {% for type in summary.types %}
-                <li><a href="{{ type.url }}" title="{{ type.label }}: {{ type.count }} z {{ summary.total }} zadań">
-                    <span class="work-summary-label"><i data-icon="{{ type.icon }}" aria-hidden="true"></i>{{ type.label }}</span>
-                    <span class="work-summary-distribution">
-                        <progress value="{{ type.count }}" max="{{ summary.total|default:1 }}" aria-label="{{ type.label }}: {{ type.count }} z {{ summary.total }} zadań">{{ type.percent }}%</progress>
-                        {% if type.count %}<span class="work-summary-distribution-percent{% if type.percent < 20 %} work-summary-distribution-percent--small{% endif %}" aria-hidden="true">{% if type.percent %}{{ type.percent }}%{% else %}&lt;1%{% endif %}</span>{% endif %}
-                    </span>
-                </a></li>
-                {% endfor %}
-            </ul>
-        </section>
-
-        <section class="work-panel work-summary-panel work-summary-panel--distribution{% if space.kind != 'software' %} work-summary-workload{% endif %}" aria-labelledby="summary-workload-title">
-            <header class="work-panel-heading"><h2 id="summary-workload-title">Obciążenie zespołu</h2></header>
-            <p class="work-caption">Rozkład {{ summary.open_total }} otwartych zadań według wykonawcy. <a class="work-summary-link" href="{{ summary.list_url }}">Zmień przypisanie zadań</a></p>
-            {% if summary.workload %}<div class="work-summary-distribution-heading" aria-hidden="true"><span>Osoba przypisana</span><span>Rozkład prac</span></div>{% endif %}
-            <ul class="work-summary-bars work-summary-bars--distribution work-summary-bars--people">
-                {% for person in summary.workload %}
-                <li><a href="{{ person.url }}" title="{{ person.label }}: {{ person.count }} z {{ summary.open_total }} otwartych zadań">
-                    <span class="work-summary-label" title="{{ person.label }}">{% if person.avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=person.avatar avatar_class='tasks-issue-mini-avatar' only %}{% else %}<span class="work-summary-unassigned" aria-hidden="true"><i data-icon="user" aria-hidden="true"></i></span>{% endif %}<span>{{ person.label }}</span></span>
-                    <span class="work-summary-distribution">
-                        <progress value="{{ person.count }}" max="{{ summary.open_total|default:1 }}" aria-label="{{ person.label }}: {{ person.count }} z {{ summary.open_total }} otwartych zadań">{{ person.percent }}%</progress>
-                        <span class="work-summary-distribution-percent{% if person.percent < 20 %} work-summary-distribution-percent--small{% endif %}" aria-hidden="true">{% if person.percent %}{{ person.percent }}%{% else %}&lt;1%{% endif %}</span>
-                    </span>
-                </a></li>
-                {% empty %}<li class="work-summary-empty"><i data-icon="users" aria-hidden="true"></i><p>Brak otwartych zadań</p><span class="work-caption">Przypisane zadania pokażą obciążenie zespołu.</span></li>{% endfor %}
-            </ul>
-        </section>
-        {% if space.kind == 'software' %}
-        <section class="work-panel work-summary-panel" aria-labelledby="summary-epics-title">
-            <header class="work-panel-heading"><h2 id="summary-epics-title">Postęp epików</h2></header>
-            <p class="work-caption">Zakończone zadania w większych obszarach pracy.</p>
-            <ul class="work-summary-epics">
-                {% for epic in summary.epics %}<li><a href="{{ epic.url }}"><span class="work-item-key"><i data-icon="zap" aria-hidden="true"></i>{{ epic.key }}</span><span title="{{ epic.title }}">{{ epic.title }}</span><progress value="{{ epic.closed }}" max="{{ epic.total|default:1 }}" aria-label="{{ epic.title }}: {{ epic.closed }} z {{ epic.total }} zadań zakończonych">{{ epic.percent }}%</progress><span class="work-caption">{{ epic.closed }} / {{ epic.total }} · {{ epic.percent }}%</span></a></li>{% empty %}<li class="work-summary-empty"><i data-icon="zap" aria-hidden="true"></i><p>Brak epików</p><span class="work-caption">Połącz zadania w epiki, aby śledzić większe cele.</span></li>{% endfor %}
-            </ul>
-        </section>
+    <div class="work-summary-dashboard">
+        <div class="work-summary-toolbar">
+            <div class="work-summary-toolbar-title">{% include 'spaces/item_toolbar.html' with filters_only=True %}</div>
+        </div>
+        {% if summary.dashboard.widgets %}
+        <div class="work-summary-canvas" style="--summary-row-height: 48px; --summary-grid-gap: 12px" aria-label="Gadżety pulpitu przestrzeni">
+            {% for widget in summary.dashboard.widgets|dictsort:'x'|dictsort:'y' %}
+            <section data-summary-widget="{{ widget.id }}" class="work-summary-widget{% if widget.id == 'completed' or widget.id == 'updated' or widget.id == 'created' or widget.id == 'due' %} is-metric{% endif %}" style="grid-column: {{ widget.x|add:1 }} / span {{ widget.w }}; grid-row: {{ widget.y|add:1 }} / span {{ widget.h }}">
+                <div class="work-summary-widget-body">{% include 'spaces/summary_widget.html' %}</div>
+            </section>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="tasks-empty-state tasks-empty-state--illustrated" role="status">
+            <span class="tasks-empty-state__illustration tasks-empty-state__illustration--work" aria-hidden="true"></span>
+            <div class="tasks-empty-state__copy"><h2>Ten pulpit jest pusty.</h2><p>Otwórz edycję pulpitu i wybierz gadżety, które chcesz tutaj wyświetlać.</p></div>
+        </div>
         {% endif %}
     </div>
 </div>

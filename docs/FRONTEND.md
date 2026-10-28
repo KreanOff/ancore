@@ -83,6 +83,39 @@ URL konfiguracji także otwierają to okno. Wejście `avatar/` otwiera picker
 nad „Ustawienia”, zamiast osobnej zakładki. Lista członków w „Udostępnienia” zawiera serwerowe
 `can_remove`, odpowiadające regułom właściciela i administratora Przestrzeni.
 
+## Konfigurowalny pulpit Przestrzeni
+
+`spaces/SummaryDashboard.tsx` zarządza szkicem i zapisem układu, katalogiem
+wspólnego `Modal`, uchwytami pointer/klawiatura, błędami oraz ochroną wyjścia.
+`Summary.tsx` zachowuje źródła danych i interakcje wykresów;
+`SummaryWidgetControls.tsx` renderuje panel pozycji i rozmiaru, miniaturę
+oraz suwaki i skróty szerokości we wspólnym `Dropdown`. Pozostaje otwarty
+podczas zmian. Wariant `positioning="fixed"` zachowuje pozycję panelu
+z chwili otwarcia, więc zmiana geometrii kafelka nie przesuwa kontrolek;
+wspólna warstwa nadal dopasowuje panel do viewportu. W trybie edycji
+kolejność węzłów DOM jest stabilna,
+a CSS `order` zachowuje kolejność wizualną na telefonie; przeniesienie kafelka
+nie przerywa pracy z panelem. Po zakończeniu edycji DOM wraca do kolejności
+położenia. `summaryLayout.ts` wyznacza pozycje i rozwiązuje kolizje bez zależności
+UI; helpery `moveWidget` i `resizeWidget` pilnują kierunków i krawędzi.
+`ResizeObserver` rozpoznaje pionowy układ poniżej 700px. Wtedy panel pokazuje
+góra/dół, a `moveWidgetInOrder` zamienia kafelek z sąsiadem w kolejności
+położenia i układa siatkę ponownie, zachowując rozmiary oraz brak kolizji.
+`summary.dashboard` zawiera `widgets: [{id,x,y,w,h}]`, `catalog`, `revision`,
+`save_url`, `columns`, `max_rows` i `max_h`. Wspólny page API przekazuje JSON
+`{revision, widgets}` do zwykłego/scoped `space/<slug>/dashboard/layout/`.
+Odpowiedź zawiera aktualny `dashboard`; 400 oznacza błędną geometrię/identyfikatory,
+a 409 konflikt rewizji. Serwer waliduje rozmiary, granice i brak kolizji;
+`SpaceDashboardLayout` ma unikalność użytkownika i Przestrzeni. Wymagana jest
+migracja `spaces.0003_space_dashboard_layout`. Nie zmienia agregacji ani ACL
+zadań. Pierwszy render korzysta z tego samego zapisanego układu.
+
+Podsumowanie i zadania współdzielą `ItemFiltering` z `spaces/ItemToolbar.tsx`.
+Widok `overview` dostarcza te same opcje i aktywne warunki co lista;
+zmiana/wyczyszczenie filtrów używa istniejącej nawigacji GET/JSON. Agregacje
+nadal otrzymują queryset po filtrach i kontroli widoczności. Filtry z URL
+nie są zapisywane jako część osobistego układu gadżetów.
+
 ## Animacje zadań Przestrzeni
 
 Wszystkie sześć szablonów tablic Przestrzeni korzysta z jednego `ItemCard`
@@ -126,6 +159,10 @@ Regresje podsumowania Przestrzeni wykonują rzeczywiste callbacki wykresów,
 przełączania liczb/procentów i sortowania, a także cykl obserwatora animacji,
 fokus, Escape, zera i ograniczenie ruchu. Interakcje i style podsumowania
 opisuje [standard UI](UI.md).
+Każdy status w `summary.statuses` zawiera `path`: geometrię łuku SVG wyliczaną
+przez `spaces.summary.status_arc_path`. React i pierwszy render Django używają
+tej samej ścieżki; wcześniejsze `arc`, `gap` i `offset` pozostają w odpowiedzi
+dla zgodności. Testy backendu obejmują granice segmentów oraz udziały 0% i 100%.
 `pnpm --dir frontend/app format:check` sprawdza format źródeł;
 `pnpm --dir frontend/app format` go poprawia.
 

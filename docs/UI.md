@@ -864,16 +864,19 @@ podsumowania, osi czasu, raportów i konfiguracji. Geometria wierszy, kolumn, ka
 pochodzi ze wspólnych komponentów. [Funkcje](SPACES.md).
 
 Zakładka „Podsumowanie” używa `spaces/summary.html` i lokalnego wariantu
-`work-summary` wspólnych `work-panel` i `work-metrics`. Układ nawiązuje do
-[podsumowania Jiry](https://support.atlassian.com/jira-software-cloud/docs/what-is-the-summary-view/):
+`work-summary` wspólnych `work-panel`. Jest osobistym, konfigurowalnym pulpitem
+Przestrzeni. `SummaryDashboard.tsx` umieszcza dotychczasowe dane na siatce
+12 kolumn (wiersz 48px, odstęp 12px), a `summaryLayout.ts` rozwiązuje kolizje
+przez przesuwanie sąsiednich kafelków w dół. Domyślnie zachowuje
 cztery liczniki u góry, przegląd statusów i ostatnia aktywność w pierwszym rzędzie,
 priorytety i typy zgłoszeń w drugim, a obciążenie zespołu i opcjonalny postęp
-epików poniżej. Panel statusów centruje pierścień SVG o grubości 10 jednostek
-(18 dla aktywnego segmentu) w polu `viewBox="0 0 100 100"` obok
+epików poniżej. Panel statusów centruje pierścień SVG o grubości 16 jednostek
+(24 dla aktywnego segmentu) w polu `viewBox="0 0 100 100"` obok
 zwartej legendy z separatorami wierszy i licznikami na neutralnym tle.
-Na telefonie pierścień zmniejsza się do 120px, a nagłówek zawija odnośnik,
-gdy brakuje miejsca; do 360px legenda przechodzi pod wykres. Panel nie
-rozciąga się do wysokości sąsiedniej aktywności.
+Na telefonie pierścień zmniejsza się do 120px; aktywny podgląd ma liczbę 24px
+i ciaśniejszy układ tekstu, by dwuwierszowa nazwa mieściła się w grubszym pierścieniu.
+Nagłówek zawija odnośnik,
+gdy brakuje miejsca; do 360px legenda przechodzi pod wykres. Wysokość panelu wynika z zapisanego rozmiaru kafelka.
 Pierścień i legenda zachowują odcienie statusów zadań, ze wzmocnieniem
 przez `color-mix(in srgb, tło 66.9%, kolor statusu 33.1%)` wyłącznie
 na segmentach i kropkach. Mieszanie z mocniejszym kolorem statusu zwiększa
@@ -895,25 +898,80 @@ obok polskich etykiet, a na telefonie nad nimi. „Typy zgłoszeń” mają kolu
 Procenty są wewnątrz pasków; przy małym udziale stoją w jasnej części, a zero
 pozostawia pusty pasek z `0%`. Liczby zadań są również obok nazw,
 w etykiecie dostępności i podpowiedzi.
-Na telefonie rozkład przechodzi pod nazwę typu. Panel dopasowuje wysokość do
-wierszy i zawiera podkreślony odnośnik do wszystkich zadań. Pozostałe natywne
+Na telefonie rozkład przechodzi pod nazwę typu. Panel zawiera
+podkreślony odnośnik do wszystkich zadań. Pozostałe natywne
 `progress` w postępie epików zachowują fioletowy akcent.
 „Obciążenie zespołu” korzysta z tego samego wariantu
 `work-summary-bars--distribution`: kolumny „Osoba przypisana” i „Rozkład prac”,
 szare paski 24px i procenty wewnątrz. Nazwy zachowują awatary; nieprzypisane
 zadania mają neutralną ikonę osoby. Liczby otwartych zadań są obok nazw,
 w podpowiedzi i etykiecie dostępności. Podkreślony link „Zmień przypisanie zadań” otwiera listę;
-wiersz osoby otwiera jej otwarte zadania. Panel dopasowuje wysokość do wierszy,
+wiersz osoby otwiera jej otwarte zadania. Dłuższe listy przewijają się w kafelku,
 na telefonie paski przechodzą pod osoby, a pusty stan nie pokazuje nagłówków kolumn.
 Ikony priorytetów i awatary pochodzą ze standardowych include'ów. Panele
-zachowują font, ramki, tło, zaokrąglenie i odstępy Ancore. Przy szerokości
-do 1099px tworzą jedną kolumnę, a liczniki dwie. Na telefonie poziome paski
+zachowują font, ramki, tło, zaokrąglenie i odstępy Ancore. Tytuły paneli,
+etykiety liczników oraz nazwy widżetów w edycji i panelu opcji mają
+`font-weight: 700`; opisy i wartości zachowują dotychczasową wagę. Przy szerokości
+kontenera poniżej 700px wszystkie kafelki tworzą jedną kolumnę w kolejności
+położenia na pulpicie, z wysokością dopasowaną do treści. Na telefonie poziome paski
 przenoszą się pod etykiety. Długie nazwy zadań, epików i wykonawców zachowują
 pełny tekst w `title`; aktywność i dłuższe listy przewijają się w panelu.
 Całe podsumowanie przewija się we wspólnym `work-content`.
+Korzysta z tego samego wariantu `work-content--items` co lista zadań:
+8px nad paskiem filtrów, wspólny odstęp boczny `--work-space-inline-padding`
+i 20px na dole. Pomiędzy paskiem a pierwszym rzędem gadżetów jest 8px,
+tak jak pomiędzy paskiem a listą zadań.
+
+Pasek Podsumowania zawiera to samo menu „Filtrowanie” co w zadaniach
+(`ItemFiltering` w `ItemToolbar.tsx`): typ zgłoszenia, wykonawca, status,
+priorytet i zespół, wyszukiwanie pól/opcji, licznik aktywnych warunków i „Wyczyść”.
+Wybór aktualizuje URL i dane wszystkich gadżetów, zachowując zapisany układ.
+Warunki można łączyć, a linki wykresów zachowują pozostałe filtry. Podsumowanie
+nie pokazuje menu sortowania zadań. Pierwszy render Django wykorzystuje
+wariant `filters_only` wspólnego formularza `spaces/item_toolbar.html`.
+
+„Edytuj pulpit” pokazuje uchwyty i menu gadżetów, a „Dodaj gadżet” otwiera
+katalog w istniejącym `Modal` z wyszukiwaniem i stanem już dodanych pozycji.
+Kafelki przesuwa się za nagłówek i skaluje prawym dolnym uchwytem; strzałki
+na uchwytach zapewniają obsługę klawiaturą. Opcje kafelka otwierają wspólny
+`Dropdown` w trybie dialogu z panelem `SummaryWidgetControls.tsx`. Sekcja
+„Pozycja” ma cztery strzałki i miniaturę układu z zaznaczonym kafelkiem.
+Na wąskim ekranie pokazuje tylko góra/dół: każdy ruch zmienia kolejność
+o jeden kafelek, a niedostępne kierunki są przygaszone.
+Sekcja „Rozmiar” udostępnia podpisane suwaki szerokości (procent pulpitu)
+i wysokości (piksele) oraz wizualne skróty szerokości: 1/4 lub 1/3 dla
+większych paneli, 1/2 i „Cały wiersz”. Poszerzenie przy prawej krawędzi
+przesuwa kafelek w lewo, by zmieścić wybraną szerokość; przeciąganie narożnika
+zachowuje lewy górny punkt. Zmiany od razu aktualizują pulpit i miniaturę,
+a panel pozostaje otwarty i zachowuje pozycję z chwili otwarcia, nawet gdy
+edytowany kafelek się przesuwa. Zmiana rozmiaru okna dopasowuje panel do
+granic widocznego ekranu. „Zamknij” i Escape wracają do edycji; cały szkic
+zatwierdza nadal „Zapisz układ”. „Usuń gadżet” jest oddzielone w stopce;
+po usunięciu fokus przechodzi na opcje sąsiedniego kafelka, a przy pustym
+pulpicie na „Dodaj gadżet”.
+Suwaki i strzałki respektują granice oraz minimalny rozmiar.
+Escape anuluje bieżący
+gest. Na wąskim ekranie edycja działa przez panel opcji, bez przeciągania i uchwytu
+rozmiaru; komunikat wyjaśnia, że szerokość i wysokość dotyczą widoku na komputerze. „Zapisz układ” utrwala cały szkic, „Anuluj” przywraca poprzedni;
+wspólny guard chroni niezapisane zmiany podczas nawigacji. Konflikt rewizji
+zachowuje szkic i udostępnia wczytanie aktualnego układu po potwierdzeniu
+odrzucenia zmian. Usunięcie ostatniego gadżetu daje wspólny stan pusty.
+Po lewej pozostaje filtrowanie, a po prawej „Edytuj pulpit”; pasek nie pokazuje
+osobnego tytułu z ikoną ani przycisku „Odśwież”. Edycja jest osobistą preferencją dostępną
+dla członka z widocznością Przestrzeni; gość zachowuje tryb tylko do odczytu.
+Pierwszy render Django odtwarza zapisany układ i odnośniki. Dodane ponownie
+wykresy rejestrują się w obserwatorze animacji, także po zmianie preferencji ruchu.
 
 React `spaces/Summary.tsx` synchronizuje najechanie lub fokus legendy
-z pierścieniem: wybrany fragment pogrubia się i zachowuje pełny kolor,
+z pierścieniem: wybrany fragment pogrubia się i zachowuje pełny kolor.
+Skalowanie `transform` wokół środka SVG zwiększa widoczny promień z 40 do 44,
+a skorygowana grubość daje po skalowaniu 24 zamiast 16 jednostek. Fragment
+powiększa się na zewnątrz, zachowując miejsce na tekst w środku. Promień ścieżki
+pozostaje stały. Każdy segment jest osobnym łukiem SVG, bez kreskowania zamkniętego
+koła, które powodowało dodatkowe fragmenty przy animacji i skalowaniu interfejsu.
+Pełne 100% tworzą dwa półokręgi, a zerowy udział nie rysuje łuku. Pierwszy render
+Django i React używają tych samych ścieżek z podsumowania. SVG pozwala wyświetlić wysunięty fragment poza
+polem wykresu. Zmiana skali i grubości trwa 160ms i respektuje ograniczenie ruchu,
 a pozostałe segmenty oraz ich kropki w legendzie przechodzą do 30% krycia.
 Środek pokazuje liczbę, nazwę i udział statusu. Nazwa w środku ma limit
 dwóch wierszy i 60% szerokości pierścienia, aby nie nachodziła na pogrubiony
@@ -928,7 +986,7 @@ nie mają animacji przezroczystości podczas wejścia; wyciszenie dotyczy
 wyłącznie nieaktywnych segmentów i kropek podczas podglądu statusu.
 Priorytety podświetlają wybrany słupek i pokazują liczbę oraz udział
 w stałym wierszu pod wykresem, bez przesuwania pozostałej treści.
-Karty liczników mają neutralne podświetlenie, niewielkie uniesienie
+Karty liczników mają neutralne podświetlenie
 i skrót „Wyświetl zadania”. Fokus klawiatury używa wewnętrznego obrysu
 przez `box-shadow`, niezależnie od globalnego wyłączenia `outline`.
 
@@ -2375,6 +2433,12 @@ z przewijanego obszaru lub modal zostaje zamknięty/usunięty, zamyka też menu.
 Escape zamyka najpierw listę i przywraca fokus kontrolce; kliknięcie poza listą,
 przeniesienie fokusu lub `ancore:content-loaded` również ją zamyka.
 Przy własnym zamykaniu kontrolka wywołuje `AncoreDropdownLayer.hide(menu)`.
+Panel konfigurujący przesuwany element może ustawić
+`data-dropdown-positioning="fixed"` (`Dropdown positioning="fixed"` w React).
+Warstwa dobiera położenie przy otwarciu, potem zachowuje te współrzędne
+i ogranicza panel do widocznego ekranu. Przesunięcie kontrolki poza przewijany
+obszar nie zamyka takiego panelu; ukrycie lub usunięcie kontrolki nadal go zamyka.
+Ponowne otwarcie ustala pozycję od nowa. Domyślne menu nadal śledzą kontrolkę.
 Każda lista wyboru w oknie formularza ma wyszukiwarkę, również przy niewielu
 opcjach (np. status, priorytet, kolor). `AncoreCustomSelect` dodaje ją domyślnie
 w oknach; wspólna warstwa uzupełnia pozostałe listy, które nie mają własnego

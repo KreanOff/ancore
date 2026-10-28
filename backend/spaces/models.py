@@ -78,6 +78,18 @@ class SpaceMembership(models.Model):
         constraints = [models.UniqueConstraint(fields=['space', 'user'], name='space_member_unique')]
 
 
+class SpaceDashboardLayout(models.Model):
+    """Personal arrangement of a Space's summary widgets."""
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='dashboard_layouts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='space_dashboard_layouts')
+    widgets = models.JSONField(default=list, blank=True)
+    revision = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['space', 'user'], name='space_dashboard_layout_user')]
+
+
 class SpaceTask(models.Model):
     """Task content owned by a space, without a legacy project or group."""
     PRIORITY_CHOICES = [('none', 'Brak priorytetu'), ('low', 'Niski'), ('medium', 'Średni'), ('high', 'Wysoki'), ('urgent', 'Pilny')]

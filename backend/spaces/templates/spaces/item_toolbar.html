@@ -1,11 +1,11 @@
 {% load account_avatar %}
 <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get">
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
-    <input type="hidden" name="sort" value="{{ item_sort.value }}">
+    {% if not filters_only %}<input type="hidden" name="sort" value="{{ item_sort.value }}">{% endif %}
     {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
     {% if summary_filter %}<input type="hidden" name="summary" value="{{ summary_filter }}">{% endif %}
     <div class="tasks-filterbar-left">
-        <details class="tasks-directory-filter-aggregate tasks-project-sort-builder" data-directory-filter-aggregate>
+        {% if not filters_only %}<details class="tasks-directory-filter-aggregate tasks-project-sort-builder" data-directory-filter-aggregate>
             <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortowanie</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
             <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="arrow-up-down" aria-hidden="true"></i><strong>Sortowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{% querystring sort=None page=None %}">Domyślnie</a></header>
@@ -16,7 +16,7 @@
                     {% endfor %}
                 </div>
             </div>
-        </details>
+        </details>{% endif %}
         <details class="tasks-directory-filter-aggregate tasks-project-filter-builder" data-directory-filter-aggregate>
             <summary class="tasks-filter-button tasks-project-query-trigger{% if item_filter_count %} is-active{% endif %}"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtrowanie</span>{% if item_filter_count %}<span class="tasks-project-query-count">{{ item_filter_count }}</span>{% endif %}<i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
             <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">

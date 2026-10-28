@@ -5,6 +5,12 @@ z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikac
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
 Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
+`spaces.0003_space_dashboard_layout` (28.10.2026) dodaje osobiste układy
+podsumowania Przestrzeni: JSON pozycji/rozmiarów gadżetów, rewizję i unikalną
+parę Przestrzeń/użytkownik. Nie przepisuje danych zadań ani Pulpitów Workspace;
+bez zapisanego rekordu odczyt zwraca domyślny układ. Usunięcie użytkownika
+lub Przestrzeni usuwa powiązaną preferencję. Zastosuj `manage.py migrate`.
+
 `dashboard.0003_dashboard_preferences` (22.10.2026) dodaje ikonę, zakres
 danych, listę Przestrzeni, opcjonalny zapisany filtr i interwał odświeżania.
 Istniejące pulpity zachowują dane i dostęp: otrzymują ikonę pulpitu,

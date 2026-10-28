@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 49 | 2 | 38 | 274 |
+| [backend/spaces](../backend/spaces) | 51 | 3 | 39 | 297 |
 
 ## 2. Modele i relacje
 
@@ -404,6 +404,17 @@ Pola zadeklarowane tutaj: `space` (ForeignKey), `user` (ForeignKey), `role` (Cha
 | `space` | `Space` | on_delete=models.CASCADE; related_name='memberships' |
 | `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
 
+### `SpaceDashboardLayout`
+
+Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
+
+Pola zadeklarowane tutaj: `space` (ForeignKey), `user` (ForeignKey), `widgets` (JSONField), `revision` (PositiveIntegerField), `updated_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `space` | `Space` | on_delete=models.CASCADE; related_name='dashboard_layouts' |
+| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='space_dashboard_layouts' |
+
 ### `SpaceTask`
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
@@ -778,6 +789,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'spaces/items/<int:pk>/action/'` | `views.item_action` | 'item_action' |
 | `'spaces/manage/<slug:pk>/edit/'` | `views.edit` | 'manage_edit' |
 | `'space/<slug:pk>/'` | `views.detail` | 'detail' |
+| `'space/<slug:pk>/dashboard/layout/'` | `dashboard.save_layout` | 'dashboard_layout' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/'` | `task_views.detail` | 'task_detail' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/edit/'` | `views.item_edit` | 'task_edit' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/action/'` | `views.item_action` | 'task_action' |
@@ -802,6 +814,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'space/<slug:pk>/members/<int:member_pk>/remove/'` | `views.remove_member` | 'remove_member' |
 | `'space/<slug:pk>/configuration/'` | `views.configuration` | 'configuration' |
 | `'spaces/<int:pk>/'` | `views.detail` | 'detail' |
+| `'spaces/<int:pk>/dashboard/layout/'` | `dashboard.save_layout` | 'dashboard_layout' |
 | `'spaces/<int:pk>/edit/'` | `views.edit` | 'edit' |
 | `'spaces/<int:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
 | `'spaces/<int:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
@@ -991,17 +1004,18 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/avatars.py](../backend/spaces/avatars.py) — `avatar_upload_path`, `space_avatar`, `delete_avatar_after_commit`, `save_space_avatar`
 - [backend/spaces/backlog.py](../backend/spaces/backlog.py) — `append_planned_items`, `bulk_plan_items`, `posted_number`, `free_rank`, `redistribute_ranks`, `move_backlog_item`
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
+- [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
 - [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `issue_type_icon`, `template_settings`
 - [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `TypeForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
-- [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
+- [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
-- [backend/spaces/summary.py](../backend/spaces/summary.py) — `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
+- [backend/spaces/summary.py](../backend/spaces/summary.py) — `status_arc_path`, `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
 - [backend/spaces/task_views.py](../backend/spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `detail_post_data`, `work_log_context`, `detail`, `members`, `download`
@@ -1223,6 +1237,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/sprint_header_details.html](../backend/spaces/templates/spaces/sprint_header_details.html)
 - [backend/spaces/templates/spaces/subtask_modal.html](../backend/spaces/templates/spaces/subtask_modal.html)
 - [backend/spaces/templates/spaces/summary.html](../backend/spaces/templates/spaces/summary.html)
+- [backend/spaces/templates/spaces/summary_widget.html](../backend/spaces/templates/spaces/summary_widget.html)
 - [backend/spaces/templates/spaces/tags.html](../backend/spaces/templates/spaces/tags.html)
 - [backend/spaces/templates/spaces/task_attachments.html](../backend/spaces/templates/spaces/task_attachments.html)
 - [backend/spaces/templates/spaces/task_comment.html](../backend/spaces/templates/spaces/task_comment.html)
@@ -1457,8 +1472,11 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/SettingsDialog.tsx](../frontend/app/src/spaces/SettingsDialog.tsx)
 - [frontend/app/src/spaces/SpaceHeader.tsx](../frontend/app/src/spaces/SpaceHeader.tsx)
 - [frontend/app/src/spaces/Summary.tsx](../frontend/app/src/spaces/Summary.tsx)
+- [frontend/app/src/spaces/SummaryDashboard.tsx](../frontend/app/src/spaces/SummaryDashboard.tsx)
 - [frontend/app/src/spaces/SummaryDistribution.tsx](../frontend/app/src/spaces/SummaryDistribution.tsx)
+- [frontend/app/src/spaces/SummaryWidgetControls.tsx](../frontend/app/src/spaces/SummaryWidgetControls.tsx)
 - [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
+- [frontend/app/src/spaces/summaryLayout.ts](../frontend/app/src/spaces/summaryLayout.ts)
 - [frontend/app/src/spaces/types.ts](../frontend/app/src/spaces/types.ts)
 - [frontend/app/src/spaces/useItemMotion.ts](../frontend/app/src/spaces/useItemMotion.ts)
 - [frontend/app/src/spaces/useSummaryMotion.ts](../frontend/app/src/spaces/useSummaryMotion.ts)
@@ -1484,13 +1502,17 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/calendar-save.test.mjs](../frontend/app/tests/calendar-save.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
+- [frontend/app/tests/dropdown-layer.test.mjs](../frontend/app/tests/dropdown-layer.test.mjs)
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
+- [frontend/app/tests/item-filtering.test.mjs](../frontend/app/tests/item-filtering.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
 - [frontend/app/tests/suite-read-only.test.mjs](../frontend/app/tests/suite-read-only.test.mjs)
 - [frontend/app/tests/summary-distribution.test.mjs](../frontend/app/tests/summary-distribution.test.mjs)
 - [frontend/app/tests/summary-interactions.test.mjs](../frontend/app/tests/summary-interactions.test.mjs)
+- [frontend/app/tests/summary-layout.test.mjs](../frontend/app/tests/summary-layout.test.mjs)
+- [frontend/app/tests/summary-widget-controls.test.mjs](../frontend/app/tests/summary-widget-controls.test.mjs)
 - [frontend/app/tests/task-actions.test.mjs](../frontend/app/tests/task-actions.test.mjs)
 - [frontend/app/tests/task-members.test.mjs](../frontend/app/tests/task-members.test.mjs)
 - [frontend/app/tests/task-refresh.test.mjs](../frontend/app/tests/task-refresh.test.mjs)
@@ -2087,6 +2109,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ConfigurationWriteTests`: 3 metod testowych.
 
+### backend/spaces/test_dashboard.py
+
+Źródło: [backend/spaces/test_dashboard.py](../backend/spaces/test_dashboard.py).
+
+- `SpaceDashboardTests`: 12 metod testowych.
+
 ### backend/spaces/test_independent_tasks.py
 
 Źródło: [backend/spaces/test_independent_tasks.py](../backend/spaces/test_independent_tasks.py).
@@ -2127,7 +2155,8 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_summary.py](../backend/spaces/test_summary.py).
 
-- `SpaceSummaryTests`: 10 metod testowych.
+- `StatusArcGeometryTests`: 6 metod testowych.
+- `SpaceSummaryTests`: 15 metod testowych.
 
 ### backend/spaces/test_tags.py
 
@@ -2228,6 +2257,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [backend/spaces/migrations/0001_initial.py](../backend/spaces/migrations/0001_initial.py)
 - [backend/spaces/migrations/0002_initial.py](../backend/spaces/migrations/0002_initial.py)
+- [backend/spaces/migrations/0003_space_dashboard_layout.py](../backend/spaces/migrations/0003_space_dashboard_layout.py)
 
 ## 10. Narzędzia i wdrożenie
 

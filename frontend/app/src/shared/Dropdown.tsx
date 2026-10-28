@@ -19,6 +19,7 @@ export function Dropdown({
   triggerClassName = 'tasks-filter-button',
   searchable = true,
   disabled = false,
+  positioning = 'anchor',
   triggerProps,
 }: {
   label: string;
@@ -32,6 +33,7 @@ export function Dropdown({
   triggerClassName?: string;
   searchable?: boolean;
   disabled?: boolean;
+  positioning?: 'anchor' | 'fixed';
   triggerProps?: Pick<
     ButtonHTMLAttributes<HTMLButtonElement>,
     'id' | 'aria-describedby' | 'aria-invalid'
@@ -100,6 +102,7 @@ export function Dropdown({
         id={id}
         hidden={!open}
         data-dropdown-search-disabled={!searchable ? '' : undefined}
+        data-dropdown-positioning={positioning === 'fixed' ? 'fixed' : undefined}
         className={`tasks-filter-menu ${menuClass}`}
         role={role}
         aria-label={label}

@@ -10,7 +10,7 @@
     {% endfor %}
 </nav>
 {% endblock %}
-{% block work_content_class %}{% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %} work-content--items{% endif %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% endblock %}
+{% block work_content_class %}{% if view == 'overview' or view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %} work-content--items{% endif %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% endblock %}
 {% block work_pagination %}{% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/pagination.html' %}{% endif %}{% endblock %}
 {% block work_content %}
 {% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/item_toolbar.html' %}{% endif %}

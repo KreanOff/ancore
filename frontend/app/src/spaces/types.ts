@@ -74,12 +74,13 @@ interface Distribution {
   avatar?: AvatarData;
 }
 export interface Summary {
+  dashboard: import('./SummaryDashboard').SummaryDashboardData;
   metrics: { key: string; label: string; icon: string; count: number; url: string }[];
   list_url: string;
   total: number;
   status_total: number;
   open_total: number;
-  statuses: (Status & { url: string; arc: string; gap: string; offset: string })[];
+  statuses: (Status & { url: string; path: string; arc: string; gap: string; offset: string })[];
   activities: {
     id: number;
     url: string;
