@@ -868,31 +868,41 @@ Zakładka „Podsumowanie” używa `spaces/summary.html` i lokalnego wariantu
 [podsumowania Jiry](https://support.atlassian.com/jira-software-cloud/docs/what-is-the-summary-view/):
 cztery liczniki u góry, przegląd statusów i ostatnia aktywność w pierwszym rzędzie,
 priorytety i typy zgłoszeń w drugim, a obciążenie zespołu i opcjonalny postęp
-epików poniżej. Panel statusów centruje mniejszy, cienki pierścień SVG obok
+epików poniżej. Panel statusów centruje pierścień SVG o grubości 10 jednostek
+(18 dla aktywnego segmentu) w polu `viewBox="0 0 100 100"` obok
 zwartej legendy z separatorami wierszy i licznikami na neutralnym tle.
 Na telefonie pierścień zmniejsza się do 120px, a nagłówek zawija odnośnik,
 gdy brakuje miejsca; do 360px legenda przechodzi pod wykres. Panel nie
 rozciąga się do wysokości sąsiedniej aktywności.
-Wykres i legenda zachowują paletę kategorii statusów
-z listy zadań, ze wzmocnioną czytelnością na białym tle. Używają pełnych kolorów
-ikon statusów (`--tasks-status-color`) z `theme/elestio.css` przez klasy
-`status-*`; własne statusy przyjmują kolor swojej kategorii. Nagłówki listy
-zachowują jasne tła. „Podział priorytetów” używa szarych słupków opartych na
+Pierścień i legenda zachowują odcienie statusów zadań, ze wzmocnieniem
+przez `color-mix(in srgb, tło 66.9%, kolor statusu 33.1%)` wyłącznie
+na segmentach i kropkach. Mieszanie z mocniejszym kolorem statusu zwiększa
+widoczność także szarego segmentu; nie używa filtra `saturate`, który
+praktycznie nie zmienia bardzo jasnych pasteli. Tekst, tło panelu i lista
+zadań zachowują swoje kolory.
+Wspólny `--tasks-status-background`
+w `theme/elestio.css` jest zdefiniowany raz dla kategorii `status-*`
+oraz odpowiadających im nagłówków `tasks-status-block-header--*`
+i `tasks-status-subgroup-header--*`. Token `--work-summary-status-color`
+łączy to tło z `--tasks-status-color`, również w pierwszym renderze Django.
+Własne statusy korzystają z obu wartości swojej kategorii.
+„Podział priorytetów” używa szarych słupków opartych na
 `--system-interaction`, wspólnych osi oraz poziomej siatki. Skala zaczyna się
 od zera i ma trzy oznaczenia, dopasowane do największej liczby otwartych zadań.
 Wysokości są liniowe; zero nie tworzy słupka. Kolorowe ikony priorytetów stoją
 obok polskich etykiet, a na telefonie nad nimi. „Typy zgłoszeń” mają kolumny
-„Typ” i „Rozkład” oraz szare, prostokątne paski `progress` o wysokości 24px.
+„Typ” i „Rozkład” oraz szare, prostokątne paski o wysokości 24px.
 Procenty są wewnątrz pasków; przy małym udziale stoją w jasnej części, a zero
-pozostawia pusty pasek. Liczby zadań są w etykiecie dostępności i podpowiedzi.
+pozostawia pusty pasek z `0%`. Liczby zadań są również obok nazw,
+w etykiecie dostępności i podpowiedzi.
 Na telefonie rozkład przechodzi pod nazwę typu. Panel dopasowuje wysokość do
 wierszy i zawiera podkreślony odnośnik do wszystkich zadań. Pozostałe natywne
 `progress` w postępie epików zachowują fioletowy akcent.
 „Obciążenie zespołu” korzysta z tego samego wariantu
 `work-summary-bars--distribution`: kolumny „Osoba przypisana” i „Rozkład prac”,
 szare paski 24px i procenty wewnątrz. Nazwy zachowują awatary; nieprzypisane
-zadania mają neutralną ikonę osoby. Liczby otwartych zadań pozostają w podpowiedzi
-i etykiecie dostępności. Podkreślony link „Zmień przypisanie zadań” otwiera listę;
+zadania mają neutralną ikonę osoby. Liczby otwartych zadań są obok nazw,
+w podpowiedzi i etykiecie dostępności. Podkreślony link „Zmień przypisanie zadań” otwiera listę;
 wiersz osoby otwiera jej otwarte zadania. Panel dopasowuje wysokość do wierszy,
 na telefonie paski przechodzą pod osoby, a pusty stan nie pokazuje nagłówków kolumn.
 Ikony priorytetów i awatary pochodzą ze standardowych include'ów. Panele
@@ -902,8 +912,41 @@ przenoszą się pod etykiety. Długie nazwy zadań, epików i wykonawców zachow
 pełny tekst w `title`; aktywność i dłuższe listy przewijają się w panelu.
 Całe podsumowanie przewija się we wspólnym `work-content`.
 
-Liczniki i elementy wykresów są natywnymi linkami GET obsługiwanymi przez
-`AncoreApp`; nie wymagają nowego JavaScriptu. Lista przestrzeni oferuje
+React `spaces/Summary.tsx` synchronizuje najechanie lub fokus legendy
+z pierścieniem: wybrany fragment pogrubia się i zachowuje pełny kolor,
+a pozostałe segmenty oraz ich kropki w legendzie przechodzą do 30% krycia.
+Środek pokazuje liczbę, nazwę i udział statusu. Nazwa w środku ma limit
+dwóch wierszy i 60% szerokości pierścienia, aby nie nachodziła na pogrubiony
+segment; pełna nazwa pozostaje w legendzie. Kliknięcie fragmentu otwiera
+filtrowaną listę przez wspólny `navigate`; te same akcje są dostępne
+klawiaturą przez linki legendy. Escape przywraca łączny wynik.
+Zejście kursora, opuszczenie fokusu i Escape przywracają pełne kolory,
+gdy nie ma drugiego aktywnego podglądu z myszy lub klawiatury.
+Teksty legendy zachowują pełną czytelność. Przejście krycia trwa 160ms;
+przy ograniczeniu ruchu zmiana jest natychmiastowa. Panel i pierścień
+nie mają animacji przezroczystości podczas wejścia; wyciszenie dotyczy
+wyłącznie nieaktywnych segmentów i kropek podczas podglądu statusu.
+Priorytety podświetlają wybrany słupek i pokazują liczbę oraz udział
+w stałym wierszu pod wykresem, bez przesuwania pozostałej treści.
+Karty liczników mają neutralne podświetlenie, niewielkie uniesienie
+i skrót „Wyświetl zadania”. Fokus klawiatury używa wewnętrznego obrysu
+przez `box-shadow`, niezależnie od globalnego wyłączenia `outline`.
+
+`SummaryDistribution.tsx` dodaje niezależne kontrolki `%`/„Liczba”
+oraz wspólny `Dropdown` sortowania: kolejność domyślna lub najwięcej zadań.
+Zmiany dotyczą prezentacji danych już dostępnych użytkownikowi i nie
+wykonują zapisów. Szerokości pozostają udziałem w sumie również w trybie
+liczbowym; niezerowy udział zaokrąglony do zera ma etykietę `<1%`.
+Animowany element wizualny paska zachowuje dokładny udział, a ukryty
+natywny `progress` dostarcza wartości technologiom asystującym.
+`useSummaryMotion` uruchamia krótkie wejście paneli, rozwinięcie słupków
+i pierścienia raz, kiedy panel pojawi się w przewijanej treści.
+Odłącza obserwator po wyjściu z ekranu. `prefers-reduced-motion` wyłącza
+animacje i przesunięcia; bez obserwatora wartości są od razu widoczne.
+Szablon Django zachowuje podstawowe wykresy i linki pierwszego renderu.
+
+Liczniki i linki legendy, słupków oraz wierszy pozostają natywnymi linkami
+GET obsługiwanymi przez `AncoreApp`. Lista przestrzeni oferuje
 standardowe selecty statusu, priorytetu i wykonawcy, także „Nieprzypisane”.
 Opcje wykonawców pochodzą wyłącznie z dostępnych zadań tej przestrzeni.
 Zakres czasu lub otwartych zadań w drill-downie ma widoczną etykietę oraz

@@ -1,64 +1,199 @@
-import { type CSSProperties, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import { navigate } from '../shared/page';
 import { Priority } from './Item';
+import { SummaryDistribution } from './SummaryDistribution';
 import { dateLabel, type Summary as Data } from './types';
-export default function Summary({ data: s, software }: { data: Data; software: boolean }) {
-  function distribution(rows: Data['types'], people = false) {
-    return (
-      <>
-        <div className="work-summary-distribution-heading" aria-hidden="true">
-          <span>{people ? 'Osoba przypisana' : 'Typ'}</span>
-          <span>{people ? 'Rozkład prac' : 'Rozkład'}</span>
+import { useSummaryMotion } from './useSummaryMotion';
+
+function share(count: number, total: number) {
+  if (!count || !total) return '0%';
+  const percent = Math.round((count * 100) / total);
+  return percent ? `${percent}%` : '<1%';
+}
+
+function StatusChart({ data: s }: { data: Data }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
+  const active = s.statuses.find((status) => status.key === (hovered ?? focused));
+  return (
+    <section
+      className="work-panel work-summary-panel work-summary-panel--status"
+      aria-label="Przegląd statusów"
+      data-summary-reveal
+    >
+      <header className="work-panel-heading">
+        <h2>Przegląd statusów</h2>
+        <a className="work-summary-link" href={s.list_url}>
+          Wyświetl zadania
+          <Icon name="arrow-up-right" />
+        </a>
+      </header>
+      <p className="work-caption">Otwarte zadania i zakończone w ostatnich 14 dniach.</p>
+      <div
+        className={`work-summary-status ${active ? 'has-active-status' : ''}`}
+        onPointerLeave={() => setHovered(null)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            setHovered(null);
+            setFocused(null);
+          }
+        }}
+      >
+        <div className="work-summary-donut">
+          <div className="work-summary-donut-visual">
+            <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+              <circle className="work-summary-donut-track" cx="50" cy="50" r="40" />
+              {s.statuses
+                .filter((status) => status.count)
+                .map((status) => (
+                  <circle
+                    key={status.key}
+                    data-status-key={status.key}
+                    className={`work-summary-donut-arc status-${status.category} ${active?.key === status.key ? 'is-active' : ''}`}
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    pathLength="100"
+                    strokeDasharray={`${status.arc} ${status.gap}`}
+                    strokeDashoffset={status.offset}
+                    onPointerEnter={() => setHovered(status.key)}
+                    onPointerLeave={() => setHovered(null)}
+                    onClick={() => navigate(status.url)}
+                  />
+                ))}
+            </svg>
+          </div>
+          <div className="work-summary-donut-total" aria-hidden="true">
+            <strong>{active?.count ?? s.status_total}</strong>
+            <span className="work-summary-donut-label">{active?.label ?? 'zadań'}</span>
+            <span className="work-summary-donut-share">
+              {active ? share(active.count, s.status_total) : 'Łącznie'}
+            </span>
+          </div>
         </div>
-        <ul
-          className={`work-summary-bars work-summary-bars--distribution work-summary-bars--${people ? 'people' : 'types'}`}
-        >
-          {rows.map((row, index) => (
-            <li key={row.url + index}>
+        <ul className="work-summary-legend">
+          {s.statuses.map((status) => (
+            <li key={status.key}>
               <a
-                href={row.url}
-                title={`${row.label}: ${row.count} z ${people ? s.open_total : s.total} zadań`}
+                href={status.url}
+                className={active?.key === status.key ? 'is-active' : ''}
+                aria-label={`${status.label}: ${status.count} z ${s.status_total} zadań, ${share(status.count, s.status_total)}. Wyświetl zadania.`}
+                onPointerEnter={() => setHovered(status.key)}
+                onPointerLeave={() => setHovered(null)}
+                onFocus={() => setFocused(status.key)}
+                onBlur={() => setFocused(null)}
               >
                 <span className="work-summary-label">
-                  {row.avatar ? (
-                    <Avatar data={row.avatar} className="tasks-issue-mini-avatar" />
-                  ) : people ? (
-                    <span className="work-summary-unassigned">
-                      <Icon name="user" />
-                    </span>
-                  ) : (
-                    <Icon name={row.icon || 'circle'} />
-                  )}
-                  <span>{row.label}</span>
+                  <span className={`work-summary-dot status-${status.category}`} />
+                  {status.label}
                 </span>
-                <span className="work-summary-distribution">
-                  <progress
-                    value={row.count}
-                    max={(people ? s.open_total : s.total) || 1}
-                    aria-label={`${row.label}: ${row.count}`}
-                  >
-                    {row.percent}%
-                  </progress>
-                  {row.count || people ? (
-                    <span
-                      className={`work-summary-distribution-percent ${row.percent < 20 ? 'work-summary-distribution-percent--small' : ''}`}
-                      aria-hidden="true"
-                    >
-                      {row.percent || '<1'}%
-                    </span>
-                  ) : null}
+                <span className="work-summary-legend-values">
+                  <span className="work-summary-legend-share" aria-hidden="true">
+                    {share(status.count, s.status_total)}
+                  </span>
+                  <span className="work-summary-status-count">{status.count}</span>
                 </span>
               </a>
             </li>
           ))}
         </ul>
-      </>
-    );
-  }
+      </div>
+      {!s.total ? (
+        <p className="work-caption work-summary-note">
+          Utwórz pierwsze zadanie, aby zobaczyć postęp pracy.
+        </p>
+      ) : !s.status_total ? (
+        <p className="work-caption work-summary-note">
+          Brak otwartych ani niedawno zakończonych zadań.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function PriorityChart({ data: s }: { data: Data }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
+  const active = s.priorities.find((row) => row.key === (hovered ?? focused));
+  return (
+    <section
+      className="work-panel work-summary-panel"
+      aria-label="Podział priorytetów"
+      data-summary-reveal
+    >
+      <header className="work-panel-heading">
+        <h2>Podział priorytetów</h2>
+      </header>
+      <p className="work-caption">Priorytety otwartych zadań.</p>
+      <div
+        className={`work-summary-priority-chart ${active ? 'has-active-priority' : ''}`}
+        aria-label="Liczba otwartych zadań według priorytetu"
+      >
+        <div className="work-summary-priority-axis" aria-hidden="true">
+          <span>{s.priority_axis.max}</span>
+          <span>{s.priority_axis.middle}</span>
+          <span>0</span>
+        </div>
+        <div className="work-summary-priorities">
+          {s.priorities.map((priority) => (
+            <a
+              key={priority.key}
+              href={priority.url}
+              className={`work-summary-priority ${active?.key === priority.key ? 'is-active' : ''}`}
+              aria-label={`${priority.label}: ${priority.count} z ${s.open_total} otwartych zadań, ${share(priority.count, s.open_total)}. Wyświetl zadania.`}
+              onPointerEnter={() => setHovered(priority.key)}
+              onPointerLeave={() => setHovered(null)}
+              onFocus={() => setFocused(priority.key)}
+              onBlur={() => setFocused(null)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setHovered(null);
+                  setFocused(null);
+                }
+              }}
+            >
+              <span className="work-summary-priority-track">
+                <span
+                  className="work-summary-priority-bar"
+                  style={{ '--summary-bar-height': `${priority.height}%` } as CSSProperties}
+                >
+                  <span className="work-summary-priority-count">{priority.count}</span>
+                </span>
+              </span>
+              <span className="work-summary-priority-label">
+                <Priority value={priority.key} label={priority.label} />
+                <span>{priority.key === 'none' ? 'Brak' : priority.label}</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+      <div className={`work-summary-insight ${active ? 'is-active' : ''}`} aria-hidden="true">
+        <span>{active ? active.label : 'Otwarte zadania'}</span>
+        <span>
+          {active
+            ? `${active.count} z ${s.open_total} · ${share(active.count, s.open_total)}`
+            : s.open_total}
+        </span>
+      </div>
+      <p className="work-caption work-summary-note">
+        {s.open_total ? 'Wybierz priorytet, aby wyświetlić zadania.' : 'Brak otwartych zadań.'}
+      </p>
+    </section>
+  );
+}
+
+export default function Summary({ data: s, software }: { data: Data; software: boolean }) {
+  const root = useSummaryMotion();
   function panel(title: string, children: ReactNode, extra = '', description?: ReactNode) {
     return (
-      <section className={`work-panel work-summary-panel ${extra}`} aria-label={title}>
+      <section
+        className={`work-panel work-summary-panel ${extra}`}
+        aria-label={title}
+        data-summary-reveal
+      >
         <header className="work-panel-heading">
           <h2>{title}</h2>
         </header>
@@ -68,12 +203,13 @@ export default function Summary({ data: s, software }: { data: Data; software: b
     );
   }
   return (
-    <div className="work-overview work-summary">
+    <div className="work-overview work-summary" ref={root}>
       <div className="work-metrics work-summary-metrics" aria-label="Aktywność przestrzeni">
         {s.metrics.map((metric) => (
           <a
             key={metric.key}
             className="work-panel work-summary-metric"
+            data-summary-reveal
             href={metric.url}
             aria-label={`${metric.label}: ${metric.count}. ${metric.key === 'due' ? 'Najbliższe' : 'Ostatnie'} 7 dni. Wyświetl zadania.`}
           >
@@ -81,7 +217,13 @@ export default function Summary({ data: s, software }: { data: Data; software: b
               <Icon name={metric.icon} />
               {metric.label}
             </span>
-            <strong>{metric.count}</strong>
+            <span className="work-summary-metric-value">
+              <strong>{metric.count}</strong>
+              <span className="work-summary-metric-action" aria-hidden="true">
+                <span>Wyświetl zadania</span>
+                <Icon name="arrow-up-right" />
+              </span>
+            </span>
             <span className="work-caption">
               {metric.key === 'due' ? 'Najbliższe' : 'Ostatnie'} 7 dni
             </span>
@@ -89,66 +231,7 @@ export default function Summary({ data: s, software }: { data: Data; software: b
         ))}
       </div>
       <div className="work-summary-grid">
-        <section
-          className="work-panel work-summary-panel work-summary-panel--status"
-          aria-label="Przegląd statusów"
-        >
-          <header className="work-panel-heading">
-            <h2>Przegląd statusów</h2>
-            <a className="work-summary-link" href={s.list_url}>
-              Wyświetl zadania
-              <Icon name="arrow-up-right" />
-            </a>
-          </header>
-          <p className="work-caption">Otwarte zadania i zakończone w ostatnich 14 dniach.</p>
-          <div className="work-summary-status">
-            <div className="work-summary-donut">
-              <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
-                <circle className="work-summary-donut-track" cx="50" cy="50" r="40" />
-                {s.statuses
-                  .filter((status) => status.count)
-                  .map((status) => (
-                    <circle
-                      key={status.key}
-                      className={`work-summary-donut-arc status-${status.category}`}
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      pathLength="100"
-                      strokeDasharray={`${status.arc} ${status.gap}`}
-                      strokeDashoffset={status.offset}
-                    />
-                  ))}
-              </svg>
-              <div className="work-summary-donut-total">
-                <strong>{s.status_total}</strong>
-                <span>zadań</span>
-              </div>
-            </div>
-            <ul className="work-summary-legend">
-              {s.statuses.map((status) => (
-                <li key={status.key}>
-                  <a href={status.url}>
-                    <span className="work-summary-label">
-                      <span className={`work-summary-dot status-${status.category}`} />
-                      {status.label}
-                    </span>
-                    <span className="work-summary-status-count">{status.count}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {!s.total ? (
-            <p className="work-caption work-summary-note">
-              Utwórz pierwsze zadanie, aby zobaczyć postęp pracy.
-            </p>
-          ) : !s.status_total ? (
-            <p className="work-caption work-summary-note">
-              Brak otwartych ani niedawno zakończonych zadań.
-            </p>
-          ) : null}
-        </section>
+        <StatusChart data={s} />
         {panel(
           'Ostatnia aktywność',
           <ol className="work-summary-activity">
@@ -188,79 +271,35 @@ export default function Summary({ data: s, software }: { data: Data; software: b
           '',
           'Najnowsze zmiany w zadaniach tej przestrzeni.',
         )}
-        {panel(
-          'Podział priorytetów',
-          <>
-            <div
-              className="work-summary-priority-chart"
-              aria-label="Liczba otwartych zadań według priorytetu"
-            >
-              <div className="work-summary-priority-axis" aria-hidden="true">
-                <span>{s.priority_axis.max}</span>
-                <span>{s.priority_axis.middle}</span>
-                <span>0</span>
-              </div>
-              <div className="work-summary-priorities">
-                {s.priorities.map((priority) => (
-                  <a
-                    key={priority.key}
-                    href={priority.url}
-                    className="work-summary-priority"
-                    aria-label={`${priority.label}: ${priority.count} otwartych zadań. Wyświetl zadania.`}
-                  >
-                    <span className="work-summary-priority-track">
-                      <span
-                        className="work-summary-priority-bar"
-                        style={{ '--summary-bar-height': `${priority.height}%` } as CSSProperties}
-                      >
-                        <span className="work-summary-priority-count">{priority.count}</span>
-                      </span>
-                    </span>
-                    <span className="work-summary-priority-label">
-                      <Priority value={priority.key} label={priority.label} />
-                      <span>{priority.key === 'none' ? 'Brak' : priority.label}</span>
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-            {!s.open_total ? (
-              <p className="work-caption work-summary-note">Brak otwartych zadań.</p>
-            ) : null}
-          </>,
-          '',
-          'Priorytety otwartych zadań.',
-        )}
-        {panel(
-          'Typy zgłoszeń',
-          distribution(s.types),
-          'work-summary-panel--distribution',
-          <>
-            Podział wszystkich dostępnych zadań w przestrzeni.{' '}
-            <a className="work-summary-link" href={s.list_url}>
-              Wyświetl wszystkie zadania
-            </a>
-          </>,
-        )}
-        {panel(
-          'Obciążenie zespołu',
-          s.workload.length ? (
-            distribution(s.workload, true)
-          ) : (
-            <div className="work-summary-empty">
-              <Icon name="users" />
-              <p>Brak otwartych zadań</p>
-              <span className="work-caption">Przypisane zadania pokażą obciążenie zespołu.</span>
-            </div>
-          ),
-          `work-summary-panel--distribution ${software ? '' : 'work-summary-workload'}`,
-          <>
-            Rozkład {s.open_total} otwartych zadań według wykonawcy.{' '}
-            <a className="work-summary-link" href={s.list_url}>
-              Zmień przypisanie zadań
-            </a>
-          </>,
-        )}
+        <PriorityChart data={s} />
+        <SummaryDistribution
+          title="Typy zgłoszeń"
+          rows={s.types}
+          total={s.total}
+          description={
+            <>
+              Podział wszystkich dostępnych zadań w przestrzeni.{' '}
+              <a className="work-summary-link" href={s.list_url}>
+                Wyświetl wszystkie zadania
+              </a>
+            </>
+          }
+        />
+        <SummaryDistribution
+          title="Obciążenie zespołu"
+          rows={s.workload}
+          total={s.open_total}
+          people
+          className={software ? '' : 'work-summary-workload'}
+          description={
+            <>
+              Rozkład {s.open_total} otwartych zadań według wykonawcy.{' '}
+              <a className="work-summary-link" href={s.list_url}>
+                Zmień przypisanie zadań
+              </a>
+            </>
+          }
+        />
         {software
           ? panel(
               'Postęp epików',

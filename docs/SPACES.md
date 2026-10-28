@@ -320,6 +320,12 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   otwierają listę z odpowiednimi filtrami; epiki i aktywność prowadzą do
   szczegółów pod trwałym kluczem przestrzeni. Lista zachowuje filtry przy szukaniu i paginacji,
   a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
+  React dodaje podgląd liczby i udziału statusu/priorytetu po najechaniu
+  lub fokusie, synchronizację pierścienia z legendą oraz klikane fragmenty
+  pierścienia. Typy i obciążenie mają niezależny wybór procentów/liczb
+  i sortowanie malejąco po liczbie zadań; nie zmienia to danych ani filtrów.
+  Krótkie animacje wejścia paneli i słupków respektują ograniczenie ruchu.
+  [Kontrakt interakcji i dostępności](UI.md).
   `backend/spaces/summary.py` wyznacza identyfikatory z istniejącego querysetu
   ACL i filtrów w PostgreSQL `MATERIALIZED` CTE przed agregacją. Zapobiega to
   rozwijaniu wielokrotnie zagnieżdżonych kontroli dostępu do wolnego planu

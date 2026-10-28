@@ -122,6 +122,10 @@ Nie uruchamia osobnego serwera HTTP ani HMR. Sprawdzanie typów wykonuje
 z rzeczywistym kodem TypeScript bundlowanym przez esbuild i zastąpionymi
 granicami HTTP/renderowania. Obejmują zmianę Workspace, przekierowania,
 oczekiwanie na zapis i odrzucenie wyjścia po błędzie zapisu.
+Regresje podsumowania Przestrzeni wykonują rzeczywiste callbacki wykresów,
+przełączania liczb/procentów i sortowania, a także cykl obserwatora animacji,
+fokus, Escape, zera i ograniczenie ruchu. Interakcje i style podsumowania
+opisuje [standard UI](UI.md).
 `pnpm --dir frontend/app format:check` sprawdza format źródeł;
 `pnpm --dir frontend/app format` go poprawia.
 
