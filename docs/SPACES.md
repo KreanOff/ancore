@@ -298,7 +298,12 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   rosnącej kolejności ręcznej; zmiana statusu oraz planowanie zbiorcze
   pozostają dostępne przy innym sortowaniu. Walidacja planowania zbiorczego
   korzysta z tej samej posortowanej, widocznej strony co odczyt.
-  Lista, backlog, tablica i oś czasu mają wspólny dolny pasek z zakresem
+  Lista zadań ładuje po 20 wyników na status, a „Pokaż więcej (20 / 21)”
+  zwiększa zakres wybranej grupy o kolejne 20. Nagłówki pokazują pełne liczby
+  dostępnych zadań po filtrach. Limity grup zapisane w URL zachowują się po
+  odświeżeniu oraz zapisie zadania; filtry i sortowanie resetują zakres.
+  `spaces/list_window.py` ogranicza wyniki w SQL po ustaleniu widoczności,
+  filtrów i kolejności. Backlog, tablica i oś czasu mają wspólny dolny pasek z zakresem
   wyników, strzałkami i numerami stron. Pasek pozostaje widoczny pod przewijaną
   treścią, zachowuje filtry i działa również dla jednej strony/pustego wyniku.
   Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;

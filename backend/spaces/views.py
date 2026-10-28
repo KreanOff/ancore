@@ -36,6 +36,7 @@ from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 from .item_query import item_sort, order_items
+from .list_window import list_url, list_window, more_url
 
 
 def space_object(request, pk):
@@ -220,8 +221,13 @@ def detail_context(request, space, view):
     team = request.GET.get('team', '')
     now = timezone.now()
     items, summary_filters = filtered_space_items(request, space, items, now)
+    item_query_params = request.GET.copy()
+    for key in list(item_query_params):
+        if key.startswith('list_limit_'):
+            item_query_params.pop(key)
     filter_context = {
         **summary_filters, 'query': query, 'assignee_options': assignee_options,
+        'item_query_params': item_query_params,
         'priority_options': SpaceTask.PRIORITY_CHOICES, 'space_teams': space_teams,
         'team_filter': team, 'type_options': type_options, 'type_filter': type_filter,
         'item_filter_count': sum(bool(value) for value in (
@@ -243,8 +249,14 @@ def detail_context(request, space, view):
     if view == 'timeline':
         items = items.filter(Q(start_on__isnull=False) | Q(task__due_at__isnull=False))
     items = order_items(request, items, view)
-    page = Paginator(items, 100).get_page(request.GET.get('page'))
-    rows = decorate_items(request, page.object_list)
+    counts = dict(all_items.order_by().values_list('status').annotate(n=Count('pk')))
+    column_counts = counts if view == 'list' else dict(items.order_by().values_list('status').annotate(n=Count('pk')))
+    if view == 'list':
+        page = None
+        rows = decorate_items(request, list_window(request, space, items, column_counts))
+    else:
+        page = Paginator(items, 100).get_page(request.GET.get('page'))
+        rows = decorate_items(request, page.object_list)
     timeline = None
     if view == 'timeline' and rows:
         dates = []
@@ -259,9 +271,11 @@ def detail_context(request, space, view):
         for item in rows:
             item.timeline_left = str(round((item.timeline_start - start).days / duration * 100, 2))
             item.timeline_width = str(round(max((item.timeline_end - item.timeline_start).days + 1, 1) / duration * 100, 2))
-    counts = dict(all_items.order_by().values_list('status').annotate(n=Count('pk')))
-    column_counts = dict(items.order_by().values_list('status').annotate(n=Count('pk')))
     columns = [{**s, 'items': [i for i in rows if i.status == s['key']], 'count': column_counts.get(s['key'], 0)} for s in space.statuses]
+    if view == 'list':
+        for column in columns:
+            column['loaded_count'] = len(column['items'])
+            column['more_url'] = more_url(request, space, column['key'], column['loaded_count'], column['count'])
     sprint_totals = {row['sprint_id']: row for row in all_items.order_by().values('sprint_id').annotate(
         total=Count('pk'), point_total=Sum('points', default=0),
         finished=Count('pk', filter=Q(task__status='closed')),
@@ -288,6 +302,9 @@ def detail_context(request, space, view):
                        'backlog_create_url': backlog_url(request, space, 'items/create/')} if view == 'backlog' else {}
     sort = item_sort(request, view)
     toolbar_context = {'item_sort': sort, 'can_reorder': sort['manual']}
+    create_item_url = (backlog_url(request, space, 'items/create/') if view == 'backlog'
+                       else list_url(request, space, 'items/create/') if view == 'list'
+                       else base + 'items/create/')
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
     return {**base_context(request), **filter_context, **backlog_context, **toolbar_context,
             'space': space, 'space_url': base, 'timeline': timeline, 'view': view,
@@ -297,7 +314,7 @@ def detail_context(request, space, view):
             'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [item for item in rows if not item.sprint_id],
             'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space),
             'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(),
-            'create_item_url': backlog_url(request, space, 'items/create/') if view == 'backlog' else base + 'items/create/',
+            'create_item_url': create_item_url,
             'sprint_create_url': backlog_url(request, space, 'sprints/create/'), 'edit_url': base + 'edit/',
             'configuration_url': base + 'configuration/', 'member_url': base + 'members/',
             'members': space.memberships.filter(user__in=workplace_people(request.workplace)).select_related('user')}
@@ -523,7 +540,9 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 raise Http404
             sprint = get_object_or_404(space.sprints.filter(state__in=['planned', 'active']), pk=int(sprint_id))
             form.initial.update(sprint=sprint, in_backlog=False)
-    url = backlog_url(request, space) if in_planning else task_url(request, item.task) if key else space_url(request, space, '?view=list')
+    url = (backlog_url(request, space) if in_planning else task_url(request, item.task) if key
+           else list_url(request, space) if request.GET.get('view') == 'list'
+           else space_url(request, space, '?view=list'))
     if request.method == 'POST':
         with transaction.atomic():
             if request.workplace:

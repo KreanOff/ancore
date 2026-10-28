@@ -149,7 +149,7 @@ class IssueTypeTests(TestCase):
                 else:
                     self.assertContains(response, 'Typ zgłoszenia: Błąd')
             response = self.client.get(self.url(f'{self.space.slug}/?view=list&work_type=unknown', app='space', scoped=scoped), follow=True)
-            self.assertEqual(response.context['page'].paginator.count, 0)
+            self.assertEqual(sum(column['count'] for column in response.context['columns']), 0)
 
     def test_epic_relations_are_validated_in_detail_form(self):
         self.item.work_type = 'epic'

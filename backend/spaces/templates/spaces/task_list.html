@@ -1,0 +1,19 @@
+{% if items %}
+<div class="tasks-table-wrap tasks-board work-item-list work-item-list--incremental">
+    {% for column in columns %}{% if column.count %}
+    <section class="tasks-issue-group tasks-status-block" aria-label="{{ column.label }}">
+        {% include 'tasks/includes/issue_group_header.html' with category=column.category label=column.label count=column.count only %}
+        <div class="tasks-issue-list">
+            {% for item in column.items %}{% include 'spaces/row.html' %}{% endfor %}
+        </div>
+            {% if column.more_url %}
+            <a class="tasks-filter-button work-list-more" href="{{ column.more_url }}" aria-label="Pokaż więcej: {{ column.label }} ({{ column.loaded_count }} / {{ column.count }})">Pokaż więcej <span class="work-list-more__count">({{ column.loaded_count }} / {{ column.count }})</span></a>
+            {% elif column.loaded_count > 20 %}
+            <span class="tasks-filter-button work-list-more" aria-disabled="true">Wszystkie zadania <span class="work-list-more__count">({{ column.loaded_count }} / {{ column.count }})</span></span>
+            {% endif %}
+    </section>
+    {% endif %}{% endfor %}
+</div>
+{% else %}
+{% include 'spaces/item_list.html' %}
+{% endif %}

@@ -197,8 +197,8 @@ class SpaceSummaryTests(TestCase):
                 with self.subTest(scoped=scoped, drilldown=row['url']):
                     result = self.response(row['url'])
                     self.assertEqual(result.status_code, 200)
-                    self.assertEqual(result.context['page'].paginator.count, row['count'])
-                    self.assertTrue(all(item.task_id == selected.pk for item in result.context['page']))
+                    self.assertEqual(sum(column['count'] for column in result.context['columns']), row['count'])
+                    self.assertTrue(all(item.task_id == selected.pk for item in result.context['items']))
                     params = parse_qs(urlsplit(row['url']).query)
                     for key in ('q', 'work_type', 'team', 'status', 'priority'):
                         self.assertEqual(params[key], [filters[key]])
@@ -367,7 +367,7 @@ class SpaceSummaryTests(TestCase):
             with self.subTest(url=row['url']):
                 response = self.response(row['url'])
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.context['page'].paginator.count, row['count'])
+                self.assertEqual(sum(column['count'] for column in response.context['columns']), row['count'])
         filtered = self.response(self.url('?q=Zadanie&assignee=me')).context['summary']
         self.assertIn('q=Zadanie', filtered['priorities'][0]['url'])
         self.assertIn('assignee=me', filtered['priorities'][0]['url'])

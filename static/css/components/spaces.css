@@ -380,6 +380,14 @@
 .work-space-sheet [data-column="name"] > a:hover { text-decoration: underline; }
 .work-page--management .tasks-filterbar-left { flex-wrap: wrap; }
 .work-item-list { flex: none; }
+.work-item-list .work-list-more { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: auto; min-height: 40px; margin: 0; padding: 8px 12px; border: 0; border-top: 1px solid var(--border-color); border-radius: 0; background: var(--card-bg); color: var(--text-primary); font-size: var(--font-size-sm); font-weight: 400; text-decoration: none; box-shadow: none; }
+.work-item-list .work-list-more:is(:hover, :focus-visible):not([aria-disabled="true"]) { background: var(--system-interaction-soft); }
+.work-item-list .work-list-more:focus-visible { outline: 2px solid var(--system-interaction) !important; outline-offset: -2px !important; }
+.work-list-more__count { opacity: .7; font-variant-numeric: tabular-nums; }
+.work-item-list .work-list-more[aria-disabled="true"] { cursor: default; }
+.work-item-list .work-list-more-error { margin: 0; padding: 8px 12px; border-radius: 0; }
+.work-item-list .is-collapsed > :is(.work-list-more, .work-list-more-error) { display: none; }
+@media (pointer: coarse) { .work-item-list .work-list-more { min-height: 44px; } }
 .work-item-toolbar { flex-shrink: 0; }
 .work-item-toolbar .ancore-custom-select { width: auto; min-width: 140px; max-width: 190px; }
 .work-item-toolbar .tasks-project-pagination__pages { flex-shrink: 0; }
@@ -577,6 +585,9 @@
     .work-sprint > .tasks-issue-group-header > .tasks-rail-count { margin-left: auto; }
     .work-item-list { overflow-x: auto; }
     .work-item-list > .tasks-issue-group { min-width: 560px; }
+    .work-item-list--incremental > .tasks-issue-group { min-width: 0; }
+    .work-item-list--incremental .tasks-issue-list { overflow-x: auto; }
+    .work-item-list--incremental .tasks-issue-row { min-width: 560px; }
     .work-tabs { padding: 0 var(--work-space-inline-padding, var(--app-page-padding-x)); }
     .work-directory { grid-template-columns: minmax(0,1fr); }
     .work-panel { padding: 14px; }

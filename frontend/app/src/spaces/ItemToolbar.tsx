@@ -17,6 +17,9 @@ const matches = (text: string, query: string) =>
 function changeQuery(url: string, values: Record<string, string>) {
   const next = new URL(url, location.origin);
   next.searchParams.delete('page');
+  [...next.searchParams.keys()]
+    .filter((key) => key.startsWith('list_limit_'))
+    .forEach((key) => next.searchParams.delete(key));
   Object.entries(values).forEach(([key, value]) =>
     value ? next.searchParams.set(key, value) : next.searchParams.delete(key),
   );

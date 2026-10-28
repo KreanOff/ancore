@@ -11,7 +11,7 @@
 </nav>
 {% endblock %}
 {% block work_content_class %}{% if view == 'overview' or view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %} work-content--items{% endif %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% endblock %}
-{% block work_pagination %}{% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/pagination.html' %}{% endif %}{% endblock %}
+{% block work_pagination %}{% if view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/pagination.html' %}{% endif %}{% endblock %}
 {% block work_content %}
 {% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/item_toolbar.html' %}{% endif %}
 {% if view == 'overview' %}
@@ -25,9 +25,9 @@
     {% if space.template == 'scrum' %}<section class="work-panel"><h2>Sprinty</h2>{% for sprint in sprints %}<div class="work-member"><span>{{ sprint.name }}</span><span>{{ sprint.get_state_display }}</span><span>{{ sprint.finished_count }} / {{ sprint.visible_count }} dostępnych zadań zakończonych</span></div>{% empty %}<p>Raporty pojawią się po utworzeniu sprintów.</p>{% endfor %}</section>{% endif %}</div>
 {% else %}
 
-    {% if view == 'list' %}{% include 'spaces/item_list.html' with show_work_metadata=True %}
+    {% if view == 'list' %}{% include 'spaces/task_list.html' with show_work_metadata=True %}
     {% elif view == 'board' %}
-        {% if space.template == 'scrum' %}<div class="work-panel-heading">{% if active_sprint %}<h2>{{ active_sprint.name }}</h2><span>{{ active_sprint.start_on|date:'d.m' }}–{{ active_sprint.end_on|date:'d.m.Y' }} · {{ active_sprint.goal }}</span>{% else %}<p>Brak aktywnego sprintu. Przygotuj i rozpocznij sprint w backlogu.</p><a class="btn btn-secondary" href="{{ space_url }}?view=backlog">Otwórz backlog</a>{% endif %}</div>{% endif %}
+        {% if space.template == 'scrum' and not active_sprint %}<div class="work-panel-heading"><p>Brak aktywnego sprintu. Przygotuj i rozpocznij sprint w backlogu.</p><a class="btn btn-secondary" href="{{ space_url }}?view=backlog">Otwórz backlog</a></div>{% endif %}
         <form hidden data-board-csrf>{% csrf_token %}</form>
         <span class="u-sr-only" role="status" aria-live="polite" data-board-status></span>
         <div class="tasks-table-wrap tasks-board tasks-kanban-board work-sprint-board" data-work-board data-space-id="{{ space.pk }}">

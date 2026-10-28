@@ -1,5 +1,33 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Doładowywanie listy zadań (28.10.2026)
+
+Lista Przestrzeni wczytuje po 20 zadań na status, z pełnymi licznikami
+i paskiem „Pokaż więcej”. Pozostałe widoki zachowują paginację.
+[Kontrakt API](FRONTEND.md#doładowywanie-listy-zadań-przestrzeni),
+[wygląd i stany](UI.md#dolny-pasek-stron-przestrzeni).
+
+Przeszło 130 różnych testów PostgreSQL na izolowanych bazach przez
+`scripts/run_tests.py`: `spaces.test_list_window`, `spaces.test_item_query`,
+`spaces.test_urls`, `spaces.test_independent_tasks`, `spaces.test_board_order`,
+`spaces.test_backlog_drag`, `core.test_frontend`, `spaces.test_summary`
+i `spaces.test_issue_types`. Obejmują zwykłe/scoped API, sortowanie, filtry,
+prywatnych rodziców, Workspace, pełne liczniki, 20/21, ponad 100 zadań,
+powrót po utworzeniu i pierwszy render. Przeszły 182 testy frontendu,
+build TypeScript, Django check, kontrola indeksu oraz diff.
+
+IAB na osobnej bazie i fikcyjnych kontach potwierdziła 20→40→45,
+20→21, niezależność grup, zaznaczenie i zwinięcie podczas doładowania,
+odświeżenie rozszerzonego URL, reset przez filtr, ponowne wejście, pustą listę
+oraz referencyjny Backlog. Przy 1440×1000, 390×844 i 320×700 obejrzano
+rzeczywisty ekran. Na telefonie poprawiono przewijanie samych wierszy,
+żeby pasek był w całości widoczny. Enter zachowuje fokus na końcowym pasku
+i pozycję przewijania. Wstrzymanie serwera QA sprawdziło timeout i udane
+ponowienie bez utraty danych; test regresji sprawdza polski komunikat timeoutu.
+Nie stwierdzono błędów wykonania aplikacji w końcowym widoku.
+Nie testowano Safari, Firefoksa ani wdrożenia produkcyjnego.
+Nie zmieniono modeli ani migracji.
+
 ## Katalog gadżetów z rzeczywistymi podglądami (28.10.2026)
 
 Pulpity i Podsumowanie używają `shared/WidgetCatalog.tsx`: miniatury rzeczywistych

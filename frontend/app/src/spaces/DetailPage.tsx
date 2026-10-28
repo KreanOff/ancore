@@ -1,5 +1,5 @@
 import { setPageLocation } from '../shared/page';
-import { type DragEvent, useEffect, useRef, useState } from 'react';
+import { type DragEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
@@ -14,7 +14,7 @@ import { ItemFiltering, ItemToolbar } from './ItemToolbar';
 import Summary from './Summary';
 import SettingsDialog from './SettingsDialog';
 import { SpaceHeader } from './SpaceHeader';
-import { dateLabel, type DetailData, type Item, type Sprint } from './types';
+import { dateLabel, type DetailData, type Item, type Sprint, type Status } from './types';
 import { useItemMotion } from './useItemMotion';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
@@ -23,6 +23,8 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
+    [loadingStatus, setLoadingStatus] = useState(''),
+    [listError, setListError] = useState<{ key: string; message: string } | null>(null),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [destination, setDestination] = useState(''),
     [dragged, setDragged] = useState<Item | null>(null);
@@ -31,8 +33,60 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     setNotice('Anulowano przeciąganie zadania.');
   });
   const life = useRef(new AbortController()),
-    pending = useRef(false);
+    pending = useRef(false),
+    currentUrl = useRef(initial.url),
+    listScroll = useRef<number | null>(null);
   useEffect(() => () => life.current.abort(), []);
+  useLayoutEffect(() => {
+    if (listScroll.current !== null && motion.root.current) {
+      motion.root.current.scrollTop = listScroll.current;
+      listScroll.current = null;
+    }
+  }, [data]);
+  async function loadMore(column: Status) {
+    if (pending.current || !column.more_url) return;
+    pending.current = true;
+    setBusy(true);
+    setLoadingStatus(column.key);
+    setListError(null);
+    try {
+      const page = await pageRequest<Page>(
+        initial.api_url,
+        column.more_url,
+        csrfToken,
+        life.current.signal,
+      );
+      if (life.current.signal.aborted) return;
+      const next = page.data as DetailData;
+      if (page.type !== 'space-detail' || next.view !== 'list' || next.space.id !== data.space.id)
+        throw new Error('Nie udało się wczytać zadań. Spróbuj ponownie.');
+      listScroll.current = motion.root.current?.scrollTop ?? null;
+      currentUrl.current = column.more_url;
+      setPageLocation(currentUrl.current);
+      setData(next);
+      const visible = new Set(next.items.map((item) => item.id));
+      setSelected((current) => new Set([...current].filter((id) => visible.has(id))));
+      const group = next.columns.find((item) => item.key === column.key);
+      setNotice(
+        `${column.label}: wczytano ${group?.loaded_count ?? 0} z ${group?.count ?? 0} zadań.`,
+      );
+    } catch (exception) {
+      if (!life.current.signal.aborted)
+        setListError({
+          key: column.key,
+          message:
+            exception instanceof Error && exception.name === 'TimeoutError'
+              ? 'Serwer nie odpowiedział na czas. Spróbuj ponownie.'
+              : errorMessage(exception),
+        });
+    } finally {
+      pending.current = false;
+      if (!life.current.signal.aborted) {
+        setBusy(false);
+        setLoadingStatus('');
+      }
+    }
+  }
   async function openForm(url: string) {
     if (pending.current) return;
     pending.current = true;
@@ -74,12 +128,13 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       saved = true;
       const page = await pageRequest<Page>(
         initial.api_url,
-        initial.url,
+        currentUrl.current,
         csrfToken,
         life.current.signal,
       );
       motion.capture();
       setData(page.data as DetailData);
+      setListError(null);
       setSelected(new Set());
       setNotice('Zmiany zostały zapisane.');
     } catch (exception) {
@@ -415,7 +470,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             <button
               type="button"
               className="tasks-filter-button"
-              onClick={() => navigate(initial.url)}
+              onClick={() => navigate(currentUrl.current)}
             >
               Odśwież widok
             </button>
@@ -433,7 +488,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
         >
           {tableView ? (
             <>
-              <ItemToolbar data={data} url={initial.url} />
+              <ItemToolbar data={data} url={currentUrl.current} />
               {data.filters.summary ? (
                 <div className="work-summary-filter" role="status">
                   <span>{data.summary_filter_label}</span>
@@ -443,6 +498,9 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       const url = new URL(initial.url, location.origin);
                       url.searchParams.delete('summary');
                       url.searchParams.delete('page');
+                      [...url.searchParams.keys()]
+                        .filter((key) => key.startsWith('list_limit_'))
+                        .forEach((key) => url.searchParams.delete(key));
                       return url.pathname + url.search;
                     })()}
                     aria-label={`Usuń filtr: ${data.summary_filter_label}`}
@@ -475,21 +533,45 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           ) : null}
           {data.view === 'list' ? (
             <div
-              className={`tasks-table-wrap tasks-board work-item-list ${data.items.length ? '' : 'tasks-board--empty'}`}
+              className={`tasks-table-wrap tasks-board work-item-list work-item-list--incremental ${data.items.length ? '' : 'tasks-board--empty'}`}
             >
               {data.items.length ? (
                 [...data.columns]
-                  .filter((column) => data.items.some((item) => item.status === column.key))
+                  .filter((column) => column.count > 0)
                   .map((column) => (
                     <StatusGroup
                       key={column.key}
                       category={column.category}
                       label={column.label}
-                      count={data.items.filter((item) => item.status === column.key).length}
+                      count={column.count}
                     >
                       <div className="tasks-issue-list">
                         {data.items.filter((item) => item.status === column.key).map(row)}
                       </div>
+                      {column.more_url || (column.loaded_count ?? 0) > 20 ? (
+                        <button
+                          type="button"
+                          className="tasks-filter-button work-list-more"
+                          aria-label={`${loadingStatus === column.key ? 'Wczytywanie zadań' : column.more_url ? 'Pokaż więcej' : 'Wszystkie zadania'}: ${column.label} (${column.loaded_count} / ${column.count})`}
+                          aria-disabled={busy || !column.more_url}
+                          aria-busy={loadingStatus === column.key}
+                          onClick={() => void loadMore(column)}
+                        >
+                          {loadingStatus === column.key
+                            ? 'Wczytywanie…'
+                            : column.more_url
+                              ? 'Pokaż więcej'
+                              : 'Wszystkie zadania'}
+                          <span className="work-list-more__count">
+                            ({column.loaded_count} / {column.count})
+                          </span>
+                        </button>
+                      ) : null}
+                      {listError?.key === column.key ? (
+                        <div className="tasks-modal__errors work-list-more-error" role="alert">
+                          {listError.message} Kliknij „Pokaż więcej”, aby ponowić.
+                        </div>
+                      ) : null}
                     </StatusGroup>
                   ))
               ) : (
@@ -507,24 +589,12 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           ) : null}
           {data.view === 'board' ? (
             <>
-              {data.space.template === 'scrum' ? (
+              {data.space.template === 'scrum' && !data.active_sprint ? (
                 <div className="work-panel-heading">
-                  {data.active_sprint ? (
-                    <>
-                      <h2>{data.active_sprint.name}</h2>
-                      <span>
-                        {dateLabel(data.active_sprint.start_on)}–
-                        {dateLabel(data.active_sprint.end_on)} · {data.active_sprint.goal}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <p>Brak aktywnego sprintu. Przygotuj i rozpocznij sprint w backlogu.</p>
-                      <a className="btn btn-secondary" href={data.space.url + '?view=backlog'}>
-                        Otwórz backlog
-                      </a>
-                    </>
-                  )}
+                  <p>Brak aktywnego sprintu. Przygotuj i rozpocznij sprint w backlogu.</p>
+                  <a className="btn btn-secondary" href={data.space.url + '?view=backlog'}>
+                    Otwórz backlog
+                  </a>
                 </div>
               ) : null}
               <div className="tasks-table-wrap tasks-board tasks-kanban-board work-sprint-board">
@@ -734,11 +804,13 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
               onClose={() =>
                 data.view === 'settings' ? navigate(data.space.url) : setSettingsOpen(false)
               }
-              onSaved={() => navigate(data.view === 'settings' ? data.space.url : initial.url)}
+              onSaved={() =>
+                navigate(data.view === 'settings' ? data.space.url : currentUrl.current)
+              }
             />
           ) : null}
         </div>
-        {tableView ? <Pagination data={data.pagination} /> : null}
+        {tableView && data.view !== 'list' ? <Pagination data={data.pagination} /> : null}
       </section>
       {modal ? (
         <FormDialog

@@ -172,10 +172,26 @@ jako zwykłe linki.
 
 Wariant `work-pagination` rozszerza wspólne klasy `tasks-project-pagination`
 w `spaces.css`. Na wąskim ekranie zakres i przyciski mogą przejść do dwóch
-wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami, lista zadań,
+wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami,
 backlog, tablica, oś czasu, Zespoły oraz katalog/wyniki Filtrów.
 Podsumowanie, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
 Tagi przestrzeni zachowują osobny mechanizm `directory_pagination_toolbar.html`.
+
+Lista zadań otwartej Przestrzeni ładuje osobno po 20 pozycji w każdym statusie.
+Nagłówek grupy pokazuje pełną liczbę dostępnych wyników po filtrowaniu.
+Pod wierszami jest pełnej szerokości, wyśrodkowany pasek „Pokaż więcej (20 / 21)”.
+Wariant `work-list-more` rozszerza `tasks-filter-button` w `spaces.css`:
+wysokość co najmniej 40px (44px dla dotyku), górna ramka, neutralne tło,
+szare interakcje i licznik o mniejszym kryciu. Odczyt pokazuje „Wczytywanie…”,
+błąd pozostawia zadania i pozwala ponowić tym samym przyciskiem.
+Po ostatniej partii pasek zmienia się w „Wszystkie zadania (21 / 21)”;
+małe grupy mieszczące się w pierwszej partii nie potrzebują paska.
+Na telefonie wariant `work-item-list--incremental` przewija poziomo same
+wiersze; nagłówek i pasek doładowania pozostają w szerokości widocznej grupy.
+React zachowuje pozycję przewijania, zaznaczenia nadal dostępnych zadań
+i zwinięcia grup podczas doładowania. Zmiana filtrów/sortowania zaczyna od
+20 pozycji. Lista nie ma dolnego paska numerów stron. Pierwszy render
+`spaces/task_list.html` zachowuje wygląd i zwykłe linki do rozszerzonej listy.
 
 ## Wspólny wzorzec pustej strony
 
@@ -539,8 +555,10 @@ Opcjonalny zespół pozostaje opisem. Każdy kafelek ma białą powierzchnię, p
 a odstęp nagłówka od listy `0.65rem`. Karty mają `flex: 0 0 auto`, dzięki
 czemu długa lista przewija się bez ściskania metadanych. Pusty stan ma własną
 ramkę, a cała wysokość kolumny przyjmuje upuszczenie. Powłoka ogranicza tablicę
-do miejsca między opisem sprintu a dolną paginacją. Na wąskim ekranie kolumny
-przewijają się poziomo, a opis sprintu zawija się do dostępnej szerokości.
+do miejsca między paskiem sortowania/filtrowania a dolną paginacją. Widok
+„Aktywny sprint” nie pokazuje dodatkowego wiersza z nazwą, datami i celem sprintu;
+te informacje pozostają w Backlogu. Przy braku aktywnego sprintu nadal pokazuje
+komunikat z linkiem do Backlogu. Na wąskim ekranie kolumny przewijają się poziomo.
 React renderuje jeden `ItemCard` i jeden `StatusGroup` dla każdego szablonu,
 bez osobnej karty i szarego nagłówka Kanbana. Pierwszy render Django używa
 `spaces/card.html` oraz wspólnego `issue_group_header.html`. Historyczne nazwy

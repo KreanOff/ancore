@@ -7,6 +7,8 @@ export interface Status {
   label: string;
   category: string;
   count: number;
+  loaded_count?: number;
+  more_url?: string;
 }
 export interface Item {
   id: number;
@@ -130,7 +132,7 @@ export interface DetailData {
   active_sprint: Sprint | null;
   backlog_totals: Totals;
   timeline: { start: string; end: string } | null;
-  pagination: PaginationData;
+  pagination: PaginationData | null;
   filters: Record<string, string>;
   sort: {
     value: string;

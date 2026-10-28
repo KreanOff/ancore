@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 51 | 3 | 39 | 297 |
+| [backend/spaces](../backend/spaces) | 53 | 3 | 40 | 307 |
 
 ## 2. Modele i relacje
 
@@ -1011,6 +1011,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
+- [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `list_window`, `more_url`, `list_url`
 - [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
@@ -1243,6 +1244,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/task_attachments.html](../backend/spaces/templates/spaces/task_attachments.html)
 - [backend/spaces/templates/spaces/task_comment.html](../backend/spaces/templates/spaces/task_comment.html)
 - [backend/spaces/templates/spaces/task_detail.html](../backend/spaces/templates/spaces/task_detail.html)
+- [backend/spaces/templates/spaces/task_list.html](../backend/spaces/templates/spaces/task_list.html)
 - [backend/spaces/templates/spaces/team.html](../backend/spaces/templates/spaces/team.html)
 - [backend/spaces/templates/spaces/team_avatar.html](../backend/spaces/templates/spaces/team_avatar.html)
 - [backend/spaces/templates/spaces/teams.html](../backend/spaces/templates/spaces/teams.html)
@@ -1513,6 +1515,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
 - [frontend/app/tests/pulpit-grid-editor.test.mjs](../frontend/app/tests/pulpit-grid-editor.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
+- [frontend/app/tests/space-list-loading.test.mjs](../frontend/app/tests/space-list-loading.test.mjs)
 - [frontend/app/tests/suite-read-only.test.mjs](../frontend/app/tests/suite-read-only.test.mjs)
 - [frontend/app/tests/summary-distribution.test.mjs](../frontend/app/tests/summary-distribution.test.mjs)
 - [frontend/app/tests/summary-interactions.test.mjs](../frontend/app/tests/summary-interactions.test.mjs)
@@ -2144,6 +2147,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_item_query.py](../backend/spaces/test_item_query.py).
 
 - `ItemQueryTests`: 5 metod testowych.
+
+### backend/spaces/test_list_window.py
+
+Źródło: [backend/spaces/test_list_window.py](../backend/spaces/test_list_window.py).
+
+- `ListWindowTests`: 10 metod testowych.
 
 ### backend/spaces/test_management.py
 

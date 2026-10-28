@@ -62,6 +62,26 @@ Wydarzenia całodzienne zachowują daty kalendarzowe z API niezależnie od stref
 przeglądarki; ich zapis nadal normalizuje granice w Django. Te same zasady
 obowiązują w React i adapterze `calendar.js`.
 
+## Doładowywanie listy zadań Przestrzeni
+
+Page API dla `view=list` zwraca `pagination: null` oraz w każdej pozycji
+`columns` pełne `count`, bieżące `loaded_count` i `more_url` (pusty po końcu).
+Domyślnie wczytuje 20 zadań na status. Parametry `list_limit_<klucz statusu>`
+określają liczbę pozycji danej grupy; serwer ogranicza je do liczby dostępnych
+wyników. `spaces/list_window.py` stosuje `ROW_NUMBER()` po statusie już po
+widoczności, filtrowaniu i sortowaniu. Stary parametr `page` jest ignorowany
+na tej liście. Backlog, tablica, oś czasu i inni odbiorcy paginacji zachowują
+dotychczasowy kontrakt.
+
+`DetailPage` pobiera rozszerzony obraz listy z `more_url` przez istniejący
+`pageRequest`, bez ponownego montowania grup/wierszy. Jednoczesne odczyty
+i zapisy są blokowane, a odejście ze strony anuluje żądanie. Dopiero sukces
+aktualizuje URL, liczniki i dane; błąd pozwala powtórzyć ten sam odczyt.
+Aktualny adres zachowuje zakres również przy odświeżeniu po akcji i otwieraniu
+formularza zadania. Zmiana sortowania lub filtrów usuwa limity grup.
+Pierwszy render Django pokazuje te same limity i linki, z pełną nawigacją
+po ich kliknięciu bez Reacta.
+
 ## Okno ustawień Przestrzeni
 
 `spaces/SettingsDialog.tsx` łączy pola główne, członków, awatar oraz konfigurację
