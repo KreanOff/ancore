@@ -272,9 +272,6 @@
 .work-summary-priority.is-active { background: var(--system-interaction-soft); }
 .work-summary-priority.is-active .work-summary-priority-bar::before { background: var(--system-accent); }
 .work-summary-priority-chart.has-active-priority .work-summary-priority:not(.is-active) .work-summary-priority-bar::before { opacity: .4; }
-.work-summary-insight { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 34px; margin-top: 16px; padding: 8px 12px; border-radius: var(--radius); background: var(--panel-bg); font-size: 12px; font-variant-numeric: tabular-nums; transition: background 160ms ease; }
-.work-summary-insight.is-active { background: var(--system-interaction-soft); }
-.work-summary-insight > :last-child { flex-shrink: 0; }
 .work-summary-panel--distribution .work-panel-heading { flex-wrap: wrap; row-gap: 10px; }
 .work-summary-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .work-summary-display-mode { display: inline-flex; padding: 2px; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--panel-bg); }
@@ -294,14 +291,14 @@
 .work-summary-activity a, .work-summary-epics a { transition: background 160ms ease; }
 .work-summary [data-summary-reveal].is-visible { animation: work-summary-reveal 360ms ease-out; }
 /* Match task-group backgrounds throughout entry, hover and keyboard preview. */
-.work-summary .work-summary-panel--status.is-visible { animation-name: work-summary-status-reveal; }
+.work-summary .work-summary-panel--status.is-visible { animation: none; }
 .work-summary[data-summary-motion="ready"] [data-summary-reveal]:not(.is-visible) .work-summary-distribution-fill { transform: scaleX(0); }
 .work-summary[data-summary-motion="ready"] [data-summary-reveal]:not(.is-visible) .work-summary-priority-bar::before { transform: scaleY(0); }
 .work-summary[data-summary-motion="ready"] .is-visible .work-summary-distribution-fill { animation: work-summary-grow-x 650ms cubic-bezier(.2, .7, .2, 1) both; }
 .work-summary[data-summary-motion="ready"] .is-visible .work-summary-priority-bar::before { animation: work-summary-grow-y 650ms cubic-bezier(.2, .7, .2, 1) both; }
 .work-summary[data-summary-motion="ready"] .is-visible .work-summary-donut-visual { animation: work-summary-ring 650ms cubic-bezier(.2, .7, .2, 1) both; }
-@keyframes work-summary-reveal { from { opacity: .4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@keyframes work-summary-status-reveal { from { transform: translateY(6px); } to { transform: none; } }
+/* Full-height panels must not translate beyond their scrollable widget body. */
+@keyframes work-summary-reveal { from { opacity: .4; } to { opacity: 1; } }
 @keyframes work-summary-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes work-summary-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes work-summary-ring { from { transform: rotate(-30deg) scale(.92); } to { transform: none; } }

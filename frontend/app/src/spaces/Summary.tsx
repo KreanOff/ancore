@@ -166,17 +166,7 @@ function PriorityChart({ data: s }: { data: Data }) {
           ))}
         </div>
       </div>
-      <div className={`work-summary-insight ${active ? 'is-active' : ''}`} aria-hidden="true">
-        <span>{active ? active.label : 'Otwarte zadania'}</span>
-        <span>
-          {active
-            ? `${active.count} z ${s.open_total} · ${share(active.count, s.open_total)}`
-            : s.open_total}
-        </span>
-      </div>
-      <p className="work-caption work-summary-note">
-        {s.open_total ? 'Wybierz priorytet, aby wyświetlić zadania.' : 'Brak otwartych zadań.'}
-      </p>
+      {!s.open_total && <p className="work-caption work-summary-note">Brak otwartych zadań.</p>}
     </section>
   );
 }

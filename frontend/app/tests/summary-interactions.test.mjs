@@ -238,27 +238,45 @@ test('status preview reads refreshed counts and clears a removed status', () => 
   assert.deepEqual(centerValues(tree), ['4', 'zadań', 'Łącznie']);
 });
 
-test('priority hover and keyboard focus update the footer and Escape restores the total', () => {
+test('priority hover and keyboard focus highlight bars without a footer and Escape clears them', () => {
   const data = priorityData(),
     app = chart('PriorityChart', data);
   let tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'Otwarte zadania5');
+  assert.equal(byClass(tree, 'work-summary-insight'), undefined);
+  assert.equal(byClass(tree, 'work-summary-note'), undefined);
+  assert.doesNotMatch(text(tree), /Wybierz priorytet, aby wyświetlić zadania/);
+  assert.deepEqual(
+    priorityLinks(tree).map((link) => hasClass(link, 'is-active')),
+    [false, false],
+  );
+  assert.match(priorityLinks(tree)[0].props['aria-label'], /urgent: 3 z 5 otwartych zadań, 60%/);
+  assert.match(priorityLinks(tree)[1].props['aria-label'], /high: 2 z 5 otwartych zadań, 40%/);
   priorityLinks(tree)[0].props.onFocus();
   tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'urgent3 z 5 · 60%');
+  assert.equal(hasClass(byClass(tree, 'work-summary-priority-chart'), 'has-active-priority'), true);
+  assert.deepEqual(
+    priorityLinks(tree).map((link) => hasClass(link, 'is-active')),
+    [true, false],
+  );
   priorityLinks(tree)[1].props.onPointerEnter();
   tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'high2 z 5 · 40%');
+  assert.equal(byClass(tree, 'work-summary-insight'), undefined);
   assert.deepEqual(
     priorityLinks(tree).map((link) => hasClass(link, 'is-active')),
     [false, true],
   );
   priorityLinks(tree)[1].props.onPointerLeave();
   tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'urgent3 z 5 · 60%');
+  assert.deepEqual(
+    priorityLinks(tree).map((link) => hasClass(link, 'is-active')),
+    [true, false],
+  );
   priorityLinks(tree)[0].props.onKeyDown({ key: 'Escape' });
   tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'Otwarte zadania5');
+  assert.deepEqual(
+    priorityLinks(tree).map((link) => hasClass(link, 'is-active')),
+    [false, false],
+  );
   assert.equal(
     hasClass(byClass(tree, 'work-summary-priority-chart'), 'has-active-priority'),
     false,
@@ -266,30 +284,47 @@ test('priority hover and keyboard focus update the footer and Escape restores th
   priorityLinks(tree)[1].props.onFocus();
   priorityLinks(app.render())[1].props.onBlur();
   tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'Otwarte zadania5');
+  assert.deepEqual(
+    priorityLinks(tree).map((link) => hasClass(link, 'is-active')),
+    [false, false],
+  );
+  assert.equal(
+    hasClass(byClass(tree, 'work-summary-priority-chart'), 'has-active-priority'),
+    false,
+  );
   assert.deepEqual(
     priorityLinks(tree).map((link) => link.props.href),
     data.priorities.map((p) => p.url),
   );
 });
 
-test('priority preview uses refreshed counts and keeps empty categories reachable', () => {
+test('priority chart uses refreshed accessible counts and keeps empty categories reachable', () => {
   const app = chart('PriorityChart', priorityData([priority('none', 0)]));
   let tree = app.render({ open_total: 0, priority_axis: { max: 1, middle: 0.5 } });
   assert.match(text(tree), /Brak otwartych zadań/);
+  assert.equal(byClass(tree, 'work-summary-insight'), undefined);
   assert.match(text(priorityLinks(tree)[0]), /Brak$/);
   assert.match(priorityLinks(tree)[0].props['aria-label'], /0 z 0 otwartych zadań, 0%/);
   priorityLinks(tree)[0].props.onPointerEnter();
   tree = app.render();
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'none0 z 0 · 0%');
+  assert.equal(hasClass(priorityLinks(tree)[0], 'is-active'), true);
+  assert.match(priorityLinks(tree)[0].props['aria-label'], /0 z 0 otwartych zadań, 0%/);
   tree = app.render({ priorities: [priority('none', 1, '10')], open_total: 1000 });
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'none1 z 1000 · <1%');
+  assert.equal(hasClass(priorityLinks(tree)[0], 'is-active'), true);
+  assert.match(priorityLinks(tree)[0].props['aria-label'], /1 z 1000 otwartych zadań, <1%/);
+  assert.equal(text(byClass(tree, 'work-summary-priority-count')), '1');
+  assert.equal(byClass(tree, 'work-summary-note'), undefined);
   assert.equal(
     byClass(tree, 'work-summary-priority-bar').props.style['--summary-bar-height'],
     '10%',
   );
   tree = app.render({ priorities: [] });
-  assert.equal(text(byClass(tree, 'work-summary-insight')), 'Otwarte zadania1000');
+  assert.equal(priorityLinks(tree).length, 0);
+  assert.equal(
+    hasClass(byClass(tree, 'work-summary-priority-chart'), 'has-active-priority'),
+    false,
+  );
+  assert.equal(byClass(tree, 'work-summary-insight'), undefined);
 });
 
 function motionPanel({ reveal = true, children = [] } = {}) {
