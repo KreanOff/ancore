@@ -70,8 +70,14 @@ Domyślnie wczytuje 20 zadań na status. Parametry `list_limit_<klucz statusu>`
 określają liczbę pozycji danej grupy; serwer ogranicza je do liczby dostępnych
 wyników. `spaces/list_window.py` stosuje `ROW_NUMBER()` po statusie już po
 widoczności, filtrowaniu i sortowaniu. Stary parametr `page` jest ignorowany
-na tej liście. Oś czasu także ignoruje `page` i zwraca cały dostępny zbiór
-z `pagination: null`. Pozostali odbiorcy paginacji zachowują swój kontrakt.
+na tej liście. Pozostali odbiorcy paginacji zachowują swój kontrakt.
+
+Oś czasu (`view=timeline`) zwraca `pagination: null` i ignoruje `page`.
+Domyślnie wczytuje 20 zadań po ograniczeniu widoczności, filtrach i sortowaniu.
+`timeline_limit` rozszerza ten sam uporządkowany zakres; `group_limit` ogranicza
+wartość do liczby dostępnych wyników. Obiekt `timeline` zawiera `count`,
+`loaded_count` i `more_url` obok dat. Kolejne odczyty zwiększają limit o 20
+i ponownie sprawdzają dostęp; `more_url` jest pusty po ostatniej partii.
 
 Backlog (`view=backlog`) również zwraca `pagination: null`. Wczytuje po 20
 otwartych zadań osobno dla kolejki bez sprintu i każdego otwartego sprintu.
@@ -89,12 +95,15 @@ ale wczytuje od razu wszystkie dostępne, przefiltrowane zadania tablicy.
 React i pierwszy render Django nie pokazują dolnego paska stron.
 Przeciąganie i menu kolejności używają tego samego pełnego zakresu tablicy.
 
-`DetailPage` pobiera rozszerzony obraz listy lub backlogu z `more_url` przez istniejący
+`DetailPage` pobiera rozszerzony obraz listy, backlogu lub osi czasu z `more_url` przez istniejący
 `pageRequest`, bez ponownego montowania grup/wierszy. Jednoczesne odczyty
 i zapisy są blokowane, a odejście ze strony anuluje żądanie. Dopiero sukces
 aktualizuje URL, liczniki i dane; błąd pozwala powtórzyć ten sam odczyt.
 Aktualny adres zachowuje zakres również przy odświeżeniu po akcji i otwieraniu
-formularza zadania. Zmiana sortowania lub filtrów usuwa limity grup.
+formularza zadania. Zmiana sortowania lub filtrów usuwa limity grup i osi czasu.
+`TimelineView` zachowuje zamontowaną tabelę, skalę i przewinięcie, przekazując
+stan zapisu dat do wspólnego przycisku; odczyt blokuje edycję dat, a zapis doładowanie.
+Wyszukiwanie osi także usuwa `timeline_limit`.
 Pierwszy render Django pokazuje te same limity i linki, z pełną nawigacją
 po ich kliknięciu bez Reacta.
 
@@ -344,6 +353,11 @@ ponowienie odświeża dane bez ponownego tworzenia rekordu. Autosave pamięta
 zaległe odświeżenie również po wyczyszczeniu listy zapisanych pól i plików,
 więc „Spróbuj ponownie” może wykonać sam GET. Błąd samego POST nadal
 zachowuje niezapisany szkic do ponowienia.
+`TaskPage` pokazuje `start_at` i `due_at` razem w sekcji dat, z etykietami
+„Data rozpoczęcia” i „Termin zakończenia” z `DetailForm`. Rozpoczęcie nie jest
+ukrytym polem planowania. To te same wartości co na osi czasu; szczegóły
+edytują datę i godzinę obu końców. Autosave waliduje pełny zakres przez istniejący
+formularz, a historia zapisuje także zmianę lub usunięcie rozpoczęcia.
 Pola dodatkowe zadania są edytowalne w panelu właściwości. Błędy pozostałych
 pól planowania odsłaniają odpowiednią kontrolkę w tym panelu. Jeśli konfiguracja
 doda pole podczas edycji, odpowiedź walidacji uzupełnia schemat bez odtwarzania
@@ -757,19 +771,26 @@ sanityzowany; serwer nadal odrzuca zapisy. [Uprawnienia](TEAMWORK.md).
 ## Interaktywna oś czasu Przestrzeni
 
 `spaces/TimelineView.tsx` korzysta z `DetailData.items`, również pozycji bez dat.
-`item_payload` dodaje `end_on` (lokalna data terminu) i `update_dates_url`;
-`start_on` oraz pełny `due_at` pozostają źródłem snapshotu. Zakres jest
+`item_payload` przekazuje pełne `start_at` i `due_at`, lokalne projekcje dni
+`start_on` i `end_on` oraz `update_dates_url`. Timestampy są źródłem snapshotu,
+a projekcje dni służą geometrii kalendarza. Zakres jest
 ograniczany na serwerze przez te same filtry/ACL co inne widoki. Oś zwraca
-wszystkie pasujące zadania i `pagination: null`; `page` jest ignorowany.
+pierwsze 20 pasujących zadań z możliwością doładowania kolejnych 20 przez
+`timeline.more_url` i `pagination: null`; `page` jest ignorowany.
 `spaces/timeline.ts` liczy dni kalendarzowe w UTC, bez przesunięć DST, nagłówki,
 paski, dopasowanie i granice resize. Dzisiejszy dzień jest wyznaczany dla
 Europe/Warsaw. Nie dodano biblioteki wykresów ani modeli danych.
 
 POST do zwykłego/scoped `space/<slug>/tasks/<key>/dates/` przyjmuje formularz:
-`start_on`, `end_on`, `source_start_on`, `source_due_at`. Daty mają format
-`YYYY-MM-DD`, brak wartości to pusty ciąg; source_due_at to poprzedni ISO timestamp.
-Wszystkie cztery pola są wymagane. Endpoint jest również zarejestrowany w page API.
-Odpowiedź 200: `saved`, `changed`, `start_on`, `end_on`, `due_at`, `due_urgency`;
+`start_at`, `due_at`, `source_start_at`, `source_due_at` przy zapisie okna dat.
+Pierwsze dwa pola mają lokalny format `YYYY-MM-DDTHH:mm`, a snapshoty pełny
+ISO timestamp ze strefą; brak wartości oznacza pusty ciąg. Kontrolki formatują
+czas w Europe/Warsaw niezależnie od strefy przeglądarki. Niezmienione wartości
+minutowe zachowują zapisane sekundy. Przesuwanie/rozciąganie paska zamiast
+`start_at` i `due_at` wysyła `start_on` i `end_on` (`YYYY-MM-DD`), z tymi samymi
+pełnymi snapshotami, a serwer zachowuje obie godziny i precyzję.
+Endpoint jest również zarejestrowany w page API.
+Odpowiedź 200: `saved`, `changed`, `start_at`, `start_on`, `end_on`, `due_at`, `due_urgency`;
 400 walidacja, 409 konflikt dat, 403/404 brak uprawnień. Błędy mają `message`
 i `error`. Po zapisie React aktualizuje wiersz bez przestawiania przewiniętej
 listy; ponowne wejście stosuje aktualne sortowanie. Stan oczekiwania chroni

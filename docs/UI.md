@@ -249,8 +249,16 @@ oraz dymek przeciągania ustawiają `--app-text-color`, zachowując biały tekst
 również przy globalnych regułach typografii. Kontrolki mają widoczny fokus klawiatury.
 
 Wyszukiwanie działa po zatwierdzeniu Enterem lub przyciskiem i obejmuje cały
-przefiltrowany zbiór. Zachowano menu Sortowanie/Filtrowanie. Oś wczytuje wszystkie
-dostępne wyniki bez podziału na strony. Nie ma
+przefiltrowany zbiór. Zachowano menu Sortowanie/Filtrowanie. Oś wczytuje początkowo
+20 zadań. Pod wierszami jest wspólny pasek `work-list-more` z „Pokaż więcej”
+i licznikiem wczytanych oraz wszystkich dostępnych wyników po filtrach.
+Każde kliknięcie doładowuje kolejne 20; końcowa partia pokazuje „Wszystkie zadania”.
+Małe i puste wyniki nie potrzebują paska. Wariant `work-timeline-results`
+stosuje ten sam wygląd co Lista zadań, również w pierwszym renderze Django.
+Pasek pozostaje w widocznej szerokości podczas poziomego przewijania kalendarza.
+Doładowanie zachowuje skalę i przewinięcie; błąd pozostawia zadania i umożliwia
+ponowienie. Odczyt i zapis dat wzajemnie blokują swoje kontrolki. Wyszukiwanie,
+filtry i sortowanie resetują zakres do 20 pozycji. Nie ma
 dolnego paska paginacji, legendy „Dzisiaj” ani widocznej podpowiedzi przeciągania.
 Linia bieżącego dnia i pomoc dla czytników ekranu pozostają w kalendarzu.
 „Dzisiaj” i trzy przełączniki skali tworzą jeden `tasks-segments` w wariancie
@@ -265,7 +273,11 @@ przycisku „Dopasuj”, strzałek okresu ani osobnej nazwy miesiąca. Zakres mo
 przewijać poziomo, a daty odczytać z nagłówków kalendarza.
 Niezaplanowany wiersz ma „Zaplanuj zadanie”; data poza oknem przycisk powrotu
 do jej okresu. Kliknięcie paska otwiera wspólny kompaktowy
-`Modal` z polami dat, czasem trwania, usunięciem dat i ochroną szkicu.
+`Modal` z polami dat i godzin rozpoczęcia oraz zakończenia, zakresem dni
+na osi, usunięciem dat i ochroną szkicu. Oba pola używają `datetime-local`
+i tej samej strefy czasu co szczegóły zadania. Walidacja uwzględnia godziny,
+również gdy początek i koniec wypadają tego samego dnia. Przesuwanie oraz
+rozciąganie paska zachowuje zapisane godziny obu końców.
 Przeciąganie oraz skróty klawiatury mają alternatywę w formularzu.
 Błąd nie zmienia zapisanych dat; formularz zachowuje wpisane wartości.
 
@@ -480,12 +492,18 @@ kontrolki i współdzielone include'y dawnego ekranu Tasks przez
 tytuł. Adres i nawigacja zachowują przestrzeń, a powrót `view`
 i filtry. Panel po prawej zawiera widoczność, status, priorytet, tagi,
 typ zgłoszenia, kategorię zadania, wykonawcę, trwały klucz z kopiowaniem,
-autora oraz daty utworzenia, zamknięcia, wykonania i przypomnienia.
+autora oraz daty utworzenia, zamknięcia, rozpoczęcia, zakończenia i przypomnienia.
+„Data rozpoczęcia” i „Termin zakończenia” są zawsze widoczne w sekcji dat,
+także bez wartości, i korzystają ze wspólnych pól oraz automatycznego zapisu.
+Oba pola wskazują datę i godzinę, tak jak formularz na osi czasu.
+Zmiana w szczegółach i na osi czasu dotyczy tych samych
+danych. Obserwator widzi wyłączone pola. Pierwszy render Django zachowuje
+ten sam układ i nie powiela pola rozpoczęcia w ukrytym planowaniu.
 Pola dodatkowe konfiguracji są widoczne w osobnej sekcji tego samego panelu,
 z istniejącymi klasami `tasks-issue-side-section` i `tasks-issue-field`.
 Błąd ukrytego pola planowania odsłania jego kontrolkę i komunikat w tej sekcji.
 Widoczność jest polem tego samego formularza; właściciel prywatnego zadania
-zarządza jego widocznością. Planowanie jest dostępne przez dotychczasową
+zarządza jego widocznością. Pozostałe planowanie jest dostępne przez dotychczasową
 edycję w przestrzeni; jego wartości są zachowane przy zapisie szczegółów.
 Na wąskim ekranie panel przechodzi pod treść, a zakładki przewijają się.
 
@@ -1106,8 +1124,10 @@ Teksty legendy zachowują pełną czytelność. Przejście krycia trwa 160ms;
 przy ograniczeniu ruchu zmiana jest natychmiastowa. Panel i pierścień
 nie mają animacji przezroczystości podczas wejścia; wyciszenie dotyczy
 wyłącznie nieaktywnych segmentów i kropek podczas podglądu statusu.
-Priorytety podświetlają wybrany słupek i pokazują liczbę oraz udział
-w stałym wierszu pod wykresem, bez przesuwania pozostałej treści.
+Priorytety podświetlają wybrany słupek; liczby pozostają nad słupkami,
+a liczba i udział są dostępne w etykietach linków dla czytników ekranu.
+Pod wykresem nie ma paska „Otwarte zadania” ani podpowiedzi wyboru priorytetu.
+Przy pustym zbiorze pozostaje komunikat „Brak otwartych zadań.”.
 Karty liczników mają neutralne podświetlenie
 i skrót „Wyświetl zadania”. Fokus klawiatury używa wewnętrznego obrysu
 przez `box-shadow`, niezależnie od globalnego wyłączenia `outline`.
@@ -1121,7 +1141,12 @@ Animowany element wizualny paska zachowuje dokładny udział, a ukryty
 natywny `progress` dostarcza wartości technologiom asystującym.
 `useSummaryMotion` uruchamia krótkie wejście paneli, rozwinięcie słupków
 i pierścienia raz, kiedy panel pojawi się w przewijanej treści.
-Odłącza obserwator po wyjściu z ekranu. `prefers-reduced-motion` wyłącza
+Wejście paneli zmienia tylko krycie, bez przesuwania całej karty; panel
+statusów nie animuje także krycia. Dzięki temu animacja nie powiększa
+przewijanej wysokości kafelka i nie wywołuje chwilowych pionowych pasków.
+Kafelki nadal przewijają rzeczywiście długą treść lub zawartość niemieszczącą
+się w zapisanym rozmiarze.
+Hook odłącza obserwator po wyjściu z ekranu. `prefers-reduced-motion` wyłącza
 animacje i przesunięcia; bez obserwatora wartości są od razu widoczne.
 Szablon Django zachowuje podstawowe wykresy i linki pierwszego renderu.
 
@@ -3105,7 +3130,10 @@ Jedyny gadżet „Postęp pracy” rozszerza `dashboard-panel` i współdzieli
 z istniejącymi kolorowymi `status-indicator`. Pusty zakres nadal pokazuje wszystkie
 statusy z zerami, bez ilustracji zastępującej dane. Ikona wykresu jest po prawej
 stronie nagłówka. Przegląd pokazuje nazwę pulpitu, odświeżenie i menu działań
-zgodne z rolą; „Edytuj pulpit” jest na pasku nad siatką, jak w Podsumowaniu.
+zgodne z rolą; „Edytuj pulpit” jest w nagłówku, bezpośrednio przed „Odśwież”,
+z tym samym stylem przycisku.
+Opis pulpitu pozostaje w ustawieniach i katalogu; przegląd oraz edytor nie
+wyświetlają go pod nagłówkiem.
 Menu nie zawiera „Kopiuj pulpit”. Nawigacja i gwiazdki pozostają w menu bocznym
 oraz katalogu. Podgląd nie pokazuje uchwytów ani opcji układu.
 
@@ -3113,8 +3141,10 @@ Aktywny edytor React współdzieli `DashboardCanvas`, `SummaryWidgetControls`
 i klasy `work-summary-*` z Podsumowaniem Przestrzeni. Siatka ma 12 kolumn,
 wiersz 48px i odstępy 12px. W edycji pokazuje kropkowane tło, nagłówek
 z uchwytem, menu pozycji/rozmiaru i uchwyt w prawym dolnym rogu.
-Toolbar zawiera „Tryb edycji”/„Niezapisane zmiany”, „Dodaj gadżet”, „Anuluj”
-i „Zapisz układ”, z tymi samymi przyciskami i podpowiedzią co Podsumowanie.
+W trybie edycji górny pasek obok nazwy pulpitu zawiera „Dodaj gadżet”, „Anuluj”
+i „Zapisz układ”, z istniejącymi stylami przycisków nagłówka i wyróżnionym zapisem.
+Siatka zaczyna się bezpośrednio pod nagłówkiem, bez dodatkowego paska
+„Tryb edycji”/„Niezapisane zmiany” ani podpowiedzi przeciągania i zmiany rozmiaru.
 Nie ma wyboru pięciu gotowych układów ani automatycznego zapisu geometrii.
 Menu zachowuje pozycję przy zmianie rozmiaru kafelka i obsługuje strzałki,
 suwaki, miniaturę, skróty szerokości oraz usunięcie. Kafelki na wąskim ekranie

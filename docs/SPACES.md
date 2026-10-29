@@ -310,7 +310,8 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   Backlog korzysta z tego samego paska „Pokaż więcej”, osobno dla każdego
   sprintu i kolejki bez sprintu (`spaces/backlog_window.py`). Zachowuje limity
   grup w URL, zaznaczenia i zwinięcia sekcji; ignoruje stary `page`.
-  Oś czasu pokazuje wszystkie dostępne wyniki bez dolnego paska stron.
+  Oś czasu wczytuje początkowo 20 zadań i rozszerza zakres o kolejne 20 przez
+  ten sam pasek „Pokaż więcej”, bez dolnego paska numerów stron.
   Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
   podsumowanie, raporty i ustawienia nie pokazują stron wyników.
 - Podsumowanie jest konfigurowalnym, osobistym pulpitem Przestrzeni.
@@ -347,9 +348,9 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   otwierają listę z odpowiednimi filtrami; epiki i aktywność prowadzą do
   szczegółów pod trwałym kluczem przestrzeni. Lista zachowuje filtry przy szukaniu i paginacji,
   a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
-  React dodaje podgląd liczby i udziału statusu/priorytetu po najechaniu
-  lub fokusie, synchronizację pierścienia z legendą oraz klikane fragmenty
-  pierścienia. Typy i obciążenie mają niezależny wybór procentów/liczb
+  React dodaje podgląd liczby i udziału statusu oraz podświetlenie słupka
+  priorytetu po najechaniu lub fokusie, synchronizację pierścienia z legendą
+  oraz klikane fragmenty pierścienia. Typy i obciążenie mają niezależny wybór procentów/liczb
   i sortowanie malejąco po liczbie zadań; nie zmienia to danych ani filtrów.
   Krótkie animacje wejścia paneli i słupków respektują ograniczenie ruchu.
   [Kontrakt interakcji i dostępności](UI.md).
@@ -381,8 +382,11 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   Nie pokazują zaznaczenia, typu, estymacji, liczników tagów/załączników,
   ikony terminu ani menu działań. Daty edytuje się po kliknięciu paska.
   Pokazuje także zadania bez dat (akcja „Zaplanuj zadanie”), zachowuje
-  filtry i wyszukiwanie. Wczytuje wszystkie dostępne wyniki bez paginacji;
-  stary parametr `page` jest ignorowany. Skale tygodni, miesięcy i kwartałów
+  filtry i wyszukiwanie. Wczytuje 20 wyników, a „Pokaż więcej” doładowuje
+  kolejne 20 z licznikiem wczytanych i wszystkich dostępnych zadań.
+  Doładowanie zachowuje przewinięcie i skalę; filtry, wyszukiwanie i sortowanie
+  zaczynają od 20. Parametr `timeline_limit` zachowuje zakres po odświeżeniu,
+  a stary `page` jest ignorowany. Skale tygodni, miesięcy i kwartałów
   zmieniają szczegółowość kalendarza. „Dzisiaj” i trzy skale mają jedną wspólną
   zaokrągloną ramkę; grupa przechodzi w całości do kolejnego wiersza na telefonie.
   Przycisk „Dzisiaj” przewija
@@ -395,11 +399,13 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   zmienia koniec, Escape anuluje gest. Kliknięcie klucza otwiera zadanie.
   Kolumna Status nie jest wyświetlana na osi; status można zmienić w szczegółach
   zadania. Obserwatorzy mogą przeglądać kalendarz bez kontrolek zapisu.
-  `spaces.timeline.update_dates` zapisuje tylko `WorkItem.start_on` i
+  `spaces.timeline.update_dates` zapisuje tylko `WorkItem.start_at` i
   `SpaceTask.due_at`, po ponownym sprawdzeniu Workspace, prywatnych rodziców
   i edycji wewnątrz transakcji. Snapshot poprzednich dat chroni przed utratą
-  równoległej edycji (409). Zachowana jest lokalna godzina istniejącego terminu;
-  nowy termin ma 23:59 w strefie aplikacji. Nieistniejące/niejednoznaczne godziny
+  równoległej edycji, także samej godziny (409). Formularz edytuje obie daty
+  z godzinami. Przesuwanie i rozciąganie paska zachowuje lokalne godziny
+  oraz precyzję obu wartości; brakujący początek otrzymuje 00:00, a koniec
+  23:59 w strefie aplikacji. Nieistniejące/niejednoznaczne godziny
   przy zmianie czasu są odrzucane. Operacja zapisuje historię z faktycznym
   autorem; nie zmienia statusu ani dat zakończenia. Brak zmian nie tworzy historii.
   Pierwszy render bez Reacta zachowuje tabelę dat i link do istniejącej edycji.
@@ -457,9 +463,15 @@ zadania pokazuje strzałkę powrotu i tytuł, zakładki i treść po lewej
 oraz właściwości po prawej, bez powtarzania nagłówka przestrzeni. Powrót
 zachowuje widok i filtry. Wszystkie pięć zakładek używa układu starszego ekranu
 Zadań i wspólnych tabel, modali oraz strumienia historii. Kategoria i
-przypomnienie są polami `SpaceTask`; planowanie pozostaje w istniejącej edycji
+przypomnienie są polami `SpaceTask`; pozostałe planowanie pozostaje w istniejącej edycji
 przestrzeni i jest zachowane przy zapisie szczegółów.
 Pola dodatkowe konfiguracji są dostępne w panelu właściwości zadania.
+Sekcja dat pokazuje „Datę rozpoczęcia” (`WorkItem.start_at`) i „Termin
+zakończenia” (`SpaceTask.due_at`), także gdy nie są ustawione. Są to te same
+daty co na osi czasu; oba pola zawierają dzień i godzinę.
+Korzystają z autosave, walidacji kolejności pełnych dat z godzinami i historii
+zmian. Migracja `spaces.0004_workitem_start_at` zachowuje dotychczasowe dni
+rozpoczęcia z godziną 00:00 w strefie aplikacji.
 Wymagane pole można uzupełnić po błędzie autosave bez opuszczania szczegółów
 i utraty wcześniejszego szkicu. Odpowiedź walidacji może dodać nowe pola
 konfiguracji do już otwartego formularza. Obserwator zachowuje tylko odczyt.

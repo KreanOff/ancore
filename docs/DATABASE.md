@@ -5,6 +5,14 @@ z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikac
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
 Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
+`spaces.0004_workitem_start_at` (29.10.2026) zastępuje datę rozpoczęcia
+`WorkItem.start_on` pełną datą i godziną `start_at`. Migracja kopiuje istniejące
+dni jako 00:00 w `settings.TIME_ZONE`, niezależnie od strefy połączenia bazy;
+puste wartości pozostają puste. `SpaceTask.due_at` i daty sprintów nie zmieniają
+się. Cofnięcie zachowuje lokalny dzień rozpoczęcia, ale usuwa informację
+o godzinie. Przed zastosowaniem wykonaj backup i sprawdź `manage.py migrate
+--plan`, następnie `manage.py migrate`.
+
 `spaces.0003_space_dashboard_layout` (28.10.2026) dodaje osobiste układy
 podsumowania Przestrzeni: JSON pozycji/rozmiarów gadżetów, rewizję i unikalną
 parę Przestrzeń/użytkownik. Nie przepisuje danych zadań ani Pulpitów Workspace;

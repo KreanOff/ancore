@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 57 | 3 | 42 | 338 |
+| [backend/spaces](../backend/spaces) | 59 | 4 | 42 | 356 |
 
 ## 2. Modele i relacje
 
@@ -537,7 +537,7 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_on` (DateField), `custom_values` (JSONField).
+Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_at` (DateTimeField), `custom_values` (JSONField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -1013,9 +1013,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
-- [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `group_limit`, `list_window`, `more_url`, `list_url`
+- [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `group_limit`, `list_window`, `more_url`, `timeline_more_url`, `list_url`
 - [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
+- [backend/spaces/schedule.py](../backend/spaces/schedule.py) — `ScheduleDateTimeField`, `local_date`, `validate_range`, `move_to_date`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
@@ -1028,7 +1029,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templatetags/__init__.py](../backend/spaces/templatetags/__init__.py)
 - [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
-- [backend/spaces/timeline.py](../backend/spaces/timeline.py) — `local_end`, `posted_date`, `posted_source_due`, `serialized_precision`, `scheduled_due`, `error_response`, `update_dates`
+- [backend/spaces/timeline.py](../backend/spaces/timeline.py) — `local_end`, `posted_date`, `posted_source`, `serialized_precision`, `posted_datetime`, `datetime_label`, `error_response`, `update_dates`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
 - [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
@@ -2167,7 +2168,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_list_window.py](../backend/spaces/test_list_window.py).
 
-- `ListWindowTests`: 12 metod testowych.
+- `ListWindowTests`: 16 metod testowych.
 
 ### backend/spaces/test_management.py
 
@@ -2180,6 +2181,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_navigation.py](../backend/spaces/test_navigation.py).
 
 - `SpaceNavigationTests`: 6 metod testowych.
+
+### backend/spaces/test_schedule_migration.py
+
+Źródło: [backend/spaces/test_schedule_migration.py](../backend/spaces/test_schedule_migration.py).
+
+- `ScheduleMigrationTests`: 1 metod testowych.
 
 ### backend/spaces/test_space_sharing.py
 
@@ -2204,7 +2211,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_task_autosave.py](../backend/spaces/test_task_autosave.py).
 
-- `TaskAutosaveTests`: 15 metod testowych.
+- `TaskAutosaveTests`: 23 metod testowych.
 
 ### backend/spaces/test_task_detail_parity.py
 
@@ -2222,7 +2229,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_timeline.py](../backend/spaces/test_timeline.py).
 
-- `TimelineTests`: 16 metod testowych.
+- `TimelineTests`: 21 metod testowych.
 
 ### backend/spaces/test_urls.py
 
@@ -2301,6 +2308,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/spaces/migrations/0001_initial.py](../backend/spaces/migrations/0001_initial.py)
 - [backend/spaces/migrations/0002_initial.py](../backend/spaces/migrations/0002_initial.py)
 - [backend/spaces/migrations/0003_space_dashboard_layout.py](../backend/spaces/migrations/0003_space_dashboard_layout.py)
+- [backend/spaces/migrations/0004_workitem_start_at.py](../backend/spaces/migrations/0004_workitem_start_at.py)
 
 ## 10. Narzędzia i wdrożenie
 
