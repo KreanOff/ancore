@@ -1,7 +1,6 @@
 {% load static %}
 {% with has_gadgets=dashboard.gadgets.exists %}
 <div class="dashboard-main work-summary-dashboard{% if editing_gadgets %} is-editing{% endif %}">
-    {% if dashboard.description %}<p class="pulpit-intro">{{ dashboard.description|linebreaksbr }}</p>{% endif %}
     <div class="tasks-modal__errors" role="alert" data-pulpit-page-error hidden></div>
     <div class="work-summary-canvas pulpit-summary-canvas" style="--summary-row-height: 48px; --summary-grid-gap: 12px" data-pulpit-grid data-layout="{{ dashboard.layout }}" aria-label="Gadżety pulpitu"{% if editing_gadgets %} data-editable="true"{% endif %}{% if not has_gadgets %} hidden{% endif %}>
         {% for data in grid_gadgets %}{% include 'dashboard/pulpits/gadget.html' %}{% endfor %}

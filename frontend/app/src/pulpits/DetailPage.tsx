@@ -186,8 +186,55 @@ export function DashboardView(props: PageProps) {
           </h1>
         </div>
         <div className="tasks-titlebar-actions">
-          {!editing ? (
+          {editing ? (
             <>
+              <button
+                ref={addButton}
+                type="button"
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                disabled={locked}
+                onClick={() => setCatalog(true)}
+              >
+                <Icon name="plus" />
+                <span>Dodaj gadżet</span>
+              </button>
+              <button
+                type="button"
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                disabled={locked}
+                onClick={cancel}
+              >
+                Anuluj
+              </button>
+              <button
+                type="button"
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                disabled={locked}
+                onClick={() => void save()}
+              >
+                <Icon name="check" />
+                <span>{busy ? 'Zapisywanie…' : 'Zapisz układ'}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {dashboard.editable ? (
+                <button
+                  ref={editButton}
+                  type="button"
+                  className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                  disabled={locked}
+                  onClick={() => {
+                    setEditing(true);
+                    setError('');
+                    setPageLocation(data.editor_url);
+                    setNotice('Włączono edycję pulpitu.');
+                  }}
+                >
+                  <Icon name="pencil" />
+                  <span>Edytuj pulpit</span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
@@ -212,79 +259,11 @@ export function DashboardView(props: PageProps) {
                 />
               ) : null}
             </>
-          ) : null}
+          )}
         </div>
       </header>
       <div className="dashboard-main work-content">
-        {dashboard.description ? <p className="pulpit-intro">{dashboard.description}</p> : null}
         <div className={`work-summary-dashboard ${editing ? 'is-editing' : ''}`} aria-busy={busy}>
-          <div className="work-summary-toolbar">
-            <div className="work-summary-toolbar-title">
-              {editing ? (
-                <span className="work-caption">{dirty ? 'Niezapisane zmiany' : 'Tryb edycji'}</span>
-              ) : null}
-            </div>
-            <div className="work-summary-toolbar-actions">
-              {editing ? (
-                <>
-                  <button
-                    ref={addButton}
-                    type="button"
-                    className="tasks-filter-button"
-                    disabled={locked}
-                    onClick={() => setCatalog(true)}
-                  >
-                    <Icon name="plus" />
-                    Dodaj gadżet
-                  </button>
-                  <button
-                    type="button"
-                    className="tasks-filter-button"
-                    disabled={locked}
-                    onClick={cancel}
-                  >
-                    Anuluj
-                  </button>
-                  <button
-                    type="button"
-                    className="tasks-filter-button work-summary-save"
-                    disabled={locked}
-                    onClick={() => void save()}
-                  >
-                    <Icon name="check" />
-                    {busy ? 'Zapisywanie…' : 'Zapisz układ'}
-                  </button>
-                </>
-              ) : dashboard.editable ? (
-                <button
-                  ref={editButton}
-                  type="button"
-                  className="tasks-filter-button"
-                  disabled={locked}
-                  onClick={() => {
-                    setEditing(true);
-                    setError('');
-                    setPageLocation(data.editor_url);
-                    setNotice('Włączono edycję pulpitu.');
-                  }}
-                >
-                  <Icon name="pencil" />
-                  Edytuj pulpit
-                </button>
-              ) : null}
-            </div>
-          </div>
-          {editing ? (
-            <p className="work-caption work-summary-edit-hint">
-              <span className="work-summary-edit-hint-desktop">
-                Przeciągnij kafelek za uchwyt, a jego rozmiar zmień w prawym dolnym rogu. Możesz też
-                użyć strzałek na uchwycie lub menu kafelka.
-              </span>
-              <span className="work-summary-edit-hint-mobile">
-                Dodawaj gadżety, a ich kolejność i rozmiar zmieniaj przez menu kafelka.
-              </span>
-            </p>
-          ) : null}
           {error || actions.error ? (
             <div className="tasks-modal__errors work-summary-error" role="alert">
               <span>{error || actions.error}</span>
