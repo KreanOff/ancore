@@ -269,7 +269,7 @@ def detail_context(request, space, view):
         dates = []
         for item in rows:
             due = timezone.localtime(item.task.due_at).date() if item.task.due_at else None
-            item.timeline_start = item.start_on or due
+            item.timeline_start = timezone.localtime(item.start_at).date() if item.start_at else due
             item.timeline_end = max(item.timeline_start, due or item.timeline_start) if item.timeline_start else None
             if item.timeline_start:
                 dates.extend([item.timeline_start, item.timeline_end])
@@ -583,7 +583,7 @@ def item_edit(request, pk=None, space_pk=None, key=None):
             task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
             old_type, old_type_label = item.work_type, item.get_work_type_display()
-            for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_on', 'in_backlog'):
+            for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
                 if name in data:
                     setattr(item, name, data[name])
             item.custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else '' for f in space.configuration.settings.get('fields', [])}

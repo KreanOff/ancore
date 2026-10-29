@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import json
 
 from django.contrib.auth import get_user_model
@@ -26,9 +26,9 @@ class ItemQueryTests(TestCase):
                                                                   ('none', 'low', 'medium', 'high', 'urgent')))]
         for index, task in enumerate(cls.tasks):
             item = task.work_item
-            item.start_on = date(2026, 10, 1) + timedelta(days=index)
+            item.start_at = timezone.make_aware(datetime(2026, 10, 1)) + timedelta(days=index)
             item.points = 5 - index
-            item.save(update_fields=['start_on', 'points'])
+            item.save(update_fields=['start_at', 'points'])
         cls.private = SpaceTask.objects.create(space=cls.space, created_by=cls.owner, title='AAA prywatne',
                                               visibility='private', private_owner=cls.owner, assignee=cls.member)
         other = create_workplace_for_user(cls.owner, 'Drugi Workspace')

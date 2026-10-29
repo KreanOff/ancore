@@ -28,8 +28,8 @@ class TimelineTests(TestCase):
         cls.task = SpaceTask.objects.create(created_by=cls.owner, space=cls.space, title='Zaplanowane',
             due_at=datetime(2026, 10, 23, 16, 37, 12, 987654, tzinfo=ZoneInfo('Europe/Warsaw')))
         cls.item = cls.task.work_item
-        cls.item.start_on = date(2026, 10, 20)
-        cls.item.save(update_fields=['start_on'])
+        cls.item.start_at = datetime(2026, 10, 20, 9, 15, 42, 123456, tzinfo=ZoneInfo('Europe/Warsaw'))
+        cls.item.save(update_fields=['start_at'])
         cls.unscheduled = SpaceTask.objects.create(created_by=cls.owner, space=cls.space, title='Bez planu')
 
     def setUp(self):
@@ -47,7 +47,7 @@ class TimelineTests(TestCase):
         item.refresh_from_db()
         item.task.refresh_from_db()
         values = {'start_on': '2026-10-27', 'end_on': '2026-10-30',
-                  'source_start_on': item.start_on.isoformat() if item.start_on else '',
+                  'source_start_at': json.loads(json.dumps(item.start_at, cls=DjangoJSONEncoder)) or '',
                   'source_due_at': json.loads(json.dumps(item.task.due_at, cls=DjangoJSONEncoder)) or ''}
         return {**values, **changes}
 
@@ -108,8 +108,9 @@ class TimelineTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.task.refresh_from_db()
         self.item.refresh_from_db()
-        self.assertEqual(self.item.start_on, date(2026, 10, 27))
+        self.assertEqual(timezone.localtime(self.item.start_at).date(), date(2026, 10, 27))
         self.assertEqual(timezone.localtime(self.task.due_at).time(), time(16, 37, 12, 987654))
+        self.assertEqual(timezone.localtime(self.item.start_at).time(), time(9, 15, 42, 123456))
         self.assertEqual(self.task.due_at.utcoffset().total_seconds(), 0)  # Database UTC.
         self.assertEqual(timezone.localtime(self.task.due_at).utcoffset().total_seconds(), 3600)
         self.assertEqual((self.task.title, self.task.status, self.task.is_completed, self.task.completion_date,
@@ -129,7 +130,7 @@ class TimelineTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 item.refresh_from_db()
                 item.task.refresh_from_db()
-                self.assertEqual(item.start_on.isoformat() if item.start_on else '', start)
+                self.assertEqual(timezone.localtime(item.start_at).date().isoformat() if item.start_at else '', start)
                 self.assertEqual(timezone.localtime(item.task.due_at).date().isoformat() if item.task.due_at else '', end)
                 if end:
                     self.assertEqual(timezone.localtime(item.task.due_at).time(), time(23, 59))
@@ -150,7 +151,7 @@ class TimelineTests(TestCase):
 
     def test_invalid_dates_snapshot_and_missing_fields_do_not_write(self):
         invalid = [{'start_on': '2026-02-30'}, {'end_on': '2026-02-29'}, {'start_on': '20261027'},
-                   {'start_on': '2026-W44-2'}, {'end_on': '2026-10-26'}, {'source_start_on': 'junk'},
+                   {'start_on': '2026-W44-2'}, {'end_on': '2026-10-26'}, {'source_start_at': 'junk'},
                    {'source_due_at': '2026-10-23'}, {'source_due_at': 'not-a-date'}]
         for changes in invalid:
             with self.subTest(changes=changes):
@@ -163,17 +164,17 @@ class TimelineTests(TestCase):
             self.assertEqual(self.post(data).status_code, 400)
         self.item.refresh_from_db()
         self.task.refresh_from_db()
-        self.assertEqual(self.item.start_on, date(2026, 10, 20))
+        self.assertEqual(timezone.localtime(self.item.start_at).date(), date(2026, 10, 20))
         self.assertEqual(timezone.localtime(self.task.due_at).date(), date(2026, 10, 23))
         self.assertEqual(self.task.activities.count(), 1)
 
     def test_stale_dates_are_conflicts_and_do_not_overwrite(self):
-        for field, stale in [('source_start_on', ''), ('source_due_at', ''), ('source_due_at', '2026-10-23T14:36:12Z')]:
+        for field, stale in [('source_start_at', ''), ('source_due_at', ''), ('source_due_at', '2026-10-23T14:36:12Z')]:
             response = self.post(self.data(**{field: stale}))
             self.assertEqual(response.status_code, 409)
             self.assertTrue(response.json()['message'])
         self.item.refresh_from_db()
-        self.assertEqual(self.item.start_on, date(2026, 10, 20))
+        self.assertEqual(timezone.localtime(self.item.start_at).date(), date(2026, 10, 20))
         self.assertEqual(self.task.activities.count(), 1)
 
     def test_ignores_unrelated_fields_without_changing_their_values(self):
@@ -217,10 +218,10 @@ class TimelineTests(TestCase):
         response = self.post(self.data(start_on='2026-03-27', end_on='2026-03-29'))
         self.assertEqual(response.status_code, 400)
         self.item.refresh_from_db()
-        self.assertEqual(self.item.start_on, date(2026, 10, 20))
+        self.assertEqual(timezone.localtime(self.item.start_at).date(), date(2026, 10, 20))
 
     def test_latest_supported_date_does_not_overflow_page_range(self):
-        WorkItem.objects.filter(space=self.space).update(start_on=date.max)
+        WorkItem.objects.filter(space=self.space).update(start_at=datetime(9999, 12, 31, 0, 0, tzinfo=ZoneInfo('Europe/Warsaw')))
         SpaceTask.objects.filter(space=self.space).update(due_at=None)
         payload = self.page()
         self.assertEqual(payload['timeline']['start'], '9999-12-31')
@@ -232,7 +233,78 @@ class TimelineTests(TestCase):
         response = self.post(self.data(start_on='0001-01-01', end_on='0001-01-01'))
         self.assertEqual(response.status_code, 400)
         self.item.refresh_from_db()
-        self.assertEqual(self.item.start_on, date(2026, 10, 20))
+        self.assertEqual(timezone.localtime(self.item.start_at).date(), date(2026, 10, 20))
+
+    def test_dialog_saves_both_times_on_the_same_day_and_can_clear_them(self):
+        for scoped, api in ((False, False), (True, True)):
+            with self.subTest(scoped=scoped, api=api):
+                response = self.post(self.data(start_at='2026-10-29T09:15', due_at='2026-10-29T17:45'), scoped=scoped, api=api)
+                self.assertEqual(response.status_code, 200, response.content)
+                self.item.refresh_from_db()
+                self.task.refresh_from_db()
+                self.assertEqual(timezone.localtime(self.item.start_at).time(), time(9, 15))
+                self.assertEqual(timezone.localtime(self.task.due_at).time(), time(17, 45))
+                self.assertEqual(response.json()['start_on'], '2026-10-29')
+                self.assertTrue(response.json()['start_at'].endswith('09:15:00+01:00'))
+                cleared = self.post(self.data(start_at='', due_at=''), scoped=scoped, api=api)
+                self.assertEqual(cleared.status_code, 200)
+                self.assertIsNone(cleared.json()['start_at'])
+                self.assertIsNone(cleared.json()['due_at'])
+
+    def test_dialog_rejects_reversed_times_date_only_and_dst_gaps_without_writes(self):
+        invalid = [
+            ('2026-10-29T17:00', '2026-10-29T09:00'),
+            ('2026-10-29', '2026-10-29T17:00'),
+            ('2026-10-29T09:00', '2026-10-29'),
+            ('2026-10-29T09:00', '9999-12-31T23:59:00Z'),
+            ('2026-03-29T02:30', '2026-03-29T17:00'),
+            ('2026-03-29T01:30', '2026-03-29T02:30'),
+            ('2026-10-25T02:30', '2026-10-25T17:00'),
+            ('2026-10-25T01:30', '2026-10-25T02:30'),
+            # Repeated wall hour: 02:15 at +01 is later than 02:45 at +02.
+            ('2026-10-25T02:15:00+01:00', '2026-10-25T02:45:00+02:00'),
+        ]
+        original = self.item.start_at, self.task.due_at, self.task.activities.count()
+        for start, due in invalid:
+            with self.subTest(start=start, due=due):
+                response = self.post(self.data(start_at=start, due_at=due))
+                self.assertEqual(response.status_code, 400, response.content)
+        self.item.refresh_from_db()
+        self.task.refresh_from_db()
+        self.assertEqual((self.item.start_at, self.task.due_at, self.task.activities.count()), original)
+
+    def test_dialog_preserves_unedited_seconds_and_records_time_only_changes(self):
+        original_due = self.task.due_at
+        response = self.post(self.data(start_at='2026-10-20T10:15', due_at='2026-10-23T16:37'))
+        self.assertEqual(response.status_code, 200)
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.due_at, original_due)
+        change = self.task.activities.order_by('-pk').first().metadata['changes']
+        self.assertEqual(change, [{'field': 'planowane rozpoczęcie', 'from_label': '20.10.2026 09:15', 'to_label': '20.10.2026 10:15'}])
+        count = self.task.activities.count()
+        self.assertFalse(self.post(self.data(start_at='2026-10-20T10:15', due_at='2026-10-23T16:37')).json()['changed'])
+        self.assertEqual(self.task.activities.count(), count)
+
+    def test_time_only_concurrent_start_edit_conflicts_for_dialog_and_drag(self):
+        stale = self.data()
+        current = self.item.start_at.replace(hour=12)
+        WorkItem.objects.filter(pk=self.item.pk).update(start_at=current)
+        for values in (stale, {**stale, 'start_at': '2026-10-21T09:00', 'due_at': '2026-10-23T17:00'}):
+            response = self.post(values)
+            self.assertEqual(response.status_code, 409)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.start_at, current)
+
+    def test_drag_rejects_reversed_preserved_clocks_and_ambiguous_start(self):
+        self.item.start_at = datetime(2026, 10, 24, 17, 0, tzinfo=ZoneInfo('Europe/Warsaw'))
+        self.item.save(update_fields=['start_at'])
+        response = self.post(self.data(start_on='2026-10-29', end_on='2026-10-29'))
+        self.assertEqual(response.status_code, 400)
+        self.item.start_at = datetime(2026, 10, 24, 2, 30, tzinfo=ZoneInfo('Europe/Warsaw'))
+        self.item.save(update_fields=['start_at'])
+        self.assertEqual(self.post(self.data(start_on='2026-10-25', end_on='2026-10-26')).status_code, 400)
+        self.item.refresh_from_db()
+        self.assertEqual(timezone.localtime(self.item.start_at).date(), date(2026, 10, 24))
 
     def test_html_shows_unscheduled_task_with_assignee_and_edit_link(self):
         response = self.client.get(self.url('?view=timeline'))

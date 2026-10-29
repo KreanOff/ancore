@@ -24,6 +24,7 @@ const SIDE = [
   'work_type',
   'task_type',
   'assignee',
+  'start_at',
   'due_at',
   'reminder_at',
 ];
@@ -976,6 +977,7 @@ export default function TaskPage(props: PageProps) {
                     {dateLabel(data.completion_date, true) || 'Nie zamknięto'}
                   </strong>
                 </div>
+                {field('start_at')}
                 {field('due_at')}
                 {field('reminder_at')}
               </section>

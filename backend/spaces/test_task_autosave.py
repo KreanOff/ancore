@@ -1,15 +1,18 @@
 """Autosave uses the existing task form, live values, ACL and file transaction."""
 import json
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
+from workplaces.services import scoped_workplace_app_path
 from tasks.models import TaskTag
 from . import test_independent_tasks as fixtures
 from .models import SpaceTask, SpaceTaskFile, SpaceTaskMembership, Sprint, Team
@@ -85,6 +88,194 @@ class TaskAutosaveTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['task']['completion_date'], '')
         self.assertEqual(self.task.activities.filter(action='status_changed', actor=self.owner).count(), 2)
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_schedule_controls_and_api_show_existing_dates_and_allow_empty_start(self):
+        self.task.due_at = datetime(2026, 11, 8, 16, 37, tzinfo=ZoneInfo('Europe/Warsaw'))
+        self.task.save(update_fields=['due_at'])
+        item = self.task.work_item
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        for start in (None, datetime(2026, 10, 29, 9, 15, tzinfo=ZoneInfo('Europe/Warsaw'))):
+            item.start_at = start
+            item.save(update_fields=['start_at'])
+            for target in (self.task_url(), f'/space/{self.space.slug}/tasks/{self.key}/'):
+                with self.subTest(start=start, target=target):
+                    response = self.client.get(api, {'url': target})
+                    self.assertEqual(response.status_code, 200)
+                    data = response.json()['data']
+                    fields = {field['name']: field for field in data['form']['fields']}
+                    self.assertEqual(fields['start_at']['label'], 'Data rozpoczęcia')
+                    self.assertEqual(fields['start_at']['type'], 'datetime-local')
+                    self.assertEqual(fields['start_at']['value'], start.strftime('%Y-%m-%dT%H:%M') if start else None)
+                    self.assertFalse(fields['start_at']['hidden'])
+                    self.assertEqual(fields['due_at']['label'], 'Termin zakończenia')
+                    self.assertEqual(fields['due_at']['value'], '2026-11-08T16:37')
+                    self.assertEqual(data['item']['start_on'], start.date().isoformat() if start else None)
+                    self.assertEqual(data['item']['end_on'], '2026-11-08')
+                    html = self.client.get(target, follow=True)
+                    self.assertContains(html, 'name="start_at"', count=1)
+                    self.assertContains(html, '<label for="id_start_at">Data rozpoczęcia</label>')
+                    self.assertContains(html, '<label for="id_due_at">Termin zakończenia</label>')
+        self.login(self.observer)
+        data = self.client.get(api, {'url': self.task_url()}).json()['data']
+        fields = {field['name']: field for field in data['form']['fields']}
+        self.assertTrue(fields['start_at']['disabled'])
+        self.assertTrue(fields['due_at']['disabled'])
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_schedule_autosave_records_date_values_actor_and_noop(self):
+        self.login(self.member)
+        values = {'start_at': '2026-10-29T09:15', 'due_at': '2026-11-08T18:45'}
+        response = self.save(['start_at', 'due_at'], **values)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.task.refresh_from_db()
+        self.assertEqual(timezone.localtime(self.task.work_item.start_at).strftime('%Y-%m-%dT%H:%M'), '2026-10-29T09:15')
+        self.assertEqual(timezone.localtime(self.task.due_at).strftime('%Y-%m-%dT%H:%M'), values['due_at'])
+        self.assertEqual(self.task.status, 'new')
+        self.assertIsNone(self.task.completion_date)
+        activity = self.task.activities.get(action='updated')
+        self.assertEqual(activity.actor, self.member)
+        self.assertEqual(activity.metadata['changes'], [
+            {'field': 'planowane rozpoczęcie', 'from_label': '—', 'to_label': '29.10.2026 09:15'},
+            {'field': 'termin wykonania', 'from_label': '—', 'to_label': '08.11.2026 18:45'},
+        ])
+        count = self.task.activities.count()
+        self.assertEqual(self.save(['start_at', 'due_at'], **values).status_code, 200)
+        self.assertEqual(self.task.activities.count(), count)
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_schedule_can_clear_each_date_and_preserves_unedited_due_time(self):
+        due = datetime(2026, 11, 8, 16, 37, 12, 987654, tzinfo=ZoneInfo('Europe/Warsaw'))
+        self.task.due_at = due
+        self.task.save(update_fields=['due_at'])
+        response = self.save(['start_at'], start_at='2026-10-29T09:15', due_at='')
+        self.assertEqual(response.status_code, 200, response.content)
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.due_at, due)
+        self.assertEqual(timezone.localtime(self.task.work_item.start_at).strftime('%Y-%m-%dT%H:%M'), '2026-10-29T09:15')
+        self.assertEqual(self.save(['start_at'], start_at='').status_code, 200)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.work_item.start_at)
+        self.assertEqual(self.task.due_at, due)
+        self.assertEqual(self.save(['start_at'], start_at='2026-10-29T09:15').status_code, 200)
+        self.assertEqual(self.save(['due_at'], due_at='').status_code, 200)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.due_at)
+        self.assertEqual(timezone.localtime(self.task.work_item.start_at).strftime('%Y-%m-%dT%H:%M'), '2026-10-29T09:15')
+        self.assertEqual(self.save(['start_at'], start_at='').status_code, 200)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.work_item.start_at)
+        self.assertIsNone(self.task.due_at)
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_schedule_invalid_date_or_reversed_range_does_not_partially_save(self):
+        due = datetime(2026, 11, 8, 16, 37, tzinfo=ZoneInfo('Europe/Warsaw'))
+        self.task.due_at = due
+        self.task.save(update_fields=['due_at'])
+        item = self.task.work_item
+        item.start_at = datetime(2026, 10, 29, 9, 15, tzinfo=ZoneInfo('Europe/Warsaw'))
+        item.save(update_fields=['start_at'])
+        count = self.task.activities.count()
+        for field, value, error_field in (
+            ('start_at', '2026-11-09T09:15', 'due_at'),
+            ('due_at', '2026-10-28T23:59', 'due_at'),
+            ('start_at', '2026-02-30', 'start_at'),
+        ):
+            with self.subTest(field=field, value=value):
+                response = self.save(['title', field], title='Nie zapisuj', **{field: value})
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(error_field, response.json()['errors'])
+                self.task.refresh_from_db()
+                item.refresh_from_db()
+                self.assertEqual(self.task.title, 'Praca w przestrzeni')
+                self.assertEqual(self.task.due_at, due)
+                self.assertEqual(timezone.localtime(item.start_at).strftime('%Y-%m-%dT%H:%M'), '2026-10-29T09:15')
+                self.assertEqual(self.task.activities.count(), count)
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_schedule_round_trip_between_task_api_and_timeline(self):
+        self.login(self.member)
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        for base in (self.url(), f'/space/{self.space.slug}/'):
+            with self.subTest(base=base):
+                target = base + f'tasks/{self.key}/'
+                response = self.client.post(api + '?' + urlencode({'url': target}), {
+                    'action': 'save', 'autosave_fields': '["start_at", "due_at"]',
+                    'start_at': '2026-10-29T09:15', 'due_at': '2026-11-08T18:45',
+                })
+                self.assertEqual(response.status_code, 200, response.content)
+                timeline = self.client.get(api, {'url': base + '?view=timeline'}).json()['data']
+                row = next(row for row in timeline['items'] if row['task_id'] == self.task.pk)
+                self.assertEqual((row['start_on'], row['end_on']), ('2026-10-29', '2026-11-08'))
+                response = self.client.post(api + '?' + urlencode({'url': row['update_dates_url']}), {
+                    'start_on': '2026-10-30', 'end_on': '2026-11-09',
+                    'source_start_at': row['start_at'], 'source_due_at': row['due_at'],
+                })
+                self.assertEqual(response.status_code, 200, response.content)
+                page = self.client.get(api, {'url': target}).json()['data']
+                fields = {field['name']: field for field in page['form']['fields']}
+                self.assertEqual(fields['start_at']['value'], '2026-10-30T09:15')
+                self.assertEqual(fields['due_at']['value'], '2026-11-09T18:45')
+                self.assertEqual((page['item']['start_on'], page['item']['end_on']), ('2026-10-30', '2026-11-09'))
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, 'new')
+        self.assertIsNone(self.task.completion_date)
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_schedule_same_day_range_and_invalid_dst_wall_times(self):
+        for start, due in (
+            ('2026-10-29T18:00', '2026-10-29T09:00'),
+            ('2026-03-29T02:30', '2026-03-29T17:00'),
+            ('2026-10-25T02:30', '2026-10-25T17:00'),
+            ('2026-10-29', '2026-10-29T17:00'),
+            ('2026-10-29T09:00', '2026-10-29'),
+        ):
+            with self.subTest(start=start, due=due):
+                response = self.save(['start_at', 'due_at'], start_at=start, due_at=due)
+                self.assertEqual(response.status_code, 400, response.content)
+        self.task.refresh_from_db()
+        self.assertIsNone(self.task.work_item.start_at)
+        self.assertIsNone(self.task.due_at)
+        self.assertEqual(self.save(['start_at', 'due_at'], start_at='2026-10-29T09:00', due_at='2026-10-29T17:00').status_code, 200)
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_autosave_other_property_preserves_exact_repeated_hour_instants(self):
+        zone = ZoneInfo('Europe/Warsaw')
+        item = self.task.work_item
+        item.start_at = datetime(2026, 10, 25, 2, 45, 12, 345678, tzinfo=zone, fold=0)
+        item.save(update_fields=['start_at'])
+        self.task.due_at = datetime(2026, 10, 25, 2, 15, 42, 876543, tzinfo=zone, fold=1)
+        self.task.save(update_fields=['due_at'])
+        original = item.start_at, self.task.due_at
+        response = self.save(['title'], title='Zachowane godziny')
+        self.assertEqual(response.status_code, 200, response.content)
+        item.refresh_from_db()
+        self.task.refresh_from_db()
+        self.assertEqual(item.start_at.timestamp(), original[0].timestamp())
+        self.assertEqual(self.task.due_at.timestamp(), original[1].timestamp())
+        response = self.save(['start_at'], start_at='2026-10-25T02:30:00+01:00')
+        self.assertEqual(response.status_code, 400, response.content)
+        item.refresh_from_db()
+        self.assertEqual(item.start_at.timestamp(), original[0].timestamp())
+
+    @override_settings(TIME_ZONE='Europe/Warsaw')
+    def test_create_and_edit_task_keep_date_and_time_and_reject_reversed_range(self):
+        values = {'title': 'Z godzinami', 'work_type': 'task', 'priority': 'medium',
+                  'start_at': '2026-10-29T09:15', 'due_at': '2026-10-29T17:45'}
+        response = self.client.post(self.url('items/create/'), values)
+        self.assertEqual(response.status_code, 302)
+        task = SpaceTask.objects.get(space=self.space, title='Z godzinami')
+        self.assertEqual(timezone.localtime(task.work_item.start_at).time().isoformat(), '09:15:00')
+        self.assertEqual(timezone.localtime(task.due_at).time().isoformat(), '17:45:00')
+        target = self.url(f'tasks/{task.work_item.key}/edit/')
+        response = self.client.post(target, {**values, 'start_at': '2026-10-29T10:30'})
+        self.assertEqual(response.status_code, 302)
+        task.refresh_from_db()
+        self.assertEqual(timezone.localtime(task.work_item.start_at).time().isoformat(), '10:30:00')
+        response = self.client.post(target, {**values, 'start_at': '2026-10-29T18:00'})
+        self.assertEqual(response.status_code, 400)
+        task.refresh_from_db()
+        self.assertEqual(timezone.localtime(task.work_item.start_at).time().isoformat(), '10:30:00')
 
     def test_former_assignee_is_preserved_but_cannot_be_selected_again(self):
         self.task.assignee = self.member

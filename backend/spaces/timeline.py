@@ -1,7 +1,6 @@
 """Calendar dates for timeline planning, using the task's existing schedule."""
-from datetime import date, datetime, time, timezone as datetime_timezone
+from datetime import date, time, timezone as datetime_timezone
 
-from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -16,10 +15,11 @@ from workplaces.models import Workplace
 from .access import require_editable
 from .models import Space, SpaceTask, WorkItem
 from .services import record, visible_items
+from .schedule import ScheduleDateTimeField, local_date, move_to_date, validate_range
 
 
 def local_end(task):
-    return timezone.localtime(task.due_at).date() if task.due_at else None
+    return local_date(task.due_at)
 
 
 def posted_date(data, name):
@@ -37,42 +37,40 @@ def posted_date(data, name):
     return result
 
 
-def posted_source_due(data):
-    if 'source_due_at' not in data:
-        raise ValidationError('Prześlij poprzedni termin zadania.')
-    value = data['source_due_at']
+def posted_source(data, name):
+    if name not in data:
+        raise ValidationError('Prześlij poprzednią datę i godzinę zadania.')
+    value = data[name]
     if not value:
         return None
     try:
         parsed = parse_datetime(value)
-    except (TypeError, ValueError):
-        parsed = None
-    if parsed is None or timezone.is_naive(parsed):
-        raise ValidationError('Nieprawidłowy poprzedni termin zadania. Odśwież oś czasu.')
+        if parsed is None or timezone.is_naive(parsed):
+            raise ValueError
+        parsed.astimezone(datetime_timezone.utc)
+    except (TypeError, ValueError, OverflowError):
+        raise ValidationError('Nieprawidłowa poprzednia data zadania. Odśwież oś czasu.')
     return parsed
 
 
 def serialized_precision(value):
-    # DjangoJSONEncoder serializes timestamps to milliseconds.
-    return value.replace(microsecond=value.microsecond // 1000 * 1000) if value else None
+    # DjangoJSONEncoder serializes timestamps to milliseconds. Normalize zones
+    # before equality so the two occurrences of a repeated DST hour differ.
+    return value.astimezone(datetime_timezone.utc).replace(microsecond=value.microsecond // 1000 * 1000) if value else None
 
 
-def scheduled_due(task, end_on):
-    if end_on is None:
-        return None
-    if end_on == local_end(task):
-        return task.due_at
-    old = timezone.localtime(task.due_at) if task.due_at else None
-    clock = old.time() if old else time(23, 59)
-    # DateTimeField rejects nonexistent/ambiguous wall times at DST changes.
-    try:
-        result = forms.DateTimeField().clean(datetime.combine(end_on, clock))
-        result.astimezone(datetime_timezone.utc)
-        return result
-    except OverflowError:
-        raise ValidationError('Termin z tą godziną jest poza obsługiwanym zakresem dat.')
-    except ValidationError:
-        raise ValidationError('Godzina terminu nie istnieje lub jest niejednoznaczna w wybranym dniu. Ustaw termin w edycji zadania.')
+def posted_datetime(data, name, previous):
+    value = data.get(name)
+    if value is None or not isinstance(value, str):
+        raise ValidationError('Prześlij komplet dat i godzin zadania.')
+    # The dialog displays minutes. Do not erase seconds on an untouched field.
+    if previous and value == timezone.localtime(previous).strftime('%Y-%m-%dT%H:%M'):
+        return previous
+    return ScheduleDateTimeField(required=False).clean(value)
+
+
+def datetime_label(value):
+    return date_format(timezone.localtime(value), 'd.m.Y H:i') if value else '—'
 
 
 def error_response(message, status=400):
@@ -88,12 +86,12 @@ def update_dates(request, space_pk, key):
     item = get_object_or_404(visible_items(request), space=space, key=key)
     require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
     try:
-        start_on = posted_date(request.POST, 'start_on')
-        end_on = posted_date(request.POST, 'end_on')
-        source_start = posted_date(request.POST, 'source_start_on')
-        source_due = posted_source_due(request.POST)
-        if start_on and end_on and end_on < start_on:
-            raise ValidationError('Termin nie może być wcześniejszy niż rozpoczęcie.')
+        explicit_times = 'start_at' in request.POST or 'due_at' in request.POST
+        if not explicit_times:
+            start_on = posted_date(request.POST, 'start_on')
+            end_on = posted_date(request.POST, 'end_on')
+        source_start = posted_source(request.POST, 'source_start_at')
+        source_due = posted_source(request.POST, 'source_due_at')
         with transaction.atomic():
             if request.workplace:
                 Workplace.objects.select_for_update().get(pk=request.workplace.pk)
@@ -103,25 +101,31 @@ def update_dates(request, space_pk, key):
             require_editable(SpaceTask.objects.filter(pk=task.pk), request.user)
             # Recheck both the active Workspace and private parents after waiting.
             get_object_or_404(visible_items(request), pk=item.pk, space=space)
-            if (source_start != item.start_on
+            if (serialized_precision(source_start) != serialized_precision(item.start_at)
                     or serialized_precision(source_due) != serialized_precision(task.due_at)):
                 return error_response('Daty zadania zostały zmienione. Odśwież oś czasu i spróbuj ponownie.', 409)
-            due_at = scheduled_due(task, end_on)
-            old_start, old_due = item.start_on, task.due_at
+            if explicit_times:
+                start_at = posted_datetime(request.POST, 'start_at', item.start_at)
+                due_at = posted_datetime(request.POST, 'due_at', task.due_at)
+            else:
+                start_at = move_to_date(item.start_at, start_on)
+                due_at = move_to_date(task.due_at, end_on, time(23, 59))
+            validate_range(start_at, due_at)
+            old_start, old_due = item.start_at, task.due_at
             changes = []
-            if old_start != start_on:
-                item.start_on = start_on
-                item.save(update_fields=['start_on'])
+            if old_start != start_at:
+                item.start_at = start_at
+                item.save(update_fields=['start_at'])
                 changes.append({'field': 'planowane rozpoczęcie',
-                                'from_label': date_format(old_start, 'd.m.Y') if old_start else '—',
-                                'to_label': date_format(start_on, 'd.m.Y') if start_on else '—'})
+                                'from_label': datetime_label(old_start),
+                                'to_label': datetime_label(start_at)})
             if old_due != due_at:
                 task.due_at = due_at
                 task._activity_actor = request.user
                 task.save(update_fields=['due_at'])
                 changes.append({'field': 'termin wykonania',
-                                'from_label': date_format(timezone.localtime(old_due), 'd.m.Y H:i') if old_due else '—',
-                                'to_label': date_format(timezone.localtime(due_at), 'd.m.Y H:i') if due_at else '—'})
+                                'from_label': datetime_label(old_due),
+                                'to_label': datetime_label(due_at)})
             if changes:
                 item.task = task
                 record(item, request.user, 'updated', 'zmienił daty zadania na osi czasu', {
@@ -129,5 +133,5 @@ def update_dates(request, space_pk, key):
                 })
     except ValidationError as error:
         return error_response(' '.join(error.messages))
-    return JsonResponse({'saved': True, 'changed': bool(changes), 'start_on': item.start_on,
+    return JsonResponse({'saved': True, 'changed': bool(changes), 'start_at': item.start_at, 'start_on': local_date(item.start_at),
                          'end_on': local_end(task), 'due_at': task.due_at, 'due_urgency': task.due_urgency})

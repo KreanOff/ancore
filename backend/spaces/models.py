@@ -274,7 +274,7 @@ class WorkItem(models.Model):
     sprint = models.ForeignKey(Sprint, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
     epic = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='epic_items')
     points = models.PositiveIntegerField(null=True, blank=True)
-    start_on = models.DateField(null=True, blank=True)
+    start_at = models.DateTimeField(null=True, blank=True)
     custom_values = models.JSONField(default=dict, blank=True)
 
     def save(self, *args, **kwargs):

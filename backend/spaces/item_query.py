@@ -34,7 +34,7 @@ def order_items(request, items, view='list'):
                            for index, key in enumerate(('none', 'low', 'medium', 'high', 'urgent'))],
                          default=Value(0), output_field=IntegerField()),
         'due': F('task__due_at'), 'created': F('task__created_at'),
-        'start': F('start_on'), 'points': F('points'),
+        'start': F('start_at'), 'points': F('points'),
     }
     expression = expressions[sort['field']]
     order = expression.desc(nulls_last=True) if sort['direction'] == 'desc' else expression.asc(nulls_last=True)

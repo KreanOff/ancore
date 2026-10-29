@@ -6,7 +6,7 @@
             <tbody>{% for item in items %}<tr>
                 <td><a href="{{ item.url }}">{{ item.key }} · {{ item.task.title }}</a></td>
                 <td>{% if item.task.assignee %}{{ item.task.assignee.get_full_name|default:item.task.assignee.email }}{% else %}Nieprzypisane{% endif %}</td>
-                <td>{{ item.start_on|date:'d.m.Y'|default:'Nie ustawiono' }}</td>
+                <td>{{ item.start_at|date:'d.m.Y H:i'|default:'Nie ustawiono' }}</td>
                 <td>{{ item.task.due_at|date:'d.m.Y H:i'|default:'Nie ustawiono' }}</td>
                 <td>{% if item.editable %}<a class="tasks-filter-button" href="{{ item.edit_url }}" data-work-open aria-label="Zmień daty {{ item.key }}"><i data-icon="pencil" aria-hidden="true"></i></a>{% endif %}</td>
             </tr>{% endfor %}</tbody>

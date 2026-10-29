@@ -1,7 +1,8 @@
 from .testing import make_space
-from datetime import date
+from datetime import date, datetime
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.test import Client, TestCase
 
 from .models import SpaceTask, Space, SpaceMembership
@@ -360,9 +361,9 @@ class SpaceTests(TestCase):
 
     def test_edit_date_and_completed_sprint_are_preserved_in_form(self):
         sprint = Sprint.objects.create(space=self.space, name='Zamknięty', start_on=date(2026, 10, 1), end_on=date(2026, 10, 14), state='closed')
-        WorkItem.objects.filter(pk=self.item.pk).update(start_on=date(2026, 10, 3), sprint=sprint)
+        WorkItem.objects.filter(pk=self.item.pk).update(start_at=timezone.make_aware(datetime(2026, 10, 3)), sprint=sprint)
         response = self.client.get(self.url(f'items/{self.item.pk}/edit/'), HTTP_X_WORK_MODAL='true')
-        self.assertIn('value="2026-10-03"', response.json()['html'])
+        self.assertIn('value="2026-10-03T00:00"', response.json()['html'])
         self.assertIn('Zamknięty', response.json()['html'])
 
     def test_team_photo_is_private_and_cleans_up_on_rollback_and_delete(self):

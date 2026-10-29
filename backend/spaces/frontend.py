@@ -60,7 +60,8 @@ def item_payload(item):
         'assignee': {'label': task.assignee.get_full_name() or task.assignee.email, 'avatar': account_avatar(task.assignee)} if task.assignee else None,
         'team': item.team.name if item.team_id else '', 'tags_count': item.tags_count,
         'attachments_count': item.attachments_count, 'due_at': task.due_at, 'due_urgency': task.due_urgency,
-        'start_on': item.start_on,
+        'start_at': item.start_at,
+        'start_on': timezone.localtime(item.start_at).date() if item.start_at else None,
         'end_on': timezone.localtime(task.due_at).date() if task.due_at else None,
         'timeline': {key: getattr(item, 'timeline_' + key, None) for key in ('start', 'end', 'left', 'width')},
     }

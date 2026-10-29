@@ -39,6 +39,7 @@ export interface Item {
   attachments_count: number;
   due_at: string | null;
   due_urgency: string;
+  start_at: string | null;
   start_on: string | null;
   end_on?: string | null;
   update_dates_url?: string;

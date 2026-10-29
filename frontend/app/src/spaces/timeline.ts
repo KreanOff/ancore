@@ -59,6 +59,24 @@ export function dayLabel(day: number): string {
   });
 }
 
+/** Match Django's local datetime controls independently of the browser's timezone. */
+export function localDateTime(value: string | null | undefined): string {
+  if (!value) return '';
+  const timestamp = new Date(value);
+  if (!Number.isFinite(timestamp.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Warsaw',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(timestamp);
+  const part = (type: string) => parts.find((item) => item.type === type)!.value;
+  return `${part('year').padStart(4, '0')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
+}
+
 export function todayDay(timeZone = 'Europe/Warsaw'): number {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,

@@ -1,10 +1,11 @@
 """Task view loading through the real HTML and React page endpoints."""
-from datetime import date
+from datetime import date, datetime
 from html import unescape
 import re
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.test import TestCase
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
@@ -209,7 +210,7 @@ class ListWindowTests(TestCase):
         self.assertNotContains(response, 'work-pagination')
 
     def test_timeline_loads_all_visible_filtered_tasks_without_pagination(self):
-        WorkItem.objects.filter(space=self.space).update(start_on=date(2026, 10, 1))
+        WorkItem.objects.filter(space=self.space).update(start_at=timezone.make_aware(datetime(2026, 10, 1)))
         for scoped in (True, False):
             with self.subTest(scoped=scoped):
                 data = self.page(scoped=scoped, view='timeline', list_limit_new=120, page=2)

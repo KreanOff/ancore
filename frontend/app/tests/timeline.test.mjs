@@ -18,6 +18,7 @@ const {
   parseDay,
   dayKey,
   dayLabel,
+  localDateTime,
   timelineWindow,
   timelineHeaders,
   shiftAnchor,
@@ -28,6 +29,27 @@ const {
 } = module.exports;
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const range = (start, end = start) => ({ start: parseDay(start), end: parseDay(end) });
+
+test('datetime controls show Warsaw wall time across DST independently of the browser timezone', () => {
+  const previousZone = process.env.TZ;
+  try {
+    for (const zone of ['UTC', 'Europe/Warsaw', 'America/New_York', 'Pacific/Kiritimati']) {
+      process.env.TZ = zone;
+      for (const [timestamp, local] of [
+        ['2026-10-29T08:15:42.123Z', '2026-10-29T09:15'],
+        ['2026-07-29T07:15:00Z', '2026-07-29T09:15'],
+        ['2026-10-28T23:00:00Z', '2026-10-29T00:00'],
+        ['2026-03-29T01:15:00Z', '2026-03-29T03:15'],
+        ['2026-10-25T01:15:00Z', '2026-10-25T02:15'],
+      ])
+        assert.equal(localDateTime(timestamp), local, zone + ': ' + timestamp);
+    }
+    for (const value of [null, undefined, '', 'invalid']) assert.equal(localDateTime(value), '');
+  } finally {
+    if (previousZone === undefined) delete process.env.TZ;
+    else process.env.TZ = previousZone;
+  }
+});
 
 test('strict date parsing rejects impossible dates and timestamps without silently rolling over', () => {
   for (const value of [

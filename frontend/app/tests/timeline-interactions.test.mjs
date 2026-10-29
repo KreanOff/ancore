@@ -43,7 +43,9 @@ function dialog(tree) {
   );
 }
 function dateInputs(tree) {
-  return nodes(tree).filter((node) => node.type === 'input' && node.props.type === 'date');
+  return nodes(tree).filter(
+    (node) => node.type === 'input' && node.props.type === 'datetime-local',
+  );
 }
 function button(tree, label) {
   return nodes(tree).find((node) => node.type === 'button' && text(node) === label);
@@ -64,6 +66,7 @@ function item(overrides = {}) {
     url: base + 'tasks/PRO-7/?view=timeline',
     update_dates_url: base + 'tasks/PRO-7/dates/',
     action_url: base + 'tasks/PRO-7/action/',
+    start_at: '2026-10-20T07:15:00Z',
     start_on: '2026-10-20',
     end_on: '2026-10-23',
     due_at: '2026-10-23T14:37:12.987Z',
@@ -136,6 +139,7 @@ function harness(initialItem = item()) {
   };
   const context = {
     response: {
+      start_at: '2026-10-21T07:15:00Z',
       start_on: '2026-10-21',
       end_on: '2026-10-24',
       due_at: '2026-10-24T14:37:12.987Z',
@@ -267,7 +271,7 @@ test('keyboard scheduling sends only date fields and source snapshot to the dire
   assert.deepEqual(Object.fromEntries(sent.body), {
     start_on: '2026-10-21',
     end_on: '2026-10-24',
-    source_start_on: original.start_on,
+    source_start_at: original.start_at,
     source_due_at: original.due_at,
   });
   assert.equal(app.updates.length, 1);
@@ -304,8 +308,8 @@ test('date editor retains dirty values and server error, then retries the same s
   let editing = dialog(app.render()),
     form = app.renderDialog(editing.props);
   assert.equal(form.props.dirty, false);
-  dateInputs(form)[0].props.onChange({ target: { value: '2026-10-27' } });
-  dateInputs(form)[1].props.onChange({ target: { value: '2026-10-31' } });
+  dateInputs(form)[0].props.onChange({ target: { value: '2026-10-27T09:15' } });
+  dateInputs(form)[1].props.onChange({ target: { value: '2026-10-31T16:37' } });
   form = app.renderDialog(editing.props);
   assert.equal(form.props.dirty, true);
   app.context.status = 503;
@@ -320,13 +324,14 @@ test('date editor retains dirty values and server error, then retries the same s
   form = app.renderDialog(editing.props);
   assert.deepEqual(
     dateInputs(form).map((input) => input.props.value),
-    ['2026-10-27', '2026-10-31'],
+    ['2026-10-27T09:15', '2026-10-31T16:37'],
   );
   assert.equal(form.props.dirty, true);
   assert.equal(form.props.pending, false);
   assert.match(text(form), /Zapis jest chwilowo niedostępny/);
   app.context.status = 200;
   app.context.response = {
+    start_at: '2026-10-27T08:15:00Z',
     start_on: '2026-10-27',
     end_on: '2026-10-31',
     due_at: '2026-10-31T15:37:12.987Z',
@@ -336,6 +341,12 @@ test('date editor retains dirty values and server error, then retries the same s
     .props.onSubmit({ preventDefault() {} });
   await settle();
   assert.equal(app.requests.length, 2);
+  assert.deepEqual(Object.fromEntries(app.requests[0].body), {
+    start_at: '2026-10-27T09:15',
+    due_at: '2026-10-31T16:37',
+    source_start_at: item().start_at,
+    source_due_at: item().due_at,
+  });
   assert.deepEqual(
     Object.fromEntries(app.requests[1].body),
     Object.fromEntries(app.requests[0].body),
@@ -356,7 +367,11 @@ test('date editor validates the interval, clears dates, and exposes pending stat
     onSave: async (...values) => saves.push(values),
   };
   let tree = app.renderDialog(props);
-  dateInputs(tree)[0].props.onChange({ target: { value: '2026-10-25' } });
+  assert.deepEqual(
+    dateInputs(tree).map((input) => input.props.value),
+    ['2026-10-20T09:15', '2026-10-23T16:37'],
+  );
+  dateInputs(tree)[0].props.onChange({ target: { value: '2026-10-23T17:00' } });
   tree = app.renderDialog(props);
   assert.equal(button(tree, 'Zapisz daty').props.disabled, true);
   assert.match(text(tree), /nie może być wcześniejszy/);
@@ -364,6 +379,14 @@ test('date editor validates the interval, clears dates, and exposes pending stat
     .find((node) => node.type === 'form')
     .props.onSubmit({ preventDefault() {} });
   assert.deepEqual(saves, []);
+  dateInputs(tree)[0].props.onChange({ target: { value: '2026-10-23T09:15' } });
+  tree = app.renderDialog(props);
+  assert.equal(button(tree, 'Zapisz daty').props.disabled, false);
+  nodes(tree)
+    .find((node) => node.type === 'form')
+    .props.onSubmit({ preventDefault() {} });
+  assert.deepEqual(saves, [['2026-10-23T09:15', '2026-10-23T16:37']]);
+  saves.length = 0;
   button(tree, 'Usuń daty').props.onClick();
   tree = app.renderDialog(props);
   assert.deepEqual(
@@ -494,7 +517,7 @@ test('drag accounts for CSS zoom and calendar scrolling before persisting days',
 
 test('moving a partial schedule preserves the date that was deliberately left empty', async () => {
   for (const [source, expected] of [
-    [item({ start_on: null }), { start_on: '', end_on: '2026-10-24' }],
+    [item({ start_on: null, start_at: null }), { start_on: '', end_on: '2026-10-24' }],
     [item({ end_on: null, due_at: null }), { start_on: '2026-10-21', end_on: '' }],
   ]) {
     const app = harness(source);
@@ -502,7 +525,7 @@ test('moving a partial schedule preserves the date that was deliberately left em
     await settle();
     assert.equal(app.requests[0].body.get('start_on'), expected.start_on);
     assert.equal(app.requests[0].body.get('end_on'), expected.end_on);
-    assert.equal(app.requests[0].body.get('source_start_on'), source.start_on || '');
+    assert.equal(app.requests[0].body.get('source_start_at'), source.start_at || '');
     assert.equal(app.requests[0].body.get('source_due_at'), source.due_at || '');
     app.destroy();
   }

@@ -22,10 +22,10 @@
             <span data-space-task-save-message>{{ error }}{{ form.non_field_errors }}</span>
             {% if can_edit_task %}<button type="submit" form="space-task-form" class="btn btn-secondary" data-space-task-retry{% if not error %} hidden{% endif %}>Spróbuj ponownie</button>{% endif %}
         </div>
-        {% if planning_has_errors %}<div class="tasks-modal__errors" role="alert">{% for field in form %}{% if field.errors and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'visibility' and field.name != 'assignee' and field.name != 'due_at' %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>{% endif %}
+        {% if planning_has_errors %}<div class="tasks-modal__errors" role="alert">{% for field in form %}{% if field.errors and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'visibility' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>{% endif %}
         <form id="space-task-form" method="post" enctype="multipart/form-data"{% if can_edit_task %} data-space-task-autosave{% endif %}>
             {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="task_pk" value="{{ task.pk }}">
-            {% for field in form %}{% if not field.errors and field.name != 'visibility' and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'assignee' and field.name != 'due_at' %}{{ field.as_hidden }}{% endif %}{% endfor %}
+            {% for field in form %}{% if not field.errors and field.name != 'visibility' and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}{{ field.as_hidden }}{% endif %}{% endfor %}
             {% if can_edit_task %}<noscript><button type="submit" class="tasks-issue-save">Zapisz</button></noscript>{% endif %}
         </form>
         <div class="tasks-issue-main" data-space-task-team data-task-team-url="{{ team_url }}">
@@ -108,7 +108,8 @@
                 <section class="tasks-issue-side-section">
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label">Utworzono</span><strong>{{ task.created_at|date:'d.m.Y, H:i' }}</strong></div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label">Zamknięto</span><strong class="tasks-issue-muted" data-space-task-completion-date>{{ task.completion_date|date:'d.m.Y, H:i'|default:'Nie zamknięto' }}</strong></div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_due_at">Termin wykonania</label></span><div class="tasks-issue-due-control"><span class="tasks-row-date tasks-row-due" title="Termin wykonania"><i data-icon="flame" aria-hidden="true"></i></span>{{ form.due_at }}{{ form.due_at.errors }}</div></div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.start_at.id_for_label }}">{{ form.start_at.label }}</label></span>{{ form.start_at }}{{ form.start_at.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.due_at.id_for_label }}">{{ form.due_at.label }}</label></span><div class="tasks-issue-due-control"><span class="tasks-row-date tasks-row-due" title="{{ form.due_at.label }}"><i data-icon="flame" aria-hidden="true"></i></span>{{ form.due_at }}{{ form.due_at.errors }}</div></div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_reminder_at">Przypomnienie</label></span>{{ form.reminder_at }}{{ form.reminder_at.errors }}</div>
                 </section>
 

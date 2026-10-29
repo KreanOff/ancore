@@ -17,6 +17,7 @@ from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, visible_items, visible_spaces
+from .schedule import ScheduleDateTimeField, validate_range
 from .widgets import IssueTypeSelect, TaskVisibilitySelect, TeamSelect
 
 
@@ -148,15 +149,15 @@ class ItemForm(StyledForm):
     sprint = forms.ModelChoiceField(label='Sprint', queryset=Sprint.objects.none(), required=False)
     epic = forms.ModelChoiceField(label='Epik', queryset=WorkItem.objects.none(), required=False)
     points = forms.IntegerField(label='Estymacja (punkty)', min_value=0, max_value=10000, required=False)
-    start_on = forms.DateField(label='Planowane rozpoczęcie', required=False, widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}))
+    start_at = ScheduleDateTimeField(label='Data rozpoczęcia', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
     task_type = forms.ChoiceField(label='Kategoria zadania', choices=SpaceTask.TASK_TYPE_CHOICES, required=False, initial='general')
     reminder_at = forms.DateTimeField(label='Przypomnienie', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'title': 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela zadania lub przestrzeni.'}))
-    due_at = forms.DateTimeField(label='Termin wykonania', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
+    due_at = ScheduleDateTimeField(label='Termin zakończenia', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
 
     def __init__(self, *args, request, space, item=None, **kwargs):
         self.request, self.space, self.item = request, space, item
         if item:
-            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_on')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at')}}
+            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at')}}
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
         from tasks.tagging import tags_in_scope
@@ -194,13 +195,15 @@ class ItemForm(StyledForm):
             self.add_error('epic', 'Epik nie może należeć do innego epika.')
         if self.item and self.item.epic_items.exists() and data.get('work_type') != 'epic':
             self.add_error('work_type', 'Najpierw odłącz zadania należące do tego epika.')
-        if data.get('start_on') and data.get('due_at') and data['start_on'] > timezone.localtime(data['due_at']).date():
-            self.add_error('due_at', 'Termin nie może być wcześniejszy niż rozpoczęcie.')
+        try:
+            validate_range(data.get('start_at'), data.get('due_at'))
+        except ValidationError as error:
+            self.add_error('due_at', error)
         return data
 
 
 class DetailForm(ItemForm):
-    """Issue properties with the existing planning values submitted unchanged."""
+    """Issue properties and schedule with unchanged planning values preserved."""
     visibility = forms.ChoiceField(label='Widoczność', required=False, choices=[('private', 'Prywatne — wybrane osoby'), ('public', 'Publiczne — dostęp odziedziczony')], widget=TaskVisibilitySelect)
 
     def __init__(self, *args, changed_fields=None, **kwargs):

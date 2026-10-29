@@ -14,10 +14,11 @@ import { errorMessage, request } from '../shared/api';
 import { navigate } from '../shared/page';
 import { ItemToolbar } from './ItemToolbar';
 import { TimelineItemRow } from './Item';
-import type { DetailData, Item } from './types';
+import { dateLabel, type DetailData, type Item } from './types';
 import {
   dayKey,
   dayLabel,
+  localDateTime,
   parseDay,
   shiftTask,
   taskGeometry,
@@ -97,9 +98,7 @@ function itemRange(item: Item): DayRange | null {
   return { start: start ?? end!, end: Math.max(start ?? end!, end ?? start!) };
 }
 function dateSummary(item: Item) {
-  const start = parseDay(item.start_on),
-    end = parseDay(item.end_on ?? null);
-  return `${start === null ? 'Bez początku' : dayLabel(start)} → ${end === null ? 'Bez terminu' : dayLabel(end)}`;
+  return `${dateLabel(item.start_at, true) || 'Bez początku'} → ${dateLabel(item.due_at, true) || 'Bez terminu'}`;
 }
 function movedDates(item: Item, range: DayRange, mode: 'move' | 'start' | 'end') {
   return [
@@ -218,7 +217,12 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
       ),
     );
   }
-  async function save(item: Item, start: string, end: string): Promise<boolean> {
+  async function save(
+    item: Item,
+    start: string,
+    end: string,
+    mode: 'days' | 'time' = 'days',
+  ): Promise<boolean> {
     if (pending.current || busy || !item.editable || !item.update_dates_url) return false;
     pending.current = true;
     setSaving(item.id);
@@ -226,6 +230,7 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
     setNotice(`Zapisuję daty ${item.key}.`);
     try {
       const result = await request<{
+        start_at: string | null;
         start_on: string | null;
         end_on: string | null;
         due_at: string | null;
@@ -234,9 +239,10 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body: new URLSearchParams({
-          start_on: start,
-          end_on: end,
-          source_start_on: item.start_on || '',
+          ...(mode === 'time'
+            ? { start_at: start, due_at: end }
+            : { start_on: start, end_on: end }),
+          source_start_at: item.start_at || '',
           source_due_at: item.due_at || '',
         }),
       });
@@ -612,7 +618,7 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
           error={error}
           onClose={() => setEditing(null)}
           onSave={async (start, end) => {
-            if (await save(editing, start, end)) setEditing(null);
+            if (await save(editing, start, end, 'time')) setEditing(null);
           }}
         />
       ) : null}
@@ -633,12 +639,14 @@ function DatesDialog({
   onClose: () => void;
   onSave: (start: string, end: string) => Promise<void>;
 }) {
-  const [start, setStart] = useState(item.start_on || '');
-  const [end, setEnd] = useState(item.end_on || '');
+  const initialStart = localDateTime(item.start_at);
+  const initialEnd = localDateTime(item.due_at);
+  const [start, setStart] = useState(initialStart);
+  const [end, setEnd] = useState(initialEnd);
   const invalid = !!start && !!end && start > end;
-  const dirty = start !== (item.start_on || '') || end !== (item.end_on || '');
-  const startDay = parseDay(start),
-    endDay = parseDay(end);
+  const dirty = start !== initialStart || end !== initialEnd;
+  const startDay = parseDay(start.slice(0, 10)),
+    endDay = parseDay(end.slice(0, 10));
   return (
     <Modal
       title={`Daty zadania ${item.key}`}
@@ -665,7 +673,7 @@ function DatesDialog({
             <label className="documents-field tasks-form-field">
               Data rozpoczęcia
               <input
-                type="date"
+                type="datetime-local"
                 className="form-input"
                 value={start}
                 max={end || undefined}
@@ -676,7 +684,7 @@ function DatesDialog({
             <label className="documents-field tasks-form-field">
               Termin zakończenia
               <input
-                type="date"
+                type="datetime-local"
                 className="form-input"
                 value={end}
                 min={start || undefined}
@@ -690,7 +698,7 @@ function DatesDialog({
           ) : (
             <p className="work-caption">
               {startDay !== null && endDay !== null
-                ? `Czas trwania: ${endDay - startDay + 1} dni (z dniem rozpoczęcia i zakończenia).`
+                ? `Zakres na osi: ${endDay - startDay + 1} ${endDay === startDay ? 'dzień' : 'dni'} (z dniem rozpoczęcia i zakończenia).`
                 : 'Możesz podać jedną datę lub obie. Brak dat oznacza zadanie niezaplanowane.'}
             </p>
           )}

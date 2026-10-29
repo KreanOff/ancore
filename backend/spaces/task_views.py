@@ -66,6 +66,7 @@ def property_snapshot(task, item):
     assignee = task.assignee
     return {'tytuł': task.title, 'opis': task.description, 'priorytet': task.get_priority_display(),
             'kategoria zadania': task.get_task_type_display(), 'przypisane do': (assignee.get_full_name() or assignee.email or assignee.username) if assignee else '—',
+            'planowane rozpoczęcie': datetime_label(item.start_at),
             'termin wykonania': datetime_label(task.due_at), 'przypomnienie': datetime_label(task.reminder_at),
             'widoczność': 'Prywatne' if task.visibility == 'private' else 'Publiczne',
             'typ zgłoszenia': item.get_work_type_display(), 'tagi': ', '.join(task.tags.values_list('name', flat=True))}
@@ -89,8 +90,10 @@ def detail_post_data(request, current_form):
         raise ValidationError('Nieprawidłowe pola zapisu zadania.')
     for name, field in current_form.fields.items():
         if name not in fields:
-            value = field.prepare_value(current_form.initial.get(name, field.initial))
-            value = value.isoformat() if isinstance(value, datetime) else field.widget.format_value(value)
+            value = current_form.initial.get(name, field.initial)
+            # Preserve the exact instant (including its offset during a repeated
+            # DST hour) when autosave did not edit this datetime.
+            value = value.isoformat() if isinstance(value, datetime) else field.widget.format_value(field.prepare_value(value))
             posted.setlist(name, value if isinstance(value, list) else [value] if value is not None else [])
     if 'status' not in fields:
         posted['status'] = current_form.item.status
@@ -162,7 +165,7 @@ def detail(request, space_pk, key):
                         data = form.cleaned_data
                         old = property_snapshot(task, item)
                         old_relations_dates = (task.assignee_id, task.due_at, task.reminder_at)
-                        planning_fields = ('work_type', 'team_id', 'sprint_id', 'epic_id', 'points', 'start_on', 'in_backlog', 'custom_values')
+                        planning_fields = ('work_type', 'team_id', 'sprint_id', 'epic_id', 'points', 'start_at', 'in_backlog', 'custom_values')
                         old_planning = [getattr(item, name) for name in planning_fields]
                         previous = {'title': task.title, 'priority': task.priority, 'work_type': item.work_type}
                         target = form.data.get('status', item.status)
@@ -180,7 +183,7 @@ def detail(request, space_pk, key):
                         if 'tags' in changed_fields:
                             task.tags.set(data['tags'])
                         item.refresh_from_db()
-                        for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_on', 'in_backlog'):
+                        for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
                             if name in data and (name in changed_fields or name == 'in_backlog' and 'sprint' in changed_fields):
                                 setattr(item, name, data[name])
                         custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else ''
@@ -339,7 +342,7 @@ def detail(request, space_pk, key):
         child.status_label = next((status['label'] for status in space.statuses if status['key'] == child.status), child.status)
     context['subtask_status_groups'] = [{'status': status['category'], 'label': status['label'], 'tasks': [child for child in children if child.status == status['key']]} for status in space.statuses]
     context['subtask_count'] = len(children)
-    context['planning_has_errors'] = any(field.errors for field in form if field.name not in {'title', 'description', 'priority', 'tags', 'work_type', 'assignee', 'due_at', 'task_type', 'reminder_at', 'visibility'})
+    context['planning_has_errors'] = any(field.errors for field in form if field.name not in {'title', 'description', 'priority', 'tags', 'work_type', 'assignee', 'start_at', 'due_at', 'task_type', 'reminder_at', 'visibility'})
     context.update(mention_people=mention_choices(task), comment_placeholder='Napisz komentarz; wpisz @ i imię osoby...', comment_image_limit=MAX_COMMENT_ATTACHMENTS,
                    comment_image_max_size=DEFAULT_ATTACHMENT_MAX_SIZE, comment_attachment_accept=','.join(sorted(ATTACHMENT_ALLOWED_EXTENSIONS)),
                    comment_draft=request.POST.get('message') or request.POST.get('activity_comment', ''))

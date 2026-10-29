@@ -143,12 +143,12 @@ class SpaceWriteAccessRaceTests(TransactionTestCase):
         from .timeline import update_dates
         item = self.task.work_item
         request = self.request('dates/', {'start_on': '2026-10-28', 'end_on': '2026-10-29',
-                                          'source_start_on': '', 'source_due_at': ''})
+                                          'source_start_at': '', 'source_due_at': ''})
         with self.changed_access_before_lock(), self.assertRaises(PermissionDenied):
             update_dates(request, self.project.slug, item.key)
         item.refresh_from_db()
         self.task.refresh_from_db()
-        self.assertIsNone(item.start_on)
+        self.assertIsNone(item.start_at)
         self.assertIsNone(self.task.due_at)
         self.assertEqual(self.task.activities.count(), 1)
 
@@ -156,12 +156,12 @@ class SpaceWriteAccessRaceTests(TransactionTestCase):
         from .timeline import update_dates
         item = self.task.work_item
         request = self.request('dates/', {'start_on': '2026-10-28', 'end_on': '2026-10-29',
-                                          'source_start_on': '', 'source_due_at': ''})
+                                          'source_start_at': '', 'source_due_at': ''})
         with self.changed_access_before_lock(remove_workspace=True), self.assertRaises(PermissionDenied):
             update_dates(request, self.project.slug, item.key)
         item.refresh_from_db()
         self.task.refresh_from_db()
-        self.assertIsNone(item.start_on)
+        self.assertIsNone(item.start_at)
         self.assertIsNone(self.task.due_at)
         self.assertEqual(self.task.activities.count(), 1)
 
