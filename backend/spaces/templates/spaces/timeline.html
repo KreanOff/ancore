@@ -1,4 +1,4 @@
-<section class="work-panel" aria-label="Oś czasu">
+<section class="work-panel work-timeline-results" aria-label="Oś czasu">
     {% if items %}
     <div class="table-container">
         <table class="data-table">
@@ -12,6 +12,7 @@
             </tr>{% endfor %}</tbody>
         </table>
     </div>
+    {% include 'spaces/load_more.html' with more_url=timeline.more_url loaded_count=timeline.loaded_count count=timeline.count label='Oś czasu' only %}
     {% else %}
     <div class="tasks-empty-state tasks-empty-state--illustrated" role="status"><span class="tasks-empty-state__illustration tasks-empty-state__illustration--work" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>Brak zadań na osi czasu</h2><p>{% if query or item_filter_count %}Zmień lub wyczyść filtry, aby zobaczyć inne wyniki.{% else %}Utwórz zadanie, aby rozpocząć planowanie.{% endif %}</p></div></div>
     {% endif %}

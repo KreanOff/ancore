@@ -39,6 +39,25 @@ const require = createRequire(import.meta.url);
 const path = '/workplaces/w_0123456789abcdefghijklmnop/space/produkt/';
 const initialUrl = path + '?view=list&assignee=me&sort=title_asc';
 const backlogUrl = path + '?view=backlog&assignee=me&sort=title_asc';
+const timelineUrl = path + '?view=timeline&assignee=me&sort=title_asc';
+
+function timelineData(loaded = 20, count = 45) {
+  return {
+    ...data(loaded, count),
+    view: 'timeline',
+    items: data(loaded, count).items.slice(0, loaded),
+    timeline: {
+      count,
+      loaded_count: loaded,
+      more_url:
+        loaded < count ? timelineUrl + '&timeline_limit=' + Math.min(loaded + 20, count) : '',
+    },
+  };
+}
+
+function timelineColumn(snapshot) {
+  return { ...snapshot.timeline, key: 'timeline', label: 'Oś czasu' };
+}
 
 function execute(code, context) {
   const module = { exports: {} };
@@ -217,6 +236,40 @@ function harness(initialData = data(), url = initialUrl) {
   }
   return { context, requests, locations, ...execute(detailCallbacks, context) };
 }
+
+test('timeline loads 20, 40, then the remaining tasks with an accurate completion announcement', async () => {
+  const app = harness(timelineData(), timelineUrl);
+  for (const loaded of [40, 45]) {
+    app.context.nextData = timelineData(loaded);
+    await app.loadMore(timelineColumn(app.context.data));
+    assert.equal(app.context.data.items.length, loaded);
+    assert.equal(app.context.notice, `Oś czasu: wczytano ${loaded} z 45 zadań.`);
+    assert.equal(new Set(app.context.data.items.map((item) => item.id)).size, loaded);
+    assert.equal(app.context.currentUrl.current, timelineUrl + '&timeline_limit=' + loaded);
+  }
+  await app.loadMore(timelineColumn(app.context.data));
+  assert.equal(app.requests.length, 2);
+});
+
+test('a failed timeline load preserves rows and URL, then retries the same batch', async () => {
+  const previous = timelineData(),
+    app = harness(previous, timelineUrl),
+    column = timelineColumn(previous);
+  app.context.fail = true;
+  await app.loadMore(column);
+  assert.equal(app.context.data, previous);
+  assert.equal(app.context.currentUrl.current, timelineUrl);
+  assert.equal(app.context.listError.key, 'timeline');
+  app.context.fail = false;
+  app.context.nextData = timelineData(40);
+  await app.loadMore(column);
+  assert.deepEqual(
+    app.requests.map((request) => request.url),
+    [column.more_url, column.more_url],
+  );
+  assert.equal(app.context.listError, null);
+  assert.equal(app.context.data.items.length, 40);
+});
 
 test('loading a status preserves its existing rows, full total and other status windows', async () => {
   const app = harness(),
@@ -504,14 +557,14 @@ for (const invalid of ['list', 'space', 'type']) {
   });
 }
 
-for (const view of ['list', 'backlog']) {
+for (const view of ['list', 'backlog', 'timeline']) {
   for (const values of [{ priority: 'high' }, { sort: 'title_desc' }, { status: '' }]) {
     test(`changing ${Object.keys(values)[0]} in ${view} resets all group windows and retains the scoped context`, () => {
       const navigations = [],
         { changeQuery } = execute(queryCallbacks, { navigate: (url) => navigations.push(url) });
       changeQuery(
-        (view === 'list' ? initialUrl : backlogUrl) +
-          '&status=new&page=3&list_limit_new=60&list_limit_review=40&backlog_limit_backlog=60&backlog_limit_sprint_5=40&other=keep',
+        (view === 'list' ? initialUrl : view === 'backlog' ? backlogUrl : timelineUrl) +
+          '&status=new&page=3&list_limit_new=60&list_limit_review=40&backlog_limit_backlog=60&backlog_limit_sprint_5=40&timeline_limit=60&other=keep',
         values,
       );
       assert.equal(navigations.length, 1);
@@ -521,6 +574,7 @@ for (const view of ['list', 'backlog']) {
       assert.equal(target.searchParams.get('assignee'), 'me');
       assert.equal(target.searchParams.get('other'), 'keep');
       assert.equal(target.searchParams.has('page'), false);
+      assert.equal(target.searchParams.has('timeline_limit'), false);
       assert.equal(
         [...target.searchParams.keys()].some(
           (key) => key.startsWith('list_limit_') || key.startsWith('backlog_limit_'),
@@ -550,6 +604,7 @@ function renderDetail(initialData, url = initialUrl) {
     Avatar: 'Avatar',
     Icon: 'Icon',
     ItemToolbar: 'ItemToolbar',
+    Timeline: 'Timeline',
     StatusGroup: 'StatusGroup',
     ItemRow: 'ItemRow',
     EmptyState: 'EmptyState',
@@ -558,6 +613,26 @@ function renderDetail(initialData, url = initialUrl) {
   });
   return DetailPage({ initial: { data: initialData, url }, csrfToken: 'token' });
 }
+
+test('timeline reuses the list control and blocks loading while dates are being saved', () => {
+  const tree = nodes(renderDetail(timelineData(20, 21), timelineUrl)),
+    timeline = tree.find((node) => node.type === 'Timeline');
+  const more = (locked) =>
+    nodes(timeline.props.moreControl(locked)).find((node) => node.type === 'button');
+  assert.equal(more(false).props['aria-label'], 'Pokaż więcej: Oś czasu (20 / 21)');
+  assert.equal(more(false).props['aria-disabled'], false);
+  assert.equal(more(true).props['aria-disabled'], true);
+  more(true).props.onClick();
+  const complete = nodes(renderDetail(timelineData(21, 21), timelineUrl)).find(
+    (node) => node.type === 'Timeline',
+  );
+  assert.equal(
+    nodes(complete.props.moreControl(false)).find((node) => node.type === 'button').props[
+      'aria-label'
+    ],
+    'Wszystkie zadania: Oś czasu (21 / 21)',
+  );
+});
 
 test('list groups show the full total, a 20 / 21 loading control and no global pagination', () => {
   const tree = nodes(renderDetail(data(20, 21))),

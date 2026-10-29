@@ -37,7 +37,7 @@ from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 from .item_query import item_sort, order_items
-from .list_window import list_url, list_window, more_url
+from .list_window import group_limit, list_url, list_window, more_url, timeline_more_url
 
 
 def space_object(request, pk):
@@ -226,7 +226,7 @@ def detail_context(request, space, view):
     items, summary_filters = filtered_space_items(request, space, items, now)
     item_query_params = request.GET.copy()
     for key in list(item_query_params):
-        if key.startswith(('list_limit_', 'backlog_limit_')):
+        if key == 'timeline_limit' or key.startswith(('list_limit_', 'backlog_limit_')):
             item_query_params.pop(key)
     filter_context = {
         **summary_filters, 'query': query, 'assignee_options': assignee_options,
@@ -255,7 +255,11 @@ def detail_context(request, space, view):
     if view == 'list':
         page = None
         rows = decorate_items(request, list_window(request, space, items, column_counts))
-    elif view in {'board', 'timeline'}:
+    elif view == 'timeline':
+        page = None
+        timeline_count = sum(column_counts.values())
+        rows = decorate_items(request, items[:group_limit(request, 'timeline_limit', timeline_count)])
+    elif view == 'board':
         page = None
         rows = decorate_items(request, items)
     elif view == 'backlog':
@@ -275,7 +279,9 @@ def detail_context(request, space, view):
                 dates.extend([item.timeline_start, item.timeline_end])
         start, end = (min(dates), max(dates)) if dates else (timezone.localdate(), timezone.localdate() + timedelta(days=27))
         duration = min(max((end - start).days + 1, 7), (date.max - start).days + 1)
-        timeline = {'start': start, 'end': start + timedelta(days=duration - 1), 'today': timezone.localdate()}
+        timeline = {'start': start, 'end': start + timedelta(days=duration - 1), 'today': timezone.localdate(),
+                    'count': timeline_count, 'loaded_count': len(rows),
+                    'more_url': timeline_more_url(request, space, len(rows), timeline_count)}
         for item in rows:
             if not item.timeline_start:
                 continue

@@ -87,7 +87,7 @@ class TimelineTests(TestCase):
         self.assertEqual(self.page(status='closed')['items'], [])
         self.assertIsNone(self.page(status='closed')['pagination'])
 
-    def test_all_unscheduled_tasks_are_loaded_and_old_page_parameter_is_ignored(self):
+    def test_unscheduled_tasks_are_available_in_incremental_window_and_old_page_is_ignored(self):
         tasks = SpaceTask.objects.bulk_create([
             SpaceTask(created_by=self.owner, space=self.space, title=f'Bez dat {index:03}') for index in range(101)
         ])
@@ -98,8 +98,14 @@ class TimelineTests(TestCase):
         first, second = self.page(), self.page(page=2)
         self.assertIsNone(first['pagination'])
         self.assertIsNone(second['pagination'])
-        self.assertEqual((len(first['items']), len(second['items'])), (103, 103))
+        self.assertEqual((len(first['items']), len(second['items'])), (20, 20))
+        self.assertEqual((first['timeline']['loaded_count'], first['timeline']['count']), (20, 103))
         self.assertEqual([row['id'] for row in first['items']], [row['id'] for row in second['items']])
+        expanded = self.page(timeline_limit=103)
+        self.assertEqual(len(expanded['items']), 103)
+        self.assertEqual(expanded['timeline']['more_url'], '')
+        self.assertEqual({row['task_id'] for row in expanded['items']},
+                         {self.task.pk, self.unscheduled.pk, *(task.pk for task in tasks)})
 
     def test_move_preserves_local_clock_across_dst_and_records_actual_actor(self):
         original = (self.task.title, self.task.status, self.task.is_completed, self.task.completion_date,

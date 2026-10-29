@@ -1,6 +1,7 @@
 import {
   type CSSProperties,
   type PointerEvent,
+  type ReactNode,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -111,6 +112,7 @@ interface Props {
   url: string;
   csrfToken: string;
   busy: boolean;
+  moreControl: (locked: boolean) => ReactNode;
   onUpdate: (item: Item) => void;
 }
 interface Gesture {
@@ -125,7 +127,7 @@ interface Gesture {
   pointerId: number;
   element: HTMLElement;
 }
-export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props) {
+export default function Timeline({ data, url, csrfToken, busy, moreControl, onUpdate }: Props) {
   const [scale, setScale] = useState<TimelineScale>('weeks');
   const [anchor, setAnchor] = useState(() => {
     const dates = data.items.flatMap((item) => {
@@ -353,6 +355,7 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
             const next = new URL(url, location.origin);
             query.trim() ? next.searchParams.set('q', query.trim()) : next.searchParams.delete('q');
             next.searchParams.delete('page');
+            next.searchParams.delete('timeline_limit');
             navigate(next.pathname + next.search);
           }}
         >
@@ -422,7 +425,7 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
       </span>
       {data.items.length ? (
         <div
-          className="work-timeline-viewport"
+          className="work-timeline-viewport work-timeline-results"
           ref={viewport}
           tabIndex={0}
           aria-label="Tabela zadań i przewijany kalendarz"
@@ -598,6 +601,7 @@ export default function Timeline({ data, url, csrfToken, busy, onUpdate }: Props
               })}
             </tbody>
           </table>
+          {moreControl(locked)}
         </div>
       ) : (
         <EmptyState

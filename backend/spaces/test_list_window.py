@@ -209,13 +209,14 @@ class ListWindowTests(TestCase):
         response = self.client.get(self.url(view='board', page=2, q='Brak takiego zadania'))
         self.assertNotContains(response, 'work-pagination')
 
-    def test_timeline_loads_all_visible_filtered_tasks_without_pagination(self):
+    def test_timeline_loads_twenty_visible_tasks_with_full_counts_and_no_page_numbers(self):
         WorkItem.objects.filter(space=self.space).update(start_at=timezone.make_aware(datetime(2026, 10, 1)))
         for scoped in (True, False):
             with self.subTest(scoped=scoped):
                 data = self.page(scoped=scoped, view='timeline', list_limit_new=120, page=2)
                 self.assertIsNone(data['pagination'])
-                self.assertEqual(len(data['items']), 163)
+                self.assertEqual(len(data['items']), 20)
+                self.assertEqual((data['timeline']['loaded_count'], data['timeline']['count']), (20, 163))
                 self.assertEqual(data['stats']['all'], 163)
                 self.assertTrue(all('more_url' not in column for column in data['columns']))
                 task_ids = [item['task_id'] for item in data['items']]
@@ -224,14 +225,88 @@ class ListWindowTests(TestCase):
                 initial = self.page(scoped=scoped, view='timeline')
                 self.assertEqual([item['task_id'] for item in initial['items']], task_ids)
                 filtered = self.page(scoped=scoped, view='timeline', page=2, q='Praca new', sort='title_desc')
-                self.assertEqual([item['task_id'] for item in filtered['items']], [task.pk for task in reversed(self.tasks['new'])])
+                self.assertEqual([item['task_id'] for item in filtered['items']], [task.pk for task in reversed(self.tasks['new'])][:20])
+                self.assertEqual((filtered['timeline']['loaded_count'], filtered['timeline']['count']), (20, 121))
                 self.assertEqual(self.columns(filtered)['new']['count'], 121)
                 self.assertIsNone(filtered['pagination'])
                 response = self.client.get(self.url(scoped, view='timeline', page=2), follow=True)
                 self.assertIsNone(response.context['page'])
-                self.assertEqual(len(response.context['items']), 163)
+                self.assertEqual(len(response.context['items']), 20)
+                self.assertContains(response, 'Pokaż więcej: Oś czasu (20 / 163)')
                 self.assertNotContains(response, 'work-pagination')
                 self.assertNotContains(response, 'work-timeline-footer')
+
+    def test_timeline_show_more_keeps_order_filters_and_reaches_every_task(self):
+        expected = [task.pk for task in reversed(self.tasks['new'])]
+        for scoped in (True, False):
+            with self.subTest(scoped=scoped):
+                data = self.page(scoped=scoped, view='timeline', q='Praca new', sort='title_desc', page=99)
+                for loaded in (20, 40, 60, 80, 100, 120, 121):
+                    self.assertEqual([item['task_id'] for item in data['items']], expected[:loaded])
+                    self.assertEqual(data['timeline']['loaded_count'], loaded)
+                    self.assertEqual(data['timeline']['count'], 121)
+                    target = data['timeline']['more_url']
+                    if loaded == 121:
+                        self.assertEqual(target, '')
+                    else:
+                        self.assertEqual(urlsplit(target).path, urlsplit(data['space']['url']).path)
+                        self.assertEqual(parse_qs(urlsplit(target).query), {
+                            'view': ['timeline'], 'q': ['Praca new'], 'sort': ['title_desc'],
+                            'timeline_limit': [str(min(loaded + 20, 121))],
+                        })
+                        data = self.page(target, scoped=scoped)
+
+    def test_timeline_html_show_more_and_small_empty_and_complete_results(self):
+        response = self.client.get(self.url(view='timeline', q='Praca in_progress'))
+        target = response.context['timeline']['more_url']
+        self.assertContains(response, 'Pokaż więcej: Oś czasu (20 / 21)')
+        response = self.client.get(target)
+        self.assertEqual(len(response.context['items']), 21)
+        self.assertEqual(response.context['timeline']['more_url'], '')
+        self.assertContains(response, 'Wszystkie zadania')
+        self.assertContains(response, '(21 / 21)')
+        for query, count in [('Praca resolved', 20), ('Brak takiego zadania', 0)]:
+            with self.subTest(query=query):
+                data = self.page(view='timeline', q=query, timeline_limit=100)
+                self.assertEqual((data['timeline']['loaded_count'], data['timeline']['count']), (count, count))
+                self.assertEqual(data['timeline']['more_url'], '')
+                self.assertEqual(len(data['items']), count)
+                response = self.client.get(self.url(view='timeline', q=query, timeline_limit=100))
+                self.assertNotContains(response, 'work-list-more')
+                self.assertNotContains(response, 'work-pagination')
+
+    def test_timeline_limits_are_bounded_and_next_load_rechecks_access(self):
+        for limit, expected in [('-1', 20), ('９９', 20), ('9' * 200, 163)]:
+            with self.subTest(limit=limit):
+                data = self.page(view='timeline', timeline_limit=limit)
+                self.assertEqual(len(data['items']), expected)
+                self.assertFalse(self.hidden_ids.intersection(item['task_id'] for item in data['items']))
+                self.assertNotIn(self.foreign.pk, [item['task_id'] for item in data['items']])
+        data = self.page(view='timeline', sort='number_asc')
+        target = data['timeline']['more_url']
+        task = self.tasks['new'][0]
+        task.visibility, task.private_owner = 'private', self.owner
+        task.save(update_fields=['visibility', 'private_owner'])
+        data = self.page(target)
+        self.assertEqual((data['timeline']['loaded_count'], data['timeline']['count']), (40, 162))
+        self.assertEqual([item['task_id'] for item in data['items']], [task.pk for task in self.tasks['new'][1:41]])
+        SpaceMembership.objects.filter(space=self.space, user=self.member).delete()
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        self.assertEqual(self.client.get(api, {'url': target}).status_code, 404)
+
+    def test_timeline_html_sort_and_filter_links_restart_at_twenty(self):
+        response = self.client.get(self.url(view='timeline', timeline_limit=60,
+                                           sort='title_desc', priority='high', q='Praca'))
+        for label in ('Tytuł · rosnąco', 'Wyczyść'):
+            with self.subTest(label=label):
+                match = re.search(r'href="([^"]+)">' + re.escape(label) + r'</a>', response.content.decode())
+                self.assertIsNotNone(match)
+                href = unescape(match.group(1))
+                self.assertNotIn('timeline_limit', parse_qs(urlsplit(href).query))
+                refreshed = self.client.get(urlsplit(self.url()).path + href)
+                self.assertEqual(refreshed.status_code, 200)
+                self.assertEqual(len(refreshed.context['items']), 20)
+                self.assertEqual(refreshed.context['timeline']['loaded_count'], 20)
 
     def test_html_sort_and_filter_links_restart_groups_without_javascript(self):
         response = self.client.get(self.url(list_limit_new=60, list_limit_in_progress=21,

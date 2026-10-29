@@ -1,4 +1,4 @@
-"""Load a bounded prefix of each status from an already scoped, sorted list."""
+"""Load bounded prefixes from already scoped, sorted task views."""
 from django.db.models import Case, F, IntegerField, Value, When, Window
 from django.db.models.functions import RowNumber
 
@@ -43,6 +43,16 @@ def more_url(request, space, key, loaded_count, total):
     params.pop('page', None)
     params['view'] = 'list'
     params[f'list_limit_{key}'] = min(loaded_count + LIST_BATCH_SIZE, total)
+    return space_url(request, space) + '?' + params.urlencode()
+
+
+def timeline_more_url(request, space, loaded_count, total):
+    if loaded_count >= total:
+        return ''
+    params = request.GET.copy()
+    params.pop('page', None)
+    params['view'] = 'timeline'
+    params['timeline_limit'] = min(loaded_count + LIST_BATCH_SIZE, total)
     return space_url(request, space) + '?' + params.urlencode()
 
 

@@ -138,7 +138,13 @@ export interface DetailData {
   backlog_totals: Totals;
   backlog_loaded_count: number;
   backlog_more_url: string;
-  timeline: { start: string; end: string } | null;
+  timeline: {
+    start: string;
+    end: string;
+    count: number;
+    loaded_count: number;
+    more_url: string;
+  } | null;
   pagination: PaginationData | null;
   filters: Record<string, string>;
   sort: {

@@ -75,17 +75,19 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       const group =
         next.view === 'list'
           ? next.columns.find((item) => item.key === column.key)
-          : column.key === 'backlog'
-            ? { loaded_count: next.backlog_loaded_count, count: next.backlog_totals.total }
-            : (() => {
-                const sprint = next.sprints.find((item) => `sprint_${item.id}` === column.key);
-                return sprint
-                  ? {
-                      loaded_count: sprint.loaded_count,
-                      count: sprint.visible_count - sprint.finished_count,
-                    }
-                  : undefined;
-              })();
+          : next.view === 'timeline'
+            ? next.timeline
+            : column.key === 'backlog'
+              ? { loaded_count: next.backlog_loaded_count, count: next.backlog_totals.total }
+              : (() => {
+                  const sprint = next.sprints.find((item) => `sprint_${item.id}` === column.key);
+                  return sprint
+                    ? {
+                        loaded_count: sprint.loaded_count,
+                        count: sprint.visible_count - sprint.finished_count,
+                      }
+                    : undefined;
+                })();
       setNotice(
         `${column.label}: wczytano ${group?.loaded_count ?? 0} z ${group?.count ?? 0} zadań.`,
       );
@@ -369,6 +371,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
   }
   function moreControl(
     column: Pick<Status, 'key' | 'label' | 'count' | 'loaded_count' | 'more_url'>,
+    locked = false,
   ) {
     return (
       <>
@@ -377,9 +380,11 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             type="button"
             className="tasks-filter-button work-list-more"
             aria-label={`${loadingStatus === column.key ? 'Wczytywanie zadań' : column.more_url ? 'Pokaż więcej' : 'Wszystkie zadania'}: ${column.label} (${column.loaded_count} / ${column.count})`}
-            aria-disabled={busy || !column.more_url}
+            aria-disabled={busy || locked || !column.more_url}
             aria-busy={loadingStatus === column.key}
-            onClick={() => void loadMore(column)}
+            onClick={() => {
+              if (!locked) void loadMore(column);
+            }}
           >
             {loadingStatus === column.key
               ? 'Wczytywanie…'
@@ -554,6 +559,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       const url = new URL(initial.url, location.origin);
                       url.searchParams.delete('summary');
                       url.searchParams.delete('page');
+                      url.searchParams.delete('timeline_limit');
                       [...url.searchParams.keys()]
                         .filter(
                           (key) =>
@@ -745,6 +751,11 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
               url={currentUrl.current}
               csrfToken={csrfToken}
               busy={busy}
+              moreControl={(locked) =>
+                data.timeline
+                  ? moreControl({ ...data.timeline, key: 'timeline', label: 'Oś czasu' }, locked)
+                  : null
+              }
               onUpdate={(item) =>
                 setData((current) => ({
                   ...current,

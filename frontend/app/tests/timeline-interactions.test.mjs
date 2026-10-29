@@ -192,6 +192,7 @@ function harness(initialItem = item()) {
     url: pageUrl,
     csrfToken: 'timeline-csrf',
     busy: false,
+    moreControl: () => null,
     onUpdate: (next) => updates.push(next),
   };
   function renderComponent(name, component, values) {
@@ -285,20 +286,57 @@ test('keyboard scheduling sends only date fields and source snapshot to the dire
   app.destroy();
 });
 
+test('loading more preserves the calendar viewport and uses the shared control below its rows', () => {
+  const app = harness();
+  const control = { type: 'button', props: { children: 'Pokaż więcej' } };
+  let tree = app.render({ moreControl: () => control });
+  assert.ok(nodes(byClass(tree, 'work-timeline-viewport')).includes(control));
+  app.viewport.scrollLeft = 700;
+  tree = app.render({ data: { ...app.props.data, items: [item(), item({ id: 8 })] } });
+  assert.equal(app.viewport.scrollLeft, 700);
+  assert.equal(nodes(tree).filter((node) => node.type === 'tr').length, 3);
+  app.destroy();
+});
+
+test('timeline search resets its loaded range while retaining filters', () => {
+  const app = harness();
+  const tree = app.render({ url: pageUrl + '&timeline_limit=60' });
+  nodes(tree)
+    .find((node) => node.type === 'form')
+    .props.onSubmit({ preventDefault() {} });
+  const next = new URL(app.navigation[0], 'http://localhost');
+  assert.equal(next.searchParams.has('timeline_limit'), false);
+  assert.equal(next.searchParams.has('page'), false);
+  assert.equal(next.searchParams.get('assignee'), 'me');
+  app.destroy();
+});
+
 test('pending guard blocks two callbacks before rerender and unlocks after the response', async () => {
   const app = harness(),
     gate = deferred();
   app.context.wait = gate.promise;
-  const bar = byClass(app.render(), 'work-timeline-bar-body');
+  let moreLocked;
+  const bar = byClass(
+    app.render({
+      moreControl: (locked) => {
+        moreLocked = locked;
+        return null;
+      },
+    }),
+    'work-timeline-bar-body',
+  );
+  assert.equal(moreLocked, false);
   bar.props.onKeyDown(keyboard());
   bar.props.onKeyDown(keyboard());
   assert.equal(app.requests.length, 1);
   assert.equal(byClass(app.render(), 'work-timeline-bar-body').props['aria-disabled'], true);
+  assert.equal(moreLocked, true);
   assert.match(text(app.render()), /Zapisuję daty PRO-7/);
   gate.resolve();
   await settle();
   assert.equal(app.updates.length, 1);
   assert.equal(byClass(app.render(), 'work-timeline-bar-body').props['aria-disabled'], false);
+  assert.equal(moreLocked, false);
   app.destroy();
 });
 
