@@ -22,6 +22,7 @@ import type { FilterTeam } from '../filters/types';
 
 export interface Field {
   name: string;
+  field_name?: string;
   id: string;
   label: string;
   type: string;
@@ -115,6 +116,9 @@ export interface FormDialogData {
   form: FormSchema;
   values?: Record<string, string>;
 }
+
+// Django prefixes belong to submitted names; layout uses the original field name.
+const layoutFieldName = (field: Field) => field.field_name ?? field.name;
 
 export function FieldControl({
   field,
@@ -290,7 +294,7 @@ export function FieldControl({
           ? field.type === 'select' && !inline
             ? 'tasks-issue-select-wrap'
             : undefined
-          : `documents-field tasks-form-field ${['name', 'title', 'description', 'notes', 'spaces'].includes(field.name) ? 'resources-form-wide' : ''}`
+          : `documents-field tasks-form-field ${['name', 'title', 'description', 'notes', 'spaces'].includes(layoutFieldName(field)) ? 'resources-form-wide' : ''}`
       }
       hidden={field.hidden}
     >
@@ -344,11 +348,13 @@ export function FormLayout({
   fields: Field[];
   renderField?: (field: Field) => ReactNode;
 }) {
-  const primary = fields.find((field) => !field.hidden && ['name', 'title'].includes(field.name));
+  const primary = fields.find(
+    (field) => !field.hidden && ['name', 'title'].includes(layoutFieldName(field)),
+  );
   const visibility =
-    primary && fields.find((field) => !field.hidden && field.name === 'visibility');
+    primary && fields.find((field) => !field.hidden && layoutFieldName(field) === 'visibility');
   const description = fields.find(
-    (field) => !field.hidden && ['description', 'goal', 'notes'].includes(field.name),
+    (field) => !field.hidden && ['description', 'goal', 'notes'].includes(layoutFieldName(field)),
   );
   if (fields.every((field) => field.hidden)) return <>{fields.map(renderField)}</>;
   return (

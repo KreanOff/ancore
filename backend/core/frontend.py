@@ -117,7 +117,7 @@ def form_payload(form):
         field, widget = bound.field, bound.field.widget
         value = widget.format_value(bound.value())
         info = {
-            'name': bound.html_name, 'id': bound.id_for_label or bound.auto_id, 'label': str(field.label or ''),
+            'name': bound.html_name, 'field_name': bound.name, 'id': bound.id_for_label or bound.auto_id, 'label': str(field.label or ''),
             'required': bool(field.required and form.use_required_attribute and widget.use_required_attribute(bound.initial)), 'disabled': field.disabled, 'value': value,
             'hidden': bound.is_hidden, 'checked': bool(bound.value()) if isinstance(widget, forms.CheckboxInput) else False,
             'help_text': str(field.help_text), 'errors': list(bound.errors),
