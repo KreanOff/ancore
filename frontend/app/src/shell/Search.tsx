@@ -1,9 +1,42 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { Icon } from '../shared/Icon';
+import { Avatar } from '../shared/Avatar';
 import { pageRequest } from '../shared/page';
 import type { PanelsConfig, SearchPayload } from './types';
 import { LoadingRows, PanelState } from './States';
+
+const searchFilters = [
+  { key: 'all', label: 'Wszystko' },
+  { key: 'space_tasks', label: 'Zadania' },
+  { key: 'spaces', label: 'Przestrzenie' },
+  { key: 'office-documents', label: 'Dokumenty' },
+  { key: 'documents', label: 'Pliki' },
+  { key: 'tags', label: 'Tagi' },
+  { key: 'calendar', label: 'Kalendarz' },
+  { key: 'resources', label: 'Zasoby' },
+  { key: 'document-libraries', label: 'Dyski' },
+  { key: 'document-folders', label: 'Foldery' },
+  { key: 'workplaces', label: 'Workspace' },
+  { key: 'navigation', label: 'Nawigacja' },
+];
+
+function MatchedText({ text, query }: { text: string; query: string }) {
+  const term = query.trim().toLocaleLowerCase('pl');
+  if (term.length < 2) return <>{text}</>;
+  const lower = text.toLocaleLowerCase('pl');
+  const parts = [];
+  let start = 0;
+  let match = lower.indexOf(term);
+  while (match !== -1) {
+    parts.push(text.slice(start, match));
+    parts.push(<mark key={match}>{text.slice(match, match + term.length)}</mark>);
+    start = match + term.length;
+    match = lower.indexOf(term, start);
+  }
+  parts.push(text.slice(start));
+  return <>{parts}</>;
+}
 
 export default function Search({ config, token }: { config: PanelsConfig; token: string }) {
   const [open, setOpen] = useState(false),
@@ -21,6 +54,7 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
   const state = useRef({ open });
   state.current = { open };
   const focus = (select = false) => {
+    setActive(-1);
     suppressFocus.current = true;
     input.current?.focus({ preventScroll: true });
     if (select) input.current?.select();
@@ -28,6 +62,7 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
   };
   const close = (restore = false) => {
     setOpen(false);
+    setActive(-1);
     if (restore) focus();
   };
   useEffect(() => {
@@ -41,7 +76,6 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
       text = query.trim();
     setPayload(null);
     setFailed(false);
-    setGroup('all');
     setActive(-1);
     if (text.length === 1) {
       setLoading(false);
@@ -87,7 +121,12 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
       if (!form.current?.contains(event.target as Node)) close();
     };
     const keyboard = (event: globalThis.KeyboardEvent) => {
-      if (event.defaultPrevented || document.querySelector('.confirm-modal-overlay')) return;
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        document.querySelector('.confirm-modal-overlay')
+      )
+        return;
       const target = event.target as HTMLElement;
       const typing = target.matches('input, textarea, select') || target.isContentEditable;
       if (
@@ -135,7 +174,16 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
       document.removeEventListener('focusin', outside);
     };
   }, []);
-  const groups = (payload?.groups || []).filter((item) => group === 'all' || group === item.key);
+  const currentPayload = payload?.query === query.trim() ? payload : null;
+  const groups = (currentPayload?.groups || []).filter(
+    (item) => currentPayload?.recent || group === 'all' || group === item.key,
+  );
+  const filters = searchFilters.filter(
+    (item, index) =>
+      index < 5 ||
+      item.key === group ||
+      currentPayload?.groups.some((result) => result.key === item.key),
+  );
   const count = groups.reduce((sum, item) => sum + item.results.length, 0),
     truncated = groups.some((item) => item.has_more);
   const summary = loading
@@ -144,9 +192,9 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
       ? 'Spróbuj ponownie'
       : query.trim().length === 1
         ? 'Wpisz co najmniej 2 znaki.'
-        : payload?.recent
+        : currentPayload?.recent
           ? 'Ostatnio oglądane w tym Workspace'
-          : payload
+          : currentPayload
             ? `Wyniki: ${count}${truncated ? '+' : ''}`
             : 'Wyszukaj w bieżącym Workspace';
   function select(index: number) {
@@ -159,10 +207,19 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
   }
   function keyboard(event: KeyboardEvent) {
     if (event.nativeEvent.isComposing) return;
+    if (
+      event.target !== input.current &&
+      !(event.target as HTMLElement).closest('.global-search-result')
+    )
+      return;
+    if (!open && ['ArrowDown', 'ArrowUp', 'Enter'].includes(event.key)) {
+      event.preventDefault();
+      setOpen(true);
+      return;
+    }
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      if (!open) setOpen(true);
-      else select(event.target === input.current ? 0 : active + 1);
+      select(event.target === input.current ? 0 : active + 1);
     }
     if (event.key === 'ArrowUp') {
       event.preventDefault();
@@ -184,6 +241,11 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
       onKeyDown={keyboard}
       onSubmit={(event) => {
         event.preventDefault();
+        if (!open) {
+          setOpen(true);
+          return;
+        }
+        if (loading || failed || !currentPayload) return;
         results.current
           ?.querySelector<HTMLAnchorElement>(
             active < 0 ? '.global-search-result' : '.global-search-result.is-active',
@@ -209,16 +271,24 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
           spellCheck={false}
           value={query}
           onFocus={() => {
+            setActive(-1);
             if (!suppressFocus.current) setOpen(true);
           }}
           onClick={() => setOpen(true)}
           onChange={(event) => {
             setQuery(event.target.value);
+            setPayload(null);
+            setActive(-1);
+            setFailed(false);
+            setLoading(event.target.value.trim().length !== 1);
+            if (!event.target.value.trim()) setGroup('all');
             setOpen(true);
           }}
         />
         <span className="global-search-form__shortcut" aria-hidden="true">
-          ⌘ K
+          {typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+            ? '⌘ K'
+            : 'Ctrl K'}
         </span>
         <button
           type="button"
@@ -228,6 +298,8 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
           hidden={!query}
           onClick={() => {
             setQuery('');
+            setPayload(null);
+            setGroup('all');
             setOpen(true);
             focus();
           }}
@@ -246,26 +318,57 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
           Wyszukaj w Ancore
         </h2>
         <div className="global-search-quick-toolbar">
-          <div className="global-search-filters" role="group" aria-label="Typ wyników">
-            {[
-              { key: 'all', label: 'Wszystko' },
-              ...(payload?.recent ? [] : payload?.groups || []),
-            ].map((item) => (
-              <button
-                type="button"
-                key={item.key}
-                className="tasks-filter-button"
-                aria-pressed={group === item.key}
-                onClick={() => {
-                  setGroup(item.key);
-                  setActive(-1);
-                  results.current?.scrollTo({ top: 0 });
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          {!query.trim() ? (
+            <span className="global-search-quick-heading">
+              <Icon name="clock" />
+              Ostatnio oglądane
+              {currentPayload?.recent ? (
+                <span className="global-search-filter-count">{count}</span>
+              ) : null}
+            </span>
+          ) : (
+            <div className="global-search-filters" role="group" aria-label="Typ wyników">
+              {filters.map((item) => {
+                const resultGroup = currentPayload?.groups.find(
+                  (result) => result.key === item.key,
+                );
+                const filterCount =
+                  item.key === 'all' ? currentPayload?.total : resultGroup?.results.length || 0;
+                const hasMore =
+                  item.key === 'all' ? currentPayload?.truncated : resultGroup?.has_more;
+                return (
+                  <button
+                    type="button"
+                    key={item.key}
+                    className="tasks-filter-button"
+                    aria-pressed={group === item.key}
+                    onClick={() => {
+                      setGroup(item.key);
+                      setActive(-1);
+                      results.current?.scrollTo({ top: 0 });
+                    }}
+                  >
+                    {item.label}
+                    {currentPayload && !loading ? (
+                      <span className="global-search-filter-count">
+                        {filterCount}
+                        {hasMore ? '+' : ''}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button
+            type="button"
+            className="tasks-icon-button global-search-close"
+            aria-label="Zamknij wyszukiwanie"
+            title="Zamknij wyszukiwanie (Esc)"
+            onClick={() => close(true)}
+          >
+            <Icon name="x" />
+          </button>
         </div>
         <div className="global-search-results" ref={results} tabIndex={-1} aria-busy={loading}>
           {loading ? (
@@ -286,7 +389,7 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
               Fraza „{query.trim()}” jest zbyt krótka, aby rozpocząć globalne wyszukiwanie.
             </PanelState>
           ) : !count ? (
-            payload?.recent ? (
+            currentPayload?.recent ? (
               <PanelState icon="scan-search" title="Znajdź zadanie, przestrzeń lub dokument">
                 Wpisz co najmniej 2 znaki. Ostatnio oglądane elementy pojawią się tutaj, gdy je
                 otworzysz.
@@ -294,22 +397,37 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
             ) : (
               <PanelState icon="search-x" title="Nie znaleźliśmy wyników">
                 Sprawdź pisownię „{query.trim()}” albo użyj krótszej, bardziej ogólnej frazy.
+                {group !== 'all' ? (
+                  <button
+                    type="button"
+                    className="global-search-state__retry"
+                    onClick={() => {
+                      setGroup('all');
+                      setActive(-1);
+                      focus();
+                    }}
+                  >
+                    Szukaj we wszystkich typach
+                  </button>
+                ) : null}
               </PanelState>
             )
           ) : (
             <>
               {groups.map((item) => (
                 <section className="global-search-group" key={item.key}>
-                  <header className="global-search-group__header">
-                    <h3>
-                      <Icon name={item.icon} />
-                      <span>{item.label}</span>
-                    </h3>
-                    <span className="global-search-group__count">
-                      {item.results.length}
-                      {item.has_more ? '+' : ''}
-                    </span>
-                  </header>
+                  {!currentPayload?.recent ? (
+                    <header className="global-search-group__header">
+                      <h3>
+                        <Icon name={item.icon} />
+                        <span>{item.label}</span>
+                      </h3>
+                      <span className="global-search-group__count">
+                        {item.results.length}
+                        {item.has_more ? '+' : ''}
+                      </span>
+                    </header>
+                  ) : null}
                   <div className="global-search-group__list">
                     {item.results.map((result, i) => {
                       const current = index++;
@@ -323,21 +441,37 @@ export default function Search({ config, token }: { config: PanelsConfig; token:
                             'global-search-result' + (active === current ? ' is-active' : '')
                           }
                           onFocus={() => setActive(current)}
-                          onMouseMove={() => setActive(current)}
                           onClick={() => close()}
                         >
-                          <span className="global-search-result__icon">
-                            <Icon name={result.icon || item.icon} />
-                          </span>
+                          {result.avatar ? (
+                            <Avatar
+                              data={result.avatar}
+                              space
+                              className="global-search-result__avatar"
+                            />
+                          ) : (
+                            <span
+                              className={
+                                'global-search-result__icon' +
+                                (['Zadanie', 'Podzadanie'].includes(result.type)
+                                  ? ' tasks-issue-type'
+                                  : '')
+                              }
+                            >
+                              <Icon name={result.icon || item.icon} />
+                            </span>
+                          )}
                           <span className="global-search-result__body">
                             <span className="global-search-result__title-line">
                               <strong className="global-search-result__title" title={result.title}>
-                                {result.title}
+                                <MatchedText text={result.title} query={query} />
                               </strong>
                               <span className="global-search-result__type">{result.type}</span>
                             </span>
                             {result.meta ? (
-                              <span className="global-search-result__meta">{result.meta}</span>
+                              <span className="global-search-result__meta" title={result.meta}>
+                                <MatchedText text={result.meta} query={query} />
+                              </span>
                             ) : null}
                             {result.eyebrow ? (
                               <span className="global-search-result__eyebrow">

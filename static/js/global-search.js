@@ -4,13 +4,29 @@
     const form = document.querySelector('[data-global-search-form]');
     const input = document.querySelector('[data-global-search-input]');
     const clearButton = document.querySelector('[data-global-search-clear]');
+    const closeButton = document.querySelector('[data-global-search-close]');
     const results = document.querySelector('[data-global-search-results]');
     const status = document.querySelector('[data-global-search-status]');
     const filters = document.querySelector('[data-global-search-filters]');
+    const recentHeading = document.querySelector('[data-global-search-heading]');
     const summary = document.querySelector('[data-global-search-summary]');
     const searchUrl = panel?.dataset.searchUrl || '';
     const minimumQueryLength = 2;
     const debounceDelay = 180;
+    const searchFilters = [
+        { key: 'all', label: 'Wszystko' },
+        { key: 'space_tasks', label: 'Zadania' },
+        { key: 'spaces', label: 'Przestrzenie' },
+        { key: 'office-documents', label: 'Dokumenty' },
+        { key: 'documents', label: 'Pliki' },
+        { key: 'tags', label: 'Tagi' },
+        { key: 'calendar', label: 'Kalendarz' },
+        { key: 'resources', label: 'Zasoby' },
+        { key: 'document-libraries', label: 'Dyski' },
+        { key: 'document-folders', label: 'Foldery' },
+        { key: 'workplaces', label: 'Workspace' },
+        { key: 'navigation', label: 'Nawigacja' },
+    ];
     let requestController = null;
     let debounceTimer = null;
     let suppressFocusOpen = false;
@@ -18,7 +34,10 @@
     let selectedGroup = 'all';
     let activeResultIndex = -1;
 
-    if (!panel || !input || !results || !searchUrl) return;
+    if (!panel || !form || !input || !results || !filters || !searchUrl) return;
+
+    const shortcut = form.querySelector('.global-search-form__shortcut');
+    if (shortcut) shortcut.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K';
 
     function iconNode(iconName) {
         const icon = document.createElement('i');
@@ -29,6 +48,33 @@
 
     function renderIcons(scope) {
         window.AncoreIcons?.render(scope);
+    }
+
+    function matchedText(text, query) {
+        const fragment = document.createDocumentFragment();
+        const term = query.trim().toLocaleLowerCase('pl');
+        if (term.length < minimumQueryLength) {
+            fragment.append(text);
+            return fragment;
+        }
+        const lower = text.toLocaleLowerCase('pl');
+        let start = 0;
+        let match = lower.indexOf(term);
+        while (match !== -1) {
+            fragment.append(text.slice(start, match));
+            const mark = document.createElement('mark');
+            mark.textContent = text.slice(match, match + term.length);
+            fragment.appendChild(mark);
+            start = match + term.length;
+            match = lower.indexOf(term, start);
+        }
+        fragment.append(text.slice(start));
+        return fragment;
+    }
+
+    function resetActiveResult() {
+        activeResultIndex = -1;
+        results.querySelectorAll('.global-search-result.is-active').forEach(item => item.classList.remove('is-active'));
     }
 
     function stateElement(kind, icon, title, copy) {
@@ -57,7 +103,7 @@
         ));
         activeResultIndex = -1;
         status.textContent = 'Brak ostatnio oglądanych elementów.';
-        summary.textContent = 'Wyszukaj w bieżącym Workspace';
+        summary.textContent = 'Ostatnio oglądane w tym Workspace';
         renderIcons(results);
     }
 
@@ -81,7 +127,7 @@
         for (let index = 0; index < 6; index += 1) {
             const row = document.createElement('span');
             row.className = 'global-search-loading__row';
-            row.innerHTML = '<span></span><span></span>';
+            row.append(document.createElement('span'), document.createElement('span'));
             loading.appendChild(row);
         }
         results.replaceChildren(loading);
@@ -91,15 +137,29 @@
     }
 
     function renderEmpty(query) {
-        results.replaceChildren(stateElement(
+        const emptyState = stateElement(
             'empty',
             'search-x',
             'Nie znaleźliśmy wyników',
             `Sprawdź pisownię „${query}” albo użyj krótszej, bardziej ogólnej frazy.`
-        ));
+        );
+        if (selectedGroup !== 'all') {
+            const all = document.createElement('button');
+            all.type = 'button';
+            all.className = 'global-search-state__retry';
+            all.textContent = 'Szukaj we wszystkich typach';
+            all.addEventListener('click', function () {
+                selectedGroup = 'all';
+                renderFilters(currentPayload);
+                if (currentPayload) renderSearchResults(currentPayload);
+                focusInput();
+            });
+            emptyState.appendChild(all);
+        }
+        results.replaceChildren(emptyState);
         activeResultIndex = -1;
         status.textContent = `Brak wyników dla frazy ${query}.`;
-        summary.textContent = 'Brak wyników';
+        summary.textContent = 'Wyniki: 0';
         renderIcons(results);
     }
 
@@ -137,9 +197,25 @@
         link.dataset.globalSearchResult = '';
         link.dataset.resultIndex = String(resultIndex);
 
-        if (result.icon || groupIcon) {
+        if (result.avatar) {
+            const avatar = result.avatar;
             const visual = document.createElement('span');
-            visual.className = 'global-search-result__icon';
+            visual.className = `profile-avatar space-avatar global-search-result__avatar ${avatar.color_class || ''} ${avatar.photo_url ? 'has-photo' : `space-avatar-art ${avatar.preset_class || ''}`}`;
+            visual.setAttribute('aria-hidden', 'true');
+            visual.dataset.spaceAvatar = '';
+            if (avatar.background_color) visual.style.setProperty('--profile-avatar-bg', avatar.background_color);
+            if (avatar.foreground_color) visual.style.setProperty('--profile-avatar-fg', avatar.foreground_color);
+            if (avatar.photo_url) {
+                const photo = document.createElement('img');
+                photo.src = avatar.photo_url;
+                photo.alt = '';
+                photo.draggable = false;
+                visual.appendChild(photo);
+            }
+            link.appendChild(visual);
+        } else if (result.icon || groupIcon) {
+            const visual = document.createElement('span');
+            visual.className = 'global-search-result__icon' + (['Zadanie', 'Podzadanie'].includes(result.type) ? ' tasks-issue-type' : '');
             visual.setAttribute('aria-hidden', 'true');
             visual.appendChild(iconNode(result.icon || groupIcon));
             link.appendChild(visual);
@@ -151,7 +227,7 @@
         titleLine.className = 'global-search-result__title-line';
         const title = document.createElement('strong');
         title.className = 'global-search-result__title';
-        title.textContent = result.title;
+        title.appendChild(matchedText(result.title, input.value));
         title.title = result.title;
         const type = document.createElement('span');
         type.className = 'global-search-result__type';
@@ -162,7 +238,8 @@
         if (result.meta) {
             const meta = document.createElement('span');
             meta.className = 'global-search-result__meta';
-            meta.textContent = result.meta;
+            meta.appendChild(matchedText(result.meta, input.value));
+            meta.title = result.meta;
             body.appendChild(meta);
         }
 
@@ -182,23 +259,46 @@
     }
 
     function renderFilters(payload) {
-        const groups = payload?.recent ? [] : (payload?.groups || []);
-        if (!groups.some(group => group.key === selectedGroup)) selectedGroup = 'all';
+        const recent = !input.value.trim();
+        filters.hidden = recent;
+        if (recentHeading) {
+            recentHeading.hidden = !recent;
+            recentHeading.replaceChildren(iconNode('clock'), document.createTextNode('Ostatnio oglądane'));
+            if (payload?.recent) {
+                const count = document.createElement('span');
+                count.className = 'global-search-filter-count';
+                count.textContent = String(payload.total);
+                recentHeading.appendChild(count);
+            }
+            renderIcons(recentHeading);
+        }
+        const groups = payload?.groups || [];
         const fragment = document.createDocumentFragment();
-        [{ key: 'all', label: 'Wszystko' }, ...groups].forEach(group => {
+        searchFilters.filter((group, index) => index < 5 || group.key === selectedGroup || groups.some(result => result.key === group.key)).forEach(group => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'tasks-filter-button';
             button.dataset.searchGroup = group.key;
             button.setAttribute('aria-pressed', String(group.key === selectedGroup));
             button.textContent = group.label;
+            if (payload) {
+                const resultGroup = groups.find(result => result.key === group.key);
+                const count = document.createElement('span');
+                count.className = 'global-search-filter-count';
+                const total = group.key === 'all' ? payload.total : resultGroup?.results.length || 0;
+                const hasMore = group.key === 'all' ? payload.truncated : resultGroup?.has_more;
+                count.textContent = `${total}${hasMore ? '+' : ''}`;
+                button.appendChild(count);
+            }
             fragment.appendChild(button);
         });
         filters.replaceChildren(fragment);
     }
 
     function renderSearchResults(payload) {
-        if (!payload.groups?.length || payload.total === 0) {
+        const groups = (payload.groups || []).filter(group => payload.recent || selectedGroup === 'all' || group.key === selectedGroup);
+        const total = groups.reduce((count, group) => count + group.results.length, 0);
+        if (!total) {
             if (payload.recent) renderWelcome();
             else renderEmpty(payload.query || input.value.trim());
             return;
@@ -206,23 +306,24 @@
 
         const fragment = document.createDocumentFragment();
         let resultIndex = 0;
-        const groups = payload.groups.filter(group => selectedGroup === 'all' || group.key === selectedGroup);
         groups.forEach(function (group) {
             const section = document.createElement('section');
             section.className = 'global-search-group';
 
-            const header = document.createElement('header');
-            header.className = 'global-search-group__header';
-            const heading = document.createElement('h3');
-            heading.append(iconNode(group.icon));
-            const label = document.createElement('span');
-            label.textContent = group.label;
-            heading.appendChild(label);
-            const count = document.createElement('span');
-            count.className = 'global-search-group__count';
-            count.textContent = group.has_more ? `${group.results.length}+` : String(group.results.length);
-            header.append(heading, count);
-            section.appendChild(header);
+            if (!payload.recent) {
+                const header = document.createElement('header');
+                header.className = 'global-search-group__header';
+                const heading = document.createElement('h3');
+                heading.append(iconNode(group.icon));
+                const label = document.createElement('span');
+                label.textContent = group.label;
+                heading.appendChild(label);
+                const count = document.createElement('span');
+                count.className = 'global-search-group__count';
+                count.textContent = group.has_more ? `${group.results.length}+` : String(group.results.length);
+                header.append(heading, count);
+                section.appendChild(header);
+            }
 
             const list = document.createElement('div');
             list.className = 'global-search-group__list';
@@ -244,7 +345,6 @@
 
         results.replaceChildren(fragment);
         activeResultIndex = -1;
-        const total = groups.reduce((count, group) => count + group.results.length, 0);
         status.textContent = payload.recent ? `Ostatnio oglądane: ${total}.` : truncated
             ? `Pokazano ${total} wyników. Doprecyzuj frazę, aby zawęzić listę.`
             : `Znaleziono ${total} wyników.`;
@@ -258,13 +358,17 @@
         requestController?.abort();
 
         requestController = null;
+        currentPayload = null;
+        renderFilters(null);
         if (query && query.length < minimumQueryLength) {
+            results.setAttribute('aria-busy', 'false');
             renderPrompt(query);
             return;
         }
 
         requestController = new AbortController();
         const controller = requestController;
+        results.setAttribute('aria-busy', 'true');
         renderLoading();
 
         try {
@@ -280,10 +384,14 @@
             const payload = await response.json();
             if (controller.signal.aborted || controller !== requestController || !isOpen() || input.value.trim() !== query) return;
             currentPayload = payload;
+            results.setAttribute('aria-busy', 'false');
             renderFilters(payload);
             renderSearchResults(payload);
         } catch (error) {
-            if (error.name !== 'AbortError' && controller === requestController && !controller.signal.aborted && isOpen()) renderError();
+            if (error.name !== 'AbortError' && controller === requestController && !controller.signal.aborted && isOpen()) {
+                results.setAttribute('aria-busy', 'false');
+                renderError();
+            }
         }
     }
 
@@ -294,12 +402,13 @@
         requestController?.abort();
         requestController = null;
         currentPayload = null;
-        selectedGroup = 'all';
+        if (!query) selectedGroup = 'all';
         renderFilters(null);
         if (!query || query.length < minimumQueryLength) {
             runSearch(query);
             return;
         }
+        results.setAttribute('aria-busy', 'true');
         renderLoading();
         debounceTimer = window.setTimeout(function () {
             runSearch(query);
@@ -321,6 +430,7 @@
     }
 
     function openSelectedResult() {
+        if (!isOpen() || !currentPayload || currentPayload.query !== input.value.trim() || results.getAttribute('aria-busy') === 'true') return false;
         const active = results.querySelector('.global-search-result.is-active')
             || results.querySelector('[data-global-search-result]');
         if (!active) return false;
@@ -333,6 +443,7 @@
     }
 
     function focusInput(select = false) {
+        resetActiveResult();
         suppressFocusOpen = true;
         input.focus({ preventScroll: true });
         if (select) input.select();
@@ -352,6 +463,7 @@
             if (options.focus !== false) focusInput(true);
             if (options.search !== false) queueSearch();
         } else {
+            resetActiveResult();
             window.clearTimeout(debounceTimer);
             requestController?.abort();
             requestController = null;
@@ -360,6 +472,7 @@
     }
 
     input.addEventListener('focus', function () {
+        resetActiveResult();
         if (!suppressFocusOpen) setOpen(true, { focus: false });
     });
     input.addEventListener('click', function () {
@@ -367,6 +480,10 @@
     });
     form?.addEventListener('submit', function (event) {
         event.preventDefault();
+        if (!isOpen()) {
+            setOpen(true);
+            return;
+        }
         openSelectedResult();
     });
     input.addEventListener('input', function () {
@@ -398,10 +515,8 @@
         queueSearch();
         focusInput();
     });
-    results.addEventListener('mousemove', function (event) {
-        const item = event.target.closest('[data-global-search-result]');
-        if (!item) return;
-        setActiveResult(Number(item.dataset.resultIndex));
+    closeButton?.addEventListener('click', function () {
+        setOpen(false);
     });
     results.addEventListener('click', function (event) {
         if (event.target.closest('[data-global-search-result]')) setOpen(false, { restoreFocus: false });
@@ -417,14 +532,23 @@
     });
     document.addEventListener('ancore:content-unloading', function () {
         setOpen(false, { restoreFocus: false });
+        input.value = '';
+        clearButton.hidden = true;
+        currentPayload = null;
+        selectedGroup = 'all';
+        renderFilters(null);
     });
 
     document.addEventListener('keydown', function (event) {
-        if (document.querySelector('.confirm-modal-overlay')) return;
+        if (event.defaultPrevented || event.isComposing || document.querySelector('.confirm-modal-overlay')) return;
         const target = event.target;
         const typing = target instanceof HTMLElement
             && (target.matches('input, textarea, select') || target.isContentEditable);
         if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase('pl') === 'k') {
+            if (form.closest('[inert]')) {
+                const inbox = document.getElementById('notifications-panel');
+                if (!inbox || inbox.getAttribute('aria-busy') === 'true') return;
+            }
             event.preventDefault();
             setOpen(true);
             return;
@@ -452,12 +576,13 @@
     });
     filters.addEventListener('click', function (event) {
         const button = event.target.closest('[data-search-group]');
-        if (!button || !currentPayload) return;
+        if (!button) return;
         selectedGroup = button.dataset.searchGroup;
         filters.querySelectorAll('button').forEach(item => {
             item.setAttribute('aria-pressed', String(item === button));
         });
-        renderSearchResults(currentPayload);
+        resetActiveResult();
+        if (currentPayload) renderSearchResults(currentPayload);
         results.scrollTop = 0;
     });
     document.addEventListener('pointerdown', function (event) {
@@ -474,5 +599,6 @@
         selectedGroup = 'all';
         renderFilters(null);
     });
+    renderFilters(null);
     window.AncoreGlobalSearch = { close: () => setOpen(false, { restoreFocus: false }) };
 })();

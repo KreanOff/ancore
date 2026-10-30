@@ -470,11 +470,13 @@ body.global-search-open .sidebar-header-action--search {
 }
 
 .global-search-panel.global-search-panel--quick {
+    --app-text-color: var(--text-primary);
+
     position: absolute;
     inset: calc(100% + 8px) auto auto 50%;
-    width: min(680px, calc(var(--app-viewport-width) - 16px));
+    width: max(100%, min(640px, calc(var(--app-viewport-width) - 16px)));
     min-width: 0;
-    max-height: min(620px, calc(var(--app-viewport-height) - var(--app-topbar-height) - 24px));
+    max-height: min(620px, calc(var(--app-dynamic-viewport-height) - var(--app-topbar-height) - 24px));
     transform: translateX(-50%);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
@@ -494,7 +496,8 @@ body.global-search-open .global-search-form__shortcut {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    min-height: 48px;
+    padding: 8px;
     border-bottom: 1px solid var(--border-color);
     flex: 0 0 auto;
 }
@@ -510,20 +513,57 @@ body.global-search-open .global-search-form__shortcut {
 }
 
 .global-search-filters .tasks-filter-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     flex: 0 0 auto;
-    min-height: 28px;
+    min-height: 30px;
     padding: 4px 9px;
     font-size: 12px;
 }
 
 .global-search-filters .tasks-filter-button[aria-pressed="true"] {
-    background: var(--system-interaction-soft);
-    border-color: var(--system-interaction);
+    background: rgba(var(--system-accent-rgb), 0.1);
+    border-color: rgba(var(--system-accent-rgb), 0.35);
 }
 
-.global-search-filters button:focus-visible {
-    outline: 2px solid var(--system-interaction);
-    outline-offset: -2px;
+.global-search-form :is(button, a):focus-visible {
+    outline: 2px solid var(--system-accent) !important;
+    outline-offset: -2px !important;
+}
+
+.global-search-quick-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    padding-inline: 8px;
+    font-size: 12px;
+}
+
+.global-search-quick-heading > svg {
+    width: 16px;
+    height: 16px;
+}
+
+.global-search-filter-count {
+    --app-text-color: var(--system-interaction);
+
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.global-search-quick-toolbar .global-search-close {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+}
+
+.global-search-close svg {
+    width: 16px;
+    height: 16px;
 }
 
 .global-search-panel--quick .global-search-results {
@@ -552,22 +592,58 @@ body.global-search-open .global-search-form__shortcut {
 }
 
 .global-search-panel--quick .global-search-result {
-    min-height: 48px;
+    min-height: 54px;
     gap: 10px;
     padding: 7px 10px;
 }
 
+.global-search-panel--quick .global-search-result:is(.is-active, :focus-visible) {
+    background: rgba(var(--system-accent-rgb), 0.08);
+}
+
+.global-search-panel--quick .global-search-result__icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: var(--dropdown-control-radius);
+    background: var(--system-interaction-soft);
+}
+
+.global-search-panel--quick .profile-avatar.global-search-result__avatar {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    border-radius: var(--dropdown-control-radius);
+}
+
+.global-search-panel--quick .global-search-result__icon.tasks-issue-type {
+    padding: 0;
+}
+
 .global-search-panel--quick .global-search-result__title {
+    flex: 1;
     font-weight: 400 !important;
 }
 
 .global-search-panel--quick .global-search-result__meta {
-    font-size: 11px;
+    --app-text-color: var(--system-interaction);
+
+    font-size: 12px;
+}
+
+.global-search-panel--quick mark {
+    --app-text-color: var(--text-primary);
+
+    padding: 0;
+    border-radius: 2px;
+    background: rgba(var(--system-accent-rgb), 0.14);
 }
 
 .global-search-panel--quick .global-search-result__type {
+    --app-text-color: var(--system-interaction);
+
     margin-left: auto;
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .global-search-panel--quick .global-search-result__arrow {
@@ -579,15 +655,17 @@ body.global-search-open .global-search-form__shortcut {
 }
 
 .global-search-quick-footer {
+    --app-text-color: var(--system-interaction);
+
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
     flex: 0 0 auto;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-top: 1px solid var(--border-color);
-    background: var(--sidebar-bg);
+    background: var(--card-bg);
     font-size: 11px;
 }
 
@@ -612,6 +690,11 @@ body.global-search-open .global-search-form__shortcut {
     text-align: center;
 }
 
+.global-search-panel--quick .global-search-state p > button {
+    display: block;
+    margin-inline: auto;
+}
+
 @media (max-width: 767px) {
     body.global-search-open .app-topbar__search {
         position: absolute;
@@ -626,10 +709,54 @@ body.global-search-open .global-search-form__shortcut {
 
     .global-search-panel.global-search-panel--quick {
         width: 100%;
-        max-height: calc(var(--app-viewport-height) - var(--app-topbar-height) - 24px);
+        max-height: calc(var(--app-dynamic-viewport-height) - var(--app-topbar-height) - 24px);
     }
 
     .global-search-quick-keys {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    body:not(.global-search-open) .app-topbar__search label {
+        position: relative;
+        padding: 0;
+        gap: 0;
+    }
+
+    body:not(.global-search-open) .app-topbar__search label > svg {
+        position: absolute;
+        left: 8px;
+        pointer-events: none;
+    }
+
+    body:not(.global-search-open) .app-topbar__search input {
+        padding-left: 32px;
+    }
+
+    body:not(.global-search-open) .app-topbar__search .global-search-form__clear {
+        display: none;
+    }
+
+    .global-search-panel--quick .global-search-result {
+        gap: 8px;
+        padding-inline: 6px;
+    }
+
+    .global-search-panel--quick .global-search-result__title-line {
+        flex-wrap: wrap;
+        gap: 2px 8px;
+    }
+
+    .global-search-panel--quick .global-search-result__title {
+        flex-basis: 100%;
+    }
+
+    .global-search-panel--quick .global-search-result__type {
+        margin-left: 0;
+    }
+
+    .global-search-panel--quick .global-search-result__arrow {
         display: none;
     }
 }

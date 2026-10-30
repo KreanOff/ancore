@@ -28,7 +28,7 @@
 @import 'components/modal-system.css?v=20261030-field-help';
 @import 'components/dropdown-layer.css?v=20261013-shared-dropdowns';
 @import 'components/emoji-picker.css?v=20261023-stable-emoji-picker';
-@import 'components/global-search.css?v=20261017-border-visibility-3pct';
+@import 'components/global-search.css?v=20261030-search-avatars';
 @import 'components/notifications-panel.css?v=20261003-notifications-modal';
 
 /* App-wide text palette: #40444C and #FFFFFF. */

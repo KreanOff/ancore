@@ -19,7 +19,9 @@ from accounts.views import _switch_account_context
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
 from planner.models import CalendarEvent
 from resources.models import Resource
+from spaces.avatars import space_avatar
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
+from workplaces.templatetags.workplace_avatar import workplace_avatar
 from .pulpit_views import default as default_pulpit
 from .for_you import for_you_context
 from .recent import recent_views
@@ -59,8 +61,8 @@ def _workspace_app_url(workplace, app_label, suffix=''):
     return f'{base_url}{suffix.lstrip("/")}' if suffix else base_url
 
 
-def _global_search_result(title, type_label, url, icon, meta='', eyebrow='', *, new_tab=False):
-    return {
+def _global_search_result(title, type_label, url, icon, meta='', eyebrow='', *, new_tab=False, avatar=None):
+    result = {
         'title': str(title or '').strip(),
         'type': type_label,
         'url': url,
@@ -69,6 +71,9 @@ def _global_search_result(title, type_label, url, icon, meta='', eyebrow='', *, 
         'eyebrow': str(eyebrow or '').strip(),
         'new_tab': new_tab,
     }
+    if avatar is not None:
+        result['avatar'] = avatar
+    return result
 
 
 def _global_search_group(key, label, icon, queryset, serializer):
@@ -82,13 +87,25 @@ def _global_search_group(key, label, icon, queryset, serializer):
     }
 
 
-def _ranked_search_queryset(queryset, field_name, query):
+def _ranked_search_queryset(queryset, field_name, query, *, key_field=None):
+    exact = Q(**{f'{field_name}__iexact': query})
+    prefix = Q(**{f'{field_name}__istartswith': query})
+    fragment = Q(**{f'{field_name}__icontains': query})
+    ranks = []
+    if key_field:
+        ranks.append(When(**{f'{key_field}__iexact': query}, then=Value(0)))
+        prefix |= Q(**{f'{key_field}__istartswith': query})
+        fragment |= Q(**{f'{key_field}__icontains': query})
+    offset = len(ranks)
+    ranks.extend([
+        When(exact, then=Value(offset)),
+        When(prefix, then=Value(offset + 1)),
+        When(fragment, then=Value(offset + 2)),
+    ])
     return queryset.annotate(
         _global_search_rank=Case(
-            When(**{f'{field_name}__iexact': query}, then=Value(0)),
-            When(**{f'{field_name}__istartswith': query}, then=Value(1)),
-            When(**{f'{field_name}__icontains': query}, then=Value(2)),
-            default=Value(3),
+            *ranks,
+            default=Value(offset + 3),
             output_field=IntegerField(),
         )
     )
@@ -133,10 +150,10 @@ def _recent_search_results(request):
     from spaces.services import visible_spaces, visible_items, task_url, space_url
     ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == Space._meta.label_lower]
     for obj in visible_spaces(request).filter(pk__in=ids):
-        results[(Space._meta.label_lower, obj.pk)] = _global_search_result(obj.name, 'Przestrzeń', space_url(request, obj), 'layers', obj.key)
+        results[(Space._meta.label_lower, obj.pk)] = _global_search_result(obj.name, 'Przestrzeń', space_url(request, obj), 'layers', obj.key, avatar=space_avatar(obj))
     ids = [entry['identity'][3] for entry in entries if entry['identity'][2] == SpaceTask._meta.label_lower]
     for item in visible_items(request).filter(task_id__in=ids):
-        results[(SpaceTask._meta.label_lower, item.task_id)] = _global_search_result(item.task.title, 'Zadanie', task_url(request, item.task), 'list-checks', f'{item.key} · {item.space.name}')
+        results[(SpaceTask._meta.label_lower, item.task_id)] = _global_search_result(item.task.title, 'Podzadanie' if item.task.parent_id else 'Zadanie', task_url(request, item.task), item.type_icon, f'{item.key} · {item.space.name}')
     return [results[tuple(entry['identity'][2:])] for entry in entries
             if tuple(entry['identity'][2:]) in results][:GLOBAL_SEARCH_RECENT_LIMIT]
 
@@ -151,7 +168,7 @@ def global_search(request):
         recent = [item for item in recent if module_enabled(request.workplace, module_for_path(item['url']))]
         response = JsonResponse({
             'query': '', 'recent': True, 'total': len(recent), 'truncated': False,
-            'groups': [{'key': 'recent', 'label': 'Ostatnio oglądane', 'icon': 'history',
+            'groups': [{'key': 'recent', 'label': 'Ostatnio oglądane', 'icon': 'clock',
                         'results': recent, 'has_more': False}] if recent else [],
         })
         response['Cache-Control'] = 'no-store'
@@ -199,11 +216,17 @@ def global_search(request):
     from spaces.services import visible_items, visible_spaces, task_url, space_url
     groups.extend([
         _global_search_group('space_tasks', 'Zadania przestrzeni', 'list-checks',
-            visible_items(request).filter(Q(task__title__icontains=query) | Q(key__icontains=query) | Q(task__description__icontains=query) | Q(task__activities__message__icontains=query)).distinct().order_by('-task__created_at', '-pk'),
-            lambda item: _global_search_result(item.task.title, 'Podzadanie' if item.task.parent_id else 'Zadanie', task_url(request, item.task), '', f'{item.key} · {item.space.name}')),
+            _ranked_search_queryset(
+                visible_items(request).filter(Q(task__title__icontains=query) | Q(key__icontains=query) | Q(task__description__icontains=query) | Q(task__activities__message__icontains=query)).distinct(),
+                'task__title', query, key_field='key',
+            ).order_by('_global_search_rank', '-task__created_at', '-pk'),
+            lambda item: _global_search_result(item.task.title, 'Podzadanie' if item.task.parent_id else 'Zadanie', task_url(request, item.task), item.type_icon, f'{item.key} · {item.space.name}')),
         _global_search_group('spaces', 'Przestrzenie', 'layers',
-            visible_spaces(request).filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(key__icontains=query)).order_by('name', 'pk'),
-            lambda space: _global_search_result(space.name, 'Przestrzeń', space_url(request, space), '', space.key)),
+            _ranked_search_queryset(
+                visible_spaces(request).filter(Q(name__icontains=query) | Q(description__icontains=query) | Q(key__icontains=query)),
+                'name', query, key_field='key',
+            ).order_by('_global_search_rank', 'name', 'pk'),
+            lambda space: _global_search_result(space.name, 'Przestrzeń', space_url(request, space), 'layers', space.key, avatar=space_avatar(space))),
     ])
 
     groups.extend((
@@ -249,6 +272,7 @@ def global_search(request):
                 'briefcase-business',
                 ' · '.join(part for part in (item.code, item.description) if part),
                 'Bieżący' if workplace is not None and item.id == workplace.id else '',
+                avatar=workplace_avatar(item),
             ),
         ),
     ))

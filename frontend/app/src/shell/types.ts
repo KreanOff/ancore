@@ -28,6 +28,7 @@ export interface SearchPayload {
       type: string;
       url: string;
       icon: string;
+      avatar?: AvatarData;
       meta: string;
       eyebrow: string;
       new_tab?: boolean;

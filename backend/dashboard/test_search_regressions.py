@@ -1,5 +1,11 @@
+import base64
+import json
+from unittest.mock import patch
+from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.core.files.storage import InMemoryStorage
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
@@ -8,9 +14,15 @@ from django.utils import timezone
 
 from dashboard.recent import RECENT_SESSION_KEY
 from dashboard.views import GLOBAL_SEARCH_GROUP_LIMIT, GLOBAL_SEARCH_RECENT_LIMIT
-from spaces.models import SpaceTask
+from spaces.avatars import space_avatar
+from spaces.models import Space, SpaceTask, SpaceTaskActivity
 from spaces.testing import make_space, make_task
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
+from workplaces.services import scoped_workplace_app_path
+from workplaces.templatetags.workplace_avatar import workplace_avatar
+
+
+PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=')
 
 
 class GlobalSearchRegressionTests(TestCase):
@@ -33,8 +45,14 @@ class GlobalSearchRegressionTests(TestCase):
         session['active_workplace_id'] = self.team.pk
         session.save()
 
-    def search(self, query):
-        response = self.client.get(reverse('global_search'), {'q': query})
+    def search(self, query, *, scoped=False):
+        if scoped:
+            response = self.client.get(
+                scoped_workplace_app_path(self.team, 'api', 'v1/page/'),
+                {'url': reverse('global_search') + '?' + urlencode({'q': query})},
+            )
+        else:
+            response = self.client.get(reverse('global_search'), {'q': query})
         self.assertEqual(response.status_code, 200)
         return response
 
@@ -89,7 +107,7 @@ class GlobalSearchRegressionTests(TestCase):
         for index in range(GLOBAL_SEARCH_GROUP_LIMIT + 3):
             make_task(user=self.owner, workplace=self.team, space=self.space, title=f'Limit probe {index}')
             make_space(user=self.owner, workplace=self.team, name=f'Limit probe {index}')
-        newest = make_task(user=self.owner, workplace=self.team, space=self.space, title='Limit probe')
+        newest = make_task(user=self.owner, workplace=self.team, space=self.space, title='Limit probe newest')
         with CaptureQueriesContext(connection) as queries:
             payload = self.search('Limit probe').json()
         self.assertTrue(payload['truncated'])
@@ -103,6 +121,75 @@ class GlobalSearchRegressionTests(TestCase):
         for table in ['spaces_workitem', 'spaces_space']:
             bounded = [q['sql'] for q in queries if f'FROM "{table}"' in q['sql'] and f'LIMIT {GLOBAL_SEARCH_GROUP_LIMIT + 1}' in q['sql']]
             self.assertTrue(bounded, table)
+
+    def test_exact_task_key_precedes_newer_matches_beyond_limit_in_base_and_scoped_search(self):
+        target = make_task(user=self.owner, workplace=self.team, space=self.space, title='Original key target')
+        query = target.work_item.key.lower()
+        title_match = make_task(user=self.owner, workplace=self.team, space=self.space, title=query.upper())
+        for index in range(GLOBAL_SEARCH_GROUP_LIMIT + 3):
+            make_task(user=self.owner, workplace=self.team, space=self.space,
+                      title=f'Follow-up {index}: {query}', description=query)
+        private = make_space(user=self.owner, workplace=self.team, name='Private match',
+                             visibility='private', private_owner=self.owner)
+        hidden = make_task(user=self.owner, workplace=self.team, space=private, title=query)
+        foreign = make_task(user=self.owner, workplace=self.private, title=query)
+
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                with CaptureQueriesContext(connection) as queries:
+                    payload = self.search(query, scoped=scoped).json()
+                group = next(group for group in payload['groups'] if group['key'] == 'space_tasks')
+                self.assertEqual([row['title'] for row in group['results'][:2]], [target.title, title_match.title])
+                self.assertEqual(len(group['results']), GLOBAL_SEARCH_GROUP_LIMIT)
+                self.assertTrue(group['has_more'])
+                self.assertTrue(payload['truncated'])
+                urls = [row['url'] for row in group['results']]
+                self.assertTrue(all(f'/workplaces/{self.team.slug}/' in url for url in urls))
+                self.assertFalse(any(f'/space/{task.space.slug}/' in url for task in (hidden, foreign) for url in urls))
+                self.assertTrue(any(
+                    'FROM "spaces_workitem"' in query['sql'] and f'LIMIT {GLOBAL_SEARCH_GROUP_LIMIT + 1}' in query['sql']
+                    for query in queries
+                ))
+
+    def test_task_title_rank_precedes_description_and_comments_with_newest_tiebreaker(self):
+        def task(title, **values):
+            return make_task(user=self.owner, workplace=self.team, space=self.space, title=title, **values)
+
+        exact = task('Rank task')
+        prefix_older = task('Rank task older')
+        prefix_newer = task('Rank task newer')
+        fragment = task('Before rank task')
+        description = task('Description match', description='Rank task')
+        comment = task('Comment match')
+        SpaceTaskActivity.objects.create(task=comment, actor=self.owner, kind='comment', message='Rank task')
+        expected = [exact, prefix_newer, prefix_older, fragment, comment, description]
+
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                payload = self.search('rank task', scoped=scoped).json()
+                group = next(group for group in payload['groups'] if group['key'] == 'space_tasks')
+                self.assertEqual([row['title'] for row in group['results']], [item.title for item in expected])
+
+    def test_spaces_rank_key_name_prefix_fragment_and_description_with_name_tiebreaker(self):
+        def space(name, key, **values):
+            return make_space(user=self.owner, workplace=self.team, name=name, key=key, **values)
+
+        exact_key = space('Z Exact code', 'RANK')
+        exact_name = space('RaNk', 'EXACTNAME')
+        prefix_name_b = space('Rank Beta', 'PREFIXB')
+        prefix_name_a = space('Rank Alpha', 'PREFIXA')
+        prefix_key = space('A Key prefix', 'RANKX')
+        fragment_name = space('Before rank', 'FRAGMENT')
+        fragment_key = space('A Key fragment', 'XRANKX')
+        description = space('A Description', 'DESCRIPTION', description='rank')
+        expected = [exact_key, exact_name, prefix_key, prefix_name_a, prefix_name_b,
+                    fragment_key, fragment_name, description]
+
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                payload = self.search('rank', scoped=scoped).json()
+                group = next(group for group in payload['groups'] if group['key'] == 'spaces')
+                self.assertEqual([row['title'] for row in group['results']], [item.name for item in expected])
 
     def test_exact_limit_is_not_reported_as_truncated(self):
         for index in range(GLOBAL_SEARCH_GROUP_LIMIT):
@@ -120,11 +207,102 @@ class GlobalSearchRegressionTests(TestCase):
         ]
         session.save()
 
-    def recent(self):
-        response = self.client.get(reverse('global_search'), {'recent': '1'})
+    def recent(self, *, scoped=False):
+        if scoped:
+            response = self.client.get(
+                scoped_workplace_app_path(self.team, 'api', 'v1/page/'),
+                {'url': reverse('global_search') + '?recent=1'},
+            )
+        else:
+            response = self.client.get(reverse('global_search'), {'recent': '1'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Cache-Control'], 'no-store')
         return response.json()
+
+    def test_space_search_and_recent_use_presets_and_controlled_photos_with_current_access(self):
+        with patch.object(Space._meta.get_field('avatar_photo'), 'storage', InMemoryStorage()):
+            self.space.name, self.space.avatar = 'Avatar preset', 'rocket'
+            self.space.save(update_fields=['name', 'avatar'])
+            photo = make_space(user=self.owner, workplace=self.team, name='Avatar photo',
+                               avatar_photo=ContentFile(PNG, name='visible.png'))
+            hidden = make_space(user=self.owner, workplace=self.team, name='Avatar private',
+                                visibility='private', private_owner=self.owner,
+                                avatar_photo=ContentFile(PNG, name='private.png'))
+            foreign = make_space(user=self.owner, workplace=self.private, name='Avatar foreign',
+                                 avatar_photo=ContentFile(PNG, name='foreign.png'))
+            self.remember(self.space, photo, hidden, foreign)
+            photo_url = space_avatar(photo)['photo_url']
+            self.assertEqual(photo_url, scoped_workplace_app_path(self.team, 'space', f'{photo.slug}/avatar/photo/'))
+            response = self.client.get(photo_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response['Cache-Control'], 'private, no-store')
+            self.assertEqual(b''.join(response.streaming_content), PNG)
+
+            for scoped in (False, True):
+                with self.subTest(scoped=scoped):
+                    search = self.search('Avatar', scoped=scoped).json()
+                    recent = self.recent(scoped=scoped)
+                    for payload in (search, recent):
+                        rows = {row['title']: row for group in payload['groups'] for row in group['results']}
+                        self.assertEqual(set(rows), {self.space.name, photo.name})
+                        self.assertEqual(rows[self.space.name]['avatar']['preset_class'], 'space-avatar-art--rocket')
+                        self.assertEqual(rows[photo.name]['avatar']['photo_url'], photo_url)
+                        serialized = json.dumps(payload)
+                        self.assertNotIn(photo.avatar_photo.name, serialized)
+                        for excluded in (hidden, foreign):
+                            self.assertNotIn(space_avatar(excluded)['photo_url'], serialized)
+                            self.assertNotIn(excluded.avatar_photo.name, serialized)
+
+            photo.visibility, photo.private_owner = 'private', self.owner
+            photo.save(update_fields=['visibility', 'private_owner'])
+            self.assertEqual(self.client.get(photo_url).status_code, 404)
+            for payload in (self.search('Avatar', scoped=True).json(), self.recent(scoped=True)):
+                self.assertNotIn(photo_url, json.dumps(payload))
+                self.assertNotIn(photo.name, json.dumps(payload))
+
+    def test_workspace_search_uses_current_preset_and_photo_without_private_workspace_avatar(self):
+        self.team.avatar = 'leaf'
+        self.team.save(update_fields=['avatar'])
+        self.personal.workplace_photo = 'workplace_photos/search-personal.png'
+        self.personal.save(update_fields=['workplace_photo'])
+        self.private.workplace_photo = 'workplace_photos/search-private.png'
+        self.private.save(update_fields=['workplace_photo'])
+
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                response = self.search('Search', scoped=scoped)
+                group = next(group for group in response.json()['groups'] if group['key'] == 'workplaces')
+                rows = {row['title']: row for row in group['results']}
+                self.assertEqual(rows[self.team.name]['avatar'], workplace_avatar(self.team))
+                self.assertEqual(rows[self.personal.name]['avatar'], workplace_avatar(self.personal))
+                self.assertNotContains(response, self.private.workplace_photo.name)
+                self.assertNotContains(response, workplace_avatar(self.private)['photo_url'])
+
+    def test_search_and_recent_use_task_type_icons_and_distinguish_subtasks(self):
+        expected = {}
+        tasks = []
+        for work_type, icon in [('task', 'square-check'), ('bug', 'circle-alert'), ('story', 'book-open'),
+                                ('epic', 'zap'), ('custom-type', 'shapes')]:
+            task = make_task(user=self.owner, workplace=self.team, space=self.space,
+                             title=f'Icon example {work_type}', assignee=self.member)
+            item = task.work_item
+            item.work_type = work_type
+            item.save(update_fields=['work_type'])
+            tasks.append(task)
+            expected[task.title] = (icon, 'Zadanie')
+        child = make_task(user=self.owner, workplace=self.team, space=self.space,
+                          parent=tasks[0], title='Icon example child')
+        expected[child.title] = (child.work_item.type_icon, 'Podzadanie')
+        self.remember(*tasks, child)
+
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                for payload in (self.search('Icon example', scoped=scoped).json(), self.recent(scoped=scoped)):
+                    rows = [row for group in payload['groups'] for row in group['results']]
+                    self.assertEqual(len(rows), len(expected))
+                    for row in rows:
+                        self.assertEqual((row['icon'], row['type']), expected[row['title']])
+                        self.assertNotIn('avatar', row)
 
     def test_recent_is_explicit_empty_and_requires_login(self):
         self.assertEqual(self.recent()['groups'], [])
@@ -198,6 +376,6 @@ class GlobalSearchRegressionTests(TestCase):
                 self.assertEqual(response.status_code, 302)
                 row = self.recent()['groups'][0]['results'][0]
                 self.assertEqual(row['title'], child.title)
-                self.assertEqual(row['type'], 'Zadanie')
+                self.assertEqual(row['type'], 'Podzadanie')
                 self.assertIn(f'/tasks/{child.work_item.key}/', row['url'])
                 self.assertEqual(self.client.get(row['url'], follow=True).context['task'].pk, parent.pk)
