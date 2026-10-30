@@ -914,7 +914,7 @@
 .confirm-modal-overlay,
 .contacts-photo-editor-overlay {
     --app-panel-gutter: 24px;
-    --app-panel-surface: var(--secondary-menu-bg);
+    --app-panel-surface: var(--app-modal-surface);
     --app-panel-motion-duration: 320ms;
     --app-panel-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }

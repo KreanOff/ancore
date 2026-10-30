@@ -165,11 +165,11 @@
         }
         const field = select?.name;
         const value = option?.value;
-        if (field === 'priority' && ['urgent', 'high', 'medium', 'low'].includes(value)) {
+        if (field === 'priority' && ['none', 'urgent', 'high', 'medium', 'low'].includes(value)) {
             const preview = document.createElement('span');
             preview.className = `ancore-custom-select__preview tasks-row-priority priority-${value}`;
             preview.setAttribute('aria-hidden', 'true');
-            preview.append(window.AncoreIcons.create({ urgent: 'circle-alert', high: 'arrow-up', medium: 'equal', low: 'arrow-down' }[value]));
+            preview.append(window.AncoreIcons.create({ none: 'circle', urgent: 'circle-alert', high: 'arrow-up', medium: 'equal', low: 'arrow-down' }[value]));
             return preview;
         }
         if (field === 'status' && ['new', 'in_progress', 'resolved', 'closed', 'reopened'].includes(value)) {
