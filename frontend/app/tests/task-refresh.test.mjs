@@ -36,6 +36,13 @@ const noteCallbacks = await callbacks('tags/NotesDialog.tsx', [
   'retryRefresh',
   'act',
 ]);
+const childCallbacks = await callbacks('tasks/TaskPage.tsx', [
+  'refresh',
+  'refreshError',
+  'retryRefresh',
+  'editChild',
+  'childSaved',
+]);
 const autosaveCode = (
   await transform(
     (await readFile(new URL('../src/tasks/useTaskSave.ts', import.meta.url), 'utf8')).replace(
@@ -69,6 +76,150 @@ function deferred() {
   const promise = new Promise((done) => (resolve = done));
   return { promise, resolve };
 }
+
+function childHarness() {
+  const requests = [],
+    navigations = [],
+    context = {
+      initial: { api_url: '/api/v1/page/', url: '/space/test/tasks/TS-1/?tab=subtasks' },
+      csrfToken: 'token',
+      life: { current: new AbortController() },
+      actionPending: { current: false },
+      childEditor: null,
+      saves: 0,
+      failAutosave: false,
+      failRead: false,
+      replyType: 'form',
+      auto: {
+        save: async () => {
+          context.saves++;
+          if (context.saveWait) await context.saveWait;
+          if (context.autosaveError) throw context.autosaveError;
+          return !context.failAutosave;
+        },
+      },
+      pageRequest: async (api, url, token, signal, body) => {
+        requests.push({ api, url, token, signal, body });
+        if (context.failRead) throw new Error('GET 503');
+        return url === context.initial.url
+          ? { type: 'space-task', data: { children: [{ title: 'Zmienione podzadanie' }] } }
+          : {
+              type: context.replyType,
+              data: {
+                action: url,
+                return_url: context.initial.url,
+                title: 'Edytuj zadanie',
+                form: { fields: [{ name: 'title', value: 'Podzadanie' }] },
+              },
+            };
+      },
+      navigate: (url) => navigations.push(url),
+    };
+  setters(context, ['Busy', 'Error', 'RefreshFailed', 'Data', 'ChildEditor']);
+  const item = {
+    key: 'TS-2',
+    title: 'Podzadanie',
+    editable: true,
+    edit_url: '/space/test/items/2/edit/',
+  };
+  return { context, requests, navigations, item, ...execute(childCallbacks, context) };
+}
+
+test('opening a subtask waits for parent autosave and blocks a second editor request', async () => {
+  const app = childHarness(),
+    saving = deferred();
+  app.context.saveWait = saving.promise;
+  const first = app.editChild(app.item);
+  await app.editChild({ ...app.item, key: 'TS-3', edit_url: '/space/test/items/3/edit/' });
+  assert.equal(app.context.saves, 1);
+  assert.equal(app.requests.length, 0);
+  assert.equal(app.context.busy, true);
+  saving.resolve();
+  await first;
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.requests[0].url, app.item.edit_url);
+  assert.equal(app.requests[0].api, app.context.initial.api_url);
+  assert.equal(app.requests[0].token, 'token');
+  assert.equal(app.requests[0].signal, app.context.life.current.signal);
+  assert.equal(app.requests[0].body, undefined);
+  assert.equal(app.context.childEditor.action, app.item.edit_url);
+  assert.equal(app.context.childEditor.title, 'Edytuj podzadanie TS-2');
+  assert.equal(app.context.childEditor.form.fields[0].value, 'Podzadanie');
+  assert.equal(app.context.busy, false);
+  assert.deepEqual(app.navigations, []);
+});
+
+test('a read-only subtask does not save its parent or request an editor', async () => {
+  const app = childHarness();
+  await app.editChild({ ...app.item, editable: false });
+  assert.equal(app.context.saves, 0);
+  assert.equal(app.requests.length, 0);
+  assert.equal(app.context.childEditor, null);
+});
+
+test('a failed parent autosave keeps the subtask closed and permits a later retry', async () => {
+  const app = childHarness();
+  app.context.failAutosave = true;
+  await app.editChild(app.item);
+  assert.equal(app.requests.length, 0);
+  assert.equal(app.context.childEditor, null);
+  assert.equal(app.context.busy, false);
+  app.context.failAutosave = false;
+  app.context.autosaveError = new Error('Zapis niedostępny');
+  await app.editChild(app.item);
+  assert.equal(app.requests.length, 0);
+  assert.equal(app.context.error, 'Zapis niedostępny');
+  assert.equal(app.context.busy, false);
+  app.context.autosaveError = null;
+  await app.editChild(app.item);
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.context.error, '');
+  assert.equal(app.context.childEditor.action, app.item.edit_url);
+});
+
+test('a failed or invalid subtask response shows an error and permits reopening', async () => {
+  const app = childHarness();
+  app.context.failRead = true;
+  await app.editChild(app.item);
+  assert.equal(app.context.childEditor, null);
+  assert.equal(app.context.error, 'GET 503');
+  assert.equal(app.context.busy, false);
+  app.context.failRead = false;
+  app.context.replyType = 'space-task';
+  await app.editChild(app.item);
+  assert.equal(app.context.childEditor, null);
+  assert.equal(app.context.error, 'Nie udało się otworzyć edycji podzadania.');
+  app.context.replyType = 'form';
+  await app.editChild(app.item);
+  assert.equal(app.context.childEditor.action, app.item.edit_url);
+  assert.equal(app.context.error, '');
+  assert.deepEqual(app.navigations, []);
+});
+
+test('a saved subtask closes its editor and refreshes the parent without navigation', async () => {
+  const app = childHarness();
+  await app.editChild(app.item);
+  app.context.failRead = true;
+  await app.childSaved('/space/test/tasks/TS-2/');
+  assert.equal(app.context.childEditor, null);
+  assert.equal(app.context.refreshFailed, true);
+  assert.match(app.context.error, /^Zapisano zmiany.*GET 503$/);
+  assert.equal(app.requests[1].url, app.context.initial.url);
+  await app.retryRefresh();
+  app.context.failRead = false;
+  await app.retryRefresh();
+  assert.deepEqual(
+    app.requests.slice(1).map((request) => request.url),
+    [app.context.initial.url, app.context.initial.url, app.context.initial.url],
+  );
+  assert.ok(app.requests.every((request) => request.body === undefined));
+  assert.equal(app.context.saves, 1, 'refresh retries must not resubmit the parent');
+  assert.equal(app.context.refreshFailed, false);
+  assert.equal(app.context.error, '');
+  assert.equal(app.context.data.children[0].title, 'Zmienione podzadanie');
+  assert.equal(app.context.busy, false);
+  assert.deepEqual(app.navigations, []);
+});
 
 function schemaHarness(kind) {
   const requests = [],

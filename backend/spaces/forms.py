@@ -16,7 +16,7 @@ from workplaces.services import can_manage_team, workplace_people, workspace_own
 from .defaults import KINDS, MANAGEMENT, TEMPLATES
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
-from .services import teams_for, visible_items, visible_spaces
+from .services import teams_for, transition_allowed, visible_items, visible_spaces
 from .schedule import ScheduleDateTimeField, validate_range
 from .widgets import IssueTypeSelect, TaskVisibilitySelect, TeamSelect
 
@@ -136,6 +136,7 @@ class SpaceForm(SpaceAvatarForm):
 
 
 class ItemForm(StyledForm):
+    editable_subtask_status = True
     title = forms.CharField(label='Tytuł', max_length=255)
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     work_type = forms.ChoiceField(label='Typ zgłoszenia', widget=IssueTypeSelect)
@@ -158,8 +159,17 @@ class ItemForm(StyledForm):
         self.request, self.space, self.item = request, space, item
         if item:
             kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at')}}
+            if item.task.parent_id:
+                kwargs.setdefault('auto_id', f'subtask-{item.pk}-%s')
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
+        if item and item.task.parent_id and self.editable_subtask_status:
+            self.fields['status'] = forms.ChoiceField(label='Status', required=False, choices=[
+                (status['key'], status['label']) for status in space.statuses
+                if transition_allowed(item, status['key'])
+            ])
+            self.initial['status'] = item.status
+            self.order_fields(['title', 'description', 'status'])
         from tasks.tagging import tags_in_scope
         self.fields['tags'].queryset = tags_in_scope(workspace_owner(request), request.workplace, space)
         if item:
@@ -187,6 +197,10 @@ class ItemForm(StyledForm):
                 self.initial['custom_' + field['key']] = item.custom_values.get(field['key'])
         self.style()
 
+    def clean_status(self):
+        # Older edit forms did not submit status; keep their current value.
+        return self.cleaned_data.get('status') or self.item.status
+
     def clean(self):
         data = super().clean()
         if data.get('sprint'):
@@ -204,6 +218,7 @@ class ItemForm(StyledForm):
 
 class DetailForm(ItemForm):
     """Issue properties and schedule with unchanged planning values preserved."""
+    editable_subtask_status = False
     visibility = forms.ChoiceField(label='Widoczność', required=False, choices=[('private', 'Prywatne — wybrane osoby'), ('public', 'Publiczne — dostęp odziedziczony')], widget=TaskVisibilitySelect)
 
     def __init__(self, *args, changed_fields=None, **kwargs):

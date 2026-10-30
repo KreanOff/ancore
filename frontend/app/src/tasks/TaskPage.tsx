@@ -1,6 +1,6 @@
 import { setPageLocation } from '../shared/page';
 import { useEffect, useRef, useState } from 'react';
-import { FieldControl, type Field } from '../forms/FormDialog';
+import { FieldControl, FormDialog, type Field, type FormDialogData } from '../forms/FormDialog';
 import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
@@ -40,6 +40,7 @@ export default function TaskPage(props: PageProps) {
     [error, setError] = useState(''),
     [refreshFailed, setRefreshFailed] = useState(false),
     [dialog, setDialog] = useState<DialogData | null>(null),
+    [childEditor, setChildEditor] = useState<FormDialogData | null>(null),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [sort, setSort] = useState(false),
     [logSelected, setLogSelected] = useState<Set<number>>(new Set()),
@@ -147,6 +148,36 @@ export default function TaskPage(props: PageProps) {
   }
   async function openDialog(value: DialogData) {
     if (!busy && (await auto.save())) setDialog(value);
+  }
+  async function editChild(item: Item) {
+    if (!item.editable || actionPending.current) return;
+    actionPending.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      if (!(await auto.save())) return;
+      const page = await pageRequest<Page>(
+        initial.api_url,
+        item.edit_url,
+        csrfToken,
+        life.current.signal,
+      );
+      if (page.type !== 'form') throw new Error('Nie udało się otworzyć edycji podzadania.');
+      const editor = page.data as FormDialogData;
+      setChildEditor({
+        ...editor,
+        title: `Edytuj podzadanie ${item.key}`,
+      });
+    } catch (exception) {
+      if (!life.current.signal.aborted) setError(errorMessage(exception));
+    } finally {
+      actionPending.current = false;
+      setBusy(false);
+    }
+  }
+  async function childSaved() {
+    setChildEditor(null);
+    await retryRefresh();
   }
   function openLog(log?: Log) {
     void openDialog({
@@ -533,7 +564,19 @@ export default function TaskPage(props: PageProps) {
                                     className={`status-indicator status-${item.category}`}
                                     title={item.status_label}
                                   />
-                                  <a href={item.url} className="tasks-row-title">
+                                  <a
+                                    href={item.editable ? item.edit_url : undefined}
+                                    className="tasks-row-title"
+                                    aria-haspopup={item.editable ? 'dialog' : undefined}
+                                    aria-disabled={item.editable && busy ? true : undefined}
+                                    title={
+                                      item.editable ? `Edytuj podzadanie ${item.key}` : undefined
+                                    }
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      void editChild(item);
+                                    }}
+                                  >
                                     <span className="tasks-row-title-content">
                                       <span className="tasks-row-title-main">
                                         <span className="work-item-key">{item.key}</span>
@@ -901,8 +944,10 @@ export default function TaskPage(props: PageProps) {
               </div>
             </main>
             <aside className="tasks-issue-sidebar" aria-label="Szczegóły zadania">
-              <section className="tasks-issue-side-section">{field('visibility')}</section>
-              <section className="tasks-issue-side-section">
+              <section className="tasks-issue-side-section" aria-label="Widoczność zadania">
+                {field('visibility')}
+              </section>
+              <section className="tasks-issue-side-section" aria-label="Właściwości zadania">
                 <div className="tasks-issue-field">
                   <span className="tasks-issue-field-label">
                     <label htmlFor={statusField.id}>Status</label>
@@ -914,11 +959,29 @@ export default function TaskPage(props: PageProps) {
                     </span>
                   ))}
                 </div>
-                {['priority', 'tags', 'work_type', 'task_type', 'assignee'].map((name) => (
+                {['priority', 'assignee', 'work_type', 'task_type', 'tags'].map((name) => (
                   <div key={name} className="react-field-slot">
                     {field(name)}
                   </div>
                 ))}
+              </section>
+              <section
+                className="tasks-issue-side-section"
+                aria-label="Pola dodatkowe i planowanie"
+                hidden={!planningFields.some(visiblePlanningField)}
+              >
+                {planningFields.map((value) => (
+                  <div hidden={!visiblePlanningField(value)} key={value.name}>
+                    {field(value.name)}
+                  </div>
+                ))}
+              </section>
+              <section className="tasks-issue-side-section" aria-label="Terminy zadania">
+                {field('start_at')}
+                {field('due_at')}
+                {field('reminder_at')}
+              </section>
+              <section className="tasks-issue-side-section" aria-label="Informacje o zadaniu">
                 <div className="tasks-issue-field">
                   <span className="tasks-issue-field-label">ID zadania</span>
                   <strong className="tasks-issue-code">
@@ -954,19 +1017,6 @@ export default function TaskPage(props: PageProps) {
                     )}
                   </strong>
                 </div>
-              </section>
-              <section
-                className="tasks-issue-side-section"
-                aria-label="Pola dodatkowe i planowanie"
-                hidden={!planningFields.some(visiblePlanningField)}
-              >
-                {planningFields.map((value) => (
-                  <div hidden={!visiblePlanningField(value)} key={value.name}>
-                    {field(value.name)}
-                  </div>
-                ))}
-              </section>
-              <section className="tasks-issue-side-section">
                 <div className="tasks-issue-field">
                   <span className="tasks-issue-field-label">Utworzono</span>
                   <strong>{dateLabel(data.created_at, true)}</strong>
@@ -977,9 +1027,6 @@ export default function TaskPage(props: PageProps) {
                     {dateLabel(data.completion_date, true) || 'Nie zamknięto'}
                   </strong>
                 </div>
-                {field('start_at')}
-                {field('due_at')}
-                {field('reminder_at')}
               </section>
             </aside>
           </div>
@@ -993,6 +1040,16 @@ export default function TaskPage(props: PageProps) {
           csrfToken={csrfToken}
           onClose={() => setDialog(null)}
           onSaved={refresh}
+        />
+      ) : null}
+      {childEditor ? (
+        <FormDialog
+          key={childEditor.action}
+          data={childEditor}
+          api={initial.api_url}
+          csrfToken={csrfToken}
+          onClose={() => setChildEditor(null)}
+          onSaved={childSaved}
         />
       ) : null}
     </div>

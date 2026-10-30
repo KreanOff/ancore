@@ -69,8 +69,11 @@ class GlobalSearchRegressionTests(TestCase):
                     link = group['results'][0]['url']
                     self.assertIn(f'/tasks/{selected.work_item.key}/', link)
                     first.delete()
-                    response = self.client.get(link)
-                    self.assertEqual(response.context['task'].pk, selected.pk)
+                    response = self.client.get(link, follow=True)
+                    self.assertEqual(response.context['task'].pk, parent.pk if is_child else selected.pk)
+                    if is_child:
+                        self.assertEqual(response.context['task_tab'], 'subtasks')
+                        self.assertContains(response, selected.title)
                     selected.delete()
                     self.assertEqual(self.client.get(link).status_code, 404)
 
@@ -192,9 +195,9 @@ class GlobalSearchRegressionTests(TestCase):
         for prefix in ('/space/', f'/workplaces/{self.team.slug}/space/'):
             with self.subTest(prefix=prefix):
                 response = self.client.get(f'{prefix}{child.space.slug}/tasks/{child.work_item.key}/')
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, 302)
                 row = self.recent()['groups'][0]['results'][0]
                 self.assertEqual(row['title'], child.title)
                 self.assertEqual(row['type'], 'Zadanie')
                 self.assertIn(f'/tasks/{child.work_item.key}/', row['url'])
-                self.assertEqual(self.client.get(row['url']).context['task'].pk, child.pk)
+                self.assertEqual(self.client.get(row['url'], follow=True).context['task'].pk, parent.pk)

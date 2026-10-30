@@ -36,7 +36,11 @@ class TaskCalendarTests(TestCase):
         self.assertEqual(item['source'], 'tasks')
         self.assertIn(f'/space/{self.space.slug}/tasks/{child.work_item.key}/', item['url'])
         self.assertEqual(item['start'], item['end'])
-        self.assertEqual(self.client.get(item['url']).status_code, 200)
+        response = self.client.get(item['url'], follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['task'].pk, parent.pk)
+        self.assertEqual(response.context['task_tab'], 'subtasks')
+        self.assertContains(response, child.title)
         self.assertEqual(CalendarEvent.objects.count(), 1)
 
     def test_only_open_in_range_current_workspace_visible_items(self):

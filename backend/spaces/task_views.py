@@ -22,7 +22,7 @@ from workplaces.services import workplace_people
 from .access import editable_to, require_editable, visible_to, tree_ids, task_people
 from .forms import DetailForm, SubtaskForm, MemberForm, WorkLogForm
 from .models import Space, SpaceTask, SpaceTaskFile, SpaceTaskMembership, SpaceTaskWorkLog
-from .services import manage_space, record, set_status, space_url, task_url, visible_items
+from .services import manage_space, record, set_status, space_url, task_subtasks_url, task_url, visible_items
 from .views import detail_context, dialog_response, space_object
 
 
@@ -126,6 +126,9 @@ def work_log_context(request, task):
 def detail(request, space_pk, key):
     item = task_item(request, space_pk, key)
     task, space = item.task, item.space
+    if request.method == 'GET' and task.parent_id:
+        remember_view(request, task)
+        return redirect(task_subtasks_url(request, task))
     can_edit = editable_to(SpaceTask.objects.filter(pk=task.pk), request.user).exists()
     if request.method == 'POST' and request.POST.get('action') == 'favorite':
         if task.favorited_by.filter(pk=request.user.pk).exists():
@@ -244,7 +247,7 @@ def detail(request, space_pk, key):
                         ids = {int(pk) for pk in request.POST.getlist('subtask_ids')}
                     except (ValueError, TypeError):
                         raise Http404
-                    selected = visible_to(task.subtasks.filter(pk__in=ids), request.user)
+                    selected = visible_to(SpaceTask.objects.filter(pk__in=tree_ids(task.subtasks.all())), request.user).filter(pk__in=ids)
                     if not ids or selected.count() != len(ids):
                         raise Http404
                     descendants = SpaceTask.objects.filter(pk__in=tree_ids(selected))
@@ -325,7 +328,7 @@ def detail(request, space_pk, key):
                    task_edit_url=space_url(request, space, f'tasks/{key}/edit/'),
                    member_edit_url=space_url(request, space, f'tasks/{key}/members/'),
                    can_manage_task=can_edit and manages_task(request, task),
-                   subtasks=visible_items(request).filter(task__parent=task),
+                   subtasks=visible_items(request).filter(task_id__in=tree_ids(task.subtasks.all())),
                    comments=visible_to(task.activities.filter(kind='comment'), request.user).select_related('actor').prefetch_related('images'),
                    history=visible_to(task.activities.filter(kind='system'), request.user).select_related('actor'),
                    files=task.attachments.filter(activity__isnull=True), logs=task.work_logs.select_related('author'),

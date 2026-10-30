@@ -34,7 +34,7 @@ from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .dashboard import dashboard_payload
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
 from .item_query import item_sort, order_items
 from .list_window import group_limit, list_url, list_window, more_url, timeline_more_url
@@ -563,7 +563,8 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 raise Http404
             sprint = get_object_or_404(space.sprints.filter(state__in=['planned', 'active']), pk=int(sprint_id))
             form.initial.update(sprint=sprint, in_backlog=False)
-    url = (backlog_url(request, space) if in_planning else task_url(request, item.task) if key
+    url = (task_subtasks_url(request, item.task) if item and item.task.parent_id
+           else backlog_url(request, space) if in_planning else task_url(request, item.task) if key
            else list_url(request, space) if request.GET.get('view') == 'list'
            else space_url(request, space, '?view=list'))
     if request.method == 'POST':
@@ -582,6 +583,9 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, background_space=space if in_planning else None)
             data = form.cleaned_data
             task = SpaceTask.objects.select_for_update().get(pk=item.task_id) if item else SpaceTask(space=space, created_by=request.user, visibility='public')
+            if item and 'status' in data:
+                set_status(request, item, data['status'])
+                task.refresh_from_db()
             for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
                 setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
             task._activity_actor = request.user

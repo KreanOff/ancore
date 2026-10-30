@@ -96,6 +96,13 @@ def task_url(request, task):
     return space_url(request, item.space, f'tasks/{item.key}/?') + params.urlencode()
 
 
+def task_subtasks_url(request, task):
+    """Return an already visible task to its root task's subtask list."""
+    while task.parent_id:
+        task = task.parent
+    return task_url(request, task) + '&tab=subtasks'
+
+
 @transaction.atomic
 def create_work_item(task):
     space = Space.objects.select_for_update().get(pk=task.space_id)
