@@ -1,10 +1,12 @@
-<div class="documents-field tasks-form-field" data-document-color-picker data-default-color="{{ form.default_color }}">
-    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+<div class="documents-field tasks-form-field app-form-field" data-document-color-picker data-default-color="{{ form.default_color }}">
+    <div class="app-field-label">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% include 'core/includes/field_help.html' with text='Kliknij próbkę, aby wybrać kolor.' label=field.label id=field.auto_id|add:'_helptext' only %}
+    </div>
     <div class="documents-color-control">
         <span class="documents-color-preview" data-document-color-preview aria-hidden="true">{% include form.color_icon_template with color=form.preview_color only %}</span>
         {{ field }}
         <button type="button" class="btn btn-secondary btn-sm" data-document-color-reset>Domyślny</button>
     </div>
-    <p class="documents-muted">Kliknij próbkę, aby wybrać kolor.</p>
     {% if field.errors %}<div class="tasks-modal__errors" role="alert">{{ field.errors }}</div>{% endif %}
 </div>

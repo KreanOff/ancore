@@ -1444,3 +1444,177 @@
         padding-top: 9px;
     }
 }
+
+/* Shared creation/editing layout: identity, description, then paired fields.
+   Opt in at the form content so inline editors and confirmation dialogs retain
+   their own geometry. DOM order matches the visual and keyboard order. */
+.app-field-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+}
+
+.app-field-label > label {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+}
+
+.app-field-help {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.app-field-help .app-field-help__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: help;
+}
+
+.app-field-help .app-field-help__trigger:hover,
+.app-field-help .app-field-help__trigger[aria-expanded="true"] {
+    background: var(--dropdown-menu-highlight-bg);
+}
+
+.app-field-help .app-field-help__trigger:focus-visible {
+    outline: 2px solid var(--system-accent) !important;
+    outline-offset: 2px;
+}
+
+.app-field-help .app-field-help__content {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 1;
+    width: max-content;
+    max-width: min(320px, calc(100vw - 32px));
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-menu-radius);
+    background: var(--card-bg);
+    box-shadow: var(--dropdown-menu-shadow);
+    color: var(--text-primary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.app-field-help__content[hidden] {
+    display: none !important;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--app-modal-field-gap);
+    align-content: start;
+    align-items: start;
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: auto;
+    max-width: none;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--app-modal-field-gap);
+    align-items: start;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading:has(> :nth-child(2)) {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 28%);
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel :is(.app-form-heading, .app-form-description, .app-form-wide) {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout :is(.tasks-form-field, .app-form-field) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout :is(.tasks-form-field, .app-form-field) > :is(label, .form-label) {
+    padding: 0;
+    margin: 0;
+    grid-column: auto;
+}
+
+.tasks-modal.app-modal-panel .tasks-form-field > .app-field-label {
+    grid-column: 1;
+    padding: 0;
+    margin: 0;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout :is(.tasks-form-field, .app-form-field) > :not(label),
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout .react-field-control > *,
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading > * {
+    grid-column: auto;
+    min-width: 0;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading .tasks-form-field {
+    grid-column: auto;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout [hidden] {
+    display: none !important;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: var(--app-modal-field-gap);
+    align-items: start;
+    align-content: start;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout > .app-form-layout {
+    grid-column: 2;
+}
+
+:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout > .app-form-layout:only-child {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout,
+    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading:has(> :nth-child(2)) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout > .app-form-layout {
+        grid-column: 1 / -1;
+    }
+}

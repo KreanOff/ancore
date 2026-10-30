@@ -6,18 +6,23 @@
                 <h2 id="documents-modal-title">{{ modal.form_title }}</h2>
                 <a href="{{ modal.folder_url }}" class="tasks-modal__close" aria-label="Zamknij" data-document-modal-close></a>
             </header>
-            <div class="tasks-modal__body documents-form">
-                <div class="documents-modal-error tasks-modal__errors" role="alert" data-document-modal-error hidden></div>
-                {% if modal.form.non_field_errors %}<div class="tasks-modal__errors" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
-                {% if modal.template_create %}<p class="documents-muted">{% if modal.has_templates %}Powstanie niezależna kopia ostatnio zapisanej treści szablonu. Najpierw zapisz zmiany w jego edytorze.{% else %}Nie masz jeszcze szablonów. W menu dokumentu DOCX, XLSX, PPTX lub PDF wybierz „Używaj jako szablonu”.{% endif %}</p>{% endif %}
-                {% if modal.current_library or modal.upload_form %}<p class="documents-muted documents-modal-location">{{ modal.current_library.name|default:'Dokumenty' }}{% if modal.current_folder %} / {{ modal.current_folder.name }}{% endif %}</p>{% endif %}
+            <div class="tasks-modal__body documents-form app-form-layout">
+                <div class="documents-modal-error tasks-modal__errors app-form-wide" role="alert" data-document-modal-error hidden></div>
+                {% if modal.form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
+                {% if modal.template_create %}<p class="documents-muted app-form-wide">{% if modal.has_templates %}Powstanie niezależna kopia ostatnio zapisanej treści szablonu. Najpierw zapisz zmiany w jego edytorze.{% else %}Nie masz jeszcze szablonów. W menu dokumentu DOCX, XLSX, PPTX lub PDF wybierz „Używaj jako szablonu”.{% endif %}</p>{% endif %}
+                {% if modal.current_library or modal.upload_form %}<p class="documents-muted documents-modal-location app-form-wide">{{ modal.current_library.name|default:'Dokumenty' }}{% if modal.current_folder %} / {{ modal.current_folder.name }}{% endif %}</p>{% endif %}
                 {% if modal.document %}
-                <div class="documents-file-summary"><span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=modal.document only %}</span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-icon="download" aria-hidden="true"></i></a></div>
+                <div class="documents-file-summary app-form-wide"><span class="documents-file-icon">{% include 'documents/includes/file_icon.html' with document=modal.document only %}</span><div>{{ modal.document.filename }}<small>{{ modal.document.extension }} · {{ modal.document.file_size|filesizeformat }} · Dodano {{ modal.document.created_at|date:'d.m.Y, H:i' }}</small></div><a class="tasks-icon-button documents-icon-button" href="{{ modal.documents_url }}{{ modal.document.pk }}/download/" download aria-label="Pobierz plik" title="Pobierz plik"><i data-icon="download" aria-hidden="true"></i></a></div>
                 {% endif %}
+                {% if modal.form.name or modal.form.title %}<div class="app-form-heading">
+                    {% if modal.form.name %}{% include 'core/includes/modal_form_field.html' with field=modal.form.name only %}{% else %}{% include 'core/includes/modal_form_field.html' with field=modal.form.title only %}{% endif %}
+                </div>{% endif %}
+                {% if modal.form.description %}{% include 'core/includes/modal_form_field.html' with field=modal.form.description only %}{% endif %}
                 {% for field in modal.form %}
                 {% if field.is_hidden %}{{ field }}
+                {% elif field.name == 'name' or field.name == 'title' or field.name == 'description' %}
                 {% elif field.name == 'color' %}{% include 'documents/includes/color_field.html' with form=modal.form field=field only %}
-                {% else %}<div class="documents-field tasks-form-field">
+                {% else %}<div class="documents-field tasks-form-field app-form-field{% if field.name == 'files' %} app-form-wide{% endif %}">
                     <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
                     {% if modal.upload_form and field.name == 'files' %}
                     <div class="documents-upload-control">

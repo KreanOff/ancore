@@ -178,7 +178,9 @@
         const desiredHeight = Math.min(maxHeight, menu.scrollHeight + menu.offsetHeight - menu.clientHeight) * scale;
         const below = Math.max(0, bottomEdge - rect.bottom - gap);
         const above = Math.max(0, rect.top - topEdge - gap);
-        const openAbove = desiredHeight > below && above > below;
+        const preferAbove = menu.getAttribute('data-dropdown-placement') === 'top';
+        const openAbove = (preferAbove && desiredHeight <= above)
+            || (desiredHeight > below && above > below);
         // Live configuration panels must not chase the item they are changing.
         // Fit them to the viewport once, then keep their opening position.
         const availableHeight = active.fixedPosition ? bottomEdge - topEdge : openAbove ? above : below;

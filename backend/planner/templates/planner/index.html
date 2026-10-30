@@ -176,29 +176,33 @@
                 </div>
             </header>
 
-            <div class="tasks-modal__body calendar-dialog-body">
+            <div class="tasks-modal__body calendar-dialog-body app-form-layout">
                 <input type="hidden" name="event_id" id="event-id">
-                <div class="calendar-dialog-field">
+                <div class="app-form-heading"><div class="calendar-dialog-field app-form-field">
                     <label class="form-label" for="event-title">Tytuł</label>
                     <input type="text" id="event-title" name="title" class="tasks-inline-input" required maxlength="255" placeholder="Tytuł wydarzenia">
+                </div></div>
+                <div class="calendar-dialog-field app-form-field app-form-description">
+                    <label class="form-label" for="event-description">Opis</label>
+                    <textarea id="event-description" name="description" class="tasks-inline-input calendar-dialog-desc" placeholder="Opis (opcjonalnie)"></textarea>
                 </div>
-                <div class="calendar-dialog-field calendar-checkbox-field">
+                <div class="calendar-form-row app-form-layout app-form-wide">
+                    <div class="calendar-dialog-field app-form-field">
+                        <label class="form-label" for="event-start">Rozpoczęcie</label>
+                        <input type="datetime-local" id="event-start" name="start" class="tasks-inline-input" required>
+                    </div>
+                    <div class="calendar-dialog-field app-form-field">
+                        <label class="form-label" for="event-end">Zakończenie</label>
+                        <input type="datetime-local" id="event-end" name="end" class="tasks-inline-input" required>
+                    </div>
+                </div>
+                <div class="calendar-dialog-field calendar-checkbox-field app-form-field">
                     <label class="form-label form-label--checkbox" for="event-all-day">
                         <input type="checkbox" id="event-all-day" name="all_day" class="form-checkbox">
                         Cały dzień
                     </label>
                 </div>
-                <div class="calendar-form-row">
-                    <div class="calendar-dialog-field">
-                        <label class="form-label" for="event-start">Rozpoczęcie</label>
-                        <input type="datetime-local" id="event-start" name="start" class="tasks-inline-input" required>
-                    </div>
-                    <div class="calendar-dialog-field">
-                        <label class="form-label" for="event-end">Zakończenie</label>
-                        <input type="datetime-local" id="event-end" name="end" class="tasks-inline-input" required>
-                    </div>
-                </div>
-                <div class="calendar-dialog-field">
+                <div class="calendar-dialog-field app-form-field">
                     <label class="form-label" id="event-color-label" for="event-color-button">Kolor</label>
                     <div class="calendar-color-select" data-calendar-color-select>
                         <select id="event-color" name="color" class="tasks-inline-input form-select" aria-hidden="true" tabindex="-1" data-calendar-color-source>
@@ -248,11 +252,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="calendar-dialog-field">
-                    <label class="form-label" for="event-description">Opis</label>
-                    <textarea id="event-description" name="description" class="tasks-inline-input calendar-dialog-desc" placeholder="Opis (opcjonalnie)"></textarea>
-                </div>
-                <p class="calendar-form-error u-hidden" id="event-form-error" role="alert"></p>
+                <p class="calendar-form-error app-form-wide u-hidden" id="event-form-error" role="alert"></p>
             </div>
 
             <footer class="tasks-modal__footer calendar-dialog-footer">

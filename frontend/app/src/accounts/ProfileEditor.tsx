@@ -60,7 +60,10 @@ export default function ProfileEditor({
       'aria-describedby': definition.errors.length ? definition.id + '-errors' : undefined,
     };
     return (
-      <div className="profile-stacked-field" key={name}>
+      <div
+        className={`profile-stacked-field app-form-field${name === 'bio' ? ' app-form-description' : ''}`}
+        key={name}
+      >
         <label className="profile-field-label" htmlFor={definition.id}>
           {label}
         </label>
@@ -165,17 +168,20 @@ export default function ProfileEditor({
             </ul>
           </div>
         ) : null}
-        <div className="profile-edit-body">
+        <div className="profile-edit-body app-form-avatar-layout">
           <AvatarControl schema={data.form} formId="profile-detail-form" account />
-          <div className="profile-edit-fields">
-            <div className="profile-name-fields">
-              {field('first_name', 'Imię')}
-              {field('middle_name', 'Drugie imię')}
-              {field('last_name', 'Nazwisko')}
+          <div className="profile-edit-fields app-form-layout">
+            <div className="app-form-heading">
+              <div className="profile-name-fields">
+                {field('first_name', 'Imię')}
+                {field('middle_name', 'Drugie imię')}
+                {field('last_name', 'Nazwisko')}
+              </div>
             </div>
+            {field('bio', 'Bio')}
             {field('email', 'Email')}
             {field('username', 'ID Ancore')}
-            <div className="profile-status-field">
+            <div className="profile-status-field app-form-field">
               <span>Status</span>
               <PresenceSelect
                 value={status}
@@ -189,11 +195,8 @@ export default function ProfileEditor({
                 }}
               />
             </div>
-            <div className="profile-contact-fields">
-              {field('phone_number', 'Numer telefonu')}
-              {field('job_title', 'Stanowisko')}
-            </div>
-            {field('bio', 'Bio')}
+            {field('phone_number', 'Numer telefonu')}
+            {field('job_title', 'Stanowisko')}
           </div>
         </div>
         <footer className="profile-edit-footer">

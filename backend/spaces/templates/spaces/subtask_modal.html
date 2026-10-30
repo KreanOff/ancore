@@ -14,42 +14,9 @@
                 </div>
             </header>
 
-            <div class="tasks-modal__body tasks-issue-modal__body">
-                {% if subtask_form.errors %}
-                <div class="tasks-modal__errors" role="alert">
-                    {% for field in subtask_form %}
-                        {% for error in field.errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    {% endfor %}
-                    {% for error in subtask_form.non_field_errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="tasks-project-heading-fields">
-                    <div class="tasks-form-field">
-                        <label for="{{ subtask_form.title.id_for_label }}">Tytuł podzadania</label>
-                        {{ subtask_form.title }}
-                    </div>
-                    <div class="tasks-form-field"><label for="{{ subtask_form.visibility.id_for_label }}">Widoczność</label>{{ subtask_form.visibility }}</div>
-                </div>
-                <div class="tasks-form-field">
-                    <label for="{{ subtask_form.description.id_for_label }}">Opis</label>
-                    {{ subtask_form.description }}
-                </div>
-
-                <div class="tasks-issue-fields">
-                    <label>
-                        <span>Status</span>
-                        {{ subtask_form.status }}
-                    </label>
-                    <label>
-                        <span>Termin wykonania</span>
-                        {{ subtask_form.due_at }}
-                    </label>
-                </div>
+            <div class="tasks-modal__body tasks-issue-modal__body app-form-layout">
+                {% if subtask_form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ subtask_form.non_field_errors }}</div>{% endif %}
+                {% include 'core/includes/modal_form_fields.html' with form=subtask_form only %}
             </div>
 
             <footer class="tasks-modal__footer tasks-issue-modal__footer">

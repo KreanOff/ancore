@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Modal } from '../shared/Modal';
 import { Icon } from '../shared/Icon';
+import { FieldLabel } from '../shared/FieldLabel';
 import { errorMessage } from '../shared/api';
 import { PageError, pageRequest, type Page } from '../shared/page';
 import AvatarControl from './AvatarControl';
@@ -11,8 +12,13 @@ import type { DirectoryData, WorkspaceForm as Schema } from './types';
 function ModuleFields({ field, id }: { field: Field; id: string }) {
   const selected = new Set(Array.isArray(field.value) ? field.value : []);
   return (
-    <div className="tasks-form-field workplace-module-fields">
-      <span id={id + '-modules-label'}>{field.label}</span>
+    <div className="tasks-form-field workplace-module-fields app-form-field app-form-wide">
+      <FieldLabel
+        label={<span id={id + '-modules-label'}>{field.label}</span>}
+        helpText={field.help_text}
+        helpId={id + '-modules-hint'}
+        helpLabel={field.label}
+      />
       <input type="hidden" name="modules_submitted" value="1" />
       <div
         className="workplace-module-grid"
@@ -55,7 +61,6 @@ function ModuleFields({ field, id }: { field: Field; id: string }) {
           );
         })}
       </div>
-      {field.help_text ? <small id={id + '-modules-hint'}>{field.help_text}</small> : null}
     </div>
   );
 }
@@ -132,31 +137,33 @@ export function SettingsFields({
 }) {
   const modules = schema?.fields.find((field) => field.name === 'enabled_modules');
   return (
-    <div className="workplace-modal__content" data-profile-photo-layout>
+    <div className="workplace-modal__content app-form-avatar-layout" data-profile-photo-layout>
       {schema && !readonly ? <AvatarControl schema={schema} formId={id} create={create} /> : null}
-      <div className="workplace-modal__details">
-        <div className="tasks-form-field">
-          <label htmlFor={id + '-name'}>Nazwa miejsca pracy</label>
-          <input
-            id={id + '-name'}
-            aria-invalid={!!schema?.fields.find((field) => field.name === 'name')?.errors.length}
-            name="name"
-            className="tasks-inline-input workplace-create-modal__name-input workplace-create-modal__text-input"
-            placeholder="Nazwa miejsca pracy"
-            autoComplete="off"
-            maxLength={140}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            readOnly={readonly}
-            required
-          />
+      <div className="workplace-modal__details app-form-layout">
+        <div className="app-form-heading">
+          <div className="tasks-form-field app-form-field">
+            <label htmlFor={id + '-name'}>Nazwa miejsca pracy</label>
+            <input
+              id={id + '-name'}
+              aria-invalid={!!schema?.fields.find((field) => field.name === 'name')?.errors.length}
+              name="name"
+              className="tasks-inline-input workplace-create-modal__name-input workplace-create-modal__text-input"
+              placeholder="Nazwa miejsca pracy"
+              autoComplete="off"
+              maxLength={140}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              readOnly={readonly}
+              required
+            />
+          </div>
         </div>
         {create ? (
           <span className="u-sr-only" aria-live="polite">
             {name.length}/140
           </span>
         ) : null}
-        <div className="tasks-form-field">
+        <div className="tasks-form-field app-form-field app-form-description">
           <label htmlFor={id + '-description'}>Opis</label>
           <textarea
             id={id + '-description'}
@@ -169,30 +176,23 @@ export function SettingsFields({
             readOnly={readonly}
           />
         </div>
-        <section
-          className="tasks-project-parameters workplace-modal__parameters"
-          aria-label="Parametry miejsca pracy"
-        >
-          <div className="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields">
-            <label
-              className="tasks-issue-field workplace-edit-modal__code-field"
-              htmlFor={id + '-code'}
-            >
-              <span>Kod miejsca pracy</span>
-              <input
-                id={id + '-code'}
-                aria-label="Kod miejsca pracy"
-                className="tasks-inline-input"
-                value={code || 'Generowany automatycznie'}
-                readOnly
-                aria-describedby={id + '-code-hint'}
-              />
-              <small id={id + '-code-hint'} className="u-sr-only">
-                Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu.
-              </small>
-            </label>
-          </div>
-        </section>
+        <div className="tasks-form-field workplace-edit-modal__code-field app-form-field">
+          <FieldLabel
+            htmlFor={id + '-code'}
+            label="Kod miejsca pracy"
+            helpText="Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu."
+            helpId={id + '-code-hint'}
+            helpLabel="Kod miejsca pracy"
+          />
+          <input
+            id={id + '-code'}
+            aria-label="Kod miejsca pracy"
+            className="tasks-inline-input"
+            value={code || 'Generowany automatycznie'}
+            readOnly
+            aria-describedby={id + '-code-hint'}
+          />
+        </div>
         {modules && !readonly ? <ModuleFields field={modules} id={id} /> : null}
       </div>
     </div>

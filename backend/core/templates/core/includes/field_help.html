@@ -1,0 +1,4 @@
+{% if text %}<span class="app-field-help" data-field-help>
+    <button type="button" class="app-field-help__trigger" data-field-help-toggle aria-label="Informacja: {{ label }}" aria-describedby="{{ id }}" aria-controls="{{ id }}" aria-expanded="false"><span aria-hidden="true">!</span></button>
+    <span id="{{ id }}" class="app-field-help__content" data-field-help-content data-dropdown-search-disabled data-dropdown-placement="top" role="tooltip" hidden>{{ text }}</span>
+</span>{% endif %}

@@ -23,27 +23,29 @@
                         {% csrf_token %}
                         <input type="hidden" name="view" value="{{ management_view }}">
                         {% if edit_form.errors %}<div class="tasks-modal__errors" role="alert">{% for field in edit_form %}{% for error in field.errors %}<p>{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}{% for error in edit_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
-                        <div class="workplace-modal__content" data-profile-photo-layout>
+                        <div class="workplace-modal__content{% if can_manage_team %} app-form-avatar-layout{% endif %}" data-profile-photo-layout>
                             {% if can_manage_team %}{% include 'workplaces/includes/workplace_photo_editor.html' with form=avatar_edit_form workplace_logo=workplace_logo photo_button_label='Zmień' form_id='workplace-edit-form' %}{% endif %}
-                            <div class="workplace-modal__details">
-                                <div class="tasks-form-field">
+                            <div class="workplace-modal__details app-form-layout">
+                                <div class="app-form-heading"><div class="tasks-form-field app-form-field">
                                     <label for="workplace-edit-name">Nazwa miejsca pracy</label>
                                     <input id="workplace-edit-name" type="text" name="name" value="{% if edit_form %}{{ edit_form.name.value|default_if_none:'' }}{% else %}{{ workplace.name }}{% endif %}" class="tasks-inline-input" placeholder="Nazwa miejsca pracy" autocomplete="off" required data-workplace-edit-autofocus{% if not can_manage_team %} readonly{% endif %}>
-                                </div>
-                                <div class="tasks-form-field">
+                                </div></div>
+                                <div class="tasks-form-field app-form-field app-form-description">
                                     <label for="workplace-edit-description">Opis</label>
                                     <textarea id="workplace-edit-description" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…"{% if not can_manage_team %} readonly{% endif %}>{% if edit_form %}{{ edit_form.description.value|default_if_none:'' }}{% else %}{{ workplace.description }}{% endif %}</textarea>
                                 </div>
-                                <section class="tasks-project-parameters workplace-modal__parameters" aria-label="Parametry miejsca pracy">
+                                <section class="tasks-project-parameters workplace-modal__parameters app-form-wide" aria-label="Parametry miejsca pracy">
                                     <div class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields">
-                                        <label class="tasks-issue-field workplace-edit-modal__code-field" for="workplace-edit-code"><span>Kod miejsca pracy</span><input id="workplace-edit-code" type="text" value="{{ workplace.code }}" class="tasks-inline-input" readonly aria-describedby="workplace-edit-code-hint"><small id="workplace-edit-code-hint" class="u-sr-only">Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu.</small></label>
+                                        <div class="tasks-issue-field workplace-edit-modal__code-field app-form-field">
+                                            <div class="app-field-label"><label for="workplace-edit-code">Kod miejsca pracy</label>{% include 'core/includes/field_help.html' with text='Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu.' label='Kod miejsca pracy' id='workplace-edit-code-hint' only %}</div>
+                                            <input id="workplace-edit-code" type="text" value="{{ workplace.code }}" class="tasks-inline-input" readonly aria-describedby="workplace-edit-code-hint">
+                                        </div>
                                     </div>
                                 </section>
-                                {% if can_manage_team %}<div class="tasks-form-field workplace-module-fields">
-                                    <label>{{ avatar_edit_form.enabled_modules.label }}</label>
+                                {% if can_manage_team %}<div class="tasks-form-field workplace-module-fields app-form-field app-form-wide">
+                                    <div class="app-field-label"><label for="{{ avatar_edit_form.enabled_modules.id_for_label }}">{{ avatar_edit_form.enabled_modules.label }}</label>{% include 'core/includes/field_help.html' with text=avatar_edit_form.enabled_modules.help_text label=avatar_edit_form.enabled_modules.label id=avatar_edit_form.enabled_modules.auto_id|add:'_helptext' only %}</div>
                                     <input type="hidden" name="modules_submitted" value="1">
                                     {{ avatar_edit_form.enabled_modules }}
-                                    <small>{{ avatar_edit_form.enabled_modules.help_text }}</small>
                                 </div>{% endif %}
                             </div>
                         </div>

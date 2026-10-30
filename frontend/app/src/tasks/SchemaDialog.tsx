@@ -172,7 +172,7 @@ export default function SchemaDialog({
             </p>
           ))}
           <fieldset className="resources-react-fieldset" disabled={pending || saved}>
-            <FormFields schema={schema} />
+            <FormFields schema={schema} layout />
             {dialog.kind === 'share' ? (
               <div className="resources-form-wide">
                 <div

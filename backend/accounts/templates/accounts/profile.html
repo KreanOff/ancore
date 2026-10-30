@@ -259,7 +259,7 @@
                     </div>
                     {% endif %}
 
-                    <div class="profile-edit-body">
+                    <div class="profile-edit-body app-form-avatar-layout">
                         <div class="profile-photo-control profile-photo-control--modal"
                              data-profile-photo-editor
                              {% if current_account_avatar.photo_url %}data-profile-photo-url="{{ current_account_avatar.photo_url }}"{% endif %}>
@@ -285,33 +285,38 @@
                             {% include 'core/includes/avatar_picker.html' with form=form form_id='profile-detail-form' photo_field=form.profile_photo photo_crop_field=form.profile_photo_crop photo_remove_field=form.profile_photo_remove editor_title='Edytuj zdjęcie użytkownika' canvas_label='Kadr zdjęcia użytkownika' empty_label='Wybierz zdjęcie użytkownika' only %}
                         </div>
 
-                        <div class="profile-edit-fields">
-                            <div class="profile-name-fields">
-                                <div class="profile-inline-field">
+                        <div class="profile-edit-fields app-form-layout">
+                            <div class="app-form-heading"><div class="profile-name-fields">
+                                <div class="profile-inline-field app-form-field">
                                     <label class="profile-field-label" for="{{ form.first_name.id_for_label }}">Imię</label>
                                     {{ form.first_name }}
                                 </div>
-                                <div class="profile-inline-field">
+                                <div class="profile-inline-field app-form-field">
                                     <label class="profile-field-label" for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
                                     {{ form.middle_name }}
                                 </div>
-                                <div class="profile-inline-field">
+                                <div class="profile-inline-field app-form-field">
                                     <label class="profile-field-label" for="{{ form.last_name.id_for_label }}">Nazwisko</label>
                                     {{ form.last_name }}
                                 </div>
+                            </div></div>
+
+                            <div class="profile-stacked-field profile-bio-field app-form-field app-form-description">
+                                <label class="profile-field-label" for="{{ form.bio.id_for_label }}">Bio</label>
+                                {{ form.bio }}
                             </div>
 
-                            <div class="profile-stacked-field">
+                            <div class="profile-stacked-field app-form-field">
                                 <label class="profile-field-label" for="{{ form.email.id_for_label }}">Email</label>
                                 {{ form.email }}
                             </div>
 
-                            <div class="profile-stacked-field">
+                            <div class="profile-stacked-field app-form-field">
                                 <label class="profile-field-label" for="{{ form.username.id_for_label }}">ID Ancore</label>
                                 {{ form.username }}
                             </div>
 
-                            <div class="profile-status-field">
+                            <div class="profile-status-field app-form-field">
                                 <label for="{{ form.presence_status.id_for_label }}">Status</label>
                                 <div class="profile-status-dropdown" data-profile-status-dropdown data-profile-status-select="{{ form.presence_status.id_for_label }}">
                                     {{ form.presence_status }}
@@ -350,21 +355,16 @@
                                 </div>
                             </div>
 
-                            <div class="profile-contact-fields">
-                                <div class="profile-stacked-field">
-                                    <label class="profile-field-label" for="{{ form.phone_number.id_for_label }}">Numer telefonu</label>
-                                    {{ form.phone_number }}
-                                </div>
-                                <div class="profile-stacked-field">
-                                    <label class="profile-field-label" for="{{ form.job_title.id_for_label }}">Stanowisko</label>
-                                    {{ form.job_title }}
-                                </div>
+                            <div class="profile-stacked-field app-form-field">
+                                <label class="profile-field-label" for="{{ form.phone_number.id_for_label }}">Numer telefonu</label>
+                                {{ form.phone_number }}
+                            </div>
+                            <div class="profile-stacked-field app-form-field">
+                                <label class="profile-field-label" for="{{ form.job_title.id_for_label }}">Stanowisko</label>
+                                {{ form.job_title }}
                             </div>
 
-                            <div class="profile-stacked-field profile-bio-field">
-                                <label class="profile-field-label" for="{{ form.bio.id_for_label }}">Bio</label>
-                                {{ form.bio }}
-                            </div>
+
                         </div>
                     </div>
 

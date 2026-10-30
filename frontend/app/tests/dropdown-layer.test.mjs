@@ -230,6 +230,29 @@ function position(app) {
   return { left, top };
 }
 
+test('field help opens above its label while ordinary dropdowns still open below', () => {
+  const help = harness({ anchorTop: 400 });
+  help.menu.setAttribute('data-dropdown-placement', 'top');
+  help.open();
+  assert.ok(help.menu.getBoundingClientRect().bottom < help.anchor.rect.top);
+
+  const dropdown = harness({ anchorTop: 400 });
+  dropdown.open();
+  assert.ok(
+    dropdown.menu.getBoundingClientRect().top > dropdown.anchor.getBoundingClientRect().bottom,
+  );
+});
+
+test('field help near the top edge falls below its label and stays inside the viewport', () => {
+  const app = harness({ anchorTop: 20, anchorLeft: 1170 });
+  app.menu.setAttribute('data-dropdown-placement', 'top');
+  app.open();
+  const rect = app.menu.getBoundingClientRect();
+  assert.ok(rect.top > app.anchor.getBoundingClientRect().bottom);
+  assert.ok(rect.top >= 8 && rect.bottom <= app.viewport.height - 8);
+  assert.ok(rect.left >= 8 && rect.right <= app.viewport.width - 8);
+});
+
 test('fixed positioning remains at its opening position after anchor moves, content mutations and resizing', () => {
   const app = harness({ fixed: true });
   app.open();

@@ -156,38 +156,35 @@
                     </div>
                     {% endif %}
 
-                    <div class="workplace-modal__content" data-profile-photo-layout>
+                    <div class="workplace-modal__content app-form-avatar-layout" data-profile-photo-layout>
                         {% include 'workplaces/includes/workplace_photo_editor.html' with form=form workplace_logo=form.current_avatar photo_button_label='Dodaj' form_id='workplace-create-form' %}
 
-                        <div class="workplace-modal__details">
-                            <div class="tasks-form-field">
-                                <label for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>
+                        <div class="workplace-modal__details app-form-layout">
+                            <div class="app-form-heading"><div class="tasks-form-field app-form-field">
+                                <div class="app-field-label"><label for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>{% include 'core/includes/field_help.html' with text='Będzie widoczna dla wszystkich członków miejsca pracy.' label='Nazwa miejsca pracy' id='workplace-create-name-hint' only %}</div>
                                 {{ form.name }}
-                            </div>
-                            <span id="workplace-create-name-hint" class="u-sr-only">Będzie widoczna dla wszystkich członków miejsca pracy.</span>
-                            <span id="workplace-create-name-counter" class="u-sr-only" aria-live="polite"><span data-workplace-name-count>{{ form.name.value|default:''|length }}</span>/140</span>
-                            {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                                <span id="workplace-create-name-counter" class="u-sr-only" aria-live="polite"><span data-workplace-name-count>{{ form.name.value|default:''|length }}</span>/140</span>
+                                {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                            </div></div>
 
-                            <div class="tasks-form-field">
+                            <div class="tasks-form-field app-form-field app-form-description">
                                 <label for="{{ form.description.id_for_label }}">Opis</label>
                                 {{ form.description }}
-                                <div class="tasks-form-field workplace-module-fields">
-                                    <label>{{ form.enabled_modules.label }}</label>
-                                    <input type="hidden" name="modules_submitted" value="1">
-                                    {{ form.enabled_modules }}
-                                    <small>{{ form.enabled_modules.help_text }}</small>
-                                </div>
+                                {% for error in form.description.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
                             </div>
-                            {% for error in form.description.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                            <div class="tasks-form-field workplace-module-fields app-form-field app-form-wide">
+                                <div class="app-field-label"><label for="{{ form.enabled_modules.id_for_label }}">{{ form.enabled_modules.label }}</label>{% include 'core/includes/field_help.html' with text=form.enabled_modules.help_text label=form.enabled_modules.label id=form.enabled_modules.auto_id|add:'_helptext' only %}</div>
+                                <input type="hidden" name="modules_submitted" value="1">
+                                {{ form.enabled_modules }}
+                            </div>
 
-                            <section class="tasks-project-parameters workplace-modal__parameters" aria-labelledby="workplace-create-parameters-title">
+                            <section class="tasks-project-parameters workplace-modal__parameters app-form-wide" aria-labelledby="workplace-create-parameters-title">
                                 <h3 class="u-sr-only" id="workplace-create-parameters-title">Parametry miejsca pracy</h3>
                                 <div class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields">
-                                    <label class="workplace-create-modal__code-field" for="workplace-create-code">
-                                        <span>Kod miejsca pracy</span>
+                                    <div class="workplace-create-modal__code-field app-form-field">
+                                        <div class="app-field-label"><label for="workplace-create-code">Kod miejsca pracy</label>{% include 'core/includes/field_help.html' with text='Unikatowy, losowy kod zostanie nadany przy tworzeniu Workspace i pozostanie stały.' label='Kod miejsca pracy' id='workplace-create-code-hint' only %}</div>
                                         <input id="workplace-create-code" type="text" class="tasks-inline-input workplace-create-modal__text-input" value="Generowany automatycznie" readonly aria-describedby="workplace-create-code-hint">
-                                        <small id="workplace-create-code-hint" class="u-sr-only">Unikatowy, losowy kod zostanie nadany przy tworzeniu Workspace i pozostanie stały.</small>
-                                    </label>
+                                    </div>
                                 </div>
                             </section>
                         </div>

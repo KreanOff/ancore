@@ -4,16 +4,15 @@
 </div>
 {% for field in work_log_form %}
 {% if field.is_hidden %}{{ field }}{% elif field.name != 'hours' and field.name != 'minutes' %}
-<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+<div class="tasks-form-field"><div class="app-field-label"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{% if field.help_text %}{% include 'core/includes/field_help.html' with text=field.help_text label=field.label id=field.auto_id|add:'_helptext' only %}{% endif %}</div>{{ field }}</div>
 {% endif %}
 {% endfor %}
 <div class="tasks-form-field">
-    <span id="work-log-duration-label" class="tasks-work-log-duration-label">Czas poświęcony</span>
+    <div class="app-field-label"><span id="work-log-duration-label" class="tasks-work-log-duration-label">Czas poświęcony</span>{% include 'core/includes/field_help.html' with text='Wpisz czas poświęcony lub daty rozpoczęcia i zakończenia. Zmiana czasu przelicza rozpoczęcie względem zakończenia (domyślnie teraz). Godziny w strefie Europe/Warsaw.' label='Czas poświęcony' id='work-log-duration-help' only %}</div>
     <div>
         <div class="tasks-issue-time-spent" role="group" aria-labelledby="work-log-duration-label" aria-describedby="work-log-duration-help">
             <label for="{{ work_log_form.hours.id_for_label }}">{{ work_log_form.hours }}<span>Godziny</span></label>
             <label for="{{ work_log_form.minutes.id_for_label }}">{{ work_log_form.minutes }}<span>Minuty</span></label>
         </div>
-        <p id="work-log-duration-help" class="tasks-work-log-hint">Wpisz czas poświęcony lub daty rozpoczęcia i zakończenia. Zmiana czasu przelicza rozpoczęcie względem zakończenia (domyślnie teraz). Godziny w strefie Europe/Warsaw.</p>
     </div>
 </div>

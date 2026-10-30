@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ApiError, errorMessage, request } from '../shared/api';
+import { FieldLabel } from '../shared/FieldLabel';
 import type { Editor, Errors, Field } from './types';
 
 function FieldControl({ field, errors }: { field: Field; errors?: Errors[string] }) {
@@ -74,15 +75,16 @@ function FieldControl({ field, errors }: { field: Field; errors?: Errors[string]
     window.AncoreCustomSelect?.refresh(ref.current!);
   }, [errors, field]);
   return (
-    <div
-      className={`documents-field tasks-form-field ${['name', 'notes'].includes(field.name) ? 'resources-form-wide' : ''}`}
-    >
-      <label htmlFor={`id_${field.name}`}>
-        {field.label}
-        {field.required ? <span aria-hidden="true"> *</span> : null}
-      </label>
+    <div className="documents-field tasks-form-field app-form-field">
+      <FieldLabel
+        htmlFor={`id_${field.name}`}
+        label={field.label}
+        required={field.required}
+        helpText={field.help_text}
+        helpId={`id_${field.name}_helptext`}
+        helpLabel={field.label}
+      />
       <div ref={ref} className="react-field-control" />
-      {field.help_text ? <small id={`id_${field.name}_helptext`}>{field.help_text}</small> : null}
       {errors?.length ? (
         <div className="tasks-modal__errors" id={`id_${field.name}_error`} role="alert">
           {errors.map((error, index) => (
@@ -265,7 +267,7 @@ export function ResourceEditor({
             />
           </header>
           <fieldset className="resources-react-fieldset" disabled={pending}>
-            <div className="tasks-modal__body documents-form resources-form">
+            <div className="tasks-modal__body documents-form resources-form app-form-layout">
               {error ? (
                 <div className="tasks-modal__errors resources-form-wide" role="alert">
                   {error}
@@ -274,9 +276,25 @@ export function ResourceEditor({
                   ))}
                 </div>
               ) : null}
-              {fields.map((field) => (
-                <FieldControl key={field.name} field={field} errors={errors[field.name]} />
-              ))}
+              <div className="app-form-heading">
+                {fields
+                  .filter((field) => field.name === 'name')
+                  .map((field) => (
+                    <FieldControl key={field.name} field={field} errors={errors[field.name]} />
+                  ))}
+              </div>
+              {fields
+                .filter((field) => field.name === 'notes')
+                .map((field) => (
+                  <div key={field.name} className="app-form-description">
+                    <FieldControl field={field} errors={errors[field.name]} />
+                  </div>
+                ))}
+              {fields
+                .filter((field) => !['name', 'notes'].includes(field.name))
+                .map((field) => (
+                  <FieldControl key={field.name} field={field} errors={errors[field.name]} />
+                ))}
             </div>
             <footer className="tasks-modal__footer">
               <button

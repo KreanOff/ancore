@@ -1,0 +1,9 @@
+<div class="documents-field tasks-form-field app-form-field{% if field.name == 'description' or field.name == 'goal' or field.name == 'notes' %} app-form-description{% elif field.name == 'spaces' or field.name == 'shared_with' or field.name == 'scope_spaces' or field.name == 'definition' %} app-form-wide{% endif %}"{% if field_scope == 'pulpit' %} data-pulpit-field="{{ field.name }}"{% if field.name == 'scope_spaces' and form.data_scope.value != 'spaces' or field.name == 'scope_filter' and form.data_scope.value != 'filter' %} hidden{% endif %}{% elif field_scope == 'filter' %} data-filter-field="{{ field.name }}"{% endif %}>
+    <div class="app-field-label">
+        <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
+        {% if field.help_text %}{% include 'core/includes/field_help.html' with text=field.help_text label=field.label id=field.auto_id|add:'_helptext' only %}{% endif %}
+    </div>
+    {{ field }}
+    {% if field_scope == 'pulpit' and field.name == 'kind' %}{% include 'dashboard/pulpits/gadget_preview.html' with selected_kind=field.value catalog=form.catalog only %}{% endif %}
+    {% if field.errors %}<div class="tasks-modal__errors" id="{{ field.auto_id }}_error" role="alert">{{ field.errors }}</div>{% endif %}
+</div>

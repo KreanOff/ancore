@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { FieldControl, type FormSchema } from '../forms/FormDialog';
+import { FieldLabel } from '../shared/FieldLabel';
 import { Modal } from '../shared/Modal';
 import { Icon } from '../shared/Icon';
 import { errorMessage } from '../shared/api';
@@ -186,12 +187,12 @@ export default function DocumentDialog({
   const errors = (schema: FormSchema | null) => (
     <>
       {error ? (
-        <div className="tasks-modal__errors" role="alert">
+        <div className="tasks-modal__errors app-form-wide" role="alert">
           {error}
         </div>
       ) : null}
       {schema?.errors.length ? (
-        <div className="tasks-modal__errors" role="alert">
+        <div className="tasks-modal__errors app-form-wide" role="alert">
           {schema.errors.map((message, index) => (
             <p key={index}>{message}</p>
           ))}
@@ -427,26 +428,28 @@ export default function DocumentDialog({
           dropFiles(Array.from(e.dataTransfer.files));
         }}
       >
-        <div className="tasks-modal__body documents-form">
+        <div className="tasks-modal__body documents-form app-form-layout">
           {errors(schema)}
           {created ? (
-            <p className="documents-muted" role="status">
+            <p className="documents-muted app-form-wide" role="status">
               Dokument został zapisany. Otwórz edytor w nowej karcie.
             </p>
           ) : (
             <>
               {data.template_create ? (
-                <p className="documents-muted">
+                <p className="documents-muted app-form-wide">
                   {data.has_templates
                     ? 'Powstanie niezależna kopia ostatnio zapisanej treści szablonu. Najpierw zapisz zmiany w jego edytorze.'
                     : 'Nie masz jeszcze szablonów. W menu dokumentu DOCX, XLSX, PPTX lub PDF wybierz „Używaj jako szablonu”.'}
                 </p>
               ) : null}
               {data.location ? (
-                <p className="documents-muted documents-modal-location">{data.location}</p>
+                <p className="documents-muted documents-modal-location app-form-wide">
+                  {data.location}
+                </p>
               ) : null}
               {item ? (
-                <div className="documents-file-summary">
+                <div className="documents-file-summary app-form-wide">
                   <span className="documents-file-icon">
                     <FileIcon variant={item.variant} />
                   </span>
@@ -467,111 +470,139 @@ export default function DocumentDialog({
                 </div>
               ) : null}
               <fieldset className="resources-react-fieldset" disabled={pending}>
-                {schema?.fields.map((field) =>
-                  field.name === 'color' ? (
-                    <div key={field.name} className="documents-field tasks-form-field">
-                      <label htmlFor={field.id}>{field.label}</label>
-                      <div className="documents-color-control">
-                        <span className="documents-color-preview" aria-hidden="true">
-                          {data.color_kind === 'library' ? (
-                            <DriveIcon color={color} />
-                          ) : (
-                            <FolderIcon color={color} />
-                          )}
-                        </span>
-                        <input
-                          id={field.id}
-                          type="color"
-                          className="documents-color-input"
-                          name={field.name}
-                          value={/^#[0-9a-f]{6}$/i.test(color) ? color : data.default_color}
-                          onChange={(event) => {
-                            setColor(event.target.value);
-                            setDirty(true);
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            setColor(data.default_color);
-                            setDirty(true);
-                          }}
-                        >
-                          Domyślny
-                        </button>
-                      </div>
-                      <p className="documents-muted">Kliknij próbkę, aby wybrać kolor.</p>
-                      {field.errors.length ? (
-                        <div className="tasks-modal__errors" role="alert">
-                          {field.errors.join(' ')}
-                        </div>
-                      ) : null}
+                {schema?.fields
+                  .filter((field) => ['name', 'title'].includes(field.name))
+                  .map((field) => (
+                    <div key={field.name} className="app-form-heading" hidden={field.hidden}>
+                      <FieldControl field={field} />
                     </div>
-                  ) : field.type === 'file' ? (
-                    <div key={field.name} className="documents-field tasks-form-field">
-                      <label htmlFor={field.id}>
-                        {field.label}
-                        {field.label_required ? ' *' : ''}
-                      </label>
-                      <div className={data.upload ? 'documents-upload-control' : undefined}>
-                        {data.upload ? (
-                          <p className="documents-upload-hint">
-                            <Icon name="cloud-upload" />
-                            <span>
-                              Przeciągnij pliki tutaj lub wybierz je z komputera
-                              <small>
-                                {data.office_upload
-                                  ? 'Dokumenty, arkusze i prezentacje: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, CSV, RTF i TXT.'
-                                  : 'Dokumenty, arkusze, obrazy i archiwa.'}{' '}
-                                Maks. {data.max_size} na plik, do 20 plików jednocześnie.
-                              </small>
-                            </span>
-                          </p>
+                  ))}
+                {schema?.fields
+                  .filter((field) => field.name === 'description')
+                  .map((field) => (
+                    <div key={field.name} className="app-form-description" hidden={field.hidden}>
+                      <FieldControl field={field} />
+                    </div>
+                  ))}
+                {schema?.fields
+                  .filter((field) => !['name', 'title', 'description'].includes(field.name))
+                  .map((field) =>
+                    field.name === 'color' ? (
+                      <div
+                        key={field.name}
+                        className="documents-field tasks-form-field app-form-field"
+                      >
+                        <FieldLabel
+                          htmlFor={field.id}
+                          label={field.label}
+                          helpText="Kliknij próbkę, aby wybrać kolor."
+                          helpId={`${field.id}_help`}
+                          helpLabel={field.label}
+                        />
+                        <div className="documents-color-control">
+                          <span className="documents-color-preview" aria-hidden="true">
+                            {data.color_kind === 'library' ? (
+                              <DriveIcon color={color} />
+                            ) : (
+                              <FolderIcon color={color} />
+                            )}
+                          </span>
+                          <input
+                            id={field.id}
+                            type="color"
+                            className="documents-color-input"
+                            name={field.name}
+                            aria-describedby={`${field.id}_help`}
+                            value={/^#[0-9a-f]{6}$/i.test(color) ? color : data.default_color}
+                            onChange={(event) => {
+                              setColor(event.target.value);
+                              setDirty(true);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              setColor(data.default_color);
+                              setDirty(true);
+                            }}
+                          >
+                            Domyślny
+                          </button>
+                        </div>
+                        {field.errors.length ? (
+                          <div className="tasks-modal__errors" role="alert">
+                            {field.errors.join(' ')}
+                          </div>
                         ) : null}
-                        <input
-                          ref={input}
-                          id={field.id}
-                          name={field.name}
-                          type="file"
-                          className="form-input"
-                          multiple={field.multiple}
-                          accept={field.attrs.accept}
-                          required={field.required}
-                          aria-invalid={!!field.errors.length}
-                          onChange={(e) => {
-                            setSelected(Array.from(e.target.files || []));
-                            setDirty(true);
-                          }}
-                        />
                       </div>
-                      {selected.length ? (
-                        <ul
-                          className="file-list documents-upload-files"
-                          aria-label="Wybrane pliki"
-                          aria-live="polite"
-                          aria-atomic="true"
-                        >
-                          {selected.map((file, index) => (
-                            <li key={index} className="file-item">
-                              <div className="file-details">
-                                <div className="file-name">{file.name}</div>
-                                <div className="file-size">{bytes(file.size)}</div>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      {field.errors.length ? (
-                        <div className="tasks-modal__errors" role="alert">
-                          {field.errors.join(' ')}
+                    ) : field.type === 'file' ? (
+                      <div
+                        key={field.name}
+                        className="documents-field tasks-form-field app-form-field app-form-wide"
+                      >
+                        <label htmlFor={field.id}>
+                          {field.label}
+                          {field.label_required ? ' *' : ''}
+                        </label>
+                        <div className={data.upload ? 'documents-upload-control' : undefined}>
+                          {data.upload ? (
+                            <p className="documents-upload-hint">
+                              <Icon name="cloud-upload" />
+                              <span>
+                                Przeciągnij pliki tutaj lub wybierz je z komputera
+                                <small>
+                                  {data.office_upload
+                                    ? 'Dokumenty, arkusze i prezentacje: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, CSV, RTF i TXT.'
+                                    : 'Dokumenty, arkusze, obrazy i archiwa.'}{' '}
+                                  Maks. {data.max_size} na plik, do 20 plików jednocześnie.
+                                </small>
+                              </span>
+                            </p>
+                          ) : null}
+                          <input
+                            ref={input}
+                            id={field.id}
+                            name={field.name}
+                            type="file"
+                            className="form-input"
+                            multiple={field.multiple}
+                            accept={field.attrs.accept}
+                            required={field.required}
+                            aria-invalid={!!field.errors.length}
+                            onChange={(e) => {
+                              setSelected(Array.from(e.target.files || []));
+                              setDirty(true);
+                            }}
+                          />
                         </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <FieldControl key={field.name} field={field} />
-                  ),
-                )}
+                        {selected.length ? (
+                          <ul
+                            className="file-list documents-upload-files"
+                            aria-label="Wybrane pliki"
+                            aria-live="polite"
+                            aria-atomic="true"
+                          >
+                            {selected.map((file, index) => (
+                              <li key={index} className="file-item">
+                                <div className="file-details">
+                                  <div className="file-name">{file.name}</div>
+                                  <div className="file-size">{bytes(file.size)}</div>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        {field.errors.length ? (
+                          <div className="tasks-modal__errors" role="alert">
+                            {field.errors.join(' ')}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <FieldControl key={field.name} field={field} />
+                    ),
+                  )}
               </fieldset>
             </>
           )}

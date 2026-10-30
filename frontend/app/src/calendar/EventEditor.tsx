@@ -164,31 +164,69 @@ export function EventEditor({
         onChange={() => setDirty(true)}
         aria-busy={pending}
       >
-        <div className="tasks-modal__body calendar-dialog-body">
+        <div className="tasks-modal__body calendar-dialog-body app-form-layout">
           {error ? (
-            <p role="alert" className="calendar-form-error">
+            <p role="alert" className="calendar-form-error app-form-wide">
               {error}
               {errors.__all__?.join(' ')}
             </p>
           ) : null}
-          <div className="calendar-dialog-field">
-            <label className="form-label" htmlFor="react-event-title">
-              Tytuł
-            </label>
-            <input
-              id="react-event-title"
-              name="title"
-              className="tasks-inline-input"
-              defaultValue={event?.title || ''}
-              required
-              maxLength={255}
-              placeholder="Tytuł wydarzenia"
-              disabled={pending}
-              aria-invalid={!!errors.title}
-            />
-            {fieldErrors('title')}
+          <div className="app-form-heading">
+            <div className="calendar-dialog-field app-form-field">
+              <label className="form-label" htmlFor="react-event-title">
+                Tytuł
+              </label>
+              <input
+                id="react-event-title"
+                name="title"
+                className="tasks-inline-input"
+                defaultValue={event?.title || ''}
+                required
+                maxLength={255}
+                placeholder="Tytuł wydarzenia"
+                disabled={pending}
+                aria-invalid={!!errors.title}
+              />
+              {fieldErrors('title')}
+            </div>
           </div>
-          <div className="calendar-dialog-field calendar-checkbox-field">
+          <div className="calendar-dialog-field app-form-field app-form-description">
+            <label className="form-label" htmlFor="react-event-description">
+              Opis
+            </label>
+            <textarea
+              id="react-event-description"
+              name="description"
+              className="tasks-inline-input calendar-dialog-desc"
+              defaultValue={event?.description || ''}
+              disabled={pending}
+              placeholder="Opis (opcjonalnie)"
+            />
+          </div>
+          {(
+            [
+              ['start', 'Rozpoczęcie', event?.start || start],
+              ['end', 'Zakończenie', event?.end || end],
+            ] as const
+          ).map(([name, label, value]) => (
+            <div className="calendar-dialog-field app-form-field" key={name}>
+              <label className="form-label" htmlFor={`react-event-${name}`}>
+                {label}
+              </label>
+              <input
+                type="datetime-local"
+                id={`react-event-${name}`}
+                name={name}
+                className="tasks-inline-input"
+                defaultValue={event ? eventInput(event, name) : localInput(new Date(value))}
+                required
+                disabled={pending}
+                aria-invalid={!!errors[name]}
+              />
+              {fieldErrors(name)}
+            </div>
+          ))}
+          <div className="calendar-dialog-field calendar-checkbox-field app-form-field">
             <label className="form-label form-label--checkbox">
               <input
                 type="checkbox"
@@ -201,32 +239,7 @@ export function EventEditor({
               Cały dzień
             </label>
           </div>
-          <div className="calendar-form-row">
-            {(
-              [
-                ['start', 'Rozpoczęcie', event?.start || start],
-                ['end', 'Zakończenie', event?.end || end],
-              ] as const
-            ).map(([name, label, value]) => (
-              <div className="calendar-dialog-field" key={name}>
-                <label className="form-label" htmlFor={`react-event-${name}`}>
-                  {label}
-                </label>
-                <input
-                  type="datetime-local"
-                  id={`react-event-${name}`}
-                  name={name}
-                  className="tasks-inline-input"
-                  defaultValue={event ? eventInput(event, name) : localInput(new Date(value))}
-                  required
-                  disabled={pending}
-                  aria-invalid={!!errors[name]}
-                />
-                {fieldErrors(name)}
-              </div>
-            ))}
-          </div>
-          <div className="calendar-dialog-field">
+          <div className="calendar-dialog-field app-form-field">
             <span className="form-label">Kolor</span>
             <Dropdown
               label="Kolor wydarzenia"
@@ -258,19 +271,6 @@ export function EventEditor({
                 ))
               }
             </Dropdown>
-          </div>
-          <div className="calendar-dialog-field">
-            <label className="form-label" htmlFor="react-event-description">
-              Opis
-            </label>
-            <textarea
-              id="react-event-description"
-              name="description"
-              className="tasks-inline-input calendar-dialog-desc"
-              defaultValue={event?.description || ''}
-              disabled={pending}
-              placeholder="Opis (opcjonalnie)"
-            />
           </div>
         </div>
         <footer className="tasks-modal__footer calendar-dialog-footer">

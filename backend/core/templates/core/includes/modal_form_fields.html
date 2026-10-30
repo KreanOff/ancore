@@ -1,0 +1,13 @@
+{% if not visible_only %}{% for field in form %}{% if field.is_hidden %}{% if not form.inline_avatar or field.name not in 'avatar avatar_photo avatar_photo_crop avatar_photo_remove' %}{{ field }}{% endif %}{% endif %}{% endfor %}{% endif %}
+{% if form.name or form.title %}
+<div class="app-form-heading{% if form.visibility and not form.visibility.is_hidden %} app-form-heading--with-visibility{% endif %}">
+    {% if form.name %}{% include 'core/includes/modal_form_field.html' with field=form.name %}{% else %}{% include 'core/includes/modal_form_field.html' with field=form.title %}{% endif %}
+    {% if form.visibility and not form.visibility.is_hidden %}{% include 'core/includes/modal_form_field.html' with field=form.visibility %}{% endif %}
+</div>
+{% endif %}
+{% for field in form %}{% if not field.is_hidden %}{% if field.name == 'description' or field.name == 'goal' or field.name == 'notes' %}{% include 'core/includes/modal_form_field.html' %}{% endif %}{% endif %}{% endfor %}
+{% for field in form %}{% if not field.is_hidden and field.name != 'name' and field.name != 'title' and field.name != 'description' and field.name != 'goal' and field.name != 'notes' %}
+    {% if field.name != 'visibility' or not form.name and not form.title %}
+        {% if not form.inline_avatar or field.name not in 'avatar avatar_photo avatar_photo_crop avatar_photo_remove' %}{% include 'core/includes/modal_form_field.html' %}{% endif %}
+    {% endif %}
+{% endif %}{% endfor %}

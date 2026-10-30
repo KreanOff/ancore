@@ -65,7 +65,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261025-shared-status-backgrounds">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261030-field-help">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
     {% block extra_head %}{% endblock %}
     {% if frontend_bootstrap or request.user.is_authenticated %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261017-layout-parity">{% react_bundle %}{% endif %}
@@ -389,7 +389,8 @@
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20261025-confirmation-text"></script>
-    <script src="{% static 'js/dropdown-layer.js' %}?v=20261028-fixed-widget-controls"></script>
+    <script src="{% static 'js/dropdown-layer.js' %}?v=20261030-help-placement"></script>
+    <script src="{% static 'js/field-help.js' %}?v=20261030-field-help"></script>
     <script src="{% static 'js/task-modals.js' %}?v=20261016-react-shell"></script>
     <script src="{% static 'js/tasks.js' %}?v=20261016-react-boundary"></script>
     <script src="{% static 'js/profile.js' %}?v=20261016-avatar-islands"></script>
