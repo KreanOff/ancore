@@ -1,5 +1,95 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Dziewięć pól podzadania (30.10.2026)
+
+Tworzenie i edycja korzystają z `SubtaskForm`: Tytuł, Opis, Status,
+Priorytet, Wykonawca, Typ zgłoszenia, Data rozpoczęcia, Termin zakończenia
+i Estymacja (punkty). Punkty są dostępne we wszystkich szablonach.
+Wspólne kontrolki statusu i priorytetu zachowują ikony także przy prefiksie
+formularza. Edycja nie nadpisuje właściwości spoza tego zestawu.
+
+Przeszło 107 testów backendu na oddzielnych bazach PostgreSQL:
+`spaces.test_subtask_fields` (10 nowych regresji), `spaces.test_subtask_navigation`,
+`spaces.test_task_detail_parity`, `core.test_frontend`,
+`spaces.test_configuration_writes`, `spaces.test_independent_tasks`,
+`spaces.test_task_owner_membership`, `spaces.test_timeline` i `core.test_form_payload`.
+Sprawdzają zwykłe/scoped adresy, HTML i API, sześć szablonów, zapis i odczyt,
+walidację dat/punktów/typów, przejścia statusów i historię, granice dostępu,
+zachowanie wcześniejszych relacji i zgodność starszych żądań tworzenia.
+Przeszły też build TypeScript, 246 testów frontendu, kontrola Django,
+składnia Pythona, indeks kodu i diff. Modele i migracje pozostają bez zmian.
+
+Chrome/Playwright na tymczasowej bazie: dodawanie i edycja przy 1440/390/320px,
+pełny zapis dziewięciu pól i odczyt po przeładowaniu, pusty stan, zakres dat
+odrzucony przez Django (400), symulowany błąd serwera (503), zachowanie szkicu,
+poprawienie i ponowienie zapisu, czyszczenie pól opcjonalnych, Escape/fokus
+oraz ponowne wejście. Porównano zwykły formularz zadania przy 1440/390px.
+Nie było błędów JavaScriptu ani nieoczekiwanych ostrzeżeń konsoli; oczekiwane
+odpowiedzi 400/503 pochodziły z prób błędów. Plugin Browser był niedostępny;
+użyto lokalnego Playwright i Chrome. Safari, Firefox i produkcji nie testowano.
+
+## Ikona braku priorytetu (30.10.2026)
+
+Wspólny `custom-select.js` rozpoznaje `none` i pokazuje pusty okrąg `circle`,
+zgodnie z pozostałymi widokami priorytetów. Sprawdzono składnię JS, indeks
+i diff. Chrome/Playwright potwierdził ikonę opcji i wybranej wartości,
+zapis oraz ponowny odczyt priorytetu zadania, zgodność z wierszem Listy
+i filtr wielokrotny przy 1440/390px, w tym wybór, ponowne otwarcie i wyniki.
+Pozostałe priorytety i referencyjne statusy zachowują swoje ikony.
+Formularz tagu również pokazuje okrąg przy „Brak” w menu i wybranej wartości.
+Test zamykania zmienionego formularza zadania otwartego bezpośrednim URL
+ujawnił istniejącą pętlę `navigate → onClose → beforeNavigate` po wyborze
+„Zamknij bez zapisu”. Poprzedni skrypt podstawiony wyłącznie w przeglądarce
+wywołał te same cztery błędy `Maximum call stack size exceeded`; zmiana ikony
+nie wpływa na ten problem. Izolowane scenariusze filtra i tagu są bez błędów JS.
+Plugin Browser był niedostępny; użyto lokalnego Playwright/Chrome.
+Safari, Firefox i produkcji nie testowano.
+
+## Układ formularza podzadania z prefiksem (30.10.2026)
+
+Serializer przekazuje bazowe `field_name` obok niezmienionej nazwy POST.
+Wspólny układ rozpoznaje dzięki temu tytuł, widoczność i pełny opis również
+w formularzach `subtask-` i `worklog-`, także po błędzie walidacji.
+
+Przeszły build TypeScript, 246 testów frontendu (w tym 3 nowe regresje układu),
+37 testów `core.test_form_payload`, `core.test_frontend` i
+`spaces.test_task_detail_parity` na osobnej bazie PostgreSQL, formatowanie,
+indeks i diff. Chrome/Playwright: rzeczywiste wejście przez Podzadania przy
+1440/1024/390/320px, pełny opis i pary pól bez przepełnienia, HTTP 503 oraz
+walidacja Django 400 z zachowaniem szkicu, ponowienie zapisu, odczyt po
+odświeżeniu i puste ponowne otwarcie. Formularz zadania i rejestracja czasu
+sprawdzone referencyjnie przy 1440/390px. Brak błędów JS i ostrzeżeń konsoli.
+Plugin Browser był niedostępny; użyto lokalnego Playwright/Chrome.
+Safari, Firefox i produkcji nie testowano.
+
+## Globalne wyszukiwanie (30.10.2026)
+
+Panel ma czytelniejsze wiersze, liczniki i trwały wybór kategorii, wyróżnienie
+frazy oraz zamknięcie dostępne również na telefonie. Enter i strzałki otwierają
+zamknięty panel bez uruchamiania ukrytego wyniku; najechanie nie zmienia wyboru
+klawiaturą. Dokładny klucz zadania/Przestrzeni i dopasowania nazw mają
+pierwszeństwo przed opisami/komentarzami, z zachowaniem ACL i limitu SQL.
+
+Przeszły build TypeScript, 243 testy frontendu (w tym 9 regresji wyszukiwarki),
+37 testów backendu wyszukiwania, API paneli i wyłączonego modułu, kompilacja
+szablonu, składnia JS, formatowanie, indeks oraz diff. Backend sprawdzono
+na osobnej bazie PostgreSQL. Chrome/Playwright na tymczasowych danych:
+1440/1024/768/390/320px, ostatnie i pusta historia, filtry i puste wyniki,
+klucz zadania, klawiatura/fokus, przejście do wyniku, powrót na Listę,
+błąd 503 i ponowienie, zamknięcie/ponowne otwarcie oraz brak przepełnienia.
+Naprawiono klikalność zamkniętego pola przy 320px i powtórzono scenariusze.
+Sprawdzono także starszy kontroler bez bundla React. Brak nieoczekiwanych
+błędów JS/konsoli. Plugin Browser był niedostępny; użyto istniejącego
+Playwright/Chrome. Safari, Firefox i produkcji nie testowano.
+
+Uzupełnienie grafik wyszukiwarki: Przestrzenie i Workspace przekazują istniejące
+awatary/zdjęcia, zadania i ostatnio oglądane własne ikony typu. Nagłówek ostatnich
+używa `clock` zamiast nierozpoznawanego `history`. Przeszły ponownie build,
+243 testy frontendu i 39 testów wyszukiwania/API, w tym nowe regresje grafik
+i cofnięcia dostępu do zdjęcia. Chrome przy 1440/390/320px potwierdził
+ilustrację, załadowane zdjęcie z kontrolowanego adresu, kolor typu zgodny z Listą,
+wyszukiwanie i ponowne otwarcie w React oraz starszym kontrolerze.
+
 ## Pomoc pola pod znakiem „!” (30.10.2026)
 
 Pomoc formularzy korzysta ze wspólnego `FieldLabel`/`field_help.html` i

@@ -536,8 +536,16 @@ przełącza przyciski zakładek, URL `tab`, ARIA i fokus klawiatury, zachowując
 szkic tytułu, opisu i pól. Podzadania mają standardowy toolbar, grupy statusów,
 zaznaczanie, sortowanie, usuwanie i modal tworzenia. Podzadania nie mają osobnej
 pełnej strony. Kliknięcie tytułu z prawem edycji otwiera istniejący `FormDialog`
-nad zakładką rodzica; obserwator widzi sam tytuł. Okno zachowuje wspólne pola,
-status, walidację, ochronę szkicu, Escape i powrót fokusu. Zapis odświeża listę
+nad zakładką rodzica; obserwator widzi sam tytuł. Tworzenie i edycja mają
+dziewięć pól: Tytuł, Opis, Status, Priorytet, Wykonawca, Typ zgłoszenia,
+Data rozpoczęcia, Termin zakończenia i Estymacja (punkty), również poza Scrumem.
+Tytuł i opis zajmują pełne wiersze; pozostałe pola korzystają ze wspólnych
+dwóch kolumn `app-form-layout`, na telefonie z jednej. Widoczność nowego
+podzadania pozostaje domyślnie prywatna i nie zajmuje miejsca w formularzu.
+Status i priorytet używają istniejącego `VisualSelect` oraz podglądów
+`select_status.html` i `select_priority.html`, także z prefiksem `subtask-`.
+Własny status ma oznaczenie swojej kategorii, a wykonawca dotychczasowy awatar.
+Okno zachowuje walidację, ochronę szkicu, Escape i powrót fokusu. Zapis odświeża listę
 bez opuszczania rodzica; błąd odświeżenia pozwala ponowić sam odczyt.
 Pierwszy render używa tego samego linku edycji z `data-work-open`.
 Wiersze podzadań mają minimalną szerokość 520px i przewijają się poziomo
@@ -1279,7 +1287,9 @@ i wspólnej tabeli zespołu. `project-team.js` obsługuje `task-detail-form` ora
 osobny host modali `data-project-team-modal-host="task"`; zachowuje szkic pól,
 błędy, fokus, Escape i inicjalizację po `ancore:content-loaded`. Po zapisaniu
 widoczności przez AJAX zdarzenie `ancore:task-team-updated` odświeża członków.
-Tworzenie zadania i podzadania używa istniejącego wiersza tytułu z widocznością,
+Bieżący formularz podzadania używa pełnego wiersza tytułu i ukrytej
+widoczności, domyślnie prywatnej, zgodnie z opisem Przestrzeni powyżej.
+Historyczny wzorzec tworzenia zadania używa wiersza tytułu z widocznością,
 domyślnie „Prywatne — wybrane osoby”. Publiczne zadanie pokazuje dostęp
 odziedziczony, bez osobnego przycisku udostępnienia. Prywatne udostępnia się
 od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń.
@@ -1531,19 +1541,37 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   krawędź. Pasek należy do bloku `app_navigation`, więc nie występuje w osobnym
   edytorze Dokumentów ani na ekranach uwierzytelniania.
 - Wyszukiwanie używa wariantu `global-search-panel--quick` wewnątrz formularza
-  górnego paska. Panel jest wyśrodkowany pod polem, ma maksymalnie 680px szerokości
+  górnego paska. Panel jest wyśrodkowany pod polem, dopasowany do jego szerokości
+  (na węższym desktopie rozszerza się do 640px w granicach ekranu)
   i 620px wysokości, własne przewijanie, wspólny cień oraz zaokrąglenia dropdownów.
-  Nie przyciemnia ani nie blokuje treści strony. Powiadomienia zachowują boczny panel.
+  Nie przyciemnia ani nie blokuje treści strony.
   Przed wpisaniem frazy pokazuje do 8 ostatnio oglądanych elementów bieżącego
   Workspace z ponowną kontrolą dostępu; pustą historię zastępuje podpowiedź.
-  Przy wynikach przyciski „Wszystko” i dostępne typy filtrują pobrane grupy.
-  Filtry przewijają się poziomo, a stopka podaje liczbę wyników i skróty.
-  Nagłówek panelu zawiera wyłącznie filtry, bez osobnego przycisku zamknięcia.
+  Nagłówek pustej frazy pokazuje „Ostatnio oglądane” z licznikiem, bez samotnego
+  filtra „Wszystko”. Po wpisaniu frazy dostępne są „Wszystko”, „Zadania”,
+  „Przestrzenie”, „Dokumenty” i „Pliki”; pozostałe typy pojawiają się przy
+  dopasowaniach lub gdy pozostają wybrane. Filtry mają liczniki i przewijają się
+  poziomo. Wybór pozostaje aktywny podczas dopisywania frazy, również przy braku
+  wyników; pusty stan pozwala wrócić do wszystkich typów. Wyczyszczenie frazy
+  resetuje wybór. Pasujące fragmenty tytułu i metadanych mają delikatne tło
+  akcentu. Przestrzenie i Workspace pokazują własne ilustracje lub zdjęcia przez
+  wspólny `Avatar` (30px); zdjęcia Przestrzeni zachowują kontrolowany adres pobrania.
+  Zadania i podzadania pokazują ikonę swojego typu oraz kolory `tasks-issue-type`,
+  tak jak Lista zadań. Dotyczy to wyników oraz ostatnio oglądanych.
+  Pozostałe typy zachowują swoje ikony. Nagłówek ostatnich używa dostępnej ikony
+  `clock`. Wiersze mają tekst 13px i metadane 12px; na telefonie typ przechodzi
+  pod tytuł. Stopka podaje liczbę wyników
+  i skróty. Nagłówek ma przycisk zamknięcia, także na telefonie.
   Strzałki przenoszą fokus na linki, Enter otwiera wynik, Escape zamyka panel
-  i przywraca fokus polu. Tab zachowuje naturalną kolejność, a kliknięcie lub
+  i przywraca fokus polu. Najechanie myszą nie zmienia wyboru klawiaturą.
+  Enter lub strzałka w zamkniętym polu tylko otwiera panel; nie uruchamia
+  ukrytego wyniku. Fokus kontrolek ma widoczny obrys wspólnego akcentu.
+  Tab zachowuje naturalną kolejność, a kliknięcie lub
   przeniesienie fokusu poza formularz zamyka wyszukiwanie. Na telefonie aktywne
   pole zajmuje szerokość paska, panel mieści się w ekranie, a podpowiedzi klawiszy
-  są ukryte. `ancore:content-loaded` czyści frazę i wyniki bez ponownego podpinania
+  są ukryte. Do 480px zamknięte pole zachowuje klikalną powierzchnię także
+  przy niepustej frazie; przycisk czyszczenia pojawia się po jego otwarciu.
+  `ancore:content-unloading` w React czyści frazę i wyniki bez ponownego podpinania
   listenerów. Zmiana frazy od razu usuwa stare wyniki, aby Enter nie otworzył
   elementu z poprzedniego zapytania; anulowane odpowiedzi i błędy są ignorowane.
 - Stała nawigacja z modułami i ulubionymi.
@@ -2479,9 +2507,9 @@ szerokości i stanu menu bocznego. Zachowuje dotychczasową szerokość na deskt
 obszarem. Od góry pozostaje 24px, a panel dochodzi do dolnej krawędzi ekranu.
 Odstępy po lewej i prawej są równe. Zachowuje dotychczasowe zaokrąglenie
 tylko górnych rogów oraz brak dolnego obramowania.
-Jasnoszara powierzchnia używa `--secondary-menu-bg` (`#FBFBFC`),
-tego samego tokenu co boczny pasek nawigacji; wewnątrz jest biała,
-przewijana treść `--card-bg` z odstępami 24px.
+Całe okno ma jednolite białe tło: `--app-panel-surface` wskazuje
+`--app-modal-surface` (`--card-bg`, `#ffffff`). Nagłówek, zakładki, obrzeża,
+przewijana treść i stopka mają ten sam kolor; treść zachowuje odstępy 24px.
 Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po lewej.
 Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, fioletowe
 akcje, kontrolki, obsługa fokusu, Escape, list wyboru i zapisu korzystają
@@ -2523,7 +2551,10 @@ Układ obejmuje zadania i podzadania, sprinty, tagi, Przestrzenie, Pulpity,
 Filtry, Zespoły, Zasoby, Kalendarz, formularze Dysku/Dokumentów, Workspace
 i profil. `app-form-wide` oznacza treści wymagające pełnego wiersza, np.
 upload lub wybór modułów. W React wspólny `FormLayout` porządkuje pola schematu;
-osobne edytory stosują te same klasy. Pierwszy render Django używa wspólnych
+rozpoznaje ich bazową nazwę (`field_name`), również w formularzach z prefiksem
+`subtask-` lub `worklog-`. Podzadanie zachowuje tytuł i widoczność w pierwszym
+wierszu, pełny opis poniżej oraz status i termin w kolejnej parze pól.
+Osobne edytory stosują te same klasy. Pierwszy render Django używa wspólnych
 include'ów `core/includes/modal_form_fields.html` i `modal_form_field.html`
 oraz tych samych klas w formularzach specjalistycznych. Pola ukryte i warunkowe
 zachowują dotychczasowe mechanizmy. Wariant dotyczy formularzy, nie tabel
@@ -2552,7 +2583,7 @@ po panelu „Edytuj miejsce pracy”.
 `AncoreTaskModals` kończy zamykanie małego formularza po zakończeniu ruchu,
 zanim moduł usunie jego HTML. Ponowne otwarcie anuluje poprzednie sprzątanie
 i zachowuje pierwotny punkt powrotu fokusu.
-Ma jasnoszare tło, białą przewijaną treść i akcje po lewej. Etykiety pozostają
+Ma jednolite białe tło nagłówka, przewijanej treści i stopki oraz akcje po lewej. Etykiety pozostają
 nad kontrolkami; w formularzu dodawania osoby konto i rola są obok siebie. Długi tytuł zawija się.
 Na telefonie zachowuje margines od krawędzi, a stopka może zawijać akcje.
 Potwierdzenia `showConfirmModal` i edytory zdjęć konta, firmy oraz logo Workspace
@@ -2654,6 +2685,9 @@ lub podglądy przez lokalne szablony, bez zmiany wartości opcji i walidacji.
 Filtry zadań pokazują awatary/zdjęcia widocznych przestrzeni, wykonawców
 i zespołów, kolorowe typy zgłoszeń, statusy i priorytety. Podglądy korzystają
 z tych samych include'ów co szczegóły i zachowują kontrolowane adresy obrazów.
+„Brak priorytetu” (`none`) ma neutralną ikonę pustego okręgu `circle` z tej
+samej rodziny UIcons co statusy. Wspólny select używa jej w menu oraz przy
+wybranej wartości, zgodnie z listami zadań i podglądami z szablonów.
 `UserSelectMultiple` rozszerza podglądy kont o wybór osób w dostępie Pulpitów
 i Filtrów. `SpaceSelect` i `TeamSelect` zachowują queryset formularza;
 formularz Zasobów używa istniejącego `UserSelect`. Brak zdjęcia pokazuje
@@ -2973,8 +3007,8 @@ Powiadomienia są dostępne wyłącznie w panelu dzwonka. Panel renderuje
 `notifications-panel.css`. Include'y `notification_controls.html`,
 `notification_list.html`, `notification_pagination.html` oraz
 `notifications-panel.js` pozostają wzorcem i trybem zgodności. Panel używa tej samej powłoki
-`tasks-modal app-modal-panel` co „Utwórz zadanie”: szerokiego okna z jasnoszarym
-tłem, białą treścią, wspólnymi odstępami i animacją. Nagłówek zawiera tytuł
+`tasks-modal app-modal-panel` co „Utwórz zadanie”: szerokiego okna z jednolitym
+białym tłem, wspólnymi odstępami i animacją. Nagłówek zawiera tytuł
 „Powiadomienia” i standardowy krzyżyk. Stała stopka zawiera „Zamknij” oraz
 paginację „Pokaż starsze”, gdy są dalsze wpisy. Wariant `notifications-panel__body`
 układa filtry i niezależnie przewijaną listę pionowo we wspólnej białej powierzchni.

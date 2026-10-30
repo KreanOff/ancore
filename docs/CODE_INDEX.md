@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 37 | 0 | 23 | 225 |
+| [backend/core](../backend/core) | 38 | 0 | 23 | 227 |
 | [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 54 | 8 | 42 | 277 |
+| [backend/dashboard](../backend/dashboard) | 54 | 8 | 42 | 283 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 60 | 4 | 42 | 363 |
+| [backend/spaces](../backend/spaces) | 61 | 4 | 42 | 373 |
 
 ## 2. Modele i relacje
 
@@ -1522,7 +1522,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
 - [frontend/app/tests/dashboard-canvas.test.mjs](../frontend/app/tests/dashboard-canvas.test.mjs)
 - [frontend/app/tests/dropdown-layer.test.mjs](../frontend/app/tests/dropdown-layer.test.mjs)
+- [frontend/app/tests/form-layout.test.mjs](../frontend/app/tests/form-layout.test.mjs)
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
+- [frontend/app/tests/global-search.test.mjs](../frontend/app/tests/global-search.test.mjs)
 - [frontend/app/tests/item-filtering.test.mjs](../frontend/app/tests/item-filtering.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
@@ -1592,6 +1594,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/core/test_filter_frontend.py](../backend/core/test_filter_frontend.py).
 
 - `ReactFilterAndTagTests`: 14 metod testowych.
+
+### backend/core/test_form_payload.py
+
+Źródło: [backend/core/test_form_payload.py](../backend/core/test_form_payload.py).
+
+- `PayloadForm`: 0 metod testowych.
+- `FormPayloadFieldIdentityTests`: 2 metod testowych.
 
 ### backend/core/test_frontend.py
 
@@ -1950,7 +1959,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_search_regressions.py](../backend/dashboard/test_search_regressions.py).
 
-- `GlobalSearchRegressionTests`: 12 metod testowych.
+- `GlobalSearchRegressionTests`: 18 metod testowych.
 
 ### backend/dashboard/test_workspace_invitations.py
 
@@ -2198,6 +2207,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_space_sharing.py](../backend/spaces/test_space_sharing.py).
 
 - `SpaceSharingTests`: 9 metod testowych.
+
+### backend/spaces/test_subtask_fields.py
+
+Źródło: [backend/spaces/test_subtask_fields.py](../backend/spaces/test_subtask_fields.py).
+
+- `SubtaskFieldsTests`: 10 metod testowych.
 
 ### backend/spaces/test_subtask_navigation.py
 

@@ -248,7 +248,7 @@ bez kontenera dla konfiguracji i osadzonych kontrolek. `PulpitFields` oraz
 zakładki Filtrów zachowują warunkową widoczność swoich pól we wspólnym układzie.
 Osobne edytory Kalendarza, Zasobów, Dysku, Workspace i profilu stosują klasy
 `app-form-*` z `modal-system.css`. Zmiana kolejności jest częścią renderowania,
-bez przenoszenia kontrolek przez JS i bez zmiany schematu API, zapisu lub ACL.
+bez przenoszenia kontrolek przez JS i bez zmiany zapisu lub ACL.
 Szczegóły i responsywność: [standard modali](UI.md#6-modale).
 
 `shared/FieldLabel.tsx` renderuje etykietę i opcjonalny znak „!” z pomocą pola.
@@ -350,7 +350,12 @@ migracji, a nie niezależnym drugim zestawem operacji biznesowych.
 `form_payload` serializuje wyłącznie pola i opcje dozwolone przez oryginalny
 formularz. Zachowuje typy kontrolek, ukryte/wyłączone pola, wybory wielokrotne,
 błędy, awatary i ikony, a dla formsetów także management form oraz brak
-przeglądarkowego `required` w pustych wierszach. Pliki są wysyłane jako
+przeglądarkowego `required` w pustych wierszach. `name` pozostaje nazwą HTML
+używaną w POST (np. `subtask-description`), a `field_name` zawiera nazwę pola
+Django bez prefiksu (`description`). Wspólny układ korzysta z `field_name`,
+z fallbackiem do `name` dla schematów bez tych metadanych; nie zmienia nazw
+ani ID kontrolek. Dotyczy to również schematów zwracanych po błędzie walidacji.
+Pliki są wysyłane jako
 `FormData`, bez ręcznego nagłówka multipart. Pobieranie pozostaje pod
 kontrolowanymi adresami domenowymi, z dotychczasowym prywatnym storage.
 
@@ -383,6 +388,13 @@ Zapis okna odświeża dane rodzica bez nawigacji. Błąd samego odczytu po zapis
 pokazuje „Odśwież zadanie” i nie powtarza mutacji. Obserwator widzi tytuł bez
 linku edycji. Formularz podzadania ma osobne identyfikatory kontrolek, także
 po walidacji, aby etykiety i podglądy wyborów nie wskazywały formularza rodzica.
+`SubtaskForm` dostarcza wspólny schemat dodawania (`SchemaDialog`, prefiks
+`subtask-`) i edycji (`FormDialog`): tytuł, opis, status, priorytet, wykonawca,
+typ zgłoszenia, rozpoczęcie, termin zakończenia i punkty. Oba okna korzystają
+z istniejącego `FormLayout` oraz tych samych kontrolek; punkty pozostają
+dostępne również poza Scrumem. Ukryta widoczność tworzenia zachowuje domyślną
+prywatność i zgodność wcześniejszych żądań. Zapis edycji zmienia tylko pola
+schematu, zachowując wcześniejsze powiązania i pozostałe dane planowania.
 Pola dodatkowe zadania są edytowalne w panelu właściwości. Błędy pozostałych
 pól planowania odsłaniają odpowiednią kontrolkę w tym panelu. Jeśli konfiguracja
 doda pole podczas edycji, odpowiedź walidacji uzupełnia schemat bez odtwarzania

@@ -461,10 +461,19 @@ klucza z PK ani dawnym, renumerowanym `tasks.Task.task_id`.
 Szczegóły zadań głównych są pod `/space/<slug>/tasks/<klucz>/?view=list`.
 GET adresu podzadania po kontroli dostępu przekierowuje do zakładki
 `tab=subtasks` głównego przodka, także w scoped adresach i API stron.
-Podzadania edytuje się przez istniejące okno nad listą rodzica, z zapisem
-tytułu, statusu i pozostałych pól. Zmiana statusu zachowuje datę zakończenia
-i historię. Obserwator ma listę bez linku edycji. Lista obejmuje wszystkich
-dostępnych potomków, więc istniejące głębsze poziomy pozostają osiągalne.
+Podzadania tworzy się i edytuje w oknie nad listą rodzica. Oba formularze
+udostępniają te same dziewięć pól: Tytuł, Opis, Status, Priorytet, Wykonawca,
+Typ zgłoszenia, Data rozpoczęcia, Termin zakończenia i Estymacja (punkty).
+Daty obejmują dzień i godzinę, a termin nie może poprzedzać rozpoczęcia.
+Punkty są opcjonalne (0–10000) i dostępne we wszystkich szablonach przestrzeni.
+Typy i statusy pochodzą z konfiguracji przestrzeni, a wykonawcy z aktywnego
+Workspace. Przypisanie wykonawcy samo nie nadaje dostępu. Nowe podzadanie
+z okna zachowuje domyślną prywatność; widoczność nie jest osobną kontrolką.
+Edycja nie zmienia istniejących tagów, zespołu, sprintu, epika, backlogu,
+kategorii, przypomnienia, pól dodatkowych ani uprawnień. Zmiana statusu
+zachowuje datę zakończenia i historię. Obserwator ma listę bez linku edycji.
+Lista obejmuje wszystkich dostępnych potomków, więc istniejące głębsze
+poziomy pozostają osiągalne.
 Trwałe adresy konkretnych podzadań nadal przechodzą własną kontrolę dostępu;
 usunięte lub niedostępne podzadanie nie ujawnia adresu rodzica. Dane i operacje
 podzadań pozostają w dotychczasowych modelach. Wspólna powłoka

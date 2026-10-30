@@ -478,7 +478,15 @@ Linki bieżących zadań zawierają stały klucz `WorkItem.key` w adresie przest
 Historyczne wyniki Tasks i Kanbana są wycofane.
 
 Wybrane grupy porządkują dopasowanie dokładne, początek nazwy i fragment nazwy.
+Zadania i Przestrzenie mają pierwszeństwo dokładnego klucza, następnie dokładnej
+nazwy/tytułu, początku nazwy lub klucza i ich fragmentu. Dopasowania wyłącznie
+w opisie lub komentarzu są dalej. Ranking działa przed limitem SQL; przy
+równych dopasowaniach zadania są od najnowszych, a Przestrzenie według nazwy.
 Wynik zawiera grupy z `title`, `type`, `url`, `icon`, `meta`, `eyebrow`.
+Przestrzenie i Workspace przekazują również opcjonalne `avatar` z istniejącego
+helpera awatarów (ilustracja lub zdjęcie). Zadania używają `WorkItem.type_icon`;
+ostatnio oglądane rozróżniają także podzadania. Grafiki Przestrzeni są pobierane
+przez dotychczasowy kontrolowany endpoint, po sprawdzeniu widoczności wyniku.
 Odpowiedź ma `Cache-Control: no-store`. Każda grupa danych zwraca maksymalnie
 20 wyników; zapytanie SQL pobiera najwyżej 21 rekordów, aby ustalić `has_more`.
 `truncated` oznacza przekroczenie limitu w co najmniej jednej grupie, a `total`
@@ -489,7 +497,9 @@ i prosi o doprecyzowanie frazy; nie ma paginacji wyników.
 Frontend obsługuje opóźnienie wyszukiwania, anulowanie starszego requestu,
 stany pusty/ładowanie/błąd oraz nawigację po wynikach. Wyniki pojawiają się
 w rozwijanym panelu pod polem górnego paska; przyciski typów filtrują pobrane
-wyniki bez zmiany uprawnień ani limitów serwera.
+wyniki bez zmiany uprawnień ani limitów serwera. Wybrany typ jest zachowany
+przy zmianie frazy; wyczyszczenie pola i nawigacja resetują go. Zamknięty panel
+nie otwiera ukrytych wyników Enterem; najechanie nie zmienia wyboru klawiaturą.
 
 GET `/global-search/?recent=1` przy pustej frazie zwraca do 8 ostatnio oglądanych
 zadań i przestrzeni z aktywnego modułu Przestrzeni, bez historycznych
