@@ -458,7 +458,16 @@ np. `ANC-12`, z rosnącego licznika przestrzeni. Usunięcie zadania nie zmienia
 kluczy pozostałych. Zadanie pozostaje w swojej przestrzeni; zapis modelu
 odrzuca zmianę przestrzeni, obcego rodzica i cykl podzadań. Nie należy mylić
 klucza z PK ani dawnym, renumerowanym `tasks.Task.task_id`.
-Szczegóły są pod `/space/<slug>/tasks/<klucz>/?view=list`. Wspólna powłoka
+Szczegóły zadań głównych są pod `/space/<slug>/tasks/<klucz>/?view=list`.
+GET adresu podzadania po kontroli dostępu przekierowuje do zakładki
+`tab=subtasks` głównego przodka, także w scoped adresach i API stron.
+Podzadania edytuje się przez istniejące okno nad listą rodzica, z zapisem
+tytułu, statusu i pozostałych pól. Zmiana statusu zachowuje datę zakończenia
+i historię. Obserwator ma listę bez linku edycji. Lista obejmuje wszystkich
+dostępnych potomków, więc istniejące głębsze poziomy pozostają osiągalne.
+Trwałe adresy konkretnych podzadań nadal przechodzą własną kontrolę dostępu;
+usunięte lub niedostępne podzadanie nie ujawnia adresu rodzica. Dane i operacje
+podzadań pozostają w dotychczasowych modelach. Wspólna powłoka
 zadania pokazuje strzałkę powrotu i tytuł, zakładki i treść po lewej
 oraz właściwości po prawej, bez powtarzania nagłówka przestrzeni. Powrót
 zachowuje widok i filtry. Wszystkie pięć zakładek używa układu starszego ekranu

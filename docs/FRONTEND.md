@@ -241,6 +241,24 @@ do trwałego wolumenu serwowanego przez Nginx. [Instalator i pięć usług](PROD
 
 ## Podział źródeł i cykl życia
 
+Formularze modalne współdzielą `forms/FormDialog.tsx`: `FormLayout` układa
+nazwę/tytuł i opcjonalną widoczność, pełny opis oraz pozostałe pola parami.
+`FormFields` włącza ten układ przez `layout`; domyślny wariant pozostaje
+bez kontenera dla konfiguracji i osadzonych kontrolek. `PulpitFields` oraz
+zakładki Filtrów zachowują warunkową widoczność swoich pól we wspólnym układzie.
+Osobne edytory Kalendarza, Zasobów, Dysku, Workspace i profilu stosują klasy
+`app-form-*` z `modal-system.css`. Zmiana kolejności jest częścią renderowania,
+bez przenoszenia kontrolek przez JS i bez zmiany schematu API, zapisu lub ACL.
+Szczegóły i responsywność: [standard modali](UI.md#6-modale).
+
+`shared/FieldLabel.tsx` renderuje etykietę i opcjonalny znak „!” z pomocą pola.
+`static/js/field-help.js` obsługuje wspólny kontrakt Reacta i szablonów Django
+przez delegowane zdarzenia, bez ponownego podpinania listenerów przy nawigacji.
+Treść dymka pozostaje w formularzu i jest pozycjonowana przez
+`AncoreDropdownLayer`; zachowuje ID używane w `aria-describedby` kontrolki.
+Pomoc otwiera się przez hover/fokus oraz kliknięcie/dotyk, nie wysyła formularza
+i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
+
 - `frontend/app/src/main.tsx` montuje moduł na pierwszym wejściu i
   `ancore:content-loaded`, a odmontowuje na `ancore:content-unloading`.
   Import modułu jest odroczony; odłączony kontener nie zostaje zamontowany.
@@ -358,6 +376,13 @@ zachowuje niezapisany szkic do ponowienia.
 ukrytym polem planowania. To te same wartości co na osi czasu; szczegóły
 edytują datę i godzinę obu końców. Autosave waliduje pełny zakres przez istniejący
 formularz, a historia zapisuje także zmianę lub usunięcie rozpoczęcia.
+Podzadanie nie montuje własnego `TaskPage`: jego adres zwraca przekierowanie
+do `tab=subtasks` zadania głównego po kontroli dostępu. Tytuł na liście rodzica
+otwiera istniejący `FormDialog` przez `edit_url`, po zapisaniu szkicu rodzica.
+Zapis okna odświeża dane rodzica bez nawigacji. Błąd samego odczytu po zapisie
+pokazuje „Odśwież zadanie” i nie powtarza mutacji. Obserwator widzi tytuł bez
+linku edycji. Formularz podzadania ma osobne identyfikatory kontrolek, także
+po walidacji, aby etykiety i podglądy wyborów nie wskazywały formularza rodzica.
 Pola dodatkowe zadania są edytowalne w panelu właściwości. Błędy pozostałych
 pól planowania odsłaniają odpowiednią kontrolkę w tym panelu. Jeśli konfiguracja
 doda pole podczas edycji, odpowiedź walidacji uzupełnia schemat bez odtwarzania

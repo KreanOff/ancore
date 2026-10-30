@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 37 | 0 | 20 | 225 |
+| [backend/core](../backend/core) | 37 | 0 | 23 | 225 |
 | [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 59 | 4 | 42 | 356 |
+| [backend/spaces](../backend/spaces) | 60 | 4 | 42 | 363 |
 
 ## 2. Modele i relacje
 
@@ -1017,7 +1017,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/schedule.py](../backend/spaces/schedule.py) — `ScheduleDateTimeField`, `local_date`, `validate_range`, `move_to_date`
-- [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
+- [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `task_subtasks_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
 - [backend/spaces/summary.py](../backend/spaces/summary.py) — `status_arc_path`, `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
@@ -1045,7 +1045,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/avatar_presets.html](../backend/core/templates/core/includes/avatar_presets.html)
 - [backend/core/templates/core/includes/bootstrap.html](../backend/core/templates/core/includes/bootstrap.html)
 - [backend/core/templates/core/includes/content_skeleton.html](../backend/core/templates/core/includes/content_skeleton.html)
+- [backend/core/templates/core/includes/field_help.html](../backend/core/templates/core/includes/field_help.html)
 - [backend/core/templates/core/includes/icon_credit.html](../backend/core/templates/core/includes/icon_credit.html)
+- [backend/core/templates/core/includes/modal_form_field.html](../backend/core/templates/core/includes/modal_form_field.html)
+- [backend/core/templates/core/includes/modal_form_fields.html](../backend/core/templates/core/includes/modal_form_fields.html)
 - [backend/core/templates/core/includes/photo_crop_dialog.html](../backend/core/templates/core/includes/photo_crop_dialog.html)
 - [backend/core/templates/core/includes/priority_icon.html](../backend/core/templates/core/includes/priority_icon.html)
 - [backend/core/templates/core/includes/pulpit_editor_sidebar.html](../backend/core/templates/core/includes/pulpit_editor_sidebar.html)
@@ -1315,6 +1318,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/custom-select.js](../static/js/custom-select.js)
 - [static/js/documents.js](../static/js/documents.js)
 - [static/js/dropdown-layer.js](../static/js/dropdown-layer.js)
+- [static/js/field-help.js](../static/js/field-help.js)
 - [static/js/file-upload.js](../static/js/file-upload.js)
 - [static/js/filter-navigation.js](../static/js/filter-navigation.js)
 - [static/js/flaticon-icons.js](../static/js/flaticon-icons.js)
@@ -1442,6 +1446,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/Emoji.tsx](../frontend/app/src/shared/Emoji.tsx)
 - [frontend/app/src/shared/EmojiPicker.tsx](../frontend/app/src/shared/EmojiPicker.tsx)
 - [frontend/app/src/shared/EmptyState.tsx](../frontend/app/src/shared/EmptyState.tsx)
+- [frontend/app/src/shared/FieldLabel.tsx](../frontend/app/src/shared/FieldLabel.tsx)
 - [frontend/app/src/shared/Icon.tsx](../frontend/app/src/shared/Icon.tsx)
 - [frontend/app/src/shared/Members.tsx](../frontend/app/src/shared/Members.tsx)
 - [frontend/app/src/shared/Modal.tsx](../frontend/app/src/shared/Modal.tsx)
@@ -2193,6 +2198,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_space_sharing.py](../backend/spaces/test_space_sharing.py).
 
 - `SpaceSharingTests`: 9 metod testowych.
+
+### backend/spaces/test_subtask_navigation.py
+
+Źródło: [backend/spaces/test_subtask_navigation.py](../backend/spaces/test_subtask_navigation.py).
+
+- `SubtaskNavigationTests`: 7 metod testowych.
 
 ### backend/spaces/test_summary.py
 

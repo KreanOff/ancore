@@ -1,5 +1,41 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Pomoc pola pod znakiem „!” (30.10.2026)
+
+Pomoc formularzy korzysta ze wspólnego `FieldLabel`/`field_help.html` i
+delegowanej obsługi `field-help.js`. `AncoreDropdownLayer` przyjmuje opcjonalne
+`data-dropdown-placement="top"`; dymek preferuje miejsce nad etykietą,
+a zwykłe dropdowny zachowują dotychczasowe pozycjonowanie.
+Przeszły build, 232 istniejące testy frontendu oraz 10 testów warstwy dropdownów
+po zmianie pozycjonowania (w tym dwa nowe), kompilacja i render szablonów,
+kontrola składni JS, indeksu oraz diff. Chrome/Playwright sprawdził hover,
+fokus, Escape, kliknięcie/dotyk, brak zmiany szkicu oraz szerokości 1440/390/320px
+na tymczasowej bazie. Plugin Browser był niedostępny; Safari i Firefox nie
+były testowane.
+
+## Wspólny układ formularzy modalnych (30.10.2026)
+
+`app-form-*` i `FormLayout` porządkują nazwę/widoczność, pełny opis i dwie
+równe kolumny parametrów. Osobne edytory i pierwszy render Django używają
+tych samych klas. Powłoka, kontrolki i mechanizmy zapisu pozostają wspólne.
+
+Przeszły build TypeScript, 232 testy frontendu oraz 76 testów
+`core.test_frontend`, `core.test_filter_frontend`, `core.test_pulpit_frontend`,
+`core.test_document_frontend` i `core.test_workspace_frontend` na osobnej
+tymczasowej bazie PostgreSQL. Sprawdzono kompilację szablonów, pojedyncze
+wystąpienia kontrolek, kontrolę indeksu i diff. Chrome/Playwright na danych
+testowych: formularze przy 1440/1024/768/390/320px, zapis i ponowne wejście,
+walidacja, zachowanie szkicu po błędzie i ponowienie, przewijanie oraz stopka
+na telefonie. Plugin Browser niedostępny; użyto zainstalowanego Chrome.
+Sprawdzono też HTML 11 formularzy Django przy 1440/390px; ukryte początkowo
+modale odsłonięto wyłącznie w DOM testu do oceny CSS. Nie oznacza to obsługi
+całego przepływu bez JavaScriptu; bezpośrednie adresy Pulpitów i Filtrów
+zachowują istniejące formularze stron.
+Wykryto istniejący problem: po Escape z okna tworzenia zadania otwartego
+z Listy fokus pozostaje na `body` (przycisk otwarcia jest wcześniej wyłączany
+podczas odczytu). Zmiana układu nie modyfikuje tego cyklu życia.
+Safari, Firefox i produkcji nie sprawdzano.
+
 ## Wspólny pasek Dzisiaj i skali osi (28.10.2026)
 
 „Dzisiaj”, „Tygodnie”, „Miesiące” i „Kwartały” są czterema przyciskami jednego

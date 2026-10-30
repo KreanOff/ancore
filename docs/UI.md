@@ -490,10 +490,14 @@ Szczegóły nowego zadania (`spaces/task_detail.html`) zachowują powłokę,
 kontrolki i współdzielone include'y dawnego ekranu Tasks przez
 `spaces/base.html` oraz `core/base.html`. Nagłówek ma strzałkę powrotu,
 tytuł. Adres i nawigacja zachowują przestrzeń, a powrót `view`
-i filtry. Panel po prawej zawiera widoczność, status, priorytet, tagi,
-typ zgłoszenia, kategorię zadania, wykonawcę, trwały klucz z kopiowaniem,
-autora oraz daty utworzenia, zamknięcia, rozpoczęcia, zakończenia i przypomnienia.
-„Data rozpoczęcia” i „Termin zakończenia” są zawsze widoczne w sekcji dat,
+i filtry. Panel po prawej zaczyna się osobną sekcją widoczności. Właściwości
+zadania mają kolejność: status, priorytet, przypisane do, typ zgłoszenia,
+kategoria zadania i tagi. Następna sekcja zawiera terminy: datę rozpoczęcia,
+termin zakończenia i przypomnienie. Ostatnia sekcja informacji o zadaniu
+zawiera trwały klucz z kopiowaniem, autora, datę utworzenia i datę zamknięcia.
+Sekcje mają odpowiednio nazwy dostępności „Widoczność zadania”, „Właściwości
+zadania”, „Terminy zadania” i „Informacje o zadaniu”.
+„Data rozpoczęcia” i „Termin zakończenia” są zawsze widoczne w sekcji terminów,
 także bez wartości, i korzystają ze wspólnych pól oraz automatycznego zapisu.
 Oba pola wskazują datę i godzinę, tak jak formularz na osi czasu.
 Zmiana w szczegółach i na osi czasu dotyczy tych samych
@@ -506,6 +510,15 @@ Widoczność jest polem tego samego formularza; właściciel prywatnego zadania
 zarządza jego widocznością. Pozostałe planowanie jest dostępne przez dotychczasową
 edycję w przestrzeni; jego wartości są zachowane przy zapisie szczegółów.
 Na wąskim ekranie panel przechodzi pod treść, a zakładki przewijają się.
+
+Wariant panelu właściwości w `spaces.css` ogranicza kolumnę etykiet do 128px
+i 36% szerokości wiersza, pozostawiając więcej miejsca na wartości i daty.
+Sekcje mają równy odstęp `0.25rem` między polami, również z kontenerami Reacta.
+Statyczne wartości mają takie samo wcięcie jak kontrolki. Etykiety, wybrane
+wartości i nazwa autora mogą się zawijać; błędy zajmują pełny wiersz pod polem.
+Do 360px etykieta znajduje się nad wartością, aby natywne pola daty i godziny
+mieściły się w panelu. Wariant obejmuje tylko szczegóły zadań głównych,
+także pierwszy render Django; panel profilu zachowuje własny układ.
 
 Nagłówek nie wyświetla statusu ani przycisku zapisu. Automatyczny zapis
 uruchamia atrybut `data-space-task-autosave` formularza, niezależnie od
@@ -521,7 +534,18 @@ po `ancore:content-loaded`, a abort usuwa listenery i timer poprzedniej strony.
 Wszystkie pięć paneli jest renderowane razem. Wspólny `task-work-log.js`
 przełącza przyciski zakładek, URL `tab`, ARIA i fokus klawiatury, zachowując
 szkic tytułu, opisu i pól. Podzadania mają standardowy toolbar, grupy statusów,
-zaznaczanie, sortowanie, usuwanie i modal tworzenia. Dziennik pracy korzysta
+zaznaczanie, sortowanie, usuwanie i modal tworzenia. Podzadania nie mają osobnej
+pełnej strony. Kliknięcie tytułu z prawem edycji otwiera istniejący `FormDialog`
+nad zakładką rodzica; obserwator widzi sam tytuł. Okno zachowuje wspólne pola,
+status, walidację, ochronę szkicu, Escape i powrót fokusu. Zapis odświeża listę
+bez opuszczania rodzica; błąd odświeżenia pozwala ponowić sam odczyt.
+Pierwszy render używa tego samego linku edycji z `data-work-open`.
+Wiersze podzadań mają minimalną szerokość 520px i przewijają się poziomo
+wewnątrz grupy, tak jak lista zadań Przestrzeni. Tytuł zachowuje miejsce
+również na telefonie; nagłówek statusu pozostaje w szerokości panelu.
+Stare adresy podzadań prowadzą po kontroli dostępu do „Podzadań” zadania
+głównego. Istniejące dalsze poziomy są widoczne w tej samej płaskiej liście.
+Dziennik pracy korzysta
 z `tasks/includes/work_log_list.html`, `work_log_modal.html` i wspólnego
 `core.work_logs.TimeLogForm`: suma minut, paginacja, awatary, edycja i usuwanie
 przez modal. Członkowie używają `project_members_panel.html`, wspólnej tabeli
@@ -2384,7 +2408,8 @@ stale rozwinięte, bez przycisków zwijania; „Podzadania” z licznikiem to zw
 nagłówek. Nie pokazuje tematu, opisu
 ani czatu. Pusta lista wyświetla „Brak podzadań.”, a dodawanie pozostaje dostępne.
 Zapis podzadania i błąd formularza pozostawiają wybraną zakładkę.
-Szczegóły podzadania zachowują trzy zakładki, bez kolejnego poziomu podzadań.
+W bieżących Przestrzeniach podzadanie korzysta z okna edycji nad listą rodzica;
+nie ma osobnego ekranu szczegółów ani własnego paska zakładek.
 
 „Główna” zawiera wyłącznie komentarze w sekcji „Czat”, z dotychczasowym
 formularzem i wzmiankami. Nie ma menu filtrowania aktywności. Zakładka
@@ -2472,17 +2497,42 @@ plików zachowują własne zachowanie. `prefers-reduced-motion` wyłącza ruch
 i oczekiwanie; starsze przeglądarki bez dyskretnych przejść mają animację
 otwierania oraz natychmiastowe zamknięcie.
 
-Od szerokości 1100px pełne wiersze `tasks-form-field` mają etykietę po lewej
-(180px), a kontrolkę po prawej. Parametry projektu zachowują dwie kolumny,
-z etykietą 128px w każdej; ukryte pola pierwszej grupy nadal są ukryte po
-wybraniu szablonu. „Nowe zadanie” używa tej samej sekcji `tasks-project-parameters`
-i siatki `tasks-project-create-fields`: dwie równe kolumny, identyczne odstępy
-i etykiety obok kontrolek. Wspólny wariant wiersza obejmuje także kontrolki
-projektu i grupy w elementach `.tasks-issue-field`. Do 720px parametry projektu
-i zadania przechodzą do jednej kolumny. Węższe okna zachowują pionowy układ pól. Do 900px panel
-ma 16px odstępu od góry i po 20px z boków, a do 600px wypełnia ekran, z odstępami treści 12px,
-większą stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
-Dane kontaktowe mają dwie kolumny, a do 600px jedną; ID Ancore zajmuje pełny wiersz.
+Formularze tworzenia i edycji korzystają ze wspólnego układu `app-form-layout`
+w `modal-system.css`. Pierwszy wiersz `app-form-heading` zawiera nazwę/tytuł
+oraz widoczność po prawej, jeżeli formularz udostępnia to pole. Bez widoczności
+nazwa wypełnia wiersz. Opis zajmuje pełną szerokość bezpośrednio pod nazwą;
+dotyczy to także celu sprintu, notatek Zasobu i Bio profilu. Pozostałe pola
+tworzą dwie równe kolumny z odstępem `--app-modal-field-gap`. Etykiety pozostają
+widoczne nad kontrolkami, a błędy pod właściwym polem. Pomoc przy polu nie
+zajmuje osobnego wiersza: znak „!” obok etykiety otwiera dymek po najechaniu
+lub fokusie, a kliknięcie/dotknięcie utrzymuje go do zamknięcia. Escape zamyka
+najpierw dymek; kliknięcie poza nim i zamknięcie formularza również go usuwają.
+Dymek zachowuje powiązanie `aria-describedby` z kontrolką i korzysta ze wspólnej
+warstwy dropdownów, więc nie jest obcinany przez przewijaną treść okna.
+Preferuje miejsce nad etykietą, aby pozostawić samą kontrolkę dostępną;
+gdy go brakuje, warstwa dopasowuje położenie do widocznego ekranu.
+`shared/FieldLabel.tsx` oraz `core/includes/field_help.html` współdzielą klasy
+i delegowaną obsługę `static/js/field-help.js`, także po podmianie treści.
+Pola „Opis”, komunikaty błędów i istotne instrukcje uploadu pozostają widoczne.
+Kolejność DOM
+i przechodzenia Tab odpowiada układowi wizualnemu. Awatar/ikona zajmuje osobną
+kolumnę 68px po lewej (`app-form-avatar-layout`), bez zwężania opisu względem
+pozostałych pól. Profil zachowuje grupę imienia, drugiego imienia i nazwiska.
+
+Układ obejmuje zadania i podzadania, sprinty, tagi, Przestrzenie, Pulpity,
+Filtry, Zespoły, Zasoby, Kalendarz, formularze Dysku/Dokumentów, Workspace
+i profil. `app-form-wide` oznacza treści wymagające pełnego wiersza, np.
+upload lub wybór modułów. W React wspólny `FormLayout` porządkuje pola schematu;
+osobne edytory stosują te same klasy. Pierwszy render Django używa wspólnych
+include'ów `core/includes/modal_form_fields.html` i `modal_form_field.html`
+oraz tych samych klas w formularzach specjalistycznych. Pola ukryte i warunkowe
+zachowują dotychczasowe mechanizmy. Wariant dotyczy formularzy, nie tabel
+udostępniania, podglądów plików ani edytorów w szczegółach zadania.
+
+Do 720px pola i nazwa z widocznością przechodzą do jednej kolumny; do 600px
+awatar znajduje się nad polami. Do 900px panel ma 16px odstępu od góry i po
+20px z boków, a do 600px wypełnia ekran, z odstępami treści 12px, większą
+stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
 
 Okna „Informacje” oraz „Notatki” projektów, grup i tagów w Zadaniach oraz
 przestrzeni i tagów w Kanbanie również używają `app-modal-panel`.

@@ -326,7 +326,9 @@ odpytywania centrum powiadomień; nie wymagają workera. Aktualne ograniczenia i
 `Space` → `SpaceTask` → podzadanie ma własne członkostwa, historię, pliki
 i dziennik pracy. `WorkItem` przechowuje planowanie i trwały klucz, np. `PRO-1`.
 Lista, tablica, backlog i szczegóły używają tego samego zadania.
-Szczegóły są pod `/space/<slug>/tasks/<klucz>/`, także scoped.
+Szczegóły zadań głównych są pod `/space/<slug>/tasks/<klucz>/`, także scoped.
+Adres podzadania po kontroli dostępu prowadzi do zakładki „Podzadania”
+głównego przodka; edycja podzadania odbywa się w oknie nad tą listą.
 Planowanie korzysta z `backend/spaces/backlog.py`; szczegóły: [Przestrzenie](SPACES.md).
 
 ## Wycofanie starszych systemów pracy (10.10.2026)
