@@ -1,4 +1,5 @@
 import re
+from copy import deepcopy
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -8,6 +9,7 @@ from django.utils import timezone
 
 from accounts.widgets import UserChoiceField
 from core.upload_validation import validate_image_crop, validate_image_upload
+from core.widgets import VisualSelect
 from .access import editable_to
 from tasks.models import TaskTag
 from core.work_logs import TimeLogForm
@@ -258,17 +260,52 @@ class DetailForm(ItemForm):
         return self.cleaned_data.get('task_type') or (self.item.task.task_type if self.item else 'general')
 
 
-class SubtaskForm(StyledForm):
-    title = forms.CharField(label='Tytuł podzadania', max_length=255)
-    visibility = forms.ChoiceField(label='Widoczność', choices=[('public', 'Publiczne — dostęp odziedziczony'), ('private', 'Prywatne — wybrane osoby')], initial='private')
-    description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
+class SubtaskForm(ItemForm):
+    """Shared subtask properties, independent of the space's planning template."""
+    field_order = ('title', 'description', 'status', 'priority', 'assignee', 'work_type', 'start_at', 'due_at', 'points')
+    visibility = forms.ChoiceField(label='Widoczność', required=False, choices=[('public', 'Publiczne — dostęp odziedziczony'), ('private', 'Prywatne — wybrane osoby')], initial='private', widget=forms.HiddenInput)
     status = forms.ChoiceField(label='Status')
-    due_at = forms.DateTimeField(label='Termin wykonania', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
 
-    def __init__(self, *args, space, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['status'].choices = [(status['key'], status['label']) for status in space.statuses]
-        self.fields['status'].initial = space.statuses[0]['key']
+    def __init__(self, *args, request, space, item=None, **kwargs):
+        super().__init__(*args, request=request, space=space, item=item, **kwargs)
+        # ItemForm only exposes points for Scrum; subtasks use the same field
+        # and validation in every template.
+        if 'points' not in self.fields:
+            self.fields['points'] = deepcopy(ItemForm.base_fields['points'])
+        names = (*self.field_order, 'visibility') if item is None else self.field_order
+        self.fields = {name: self.fields[name] for name in names}
+        if item is None:
+            self.fields['status'].choices = [(status['key'], status['label']) for status in space.statuses]
+            self.fields['status'].initial = space.statuses[0]['key']
+            self.fields['work_type'].initial = space.configuration.settings['types'][0]['key']
+            if self.is_bound:
+                # Older modal callers only sent the original subtask fields.
+                # Missing new choices retain defaults; explicit empty/invalid
+                # choices still go through the normal field validation.
+                self.data = self.data.copy()
+                for name in ('priority', 'work_type'):
+                    self.data.setdefault(self.add_prefix(name), self.fields[name].initial)
+        visuals = {
+            'status': {status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category']}}
+                       for status in space.statuses},
+            'priority': {key: {'template': 'core/includes/select_priority.html', 'context': {'priority': key}}
+                         for key, _ in SpaceTask.PRIORITY_CHOICES},
+        }
+        for name, options in visuals.items():
+            self.fields[name].widget = VisualSelect(choices=self.fields[name].choices, visuals=options)
+        self.fields['assignee'].widget.attrs['data-ancore-custom-select-icon'] = 'user-round'
+        self.style()
+
+    def clean_visibility(self):
+        return self.cleaned_data.get('visibility') or 'private'
+
+    def clean(self):
+        data = super().clean()
+        # The existing epic relation is not edited by this form. Keep it while
+        # enforcing the same no-nested-epic rule as the full task form.
+        if self.item and self.item.epic_id and data.get('work_type') == 'epic':
+            self.add_error('work_type', 'Epik nie może należeć do innego epika.')
+        return data
 
 
 class WorkLogForm(TimeLogForm):

@@ -32,7 +32,7 @@ from .backlog_window import backlog_more_url, backlog_window
 from .board import move_board_item
 from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .dashboard import dashboard_payload
-from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, TypeForm
+from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, space_summary
@@ -551,7 +551,8 @@ def item_edit(request, pk=None, space_pk=None, key=None):
             raise PermissionDenied
     elif not editable_to(Space.objects.filter(pk=space.pk), request.user).exists():
         raise PermissionDenied
-    form = ItemForm(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
+    form_class = SubtaskForm if item and item.task.parent_id else ItemForm
+    form = form_class(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
     in_planning = request.GET.get('view') == 'backlog' and space.template in {'scrum', 'kanban'}
     if not item and in_planning:
         form.initial['in_backlog'] = True
@@ -578,7 +579,8 @@ def item_edit(request, pk=None, space_pk=None, key=None):
             else:
                 require_editable(Space.objects.filter(pk=space.pk), request.user)
             space = space_object(request, space.pk)
-            form = ItemForm(request.POST, request=request, space=space, item=item)
+            form_class = SubtaskForm if item and item.task.parent_id else ItemForm
+            form = form_class(request.POST, request=request, space=space, item=item)
             if not form.is_valid():
                 return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, background_space=space if in_planning else None)
             data = form.cleaned_data
@@ -587,16 +589,19 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 set_status(request, item, data['status'])
                 task.refresh_from_db()
             for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
-                setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
+                if name in data:
+                    setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
             task._activity_actor = request.user
             task.save()
-            task.tags.set(data['tags'])
+            if 'tags' in data:
+                task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
             old_type, old_type_label = item.work_type, item.get_work_type_display()
             for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
                 if name in data:
                     setattr(item, name, data[name])
-            item.custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else '' for f in space.configuration.settings.get('fields', [])}
+            if not isinstance(form, SubtaskForm):
+                item.custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else '' for f in space.configuration.settings.get('fields', [])}
             item.save()
             if pk:
                 metadata = {'fields': ['typ zgłoszenia'], 'changes': [{

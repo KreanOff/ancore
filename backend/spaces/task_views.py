@@ -138,7 +138,7 @@ def detail(request, space_pk, key):
         return redirect(request.get_full_path())
     form = DetailForm(request=request, space=space, item=item)
     log_form = WorkLogForm(prefix="worklog")
-    subtask_form = SubtaskForm(space=space, prefix="subtask")
+    subtask_form = SubtaskForm(request=request, space=space, prefix="subtask")
     error = ''
     tab = request.GET.get('tab', 'main')
     if tab not in {'main', 'subtasks', 'work-log', 'members', 'history'}:
@@ -226,19 +226,24 @@ def detail(request, space_pk, key):
                         posted['subtask-title'] = posted.get('title', '')
                         posted['subtask-status'] = space.statuses[0]['key']
                         posted['subtask-visibility'] = 'public'
-                    subtask_form = SubtaskForm(posted, space=space, prefix='subtask')
+                    subtask_form = SubtaskForm(posted, request=request, space=space, prefix='subtask')
                     if not subtask_form.is_valid():
                         raise ValidationError('Popraw dane podzadania.')
                     data = subtask_form.cleaned_data
-                    status_key = data.pop('status')
+                    status_key = data['status']
                     status = next(status for status in space.statuses if status['key'] == status_key)
                     child = SpaceTask(space=space, parent=task, created_by=request.user,
                                       private_owner=request.user if data['visibility'] == 'private' else None,
-                                      status=status['category'], **data)
+                                      status=status['category'], **{name: data[name] for name in (
+                                          'title', 'description', 'visibility', 'priority', 'assignee', 'due_at',
+                                      )})
                     child._activity_actor = request.user
                     child.save()
-                    child.work_item.status = status['key']
-                    child.work_item.save(update_fields=['status'])
+                    child_item = child.work_item
+                    child_item.status = status['key']
+                    for name in ('work_type', 'start_at', 'points'):
+                        setattr(child_item, name, data[name])
+                    child_item.save(update_fields=['status', 'work_type', 'start_at', 'points'])
                     record(item, request.user, 'subtask_created', 'dodał podzadanie', {'subtask_pk': child.pk, 'subtask_title': child.title})
                     if action == 'subtask':
                         return redirect(task_url(request, child))
