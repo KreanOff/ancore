@@ -35,29 +35,71 @@ dostęp. Plik CSV używa UTF-8 z BOM, separatora średnika i zabezpiecza tekst
 mogący zostać zinterpretowany przez arkusz jako formuła. Eksport jest odczytem,
 nie zapisuje konfiguracji raportu ani kopii danych na serwerze.
 
-## Okno ustawień przestrzeni
+## Strona ustawień przestrzeni
 
-„Ustawienia przestrzeni” otwiera wspólne duże okno `app-modal-panel`, zgodne
-z dotychczasowym wzorcem Projektów. Zakładki „Ustawienia”, „Udostępnienia”
-i „Statusy, typy i pola” obejmują wszystkie dotychczasowe ustawienia. Awatar
-znajduje się w „Ustawienia”, po lewej stronie pól, tak jak w edycji profilu.
-Konfiguracja i operacje członkostwa są dostępne zgodnie z istniejącymi uprawnieniami. Osoby bez prawa zarządzania widzą podgląd i członków; publiczna
+„Ustawienia przestrzeni” jest osobną stroną w powłoce aplikacji. Centrum
+`/settings/` pokazuje w kategorii Workspace listę przestrzeni dostępnych przez
+`visible_spaces`, z linkiem do ustawień każdej z nich. Lista korzysta z aktywnego
+Workspace i uwzględnia włączenie modułu Przestrzeni. Wejścia z zakładki
+Przestrzeni oraz menu katalogu również prowadzą na tę stronę.
+
+Główne lewe menu zastępuje menu Workspace trzema sekcjami: „Ustawienia”,
+„Udostępnienia” i „Typy zgłoszeń”. Sekcje „Statusy i przejścia” oraz
+„Pola dodatkowe” usunięto z interfejsu ustawień. Zapisane statusy, przejścia
+i pola dodatkowe nadal działają w zadaniach i pozostają częścią konfiguracji.
+Menu zawiera wyłącznie dostępne sekcje, bez dodatkowych nagłówków i linku powrotu.
+Sekcje obejmują główny formularz, tabelę członków i listę typów zgłoszeń.
+Awatar znajduje się w „Ustawienia”, po lewej stronie pól, tak jak
+w edycji profilu. Konfiguracja i operacje członkostwa zachowują istniejące
+uprawnienia. Osoby bez prawa zarządzania widzą podgląd i członków; publiczna
 przestrzeń pokazuje informację o dostępie przez Workspace.
 
-Zmiana zakładki zachowuje szkice pozostałych formularzy. „Zapisz” dotyczy
-bieżącej sekcji i pozostawia okno otwarte; zamknięcie, Escape i nawigacja
-chronią niezapisane zmiany także w ukrytych zakładkach. Udostępnienie/zmiana
-roli używa zagnieżdżonego standardowego formularza i odświeża listę członków
-bez utraty szkiców. Wiersze pokazują odbieranie dostępu tylko osobom, wobec
-których bieżący użytkownik ma takie uprawnienie.
+Zmiana sekcji zachowuje szkic głównych ustawień. „Zapisz” zapisuje
+główne ustawienia i pozostawia użytkownika na stronie; zmieniona nazwa odświeża
+nagłówek i tytuł strony. Typy zgłoszeń mają tabelę zapisanych wartości
+według wzorca „Udostępnienia”. Dodawanie odbywa się przyciskiem nad tabelą,
+a edycja przez nazwę lub menu wiersza. Obie operacje otwierają standardowe
+okno formularza. „Zapisz” w oknie od razu utrwala wybraną pozycję i odświeża
+listę; „Usuń” wymaga potwierdzenia w oknie. Każda operacja przesyła pełne
+formsety ze wspólną rewizją i zachowanymi zapisanymi wartościami pozostałych
+pozycji do istniejącego widoku Django. W stopce listy jest „Zamknij”, bez
+globalnego zapisu konfiguracji. Błędy pozostają w oknie i zachowują szkic.
+Anulowanie zmienionego formularza wymaga potwierdzenia odrzucenia zmian.
+Nawigacja i przeładowanie chronią szkic głównych ustawień oraz otwartego okna.
+Udostępnienie i zmiana roli używają standardowych kompaktowych okien
+i odświeżają listę członków bez
+utraty szkiców. Wiersze pokazują odbieranie dostępu tylko osobom, wobec których
+bieżący użytkownik ma takie uprawnienie. Picker awatara i kadrowanie również
+pozostają osobnymi oknami nad stroną. Strzałka w nagłówku wraca do przestrzeni.
+„Anuluj”/„Zamknij” zachowuje adres powrotu formularza, np. katalog z filtrami;
+jeśli brak takiego kontekstu lub prowadzi on do ustawień, wraca do przestrzeni.
 
-Wejście z zakładki Przestrzeni oraz menu katalogu zachowuje ekran w tle.
 Bezpośrednie adresy `?view=settings`, `edit/`, `avatar/`, `members/` i
-`configuration/`, również scoped, otwierają to samo okno w odpowiedniej sekcji.
-Zapisy nadal korzystają z istniejących widoków, formularzy i blokad Django;
-walidacja statusów, rewizja konfiguracji i zasady plików pozostają wspólne.
-Implementacja React: `src/spaces/SettingsDialog.tsx`, `ConfigurationForm`
-i współdzielony `EmbeddedForm`; formularze tworzenia zachowują swój kreator.
+`configuration/`, również scoped, renderują tę samą stronę w odpowiedniej
+sekcji. React normalizuje adres do `?view=settings` z fragmentem `#main`,
+`#members` albo `#types`; starsze `#configuration`, `#statuses` i `#fields`
+otwierają „Typy zgłoszeń”. Zmiany sekcji zachowują formularz głównych
+ustawień i historię Wstecz/Dalej.
+Zapisy nadal korzystają z istniejących widoków,
+formularzy i blokad Django; walidacja statusów, rewizja konfiguracji i zasady
+plików pozostają wspólne. Implementacja React:
+[`src/spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx),
+`ConfigurationForm`, `ConfigurationTable` i współdzielony `EmbeddedForm`;
+formularze tworzenia zachowują swój kreator.
+
+Pierwszy render Django również zawiera formularz strony lub tabelę członków
+przez `settings_form.html` i `settings_members.html`. Linki `fallback_url`
+kierują do głównych ustawień, `?view=settings&section=members#members` albo
+`configuration/?section=types`, ponieważ sam fragment adresu
+nie trafia do serwera.
+Bezpośrednie `edit/`, `avatar/` i `members/` renderują formularz na stronie.
+`configuration/` pokazuje tabelę typów zgłoszeń; parametry `edit` i `remove`
+otwierają nad nią formularz pozycji albo potwierdzenie usunięcia. Stare
+`section=statuses|fields|configuration` otwierają typy bez przenoszenia
+indeksu edycji lub usunięcia ze starej sekcji.
+Ukryte pola zachowują pełne formsety i rewizję. Odpowiedź z błędem zapisu
+pozostawia okno z błędami, a sukces wraca do tabeli typów. Błędy zachowanych
+formsetów statusów i pól są komunikatami ogólnymi; nie otwierają ich edytorów.
 
 ## Adresy przestrzeni
 
@@ -172,10 +214,11 @@ awatarów, nie pobiera plików poza kontrolowanym endpointem.
 
 Każda przestrzeń ma awatar widoczny w menu bocznym, katalogu i nagłówku
 wszystkich jej widoków. Domyślny wariant dobierany jest stabilnie według ID
-przestrzeni z 24 kolorowych ilustracji. Kliknięcie awatara w nagłówku lub
-przycisku „Zmień” pod podglądem w głównych ustawieniach otwiera wspólny wybór
-awatara, identyczny jak w edycji profilu użytkownika. Własny obraz używa tego
-samego kadrowania i powiększania. Zatwierdzenie wyboru zmienia podgląd; dopiero
+przestrzeni z 24 kolorowych ilustracji. Kliknięcie awatara w nagłówku prowadzi
+na stronę ustawień z otwartym wyborem awatara. Przycisk „Zmień” pod podglądem
+w głównych ustawieniach otwiera ten sam picker co edycja profilu użytkownika.
+Własny obraz używa tego samego kadrowania i powiększania. Zatwierdzenie wyboru
+zmienia podgląd; dopiero
 „Zapisz” w ustawieniach zapisuje nazwę, opis, widoczność i awatar w jednej
 transakcji. Anulowanie wyboru przywraca poprzedni podgląd. Zapis wymaga tego samego
 prawa zarządzania co edycja przestrzeni (`manage_space`); członek i obserwator
@@ -193,7 +236,7 @@ przechowuje stabilny identyfikator motywu, a `Space.avatar_photo` opcjonalny obr
 Zamiana wcześniejszych ikon konturowych na ilustracje zachowuje zapisane wybory
 i automatyczne przypisania; nie wymaga kolejnej migracji.
 Sam wybór awatara nie zmienia konfiguracji, zadań ani uprawnień przestrzeni.
-Bezpośredni adres `avatar/` otwiera wybór nad zakładką „Ustawienia”.
+Bezpośredni adres `avatar/` otwiera wybór nad sekcją „Ustawienia” strony ustawień.
 Przesłany kadr jest walidowany przez `core.upload_validation.validate_image_crop`;
 wybór ilustracji i kadru współdzieli `SpaceAvatarForm` oraz `save_space_avatar`.
 Starszy zapis głównych ustawień bez pól awatara zachowuje dotychczasowy obraz.
@@ -226,7 +269,19 @@ Migracja `spaces.0004_issue_types` dopisuje brakujące cztery standardowe typy d
 istniejących konfiguracji, także współdzielonych. Zachowuje własne nazwy, typy,
 kolejność, statusy, pola oraz wszystkie zadania. Cofnięcie migracji pozostawia
 te opcje, ponieważ zadania mogą już ich używać. Administrator nadal może
-zmieniać dostępne typy przez „Statusy, typy i pola”; używanego typu nie można usunąć.
+zmieniać dostępne typy w sekcji „Typy zgłoszeń” ustawień przestrzeni;
+używanego typu nie można usunąć.
+
+Typ ma klucz, nazwę, opcjonalną ikonę z lokalnego zestawu i opis przeznaczenia
+(do 500 znaków). Tabela ustawień pokazuje ikonę, klucz, nazwę i opis.
+„Domyślna dla typu” używa dotychczasowego symbolu znanego klucza, a dla
+własnego typu ikony `shapes`. Wybrana ikona jest zapisywana w istniejącym
+JSON konfiguracji i trafia również do zadań, wyboru typu, filtrów, podsumowania
+oraz wyszukiwania. Opis jest informacją w ustawieniach, bez zmiany zachowania
+zadań. Starsze formularze bez nowych pól zachowują zapisane ikony i opisy;
+jawne wyczyszczenie pola przywraca domyślną ikonę lub usuwa opis.
+Konfiguracja może zawierać do 30 typów. Nad tabelą pozostaje przycisk dodawania;
+opis konfiguracji i licznik typów nie są wyświetlane.
 
 Listy, backlog i karty tablicy pokazują ikonę i nazwę typu. Filtr „Typ zgłoszenia”
 na liście, tablicy, backlogu, osi czasu i we Wszystkich zadaniach działa na

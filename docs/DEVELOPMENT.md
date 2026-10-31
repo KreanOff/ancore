@@ -1,5 +1,56 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Ikony i opisy typów zgłoszeń (31.10.2026)
+
+`TypeForm` udostępnia 24 istniejące ikony, wybór domyślny według klucza
+oraz opcjonalny opis do 500 znaków. Metadane są w dotychczasowym JSON
+konfiguracji, bez nowej migracji. Starsze formularze zachowują zapisane
+metadane; jawne puste wartości je czyszczą. Tabela React i pierwszy render
+Django pokazują ikonę, klucz, nazwę i opis. Ikony korzystają ze wspólnego
+resolvera w zadaniach, formularzach, filtrach, podsumowaniu i wyszukiwaniu.
+`CustomFieldForm` zachowuje osobny zestaw pól.
+
+Przeszło 81 testów backendu: `core.test_space_settings_frontend`,
+`spaces.test_issue_types`, `spaces.test_configuration_writes`,
+`core.test_form_payload`, `spaces.test_summary` i
+`dashboard.test_search_regressions`, uruchomionych przez
+`scripts/run_tests.py` na osobnej bazie PostgreSQL. Przeszło także 268 testów
+frontendu oraz produkcyjny build z kontrolą TypeScript. Regresja tabeli
+sprawdza ikony domyślne i wybrane przy wartościach selecta serializowanych
+przez Django jako tablice. `manage.py check` oraz
+`makemigrations --check --dry-run` przeszły bez zmian schematu.
+
+Playwright/Chrome na izolowanej bazie QA potwierdził widok tabeli i edytora
+przy 1440, 1024, 390 i 320px, dodawanie, zmianę ikony i opisu, zapis po
+przeładowaniu oraz powrót przez menu. Walidacja duplikatu (400) i symulowany
+błąd zapisu (503) zachowały szkic i pozwoliły ponowić zapis. Sprawdzono pusty
+stan, zwykłe/scoped adresy, referencyjną tabelę tagów, ikony w liście zadań,
+filtrze typu i szczegółach zadania. Pierwszy render Django sprawdzono przy
+1440 i 390px. Konsola była czysta poza celowo wywołanymi odpowiedziami 400/503;
+nie było błędów JavaScript ani przepełnienia strony. Użyto Playwright,
+ponieważ plugin Browser był niedostępny. Przeszły lokalne linki dokumentacji,
+indeks i `git diff --check`. Nie uruchamiano całego zestawu testów backendu
+ani innych przeglądarek.
+
+## Usunięcie dwóch sekcji ustawień przestrzeni (31.10.2026)
+
+Menu i ekrany ustawień zawierają teraz Ustawienia, Udostępnienia i Typy zgłoszeń.
+Stare fragmenty `statuses`, `fields`, `configuration` oraz adresy konfiguracji
+otwierają typy bez przenoszenia indeksu starego edytora. Pełne formsety, dane
+statusów i pól, uprawnienia, rewizja oraz walidacja zapisu pozostają zachowane.
+
+Przeszło 36 testów Django (`core.test_space_settings_frontend`,
+`spaces.test_configuration_writes`, `spaces.test_space_sharing`) na osobnej
+bazie PostgreSQL, 266 testów frontendu, TypeScript i build, `manage.py check`,
+kontrola indeksu, lokalnych odnośników dokumentacji i `git diff --check`.
+Chrome/Playwright na osobnej bazie QA sprawdził zwykłe/scoped adresy, stare
+hashe i edytory, trzy sekcje, szkic, Wstecz/Dalej, zapis typu i odczyt po
+reloadzie, pustą odpowiedź i błąd 503 z ponowieniem, powrót do ustawień
+oraz szerokości 1440/1024/390/320px. Pierwszy render Django bez JavaScriptu
+sprawdzono przy 1440/390px; ekranem referencyjnym były Udostępnienia.
+Brak błędów JavaScriptu i nieoczekiwanych błędów konsoli. Plugin Browser
+był niedostępny. Nie testowano Safari, Firefox ani wdrożenia produkcyjnego.
+
 ## Raporty Przestrzeni (30.10.2026)
 
 Zakładka Raporty ma pełne agregaty, zakresy 7/30/90 dni, filtry, trend z tabelą,
@@ -2665,6 +2716,11 @@ i `git diff --check` przeszły; nie powtarzano pełnego zestawu backendu.
 
 ## Zarządzanie w Ustawieniach (13.10.2026)
 
+Poniższy opis i wyniki dotyczą historycznego wariantu z 13.10.2026. Osobne
+katalogi zarządzania Przestrzeniami, Pulpitami i Filtrami zostały później
+wycofane. Aktualne centrum Ustawień i stronę ustawień konkretnej przestrzeni
+opisują [standard UI](UI.md) oraz [Przestrzenie](SPACES.md#strona-ustawień-przestrzeni).
+
 Zarządzanie Przestrzeniami, Pulpitami i Filtrami ma trzy osobne strony
 z własnymi minimalnymi paskami bocznymi, według wzorca katalogu Workspace.
 Filtry mają osobny katalog `/filters/manage/` oraz scoped
@@ -4595,3 +4651,145 @@ i drugi krok kreatora Przestrzeni przy czterech szerokościach, wraz
 z potwierdzeniem odrzucenia szkicu.
 Zrzuty i skrypty QA pozostały w `/tmp`. Pełny zestaw backendu, Safari,
 Firefox, fizyczny ekran dotykowy i produkcyjne ONLYOFFICE nie były sprawdzane.
+
+## Strona ustawień przestrzeni (31.10.2026)
+
+Typy zgłoszeń, statusy/przejścia i pola dodatkowe pokazują zapisane wartości
+w tabelach według wzorca Udostępnień. „Dodaj”, nazwa pozycji oraz menu
+„Edytuj” otwierają standardowy modal; „Usuń” wymaga potwierdzenia.
+Tabela nie zawiera edytowanych komórek ani pustego wiersza. Zapis w oknie
+zachowuje pełne formsety, kontrolę rewizji i ochronę używanych pozycji,
+a po powodzeniu odświeża listę. Nieudany odczyt po zapisie ponawia tylko GET.
+Zmiana obejmuje React i pierwszy render Django. Checkbox bez jawnej wartości
+wysyła `on`; regresję pokrywa `frontend/app/tests/field-control.test.mjs`.
+
+Po tej korekcie przeszło **36 testów backendu** (ustawienia, udostępnienia,
+zapis konfiguracji) na osobnej bazie PostgreSQL, **266 testów frontendu**
+i build z TypeScriptem. Testy frontendu obejmują pełne formsety, odznaczanie checkboxów, wielokrotne przejścia, zapis wybranej
+pozycji, błędy 400/503 i ponowienie GET bez powtórzenia mutacji.
+
+Plugin Browser był niedostępny; użyto istniejącego Playwright/Chrome
+na osobnej bazie QA. Sprawdzono tabele i modale przy szerokościach
+2048/1440/1024/768/390/320px oraz ekran Udostępnień jako wzorzec.
+Scenariusze obejmowały pustą listę pól, dodanie i edycję typu, zmianę rodzaju
+i wymagalności pola, usunięcie z potwierdzeniem, zachowanie przejść statusu,
+odrzucenie usuwania ostatniego statusu kategorii, odczyt po reloadzie,
+fokus błędu 400, symulowany 503 z ponowieniem, odrzucanie szkicu i powrót
+fokusu, dropdowny z Escape, historię, ponowne wejście oraz zwykły/scoped URL.
+Sprawdzono też udany POST z nieudanym odświeżeniem i ponowienie samego GET.
+Odrzucenie błędnego natywnego POST po uruchomieniu Reacta przywraca czystą
+listę i pozwala zapisać kolejną edycję bez anulowanego duplikatu.
+Pierwszy render Django bez JavaScriptu zweryfikowano przy 1440/390px:
+lista pokazuje wartości, edycja otwiera modal z natywnymi selektorami.
+Format zmienionych plików, indeks kodu, linki dokumentacji i diff są poprawne.
+Brak błędów JS i nieoczekiwanych błędów konsoli. Safari, Firefox i produkcji
+nie sprawdzano. Dalsze zapisy poniżej dokumentują wcześniejsze warianty UI.
+
+Ustawienia przestrzeni przeniesiono z dużego okna na osobną stronę z menu
+pięciu sekcji w głównym lewym pasku bocznym: Ustawienia, Udostępnienia,
+Typy zgłoszeń, Statusy i przejścia oraz Pola dodatkowe. Menu zawiera wyłącznie
+pozycje sekcji. Główny formularz rozszerza się wraz z panelem, z awatarem
+po lewej oraz siatką pól, a tabela członków zachowuje pełną szerokość. Trzy widoki konfiguracji
+współdzielą jeden stale zamontowany formularz, pełny zapis i rewizję.
+Centrum Ustawień pokazuje widoczne
+przestrzenie aktywnego Workspace. Formularze, konfiguracja, udostępnienia
+i szkice korzystają z dotychczasowych mechanizmów; opis:
+[Przestrzenie](SPACES.md#strona-ustawień-przestrzeni), [Frontend](FRONTEND.md#strona-ustawień-przestrzeni).
+
+Dla wersji sprzed rozdzielenia konfiguracji na trzy pozycje menu na izolowanej
+bazie PostgreSQL przeszły **84 testy backendu**. Przeszły także
+**252 testy frontendu**, build TypeScript i kontrola formatowania.
+
+Plugin Browser był niedostępny; użyto istniejącego Playwright i Chrome.
+UI React sprawdzono przy szerokościach 1440, 1024, 390 i 320px: formularze,
+zachowanie szkiców przy zmianie sekcji, historię Wstecz/Dalej, zapis, błędy
+walidacji HTTP 400, błąd sieci HTTP 503 i ponowienie, picker awatara oraz
+edycję roli. Pustą listę przestrzeni w centrum Ustawień sprawdzono przez
+kontrolowane zastąpienie odpowiedzi API. Końcowy pełny scenariusz nie zgłosił
+błędów ani ostrzeżeń konsoli. Ten zakres nie oznacza pełnej regresji całej
+aplikacji ani weryfikacji wszystkich przeglądarek.
+
+Uzupełniający scenariusz potwierdził dodanie osoby z Workspace, odebranie
+dostępu, podgląd obserwatora bez edycji, odrzucenie szkicu i ponowne wejście.
+Pierwszy render Django bez JavaScriptu obejrzano przy 1440/390px dla ustawień,
+edycji, awatara, listy członków i konfiguracji. Formularze oraz tabela są
+dostępne na stronie; ikony i niestandardowe pickery wymagają JavaScriptu.
+Indeks kodu i `git diff --check` przeszły. Safari, Firefox oraz produkcji
+nie testowano.
+
+Po rozdzieleniu konfiguracji na typy, statusy i pola oraz korekcie układu
+przeszły **53/53 testy backendu**, **255/255 testów frontendu**, build TypeScript
+i kontrola formatowania. Końcowy Playwright/Chrome potwierdził wszystkie pięć
+sekcji przy 1440, 1024, 390 i 320px, zachowanie szkiców oraz wspólny zapis
+formsetów, odsłanianie i fokus błędnej grupy, stare i bezpośrednie URL,
+picker awatara, edycję roli, HTTP 503 i ponowienie oraz odrzucenie szkicu.
+Sprawdzono też ekran referencyjny listy zadań oraz pierwszy render Django
+bez JavaScriptu przy 1440/390px. Obejrzano zrzuty głównego formularza,
+szerokiej tabeli udostępnień, konfiguracji oraz widoku mobilnego.
+
+Osobny scenariusz potwierdził poprawny URL po Wstecz do centrum Ustawień
+i Dalej do przestrzeni, anulowanie wyjścia z niezapisanym szkicem oraz
+jego odrzucenie. Uzupełniająca kontrola typów, pól i statusów przy 1440/390px
+potwierdziła wyrównanie grup do góry strony. Końcowe scenariusze nie zgłosiły
+błędów JavaScriptu. Wcześniejsze wyniki przeglądarkowe powyżej dotyczą
+poprzedniego wariantu UI; nadal nie testowano Safari, Firefox ani produkcji.
+
+Korekta zgodności ze szkicem: formularz nie ma już stałego limitu 840px,
+siatka reaguje na szerokość panelu przez zapytania kontenera, a menu sekcji
+na desktopie otwiera się rozwinięte bez nadpisania preferencji menu Workspace.
+Odświeżono także wersję importowanego `modal-system.css`, aby przeglądarka
+nie używała starszych reguł formularzy po aktualizacji arkusza nadrzędnego.
+
+Po korekcie przeszły **33 testy Django** (`core.test_space_settings_frontend`,
+`spaces.test_space_sharing`, `spaces.test_configuration_writes`) na osobnej
+bazie PostgreSQL, **255 testów frontendu**, TypeScript i build, formatowanie
+zmienionych plików TS, `manage.py check`, kontrola indeksu oraz `git diff --check`.
+Chrome/Playwright na tymczasowych danych potwierdził pięć sekcji przy
+2048/1440/1024/768/390/320px, szeroką tabelę, zachowanie szkicu, zapis i odczyt
+po przeładowaniu, walidację 400 oraz symulowany 503 z ponowieniem, picker
+awatara i Escape, Wstecz/Dalej oraz wejście przez zwykły i scoped URL.
+Sprawdzono zapamiętane zwinięcie, ręczny toggle, powrót do zwykłego menu
+oraz ponowne wejście przez nawigację Reacta. Podgląd obserwatora pozostał
+bez edycji; porównano katalog przestrzeni przy 1440/390px oraz pierwszy
+render Django bez JavaScriptu przy 1440/390px. Brak błędów JavaScriptu
+oraz nieoczekiwanych błędów konsoli; 400/503 pochodziły z prób błędów.
+Plugin Browser był niedostępny; użyto istniejącego Playwright i Chrome.
+Safari, Firefox oraz wdrożenia produkcyjnego nie sprawdzano.
+Dodatkowy pomiar potwierdził układ przy rozszerzeniu menu klawiaturą do
+420px (viewport 1024px), po zmianie szerokości na 768/390px oraz pierwszy
+render bez Reacta przy 768/390px. Wąski panel ma jedną kolumnę bez
+przepełnienia; uwzględniono specyficzność wspólnej reguły położenia pól SSR.
+Po zakończeniu animacji Escape w pickerze awatara przywraca fokus na „Zmień”.
+
+## Strona ustawień pulpitu (31.10.2026)
+
+Ustawienia i udostępnienia Pulpitu mają osobną stronę z bocznym menu,
+współdzielącą układ ustawień Przestrzeni. Zwykłe, scoped, numeryczne oraz
+adresy zarządzania zachowują zakres dostępu i kontekst powrotu. Zapis
+pozostaje na stronie także przy natywnym POST; odpowiedzi starszego transportu
+modalowego i API zachowują dotychczasowy kontrakt.
+
+Weryfikacja obejmowała **98 testów Django** na jednorazowych bazach PostgreSQL:
+`dashboard.test_pulpit_settings`, `core.test_pulpit_frontend`,
+`core.test_navigation_frontend`, `dashboard.test_pulpit_sharing`,
+`dashboard.test_pulpit_roles`, `dashboard.test_pulpit_urls`,
+`dashboard.test_default_pulpit` i referencyjne `core.test_space_settings_frontend`.
+W pierwszym przebiegu dwie asercje oczekiwały dawnego przekierowania po zapisie;
+po dostosowaniu do pozostawania na stronie oba testy przeszły ponownie.
+Przeszło również **268 testów frontendu**, TypeScript/build, formatowanie
+zmienionych plików TS, `manage.py check`, indeks kodu i `git diff --check`.
+
+Chrome/Playwright na odizolowanej bazie i przy 1440×1000 oraz 390×844 potwierdził
+wejście z podglądu i katalogu, dwie sekcje menu, szkic przy Wstecz/Dalej,
+zapis i aktualizację nagłówka, zmianę roli, ochronę wyjścia, ponowne wejście,
+adresy bezpośrednie oraz pulpit domyślny. Sprawdzono walidację 400, symulowany
+błąd 503 z ponowieniem, uprawnienia administratora/obserwatora i referencyjne
+ustawienia Przestrzeni. Nie było błędów JavaScriptu ani przepełnienia strony;
+błędy sieci w konsoli pochodziły wyłącznie z kontrolowanych prób 400/503.
+Pierwszy render bez JavaScriptu sprawdzono w obu sekcjach przy obu szerokościach,
+razem z natywnym zapisem i błędną walidacją. Usunięto wykryte podwójne menu:
+stare menu edytora jest ukrywane według `sidebar_mode`; test sprawdza jedno
+widoczne menu i właściwą aktywną sekcję. Końcowa próba potwierdziła tę poprawkę
+oraz ponowienie błędu pobrania sekcji w najnowszym bundle'u.
+Plugin Browser był niedostępny; wykorzystano istniejące Playwright i Chrome.
+Nie sprawdzano Safari, Firefoksa ani wdrożenia produkcyjnego.

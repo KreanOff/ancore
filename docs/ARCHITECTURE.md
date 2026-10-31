@@ -224,7 +224,10 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   `/dashboards/manage/` i scoped odpowiednik przekierowują do katalogu „Pulpity”,
   zachowując wyszukiwanie, widoczność i numer strony. Menu oraz Ustawienia
   nie pokazują wejścia do dawnego ekranu. Ustawienia i dostępy konkretnego pulpitu
-  pozostają w dużym oknie otwieranym z jego menu.
+  otwierają osobną stronę z menu „Ustawienia” i „Udostępnienia”, zgodną
+  z ustawieniami Przestrzeni. Tryb powłoki `pulpit-settings` zastępuje główne
+  menu Workspace; zapis pozostaje na stronie, a zamknięcie wraca do pulpitu
+  lub katalogu zgodnie z kontekstem wejścia.
   `Dashboard.slug` jest nazwą w formie URL, przydzielaną w obrębie Workspace
   przy tworzeniu (istniejącym rekordom przez `dashboard.0012_dashboard_slugs`).
   Duplikaty dostają końcówkę `-2`, `-3`; późniejsza zmiana nazwy nie zmienia adresu.
@@ -274,8 +277,9 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
 - Kalendarz ma etykietę aplikacji `planner`, lecz segment URL `calendar`.
 - `/spaces/` jest katalogiem Przestrzeni. Osobny ekran zarządzania usunięto;
   `/spaces/manage/` i scoped odpowiednik przekierowują do katalogu, zachowując
-  wyszukiwanie, rodzaj, zakładkę i numer strony. Stare adresy tworzenia/edycji
-  nadal kontrolują uprawnienia i wracają do tego katalogu; [szczegóły](SPACES.md).
+  wyszukiwanie, rodzaj, zakładkę i numer strony. Stare adresy tworzenia nadal
+  kontrolują uprawnienia i otwierają kreator nad tym katalogiem. Edycja korzysta
+  ze strony ustawień konkretnej przestrzeni; [szczegóły](SPACES.md).
   Poszczególne przestrzenie używają `/space/<slug>/` i scoped odpowiednika.
   Segment z nazwy przydzielany jest raz w obrębie Workspace; późniejsza edycja
   nazwy zachowuje adres. Stare `/spaces/<pk>/` przekierowuje po kontroli dostępu.
@@ -283,7 +287,19 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   zwraca 404; projekty zachowują swoje pola i dotychczasowe wartości.
 - `/settings/` jest centrum ustawień konta i Workspace oraz zarządzania sesją.
   Główny pasek boczny pokazuje jego kategorie zamiast menu Workspace,
-  także przy częściowej nawigacji; [standard UI](UI.md).
+  także przy częściowej nawigacji. Kategoria Workspace zawiera listę widocznych
+  przestrzeni aktywnego Workspace z linkami do ich ustawień.
+  `/space/<slug>/?view=settings` oraz bezpośrednie `edit/`, `avatar/`, `members/`
+  i `configuration/`, również scoped, renderują osobną stronę ustawień
+  przestrzeni. Tryb powłoki `space-settings` zastępuje główne menu sekcjami
+  „Ustawienia”, „Udostępnienia” i „Typy zgłoszeń” według uprawnień, bez
+  dodatkowych nagłówków i powrotu w menu. Sekcje „Statusy i przejścia”
+  i „Pola dodatkowe” usunięto z UI; stare adresy sekcji otwierają typy zgłoszeń.
+  Zapis typów zachowuje pełną konfigurację statusów, przejść i pól oraz wspólną
+  rewizję. Dane i mechanizmy zadań pozostają dostępne.
+  Strona korzysta z dotychczasowych endpointów zapisu,
+  zachowuje szkice przy zmianie sekcji i pozostaje otwarta
+  po zapisaniu; [standard UI](UI.md), [strona ustawień](SPACES.md#strona-ustawień-przestrzeni).
 - Dawne `/tasks/`, `/kanban/` i `/contacts/` nie mają routingu, również scoped.
   W `tasks/templates/tasks/includes/` pozostają wspólne komponenty aktywnych modułów.
 

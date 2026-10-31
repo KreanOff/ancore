@@ -436,23 +436,89 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
-Ustawienia Przestrzeni korzystają ze wspólnego dużego `app-modal-panel` z
-zakładkami `notifications-tabs`: „Ustawienia”, „Udostępnienia” oraz „Statusy, typy i pola”,
-według uprawnień. W „Ustawienia” wspólny `AvatarControl` pokazuje po lewej awatar
-68px i przycisk „Zmień”, jak w edycji profilu. Wybór ilustracji, upload
-i kadrowanie używają tego samego pickera; zatwierdzony szkic awatara zapisuje
-się dopiero z całym formularzem ustawień. Nie ma osobnej zakładki awatara. `space-settings-panel` dodaje jedynie
-elastyczny kontener dla istniejącej treści i stopki; ukryte panele zachowują
-zamontowane formularze i szkice. Pod zakładkami nie ma poziomej linii rozdzielającej;
-fioletowe podkreślenie wskazuje aktywną zakładkę. Zakładki obsługują strzałki, Home i End.
-Stopka zapisuje bieżącą sekcję, pozostawiając okno otwarte; zamknięcie chroni
-szkice wszystkich zakładek. Konfiguracja zadań przewija się wewnątrz okna,
-a udostępnianie otwiera kompaktowe okno z pickerem osoby. Bezpośrednie URL
-ustawień i konfiguracji renderują tę samą powłokę. Szczegóły:
-[Okno ustawień](SPACES.md#okno-ustawień-przestrzeni).
+Ustawienia Przestrzeni są osobną stroną `space-settings-page`. Główne lewe menu
+zastępuje menu Workspace trzema sekcjami: „Ustawienia”, „Udostępnienia”
+oraz „Typy zgłoszeń”, według uprawnień. Sekcje „Statusy i przejścia” i
+„Pola dodatkowe” usunięto z ustawień; zapisane wartości nadal służą zadaniom.
+Zawiera same pozycje sekcji, bez dodatkowych nagłówków i powrotu. Wykorzystuje
+istniejące wiersze `nav-link`, ikony oraz aktywny stan menu; treść nie ma
+dodatkowej listy zakładek. Centrum Ustawień w kategorii Workspace pokazuje
+listę dostępnych przestrzeni z wejściem na tę stronę.
+
+Główny formularz rozszerza się wraz z panelem, bez stałego limitu szerokości.
+Padding poziomy wynosi `max(var(--app-modal-padding-x), 10%)`. Na szerokim
+ekranie formularz ma po 24px od góry i dołu (`--app-modal-padding-y`), awatar ma 100px i odstęp 32px od
+pól. Nazwa i widoczność zajmują wspólny wiersz, opis pełną szerokość poniżej,
+a pozostałe pola tworzą dwie kolumny z odstępem 48px. Pionowe odstępy między
+wierszami wynoszą 12px, również w układzie mobilnym. Opis ma minimum 128px
+wysokości. Zapytania kontenera `space-settings` reagują na szerokość panelu,
+również przy zmianie szerokości menu: do 960px padding i odstępy kolumn
+maleją do 24px, do 640px pola przechodzą do jednej kolumny, a awatar nad nie.
+Na desktopie wejście do ustawień rozwija menu sekcji niezależnie od zapisanej
+preferencji zwykłego menu. Ręczne zwinięcie obowiązuje tylko podczas tej
+wizyty; powrót przywraca preferencję Workspace. Mobilne menu zachowuje
+dotychczasowy przycisk otwierania i zamykanie po wyborze sekcji.
+Tabela „Udostępnienia” zachowuje
+pełną dostępną szerokość strony. „Typy zgłoszeń” używają tego samego wzorca
+tabeli: jeden nagłówek kolumn
+z ikonami, zwarte wiersze i wspólne separatory, bez otaczających kart.
+Wariant `work-configuration-sheet` korzysta z siatki i ról tabeli wzorca
+„Udostępnienia”. Komórki pokazują ikonę, klucz, nazwę i opis typu zgłoszenia.
+Ikona używa wspólnego `tasks-issue-type`, z tymi samymi symbolami i kolorami
+co zadania. Formularz ma standardowy select z podglądem ikon lokalnego zestawu
+oraz opcjonalny opis; wybór „Domyślna dla typu” przywraca symbol według klucza.
+Kolumna opisu wykorzystuje pozostałą szerokość, a pełny tekst jest dostępny
+w podpowiedzi i edycji. Brak opisu jest oznaczony „—”.
+Nad tabelą jest tylko przycisk „Dodaj typ”, wyrównany do prawej.
+Opis konfiguracji oraz licznik typów nie są wyświetlane. Nazwa i menu wiersza
+„Edytuj” otwierają standardowy `Modal`; „Usuń” otwiera potwierdzenie.
+W React checkboxy służą wyłącznie zaznaczaniu wierszy. Pusta grupa pokazuje
+komunikat i przycisk dodawania, bez dodatkowego wiersza formularza.
+Tabela wypełnia panel, a na małych ekranach przewija się poziomo we własnym
+kontenerze. Błędy i szkic pozostają w oknie edycji; wspólna powłoka zachowuje
+fokus, Escape, blokadę podczas zapisu i potwierdzenie odrzucenia zmian.
+Pierwszy render Django również pokazuje wartości i otwiera formularz wybranej
+pozycji nad tabelą. Wariant wysokości opisu głównych ustawień korzysta ze
+wspólnego `--app-form-textarea-min-height`, ustawionego wyłącznie wewnątrz
+strony ustawień przestrzeni.
+
+Zmiany wspólnego CSS formularzy wymagają odświeżenia wersji importu
+`modal-system.css` w `style.css` oraz wersji `style.css` w `core/base.html`.
+Sama zmiana adresu arkusza nadrzędnego nie unieważnia cache jego importów.
+
+Wspólny `AvatarControl` pokazuje pod awatarem przycisk „Zmień”. Wybór
+ilustracji, upload i kadrowanie zachowują istniejący picker; szkic awatara
+zapisuje się dopiero z całym formularzem ustawień. Nie ma osobnej sekcji
+awatara. `space-settings-panel` jest elastycznym kontenerem istniejącej
+treści i stopki; ukrycie głównych ustawień zachowuje ich formularz i szkic.
+Nagłówek i stopka pozostają poza przewijaną treścią. „Zapisz” głównych ustawień
+pozostawia stronę otwartą i aktualizuje nazwę w nagłówku i tytule dokumentu.
+W sekcji typów „Zapisz” w oknie od razu utrwala wybraną pozycję
+i odświeża tabelę. Żądanie zachowuje zapisane wartości pozostałych pozycji
+oraz przekazuje pełne formsety, w tym statusy i pola dodatkowe, wraz ze wspólną
+rewizją do dotychczasowej walidacji Django. Usunięcie działa tak samo po
+potwierdzeniu. Strona listy ma w stopce
+„Zamknij”, bez wspólnego przycisku zapisu konfiguracji. Nawigacja i przeładowanie
+chronią szkic głównych ustawień, a `Modal` chroni szkic otwartego okna.
+„Anuluj”/„Zamknij” strony zachowuje kontekst powrotu
+formularza, np. katalog; domyślnie, podobnie jak strzałka w nagłówku, prowadzi
+do przestrzeni. Zmiana sekcji aktualizuje adres `?view=settings#<sekcja>`
+(`main`, `members`, `types`) oraz historię Wstecz/Dalej
+z zachowaniem formularza głównych ustawień. Starsze `#configuration`,
+`#statuses` i `#fields` otwierają typy zgłoszeń.
+Udostępnianie i zmiana roli otwierają
+kompaktowe okno z pickerem osoby. Bezpośrednie URL ustawień i konfiguracji
+renderują tę samą stronę. Pierwszy render Django również zawiera formularze
+i tabelę członków; jego menu przekazuje sekcję członków przez `&section=members`
+oraz wybiera typy przez `configuration/?section=types`. Bezpośrednie adresy
+usuniętych sekcji również pokazują typy, bez otwierania ich edytorów.
+Po błędzie zapisu konfiguracji Django zachowuje formularz z błędami w oknie;
+błędy ukrytych formsetów statusów i pól są komunikatami ogólnymi.
+Szczegóły:
+[Strona ustawień](SPACES.md#strona-ustawień-przestrzeni).
 
 Menu wierszy Przestrzeni w nawigacji i katalogu nie zawierają „Dodaj osoby”.
-Udostępnianie pozostaje w zakładce „Udostępnienia” okna ustawień przestrzeni.
+Udostępnianie pozostaje w sekcji „Udostępnienia” strony ustawień przestrzeni.
 
 Przycisk z trzema kreskami w `work-item-actions` ma przezroczyste tło,
 także w podświetlonym wierszu zadania. Najechanie, fokus klawiatury i otwarte
@@ -783,27 +849,30 @@ rodzaju, zakładki i numeru strony. Katalog ma jeden wariant listy; stary filtr
 sposobu zarządzania i klucz szerokości `spaces-management` są wycofane.
 Zachowane są zakładki Wszystkie, Ulubione i Prywatne, wspólna tabela,
 wyszukiwanie, filtr rodzaju, paginacja i menu konkretnej przestrzeni.
-Starsze formularze tworzenia/edycji korzystają z tej samej powłoki modalnej
-nad katalogiem oraz zwykłej nawigacji Workspace. Ustawienia, dostęp i konfiguracja
-zadań pozostają przy konkretnej przestrzeni. Uprawnienia: [SPACES.md](SPACES.md).
+Formularz tworzenia zachowuje powłokę modalną nad katalogiem oraz zwykłą
+nawigację Workspace. Edycja, dostęp i konfiguracja zadań korzystają z osobnej
+strony ustawień konkretnej przestrzeni. Uprawnienia: [SPACES.md](SPACES.md).
 Katalog Workspace zachowuje własny wariant menu; dawne osobne katalogi
 zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
 
 Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
 głównego paska bocznego (`core/includes/settings_sidebar.html`). Zastępuje
 menu Workspace kategoriami Ogólne, Konto i dostęp i Workspace.
-Trzy linki zarządzania znajdują się w treści sekcji Workspace, bez duplikatów
-w bocznym menu. Link przestrzeni zależy od istniejącego prawa zarządzania. Na stronie centrum
-jest „Wróć do przestrzeni”. Strony zarządzania mają osobne minimalne menu
-z linkiem „Wróć do ustawień”.
-Sekcja Workspace centrum zawiera również wiersze prowadzące do tych stron.
+Sekcja Workspace zawiera „Zarządzaj Workspace”, dla personelu także „Panel
+administracyjny”, oraz listę „Ustawienia przestrzeni”. Lista obejmuje widoczne
+przestrzenie aktywnego Workspace; brak dostępnych przestrzeni pokazuje komunikat.
+Prawo zarządzania i konfigurowania jest sprawdzane na stronie wybranej przestrzeni.
+Na stronie centrum jest „Wróć do przestrzeni”. Strona ustawień przestrzeni
+zastępuje główne menu trzema sekcjami bez dodatkowych nagłówków i powrotu.
 Treść nie ma dodatkowej wewnętrznej nawigacji;
 wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
-`settings.js` obsługuje kategorie w stałej powłoce, aktywne pozycje, adresy
+`dashboard/SettingsPage.tsx` i `shell/Sidebar.tsx` obsługują kategorie w stałej
+powłoce, aktywne pozycje, adresy
 z fragmentem (`#account`, `#workspace` i skrót `#security`),
 historię Wstecz/Dalej i ponowne wejście po częściowej nawigacji. Wybór kategorii
 zamyka menu na telefonie; stan zwinięcia i szerokość są wspólne z resztą aplikacji.
-Wyjście ze strony usuwa jej listenery.
+Wyjście ze strony usuwa jej listenery; `settings.js` zachowuje obsługę
+starszego renderowania HTML.
 Sekcja Preferencje i jej opcje są usunięte z Ustawień; zwijanie menu i panel
 powiadomień pozostają dostępne przez kontrolki wspólnej powłoki aplikacji.
 Profil nie odsyła już do usuniętych opcji. Dla zgodności
@@ -2565,7 +2634,8 @@ Pola „Opis”, komunikaty błędów i istotne instrukcje uploadu pozostają wi
 Kolejność DOM
 i przechodzenia Tab odpowiada układowi wizualnemu. Awatar/ikona zajmuje osobną
 kolumnę 68px po lewej (`app-form-avatar-layout`), bez zwężania opisu względem
-pozostałych pól. Profil zachowuje grupę imienia, drugiego imienia i nazwiska.
+pozostałych pól; osobna strona ustawień przestrzeni używa wariantu 100px.
+Profil zachowuje grupę imienia, drugiego imienia i nazwiska.
 
 Układ obejmuje zadania i podzadania, sprinty, tagi, Przestrzenie, Pulpity,
 Filtry, Zespoły, Zasoby, Kalendarz, formularze Dysku/Dokumentów, Workspace
@@ -3341,18 +3411,21 @@ zwykły katalog „Pulpity”, z zachowaniem wyszukiwania, widoczności i numeru
 Katalog ma jeden wariant listy i klucz szerokości `pulpits-directory`.
 Menu konkretnego pulpitu zawiera „Gadżety i układ” oraz „Ustawienia”.
 Nie ma osobnej pozycji „Dostępy”; udostępnieniami zarządza się w zakładce
-„Udostępnienia” okna ustawień.
+„Udostępnienia” strony ustawień.
 
-Ustawienia konkretnego pulpitu renderuje `src/pulpits/SettingsDialog.tsx`
-w dużym wspólnym `app-modal-panel`, tak jak ustawienia Przestrzeni. Zakładki
-`notifications-tabs` to kolejno „Ustawienia” i „Udostępnienia”. Obsługują
-strzałki, Home i End. Ukryte formularze pozostają zamontowane i zachowują szkice.
-Menu katalogu, przeglądu i nawigacji otwiera okno nad bieżącym ekranem,
-bez zmiany jego adresu i menu bocznego. Zamknięcie po zapisie odświeża ten ekran.
-Bezpośrednie zwykłe/scoped URL oraz wariant zarządzania otwierają tę samą
-powłokę nad podglądem pulpitu; stare adresy wracają do zwykłego katalogu z filtrami.
-Powłoka React nie przełącza się w osobne menu edytora. Szablony Django
-zachowują dotychczasowy pierwszy render i zgodność formularzy POST.
+Ustawienia konkretnego pulpitu renderuje `src/pulpits/SettingsPage.tsx`
+na osobnej stronie zgodnej z ustawieniami Przestrzeni. Wspólne klasy
+`space-settings-page` i `space-settings-panel` zapewniają nagłówek, przewijaną
+treść i stopkę formularza. Główne menu zastępują dwie pozycje „Ustawienia”
+i „Udostępnienia”, bez dodatkowych nagłówków. Menu otwiera się rozwinięte,
+zachowując zapisaną preferencję zwinięcia zwykłego menu Workspace.
+Ukryty formularz pozostaje zamontowany i zachowuje szkic przy zmianie sekcji,
+także przez Wstecz/Dalej. Wyjście chroni dotychczasowe potwierdzenie niezapisanych zmian.
+Menu katalogu, przeglądu i nawigacji przechodzą na tę stronę. Bezpośrednie
+zwykłe/scoped URL oraz wariant zarządzania używają tej samej powłoki.
+Zapis nie zamyka strony; aktualizuje nazwę w nagłówku i dane menu.
+Powrót oraz „Anuluj”/„Zamknij” respektują kontekst wejścia.
+Szablony Django również pokazują pełną stronę i zachowują formularze POST.
 
 „Ustawienia” zawierają nazwę, opis, ikonę, zakres danych, automatyczne
 odświeżanie i widoczność („Prywatny — wybrane osoby” albo „Cały Workspace”).
@@ -3369,14 +3442,13 @@ Usunięcie Pulpitu jest dostępne wyłącznie właścicielowi. Daty nowych udost
 są zapisywane, a brak historycznej daty jest pokazywany jako „—”.
 Przy widoczności Workspace tabela pokazuje dostęp odziedziczony, bez indywidualnych
 akcji. Dawne formularze `access/` pozostają zgodne dla starszych klientów.
-Od szerokości 1100px parametry
-ustawień układają się w dwie równe kolumny. Każde pole używa takiego samego
-wiersza etykieta/kontrolka jak ustawienia Przestrzeni: etykieta 180px po lewej,
-odstęp 24px i kontrolka w pozostałym miejscu. Opisy i błędy są pod kontrolką.
-Nazwa i opis zajmują pełną szerokość kolumny pól;
-na mniejszych ekranach pozostaje jedna kolumna. Po lewej stronie formularza
-jest podgląd ikony 68×68px bez dodatkowego tła, z przyciskiem „Zmień” pod spodem, tak jak awatar
-w ustawieniach Przestrzeni. Korzysta ze wspólnego `profile-edit-body` oraz
+Strona ustawień korzysta z układu formularza Przestrzeni: nazwa i widoczność
+obok siebie, opis na pełną szerokość pól, następnie zakres danych
+i odświeżanie w dwóch kolumnach. Etykiety znajdują się nad kontrolkami,
+a opisy i błędy pod nimi. Na wąskim ekranie pola przechodzą do jednej kolumny.
+Po lewej jest podgląd ikony 100×100px bez dodatkowego tła,
+z przyciskiem „Zmień” pod spodem; tworzenie zachowuje podgląd 68×68px.
+Korzysta ze wspólnego `profile-edit-body` oraz
 `profile-photo-control`; na telefonie podgląd przechodzi nad pola. Dotyczy to
 ustawień i tworzenia Pulpitu. Domyślny wybór to konturowa ikona czterech
 kafelków `layout-dashboard`, wyświetlana wspólnym rendererem ikon w podglądzie,

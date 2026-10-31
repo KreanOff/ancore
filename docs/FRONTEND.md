@@ -122,26 +122,98 @@ Wyszukiwanie osi także usuwa `timeline_limit`.
 Pierwszy render Django pokazuje te same limity i linki, z pełną nawigacją
 po ich kliknięciu bez Reacta.
 
-## Okno ustawień Przestrzeni
+## Strona ustawień Przestrzeni
 
-`spaces/SettingsDialog.tsx` łączy pola główne, członków, awatar oraz konfigurację
-zadań w jednym `shared/Modal`. Formularze są ładowane przy pierwszym otwarciu
-sekcji, a ukryte panele pozostają zamontowane. `forms/EmbeddedForm` współdzieli
-pola, upload, walidację i zapis z `FormDialog`. `SpaceForm.inline_avatar` udostępnia
-w „Ustawienia” ten sam `shared/AvatarControl` co Profil, z wariantem `space`, nazwami
-pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany awatar
-i kadr należą do formularza głównego także po przeniesieniu pickera nad modal.
-Zapis łączy pola Przestrzeni i awatar w jednej transakcji; `ConfigurationForm` zachowuje
-formsety i rewizję konfiguracji. Rodzic zbiera stan zmian/zapisu wszystkich
-sekcji do wspólnej ochrony zamknięcia. Nie dodaje endpointu zapisu.
+[`spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx) łączy
+pola główne, członków, awatar oraz konfigurację zadań na osobnej stronie.
+Powłoka otrzymuje tryb `space-settings` i `space_settings` z autoryzowanymi
+linkami; `shell/Sidebar.tsx` zastępuje menu Workspace trzema sekcjami
+`main` („Ustawienia”), `members` („Udostępnienia”) i `types` („Typy zgłoszeń”).
+Menu nie dodaje nagłówków ani linku powrotu; sekcja typów zależy od uprawnień
+konfiguracji. Sekcje `statuses` i `fields` usunięto z interfejsu ustawień.
+`useShellLayout` utrzymuje osobne zwinięcie menu ustawień podczas wizyty:
+na desktopie początkowo pokazuje nazwy sekcji i nie nadpisuje preferencji
+`ancoreSidebarCollapsed` zwykłego menu. Wyjście przywraca tę preferencję,
+a ponowne wejście znów rozwija sekcje. Pierwszy render również pomija
+zapisane zwinięcie w trybie `space-settings`.
+Wejścia są normalizowane do `?view=settings#<sekcja>`. Fragment wybiera sekcję
+i zachowuje historię Wstecz/Dalej; starsze `#configuration`, `#statuses`
+i `#fields` mapują na `types`.
+Zdarzenie `ancore:space-settings-tab` synchronizuje aktywny
+wiersz menu. Pierwszy render menu zapewnia
+`core/includes/space_settings_sidebar.html`. Centrum Ustawień otrzymuje `spaces`
+z widocznymi przestrzeniami aktywnego Workspace i wyświetla ich linki w kategorii
+Workspace, także w widoku Ogólne.
+
+Dane sekcji są ładowane przy jej pierwszym otwarciu, a formularz głównych
+ustawień pozostaje zamontowany po ukryciu panelu. `EmbeddedForm`
+z `forms/FormDialog.tsx` współdzieli pola, upload,
+walidację i zapis z `FormDialog`. `SpaceForm.inline_avatar` udostępnia
+w „Ustawienia” ten sam `shared/AvatarControl` co Profil, z wariantem `space`,
+nazwami pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany
+awatar i kadr należą do formularza głównego, a picker pozostaje oknem nad stroną.
+Zapis łączy pola Przestrzeni i awatar w jednej transakcji.
+`ConfigurationForm` renderuje wyłącznie typy zgłoszeń przez
+[`spaces/ConfigurationTable.tsx`](../frontend/app/src/spaces/ConfigurationTable.tsx).
+Tabela korzysta z klas i ról wzorca `Members`, pokazuje zapisane wartości,
+zaznaczenie i menu wiersza. Nad nią pozostaje przycisk dodawania po prawej;
+opis konfiguracji i licznik typów są usunięte w React i pierwszym renderze Django.
+Typy mają kolumny `icon`, `key`, `label`
+i `description`; glif tabeli pochodzi z `choices[].icon` wybranej opcji pola
+formularza. `TypeForm` udostępnia ikonę przez wspólny `VisualSelect`, w tym
+domyślną opcję zależną od klucza; opis jest opcjonalnym polem tekstowym.
+React nie utrzymuje osobnej mapy ikon typów. Przycisk „Dodaj…”, nazwa lub „Edytuj”
+otwierają pojedynczy formularz `FormFields` we wspólnym `Modal`.
+Pusty dodatkowy formularz Django służy jako schemat dodawania i nie jest
+wierszem tabeli; brak takiego formularza wyłącza przycisk dodawania.
+„Usuń” otwiera okno potwierdzenia. Strona listy ma wyłącznie „Zamknij” w stopce.
+
+[`spaces/configuration-form.ts`](../frontend/app/src/spaces/configuration-form.ts)
+buduje żądanie z pełnych zapisanych formsetów i wspólnej rewizji, zastępując
+wartości jednej pozycji szkicem z okna albo ustawiając jej `DELETE`.
+Kontrakt JSON i zapis zachowują wszystkie trzy formsety, w tym statusy,
+przejścia i pola dodatkowe używane przez zadania. Wielokrotne wartości przejść
+i stan checkboxów są zachowane; niezaznaczony checkbox nie trafia do `FormData`.
+„Zapisz” od razu wykonuje istniejący POST,
+zamyka okno po sukcesie i odświeża listę. Błąd zapisu zachowuje szkic i pola
+walidacji w oknie z fokusem na błędnej kontrolce. Gdy POST się uda, a odświeżenie
+listy zawiedzie, ponowienie wykonuje wyłącznie odczyt.
+Przy uruchomieniu Reacta po błędnym natywnym POST odrzucenie szkicu pobiera
+czysty stan konfiguracji przed zamknięciem okna, aby odrzucone wartości
+i zaznaczenia `DELETE` nie trafiały do kolejnego zapisu.
+`Modal` chroni szkic okna przed zamknięciem i przeładowaniem. Rodzic nadal
+chroni szkic głównych ustawień przez `useDirtyGuard` i blokuje nawigację
+podczas zapisu konfiguracji.
+Zapis odświeża dane, nagłówek i tytuł dokumentu, pozostając na stronie;
+zdarzenie `ancore:space-settings-saved` aktualizuje także kontekst powłoki
+`shell/Shell.tsx`. `onCancel` w osadzonych formularzach zachowuje
+`initialForm.return_url`, np. powrót do katalogu; gdy brak adresu lub prowadzi
+on do ustawień, kieruje do przestrzeni. Nie dodano endpointu zapisu.
 
 Serializer formularza edycji/awatara/członków zwraca opcjonalne `space_settings`
-(`space_url`, `tab`), kierujące wszystkie wejścia do tego samego okna.
-`FormDialog` ładuje okno ustawień dynamicznie wyłącznie dla tego kontraktu;
+(`space_url`, `tab`), kierujące wszystkie wejścia do tej samej strony.
+`FormPage` i `FormDialog` ładują `SettingsPage` dynamicznie dla tego kontraktu;
 pozostali odbiorcy zachowują standardową powłokę. `?view=settings` i bezpośredni
-URL konfiguracji także otwierają to okno. Wejście `avatar/` otwiera picker
-nad „Ustawienia”, zamiast osobnej zakładki. Lista członków w „Udostępnienia” zawiera serwerowe
-`can_remove`, odpowiadające regułom właściciela i administratora Przestrzeni.
+URL konfiguracji również renderują tę stronę. Wejście `avatar/` otwiera picker
+nad „Ustawienia”, zamiast osobnej sekcji. Udostępnienie i zmiana roli zachowują
+kompaktowy `SharingDialog`, a lista członków zawiera serwerowe `can_remove`,
+odpowiadające regułom właściciela i administratora Przestrzeni.
+
+Szablony Django również renderują pełną stronę: `spaces/settings_form.html`
+zawiera formularz główny lub bezpośredni formularz edycji, awatara i członków,
+`spaces/settings_members.html` tabelę, a `spaces/configuration.html` tabelę
+typów zgłoszeń i okno edycji lub potwierdzenia usunięcia.
+Menu pierwszego renderu używa `fallback_url`; sekcja członków przekazuje
+`&section=members`, a konfiguracja `configuration/?section=types`,
+więc wybór działa także bez obsługi fragmentów przez React. Linki dodawania
+i edycji przekazują indeks przez `edit`, a usuwania przez `remove`.
+Stare `section=statuses|fields|configuration` wybierają typy i pomijają
+indeks edycji lub usunięcia ze starej sekcji. Szablon pokazuje kontrolki
+wybranego typu w oknie, a pozostałe formsety przekazuje jako pola ukryte.
+Błędny POST zachowuje okno, wartości i błędy;
+walidacja ukrytych formsetów pokazuje komunikaty ogólne, bez otwierania
+edytora statusu lub pola. Udany zapis wraca do typów. Ograniczenia odczytu
+i uprawnień są ustalane przez ten sam backend.
 
 ## Konfigurowalny pulpit Przestrzeni
 
@@ -475,12 +547,22 @@ w głównej treści pulpitu. „Edytuj pulpit” przełącza szkic na tej samej 
 i aktualizuje adres przez adapter nawigacji; „Gadżety i układ” oraz bezpośrednie
 adresy otwierają ten sam edytor. `shared/DashboardCanvas.tsx` zapewnia siatkę
 12 kolumn, uchwyty, rozmiary, menu i mobilną kolejność jak w Podsumowaniu.
-`src/pulpits/SettingsDialog.tsx` zawiera tabelę dostępów i formularz ustawień
-w dużym wspólnym `Modal` z zakładkami „Ustawienia” i „Udostępnienia”, w tej kolejności. Serializer przekazuje
-`settings_tabs` z autoryzowanymi adresami i zachowanymi filtrami; dialog
-pomija pozycję gadżetów. Powłoka przechwytuje wyłącznie linki ustawień
-i dostępów. Ich bezpośrednie URL korzystają z `SettingsPage`.
-Zakładka „Udostępnienia” używa `shared/Members`, `shared/SharingDialog` oraz
+`src/pulpits/SettingsPage.tsx` zawiera tabelę dostępów i formularz ustawień
+na osobnej stronie, z układem `space-settings-page` współdzielonym z Przestrzeniami.
+Powłoka `pulpit-settings` otrzymuje `pulpit_settings` z autoryzowanymi linkami
+„Ustawienia” i „Udostępnienia”. Menu zastępuje nawigację Workspace i otwiera się
+rozwinięte bez zmiany zapisanej preferencji zwykłego menu. Pierwszy render
+zapewnia `core/includes/pulpit_settings_sidebar.html`.
+Wejścia z katalogu, podglądu i menu bocznego korzystają ze zwykłej nawigacji JSON.
+Bezpośrednie `edit/` i `access/`, także scoped, zarządzania oraz numeryczne,
+otwierają tę samą stronę. `settings_tabs` zachowuje adresy i filtry; strona pomija
+gadżety i normalizuje lokalne sekcje do `edit/#settings` oraz `edit/#access`.
+Zmiana fragmentu i zdarzenie `ancore:pulpit-settings-tab` synchronizują boczne
+menu z historią Wstecz/Dalej, bez odmontowania szkicu. `useDirtyGuard` chroni
+niezapisane zmiany przy wyjściu. Zapis pozostaje na stronie i odświeża nagłówek,
+tytuł dokumentu oraz dane powłoki przez `ancore:pulpit-settings-saved`.
+Zamknięcie respektuje `return_url`; nie dodano nowych endpointów zapisu.
+Sekcja „Udostępnienia” używa `shared/Members`, `shared/SharingDialog` oraz
 pickera Workspace, tak jak Przestrzenie. `pulpit_sharing.py` obsługuje
 zwykłe/scoped `dashboards/<slug>/team/` i `team/candidates/`, także przez API strony.
 Serializer przekazuje `team` i `team_url`; tabela odświeża się po każdej operacji,
