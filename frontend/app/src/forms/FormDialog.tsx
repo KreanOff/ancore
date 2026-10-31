@@ -271,7 +271,9 @@ export function FieldControl({
         if (field.type === 'file') element.multiple = !!field.multiple;
       }
       if (field.type !== 'file')
-        element.value = Array.isArray(field.value) ? field.value[0] || '' : field.value || '';
+        element.value = Array.isArray(field.value)
+          ? field.value[0] || ''
+          : field.value || (field.type === 'checkbox' ? 'on' : '');
     }
     Object.entries(field.attrs).forEach(([key, value]) => element.setAttribute(key, value));
     element.setAttribute('aria-invalid', String(!!field.errors.length));
