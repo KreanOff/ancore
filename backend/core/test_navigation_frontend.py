@@ -210,5 +210,6 @@ class ReactNavigationTests(TestCase):
                 self.assertEqual(response.json()['shell']['mode'], mode)
         response = self.nav(reverse('pulpits:edit', args=[self.dashboard.slug]))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()['shell']['mode'], 'workspace')
+        self.assertEqual(response.json()['shell']['mode'], 'pulpit-settings')
         self.assertTrue(response.json()['page']['data']['settings_tabs'])
+        self.assertEqual(response.json()['shell']['pulpit_settings']['tab'], 'settings')

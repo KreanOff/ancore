@@ -117,15 +117,18 @@ def detail_page(request, context):
         'team': space_team_payload(request, space), 'team_url': context['space_url'] + 'team/',
         'modal': modal_payload(context['modal']) if context.get('modal') else None,
     }
-    return {'type': 'space-detail', 'title': space.name, 'data': data}
+    return {'type': 'space-detail', 'title': f'Ustawienia przestrzeni · {space.name}' if context['view'] == 'settings' else space.name, 'data': data}
 
 
 def configuration_page(request, context):
     config = context['config']
-    return {'type': 'space-configuration', 'title': 'Statusy, typy i pola', 'data': {
+    section = context['configuration_section']
+    title = next(group['title'] for group in context['sets'] if group['key'] == section)
+    return {'type': 'space-configuration', 'title': title, 'data': {
         'name': config.name, 'shared': config.shared, 'spaces_count': config.spaces.count(),
         'space_url': context['space_url'], 'revision': context['revision'], 'errors': context['errors'],
-        'sets': [{'title': group['title'], 'management': form_payload(group['formset'].management_form),
+        'section': section, 'editor': context.get('editor'),
+        'sets': [{'key': group['key'], 'title': group['title'], 'management': form_payload(group['formset'].management_form),
                   'errors': list(group['formset'].non_form_errors()),
                   'forms': [form_payload(form) for form in group['formset']]} for group in context['sets']],
     }}

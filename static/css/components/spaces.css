@@ -617,10 +617,38 @@
     .work-template-summary > img { width: 90px; height: 50px; }
 }
 .work-configuration { display: grid; gap: 20px; }
-.work-configuration-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 14px; border-top: 1px solid var(--border-color); padding: 16px 0; }
-.work-configuration-row .tasks-form-field { flex: 1 1 140px; min-width: 0; }
-.work-configuration-row select[multiple] { min-height: 120px; }
-.work-configuration-row label { display: block; margin-bottom: 8px; }
+.work-configuration-section { min-width: 0; }
+.work-configuration-section > .workplace-edit-modal__team-toolbar { justify-content: flex-end; }
+.work-configuration-section h2 { margin: 0 0 8px; font-size: var(--font-size-lg); }
+/* Configuration lists share the Members table; editing uses the standard modal. */
+.tasks-directory-board.work-configuration-sheet {
+    --tasks-project-action-width: 40px;
+    --work-configuration-min-width: 480px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(160px, 1fr) minmax(240px, 2fr);
+    width: 100%; min-width: 0; padding: 0; overflow: auto;
+}
+.tasks-directory-board.work-configuration-sheet--types {
+    --work-configuration-min-width: 760px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 80px minmax(140px, 1fr) minmax(180px, 1.3fr) minmax(240px, 2fr);
+}
+.tasks-directory-board.work-configuration-sheet--statuses {
+    --work-configuration-min-width: 960px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(150px, 1fr) minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(320px, 2fr);
+}
+.tasks-directory-board.work-configuration-sheet--fields {
+    --work-configuration-min-width: 720px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(160px, 1fr) minmax(220px, 1.5fr) minmax(160px, 1fr) 100px;
+}
+.tasks-directory-board.work-configuration-sheet .tasks-directory-header,
+.tasks-directory-board.work-configuration-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    width: 100%; min-width: var(--work-configuration-min-width); padding-inline: 0;
+}
+.work-configuration-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
+.work-configuration-name { min-width: 0; max-width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.work-configuration-name:hover:not(:disabled) { text-decoration: underline; }
+.work-configuration-name:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+.tasks-project-filter-choice > .tasks-issue-type { max-width: 100%; justify-self: start; }
 .work-configuration .errorlist { color: var(--text-primary); padding-left: 16px; }
 .work-page :is(a,button,select,input):not(.tasks-issue-close):focus-visible { outline: 2px solid var(--system-accent); outline-offset: 2px; }
 @media (max-width: 767px) {
@@ -642,29 +670,49 @@
 }
 
 
-/* Settings share the existing project modal shell and tab controls. */
-.space-settings-tabs { flex-shrink: 0; margin: 0 var(--app-panel-gutter); border-bottom: 0; overflow-x: auto; white-space: nowrap; }
-.space-settings-tabs > button { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.space-settings-tabs svg { width: 18px; height: 18px; }
+/* Space settings are a page; forms retain their existing layout and controls. */
+.space-settings-page { display: flex; flex-direction: column; min-height: 0; overflow: hidden; container: space-settings / inline-size; }
+.space-settings-page .tasks-topbar { flex-shrink: 0; }
+.space-settings-page .work-content.space-settings-panel { padding: 0; overflow: hidden; }
+.space-settings-page .tasks-titlebar-left { min-width: 0; }
+.space-settings-page .tasks-topbar-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .space-settings-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
 .space-settings-panel[hidden] { display: none !important; }
-.space-settings-message { margin: 8px var(--app-panel-gutter); }
-.space-settings-modal .work-member > .profile-avatar { width: 30px; height: 30px; flex: 0 0 30px; min-width: 0; }
-.space-settings-modal .work-member > .profile-avatar + span { flex: 1; min-width: 140px; }
-.space-settings-modal .work-configuration .tasks-form-field { display: block; }
-.space-settings-modal .work-configuration-row .react-field-control { display: block; }
-.space-settings-modal .work-configuration .tasks-form-field > label { margin-bottom: 8px; }
+.space-settings-message { margin: 8px var(--app-page-padding-x); }
+.space-settings-page .space-settings-panel > .tasks-modal__form { display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0; overflow: hidden; }
+.space-settings-page .space-settings-panel > .tasks-modal__body,
+.space-settings-page .space-settings-panel > .tasks-modal__form > .tasks-modal__body { flex: 1; min-height: 0; min-width: 0; max-height: none; overflow: auto; padding: var(--app-modal-padding-y) var(--app-page-padding-x); margin: 0; scrollbar-gutter: stable; }
+.space-settings-page .space-settings-panel > .tasks-modal__footer,
+.space-settings-page .space-settings-panel > .tasks-modal__form > .tasks-modal__footer { display: flex; flex-shrink: 0; justify-content: flex-start; gap: 8px; min-height: 68px; padding: 12px var(--app-page-padding-x); margin: 0; border-top: 1px solid var(--border-color); background: var(--card-bg); }
+.space-settings-page .work-member > .profile-avatar { width: 30px; height: 30px; flex: 0 0 30px; min-width: 0; }
+.space-settings-page .work-member > .profile-avatar + span { flex: 1; min-width: 140px; }
+.space-settings-page .work-configuration { align-content: start; }
+.space-settings-page [data-configuration-section][hidden] { display: none !important; }
 
 .space-settings-main { align-content: start; }
+.space-settings-page .space-settings-main { --app-form-textarea-min-height: 128px; }
 .space-settings-main .profile-photo-control { align-self: start; align-content: start; }
-.space-settings-main .profile-page-avatar { width: 68px; height: 68px; flex: 0 0 68px; }
 .space-settings-fields { min-width: 0; }
 .space-settings-main > .tasks-modal__errors { grid-column: 1 / -1; }
-@media (min-width: 1100px) {
-    .space-settings-fields .tasks-form-field { display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 24px; align-items: start; }
-    .space-settings-fields .tasks-form-field > label { grid-column: 1; padding-top: 9px; }
-    .space-settings-fields .tasks-form-field > :not(label),
-    .space-settings-fields .tasks-form-field > .react-field-control > * { grid-column: 2; }
+.space-settings-page .space-settings-panel > .tasks-modal__form > .space-settings-main {
+    padding: var(--app-modal-padding-y) max(var(--app-modal-padding-x), 10%);
+    grid-template-columns: 100px minmax(0, 1fr);
+    row-gap: 12px;
+    column-gap: 32px;
+}
+.space-settings-page .space-settings-main .profile-page-avatar { width: 100px; height: 100px; flex: 0 0 100px; }
+.space-settings-page .space-settings-main .app-form-layout { row-gap: 12px; column-gap: 48px; }
+.space-settings-page .space-settings-main .app-form-heading { row-gap: 12px; }
+.space-settings-page .space-settings-main .app-form-heading:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr) minmax(248px, 32%); }
+@container space-settings (max-width: 960px) {
+    .space-settings-page .space-settings-panel > .tasks-modal__form > .space-settings-main { padding-inline: var(--app-modal-padding-x); column-gap: 24px; }
+    .space-settings-page .space-settings-main .app-form-layout { column-gap: 24px; }
+}
+@container space-settings (max-width: 640px) {
+    .space-settings-page .space-settings-panel > .tasks-modal__form > .space-settings-main { padding: var(--app-modal-padding-y) var(--app-page-padding-x); grid-template-columns: minmax(0, 1fr); }
+    .space-settings-page .space-settings-main .app-form-layout,
+    .space-settings-page .space-settings-main .app-form-heading:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); }
+    .space-settings-page .space-settings-main.app-form-avatar-layout > .app-form-layout { grid-column: 1 / -1; }
 }
 
 /* Widget catalog: actual rendered widgets shown as inert miniatures. */

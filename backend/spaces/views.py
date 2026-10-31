@@ -25,6 +25,7 @@ from dashboard.recent import remember_view
 from .access import editable_to, require_editable, visible_to
 from .models import SpaceTask, SpaceMembership
 from workplaces.models import Workplace
+from workplaces.policy import read_only
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import save_space_avatar
 from .backlog import bulk_plan_items, move_backlog_item
@@ -48,6 +49,24 @@ def space_object(request, pk):
 
 def base_context(request):
     return {'spaces_url': app_url(request), 'teams_url': app_url(request, app='teams')}
+
+
+def settings_context(request, space, tab='main'):
+    base = space_url(request, space, '?view=settings')
+    sections = [('main', 'Ustawienia', 'settings'), ('members', 'Udostępnienia', 'users')]
+    if not read_only(request) and manage_configuration(request, space):
+        sections.append(('types', 'Typy zgłoszeń', 'layers'))
+    fallback_urls = {'main': base + '#main', 'members': base + '&section=members#members',
+                     **{key: space_url(request, space, f'configuration/?section={key}#{key}')
+                        for key in ('types',)}}
+    return {'space': space, 'space_url': space_url(request, space),
+            'sidebar_mode': 'space-settings', 'space_settings_sidebar': {
+        'name': space.name, 'tab': {'avatar': 'main', 'configuration': 'types',
+                                  'statuses': 'types', 'fields': 'types'}.get(tab, tab),
+        'links': [{'key': key, 'label': label, 'icon': icon, 'url': base + '#' + key,
+                   'fallback_url': fallback_urls[key]}
+                  for key, label, icon in sections],
+    }}
 
 
 def decorate_items(request, items):
@@ -332,6 +351,7 @@ def detail_context(request, space, view):
                        else base + 'items/create/')
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
     return {**base_context(request), **filter_context, **backlog_context, **toolbar_context,
+            **(settings_context(request, space, 'members' if request.GET.get('section') == 'members' else 'main') if view == 'settings' else {}),
             'space': space, 'space_url': base, 'timeline': timeline, 'view': view,
             'navigation': [{'key': k, 'label': label, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, label, icon in navigation],
             'page': page, 'items': rows, 'columns': columns, 'stats': stats,
@@ -380,7 +400,19 @@ def detail(request, pk):
     if request.GET.get('view') == 'reports' and request.GET.get('report_export') == 'csv':
         items, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
         return report_csv(request, space, items)
-    return render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
+    context = detail_context(request, space, request.GET.get('view', 'overview'))
+    if context['view'] == 'settings' and not getattr(request, '_react_api', False):
+        if context['space_settings_sidebar']['tab'] == 'members':
+            from .space_team import team_context
+            context['settings_team'] = team_context(request, space)
+            if read_only(request):
+                context['settings_team']['can_manage_team'] = False
+                for member in context['settings_team']['members']:
+                    member.can_change = False
+        elif context['can_manage'] and not read_only(request):
+            context['settings_form'] = {'form': SpaceForm(request=request, space=space),
+                'action': space_url(request, space, 'edit/'), 'return_url': space_url(request, space)}
+    return render(request, 'spaces/detail.html', context)
 
 
 @login_required
@@ -410,12 +442,15 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
     modal = {'form': form, 'title': title, 'action': request.get_full_path(), 'return_url': return_url}
     if settings_space:
         modal['space_settings'] = {'space_url': space_url(request, settings_space), 'tab': settings_tab}
-    context = {**base_context(request), 'modal': modal}
+    context = {**base_context(request), 'modal': modal,
+               **(settings_context(request, settings_space, settings_tab) if settings_space else {})}
     status = 400 if request.method == 'POST' else 200
     if getattr(request, '_react_api', False):
         return render(request, 'spaces/form_page.html', context, status=status)
     if request.headers.get('X-Work-Modal') == 'true':
         return JsonResponse({'html': render_to_string('spaces/form.html', context, request=request)}, status=status)
+    if settings_space:
+        return render(request, 'spaces/form_page.html', context, status=status)
     if directory:
         context.update(index_context(request))
         modal['directory_url'] = return_url
@@ -854,12 +889,32 @@ def configuration(request, pk):
     if not manage_configuration(request, space):
         raise PermissionDenied
     config = space.configuration
+    requested_section = request.POST.get('configuration_section', request.GET.get('section'))
+    section = 'types'
     data = request.POST if request.method == 'POST' else None
     StatusSet = formset_factory(StatusForm, extra=1, can_delete=True, max_num=40, validate_max=True)
     TypeSet = formset_factory(TypeForm, extra=1, can_delete=True, max_num=30, validate_max=True)
     FieldSet = formset_factory(CustomFieldForm, extra=1, can_delete=True, max_num=30, validate_max=True)
     sets = [StatusSet(data, initial=config.settings['statuses'], prefix='statuses', form_kwargs={'statuses': config.settings['statuses']}), TypeSet(data, initial=config.settings['types'], prefix='types'), FieldSet(data, initial=config.settings.get('fields', []), prefix='fields')]
     revision = hashlib.sha256(json.dumps(config.settings, sort_keys=True).encode()).hexdigest()
+    editor = None
+    editor_index = (request.POST.get('configuration_index') if request.method == 'POST'
+                    else request.GET.get('remove', request.GET.get('edit')))
+    # Old status/field editor links must not select a type with the same index.
+    if requested_section != section:
+        editor_index = None
+    removing = (request.POST.get('configuration_remove') == '1' if request.method == 'POST'
+                else 'remove' in request.GET)
+    if editor_index is not None:
+        try:
+            index = int(editor_index)
+        except (TypeError, ValueError):
+            raise Http404('Nie znaleziono pozycji konfiguracji.')
+        selected_set = next(formset for formset in sets if formset.prefix == section)
+        count = len(config.settings.get(section, [])) if removing else len(selected_set.forms)
+        if not 0 <= index < count:
+            raise Http404('Nie znaleziono pozycji konfiguracji.')
+        editor = {'section': section, 'index': index, 'remove': removing}
     errors = []
     if request.method == 'POST' and all([formset.is_valid() for formset in sets]):
         settings = {key: [{k: v for k, v in form.cleaned_data.items() if k != 'DELETE'} for form in formset if form.cleaned_data and not form.cleaned_data.get('DELETE')] for key, formset in zip(('statuses', 'types', 'fields'), sets)}
@@ -899,5 +954,86 @@ def configuration(request, pk):
                 config.settings = settings
                 config.save(update_fields=['settings'])
                 messages.success(request, 'Konfiguracja została zapisana.')
+                if editor:
+                    return redirect(space_url(request, space, f'configuration/?section={section}#{section}'))
                 return redirect(space_url(request, space, '?view=settings'))
-    return render(request, 'spaces/configuration.html', {**base_context(request), 'space': space, 'space_url': space_url(request, space), 'config': config, 'revision': revision, 'sets': [{'title': title, 'formset': formset} for title, formset in zip(('Statusy i przejścia', 'Typy zgłoszeń', 'Pola dodatkowe'), sets)], 'errors': errors}, status=400 if data else 200)
+    if request.method == 'POST':
+        # A rejected write must not silently acquire a newer revision for retry.
+        revision = request.POST.get('revision', '')
+        for formset in sets:
+            if formset.prefix != section:
+                errors.extend(formset.non_form_errors())
+                errors.extend(error for form in formset if not form.cleaned_data.get('DELETE')
+                              for error in form.non_field_errors())
+                errors.extend(f'{field.label}: {error}' for form in formset
+                              if not form.cleaned_data.get('DELETE')
+                              for field in form for error in field.errors)
+        invalid_row = next(((formset.prefix, index) for formset in sets if formset.prefix == section
+                            for index, form in enumerate(formset) if form.errors and not form.cleaned_data.get('DELETE')), None)
+        if invalid_row:
+            section, index = invalid_row
+            editor = {'section': section, 'index': index, 'remove': False}
+        elif not editor:
+            editor = {'section': section, 'index': 0, 'remove': False}
+
+    labels = {
+        'statuses': ('Statusy i przejścia', 'Dodaj status', 'Edytuj status', 'Usuń status', 'Brak statusów.'),
+        'types': ('Typy zgłoszeń', 'Dodaj typ zgłoszenia', 'Edytuj typ zgłoszenia', 'Usuń typ zgłoszenia', 'Brak typów zgłoszeń.'),
+        'fields': ('Pola dodatkowe', 'Dodaj pole dodatkowe', 'Edytuj pole dodatkowe', 'Usuń pole dodatkowe', 'Brak pól dodatkowych.'),
+    }
+    icons = {'key': 'hash', 'label': 'align-left', 'icon': 'shapes', 'description': 'align-left',
+             'category': 'list-checks', 'transitions': 'workflow',
+             'type': 'list-ordered', 'required': 'check'}
+    groups = []
+    for formset in sets:
+        key = formset.prefix
+        title, add_label, edit_label, remove_label, empty_label = labels[key]
+        base_url = space_url(request, space, f'configuration/?section={key}')
+        empty_form = formset.empty_form
+        headers = [{'key': field.name, 'label': field.label, 'icon': icons.get(field.name, 'align-left')}
+                   for field in empty_form.visible_fields() if field.name != 'DELETE']
+        if key == 'types':
+            headers.sort(key=lambda header: ('icon', 'key', 'label', 'description').index(header['key']))
+        rows = []
+        for index, saved in enumerate(config.settings.get(key, [])):
+            cells = []
+            for header in headers:
+                name = header['key']
+                value = saved.get(name)
+                field = empty_form.fields[name]
+                if key == 'types' and name == 'icon':
+                    icon = issue_type_icon(saved['key'], value)
+                    cells.append({'key': name, 'value': dict(field.choices)[icon], 'icon': icon})
+                    continue
+                if name == 'required':
+                    value = 'Tak' if value else 'Nie'
+                elif name == 'transitions':
+                    choices = dict(field.choices)
+                    value = ', '.join(choices.get(item, item) for item in (value or []))
+                elif hasattr(field, 'choices'):
+                    value = dict(field.choices).get(value, value)
+                cells.append({'key': name, 'value': value or '—'})
+            rows.append({'index': index, 'label': saved.get('label', saved.get('key', '')),
+                         'cells': cells, 'edit_url': f'{base_url}&edit={index}', 'remove_url': f'{base_url}&remove={index}'})
+        groups.append({'key': key, 'title': title, 'formset': formset, 'headers': headers, 'rows': rows,
+                       'empty_label': empty_label, 'add_label': add_label,
+                       'add_url': f'{base_url}&edit={len(rows)}' if len(formset.forms) > len(rows) else None})
+    editor_form = None
+    editor_title = ''
+    editor_fields = []
+    if editor:
+        editor_group = next(group for group in groups if group['key'] == editor['section'])
+        if editor['index'] < len(editor_group['formset'].forms):
+            editor_form = editor_group['formset'].forms[editor['index']]
+            editor_fields = [field for field in editor_form.visible_fields() if field.name != 'DELETE']
+        _, add_label, edit_label, remove_label, _ = labels[editor['section']]
+        editor_title = remove_label if editor['remove'] else (edit_label if editor['index'] < len(editor_group['rows']) else add_label)
+    return render(request, 'spaces/configuration.html', {
+        **base_context(request), **settings_context(request, space, section),
+        'space': space, 'space_url': space_url(request, space), 'config': config, 'revision': revision,
+        'configuration_section': section,
+        'sets': groups, 'editor': editor, 'editor_form': editor_form, 'editor_fields': editor_fields,
+        'editor_title': editor_title,
+        'configuration_url': space_url(request, space, f'configuration/?section={section}'),
+        'errors': errors,
+    }, status=400 if request.method == 'POST' else 200)

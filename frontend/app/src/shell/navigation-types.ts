@@ -50,6 +50,16 @@ export interface ShellData {
   profile: { name: string; avatar: AvatarData; url: string; active: boolean };
   settings_url: string;
   settings_active: boolean;
+  space_settings?: {
+    name: string;
+    tab: string;
+    links: { key: string; label: string; icon: string; url: string }[];
+  } | null;
+  pulpit_settings?: {
+    name: string;
+    tab: string;
+    links: { key: string; label: string; icon: string; url: string }[];
+  } | null;
   workplaces_url: string;
   links: Record<string, Link>;
   favorites: Link[];

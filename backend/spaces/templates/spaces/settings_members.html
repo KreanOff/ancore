@@ -1,0 +1,48 @@
+{% load account_avatar %}
+<div class="tasks-modal__body">
+    <div class="workplace-edit-modal__team-toolbar">
+        <span class="workplaces-management__count">{{ space.name }} · Członkowie: {{ settings_team.members|length }}</span>
+        {% if settings_team.can_manage_team %}<a href="{{ member_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>Udostępnij / zmień rolę</a>{% endif %}
+    </div>
+    {% if space.visibility == 'public' %}<p class="workplace-team__hint">Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom, zapisz widoczność „Prywatna” w zakładce „Ustawienia”.</p>{% endif %}
+    <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet" role="region" aria-label="Członkowie — tabela" tabindex="0">
+        <section class="tasks-directory-group" role="table" aria-label="Członkowie przestrzeni">
+            <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Działania"></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="columnheader"><i data-icon="users" aria-hidden="true"></i>Nazwa</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="columnheader"><i data-icon="mail" aria-hidden="true"></i>E-mail</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="role" role="columnheader"><i data-icon="user-round" aria-hidden="true"></i>Rola</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="joined" role="columnheader"><i data-icon="calendar-days" aria-hidden="true"></i>Dołączono</span>
+            </div>
+            <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+                {% for member in settings_team.members %}
+                <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"></span>
+                    <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
+                        {% if member.can_change %}
+                        <div class="documents-item-actions">
+                            <button type="button" class="tasks-project-sheet__edit-button" popovertarget="space-member-menu-{{ member.pk }}" aria-label="Działania: {{ member.user.get_full_name|default:member.user.username }}"><i data-icon="menu" aria-hidden="true"></i></button>
+                            <div id="space-member-menu-{{ member.pk }}" class="tasks-section-menu documents-item-menu" popover="auto">
+                                <div class="documents-menu-actions">
+                                    <a href="{{ member_url }}" class="tasks-project-menu-button"><i data-icon="pencil" aria-hidden="true"></i>Zmień rolę</a>
+                                    <form method="post" action="{{ member_url }}{{ member.pk }}/remove/">{% csrf_token %}<button type="submit" class="tasks-project-menu-button"><i data-icon="log-out" aria-hidden="true"></i>Odbierz dostęp</button></form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="cell">
+                        {% user_avatar member.user as member_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=member_avatar avatar_class='tasks-directory-avatar' only %}
+                        <span class="workplace-team__name">{{ member.user.get_full_name|default:member.user.username }}{% if member.user_id == request.user.pk %} (Ty){% endif %}</span>
+                    </div>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="cell">{{ member.user.email }}</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="role" role="cell">{{ member.get_role_display }}</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="joined" role="cell">{{ member.created_at|date:'d.m.Y' }}</span>
+                </div>
+                {% empty %}<p class="workplace-team__hint">Brak członków.</p>{% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+<footer class="tasks-modal__footer"><a href="{{ space_url }}" class="btn btn-secondary">Wróć do przestrzeni</a></footer>

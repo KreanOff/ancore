@@ -83,7 +83,7 @@ export interface FormSchema {
   planning_summary?: { total: number; finished: number; points: number; unestimated: number };
   sprint_name?: string;
 }
-const SpaceSettingsDialog = lazy(() => import('../spaces/SettingsDialog'));
+const SpaceSettingsPage = lazy(() => import('../spaces/SettingsPage'));
 const FilterSettingsDialog = lazy(() => import('../filters/SettingsDialog'));
 const tagFieldOrder = [
   'name',
@@ -481,7 +481,9 @@ export function EmbeddedForm({
   activeSection,
   onInvalidSection,
   revisionChange,
+  onCancel,
 }: {
+  onCancel?: () => void;
   openAvatar?: boolean;
   data: FormDialogData;
   api: string;
@@ -621,6 +623,7 @@ export function EmbeddedForm({
     }
   }
   function close() {
+    if (onCancel) return onCancel();
     const modal = form.current?.closest<HTMLElement>('.tasks-modal');
     if (modal) window.AncoreTaskModals?.close(modal);
   }
@@ -976,7 +979,7 @@ export function FormDialog(props: {
   if (props.data.space_settings)
     return (
       <Suspense fallback={<div role="status">Wczytywanie ustawień…</div>}>
-        <SpaceSettingsDialog
+        <SpaceSettingsPage
           {...props}
           spaceUrl={props.data.space_settings.space_url}
           initialTab={props.data.space_settings.tab}
@@ -1007,6 +1010,18 @@ export function FormDialog(props: {
 
 export default function FormPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as FormDialogData;
+  if (data.space_settings)
+    return (
+      <Suspense fallback={<div role="status">Wczytywanie ustawień…</div>}>
+        <SpaceSettingsPage
+          api={initial.api_url}
+          csrfToken={csrfToken}
+          spaceUrl={data.space_settings.space_url}
+          initialTab={data.space_settings.tab}
+          initialForm={data}
+        />
+      </Suspense>
+    );
   return (
     <div className="tasks-page work-page">
       <FormDialog

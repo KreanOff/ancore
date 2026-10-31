@@ -114,10 +114,10 @@ class DefaultPulpitTests(TestCase):
         dashboard = self.default()
         self.assertEqual(self.client.post(self.url(f'{dashboard.slug}/edit/'), {
             'name': 'Mój start', 'description': 'Osobisty układ',
-        }).url, self.url('default/'))
+        }).url, self.url(f'{dashboard.slug}/edit/'))
         self.assertEqual(self.client.post(self.url(f'{dashboard.slug}/access/'), {
             'visibility': 'selected', 'shared_with': [self.member.pk],
-        }).url, self.url('default/'))
+        }).url, self.url(f'{dashboard.slug}/access/'))
         self.assertContains(self.client.get('/'), 'Mój start')
         dashboard.favorited_by.add(self.owner)
         self.client.get(self.url(f'{dashboard.slug}/'))

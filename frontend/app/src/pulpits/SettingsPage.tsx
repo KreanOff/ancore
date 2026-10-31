@@ -1,47 +1,93 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { EmbeddedForm } from '../forms/FormDialog';
 import { Members, type MemberRow } from '../shared/Members';
 import SharingDialog from '../shared/SharingDialog';
 import { Icon } from '../shared/Icon';
-import { Modal } from '../shared/Modal';
 import { errorMessage } from '../shared/api';
-import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
-import { DashboardView } from './DetailPage';
-import type { EditData, SettingsTab } from './types';
+import { type Page, type PageProps, navigate, pageRequest, setPageLocation } from '../shared/page';
+import { useDirtyGuard } from '../shared/useDirtyGuard';
+import type { EditData } from './types';
 
-export default function SettingsDialog({
-  initial,
-  csrfToken,
-  onClose,
-  hostId,
-}: PageProps & { onClose: (changed: boolean) => void; hostId?: string }) {
+type Tab = EditData['section'];
+function tabFromHash(fallback: Tab): Tab {
+  const key = location.hash.slice(1);
+  return key === 'settings' || key === 'access' ? key : fallback;
+}
+
+export default function SettingsPage({ initial, csrfToken }: PageProps) {
   const initialData = initial.data as EditData;
-  const [tab, setTab] = useState<SettingsTab>(initialData.section);
+  const [tab, setTab] = useState<Tab>(() => tabFromHash(initialData.section));
   const [team, setTeam] = useState(initialData.team);
   const [sharing, setSharing] = useState(false);
   const [roleMember, setRoleMember] = useState<MemberRow>();
   const [acting, setActing] = useState(false);
   const action = useRef(false);
   const retryAction = useRef<(() => void) | undefined>();
-  const [pages, setPages] = useState<Partial<Record<SettingsTab, Page>>>(() => ({
-    [tab]: initial,
+  const [pages, setPages] = useState<Partial<Record<Tab, Page>>>(() => ({
+    [initialData.section]: initial,
   }));
-  const [states, setStates] = useState<
-    Partial<Record<SettingsTab, { dirty: boolean; pending: boolean }>>
-  >({});
+  const [states, setStates] = useState<Partial<Record<Tab, { dirty: boolean; pending: boolean }>>>(
+    {},
+  );
   const [error, setError] = useState(''),
     [notice, setNotice] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [life] = useState(() => new AbortController());
-  const changed = useRef(false);
   const tabs = useMemo(
-    () => initialData.settings_tabs.filter((item) => item.key !== 'gadgets'),
+    () =>
+      initialData.settings_tabs.filter(
+        (item): item is typeof item & { key: Tab } => item.key !== 'gadgets',
+      ),
     [initialData.settings_tabs],
   );
   const dirty = Object.values(states).some((state) => state?.dirty);
   const pending = acting || Object.values(states).some((state) => state?.pending);
+  const settingsUrl = tabs.find((item) => item.key === 'settings')!.url;
+  const returnLabel =
+    initialData.return_url === initialData.dashboard.url ? 'Wróć do pulpitu' : 'Wróć do pulpitów';
+  useDirtyGuard(dirty, pending);
   useEffect(() => () => life.abort(), [life]);
+  useEffect(() => {
+    setPageLocation(settingsUrl + '#' + tab);
+    window.dispatchEvent(new CustomEvent('ancore:pulpit-settings-tab'));
+  }, [settingsUrl]);
+  useEffect(() => {
+    const select = (next: Tab, push = false) => {
+      setTab(next);
+      if (next !== tab) {
+        setNotice('');
+        setError('');
+        retryAction.current = undefined;
+      }
+      setPageLocation(settingsUrl + '#' + next, push);
+      window.dispatchEvent(new CustomEvent('ancore:pulpit-settings-tab'));
+    };
+    const sync = () => {
+      const target = new URL(settingsUrl, location.href);
+      if (location.pathname !== target.pathname || location.search !== target.search) return;
+      select(pending ? tab : tabFromHash(initialData.section));
+    };
+    const click = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? event.target.closest<HTMLAnchorElement>('[data-pulpit-settings-tab]')
+          : null;
+      if (!link || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+        return;
+      event.preventDefault();
+      if (pending) return;
+      const next = link.dataset.pulpitSettingsTab as Tab;
+      if (tabs.some((item) => item.key === next)) select(next, next !== tab);
+    };
+    document.addEventListener('click', click, true);
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      document.removeEventListener('click', click, true);
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
+    };
+  }, [pending, tab, tabs, settingsUrl, initialData.section]);
   useEffect(() => {
     if (tab === 'access' || pages[tab]) return;
     let current = true;
@@ -71,23 +117,47 @@ export default function SettingsDialog({
     if (dirty || pending) setNotice('');
   }, []);
   async function saved() {
-    changed.current = true;
-    const result = await pageRequest<EditData['team']>(
-      initial.api_url,
-      initialData.team_url,
-      csrfToken,
-      life.signal,
-    );
-    if (life.signal.aborted) return;
-    setTeam(result);
-    setNotice('Zmiany zostały zapisane.');
+    if (action.current) return;
+    action.current = true;
+    setActing(true);
+    setError('');
+    retryAction.current = undefined;
+    try {
+      const result = await pageRequest<EditData['team']>(
+        initial.api_url,
+        initialData.team_url,
+        csrfToken,
+        life.signal,
+      );
+      if (life.signal.aborted) return;
+      setTeam(result);
+      document.title = `Ustawienia pulpitu · ${result.name} | ancore`;
+      window.dispatchEvent(
+        new CustomEvent('ancore:pulpit-settings-saved', {
+          detail: { name: result.name },
+        }),
+      );
+      setNotice('Zmiany zostały zapisane.');
+    } catch (exception) {
+      if (!life.signal.aborted) {
+        setError(
+          `Zmiany zapisano, ale nie udało się odświeżyć ustawień. ${errorMessage(exception)}`,
+        );
+        retryAction.current = () => void saved();
+      }
+    } finally {
+      action.current = false;
+      if (!life.signal.aborted) setActing(false);
+    }
   }
   function shared(result: EditData['team']) {
-    changed.current = true;
     setTeam(result);
     setSharing(false);
     setRoleMember(undefined);
     setNotice('Dostęp został zapisany.');
+  }
+  function close() {
+    void navigate(initialData.return_url);
   }
   async function removeMember(member: MemberRow) {
     if (action.current || pending) return;
@@ -119,63 +189,25 @@ export default function SettingsDialog({
   }
   return (
     <>
-      <Modal
-        title="Ustawienia pulpitu"
-        className="work-modal pulpit-settings-modal"
-        dirty={dirty}
-        pending={pending}
-        onClose={() => onClose(changed.current)}
-        hostId={hostId}
+      <div
+        className="tasks-page work-page space-settings-page pulpit-settings-page"
+        data-react-screen="pulpit-settings"
       >
-        <div
-          className="notifications-tabs pulpit-settings-tabs"
-          role="tablist"
-          aria-label="Ustawienia pulpitu"
-          onKeyDown={(event) => {
-            const index = tabs.findIndex((item) => item.key === tab);
-            const next =
-              event.key === 'Home'
-                ? 0
-                : event.key === 'End'
-                  ? tabs.length - 1
-                  : event.key === 'ArrowRight'
-                    ? (index + 1) % tabs.length
-                    : event.key === 'ArrowLeft'
-                      ? (index + tabs.length - 1) % tabs.length
-                      : -1;
-            if (next < 0 || pending) return;
-            event.preventDefault();
-            setTab(tabs[next].key);
-            retryAction.current = undefined;
-            setError('');
-            setNotice('');
-            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
-          }}
-        >
-          {tabs.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              id={`pulpit-settings-tab-${item.key}`}
-              role="tab"
-              aria-selected={tab === item.key}
-              aria-controls={`pulpit-settings-panel-${item.key}`}
-              tabIndex={tab === item.key ? 0 : -1}
-              disabled={pending}
-              onClick={() => {
-                setTab(item.key);
-                retryAction.current = undefined;
-                setError('');
-                setNotice('');
-              }}
+        <header className="tasks-topbar tasks-topbar--project-directory">
+          <div className="tasks-titlebar-left">
+            <a
+              href={initialData.return_url}
+              className="tasks-issue-close"
+              aria-label={returnLabel}
+              title={returnLabel}
             >
-              <Icon name={item.icon} />
-              {item.label}
-            </button>
-          ))}
-        </div>
+              <Icon name="arrow-left" />
+            </a>
+            <h1 className="tasks-topbar-title">Ustawienia pulpitu · {team.name}</h1>
+          </div>
+        </header>
         {error ? (
-          <div className="tasks-modal__errors pulpit-settings-message" role="alert">
+          <div className="tasks-modal__errors space-settings-message" role="alert">
             {error}
             <button
               type="button"
@@ -190,12 +222,12 @@ export default function SettingsDialog({
           </div>
         ) : null}
         {notice ? (
-          <p className="pulpit-settings-message" role="status">
+          <p className="space-settings-message" role="status">
             {notice}
           </p>
         ) : null}
         {tab !== 'access' && !pages[tab] && !error ? (
-          <p className="pulpit-settings-message" role="status">
+          <p className="space-settings-message" role="status">
             Wczytywanie ustawień…
           </p>
         ) : null}
@@ -206,10 +238,9 @@ export default function SettingsDialog({
             <section
               key={item.key}
               id={`pulpit-settings-panel-${item.key}`}
-              role="tabpanel"
-              aria-labelledby={`pulpit-settings-tab-${item.key}`}
+              aria-label={item.label}
               hidden={tab !== item.key}
-              className="pulpit-settings-panel"
+              className="space-settings-panel pulpit-settings-panel"
             >
               {item.key === 'access' ? (
                 <>
@@ -259,10 +290,7 @@ export default function SettingsDialog({
                       type="button"
                       className="btn btn-secondary"
                       disabled={pending}
-                      onClick={(event) => {
-                        const modal = event.currentTarget.closest<HTMLElement>('.tasks-modal');
-                        if (modal) window.AncoreTaskModals?.close(modal);
-                      }}
+                      onClick={close}
                     >
                       Zamknij
                     </button>
@@ -280,12 +308,13 @@ export default function SettingsDialog({
                   csrfToken={csrfToken}
                   onSaved={saved}
                   onStateChange={reportSettings}
+                  onCancel={close}
                 />
               ) : null}
             </section>
           );
         })}
-      </Modal>
+      </div>
       {sharing || roleMember ? (
         <SharingDialog<EditData['team']>
           name={team.name}
@@ -294,46 +323,11 @@ export default function SettingsDialog({
           api={initial.api_url}
           url={initialData.team_url}
           csrfToken={csrfToken}
-          hostId={hostId}
           onClose={() => {
             setSharing(false);
             setRoleMember(undefined);
           }}
           onSaved={shared}
-        />
-      ) : null}
-    </>
-  );
-}
-
-export function SettingsPage({ initial, csrfToken }: PageProps) {
-  const data = initial.data as EditData;
-  const [preview, setPreview] = useState<Page>();
-  const [open, setOpen] = useState(true);
-  useEffect(() => {
-    const controller = new AbortController();
-    pageRequest<Page>(initial.api_url, data.dashboard.url, csrfToken, controller.signal)
-      .then(setPreview)
-      .catch(() => {
-        /* The editor remains usable if its background cannot load. */
-      });
-    return () => controller.abort();
-  }, [initial.api_url, data.dashboard.url, csrfToken]);
-  return (
-    <>
-      {preview ? (
-        <DashboardView initial={preview} csrfToken={csrfToken} />
-      ) : (
-        <div className="tasks-page work-page" />
-      )}
-      {open ? (
-        <SettingsDialog
-          initial={initial}
-          csrfToken={csrfToken}
-          onClose={() => {
-            flushSync(() => setOpen(false));
-            void navigate(data.return_url);
-          }}
         />
       ) : null}
     </>

@@ -312,7 +312,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                                   disabled={busy}
                                   onClick={() => {
                                     closeMenu();
-                                    void openForm(space.edit_url);
+                                    void navigate(space.edit_url);
                                   }}
                                 >
                                   <Icon name="pencil" />
@@ -322,23 +322,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                               <a
                                 href={space.settings_url}
                                 className="tasks-project-menu-button"
-                                onClick={
-                                  space.can_manage
-                                    ? (event) => {
-                                        if (
-                                          event.button ||
-                                          event.metaKey ||
-                                          event.ctrlKey ||
-                                          event.shiftKey ||
-                                          event.altKey
-                                        )
-                                          return;
-                                        event.preventDefault();
-                                        closeMenu();
-                                        void openForm(space.edit_url);
-                                      }
-                                    : undefined
-                                }
+                                onClick={closeMenu}
                               >
                                 <Icon name="settings" />
                                 <span>Ustawienia przestrzeni</span>

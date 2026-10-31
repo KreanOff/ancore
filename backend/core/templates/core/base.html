@@ -56,7 +56,7 @@
                     root.style.setProperty('--sidebar-width', savedSidebarWidth + 'px');
                 }
 
-                if (window.localStorage.getItem('ancoreSidebarCollapsed') === 'true' && window.innerWidth > 767) {
+                if (!['space-settings', 'pulpit-settings'].includes('{{ sidebar_mode|default:"workspace"|escapejs }}') && window.localStorage.getItem('ancoreSidebarCollapsed') === 'true' && window.innerWidth > 767) {
                     root.classList.add('sidebar-collapsed');
                 }
             } catch (error) {
@@ -65,7 +65,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261030-search-avatars">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261031-space-settings-sketch">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
     {% block extra_head %}{% endblock %}
     {% if frontend_bootstrap or request.user.is_authenticated %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261017-layout-parity">{% react_bundle %}{% endif %}
@@ -288,6 +288,8 @@
         {% include 'core/includes/pulpit_editor_sidebar.html' %}
         {% include 'core/includes/workplace_management_sidebar.html' %}
         {% include 'core/includes/settings_sidebar.html' %}
+        {% include 'core/includes/space_settings_sidebar.html' %}
+        {% include 'core/includes/pulpit_settings_sidebar.html' %}
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
     </aside>
     {% include 'spaces/sidebar_picker.html' %}

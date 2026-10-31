@@ -158,7 +158,7 @@ class ReactPulpitTests(TestCase):
         self.assertEqual(self.dashboard.revision, 1)
         self.assertEqual(self.operation('arrange', {'layout': 'three', 'columns': [[self.gadget.pk], [self.secret_gadget.pk], []], 'revision': 0}).status_code, 409)
 
-    def test_settings_window_tabs_preserve_scope_filters_and_background_navigation(self):
+    def test_settings_sections_preserve_scope_filters_and_page_navigation(self):
         for prefix in (self.path(), '/dashboards/'):
             for management in (False, True):
                 root = prefix + ('manage/' if management else '') + self.dashboard.slug + '/'
@@ -176,7 +176,14 @@ class ReactPulpitTests(TestCase):
                                 self.assertIn('q=Plan', tab['url'])
                                 self.assertIn('page=2', tab['url'])
                         navigation = self.client.get(self.endpoint(target).replace('/page/', '/navigation/')).json()
-                        self.assertEqual(navigation['shell']['mode'], 'workspace')
+                        settings_page = active in {'settings', 'access'}
+                        self.assertEqual(navigation['shell']['mode'], 'pulpit-settings' if settings_page else 'workspace')
+                        if settings_page:
+                            sidebar = navigation['shell']['pulpit_settings']
+                            self.assertEqual(sidebar, page['data']['settings_sidebar'])
+                            self.assertEqual(sidebar['tab'], active)
+                            self.assertEqual([row['key'] for row in sidebar['links']], ['settings', 'access'])
+                            self.assertTrue(navigation['shell']['settings_active'])
 
     def test_quick_add_returns_current_space_task_counts_without_html(self):
         result = self.operation('gadgets/quick-add', {'kind': 'progress', 'revision': 0})

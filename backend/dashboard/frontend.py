@@ -57,4 +57,5 @@ def settings_page(request, context):
     return {'type': 'settings', 'title': 'Ustawienia', 'data': {
         'user': {'name': request.user.get_full_name() or request.user.username, 'email': request.user.email, 'avatar': account_avatar(request.user)},
         'profile_url': reverse('profile'), 'logout_url': reverse('logout'), 'rows': rows,
+        'spaces': context.get('settings_spaces', []),
     }}

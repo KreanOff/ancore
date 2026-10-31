@@ -588,7 +588,7 @@
 
 /* Form controls share the same geometry across modules. The type exclusions
    preserve hidden picker sources, checkboxes, file inputs and color swatches. */
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(.tasks-modal__body, .profile-edit-body) :is(
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form, .space-settings-page) :is(.tasks-modal__body, .profile-edit-body) :is(
     input.form-input, input.tasks-inline-input, input.tasks-due-input,
     input.tasks-estimate-duration-input,
     select.form-input, select.form-select, select.tasks-inline-select, textarea
@@ -610,31 +610,31 @@
     box-shadow: none;
 }
 
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(.tasks-modal__body, .profile-edit-body) textarea:not([hidden]):not(.ancore-custom-select__source) {
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form, .space-settings-page) :is(.tasks-modal__body, .profile-edit-body) textarea:not([hidden]):not(.ancore-custom-select__source) {
     --app-modal-input-height: auto;
-    --app-modal-input-min-height: 84px;
+    --app-modal-input-min-height: var(--app-form-textarea-min-height, 84px);
     --app-modal-input-padding: 9px 12px;
     resize: vertical;
 }
 
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(.tasks-modal__body, .profile-edit-body) select:not(.ancore-custom-select__source) {
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form, .space-settings-page) :is(.tasks-modal__body, .profile-edit-body) select:not(.ancore-custom-select__source) {
     padding-right: 32px;
 }
 
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(.tasks-modal__body, .profile-edit-body) select[multiple]:not(.ancore-custom-select__source) {
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form, .space-settings-page) :is(.tasks-modal__body, .profile-edit-body) select[multiple]:not(.ancore-custom-select__source) {
     --app-modal-input-height: auto;
     --app-modal-input-min-height: 84px;
 }
 
 /* Active fields keep their regular border, without an outer glow. This also
    covers search inputs inside dropdowns, which stay in the modal's DOM. */
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(input, textarea, select):is(:hover, :focus):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not(.ancore-custom-select__source):not([aria-invalid="true"]):not(.is-invalid) {
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form, .space-settings-page) :is(input, textarea, select):is(:hover, :focus):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):not(.ancore-custom-select__source):not([aria-invalid="true"]):not(.is-invalid) {
     outline: none;
     border-color: var(--border-color);
     box-shadow: none;
 }
 
-:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form) :is(
+:is(.tasks-modal, .profile-edit-dialog, #issue-create-form, #tag-create-form, .space-settings-page) :is(
     .ancore-custom-select__button, .tasks-issue-dropdown-button,
     .tasks-company-select__button, .tasks-responsible-select__button,
     .tasks-picker-chip, .contacts-custom-select__button,
@@ -1522,7 +1522,7 @@
     display: none !important;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--app-modal-field-gap);
@@ -1534,23 +1534,23 @@
     max-width: none;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--app-modal-field-gap);
     align-items: start;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading:has(> :nth-child(2)) {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading:has(> :nth-child(2)) {
     grid-template-columns: minmax(0, 1fr) minmax(200px, 28%);
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel :is(.app-form-heading, .app-form-description, .app-form-wide) {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) :is(.app-form-heading, .app-form-description, .app-form-wide) {
     grid-column: 1 / -1;
     min-width: 0;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout :is(.tasks-form-field, .app-form-field) {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -1559,7 +1559,7 @@
     margin: 0;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout :is(.tasks-form-field, .app-form-field) > :is(label, .form-label) {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > :is(label, .form-label) {
     padding: 0;
     margin: 0;
     grid-column: auto;
@@ -1571,22 +1571,22 @@
     margin: 0;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout :is(.tasks-form-field, .app-form-field) > :not(label),
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout .react-field-control > *,
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading > * {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > :not(label),
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout .react-field-control > *,
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading > * {
     grid-column: auto;
     min-width: 0;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading .tasks-form-field {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading .tasks-form-field {
     grid-column: auto;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout [hidden] {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout [hidden] {
     display: none !important;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-avatar-layout {
     display: grid;
     grid-template-columns: 68px minmax(0, 1fr);
     gap: var(--app-modal-field-gap);
@@ -1594,27 +1594,27 @@
     align-content: start;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout > .app-form-layout {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-avatar-layout > .app-form-layout {
     grid-column: 2;
 }
 
-:is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout > .app-form-layout:only-child {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-avatar-layout > .app-form-layout:only-child {
     grid-column: 1 / -1;
 }
 
 @media (max-width: 720px) {
-    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-layout,
-    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-heading:has(> :nth-child(2)) {
+    :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout,
+    :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading:has(> :nth-child(2)) {
         grid-template-columns: minmax(0, 1fr);
     }
 }
 
 @media (max-width: 600px) {
-    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout {
+    :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-avatar-layout {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    :is(.tasks-modal, .profile-edit-overlay).app-modal-panel .app-form-avatar-layout > .app-form-layout {
+    :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-avatar-layout > .app-form-layout {
         grid-column: 1 / -1;
     }
 }

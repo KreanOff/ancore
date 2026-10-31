@@ -83,11 +83,11 @@ def detail_page(request, context):
 
 
 def edit_page(request, context):
-    from .pulpit_sharing import payload, team_url
     dashboard = context['dashboard']
-    return {'type': 'pulpit-edit', 'title': f'{context["section_title"]} — {dashboard.name}', 'data': {
+    return {'type': 'pulpit-edit', 'title': f'Ustawienia pulpitu · {dashboard.name}', 'data': {
         'dashboard': dashboard_payload(dashboard), 'section': next(row['key'] for row in context['pulpit_editor_navigation'] if row['active']),
         'form': pulpit_form_payload(context['form']), 'action': context['action'], 'return_url': context['return_url'],
         'settings_tabs': context['pulpit_editor_navigation'],
-        'team': payload(request, dashboard), 'team_url': team_url(request, dashboard),
+        'settings_sidebar': context['pulpit_settings_sidebar'],
+        'team': context['settings_team'], 'team_url': context['team_url'],
     }}

@@ -1,0 +1,9 @@
+{% if sidebar_mode == 'pulpit-settings' %}
+<nav class="sidebar-navigation" aria-label="Ustawienia pulpitu" data-sidebar-navigation="pulpit-settings">
+    <section class="sidebar-menu-section sidebar-menu-section--workspace">
+        {% for item in pulpit_settings_sidebar.links %}
+        <a href="{{ item.url }}" data-pulpit-settings-tab="{{ item.key }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if pulpit_settings_sidebar.tab == item.key %} active{% endif %}"{% if pulpit_settings_sidebar.tab == item.key %} aria-current="page"{% endif %}><i class="nav-icon" data-icon="{{ item.icon }}" aria-hidden="true"></i><span class="nav-label">{{ item.label }}</span></a>
+        {% endfor %}
+    </section>
+</nav>
+{% endif %}

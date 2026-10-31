@@ -1,0 +1,44 @@
+<div class="tasks-modal__body">
+    <div class="workplace-edit-modal__team-toolbar">
+        <span class="workplaces-management__count">{{ dashboard.name }} · Osoby z dostępem: {{ settings_team.members|length }}</span>
+    </div>
+    {% if settings_team.visibility == 'workspace' %}<p class="workplace-team__hint">Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom, zapisz widoczność „Prywatny — wybrane osoby” w sekcji „Ustawienia”.</p>{% endif %}
+    <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet" role="region" aria-label="Udostępnienia — tabela" tabindex="0">
+        <section class="tasks-directory-group" role="table" aria-label="Osoby z dostępem do pulpitu">
+            <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Działania"></span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="columnheader"><i data-icon="users" aria-hidden="true"></i>Nazwa</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="columnheader"><i data-icon="mail" aria-hidden="true"></i>E-mail</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="role" role="columnheader"><i data-icon="user-round" aria-hidden="true"></i>Rola</span>
+                <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="joined" role="columnheader"><i data-icon="calendar-days" aria-hidden="true"></i>Dołączono</span>
+            </div>
+            <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+                {% for member in settings_team.members %}
+                <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell"></span>
+                    <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="cell">
+                        {% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-avatar' only %}
+                        <span class="workplace-team__name">{{ member.name }}{% if member.user_id == request.user.pk %} (Ty){% endif %}</span>
+                    </div>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="cell">{{ member.email }}</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="role" role="cell">{{ member.role_label }}</span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="joined" role="cell">{% if member.created_at %}{{ member.created_at|slice:'8:10' }}.{{ member.created_at|slice:'5:7' }}.{{ member.created_at|slice:':4' }}{% else %}—{% endif %}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+    {% if settings_team.is_owner %}
+    <details{% if form.is_bound %} open{% endif %}>
+        <summary class="btn btn-secondary">Zmień osoby z dostępem</summary>
+        <form method="post" action="{{ action }}" class="documents-form pulpit-form" data-pulpit-edit-form data-pulpit-unsaved="{{ form.is_bound|yesno:'true,false' }}">
+            {% csrf_token %}
+            {% include 'dashboard/pulpits/fields.html' with form=form only %}
+            <button type="submit" class="btn btn-primary">Zapisz</button>
+        </form>
+    </details>
+    {% endif %}
+</div>
+<footer class="tasks-modal__footer"><a href="{{ return_url }}" class="btn btn-secondary">Wróć do pulpitu</a></footer>

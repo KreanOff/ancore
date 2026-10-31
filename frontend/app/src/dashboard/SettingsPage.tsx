@@ -5,6 +5,7 @@ import { setPageLocation } from '../shared/page';
 import type { PageProps } from '../shared/page';
 interface Data {
   user: { name: string; email: string; avatar: AvatarData };
+  spaces: { name: string; url: string }[];
   profile_url: string;
   logout_url: string;
   rows: { category: string; url: string; icon: string; title: string; description: string }[];
@@ -98,6 +99,35 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
                   </div>
                 </section>
               ))}
+            {category !== 'account' ? (
+              <section className="settings-group" aria-labelledby="settings-spaces-title">
+                <header className="settings-group-heading">
+                  <h2 id="settings-spaces-title">Ustawienia przestrzeni</h2>
+                  <p>
+                    Wybierz przestrzeń, aby zmienić ustawienia, udostępnienia oraz statusy, typy i
+                    pola.
+                  </p>
+                </header>
+                <div className="settings-rows">
+                  {data.spaces.map((space) => (
+                    <a key={space.url} href={space.url} className="settings-row settings-row--link">
+                      <span className="settings-row-icon">
+                        <Icon name="layers" />
+                      </span>
+                      <span className="settings-row-copy">
+                        <strong>{space.name}</strong>
+                      </span>
+                      <span className="settings-row-arrow">
+                        <Icon name="chevron-right" />
+                      </span>
+                    </a>
+                  ))}
+                  {!data.spaces.length ? (
+                    <p className="work-caption">Brak dostępnych przestrzeni w tym Workspace.</p>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
             {category !== 'workspace' ? (
               <section
                 className="settings-session"

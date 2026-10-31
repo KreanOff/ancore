@@ -11,7 +11,7 @@ import { type Page, type PageProps, navigate, pageRequest } from '../shared/page
 import { ItemCard, ItemRow } from './Item';
 import { ItemFiltering, ItemToolbar } from './ItemToolbar';
 import Summary from './Summary';
-import SettingsDialog from './SettingsDialog';
+import SettingsPage from './SettingsPage';
 import { SpaceHeader } from './SpaceHeader';
 import { dateLabel, type DetailData, type Item, type Sprint, type Status } from './types';
 import { useItemMotion } from './useItemMotion';
@@ -20,7 +20,6 @@ import ReportsView from './ReportsView';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
     [modal, setModal] = useState<FormDialogData | null>((initial.data as DetailData).modal),
-    [settingsOpen, setSettingsOpen] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
@@ -485,13 +484,21 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       </StatusGroup>
     );
   }
+  if (data.view === 'settings')
+    return (
+      <SettingsPage
+        api={initial.api_url}
+        csrfToken={csrfToken}
+        spaceUrl={data.space.url}
+        initialDetail={data}
+      />
+    );
   return (
     <div className="tasks-page tasks-list-page work-page" data-react-screen="space-detail">
       <section className="tasks-workspace" aria-busy={busy}>
         <SpaceHeader
           navigation={data.navigation}
           currentView={data.view}
-          onSettings={() => setSettingsOpen(true)}
           heading={
             <>
               {data.can_manage ? (
@@ -500,7 +507,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                   className="space-avatar-trigger"
                   aria-label={`Zmień awatar przestrzeni ${data.space.name}`}
                   disabled={busy}
-                  onClick={() => void openForm(data.space.url + 'avatar/')}
+                  onClick={() => void navigate(data.space.url + 'avatar/')}
                 >
                   <Avatar space data={data.space.avatar} className="space-avatar--heading" />
                 </button>
@@ -783,20 +790,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                   throw new Error('Nie udało się odświeżyć raportu. Spróbuj ponownie.');
                 if (!life.current.signal.aborted) setData(page.data as DetailData);
               }}
-            />
-          ) : null}
-          {data.view === 'settings' || settingsOpen ? (
-            <SettingsDialog
-              api={initial.api_url}
-              csrfToken={csrfToken}
-              spaceUrl={data.space.url}
-              initialDetail={data.view === 'settings' ? data : undefined}
-              onClose={() =>
-                data.view === 'settings' ? navigate(data.space.url) : setSettingsOpen(false)
-              }
-              onSaved={() =>
-                navigate(data.view === 'settings' ? data.space.url : currentUrl.current)
-              }
             />
           ) : null}
         </div>

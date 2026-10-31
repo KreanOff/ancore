@@ -1,0 +1,9 @@
+{% if sidebar_mode == 'space-settings' %}
+<nav class="sidebar-navigation" aria-label="Ustawienia przestrzeni" data-sidebar-navigation="space-settings">
+    <section class="sidebar-menu-section sidebar-menu-section--workspace">
+        {% for item in space_settings_sidebar.links %}
+        <a href="{{ item.fallback_url|default:item.url }}" data-space-settings-tab="{{ item.key }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if space_settings_sidebar.tab == item.key %} active{% endif %}"{% if space_settings_sidebar.tab == item.key %} aria-current="page"{% endif %}><i class="nav-icon" data-icon="{{ item.icon }}" aria-hidden="true"></i><span class="nav-label">{{ item.label }}</span></a>
+        {% endfor %}
+    </section>
+</nav>
+{% endif %}

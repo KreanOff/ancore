@@ -1,0 +1,29 @@
+<form method="post" action="{{ modal.action }}" enctype="multipart/form-data" class="tasks-modal__form" data-space-settings-form>
+    {% csrf_token %}
+    <div class="tasks-modal__body{% if modal.form.inline_avatar %} profile-edit-body space-settings-main app-form-avatar-layout{% else %} documents-form resources-form app-form-layout{% endif %}">
+        {% if modal.form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
+        {% if modal.form.inline_avatar %}
+            <div class="profile-photo-control">
+                {% include 'spaces/avatar.html' with avatar_class='profile-page-avatar' %}
+                <a href="{{ space_url }}avatar/" class="profile-photo-button">Zmień</a>
+            </div>
+            <div class="profile-edit-fields space-settings-fields app-form-layout">
+                {% include 'core/includes/modal_form_fields.html' with form=modal.form only %}
+                <details class="app-form-wide"{% if modal.form.avatar.errors or modal.form.avatar_photo.errors %} open{% endif %}>
+                    <summary class="btn btn-secondary">Wybierz awatar</summary>
+                    {% include 'spaces/avatar_picker.html' %}
+                    {{ modal.form.avatar_photo_crop }}{{ modal.form.avatar_photo_remove }}
+                </details>
+            </div>
+        {% elif modal.form.avatar_options %}
+            {% include 'spaces/avatar_picker.html' %}
+            {{ modal.form.avatar_photo_crop }}{{ modal.form.avatar_photo_remove }}
+        {% else %}
+            {% include 'core/includes/modal_form_fields.html' with form=modal.form only %}
+        {% endif %}
+    </div>
+    <footer class="tasks-modal__footer">
+        <a href="{{ space_url }}" class="btn btn-secondary">Anuluj</a>
+        <button type="submit" class="tasks-modal__submit">{{ modal.form.submit_label|default:'Zapisz' }}</button>
+    </footer>
+</form>

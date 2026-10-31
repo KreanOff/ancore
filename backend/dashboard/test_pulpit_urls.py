@@ -77,7 +77,7 @@ class PulpitUrlTests(TestCase):
     def test_rename_and_partial_saves_keep_existing_links(self):
         original_slug = self.dashboard.slug
         response = self.client.post(self.prefixes()[1] + original_slug + '/edit/', {'name': 'Nowy tytuł', 'description': 'Nowy opis'})
-        self.assertRedirects(response, self.prefixes()[1] + original_slug + '/')
+        self.assertRedirects(response, self.prefixes()[1] + original_slug + '/edit/')
         self.dashboard.refresh_from_db()
         self.assertEqual((self.dashboard.name, self.dashboard.slug), ('Nowy tytuł', original_slug))
         self.dashboard.name = 'Jeszcze inny tytuł'

@@ -14,7 +14,6 @@ import Sidebar from './Sidebar';
 import WorkspaceMenu from './WorkspaceMenu';
 import Toasts from './Toasts';
 const Picker = lazy(() => import('./CollectionPicker'));
-const PulpitSettings = lazy(() => import('../pulpits/SettingsDialog'));
 const Dialog = lazy(() =>
   import('../forms/FormDialog').then((module) => ({ default: module.FormDialog })),
 );
@@ -24,13 +23,12 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
     [ready, setReady] = useState(false);
   const [picker, setPicker] = useState<{ group: Collection; anchor: HTMLElement }>();
   const [modal, setModal] = useState<FormDialogData>();
-  const [pulpitSettings, setPulpitSettings] = useState<Page>();
   const [starBusy, setStarBusy] = useState(false),
     [formBusy, setFormBusy] = useState(false);
   const life = useRef(new AbortController()),
     pending = useRef<Promise<unknown>>(),
     refreshRequest = useRef<AbortController>();
-  const layout = useShellLayout();
+  const layout = useShellLayout(data.mode);
   const dataRef = useRef(data);
   dataRef.current = data;
   useEffect(() => {
@@ -51,8 +49,21 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
     const close = () => {
       setPicker(undefined);
       setModal(undefined);
-      setPulpitSettings(undefined);
     };
+    const settingsSaved = (event: Event) => {
+      const { name } = (event as CustomEvent<{ name: string }>).detail;
+      const key =
+        event.type === 'ancore:space-settings-saved' ? 'space_settings' : 'pulpit_settings';
+      setData((previous) =>
+        previous[key] ? { ...previous, [key]: { ...previous[key], name } } : previous,
+      );
+      if (key === 'pulpit_settings')
+        void refresh().catch(() => {
+          // A fresh navigation still reloads the collection when this background read fails.
+        });
+    };
+    window.addEventListener('ancore:space-settings-saved', settingsSaved);
+    window.addEventListener('ancore:pulpit-settings-saved', settingsSaved);
     document.addEventListener('ancore:before-navigate', wait);
     document.addEventListener('ancore:content-unloading', close);
     return () => {
@@ -61,6 +72,8 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
       refreshRequest.current?.abort();
       document.removeEventListener('ancore:before-navigate', wait);
       document.removeEventListener('ancore:content-unloading', close);
+      window.removeEventListener('ancore:space-settings-saved', settingsSaved);
+      window.removeEventListener('ancore:pulpit-settings-saved', settingsSaved);
     };
   }, []);
   useEffect(() => {
@@ -84,14 +97,10 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
       )
         return;
       const url = new URL(link.href, location.href);
-      const pulpit =
-        /^\/(?:workplaces\/[^/]+\/)?dashboards\/(?:manage\/)?[-a-zA-Z0-9_]+\/(?:edit|access)\/$/.test(
-          url.pathname,
-        );
       const filter = /^\/(?:workplaces\/[^/]+\/)?filters\/(?:manage\/)?\d+\/edit\/$/.test(
         url.pathname,
       );
-      if (url.origin !== location.origin || (!pulpit && !filter)) return;
+      if (url.origin !== location.origin || !filter) return;
       // Filter pages already open their own FormDialog; the shell handles links outside them.
       if (filter && link.closest('[data-react-screen]')) return;
       const workspace = /^\/workplaces\/([^/]+)\//.exec(url.pathname)?.[1];
@@ -110,11 +119,9 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
           messages: [],
         });
         if (life.current.signal.aborted) return;
-        if (filter) {
-          const dialog = (page.data as { modal?: FormDialogData }).modal;
-          if (!dialog?.filter_settings) throw new Error('Nie udało się otworzyć ustawień filtra.');
-          setModal(dialog);
-        } else setPulpitSettings(page);
+        const dialog = (page.data as { modal?: FormDialogData }).modal;
+        if (!dialog?.filter_settings) throw new Error('Nie udało się otworzyć ustawień filtra.');
+        setModal(dialog);
       })();
       pending.current = promise;
       void promise
@@ -313,17 +320,6 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
       {ready ? <Toasts initial={config.messages} /> : null}
       <div id="app-shell-modals" style={{ display: 'contents' }} />
       <Suspense fallback={null}>
-        {pulpitSettings ? (
-          <PulpitSettings
-            initial={pulpitSettings}
-            csrfToken={token}
-            hostId="app-shell-modals"
-            onClose={(changed) => {
-              flushSync(() => setPulpitSettings(undefined));
-              if (changed) void window.AncoreApp?.navigate(location.pathname + location.search);
-            }}
-          />
-        ) : null}
         {picker ? (
           <Picker
             collection={picker.group}

@@ -341,9 +341,14 @@ def global_search(request):
 
 @login_required
 def settings(request):
+    from spaces.services import visible_spaces, space_url
+    from workplaces.policy import module_enabled
+    spaces = visible_spaces(request).order_by('name', 'pk') if request.workplace and module_enabled(request.workplace, 'spaces') else []
+    settings_spaces = [{'name': space.name, 'url': space_url(request, space, '?view=settings')} for space in spaces]
     return render(request, 'dashboard/settings.html', {
         'current_account_avatar': account_avatar(request.user),
         'switch_accounts': _switch_account_context(request),
+        'settings_spaces': settings_spaces,
     })
 
 

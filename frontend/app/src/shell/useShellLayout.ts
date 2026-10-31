@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import { read, write } from './storage';
-export function useShellLayout() {
+export function useShellLayout(mode: string) {
+  const entitySettings = mode === 'space-settings' || mode === 'pulpit-settings';
   const [mobile, setMobile] = useState(innerWidth <= 767),
-    [collapsed, setCollapsed] = useState(
+    [workspaceCollapsed, setWorkspaceCollapsed] = useState(
       () => read<boolean>('ancoreSidebarCollapsed', false) === true,
     ),
+    [settingsCollapsed, setSettingsCollapsed] = useState(false),
     [opened, setOpened] = useState(false);
+  const collapsed = entitySettings ? settingsCollapsed : workspaceCollapsed;
   const [width, setWidth] = useState(() => {
     const saved = Number(read<number>('ancoreSidebarWidth', 272));
     return Number.isFinite(saved) && saved > 0 ? saved : 272;
@@ -15,6 +18,10 @@ export function useShellLayout() {
   const transition = useRef<ReturnType<typeof setTimeout>>();
   const max = Math.min(420, Math.max(220, viewport - 360));
   const clamped = Math.min(max, Math.max(220, width));
+  useEffect(() => {
+    // Each visit starts with readable section names without changing the Workspace preference.
+    if (!entitySettings) setSettingsCollapsed(false);
+  }, [entitySettings]);
   useEffect(() => {
     const update = () => {
       setMobile(innerWidth <= 767);
@@ -33,7 +40,7 @@ export function useShellLayout() {
       );
     };
   }, []);
-  useEffect(() => {
+  useLayoutEffect(() => {
     for (const target of [document.documentElement, document.body])
       target.classList.toggle('sidebar-collapsed', collapsed && !mobile);
     document.body.classList.toggle('sidebar-open', opened && mobile);
@@ -93,8 +100,11 @@ export function useShellLayout() {
         440,
       );
     }
-    setCollapsed(next);
-    write('ancoreSidebarCollapsed', next);
+    if (entitySettings) setSettingsCollapsed(next);
+    else {
+      setWorkspaceCollapsed(next);
+      write('ancoreSidebarCollapsed', next);
+    }
   }
   function persist(value: number) {
     const next = Math.min(max, Math.max(220, value));

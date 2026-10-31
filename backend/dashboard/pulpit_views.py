@@ -140,13 +140,26 @@ def editor_navigation_context(request, dashboard, section, management=False):
         suffix = f'{dashboard.slug}/' + entry.pop('suffix')
         entry['url'] = management_url(request, suffix) if management else app_url(request, suffix)
         entry['active'] = entry['key'] == section
-    return {
+    context = {
         'dashboard': dashboard, 'pulpit_editor_navigation': sections,
         'section_title': next(entry['label'] for entry in sections if entry['active']),
         'editor_url': sections[0]['url'], 'access_url': sections[2]['url'], 'settings_url': sections[1]['url'],
         'return_url': management_url(request) if management else dashboard.url,
         'settings_return_url': management_url(request) if management else dashboard.url,
     }
+    if section in {'settings', 'access'}:
+        from .pulpit_sharing import payload, team_url
+        context.update({
+            'sidebar_mode': 'pulpit-settings',
+            'pulpit_settings_sidebar': {
+                'name': dashboard.name, 'tab': section,
+                'links': [{key: entry[key] for key in ('key', 'label', 'icon', 'url')}
+                          for entry in sections if entry['key'] in {'settings', 'access'}],
+            },
+            'settings_team': payload(request, dashboard),
+            'team_url': team_url(request, dashboard),
+        })
+    return context
 
 
 def editor_context(request, dashboard, management=False):
@@ -227,6 +240,9 @@ def edit(request, pk=None, management=False):
             from .pulpit_frontend import pulpit_form_payload
             return JsonResponse({'redirect': target, 'form': pulpit_form_payload(
                 DashboardSettingsForm(instance=dashboard, request=request))})
+        if editing_settings and request.headers.get('X-Pulpit-Modal') != 'true':
+            suffix = f'{dashboard.slug}/edit/'
+            target = management_url(request, suffix) if management else app_url(request, suffix)
         return saved_response(request, target)
     if source:
         return render(request, 'dashboard/pulpits/edit.html', {
@@ -252,7 +268,11 @@ def access(request, pk, management=False):
         dashboard.revision += 1
         dashboard.save()
         form.save_m2m()
-        return saved_response(request, management_url(request) if management else dashboard_url(request, dashboard))
+        target = management_url(request) if management else dashboard_url(request, dashboard)
+        if not getattr(request, '_react_api', False) and request.headers.get('X-Pulpit-Modal') != 'true':
+            suffix = f'{dashboard.slug}/access/'
+            target = management_url(request, suffix) if management else app_url(request, suffix)
+        return saved_response(request, target)
     return render(request, 'dashboard/pulpits/edit.html', {
         **editor_navigation_context(request, dashboard, 'access', management),
         'form': form, 'action': request.get_full_path(),

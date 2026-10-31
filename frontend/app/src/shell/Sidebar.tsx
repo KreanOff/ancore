@@ -48,6 +48,21 @@ export default function Sidebar({
     keyboard: boolean;
   }>();
   const [category, setCategory] = useState(settingsCategory);
+  const [spaceSection, setSpaceSection] = useState(() => location.hash.slice(1));
+  useEffect(() => {
+    const sync = () => setSpaceSection(location.hash.slice(1));
+    sync();
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    window.addEventListener('ancore:space-settings-tab', sync);
+    window.addEventListener('ancore:pulpit-settings-tab', sync);
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener('ancore:space-settings-tab', sync);
+      window.removeEventListener('ancore:pulpit-settings-tab', sync);
+    };
+  }, [data.url]);
   const favorites = useFavorites(data, api, token, updateFavorites);
   const actions = {
     openForm: (url: string) => {
@@ -158,7 +173,38 @@ export default function Sidebar({
     </a>
   );
   let management: ReactNode = null;
-  if (data.mode === 'settings')
+  const entitySettings =
+    data.mode === 'space-settings'
+      ? data.space_settings
+      : data.mode === 'pulpit-settings'
+        ? data.pulpit_settings
+        : null;
+  if (entitySettings)
+    management = (
+      <>
+        {entitySettings.links.map((item) => {
+          const current =
+            (entitySettings.links.some((link) => link.key === spaceSection)
+              ? spaceSection
+              : entitySettings.tab) === item.key;
+          return (
+            <a
+              key={item.key}
+              href={item.url}
+              data-space-settings-tab={data.mode === 'space-settings' ? item.key : undefined}
+              data-pulpit-settings-tab={data.mode === 'pulpit-settings' ? item.key : undefined}
+              className={`nav-link sidebar-primary-link sidebar-primary-link--standalone${current ? ' active' : ''}`}
+              aria-current={current ? 'page' : undefined}
+              title={item.label}
+            >
+              <Icon name={item.icon} className="nav-icon" />
+              <span className="nav-label">{item.label}</span>
+            </a>
+          );
+        })}
+      </>
+    );
+  else if (data.mode === 'settings')
     management = (
       <>
         <h2 className="sidebar-menu-section-title">Ustawienia Ancore</h2>

@@ -5,10 +5,10 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261017-page-padding-15px">
 <link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-{% if pulpits_management_mode or pulpits_directory_mode %}
+{% if pulpits_management_mode or pulpits_directory_mode or sidebar_mode == 'pulpit-settings' %}
 <link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261017-layout-parity">
 {% endif %}
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261029-summary-scrollbars">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261031-pulpit-settings">
 <link rel="stylesheet" href="{% static 'css/components/pulpits.css' %}?v=20261023-avatar-column">
 <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261023-pulpit-sharing">
 <script src="{% static 'js/pulpits.js' %}?v=20261022-dashboard-preferences" defer></script>

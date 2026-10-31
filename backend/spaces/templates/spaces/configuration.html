@@ -1,4 +1,84 @@
 {% extends 'spaces/base.html' %}
-{% block work_title %}Konfiguracja przestrzeni{% endblock %}
-{% block work_heading %}<a href="{{ space_url }}?view=settings" class="tasks-issue-close" aria-label="Wróć do ustawień" title="Wróć do ustawień"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">Statusy, typy i pola</h1>{% endblock %}
-{% block work_content %}<form method="post" class="work-configuration">{% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}"><p>Konfiguracja: {{ config.name }}{% if config.shared %} · Wspólna dla {{ config.spaces.count }} przestrzeni. Zapis zmieni wszystkie korzystające z niej przestrzenie.{% else %} · Niezależna konfiguracja przestrzeni.{% endif %}</p>{% for error in errors %}<p class="tasks-modal__errors" role="alert">{{ error }}</p>{% endfor %}{% for group in sets %}<section class="work-panel"><h2>{{ group.title }}</h2><p class="work-caption">Aby dodać pozycję, wypełnij pusty wiersz. Kolejny pojawi się po zapisie.</p>{{ group.formset.management_form }}{{ group.formset.non_form_errors }}{% for form in group.formset %}<div class="work-configuration-row">{% for field in form %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{% if field.name == 'DELETE' %}Usuń{% else %}{{ field.label }}{% endif %}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</div>{% endfor %}</section>{% endfor %}<div class="work-toolbar"><button type="submit" class="btn btn-primary">Zapisz konfigurację</button><a class="btn btn-secondary" href="{{ space_url }}?view=settings">Anuluj</a></div></form>{% endblock %}
+{% block work_title %}Ustawienia przestrzeni · {{ space.name }}{% endblock %}
+{% block work_page_class %} space-settings-page{% endblock %}
+{% block work_heading %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">Ustawienia przestrzeni · {{ space.name }}</h1>{% endblock %}
+{% block work_content_class %} space-settings-panel{% endblock %}
+{% block work_content %}
+<div class="tasks-modal__body work-configuration">
+    {% for group in sets %}
+    {% if group.key == configuration_section %}
+    <section class="work-configuration-section" data-configuration-section="{{ group.key }}">
+        <div class="workplace-edit-modal__team-toolbar">
+            {% if group.add_url %}<a href="{{ group.add_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>{{ group.add_label }}</a>{% endif %}
+        </div>
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable work-configuration-sheet work-configuration-sheet--{{ group.key }}" role="region" aria-label="{{ group.title }} — tabela" tabindex="0">
+            <section class="tasks-directory-group" role="table" aria-label="{{ group.title }}">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader" aria-label="Działania"></span>
+                    {% for header in group.headers %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="{{ header.key }}" role="columnheader"><i data-icon="{{ header.icon }}" aria-hidden="true"></i>{{ header.label }}</span>{% endfor %}
+                </div>
+                <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+                    {% for row in group.rows %}
+                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"></span>
+                        <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
+                            <div class="documents-item-actions">
+                                <button type="button" class="tasks-project-sheet__edit-button" popovertarget="configuration-menu-{{ group.key }}-{{ row.index }}" aria-label="Działania: {{ row.label }}"><i data-icon="menu" aria-hidden="true"></i></button>
+                                <div id="configuration-menu-{{ group.key }}-{{ row.index }}" class="tasks-section-menu documents-item-menu" popover="auto">
+                                    <div class="documents-menu-actions">
+                                        <a href="{{ row.edit_url }}" class="tasks-project-menu-button"><i data-icon="pencil" aria-hidden="true"></i>Edytuj</a>
+                                        <a href="{{ row.remove_url }}" class="tasks-project-menu-button"><i data-icon="trash-2" aria-hidden="true"></i>Usuń</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% for cell in row.cells %}<span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="{{ cell.key }}" role="cell" title="{{ cell.value }}">{% if cell.key == 'icon' %}<span class="tasks-issue-type" aria-label="Ikona: {{ cell.value }}"><i data-icon="{{ cell.icon }}" aria-hidden="true"></i></span>{% else %}{{ cell.value }}{% endif %}</span>{% endfor %}
+                    </div>
+                    {% empty %}<p class="workplace-team__hint">{{ group.empty_label }}</p>{% endfor %}
+                </div>
+            </section>
+        </div>
+    </section>
+    {% endif %}
+    {% endfor %}
+</div>
+<footer class="tasks-modal__footer"><a class="btn btn-secondary" href="{{ space_url }}">Zamknij</a></footer>
+{% endblock %}
+{% block page_modals %}
+{% if editor and editor_form %}
+<div class="tasks-modal app-modal-panel{% if editor.remove %} app-modal-panel--compact{% endif %} tasks-form-modal work-modal is-open" role="dialog" aria-modal="true" aria-labelledby="configuration-editor-title">
+    <div class="tasks-modal__dialog">
+        <form method="post" action="{{ configuration_url }}" class="tasks-modal__form" novalidate>
+            {% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}">
+            <input type="hidden" name="configuration_section" value="{{ editor.section }}"><input type="hidden" name="configuration_index" value="{{ editor.index }}"><input type="hidden" name="configuration_remove" value="{% if editor.remove %}1{% else %}0{% endif %}">
+            {% for group in sets %}
+                {{ group.formset.management_form }}
+                {% for form in group.formset %}
+                    {% if group.key == editor.section and forloop.counter0 == editor.index and not editor.remove %}
+                        {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+                    {% else %}
+                        {% for field in form %}
+                            {% if field.name == 'DELETE' and group.key == editor.section and forloop.parentloop.counter0 == editor.index and editor.remove %}<input type="hidden" name="{{ field.html_name }}" value="on">
+                            {% elif field.field.widget.input_type == 'checkbox' %}{% if field.value %}<input type="hidden" name="{{ field.html_name }}" value="on">{% endif %}
+                            {% else %}{{ field.as_hidden }}{% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+            <header class="tasks-modal__header"><h2 id="configuration-editor-title">{{ editor_title }}</h2><a href="{{ configuration_url }}#{{ editor.section }}" class="tasks-modal__close" aria-label="Zamknij"></a></header>
+            <div class="tasks-modal__body documents-form resources-form app-form-layout">
+                {% for error in errors %}<p class="tasks-modal__errors app-form-wide" role="alert">{{ error }}</p>{% endfor %}
+                {% for group in sets %}
+                    {% if group.formset.non_form_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ group.formset.non_form_errors }}</div>{% endif %}
+                    {% for form in group.formset %}{% if form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ form.non_field_errors }}</div>{% endif %}{% endfor %}
+                {% endfor %}
+                {% if editor.remove %}<p class="app-form-wide">Czy na pewno chcesz usunąć „{{ editor_form.label.value }}”?</p>
+                {% else %}{% for field in editor_fields %}{% include 'core/includes/modal_form_field.html' with field=field only %}{% endfor %}{% endif %}
+            </div>
+            <footer class="tasks-modal__footer"><a href="{{ configuration_url }}#{{ editor.section }}" class="btn btn-secondary">Anuluj</a><button type="submit" class="tasks-modal__submit">{% if editor.remove %}Usuń{% else %}Zapisz{% endif %}</button></footer>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
