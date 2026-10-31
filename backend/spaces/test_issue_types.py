@@ -3,11 +3,14 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 
+from core.frontend import form_payload
+from dashboard.filter_forms import BasicTaskSearchForm
 from .models import SpaceTask, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
-from .defaults import TEMPLATES, template_settings
+from .defaults import TEMPLATES, issue_type_icon, template_settings
 from .models import WorkItem
 
 
@@ -169,3 +172,41 @@ class IssueTypeTests(TestCase):
             with self.assertRaises(RuntimeError):
                 self.client.post(self.detail_url(), self.detail_data(), HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(WorkItem.objects.get(pk=self.item.pk).work_type, 'task')
+
+    def test_configured_icons_reach_tasks_filters_forms_summary_and_search(self):
+        config = self.space.configuration
+        config.settings['types'].append({'key': 'review', 'label': 'Przegląd', 'icon': 'shield-check', 'description': 'Kontrola jakości'})
+        config.save()
+        self.item.work_type = 'review'
+        self.item.save(update_fields=['work_type'])
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.type_icon, 'shield-check')
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                base = self.url(self.space.slug + '/', app='space', scoped=scoped)
+                api = self.url('v1/page/', app='api', scoped=scoped)
+                response = self.client.get(api, {'url': base + '?view=list'})
+                self.assertEqual(response.status_code, 200)
+                data = response.json()['data']
+                self.assertEqual(data['type_icons']['review'], 'shield-check')
+                self.assertEqual(data['items'][0]['type_icon'], 'shield-check')
+                summary = self.client.get(api, {'url': base}).json()['data']['summary']
+                self.assertEqual(next(row for row in summary['types'] if row['key'] == 'review')['icon'], 'shield-check')
+                detail = self.client.get(self.detail_url(scoped))
+                fields = form_payload(detail.context['form'])['fields']
+                work_type = next(field for field in fields if field['field_name'] == 'work_type')
+                self.assertEqual(next(choice for choice in work_type['choices'] if choice['value'] == 'review')['icon'], 'shield-check')
+                filter_form = BasicTaskSearchForm(request=detail.wsgi_request)
+                type_field = next(field for field in form_payload(filter_form)['fields'] if field['field_name'] == 'type')
+                self.assertEqual(next(choice for choice in type_field['choices'] if choice['value'] == 'review')['icon'], 'shield-check')
+                self.assertContains(detail, 'data-ancore-option-icon="shield-check"')
+        search = self.client.get(reverse('global_search'), {'q': self.task.title}).json()
+        results = [row for group in search['groups'] for row in group['results']]
+        self.assertEqual(next(row for row in results if row['title'] == self.task.title)['icon'], 'shield-check')
+
+    def test_icon_resolver_keeps_legacy_defaults_and_rejects_untrusted_names(self):
+        for key, expected in [('bug', 'circle-alert'), ('task', 'square-check'), ('custom', 'shapes')]:
+            for configured in (None, '', 'not-in-catalog', '<svg onload="alert(1)">', ['target']):
+                with self.subTest(key=key, configured=configured):
+                    self.assertEqual(issue_type_icon(key, configured), expected)
+            self.assertEqual(issue_type_icon(key, 'target'), 'target')

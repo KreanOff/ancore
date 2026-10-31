@@ -150,7 +150,7 @@ export function ItemFiltering({
   data,
   url,
 }: {
-  data: Pick<DetailData, 'filters' | 'filter_options' | 'summary_filter_label'>;
+  data: Pick<DetailData, 'filters' | 'filter_options' | 'type_icons' | 'summary_filter_label'>;
   url: string;
 }) {
   const [field, setField] = useState<(typeof FILTERS)[number] | null>(null);
@@ -252,7 +252,14 @@ export function ItemFiltering({
                     change({ [field.key]: value });
                   }}
                 >
-                  <span>{label}</span>
+                  {field.key === 'work_type' ? (
+                    <span className="tasks-issue-type">
+                      <Icon name={data.type_icons?.[value] || 'shapes'} />
+                      <span>{label}</span>
+                    </span>
+                  ) : (
+                    <span>{label}</span>
+                  )}
                   <Icon name="check" />
                 </button>
               ))}

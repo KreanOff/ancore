@@ -41,7 +41,7 @@ class BasicTaskSearchForm(forms.Form):
                 for row in space.configuration.settings.get(key, []):
                     choices.setdefault(row['key'], row['label'])
                     visuals[field].setdefault(row['key'],
-                        {'icon': issue_type_icon(row['key'])} if field == 'type' else
+                        {'icon': issue_type_icon(row['key'], row.get('icon'))} if field == 'type' else
                         {'template': 'core/includes/select_status.html', 'context': {'category': row['category']}})
             self.fields[field].choices = list(choices.items())
         people = list(workplace_people(request.workplace, request.user))

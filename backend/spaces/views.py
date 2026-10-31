@@ -83,7 +83,7 @@ def issue_type_filters(request, space=None):
     options = {}
     for config in configurations:
         for row in config['types']:
-            options.setdefault(row['key'], {**row, 'icon': issue_type_icon(row['key'])})
+            options.setdefault(row['key'], {**row, 'icon': issue_type_icon(row['key'], row.get('icon'))})
     return list(options.values()), request.GET.get('work_type', '').strip()[:40]
 
 

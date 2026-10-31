@@ -159,6 +159,7 @@ export interface DetailData {
   };
   summary_filter_label: string;
   filter_options: Record<string, [string, string][]>;
+  type_icons?: Record<string, string>;
   members: {
     id: number;
     name: string;

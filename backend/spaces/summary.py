@@ -157,7 +157,7 @@ def space_summary(request, space, items, now=None):
 
     total = items.count()
     type_counts = dict(items.order_by().values_list('work_type').annotate(count=Count('pk')))
-    types = [{**row, 'icon': issue_type_icon(row['key']), 'count': type_counts.get(row['key'], 0),
+    types = [{**row, 'icon': issue_type_icon(row['key'], row.get('icon')), 'count': type_counts.get(row['key'], 0),
               'percent': round(type_counts.get(row['key'], 0) * 100 / total) if total else 0,
               'url': list_url(work_type=row['key'])}
              for row in space.configuration.settings['types']]

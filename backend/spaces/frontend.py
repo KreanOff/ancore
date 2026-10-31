@@ -101,6 +101,7 @@ def detail_page(request, context):
         'filters': {key: request.GET.get(key, '') for key in ('q', 'work_type', 'assignee', 'team', 'status', 'priority', 'summary')},
         'summary_filter_label': context.get('summary_filter_label', ''),
         'sort': item_sort(request, context['view']),
+        'type_icons': {row['key']: row['icon'] for row in context.get('type_options', [])},
         'filter_options': {
             'work_type': [['', 'Wszystkie typy']] + [[row['key'], row['label']] for row in context.get('type_options', [])],
             'assignee': [['', 'Wszyscy wykonawcy'], ['me', 'Przypisane do mnie'], ['unassigned', 'Nieprzypisane']] + [[str(person.pk), person.get_full_name() or person.email] for person in context.get('assignee_options', [])],

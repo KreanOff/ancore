@@ -293,7 +293,9 @@ class WorkItem(models.Model):
 
     @property
     def type_icon(self):
-        return issue_type_icon(self.work_type)
+        types = self.space.configuration.settings.get('types', []) if self.space_id else []
+        configured = next((row.get('icon') for row in types if row['key'] == self.work_type), None)
+        return issue_type_icon(self.work_type, configured)
 
     class Meta:
         ordering = ['rank', 'pk']

@@ -23,10 +23,25 @@ ISSUE_TYPE_ICONS = {
     'campaign': 'megaphone', 'content': 'file-text', 'candidate': 'user-round',
     'interview': 'messages-square', 'request': 'ticket', 'incident': 'siren',
 }
+ISSUE_TYPE_ICON_CHOICES = [
+    ('square-check', 'Zadanie'), ('circle-alert', 'Błąd'), ('book-open', 'Historyjka'),
+    ('zap', 'Epik'), ('megaphone', 'Kampania'), ('file-text', 'Materiał'),
+    ('user-round', 'Osoba'), ('messages-square', 'Rozmowa'), ('ticket', 'Zgłoszenie'),
+    ('siren', 'Incydent'), ('shapes', 'Kształty'), ('lightbulb', 'Pomysł'),
+    ('target', 'Cel'), ('rocket', 'Wdrożenie'), ('wrench', 'Usprawnienie'),
+    ('flask-conical', 'Eksperyment'), ('shield-check', 'Bezpieczeństwo'),
+    ('list-checks', 'Lista kontrolna'), ('calendar', 'Wydarzenie'),
+    ('flag', 'Kamień milowy'), ('briefcase', 'Sprawa'), ('palette', 'Projekt graficzny'),
+    ('chart-column', 'Raport'), ('settings', 'Konfiguracja'),
+]
+ISSUE_TYPE_ICON_VALUES = frozenset(icon for icon, _ in ISSUE_TYPE_ICON_CHOICES)
 
 
-def issue_type_icon(key):
-    return ISSUE_TYPE_ICONS.get(key, 'shapes')
+def issue_type_icon(key, configured_icon=None):
+    """Resolve a type's optional icon through the shared, trusted icon catalog."""
+    if isinstance(configured_icon, str) and configured_icon in ISSUE_TYPE_ICON_VALUES:
+        return configured_icon
+    return ISSUE_TYPE_ICONS.get(key, 'shapes') if isinstance(key, str) else 'shapes'
 
 
 def template_settings(template='tasks'):

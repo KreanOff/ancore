@@ -15,7 +15,7 @@ from tasks.models import TaskTag
 from core.work_logs import TimeLogForm
 from .models import SpaceTask, SpaceTaskWorkLog
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
-from .defaults import KINDS, MANAGEMENT, TEMPLATES
+from .defaults import KINDS, MANAGEMENT, TEMPLATES, ISSUE_TYPE_ICON_CHOICES, issue_type_icon
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, transition_allowed, visible_items, visible_spaces
@@ -177,6 +177,7 @@ class ItemForm(StyledForm):
         if item:
             self.initial['tags'] = item.task.tags.all()
         self.fields['work_type'].choices = [(t['key'], t['label']) for t in config['types']]
+        self.fields['work_type'].widget.type_icons = {t['key']: t.get('icon') for t in config['types']}
         self.fields['assignee'].queryset = workplace_people(request.workplace)
         self.fields['team'].queryset = teams_for(request).filter(spaces=space).select_related('workplace')
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
@@ -386,11 +387,48 @@ class StatusForm(StyledForm):
         self.fields['transitions'].choices = [(s['key'], s['label']) for s in statuses]
 
 
-class TypeForm(StyledForm):
+class ConfigurationLabelForm(StyledForm):
     key = forms.RegexField(label='Klucz typu', regex=r'^[a-z][a-z0-9_]{0,39}$', max_length=40)
     label = forms.CharField(label='Nazwa typu', max_length=80)
 
 
-class CustomFieldForm(TypeForm):
+class TypeForm(ConfigurationLabelForm):
+    icon = forms.ChoiceField(label='Ikona', required=False,
+                             choices=[('', 'Domyślna dla typu'), *ISSUE_TYPE_ICON_CHOICES],
+                             widget=VisualSelect)
+    description = forms.CharField(label='Opis', required=False, max_length=500,
+                                  widget=forms.Textarea(attrs={'rows': 3}),
+                                  help_text='Wyjaśnij, kiedy używać tego typu zgłoszenia.')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.is_bound:
+            # Older clients still submit only key/label. Explicit empty values
+            # clear metadata; an omitted field keeps its previously saved value.
+            self.data = self.data.copy()
+            for name in ('icon', 'description'):
+                if self.add_prefix(name) not in self.data and name in self.initial:
+                    self.data[self.add_prefix(name)] = self.initial[name]
+        key = self.data.get(self.add_prefix('key'), '') if self.is_bound else self.initial.get('key', '')
+        self.fields['icon'].widget.visuals = {
+            '': {'icon': issue_type_icon(key)},
+            **{icon: {'icon': icon} for icon, _ in ISSUE_TYPE_ICON_CHOICES},
+        }
+
+    def clean(self):
+        data = super().clean()
+        # Keep old JSON rows unchanged when their optional metadata is empty.
+        for name in ('icon', 'description'):
+            if not data.get(name):
+                data.pop(name, None)
+        return data
+
+
+class CustomFieldForm(ConfigurationLabelForm):
     type = forms.ChoiceField(label='Rodzaj pola', choices=[('text', 'Tekst'), ('number', 'Liczba'), ('date', 'Data')], initial='text')
     required = forms.BooleanField(label='Wymagane', required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['key'].label = 'Klucz pola'
+        self.fields['label'].label = 'Nazwa pola'
