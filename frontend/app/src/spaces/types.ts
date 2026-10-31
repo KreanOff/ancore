@@ -112,6 +112,7 @@ export interface Summary {
   }[];
 }
 export interface DetailData {
+  reports: import('./ReportsView').ReportsData | null;
   team: import('../tasks/types').Team;
   team_url: string;
   space: Space;

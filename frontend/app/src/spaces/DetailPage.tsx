@@ -16,6 +16,7 @@ import { SpaceHeader } from './SpaceHeader';
 import { dateLabel, type DetailData, type Item, type Sprint, type Status } from './types';
 import { useItemMotion } from './useItemMotion';
 import Timeline from './TimelineView';
+import ReportsView from './ReportsView';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
     [modal, setModal] = useState<FormDialogData | null>((initial.data as DetailData).modal),
@@ -765,47 +766,24 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             />
           ) : null}
           {data.view === 'reports' ? (
-            <div className="work-overview">
-              <section className="work-panel">
-                <h2>Postęp pracy</h2>
-                <p>
-                  {data.stats.closed} z {data.stats.all} zadań zakończonych · {data.stats.overdue}{' '}
-                  po terminie
-                </p>
-                {data.status_counts.map((status) => (
-                  <div className="work-report-row" key={status.key}>
-                    <span>{status.label}</span>
-                    <progress
-                      max={data.stats.all || 1}
-                      value={status.count}
-                      aria-label={status.label}
-                    >
-                      {status.count}
-                    </progress>
-                    <span>{status.count}</span>
-                  </div>
-                ))}
-              </section>
-              {data.space.template === 'scrum' ? (
-                <section className="work-panel">
-                  <h2>Sprinty</h2>
-                  {data.sprints.length ? (
-                    data.sprints.map((sprint) => (
-                      <div className="work-member" key={sprint.id}>
-                        <span>{sprint.name}</span>
-                        <span>{sprint.state_label}</span>
-                        <span>
-                          {sprint.finished_count} / {sprint.visible_count} dostępnych zadań
-                          zakończonych
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p>Raporty pojawią się po utworzeniu sprintów.</p>
-                  )}
-                </section>
-              ) : null}
-            </div>
+            <ReportsView
+              data={data}
+              url={currentUrl.current}
+              refresh={async () => {
+                const page = await pageRequest<Page>(
+                  initial.api_url,
+                  currentUrl.current,
+                  csrfToken,
+                  life.current.signal,
+                );
+                if (
+                  page.type !== 'space-detail' ||
+                  (page.data as DetailData).space.id !== data.space.id
+                )
+                  throw new Error('Nie udało się odświeżyć raportu. Spróbuj ponownie.');
+                if (!life.current.signal.aborted) setData(page.data as DetailData);
+              }}
+            />
           ) : null}
           {data.view === 'settings' || settingsOpen ? (
             <SettingsDialog

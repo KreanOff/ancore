@@ -38,6 +38,7 @@ from .services import app_url, can_manage_spaces, decorate_directory_spaces, man
 from .summary import filter_summary_items, space_summary
 from .item_query import item_sort, order_items
 from .list_window import group_limit, list_url, list_window, more_url, timeline_more_url
+from .reports import report_csv, space_reports
 
 
 def space_object(request, pk):
@@ -237,13 +238,14 @@ def detail_context(request, space, view):
             type_filter, team, *[summary_filters[key] for key in ('assignee_filter', 'status_filter', 'priority_filter', 'summary_filter')],
         )),
     }
-    if view in {'overview', 'tags'}:
+    if view in {'overview', 'tags', 'reports'}:
         return {
             **base_context(request), 'space': space, 'space_url': base, 'view': view,
             'navigation': [{'key': k, 'label': l, 'icon': icon, 'url': base + ('?view=' + k if k != 'overview' else '')} for k, l, icon in navigation],
             'can_manage': manage_space(request, space),
             'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(),
             'create_item_url': base + 'items/create/',
+            **({**filter_context, 'reports': space_reports(request, space, items, now)} if view == 'reports' else {}),
             **({**filter_context, 'summary': {**space_summary(request, space, items, now), 'dashboard': dashboard_payload(request, space)}} if view == 'overview' else {}),
         }
     active_sprint = space.sprints.filter(state='active').first()
@@ -375,6 +377,9 @@ def detail(request, pk):
         return render(request, 'spaces/tags.html', context, status=status)
     if request.method == 'POST':
         raise Http404
+    if request.GET.get('view') == 'reports' and request.GET.get('report_export') == 'csv':
+        items, _ = filtered_space_items(request, space, visible_items(request).filter(space=space), timezone.now())
+        return report_csv(request, space, items)
     return render(request, 'spaces/detail.html', detail_context(request, space, request.GET.get('view', 'overview')))
 
 

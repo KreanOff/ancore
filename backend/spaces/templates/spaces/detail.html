@@ -21,8 +21,7 @@
     <section class="work-panel"><div class="work-panel-heading"><h2>Członkowie i role</h2>{% if can_manage and space.visibility == 'private' %}<a class="btn btn-secondary" href="{{ member_url }}" data-work-open>Udostępnij / zmień rolę</a>{% endif %}</div>
     {% if space.visibility == 'public' %}<p>Dostęp mają aktywni członkowie Workspace.</p>{% else %}<p>{{ space.private_owner.get_full_name }} · Właściciel</p>{% for member in members %}<div class="work-member"><span>{{ member.user.get_full_name|default:member.user.email }}</span><span>{{ member.get_role_display }}</span>{% if can_manage %}<form method="post" action="{{ member_url }}{{ member.pk }}/remove/">{% csrf_token %}<button class="btn btn-secondary" type="submit">Odbierz dostęp</button></form>{% endif %}</div>{% endfor %}{% endif %}</section></div>
 {% elif view == 'reports' %}
-    <div class="work-overview"><section class="work-panel"><h2>Postęp pracy</h2><p>{{ stats.closed }} z {{ stats.all }} zadań zakończonych · {{ stats.overdue }} po terminie</p>{% for status in status_counts %}<div class="work-report-row"><span>{{ status.label }}</span><progress max="{{ stats.all|default:1 }}" value="{{ status.count }}" aria-label="{{ status.label }}">{{ status.count }}</progress><span>{{ status.count }}</span></div>{% endfor %}</section>
-    {% if space.template == 'scrum' %}<section class="work-panel"><h2>Sprinty</h2>{% for sprint in sprints %}<div class="work-member"><span>{{ sprint.name }}</span><span>{{ sprint.get_state_display }}</span><span>{{ sprint.finished_count }} / {{ sprint.visible_count }} dostępnych zadań zakończonych</span></div>{% empty %}<p>Raporty pojawią się po utworzeniu sprintów.</p>{% endfor %}</section>{% endif %}</div>
+    {% include 'spaces/reports.html' %}
 {% else %}
 
     {% if view == 'list' %}{% include 'spaces/task_list.html' with show_work_metadata=True %}

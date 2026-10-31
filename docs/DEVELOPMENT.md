@@ -1,5 +1,32 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Raporty Przestrzeni (30.10.2026)
+
+Zakładka Raporty ma pełne agregaty, zakresy 7/30/90 dni, filtry, trend z tabelą,
+obciążenie wykonawców, priorytety, zaległe zadania, bieżącą realizację sprintów
+i eksport CSV. Semantykę okresu, ostatniego zakończenia, czasu i dostępu
+opisują [Raporty przestrzeni](SPACES.md#raporty-przestrzeni).
+
+Przeszło 95 testów Django na oddzielnych bazach PostgreSQL przez
+`scripts/run_tests.py`: `spaces.test_reports` (11 nowych), `spaces.test_summary`,
+`spaces.test_independent_tasks`, `spaces.test_urls`, `core.test_frontend`,
+`spaces.test_item_query` i `spaces.test_task_owner_membership`. Obejmują pełny
+zakres ponad 100 zadań, prywatnych rodziców/podzadania, cofnięcie dostępu,
+zgodność filtrów i CSV, granice dni, ponowne otwarcie i czas przy zmianie DST.
+Przeszły też 252 testy frontendu (6 nowych), TypeScript i build produkcyjny,
+formatowanie zmienionych plików TS, Django check, indeks kodu i diff.
+
+Chrome/Playwright na tymczasowej bazie sprawdził dane, filtry okresu/sprintu/
+wykonawcy, zawężanie wykresami, tabelę, pobranie CSV, odświeżenie po błędzie 503,
+puste wyniki i niedostępny sprint, otwarcie zadania/powrót, ponowne wejście,
+zwykły/scoped adres oraz szerokości 1440/1024/768/390/320px bez przepełnienia.
+Sprawdzono klawiaturę/Escape/fokus selektora, kolory kategorii statusów,
+referencyjne Podsumowanie przy 1440/390px i pierwszy render bez JavaScriptu
+z filtrowaniem oraz tabelą przy 1440/390px. Brak nieoczekiwanych błędów
+JavaScriptu i konsoli; testowy błąd 503 był celowo wywołany.
+Plugin Browser był niedostępny; użyto lokalnego Playwright i Chrome.
+Safari, Firefox oraz wdrożenia produkcyjnego nie testowano.
+
 ## Dziewięć pól podzadania (30.10.2026)
 
 Tworzenie i edycja korzystają z `SubtaskForm`: Tytuł, Opis, Status,

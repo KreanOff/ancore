@@ -1,5 +1,40 @@
 # Przestrzenie i zespoły
 
+## Raporty przestrzeni
+
+Zakładka `?view=reports` (również scoped) pokazuje bieżący stan wszystkich
+dostępnych zadań oraz aktywność z ostatnich 7, 30 lub 90 dni. Agregaty
+`backend/spaces/reports.py` korzystają z pełnego zakresu `visible_items`,
+ograniczonego właścicielem danych Workspace, aktywnym Workspace i dostępem
+do zadania oraz wszystkich jego rodziców. Liczniki nie zależą od limitu
+wierszy Listy zadań. Zadania główne i dostępne podzadania liczą się osobno.
+
+Stan bieżący obejmuje zakończenie, otwarte zadania, terminy, brak wykonawcy,
+punkty i brak estymacji. Rozkłady statusów, priorytetów, obciążenia wykonawców
+i sprintów opisują aktualne przypisania. Priorytety dotyczą otwartych zadań.
+Lista opóźnień pokazuje dziesięć najstarszych terminów wraz z pełnym licznikiem
+i odnośnikami do zadań. Sprinty pokazują obecnie przypisane dostępne zadania
+oraz ukończone punkty; nie są historycznym pomiarem zobowiązania sprintu.
+
+Okres zaczyna się o północy pierwszego dnia w strefie aplikacji i kończy
+w chwili odczytu. Wykres i tabela pokazują utworzenia oraz ostatnie zakończenia
+zadań nadal zamkniętych. Ponowne otwarcie usuwa zadanie z tej liczby; nie jest
+to niezmienna historia przejść statusu. Czas pracy obejmuje części wpisów
+dziennika pokrywające się z okresem, przycięte do jego granic i chwili odczytu.
+Wpisy przez północ są dzielone na lokalne dni, a czas liczony w UTC, również
+przy zmianie czasu letniego i zimowego. W obciążeniu jest przypisany do aktualnego
+wykonawcy zadania, a nie autora wpisu czasu. Wybór okresu zmienia aktywność,
+ale nie ogranicza bieżącego stanu do zadań utworzonych w tym okresie.
+
+Filtry `report_period` i `report_sprint` (wszystkie, bez sprintu, konkretny
+sprint) współpracują ze wspólnymi filtrami zadań. Niewłaściwy lub obcy sprint
+daje pusty wynik z komunikatem, bez rozszerzenia zakresu. Adresy filtrów
+zachowują kontekst Workspace. Eksport `report_export=csv` pobiera pełny
+bieżący przefiltrowany zakres, również powyżej 100 zadań; ponownie sprawdza
+dostęp. Plik CSV używa UTF-8 z BOM, separatora średnika i zabezpiecza tekst
+mogący zostać zinterpretowany przez arkusz jako formuła. Eksport jest odczytem,
+nie zapisuje konfiguracji raportu ani kopii danych na serwerze.
+
 ## Okno ustawień przestrzeni
 
 „Ustawienia przestrzeni” otwiera wspólne duże okno `app-modal-panel`, zgodne
@@ -611,7 +646,8 @@ Wspólne `core.task_files` usuwa prywatny plik po ostatnim odwołaniu
 
 To wspólny model pracy inspirowany Jira, bez integracji z usługą Atlassian.
 Szablon obsługowy zapewnia kolejkę i formularze, bez portalu klientów, SLA
-czy obsługi poczty. Raporty pokazują aktualny postęp, bez burndown i velocity.
+czy obsługi poczty. Raporty obejmują aktualny postęp, aktywność, czas pracy,
+obciążenie, sprinty i CSV. Nie odtwarzają historycznego burndown ani velocity.
 Automatyzacje, zależności na osi czasu oraz rozszerzone schematy uprawnień
 nie są częścią tej wersji. Klucz, szablon i sposób zarządzania istniejącej
 przestrzeni są zablokowane w formularzu — ich zmiana wymaga osobnej migracji

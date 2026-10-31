@@ -208,6 +208,22 @@ resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
 „Na stronie”. Sprint zawierający wyłącznie ukończone zadania pokazuje
 „Wszystkie zadania w tym sprincie są ukończone.”.
 
+## Raporty Przestrzeni
+
+Zakładka Raporty zachowuje nagłówek i nawigację Przestrzeni. Lokalny wariant
+`work-reports` w `spaces.css` rozszerza istniejące panele, przyciski,
+selektory, awatary i tabele. Nie wprowadza biblioteki wykresów ani nowych
+tokenów kolorystycznych. Bieżące wskaźniki są oddzielone od aktywności
+w wybranym okresie; opis zakresu obejmuje także podzadania.
+
+Wykres utworzeń i ostatnich zakończeń ma legendę, odróżnione linie oraz
+przełącznik równoważnej tabeli. Rozkłady statusów i priorytetów oraz
+wykonawcy i sprinty pozwalają zawęzić raport, zachowując pozostałe filtry.
+Zadania po terminie mają odnośniki do szczegółów. Eksport opisuje bieżący
+zakres zadań. Pusty wynik i niedostępny sprint mają własne komunikaty
+oraz możliwość wyczyszczenia filtrów. Na telefonie panele układają się
+w jednej kolumnie, a szerokie tabele przewijają się we własnym kontenerze.
+
 ## Oś czasu Przestrzeni
 
 `spaces/TimelineView.tsx` rozszerza istniejący ekran o tabelę i wspólną siatkę
@@ -749,7 +765,11 @@ menu wiersza, informacje, notatki, wybór kolumn i operacje zbiorcze obsługuje
 `tasks.js` zachowuje obsługę szablonów zgodności i pomija korzeń Reacta.
 Inicjalizacja działa również po `ancore:content-loaded`. Obserwator widzi
 informacje i notatki bez przycisków zapisu; modal edycji jest niedostępny.
-Tabela dochodzi do krawędzi kontenera jak lista zadań. W formularzu zadania
+Tabela dochodzi do krawędzi kontenera jak lista zadań. Kontener tabeli tagów
+wypełnia pozostałą wysokość panelu i obsługuje przewijanie w obu kierunkach.
+Poziomy pasek jest przy dolnej krawędzi panelu także przy krótkiej liście;
+nagłówek przestrzeni i pasek filtrów pozostają poza przewijaną treścią.
+Reguła obejmuje React i pierwszy render Django. W formularzu zadania
 przestrzeni picker „Tagi” korzysta z `AncoreCustomSelect` i lokalnego wyszukiwania.
 Modal tworzenia zadania przełącza opcje tagów po wyborze przestrzeni
 przez `AncoreTaskTags` w `tasks.js`, zachowując własne dropdowny. Szczegóły

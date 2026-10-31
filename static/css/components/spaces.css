@@ -379,6 +379,8 @@
 .work-panel .btn + .btn { margin-left: 8px; }
 /* Task rows, status headers, columns and cards use the existing Tasks/Kanban CSS. */
 .work-content--tasks { padding: 0; }
+/* Let the tag sheet own scrolling across the full remaining panel height. */
+.work-content--tasks:has(> .tasks-tag-sheet) { display: flex; flex-direction: column; overflow: hidden; }
 .work-page .work-content--directory { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 .tasks-directory-board.work-space-sheet {
     --tasks-directory-grid: 40px 150px 320px 190px 220px 320px 130px;
@@ -808,3 +810,158 @@
 
 .work-timeline-table tr.is-saving .work-timeline-bar { opacity: .65; }
 .work-timeline-bar-body[aria-disabled=true] { cursor: progress; }
+
+/* Reports extend the existing panels, controls and compact space typography. */
+.work-reports { display: grid; gap: 16px; min-width: 0; }
+.work-reports-header, .work-reports-actions, .work-reports-panel-heading, .work-reports-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.work-reports-header { flex-wrap: wrap; }
+.work-reports-header h2 { font-size: 17px; margin: 0 0 4px; }
+.work-reports-header p, .work-reports-panel-heading p { margin: 0; }
+.work-reports-actions { flex-wrap: wrap; gap: 8px; }
+.work-reports .tasks-filter-button { text-decoration: none; }
+.work-reports :is(a, button, summary, [tabindex="0"]):focus-visible { outline: 2px solid var(--system-accent) !important; outline-offset: 2px; }
+.work-reports-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; padding: 12px 0 16px; border-bottom: 1px solid var(--border-color); }
+.work-reports-filter-fields { display: flex; align-items: flex-end; flex-wrap: wrap; flex: 1; min-width: 0; border: 0; padding: 0; margin: 0; gap: 12px; }
+.work-reports-filter-fields > .documents-field { width: 190px; min-width: 0; margin: 0; gap: 5px; }
+.work-reports-filter-fields .ancore-custom-select { width: 100%; min-width: 0; }
+.work-reports-filter-fields .ancore-custom-select__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.work-reports-filter-fields .ancore-custom-select__button { min-height: 32px; height: 32px; }
+.work-reports-filter-fields label { font-size: 12px; }
+.work-reports-filter-summary { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.work-reports-filter-summary > span { padding: 3px 8px; background: var(--panel-bg); border-radius: var(--radius); font-size: 12px; overflow-wrap: anywhere; }
+.work-reports-section-heading { flex-wrap: wrap; margin-bottom: -6px; }
+.work-reports h3 { margin: 0; font-size: var(--font-size-base); line-height: 1.5; }
+.work-reports .work-panel { padding: 16px; min-width: 0; }
+.work-reports-panel-heading { margin-bottom: 16px; align-items: flex-start; }
+.work-reports-panel-heading > :first-child { min-width: 0; }
+.work-reports-panel-heading > .ancore-icon { width: 20px; height: 20px; opacity: .6; flex-shrink: 0; }
+.work-reports-panel-heading > .tasks-filter-button { flex-shrink: 0; }
+.work-reports-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.work-reports-kpi { display: flex; flex-direction: column; gap: 12px; }
+.work-reports-kpi > span { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.work-reports-kpi > span > .ancore-icon { width: 16px; height: 16px; flex-shrink: 0; }
+.work-reports-kpi > strong { display: flex; align-items: baseline; gap: 12px; font-size: 30px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.work-reports-kpi em { font-size: 13px; font-style: normal; opacity: .7; }
+.work-reports-kpi > small { font-size: 11px; opacity: .8; margin-top: auto; }
+.work-reports-kpi > progress { margin-block: auto 4px; }
+.work-reports-kpi--attention { box-shadow: inset 3px 0 var(--system-accent); }
+.work-reports-main-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 16px; align-items: stretch; }
+.work-reports-secondary-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
+.work-reports-trend { display: flex; flex-direction: column; }
+.work-reports-activity { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-bottom: 14px; }
+.work-reports-activity > div { display: flex; flex-direction: column; gap: 5px; }
+.work-reports-activity span { font-size: 11px; opacity: .78; }
+.work-reports-activity strong { font-size: 21px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.work-reports-chart { position: relative; margin-block: auto; }
+.work-reports-chart svg { display: block; width: 100%; height: auto; min-height: 180px; overflow: visible; }
+.work-reports-chart svg text { font-size: 11px; font-family: var(--font-family-ui); fill: var(--text-primary); opacity: .72; }
+.work-reports-gridline { stroke: var(--border-color); stroke-dasharray: 3 4; stroke-width: 1; }
+.work-reports-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.work-reports-line--created { stroke: var(--system-interaction); stroke-dasharray: 5 4; }
+.work-reports-line--completed { stroke: var(--system-accent); }
+.work-reports-point--created { fill: var(--system-interaction); }
+.work-reports-point--completed { fill: var(--system-accent); }
+.work-reports-point { stroke: var(--card-bg); stroke-width: 1.5; }
+.work-reports-chart-empty { position: absolute; inset: 35% 10% auto; padding: 8px; text-align: center; font-size: 12px; background: var(--card-bg); border-radius: var(--radius); }
+.work-reports-chart-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 10px; font-size: 12px; }
+.work-reports-chart-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.work-reports-swatch { display: inline-block; width: 18px; border-top: 3px solid var(--system-accent); }
+.work-reports-swatch--created { border-color: var(--system-interaction); border-top-style: dashed; }
+.work-reports .work-reports-method { margin: 14px 0 0; font-size: 11px; line-height: 1.6; }
+.work-reports-bars { display: grid; gap: 4px; }
+.work-reports-bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 9px; padding: 8px; margin-inline: -8px; border-radius: var(--radius); text-decoration: none; }
+.work-reports-bar-row:hover, .work-reports-task:hover, .work-reports-sprint:hover { background: var(--system-interaction-soft); }
+.work-reports-bar-label { display: inline-flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.work-reports-bar-label > i { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.work-reports-bar-count { display: flex; align-items: baseline; gap: 10px; font-variant-numeric: tabular-nums; }
+.work-reports-bar-count small { font-size: 11px; opacity: .65; min-width: 30px; text-align: right; }
+.work-reports-bar-row > progress { grid-column: 1 / -1; }
+.work-reports-meter { display: block; width: 100%; height: 6px; appearance: none; border: 0; border-radius: var(--radius); overflow: hidden; background: var(--panel-bg); accent-color: var(--report-bar-color, var(--system-accent)); }
+.work-reports-meter::-webkit-progress-bar { background: var(--panel-bg); }
+.work-reports-meter::-webkit-progress-value { border-radius: var(--radius); background: var(--report-bar-color, var(--system-accent)); }
+.work-reports-meter::-moz-progress-bar { border-radius: var(--radius); background: var(--report-bar-color, var(--system-accent)); }
+.work-reports-badge { display: inline-flex; align-items: center; padding: 2px 7px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: var(--radius); font-size: 11px; white-space: nowrap; }
+.work-reports-badge.is-active { background: color-mix(in srgb, var(--system-accent) 10%, var(--card-bg)); border-color: color-mix(in srgb, var(--system-accent) 30%, var(--border-color)); }
+.work-reports-table-wrap { max-width: 100%; overflow: auto; border: 1px solid var(--border-color); border-radius: var(--radius); }
+.work-reports-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.work-reports-table :is(th, td) { padding: 10px 12px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+.work-reports-table th { font-weight: 400; }
+.work-reports-table thead th { background: var(--panel-bg); font-size: 11px; white-space: nowrap; }
+.work-reports-table :is(th, td):not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.work-reports-table tbody tr:last-child > * { border-bottom: 0; }
+.work-reports-workload .work-reports-table { min-width: 600px; }
+.work-reports-person { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; max-width: 280px; }
+.work-reports-person > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.work-reports-person:hover > span:last-child { text-decoration: underline; }
+.work-reports-person > .tasks-issue-mini-avatar { width: 24px; height: 24px; flex-shrink: 0; }
+.work-reports-load { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.work-reports-load progress { width: 70px; }
+.work-reports-load > span { min-width: 20px; }
+.work-reports-trend-table { max-height: 240px; }
+.work-reports-trend-table thead { position: sticky; top: 0; }
+.work-reports-overdue-list { display: grid; gap: 0; }
+.work-reports-task { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 12px 8px; margin-inline: -8px; text-decoration: none; border-bottom: 1px solid var(--border-color); border-radius: var(--radius); }
+.work-reports-task:first-child { padding-top: 4px; }
+.work-reports-task:last-child { border-bottom: 0; }
+.work-reports-task-title { display: flex; align-items: baseline; gap: 8px; }
+.work-reports-task-title > :first-child { flex-shrink: 0; font-size: 11px; }
+.work-reports-task-title > :last-child { min-width: 0; overflow-wrap: anywhere; }
+.work-reports-task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 12px; font-size: 11px; }
+.work-reports-task-meta > span:first-child { overflow-wrap: anywhere; }
+.work-reports-task-meta time { margin-left: auto; white-space: nowrap; }
+.work-reports-inline-empty { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px; }
+.work-reports-inline-empty > .ancore-icon { width: 24px; height: 24px; opacity: .7; }
+.work-reports-inline-empty p { margin: 12px 0 4px; }
+.work-reports-empty { display: flex; flex-direction: column; align-items: center; padding-bottom: 32px !important; }
+.work-reports-empty .tasks-empty-state { padding-block: 36px 24px; }
+.work-reports-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0; }
+.work-reports-sprints { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.work-reports-sprint { display: block; padding: 14px; text-decoration: none; border: 1px solid var(--border-color); border-radius: var(--radius); }
+.work-reports-sprint-heading, .work-reports-sprint-values { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.work-reports-sprint-heading { align-items: flex-start; }
+.work-reports-sprint-heading h4 { font-size: var(--font-size-sm); margin: 0; overflow-wrap: anywhere; min-width: 0; }
+.work-reports-sprint > p { margin: 6px 0 14px; }
+.work-reports-sprint > progress { margin: 9px 0; }
+.work-reports-sprint-values { flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.work-reports-footer { display: flex; align-items: baseline; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; }
+.work-reports-footer details { max-width: 620px; font-size: 12px; }
+.work-reports-footer summary { cursor: pointer; text-align: right; }
+.work-reports-footer p { margin-block: 10px; }
+@media (max-width: 1100px) {
+    .work-reports-main-grid, .work-reports-secondary-grid { grid-template-columns: minmax(0, 1fr); }
+    .work-reports-statuses .work-reports-bars { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 30px; }
+    .work-reports-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .work-reports-chart svg { max-height: 260px; }
+}
+@media (max-width: 650px) {
+    .work-reports { gap: 12px; }
+    .work-reports-header { align-items: flex-start; }
+    .work-reports-actions { width: 100%; }
+    .work-reports-actions > * { flex: 1; justify-content: center; }
+    .work-reports-filter-fields { gap: 10px; flex-basis: 100%; }
+    .work-reports-filter-fields > .documents-field { width: calc(50% - 5px); flex: 1 1 calc(50% - 5px); }
+    .work-reports-filter-fields > .documents-field:first-child { flex-basis: 100%; }
+    .work-reports .work-panel { padding: 12px; }
+    .work-reports-kpis { gap: 8px; }
+    .work-reports-kpi { gap: 10px; }
+    .work-reports-kpi > span { font-size: 11px; gap: 6px; }
+    .work-reports-kpi > strong { font-size: 26px; gap: 6px; flex-wrap: wrap; }
+    .work-reports-kpi > small { font-size: 10px; }
+    .work-reports-section-heading { margin-bottom: 0; gap: 4px; }
+    .work-reports-section-heading > .work-caption { font-size: 11px; }
+    .work-reports-panel-heading { gap: 8px; }
+    .work-reports-panel-heading h3 { font-size: 13px; }
+    .work-reports-activity { gap: 12px 20px; }
+    .work-reports-activity strong { font-size: 19px; }
+    .work-reports-activity span { font-size: 10px; }
+    .work-reports-chart svg { min-height: 140px; }
+    .work-reports-chart-empty { font-size: 11px; inset: 25% 10% auto; }
+    .work-reports-statuses .work-reports-bars { grid-template-columns: minmax(0, 1fr); }
+    .work-reports-trend-table .work-reports-table :is(th, td) { padding: 8px; }
+    .work-reports-sprints { grid-template-columns: minmax(0, 1fr); }
+    .work-reports-task-title { flex-wrap: wrap; gap: 4px 8px; }
+    .work-reports-task-meta time { margin-left: 0; }
+    .work-reports-footer summary { text-align: left; }
+}
+.work-reports-statuses .work-reports-bar-row { --report-bar-color: color-mix(in srgb, var(--tasks-status-background, var(--panel-bg)) 66.9%, var(--tasks-status-color, var(--system-accent)) 33.1%); }
+.work-reports-statuses .work-reports-bar-label > i { background: var(--report-bar-color); }

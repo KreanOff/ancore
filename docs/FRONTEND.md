@@ -62,6 +62,21 @@ Wydarzenia całodzienne zachowują daty kalendarzowe z API niezależnie od stref
 przeglądarki; ich zapis nadal normalizuje granice w Django. Te same zasady
 obowiązują w React i adapterze `calendar.js`.
 
+## Raporty Przestrzeni
+
+`src/spaces/ReportsView.tsx` renderuje zakładkę Raporty we wspólnej powłoce
+Przestrzeni. Dane `data.reports` dostarcza `backend/spaces/reports.py` przez
+istniejące API stron i `spaces/frontend.py`; obliczenia i kontrola dostępu
+pozostają w Django. Widok raportów ma osobną ścieżkę odczytu w `detail_context`,
+bez dekorowania i limitowania zwykłej listy zadań. Pierwszy render zachowuje
+szablon `spaces/reports.html`.
+
+Wykres SVG ma równoważną tabelę danych i opis serii. Filtry korzystają
+ze wspólnego selektora, a przejścia i odświeżanie z istniejącego API stron.
+Eksport CSV to bezpośrednie pobranie z adresu przestrzeni, z ponowną kontrolą
+ACL, bez przechwytywania pobrania przez nawigację Reacta. Znaczenie okresów,
+przypisań i ograniczenia historii opisują [Raporty przestrzeni](SPACES.md#raporty-przestrzeni).
+
 ## Doładowywanie listy zadań Przestrzeni
 
 Page API dla `view=list` zwraca `pagination: null` oraz w każdej pozycji

@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 61 | 4 | 42 | 373 |
+| [backend/spaces](../backend/spaces) | 63 | 4 | 43 | 384 |
 
 ## 2. Modele i relacje
 
@@ -1016,6 +1016,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `group_limit`, `list_window`, `more_url`, `timeline_more_url`, `list_url`
 - [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
+- [backend/spaces/reports.py](../backend/spaces/reports.py) — `report_scope`, `period_window`, `minutes_label`, `percent`, `report_url`, `space_reports`, `safe_csv_cell`, `report_csv`
 - [backend/spaces/schedule.py](../backend/spaces/schedule.py) — `ScheduleDateTimeField`, `local_date`, `validate_range`, `move_to_date`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `task_subtasks_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
@@ -1238,6 +1239,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/item_toolbar.html](../backend/spaces/templates/spaces/item_toolbar.html)
 - [backend/spaces/templates/spaces/load_more.html](../backend/spaces/templates/spaces/load_more.html)
 - [backend/spaces/templates/spaces/pagination.html](../backend/spaces/templates/spaces/pagination.html)
+- [backend/spaces/templates/spaces/reports.html](../backend/spaces/templates/spaces/reports.html)
 - [backend/spaces/templates/spaces/row.html](../backend/spaces/templates/spaces/row.html)
 - [backend/spaces/templates/spaces/search_results.html](../backend/spaces/templates/spaces/search_results.html)
 - [backend/spaces/templates/spaces/sidebar_navigation.html](../backend/spaces/templates/spaces/sidebar_navigation.html)
@@ -1485,6 +1487,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/DirectoryPage.tsx](../frontend/app/src/spaces/DirectoryPage.tsx)
 - [frontend/app/src/spaces/Item.tsx](../frontend/app/src/spaces/Item.tsx)
 - [frontend/app/src/spaces/ItemToolbar.tsx](../frontend/app/src/spaces/ItemToolbar.tsx)
+- [frontend/app/src/spaces/ReportsView.tsx](../frontend/app/src/spaces/ReportsView.tsx)
 - [frontend/app/src/spaces/SettingsDialog.tsx](../frontend/app/src/spaces/SettingsDialog.tsx)
 - [frontend/app/src/spaces/SpaceHeader.tsx](../frontend/app/src/spaces/SpaceHeader.tsx)
 - [frontend/app/src/spaces/Summary.tsx](../frontend/app/src/spaces/Summary.tsx)
@@ -1530,6 +1533,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
 - [frontend/app/tests/pulpit-grid-editor.test.mjs](../frontend/app/tests/pulpit-grid-editor.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
+- [frontend/app/tests/reports-interactions.test.mjs](../frontend/app/tests/reports-interactions.test.mjs)
 - [frontend/app/tests/space-list-loading.test.mjs](../frontend/app/tests/space-list-loading.test.mjs)
 - [frontend/app/tests/suite-read-only.test.mjs](../frontend/app/tests/suite-read-only.test.mjs)
 - [frontend/app/tests/summary-distribution.test.mjs](../frontend/app/tests/summary-distribution.test.mjs)
@@ -2195,6 +2199,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_navigation.py](../backend/spaces/test_navigation.py).
 
 - `SpaceNavigationTests`: 6 metod testowych.
+
+### backend/spaces/test_reports.py
+
+Źródło: [backend/spaces/test_reports.py](../backend/spaces/test_reports.py).
+
+- `SpaceReportsTests`: 11 metod testowych.
 
 ### backend/spaces/test_schedule_migration.py
 
