@@ -18,7 +18,7 @@ const columnIcons: Record<string, string> = {
 };
 const labels = {
   types: { add: 'Dodaj typ', empty: 'Brak typów zgłoszeń.' },
-  statuses: { add: 'Dodaj status', empty: 'Brak statusów.' },
+  statuses: { add: 'Dodaj stan', empty: 'Brak stanów.' },
   fields: { add: 'Dodaj pole', empty: 'Brak pól dodatkowych.' },
 };
 

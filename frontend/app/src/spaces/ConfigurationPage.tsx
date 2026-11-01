@@ -1,10 +1,12 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { FieldControl, type FormSchema } from '../forms/FormDialog';
+import { type FormSchema } from '../forms/FormDialog';
 import { Modal } from '../shared/Modal';
 import SettingsPage from './SettingsPage';
 import ConfigurationTable from './ConfigurationTable';
 import WorkflowBoard from './WorkflowBoard';
+import WorkflowStageFields from './WorkflowStageFields';
+import { moveWorkflowNode, type Position } from './workflow-board';
 import TypeFields from './TypeFields';
 import {
   configurationEditorSchema,
@@ -14,7 +16,6 @@ import {
   configurationDraftKey,
   configurationDraftSubmission,
   configurationRemove,
-  configurationMove,
   configurationStage,
 } from './configuration-form';
 import { type Page, type PageProps, pageRequest, PageError } from '../shared/page';
@@ -41,6 +42,7 @@ export interface ConfigurationData {
   revision: string;
   errors: string[];
   section?: ConfigurationSection;
+  workflow_view?: 'states' | 'map';
   editor?: ConfigurationEditor | null;
   sets: ConfigurationGroup[];
   type_icon_defaults?: Record<string, string>;
@@ -51,7 +53,7 @@ interface EditorState extends ConfigurationEditor {
   dirty: boolean;
   adding: boolean;
 }
-const nouns = { types: 'typ zgłoszenia', statuses: 'status', fields: 'pole dodatkowe' };
+const nouns = { types: 'typ zgłoszenia', statuses: 'etap', fields: 'pole dodatkowe' };
 function createEditor(data: ConfigurationData, selection: ConfigurationEditor): EditorState | null {
   if (selection.section !== 'types' && selection.section !== 'statuses') return null;
   const group = data.sets.find((group) => group.key === selection.section);
@@ -81,15 +83,21 @@ export function ConfigurationForm({
   onStateChange,
   hostId,
   section = 'types',
+  workflowView,
 }: PageProps & {
   onSaved: () => Promise<void>;
   onCancel?: () => void;
   onStateChange: (dirty: boolean, pending: boolean) => void;
   hostId?: string;
   section?: 'types' | 'statuses';
+  workflowView: 'states' | 'map';
 }) {
   const [baseline, setBaseline] = useState(initial.data as ConfigurationData);
   const [data, setData] = useState(baseline);
+  const [history, setHistory] = useState<{
+    past: ConfigurationData[];
+    future: ConfigurationData[];
+  }>({ past: [], future: [] });
   const [untrustedBaseline, setUntrustedBaseline] = useState(() =>
     baseline.sets.some((group) => group.forms.some((schema) => schema.bound)),
   );
@@ -108,6 +116,7 @@ export function ConfigurationForm({
   const sending = useRef(false);
   const source = useRef(initial.data);
   const nativeEditor = useRef(untrustedBaseline && !!data.editor);
+  const newStagePosition = useRef<Position | null>(null);
   const dirty =
     !committed &&
     (untrustedBaseline || configurationDraftKey(data) !== configurationDraftKey(baseline));
@@ -118,6 +127,7 @@ export function ConfigurationForm({
     source.current = initial.data;
     const clean = initial.data as ConfigurationData;
     setData(clean);
+    setHistory({ past: [], future: [] });
     setBaseline(clean);
     setUntrustedBaseline(false);
     setCommitted(false);
@@ -129,6 +139,7 @@ export function ConfigurationForm({
 
   function acceptClean(clean: ConfigurationData) {
     setData(clean);
+    setHistory({ past: [], future: [] });
     setBaseline(clean);
     setUntrustedBaseline(false);
     nativeEditor.current = false;
@@ -136,6 +147,25 @@ export function ConfigurationForm({
     setError('');
     setConflict(false);
     setCommitted(false);
+  }
+  function change(next: ConfigurationData) {
+    if (blocked || sending.current) return;
+    if (section === 'statuses' && configurationDraftKey(next) !== configurationDraftKey(data)) {
+      setHistory((current) => ({ past: [...current.past.slice(-49), data], future: [] }));
+    }
+    setData(next);
+  }
+  function travel(direction: 'undo' | 'redo') {
+    if (blocked || sending.current || editor || conflict) return;
+    const previous = direction === 'undo' ? history.past.at(-1) : history.future[0];
+    if (!previous) return;
+    setHistory(
+      direction === 'undo'
+        ? { past: history.past.slice(0, -1), future: [data, ...history.future] }
+        : { past: [...history.past, data], future: history.future.slice(1) },
+    );
+    setData(previous);
+    setError('');
   }
   async function cancel() {
     if (pending || sending.current || committed) return;
@@ -194,10 +224,11 @@ export function ConfigurationForm({
     setError('');
     setEditor(createEditor(data, selection));
   }
-  function add() {
+  function add(position?: Position) {
     if (blocked || sending.current) return;
     try {
       const next = configurationAdd(data, section);
+      newStagePosition.current = section === 'statuses' && position ? position : null;
       setData(next.data);
       setError('');
       setEditor(createEditor(next.data, { section, index: next.index }));
@@ -208,7 +239,7 @@ export function ConfigurationForm({
   function remove(indices: number[]) {
     if (blocked || sending.current || !indices.length) return;
     try {
-      setData(configurationRemove(data, section, indices));
+      change(configurationRemove(data, section, indices));
       setError('');
     } catch (exception) {
       setError(errorMessage(exception));
@@ -219,11 +250,24 @@ export function ConfigurationForm({
     if (blocked || sending.current || !editor || !form.current) return;
     if (!editor.remove && !form.current.reportValidity()) return;
     try {
-      setData(
-        editor.remove
-          ? configurationRemove(data, editor.section, [editor.index])
-          : configurationStage(data, editor, new FormData(form.current)),
-      );
+      let next = editor.remove
+        ? configurationRemove(data, editor.section, [editor.index])
+        : configurationStage(data, editor, new FormData(form.current));
+      if (
+        editor.section === 'statuses' &&
+        editor.adding &&
+        !editor.remove &&
+        newStagePosition.current
+      ) {
+        const key = next.sets
+          .find((group) => group.key === 'statuses')
+          ?.forms[
+            editor.index
+          ]?.fields.find((field) => configurationFieldName(field) === 'key')?.value;
+        if (typeof key === 'string') next = moveWorkflowNode(next, key, newStagePosition.current);
+      }
+      change(next);
+      newStagePosition.current = null;
       nativeEditor.current = false;
       setEditor(null);
       setError('');
@@ -282,6 +326,7 @@ export function ConfigurationForm({
     // The POST is committed. Every retry from this point only reloads data.
     flushSync(() => {
       setCommitted(true);
+      setHistory({ past: [], future: [] });
       setEditor(null);
     });
     sending.current = false;
@@ -326,43 +371,61 @@ export function ConfigurationForm({
             aria-label={group.title}
             data-configuration-section={group.key}
           >
-            {section === 'statuses' ? (
-              <WorkflowBoard
-                data={data}
-                group={group}
-                pending={blocked}
-                onChange={setData}
-                onAdd={add}
-                onEdit={(index) => open({ section, index })}
-                onRemove={remove}
-                onMove={(index, direction) =>
-                  setData(configurationMove(data, section, index, direction))
-                }
-                actions={{
-                  dirty,
-                  saveDisabled: conflict,
-                  cancelDisabled: blocked,
-                  onSave: () => void save(),
-                  onCancel: () => void cancel(),
-                }}
-              />
-            ) : (
-              <ConfigurationTable
-                key={group.key}
-                group={group}
-                pending={blocked}
-                onAdd={add}
-                onEdit={(index) => open({ section, index })}
-                onRemove={remove}
-                actions={{
-                  dirty,
-                  saveDisabled: conflict,
-                  cancelDisabled: blocked,
-                  onSave: () => void save(),
-                  onCancel: () => void cancel(),
-                }}
-              />
-            )}
+            <div
+              className="space-settings-panel"
+              id={section === 'statuses' ? 'workflow-view-panel' : undefined}
+              role={section === 'statuses' ? 'tabpanel' : undefined}
+              aria-labelledby={section === 'statuses' ? `workflow-tab-${workflowView}` : undefined}
+            >
+              {section === 'statuses' && workflowView === 'map' ? (
+                <WorkflowBoard
+                  data={data}
+                  group={group}
+                  pending={blocked}
+                  onChange={change}
+                  onAdd={add}
+                  onEdit={(index) => open({ section, index })}
+                  history={{
+                    canUndo: !!history.past.length && !conflict,
+                    canRedo: !!history.future.length && !conflict,
+                    onUndo: () => travel('undo'),
+                    onRedo: () => travel('redo'),
+                  }}
+                  actions={{
+                    dirty,
+                    statusText: refreshError
+                      ? 'Zmiany zapisano — odśwież widok'
+                      : committed
+                        ? 'Zmiany zapisano — odświeżanie…'
+                        : pending
+                          ? 'Zapisywanie…'
+                          : dirty
+                            ? 'Niezapisane zmiany'
+                            : 'Wszystkie zmiany zapisane',
+                    saveDisabled: conflict,
+                    cancelDisabled: blocked,
+                    onSave: () => void save(),
+                    onCancel: () => void cancel(),
+                  }}
+                />
+              ) : (
+                <ConfigurationTable
+                  key={group.key}
+                  group={group}
+                  pending={blocked}
+                  onAdd={() => add()}
+                  onEdit={(index) => open({ section, index })}
+                  onRemove={remove}
+                  actions={{
+                    dirty,
+                    saveDisabled: conflict,
+                    cancelDisabled: blocked,
+                    onSave: () => void save(),
+                    onCancel: () => void cancel(),
+                  }}
+                />
+              )}
+            </div>
           </section>
         ) : null}
       </div>
@@ -414,11 +477,11 @@ export function ConfigurationForm({
                   {editor.section === 'types' ? (
                     <TypeFields schema={editor.schema} iconDefaults={data.type_icon_defaults} />
                   ) : (
-                    <div className="app-form-layout">
-                      {editor.schema.fields.map((field) => (
-                        <FieldControl key={field.name} field={field} />
-                      ))}
-                    </div>
+                    <WorkflowStageFields
+                      schema={editor.schema}
+                      data={data}
+                      adding={editor.adding}
+                    />
                   )}
                 </fieldset>
               )}

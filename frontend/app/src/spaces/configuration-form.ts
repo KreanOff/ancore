@@ -100,6 +100,38 @@ export function configurationDraftKey(data: ConfigurationData) {
   );
 }
 
+export function configurationStatusKey(data: ConfigurationData, label: string): string {
+  const keys = new Set(
+    data.sets
+      .find((group) => group.key === 'statuses')
+      ?.forms.filter(
+        (schema) =>
+          !schema.fields.some(
+            (field) => configurationFieldName(field) === 'DELETE' && field.checked,
+          ),
+      )
+      .map((schema) =>
+        String(schema.fields.find((field) => configurationFieldName(field) === 'key')?.value || ''),
+      ),
+  );
+  let base = label
+    .toLowerCase()
+    .replace(/ł/g, 'l')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  if (!base) base = 'etap';
+  if (!/^[a-z]/.test(base)) base = 'etap_' + base;
+  base = base.slice(0, 40).replace(/_+$/g, '');
+  let key = base;
+  for (let suffix = 2; keys.has(key); suffix += 1) {
+    const ending = `_${suffix}`;
+    key = base.slice(0, 40 - ending.length) + ending;
+  }
+  return key;
+}
+
 export function configurationStage(
   data: ConfigurationData,
   editor: ConfigurationEditor,
@@ -109,7 +141,23 @@ export function configurationStage(
     throw new Error('Pozycja konfiguracji jest niedostępna. Odśwież stronę.');
   const row = data.sets.find((group) => group.key === editor.section)!.forms[editor.index];
   const keyField = row.fields.find((field) => configurationFieldName(field) === 'key');
-  const key = keyField ? String(draft.get(keyField.name) || '') : '';
+  const key = keyField ? String(draft.get(keyField.name) || '').trim() : '';
+  const previousKey = String(keyField?.value || '');
+  if (editor.section === 'statuses') {
+    const duplicate = data.sets
+      .find((group) => group.key === 'statuses')!
+      .forms.some(
+        (schema, index) =>
+          index !== editor.index &&
+          !schema.fields.some(
+            (field) => configurationFieldName(field) === 'DELETE' && field.checked,
+          ) &&
+          schema.fields.some(
+            (field) => configurationFieldName(field) === 'key' && String(field.value || '') === key,
+          ),
+      );
+    if (duplicate) throw new Error('Etap z tym kluczem już istnieje. Wybierz inny klucz.');
+  }
   const knownType = data.sets
     .find((group) => group.key === 'types')
     ?.forms.find((schema) =>
@@ -123,7 +171,7 @@ export function configurationStage(
       .find((field) => configurationFieldName(field) === 'icon')
       ?.choices?.find((choice) => choice.value === '')?.icon ||
     'shapes';
-  return withStatusChoices({
+  const staged: ConfigurationData = {
     ...data,
     editor: null,
     errors: [],
@@ -143,7 +191,10 @@ export function configurationStage(
                     fields: schema.fields.map((field) => {
                       if (configurationFieldName(field) === 'DELETE')
                         return { ...field, checked: false, errors: [] };
-                      const values = draft.getAll(field.name).map(String);
+                      const values =
+                        configurationFieldName(field) === 'key'
+                          ? [key]
+                          : draft.getAll(field.name).map(String);
                       return {
                         ...field,
                         errors: [],
@@ -166,7 +217,28 @@ export function configurationStage(
             ),
           },
     ),
-  });
+  };
+  if (editor.section === 'statuses' && previousKey && previousKey !== key) {
+    staged.sets = staged.sets.map((group) =>
+      group.key !== 'statuses'
+        ? group
+        : {
+            ...group,
+            forms: group.forms.map((schema) => ({
+              ...schema,
+              fields: schema.fields.map((field) =>
+                configurationFieldName(field) === 'transitions' && Array.isArray(field.value)
+                  ? {
+                      ...field,
+                      value: field.value.map((target) => (target === previousKey ? key : target)),
+                    }
+                  : field,
+              ),
+            })),
+          },
+    );
+  }
+  return withStatusChoices(staged);
 }
 
 export function configurationRemove(

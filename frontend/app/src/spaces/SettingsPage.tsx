@@ -2,10 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { EmbeddedForm, type FormDialogData } from '../forms/FormDialog';
 import AccessEditor, { type AccessTeam } from '../shared/AccessEditor';
 import { Icon } from '../shared/Icon';
+import { SpaceHeader } from './SpaceHeader';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
 import { errorMessage } from '../shared/api';
 import { type Page, pageRequest, navigate, setPageLocation } from '../shared/page';
-import { ConfigurationForm, type ConfigurationSection } from './ConfigurationPage';
+import {
+  ConfigurationForm,
+  type ConfigurationData,
+  type ConfigurationSection,
+} from './ConfigurationPage';
 import type { DetailData } from './types';
 
 type Tab = 'main' | 'members' | 'types' | 'statuses';
@@ -24,6 +29,10 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'types', label: 'Typy zgłoszeń', icon: 'layers' },
   { key: 'statuses', label: 'Proces pracy', icon: 'workflow' },
 ];
+const workflowViews = [
+  { key: 'states', label: 'Stany', icon: 'list-checks' },
+  { key: 'map', label: 'Mapa', icon: 'workflow' },
+] as const;
 
 export default function SettingsPage({
   api,
@@ -56,6 +65,11 @@ export default function SettingsPage({
     initialForm && initialTab === 'main' ? { main: initialForm } : {},
   );
   const [configuration, setConfiguration] = useState(initialConfiguration);
+  const [workflowView, setWorkflowView] = useState<'states' | 'map'>(() =>
+    (initialConfiguration?.data as ConfigurationData | undefined)?.workflow_view === 'states'
+      ? 'states'
+      : 'map',
+  );
   const [openAvatar] = useState(initialTab === 'avatar' && tab === 'main');
   const [states, setStates] = useState<
     Partial<Record<FormSection, { dirty: boolean; pending: boolean }>>
@@ -255,21 +269,57 @@ export default function SettingsPage({
   return (
     <>
       <div className="tasks-page work-page space-settings-page" data-react-screen="space-settings">
-        <header className="tasks-topbar tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            <a
-              href={spaceUrl}
-              className="tasks-issue-close"
-              aria-label="Wróć do przestrzeni"
-              title="Wróć do przestrzeni"
-            >
-              <Icon name="arrow-left" />
-            </a>
-            <h1 className="tasks-topbar-title">
-              Ustawienia przestrzeni{data ? ` · ${data.space.name}` : ''}
-            </h1>
-          </div>
-        </header>
+        <SpaceHeader
+          heading={
+            <>
+              <a
+                href={spaceUrl}
+                className="tasks-issue-close"
+                aria-label="Wróć do przestrzeni"
+                title="Wróć do przestrzeni"
+              >
+                <Icon name="arrow-left" />
+              </a>
+              <h1 className="tasks-topbar-title work-space-title">
+                Ustawienia przestrzeni{data ? ` · ${data.space.name}` : ''}
+              </h1>
+            </>
+          }
+          actions={null}
+          navigationContent={
+            tab === 'statuses' && data?.can_configure && configuration ? (
+              <nav
+                className="notifications-tabs work-tabs work-tabs--views"
+                role="tablist"
+                aria-label="Widoki procesu pracy"
+              >
+                {workflowViews.map((view, index) => (
+                  <button
+                    key={view.key}
+                    type="button"
+                    role="tab"
+                    id={`workflow-tab-${view.key}`}
+                    aria-selected={workflowView === view.key}
+                    aria-controls="workflow-view-panel"
+                    tabIndex={workflowView === view.key ? 0 : -1}
+                    disabled={pending}
+                    onClick={() => setWorkflowView(view.key)}
+                    onKeyDown={(event) => {
+                      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                      event.preventDefault();
+                      const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+                      setWorkflowView(workflowViews[next].key);
+                      document.getElementById(`workflow-tab-${workflowViews[next].key}`)?.focus();
+                    }}
+                  >
+                    <Icon name={view.icon} />
+                    {view.label}
+                  </button>
+                ))}
+              </nav>
+            ) : null
+          }
+        />
         {error ? (
           <div className="tasks-modal__errors space-settings-message" role="alert">
             {error}
@@ -379,6 +429,7 @@ export default function SettingsPage({
               key={(configuration.data as { revision: string }).revision}
               initial={configuration}
               section={tab === 'statuses' ? 'statuses' : 'types'}
+              workflowView={workflowView}
               csrfToken={csrfToken}
               onSaved={() => stored('configuration')}
               onStateChange={reportConfiguration}

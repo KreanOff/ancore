@@ -25,6 +25,7 @@ const {
   configurationFieldName,
   configurationMove,
   configurationStage,
+  configurationStatusKey,
   configurationRemove,
   configurationDraftSubmission,
 } = execute(helpers.outputFiles[0].text);
@@ -197,6 +198,63 @@ function rowDraft(data, section, index) {
       ].fields.flatMap((entry) => (entry.type === 'checkbox' ? (entry.checked ? [[entry.name, entry.value || 'on']] : []) : Array.isArray(entry.value) ? entry.value.map((value) => [entry.name, value]) : [[entry.name, entry.value || '']])),
   );
 }
+
+test('new stage keys are readable, unique and compatible with backend validation', () => {
+  const data = fixture();
+  const before = JSON.stringify(data);
+  assert.equal(configurationStatusKey(data, 'Żółć — do sprawdzenia!'), 'zolc_do_sprawdzenia');
+  assert.equal(configurationStatusKey(data, '123 oczekuje'), 'etap_123_oczekuje');
+  assert.equal(configurationStatusKey(data, '🎉'), 'etap');
+  assert.equal(configurationStatusKey(data, 'New'), 'new_2');
+  assert.equal(JSON.stringify(data), before);
+  data.sets[0].forms.push(row('statuses', 3, 'new_2'));
+  assert.equal(configurationStatusKey(data, 'New'), 'new_3');
+  const label = 'bardzo_dluga_nazwa_etapu_'.repeat(5);
+  const first = configurationStatusKey(data, label);
+  data.sets[0].forms.push(row('statuses', 4, first));
+  const second = configurationStatusKey(data, label);
+  assert.notEqual(first, second);
+  for (const key of [first, second]) assert.match(key, /^[a-z][a-z0-9_]{0,39}$/);
+  assert.equal(second.endsWith('_2'), true);
+  const removed = configurationRemove(fixture(), 'statuses', [1]);
+  assert.equal(configurationStatusKey(removed, 'Done'), 'done');
+});
+
+test('duplicate stage keys reject the local edit without damaging transitions or draft', () => {
+  const data = fixture();
+  const before = JSON.stringify(data);
+  const edited = rowDraft(data, 'statuses', 0);
+  edited.set('statuses-0-key', ' done ');
+  assert.throws(
+    () => configurationStage(data, { section: 'statuses', index: 0 }, edited),
+    /Etap z tym kluczem już istnieje/,
+  );
+  assert.equal(JSON.stringify(data), before);
+  edited.set('statuses-0-key', 'new');
+  assert.doesNotThrow(() => configurationStage(data, { section: 'statuses', index: 0 }, edited));
+  const added = rowDraft(data, 'statuses', 2);
+  added.set('statuses-2-key', 'done');
+  assert.throws(
+    () => configurationStage(data, { section: 'statuses', index: 2 }, added),
+    /Etap z tym kluczem już istnieje/,
+  );
+});
+
+test('renaming an unused stage keeps incoming and self transitions in the full snapshot', () => {
+  const data = fixture();
+  const before = JSON.stringify(data);
+  const edited = rowDraft(data, 'statuses', 0);
+  edited.set('statuses-0-key', 'queue');
+  const changed = configurationStage(data, { section: 'statuses', index: 0 }, edited);
+  const values = configurationDraftSubmission(changed);
+  assert.equal(values.get('statuses-0-key'), 'queue');
+  assert.deepEqual(values.getAll('statuses-0-transitions'), ['done', 'queue']);
+  assert.deepEqual(values.getAll('statuses-1-transitions'), ['queue']);
+  assert.equal(values.get('revision'), 'revision-1');
+  assert.equal(values.get('types-0-key'), 'task');
+  assert.equal(values.get('fields-0-required'), 'on');
+  assert.equal(JSON.stringify(data), before);
+});
 
 test('editing one row retains revision, every formset and unrelated multiple or Boolean values', () => {
   const data = fixture();
@@ -493,7 +551,7 @@ function hookHarness(code, exportName, initialProps, globals = {}) {
   };
   return app;
 }
-function harness(data = fixture()) {
+function harness(data = fixture(), section = 'types') {
   const app = {
     requests: [],
     states: [],
@@ -522,6 +580,8 @@ function harness(data = fixture()) {
     'ConfigurationForm',
     {
       initial: { api_url: '/workplaces/w_test/api/v1/page/', type: 'space-configuration', data },
+      section,
+      workflowView: 'map',
       csrfToken: 'token',
       onStateChange: (dirty, pending) => {
         app.states.push({ dirty, pending });
@@ -639,6 +699,192 @@ function assertPreservedGroups(values) {
   assert.equal(values.get('fields-0-key'), 'estimate');
   assert.equal(values.get('fields-1-key'), 'notes');
 }
+
+function workflowValues(tree) {
+  return configurationDraftSubmission(table(tree).props.data);
+}
+async function stageWorkflowEdit(app, index, label) {
+  app.open(index);
+  app.change(`statuses-${index}-label`, label);
+  return app.stage();
+}
+function travelWorkflow(app, direction = 'undo') {
+  table(app.render()).props.history[direction === 'undo' ? 'onUndo' : 'onRedo']();
+  return app.render();
+}
+
+test('switching between states and map preserves list edits and their shared undo history', async () => {
+  const app = harness(fixture(), 'statuses');
+  let tree = app.render();
+  const original = [...workflowValues(tree)];
+  tree = app.render({ workflowView: 'states' });
+  assert.equal(table(tree).props.data, undefined);
+  tree = await stageWorkflowEdit(app, 0, 'Zmieniony stan z listy');
+  assert.equal(typeField(tree, 0, 'label').value, 'Zmieniony stan z listy');
+  assert.equal(table(tree).props.actions.dirty, true);
+
+  tree = app.render({ workflowView: 'map' });
+  const edited = [...workflowValues(tree)];
+  assert.equal(workflowValues(tree).get('statuses-0-label'), 'Zmieniony stan z listy');
+  assert.equal(table(tree).props.history.canUndo, true);
+  tree = travelWorkflow(app);
+  assert.deepEqual([...workflowValues(tree)], original);
+  tree = app.render({ workflowView: 'states' });
+  assert.equal(typeField(tree, 0, 'label').value, 'Nazwa new');
+  assert.equal(table(tree).props.actions.dirty, false);
+
+  app.render({ workflowView: 'map' });
+  tree = travelWorkflow(app, 'redo');
+  assert.deepEqual([...workflowValues(tree)], edited);
+  app.refreshed = { ...table(tree).props.data, revision: 'revision-states-saved' };
+  app.render({ workflowView: 'states' });
+  app.save();
+  tree = await app.settle();
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.requests[0].body.get('configuration_section'), 'statuses');
+  assert.equal(app.requests[0].body.get('statuses-0-label'), 'Zmieniony stan z listy');
+  assertPreservedGroups(app.requests[0].body);
+  assert.equal(table(tree).props.data, undefined);
+  assert.equal(typeField(tree, 0, 'label').value, 'Zmieniony stan z listy');
+  assert.equal(table(tree).props.actions.dirty, false);
+});
+
+test('workflow modal edits undo and redo the complete draft without losing connections or metadata', async () => {
+  const data = fixture();
+  data.sets[0].forms[0].fields.push(
+    field('statuses-0-flow_stage', 'queue', { type: 'select' }),
+    field('statuses-0-policy', 'Zakres uzgodniony', { type: 'textarea' }),
+    field('statuses-0-position_x', '0', { hidden: true }),
+    field('statuses-0-position_y', '240', { hidden: true }),
+  );
+  const app = harness(data, 'statuses');
+  const original = [...workflowValues(app.render())];
+  app.open(0);
+  app.change('statuses-0-label', 'Do realizacji');
+  app.change('statuses-0-policy', 'Zakres i odbiorca uzgodnieni');
+  let tree = await app.stage();
+  const edited = [...workflowValues(tree)];
+  assert.equal(table(tree).props.history.canUndo, true);
+  assert.equal(table(tree).props.history.canRedo, false);
+  assert.deepEqual(workflowValues(tree).getAll('statuses-1-transitions'), ['new']);
+  assert.equal(workflowValues(tree).get('statuses-0-position_x'), '0');
+  assert.equal(workflowValues(tree).get('statuses-0-position_y'), '240');
+  tree = travelWorkflow(app);
+  assert.deepEqual([...workflowValues(tree)], original);
+  assert.equal(table(tree).props.actions.dirty, false);
+  assert.equal(table(tree).props.history.canRedo, true);
+  tree = travelWorkflow(app, 'redo');
+  assert.deepEqual([...workflowValues(tree)], edited);
+  assert.equal(table(tree).props.actions.dirty, true);
+  assert.equal(app.requests.length, 0);
+  app.open(1);
+  app.change('statuses-1-label', 'Niezastosowana edycja');
+  tree = travelWorkflow(app);
+  assert.ok(modal(tree));
+  assert.deepEqual([...workflowValues(tree)], edited);
+  app.closeEditor();
+  assert.deepEqual([...workflowValues(travelWorkflow(app))], original);
+});
+
+test('undoing a workflow edit preserves incoming transitions and a new edit replaces redo history', async () => {
+  const app = harness(fixture(), 'statuses');
+  const original = [...workflowValues(app.render())];
+  let tree = await stageWorkflowEdit(app, 1, 'Zakończenie');
+  assert.equal(workflowValues(tree).get('statuses-1-label'), 'Zakończenie');
+  assert.deepEqual(workflowValues(tree).getAll('statuses-0-transitions'), ['done', 'new']);
+  tree = travelWorkflow(app);
+  assert.deepEqual([...workflowValues(tree)], original);
+  assert.deepEqual(workflowValues(tree).getAll('statuses-0-transitions'), ['done', 'new']);
+  assert.equal(table(tree).props.history.canRedo, true);
+  tree = await stageWorkflowEdit(app, 0, 'Nowy szkic po cofnięciu');
+  assert.equal(table(tree).props.history.canRedo, false);
+  const changed = [...workflowValues(tree)];
+  tree = travelWorkflow(app, 'redo');
+  assert.deepEqual([...workflowValues(tree)], changed);
+  assert.equal(workflowValues(tree).get('statuses-1-label'), 'Nazwa done');
+  assert.equal(app.requests.length, 0);
+});
+
+test('workflow Cancel discards both the draft and redo history, and a successful save starts a fresh history', async () => {
+  const app = harness(fixture(), 'statuses');
+  await stageWorkflowEdit(app, 0, 'Szkic do odrzucenia');
+  await stageWorkflowEdit(app, 1, 'Druga zmiana do cofnięcia');
+  travelWorkflow(app);
+  let tree = app.cancel();
+  assert.equal(workflowValues(tree).get('statuses-0-label'), 'Nazwa new');
+  assert.equal(table(tree).props.actions.dirty, false);
+  assert.equal(table(tree).props.history.canUndo, false);
+  assert.equal(table(tree).props.history.canRedo, false);
+  tree = await stageWorkflowEdit(app, 0, 'Zapisany etap');
+  app.refreshed = { ...table(tree).props.data, revision: 'revision-saved' };
+  app.save();
+  tree = await app.settle();
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.requests[0].body.get('configuration_section'), 'statuses');
+  assert.equal(app.requests[0].body.get('statuses-0-label'), 'Zapisany etap');
+  assert.equal(table(tree).props.history.canUndo, false);
+  assert.equal(table(tree).props.history.canRedo, false);
+  assert.equal(table(tree).props.actions.dirty, false);
+  tree = travelWorkflow(app);
+  assert.equal(workflowValues(tree).get('statuses-0-label'), 'Zapisany etap');
+  tree = await stageWorkflowEdit(app, 0, 'Kolejna edycja');
+  assert.equal(table(tree).props.history.canUndo, true);
+  tree = travelWorkflow(app);
+  assert.equal(workflowValues(tree).get('statuses-0-label'), 'Zapisany etap');
+  assert.equal(workflowValues(tree).get('revision'), 'revision-saved');
+  assert.equal(table(tree).props.actions.dirty, false);
+});
+
+test('workflow history is locked during POST and remains usable when the POST fails', async () => {
+  const app = harness(fixture(), 'statuses');
+  const original = [...workflowValues(app.render())];
+  let tree = await stageWorkflowEdit(app, 0, 'Szkic zachowany po błędzie');
+  const edited = [...workflowValues(tree)];
+  const queuedUndo = table(tree).props.history.onUndo;
+  let release;
+  app.postGate = new Promise((resolve) => (release = resolve));
+  app.postError = new Error('HTTP 503');
+  app.save();
+  queuedUndo();
+  tree = travelWorkflow(app);
+  assert.equal(table(tree).props.pending, true);
+  assert.deepEqual([...workflowValues(tree)], edited);
+  assert.equal(app.requests.length, 1);
+  release();
+  tree = await app.settle();
+  assert.equal(table(tree).props.pending, false);
+  assert.equal(table(tree).props.history.canUndo, true);
+  assert.match(text(tree), /HTTP 503/);
+  tree = travelWorkflow(app);
+  assert.deepEqual([...workflowValues(tree)], original);
+  assert.doesNotMatch(text(tree), /HTTP 503/);
+  tree = travelWorkflow(app, 'redo');
+  assert.deepEqual([...workflowValues(tree)], edited);
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.reads, 0);
+});
+
+test('a committed workflow save clears history even when the following refresh fails', async () => {
+  const app = harness(fixture(), 'statuses');
+  let tree = await stageWorkflowEdit(app, 0, 'Etap zapisany na serwerze');
+  app.refreshed = { ...table(tree).props.data, revision: 'revision-saved' };
+  app.readError = new Error('GET 503');
+  app.save();
+  tree = await app.settle();
+  assert.match(text(tree), /Zmiany zapisano.*GET 503/);
+  assert.equal(table(tree).props.history.canUndo, false);
+  assert.equal(table(tree).props.history.canRedo, false);
+  assert.equal(table(tree).props.pending, true);
+  tree = travelWorkflow(app);
+  assert.equal(workflowValues(tree).get('statuses-0-label'), 'Etap zapisany na serwerze');
+  app.readError = null;
+  button(tree, 'Spróbuj ponownie').props.onClick();
+  tree = await app.settle();
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.reads, 2);
+  assert.equal(table(tree).props.history.canUndo, false);
+  assert.equal(table(tree).props.actions.dirty, false);
+});
 
 test('dialog edits stage locally, and toolbar Save submits one complete snapshot despite concurrent clicks', async () => {
   const app = harness();
@@ -1066,7 +1312,7 @@ const settingsBundle = await build({
   external: ['react', 'react/jsx-runtime', 'react-dom'],
   write: false,
 });
-function settingsHarness() {
+function settingsHarness(configurationData = fixture(), initialTab = 'main') {
   const http = { requests: [], response: null };
   const emitted = [];
   const windowListeners = new Map();
@@ -1085,7 +1331,7 @@ function settingsHarness() {
   const configuration = {
     type: 'space-configuration',
     api_url: '/workplaces/w_test/api/v1/page/',
-    data: fixture(),
+    data: configurationData,
   };
   const spaceUrl = fixture().space_url;
   class SettingsForm {
@@ -1104,7 +1350,7 @@ function settingsHarness() {
       api: configuration.api_url,
       csrfToken: 'token',
       spaceUrl,
-      initialTab: 'main',
+      initialTab,
       initialForm: { form: schema([]), return_url: spaceUrl },
       initialConfiguration: configuration,
       initialDetail: {
@@ -1130,11 +1376,11 @@ function settingsHarness() {
         }
       },
       location: {
-        href: 'https://ancore.test' + spaceUrl + '?view=settings#main',
+        href: 'https://ancore.test' + spaceUrl + '?view=settings#' + initialTab,
         origin: 'https://ancore.test',
         pathname: spaceUrl,
         search: '?view=settings',
-        hash: '#main',
+        hash: '#' + initialTab,
       },
       window: {
         ...eventSurface(windowListeners),
@@ -1151,7 +1397,8 @@ function settingsHarness() {
           ok: true,
           status: 200,
           headers: { get: () => 'application/json' },
-          json: async () => http.response,
+          json: async () =>
+            typeof http.response === 'function' ? http.response(url) : http.response,
         };
       },
     },
@@ -1179,6 +1426,11 @@ function settingsHarness() {
     );
     assert.ok(component, 'The configuration editor must remain mounted');
     return component;
+  };
+  app.navigation = (tree = app.render()) => {
+    const header = nodes(tree).find((node) => node.props?.navigationContent);
+    assert.ok(header, 'Missing workflow navigation in the space header');
+    return header.props.navigationContent;
   };
   app.access = (tree = app.render()) => {
     const component = nodes(tree).find((node) => node.props?.publicVisibility === 'public');
@@ -1212,6 +1464,50 @@ function settingsHarness() {
   app.render();
   return app;
 }
+
+test('settings retains the selected workflow view when a saved revision remounts the configuration', async () => {
+  const app = settingsHarness(fixture(), 'statuses');
+  let configuration = app.configuration();
+  assert.equal(configuration.props.workflowView, 'map');
+  assert.equal(button(app.navigation(), 'Mapa').props['aria-selected'], true);
+  button(app.navigation(), 'Stany').props.onClick();
+  configuration = app.configuration();
+  assert.equal(configuration.props.workflowView, 'states');
+  assert.equal(button(app.navigation(), 'Stany').props['aria-selected'], true);
+  assert.equal(button(app.navigation(), 'Mapa').props.tabIndex, -1);
+  const originalKey = configuration.key;
+  const saved = {
+    ...configuration.props.initial,
+    data: { ...fixture(), revision: 'revision-states-saved', workflow_view: 'map' },
+  };
+  app.http.response = (url) =>
+    new URL(url, 'https://ancore.test').searchParams.get('url').endsWith('configuration/')
+      ? saved
+      : { type: 'space-detail', title: 'Ustawienia przestrzeni', data: app.props.initialDetail };
+  await configuration.props.onSaved();
+  configuration = app.configuration();
+  assert.notEqual(configuration.key, originalKey);
+  assert.equal(configuration.key, 'revision-states-saved');
+  assert.equal(configuration.props.workflowView, 'states');
+  assert.equal(button(app.navigation(), 'Stany').props['aria-selected'], true);
+  assert.equal(configuration.props.initial, saved);
+  assert.deepEqual(
+    app.http.requests.map((request) => [
+      request.method,
+      new URL(request.url, 'https://ancore.test').searchParams.get('url'),
+    ]),
+    [
+      ['GET', fixture().space_url + '?view=settings'],
+      ['GET', fixture().space_url + 'configuration/'],
+    ],
+  );
+  button(app.navigation(), 'Mapa').props.onClick();
+  assert.equal(app.configuration().props.workflowView, 'map');
+  assert.equal(button(app.navigation(), 'Mapa').props['aria-selected'], true);
+  const nativeStates = settingsHarness({ ...fixture(), workflow_view: 'states' }, 'statuses');
+  assert.equal(nativeStates.configuration().props.workflowView, 'states');
+  assert.equal(button(nativeStates.navigation(), 'Stany').props['aria-selected'], true);
+});
 
 test('a staged configuration blocks the access visibility control until the configuration is saved or canceled', () => {
   const app = settingsHarness();
@@ -1704,7 +2000,7 @@ test('new workflow stages become transition choices before saving and removal cl
   );
 });
 
-test('workflow editor renders every process field through the common form controls', () => {
+test('workflow editor passes every process field to the stage dialog', () => {
   const data = fixture();
   data.sets[0].forms[0].fields.push(
     field('statuses-0-flow_stage', 'queue', { type: 'select' }),
@@ -1717,6 +2013,7 @@ test('workflow editor renders every process field through the common form contro
     {
       initial: { api_url: '/api/v1/page/', data },
       section: 'statuses',
+      workflowView: 'map',
       csrfToken: 'token',
       onSaved: async () => {},
       onStateChange() {},
@@ -1725,10 +2022,8 @@ test('workflow editor renders every process field through the common form contro
   );
   table(app.render()).props.onEdit(0);
   const tree = app.render();
-  assert.equal(modal(tree).props.title, 'Edytuj status');
-  const fields = nodes(tree)
-    .filter((node) => node.props?.field)
-    .map((node) => node.props.field.field_name);
+  assert.equal(modal(tree).props.title, 'Edytuj etap');
+  const fields = editorSchema(tree).fields.map((entry) => entry.field_name);
   assert.deepEqual(fields, [
     'key',
     'label',
@@ -1739,4 +2034,109 @@ test('workflow editor renders every process field through the common form contro
     'policy',
   ]);
   assert.equal(fields.includes('DELETE'), false);
+});
+
+const stageBundle = await build({
+  entryPoints: [new URL('../src/spaces/WorkflowStageFields.tsx', import.meta.url).pathname],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  jsx: 'automatic',
+  external: ['react', 'react/jsx-runtime', 'react-dom'],
+  write: false,
+});
+class StageInput {
+  constructor(name, value) {
+    this.name = name;
+    this.value = value;
+  }
+}
+
+test('editing a stage name preserves its hidden key, transitions and board positions', () => {
+  const data = fixture();
+  data.sets[0].forms[0].fields.push(
+    field('statuses-0-position_x', '0', { hidden: true }),
+    field('statuses-0-position_y', '240', { hidden: true }),
+  );
+  const app = hookHarness(
+    stageBundle.outputFiles[0].text,
+    'default',
+    { data, schema: configurationEditorSchema(data.sets[0].forms[0]), adding: false },
+    { HTMLInputElement: StageInput },
+  );
+  let tree = app.render();
+  tree.props.onInput({ target: new StageInput('statuses-0-label', 'Nowa nazwa kolejki') });
+  tree = app.render();
+  const inputs = nodes(tree).filter((node) => node.type === 'input');
+  assert.equal(inputs.find((node) => node.props.name === 'statuses-0-key').props.value, 'new');
+  assert.deepEqual(
+    inputs
+      .filter((node) => node.props.name === 'statuses-0-transitions')
+      .map((node) => node.props.value),
+    ['done', 'new'],
+  );
+  for (const [name, value] of [
+    ['position_x', '0'],
+    ['position_y', '240'],
+  ]) {
+    const control = nodes(tree).find((node) => node.props?.field?.field_name === name);
+    assert.equal(control.props.field.value, value);
+  }
+});
+
+test('adding a stage derives a unique key from its name without exposing technical key entry', () => {
+  const data = fixture();
+  const app = hookHarness(
+    stageBundle.outputFiles[0].text,
+    'default',
+    { data, schema: configurationEditorSchema(data.sets[0].forms[2]), adding: true },
+    { HTMLInputElement: StageInput },
+  );
+  let tree = app.render();
+  tree.props.onInput({ target: new StageInput('statuses-2-label', 'New') });
+  tree = app.render();
+  assert.equal(
+    nodes(tree).find((node) => node.type === 'input' && node.props.name === 'statuses-2-key').props
+      .value,
+    'new_2',
+  );
+  assert.equal(
+    nodes(tree).some((node) => node.props?.field?.field_name === 'key'),
+    false,
+  );
+  tree.props.onInput({ target: new StageInput('statuses-2-label', 'Do sprawdzenia') });
+  assert.equal(
+    nodes(app.render()).find(
+      (node) => node.type === 'input' && node.props.name === 'statuses-2-key',
+    ).props.value,
+    'do_sprawdzenia',
+  );
+});
+
+test('generating the new stage key keeps the imperative name control stable while typing', () => {
+  const data = fixture();
+  const app = hookHarness(
+    stageBundle.outputFiles[0].text,
+    'default',
+    { data, schema: configurationEditorSchema(data.sets[0].forms[2]), adding: true },
+    { HTMLInputElement: StageInput },
+  );
+  let tree = app.render();
+  const nameField = nodes(tree).find((node) => node.props?.field?.field_name === 'label').props
+    .field;
+  // FieldControl recreates its DOM input whenever this object changes. Updating
+  // the generated key must therefore retain this object, typed text and focus.
+  for (const label of ['D', 'Do', 'Do sprawdzenia']) {
+    tree.props.onInput({ target: new StageInput('statuses-2-label', label) });
+    tree = app.render();
+    assert.strictEqual(
+      nodes(tree).find((node) => node.props?.field?.field_name === 'label').props.field,
+      nameField,
+    );
+    assert.equal(
+      nodes(tree).find((node) => node.type === 'input' && node.props.name === 'statuses-2-key')
+        .props.value,
+      configurationStatusKey(data, label),
+    );
+  }
 });
