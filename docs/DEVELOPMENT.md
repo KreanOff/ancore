@@ -1,5 +1,43 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Proces Kanban, WIP i blokady (01.11.2026)
+
+Ustawienia udostępniają Proces pracy: kolejność, etapy, przejścia, zasady
+i limity WIP. Wspólny backend egzekwuje pojemność kolumn, kontroluje
+nieaktualne operacje oraz zapisuje blokady i zaobserwowane czasy przepływu.
+[Zachowanie](SPACES.md#kanban-proces-pracy-wip-i-blokady),
+[kontrakt API](FRONTEND.md#proces-kanban-i-blokady-przestrzeni)
+i [elementy UI](UI.md#przestrzenie-i-zespoły).
+
+Końcowy przebieg obejmował **472 testy Django**: `spaces`,
+`core.test_space_settings_frontend` oraz `planner.test_task_calendar`,
+przez `scripts/run_tests.py` na jednorazowej bazie PostgreSQL.
+Przeszło **335 testów frontendu**, TypeScript i build. Sprawdzono Django check,
+zgodność modeli z migracjami, indeks kodu, lokalne linki dokumentacji
+i kontrolę diffu. Regresje obejmują prywatnych rodziców, obserwatorów,
+limity ponad filtrami, podzadania, operacje zbiorcze, konflikt rewizji,
+współbieżne przyjęcie dwóch kart do jednego wolnego miejsca, reopen,
+naprawę dawnych danych i autosave po udanym zapisie oraz nieudanym odczycie.
+Nowa migracja `spaces.0005_kanban_flow` dodaje pola i naprawia położenie
+zakończonych kart w backlogu; nie odtwarza historycznych czasów przepływu.
+
+Chrome/Playwright na osobnej bazie QA sprawdził konfigurację i zapis WIP,
+blokowanie, zmianę odpowiedzialnego, filtrowanie, usuwanie blokady,
+menu i przeciąganie, trwałość po przeładowaniu oraz zwykłe/scoped adresy.
+Sprawdzono 1440/390/320px, pustą tablicę, obserwatora, ponowne wejście
+i referencyjną Listę zadań. Końcowa kontrola zrzutów wykryła przycięcie
+pól okna blokady przy 320px; po ograniczeniu szerokości siatki i selektora
+ponowny pomiar potwierdził brak poziomego przepełnienia przy wszystkich
+trzech szerokościach. Natywne formularze blokady/usuwania działają
+bez JavaScriptu. Symulowane błędy POST/GET 503 zachowują szkic lub pozwalają
+ponowić odczyt bez drugiego zapisu. Zmiana statusu w innej karcie przeglądarki
+odrzuca nieaktualną operację z komunikatem 400. Bez błędów JavaScriptu;
+konsola zawierała tylko kontrolowane odpowiedzi 400/503. Plugin Browser
+był niedostępny, użyto istniejącego Playwright i Chrome. Nie testowano
+Safari, Firefoksa ani wdrożenia produkcyjnego. Raporty cycle time, SLE,
+archiwizacja oraz synchronizacja w czasie rzeczywistym pozostają poza
+zakresem tej zmiany.
+
 ## Tworzenie zadań w kolumnach tablicy (01.11.2026)
 
 Kolumny Tablicy Przestrzeni otwierają wspólny formularz z początkowym

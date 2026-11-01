@@ -380,13 +380,26 @@ test('failed note POST preserves compose and edit drafts for a real retry', asyn
   assert.equal(app.context.message, '');
 });
 
-function autosaveHarness() {
+function autosaveHarness({ inBacklog = false } = {}) {
   const states = [],
     listeners = {},
     requests = [],
     inputs = new Map(),
     fileInput = { value: 'wybrany plik' },
-    controls = { failPost: false, failRefresh: true, updates: [] };
+    controls = {
+      failPost: false,
+      failRefresh: true,
+      updates: [],
+      status: 'new',
+      inBacklog,
+      statuses: [
+        { key: 'new', category: 'new' },
+        { key: 'in_progress', category: 'in_progress' },
+        { key: 'closed', category: 'closed' },
+        { key: 'delivered', category: 'closed' },
+      ],
+    },
+    savedItem = { status: 'new', in_backlog: inBacklog };
   class Input {
     constructor(name) {
       this.name = name;
@@ -410,6 +423,8 @@ function autosaveHarness() {
         super();
         if (form) {
           this.set('title', controls.title || 'Nowy tytuł');
+          this.set('status', controls.status);
+          if (controls.inBacklog) this.set('in_backlog', 'on');
           this.set('files', new File(['Treść'], 'notatka.txt'));
         }
       }
@@ -425,8 +440,29 @@ function autosaveHarness() {
       requests.push(body || 'GET');
       if (body && controls.postWait) await controls.postWait;
       if (body && controls.failPost) throw new Error('POST 503');
+      if (
+        body?.has('source_status') &&
+        (body.get('source_status') !== savedItem.status ||
+          body.get('source_in_backlog') !== String(savedItem.in_backlog))
+      )
+        throw new Error('Nieaktualne położenie zadania');
+      if (body?.has('status')) savedItem.status = body.get('status');
+      if (body && JSON.parse(body.get('autosave_fields')).includes('in_backlog'))
+        savedItem.in_backlog = body.get('in_backlog') === 'on';
+      if (
+        body?.has('status') &&
+        controls.statuses.find((status) => status.key === savedItem.status)?.category === 'closed'
+      )
+        savedItem.in_backlog = false;
+      if (body) return { redirect: '/task/' };
       if (!body && controls.failRefresh) throw new Error('GET 503');
-      return { data: { title: controls.title || 'Nowy tytuł' } };
+      return {
+        data: {
+          title: controls.title || 'Nowy tytuł',
+          item: { ...savedItem },
+          statuses: controls.statuses,
+        },
+      };
     },
   };
   const form = {
@@ -440,7 +476,18 @@ function autosaveHarness() {
     form,
     {
       initial: {
-        data: { form: { fields: [{ name: 'title', errors: [] }] }, can_edit: true, error: '' },
+        data: {
+          item: { ...savedItem },
+          statuses: controls.statuses,
+          form: {
+            fields: [
+              { name: 'title', errors: [] },
+              { name: 'in_backlog', errors: [] },
+            ],
+          },
+          can_edit: true,
+          error: '',
+        },
         api_url: '/api/',
         url: '/task/',
       },
@@ -452,7 +499,7 @@ function autosaveHarness() {
   function input(name) {
     if (!inputs.has(name)) inputs.set(name, new Input(name));
     const element = inputs.get(name);
-    element.value = controls.title || 'Nowy tytuł';
+    element.value = name === 'status' ? controls.status : controls.title || 'Nowy tytuł';
     return element;
   }
   return {
@@ -551,3 +598,51 @@ test('edits made during a committed autosave survive a failed refresh and save o
   );
   assert.equal(app.states[1], false);
 });
+
+test('workflow autosave sends the last committed state even after a failed refresh', async () => {
+  const app = autosaveHarness();
+  app.controls.status = 'in_progress';
+  app.change('status');
+  assert.equal(await app.hook.save(), false);
+  assert.equal(app.requests[0].get('source_status'), 'new');
+  assert.equal(app.requests[0].get('source_in_backlog'), 'false');
+  app.controls.status = 'closed';
+  app.change('status');
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests[2].get('source_status'), 'in_progress');
+  assert.equal(app.requests[2].get('status'), 'closed');
+});
+
+test('rejected workflow autosave preserves its original concurrency snapshot on retry', async () => {
+  const app = autosaveHarness();
+  app.controls.status = 'in_progress';
+  app.controls.failPost = true;
+  app.change('status');
+  assert.equal(await app.hook.save(), false);
+  app.controls.failPost = false;
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests[1].get('source_status'), 'new');
+  assert.equal(app.requests[1].get('source_in_backlog'), 'false');
+});
+
+for (const status of ['closed', 'delivered']) {
+  test(`closing backlog work as ${status} preserves the server placement after GET fails`, async () => {
+    const app = autosaveHarness({ inBacklog: true });
+    app.controls.status = status;
+    app.change('status');
+    assert.equal(await app.hook.save(), false);
+    assert.equal(app.requests[0].get('source_in_backlog'), 'true');
+    assert.match(app.states[2], /^Zapisano zmiany.*GET 503$/);
+    // The failed GET leaves the old checkbox checked, but the server moved work to the board.
+    assert.equal(app.controls.inBacklog, true);
+    app.controls.status = 'in_progress';
+    app.change('status');
+    app.controls.failRefresh = false;
+    assert.equal(await app.hook.save(), true);
+    assert.equal(app.requests[2].get('source_status'), status);
+    assert.equal(app.requests[2].get('source_in_backlog'), 'false');
+    assert.equal(app.controls.updates[0].item.in_backlog, false);
+  });
+}

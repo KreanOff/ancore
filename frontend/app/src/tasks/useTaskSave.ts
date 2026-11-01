@@ -29,6 +29,8 @@ export function useTaskSave(
     timer = useRef<ReturnType<typeof setTimeout>>(),
     request = useRef<Promise<boolean> | null>(null),
     needsRefresh = useRef(false),
+    savedWorkflow = useRef({ status: initial.item.status, inBacklog: initial.item.in_backlog }),
+    workflowStatuses = useRef(initial.statuses),
     life = useRef(new AbortController());
   const saveRef = useRef<() => Promise<boolean>>(async () => true),
     refreshRef = useRef(refresh);
@@ -57,6 +59,10 @@ export function useTaskSave(
           );
           body.set('action', 'save');
           body.set('autosave_fields', JSON.stringify([...snapshot.keys()]));
+          if (snapshot.has('status') || snapshot.has('in_backlog') || snapshot.has('sprint')) {
+            body.set('source_status', savedWorkflow.current.status);
+            body.set('source_in_backlog', String(savedWorkflow.current.inBacklog));
+          }
           await pageRequest(
             props.initial.api_url,
             props.initial.url,
@@ -65,6 +71,19 @@ export function useTaskSave(
             body,
           );
           committed = true;
+          // A committed POST remains the baseline even when the following GET fails.
+          if (snapshot.has('status')) savedWorkflow.current.status = String(all.get('status'));
+          if (snapshot.has('in_backlog'))
+            savedWorkflow.current.inBacklog = ['on', 'true', '1'].includes(
+              String(all.get('in_backlog')),
+            );
+          if (snapshot.has('sprint') && all.get('sprint')) savedWorkflow.current.inBacklog = false;
+          if (
+            snapshot.has('status') &&
+            workflowStatuses.current.find((status) => status.key === savedWorkflow.current.status)
+              ?.category === 'closed'
+          )
+            savedWorkflow.current.inBacklog = false;
           needsRefresh.current = true;
           snapshot.forEach((value, name) => {
             if (changed.current.get(name) === value) changed.current.delete(name);
@@ -82,7 +101,10 @@ export function useTaskSave(
           props.csrfToken,
           life.current.signal,
         );
-        refreshRef.current(page.data as TaskData);
+        const next = page.data as TaskData;
+        savedWorkflow.current = { status: next.item.status, inBacklog: next.item.in_backlog };
+        workflowStatuses.current = next.statuses;
+        refreshRef.current(next);
         needsRefresh.current = false;
         setErrors({});
         setNotice('Zapisano zmiany.');

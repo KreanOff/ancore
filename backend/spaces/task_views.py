@@ -126,6 +126,16 @@ def work_log_context(request, task):
 def detail(request, space_pk, key):
     item = task_item(request, space_pk, key)
     task, space = item.task, item.space
+    if request.method == 'GET' and request.GET.get('block') == '1' and getattr(request, '_react_api', False):
+        from .frontend import item_payload
+        from .views import decorate_items
+        from .workflow import block_responsible_people
+        require_editable(SpaceTask.objects.filter(pk=task.pk), request.user)
+        return JsonResponse({'type': 'space-block', 'title': f'Blokada {item.key}', 'data': {
+            'item': item_payload(decorate_items(request, [item])[0]), 'can_edit': True,
+            'block_responsible_options': [{'id': person.pk, 'label': person.get_full_name() or person.email}
+                                          for person in block_responsible_people(task)],
+        }})
     if request.method == 'GET' and task.parent_id:
         remember_view(request, task)
         return redirect(task_subtasks_url(request, task))
@@ -172,7 +182,14 @@ def detail(request, space_pk, key):
                         old_planning = [getattr(item, name) for name in planning_fields]
                         previous = {'title': task.title, 'priority': task.priority, 'work_type': item.work_type}
                         target = form.data.get('status', item.status)
-                        set_status(request, item, target)
+                        from .workflow import assert_snapshot
+                        if changed_fields & {'status', 'in_backlog', 'sprint'}:
+                            assert_snapshot(item, request.POST)
+                        planning_backlog = data.get('in_backlog') if changed_fields & {'in_backlog', 'sprint'} else None
+                        if target != item.status and next((status for status in space.statuses if status['key'] == target), {}).get('category') == 'closed':
+                            data['in_backlog'] = False
+                            planning_backlog = False
+                        set_status(request, item, target, in_backlog=planning_backlog)
                         task.refresh_from_db()
                         for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
                             if name in changed_fields:
@@ -238,6 +255,7 @@ def detail(request, space_pk, key):
                                           'title', 'description', 'visibility', 'priority', 'assignee', 'due_at',
                                       )})
                     child._activity_actor = request.user
+                    child._initial_status = status_key
                     child.save()
                     child_item = child.work_item
                     child_item.status = status['key']

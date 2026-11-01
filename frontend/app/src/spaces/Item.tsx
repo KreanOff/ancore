@@ -3,6 +3,7 @@ import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { dateLabel, type DetailData, type Item } from './types';
+import { flowAge, wipReached } from './kanban';
 export function Priority({ value, label = value }: { value: string; label?: string }) {
   const icons: Record<string, string> = {
     urgent: 'circle-alert',
@@ -90,13 +91,15 @@ export interface ActionsProps {
   data: DetailData;
   busy: boolean;
   openForm: (url: string) => void;
+  openBlock: (item: Item) => void;
   act: (url: string, values: Record<string, string>) => void;
 }
-export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
+export function ItemActions({ item, data, busy, openForm, openBlock, act }: ActionsProps) {
   if (!item.editable) return null;
   const snapshot = {
     space: String(data.space.id),
     source_status: item.status,
+    source_in_backlog: String(item.in_backlog),
     status: item.status,
     source_sprint: String(item.sprint_id ?? ''),
     source_rank: String(item.rank),
@@ -128,25 +131,45 @@ export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
             <Icon name="pencil" />
             <span>Edytuj {item.key}</span>
           </button>
-          {item.transitions.map((status) => (
-            <button
-              key={status.key}
-              type="button"
-              className="tasks-project-menu-button"
-              disabled={busy}
-              onClick={() => {
-                close();
-                act(item.action_url, {
-                  action: 'status',
-                  status: status.key,
-                  return_view: data.view,
-                });
-              }}
-            >
-              <span className={`status-indicator status-${status.category}`} />
-              <span>Zmień na: {status.label}</span>
-            </button>
-          ))}
+          {item.transitions.map((status) => {
+            const column = data.columns.find((column) => column.key === status.key);
+            const full = !item.in_backlog && column && wipReached(column);
+            return (
+              <button
+                key={status.key}
+                type="button"
+                className="tasks-project-menu-button"
+                disabled={busy || full}
+                title={full ? 'Limit pracy w toku dla tego etapu został osiągnięty.' : undefined}
+                onClick={() => {
+                  close();
+                  act(item.action_url, {
+                    ...snapshot,
+                    action: 'status',
+                    status: status.key,
+                    return_view: data.view,
+                  });
+                }}
+              >
+                <span className={`status-indicator status-${status.category}`} />
+                <span>Zmień na: {status.label}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className="tasks-project-menu-button"
+            aria-disabled={busy}
+            aria-haspopup="dialog"
+            onClick={() => {
+              if (busy) return;
+              close();
+              openBlock(item);
+            }}
+          >
+            <Icon name={item.blocked ? 'circle-check' : 'circle-alert'} />
+            <span>{item.blocked ? 'Zmień lub usuń blokadę' : 'Zablokuj zadanie'}</span>
+          </button>
           {data.sort.manual && ['board', 'backlog'].includes(data.view)
             ? ['up', 'down'].map((direction, index) => (
                 <button
@@ -206,7 +229,7 @@ export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
                   </button>
                 ))
             : null}
-          {data.space.template === 'kanban' ? (
+          {data.space.template === 'kanban' && item.category !== 'closed' ? (
             <button
               type="button"
               className="tasks-project-menu-button"
@@ -214,6 +237,7 @@ export function ItemActions({ item, data, busy, openForm, act }: ActionsProps) {
               onClick={() => {
                 close();
                 act(item.action_url, {
+                  ...snapshot,
                   action: item.in_backlog ? 'board' : 'backlog',
                   return_view: data.view,
                 });
@@ -246,6 +270,15 @@ function ItemIdentity({ item }: { item: Item }) {
           <span className="tasks-row-title-main">
             <span className="work-item-key">{item.key}</span>
             <span className="tasks-row-title-text">{item.title}</span>
+            {item.blocked ? (
+              <span
+                className="work-blocked-indicator"
+                title={`Zablokowane: ${item.blocked.reason}`}
+                aria-label={`Zablokowane: ${item.blocked.reason}`}
+              >
+                <Icon name="circle-alert" />
+              </span>
+            ) : null}
           </span>
         </span>
       </a>
@@ -348,6 +381,27 @@ export function ItemCard(
       {item.team ? (
         <div className="work-kanban-context work-sprint-card-context">
           <span>{item.team}</span>
+        </div>
+      ) : null}
+      {item.blocked ? (
+        <div className="work-card-blocked" aria-label="Blokada zadania">
+          <span>
+            <Icon name="circle-alert" /> Zablokowane · {flowAge(item.blocked.at)}
+          </span>
+          <span className="work-card-blocked-reason" title={item.blocked.reason}>
+            {item.blocked.reason}
+          </span>
+          {item.blocked.responsible ? (
+            <span>Odpowiedzialny: {item.blocked.responsible.label}</span>
+          ) : null}
+        </div>
+      ) : null}
+      {item.flow?.stage_entered_at && item.category !== 'closed' ? (
+        <div
+          className="work-card-age"
+          title={`W etapie od ${dateLabel(item.flow.stage_entered_at, true)}`}
+        >
+          <Icon name="clock" /> W etapie: {flowAge(item.flow.stage_entered_at)}
         </div>
       ) : null}
     </article>

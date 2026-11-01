@@ -343,7 +343,7 @@ class SpaceTests(TestCase):
                         payload[f'{formset.prefix}-{i}-{key}'] = field.initial
             for i, initial in enumerate(formset.initial):
                 for key, value in initial.items():
-                    payload[f'{formset.prefix}-{i}-{key}'] = value
+                    payload[f'{formset.prefix}-{i}-{key}'] = value if value is not None else ''
         payload['statuses-0-label'] = 'Zaplanowane'
         payload['statuses-0-transitions'] = ['in_progress']
         self.assertEqual(self.client.post(url, payload).status_code, 302)

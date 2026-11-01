@@ -11,6 +11,7 @@ const FILTERS = [
   { key: 'status', label: 'Status', icon: 'list' },
   { key: 'priority', label: 'Priorytet', icon: 'flag' },
   { key: 'team', label: 'Zespół', icon: 'users' },
+  { key: 'blocked', label: 'Blokada', icon: 'circle-alert' },
 ];
 const matches = (text: string, query: string) =>
   text.toLocaleLowerCase('pl').includes(query.trim().toLocaleLowerCase('pl'));
@@ -165,12 +166,15 @@ export function ItemFiltering({
 }) {
   const [field, setField] = useState<(typeof FILTERS)[number] | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
+  const availableFilters = FILTERS.filter(
+    ({ key }) => key !== 'blocked' || data.filter_options.blocked,
+  );
   const active =
-    FILTERS.filter(({ key }) => data.filters[key]).length + (data.filters.summary ? 1 : 0);
+    availableFilters.filter(({ key }) => data.filters[key]).length + (data.filters.summary ? 1 : 0);
   const options = field
     ? data.filter_options[field.key].filter(([, label]) => matches(label, filterQuery))
     : [];
-  const fields = FILTERS.filter(({ label }) => matches(label, filterQuery));
+  const fields = availableFilters.filter(({ label }) => matches(label, filterQuery));
   const change = (values: Record<string, string>) => changeQuery(url, values);
   return (
     <Dropdown

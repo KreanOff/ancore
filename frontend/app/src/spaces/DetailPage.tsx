@@ -17,6 +17,8 @@ import { dateLabel, type DetailData, type Item, type Sprint, type Status } from 
 import { useItemMotion } from './useItemMotion';
 import Timeline from './TimelineView';
 import ReportsView from './ReportsView';
+import { BlockDialog, type BlockDialogData } from './BlockDialog';
+import { boardMoveError, wipReached } from './kanban';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
     [modal, setModal] = useState<FormDialogData | null>((initial.data as DetailData).modal),
@@ -27,7 +29,8 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     [listError, setListError] = useState<{ key: string; message: string } | null>(null),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [destination, setDestination] = useState(''),
-    [dragged, setDragged] = useState<Item | null>(null);
+    [dragged, setDragged] = useState<Item | null>(null),
+    [blockDialog, setBlockDialog] = useState<BlockDialogData | null>(null);
   const motion = useItemMotion(data, () => {
     setDragged(null);
     setNotice('Anulowano przeciąganie zadania.');
@@ -36,7 +39,58 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     pending = useRef(false),
     currentUrl = useRef(initial.url),
     listScroll = useRef<number | null>(null);
+  const refreshState = useRef({ data, modal, blockDialog, dragged, busy });
+  refreshState.current = { data, modal, blockDialog, dragged, busy };
   useEffect(() => () => life.current.abort(), []);
+  async function refreshBoard() {
+    const page = await pageRequest<Page>(
+      initial.api_url,
+      currentUrl.current,
+      csrfToken,
+      life.current.signal,
+    );
+    const next = page.data as DetailData;
+    if (page.type !== 'space-detail' || next.space.id !== data.space.id || next.view !== data.view)
+      throw new Error('Nie udało się odświeżyć tablicy. Spróbuj ponownie.');
+    if (life.current.signal.aborted) return;
+    setData(next);
+    setSelected(
+      (current) => new Set([...current].filter((id) => next.items.some((item) => item.id === id))),
+    );
+  }
+  useEffect(() => {
+    async function refreshOnFocus() {
+      const current = refreshState.current;
+      if (
+        document.visibilityState !== 'visible' ||
+        current.data.view !== 'board' ||
+        pending.current ||
+        current.busy ||
+        current.modal ||
+        current.blockDialog ||
+        current.dragged ||
+        document.querySelector('.tasks-modal.is-open')
+      )
+        return;
+      pending.current = true;
+      setBusy(true);
+      try {
+        await refreshBoard();
+        if (!life.current.signal.aborted) setError('');
+      } catch (exception) {
+        if (!life.current.signal.aborted) setError(errorMessage(exception));
+      } finally {
+        pending.current = false;
+        if (!life.current.signal.aborted) setBusy(false);
+      }
+    }
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnFocus);
+    return () => {
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnFocus);
+    };
+  }, []);
   useLayoutEffect(() => {
     if (listScroll.current !== null && motion.root.current) {
       motion.root.current.scrollTop = listScroll.current;
@@ -122,6 +176,29 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     } finally {
       pending.current = false;
       setBusy(false);
+    }
+  }
+  async function openBlock(item: Item) {
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const page = await pageRequest<Page>(
+        initial.api_url,
+        item.block_url || item.url,
+        csrfToken,
+        life.current.signal,
+      );
+      const detail = page.data as BlockDialogData & { can_edit: boolean };
+      if (page.type !== 'space-block' || detail.item.id !== item.id || !detail.can_edit)
+        throw new Error('Nie można teraz zmienić blokady tego zadania. Odśwież widok.');
+      if (!life.current.signal.aborted) setBlockDialog(detail);
+    } catch (exception) {
+      if (!life.current.signal.aborted) setError(errorMessage(exception));
+    } finally {
+      pending.current = false;
+      if (!life.current.signal.aborted) setBusy(false);
     }
   }
   async function act(
@@ -246,6 +323,15 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       return;
     }
     const column = data.columns.find((column) => column.key === group);
+    if (board && column) {
+      const reason = boardMoveError(dragged, column);
+      if (reason) {
+        motion.clearDrag();
+        setDragged(null);
+        setNotice(reason);
+        return;
+      }
+    }
     const moved = board
       ? {
           ...dragged,
@@ -299,6 +385,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     data,
     busy,
     openForm: (url: string) => void openForm(url),
+    openBlock: (item: Item) => void openBlock(item),
     act: (url: string, values: Record<string, string>) => void act(url, values),
   };
   const tableView = ['list', 'board', 'backlog', 'timeline'].includes(data.view),
@@ -650,52 +737,87 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
               <div className="tasks-table-wrap tasks-board tasks-kanban-board work-sprint-board">
                 {data.columns.map((column) => {
                   const rows = data.items.filter((item) => item.status === column.key);
+                  const moveError = dragged ? boardMoveError(dragged, column) : '';
                   const cards = (
-                    <div className="tasks-issue-list tasks-kanban-column__list">
-                      {rows.length ? (
-                        rows.map((item) => (
-                          <ItemCard
-                            key={item.id}
-                            item={item}
-                            {...actionProps}
-                            dragging={!!dragged}
-                            onDragStart={(event) => dragStart(event, item)}
-                            onDragEnd={() => {
-                              motion.clearDrag();
-                              setDragged(null);
-                            }}
-                            onDrop={(event) => drop(event, column.key, item)}
-                          />
-                        ))
-                      ) : (
-                        <div className="tasks-empty-section" role="status">
-                          Brak zadań
+                    <>
+                      {column.flow_stage === 'active' || column.policy || moveError ? (
+                        <div className="work-board-policy">
+                          {column.flow_stage === 'active' ? (
+                            <span
+                              className={`work-board-wip${wipReached(column) ? ' is-full' : ''}`}
+                              title="Liczba dostępnych zadań w etapie, niezależnie od filtrów. Limit obejmuje całą tablicę."
+                            >
+                              <Icon name={wipReached(column) ? 'circle-alert' : 'layers'} />
+                              WIP: {column.wip_count ?? 0} widoczne ·{' '}
+                              {column.wip_limit == null
+                                ? 'bez limitu'
+                                : `limit ${column.wip_limit}`}
+                            </span>
+                          ) : null}
+                          {column.policy ? (
+                            <details className="work-board-policy-details">
+                              <summary>Zasady etapu</summary>
+                              <p>{column.policy}</p>
+                            </details>
+                          ) : null}
+                          {moveError ? <p className="work-board-move-error">{moveError}</p> : null}
                         </div>
-                      )}
-                      {data.can_edit && column.create_item_url ? (
-                        <button
-                          type="button"
-                          className="tasks-project-menu-button work-board-create"
-                          aria-disabled={busy}
-                          aria-label={`Utwórz zadanie w statusie ${column.label}`}
-                          aria-haspopup="dialog"
-                          onClick={() => void openForm(column.create_item_url!)}
-                        >
-                          <Icon name="plus" />
-                          Utwórz zadanie
-                        </button>
                       ) : null}
-                    </div>
+                      <div className="tasks-issue-list tasks-kanban-column__list">
+                        {rows.length ? (
+                          rows.map((item) => (
+                            <ItemCard
+                              key={item.id}
+                              item={item}
+                              {...actionProps}
+                              dragging={!!dragged}
+                              onDragStart={(event) => dragStart(event, item)}
+                              onDragEnd={() => {
+                                motion.clearDrag();
+                                setDragged(null);
+                              }}
+                              onDrop={(event) => drop(event, column.key, item)}
+                            />
+                          ))
+                        ) : (
+                          <div className="tasks-empty-section" role="status">
+                            Brak zadań
+                          </div>
+                        )}
+                        {data.can_edit && column.create_item_url ? (
+                          <button
+                            type="button"
+                            className="tasks-project-menu-button work-board-create"
+                            aria-disabled={busy || wipReached(column)}
+                            title={
+                              wipReached(column)
+                                ? 'Limit pracy w toku dla tego etapu został osiągnięty.'
+                                : undefined
+                            }
+                            aria-label={`Utwórz zadanie w statusie ${column.label}`}
+                            aria-haspopup="dialog"
+                            onClick={() => {
+                              if (!wipReached(column)) void openForm(column.create_item_url!);
+                            }}
+                          >
+                            <Icon name="plus" />
+                            Utwórz zadanie
+                          </button>
+                        ) : null}
+                      </div>
+                    </>
                   );
                   return (
                     <StatusGroup
                       key={column.key}
                       dropGroup={column.key}
-                      className="tasks-kanban-column"
+                      className={`tasks-kanban-column${moveError ? ' is-drop-unavailable' : ''}`}
                       category={column.category}
                       label={column.label}
                       count={column.count}
-                      onDragOver={dragged ? (event) => event.preventDefault() : undefined}
+                      onDragOver={
+                        dragged && !moveError ? (event) => event.preventDefault() : undefined
+                      }
                       onDrop={(event) => drop(event, column.key)}
                     >
                       {cards}
@@ -818,6 +940,16 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             if ((initial.data as DetailData).modal) setPageLocation(modal.return_url);
           }}
           onSaved={navigate}
+        />
+      ) : null}
+      {blockDialog ? (
+        <BlockDialog
+          data={blockDialog}
+          api={initial.api_url}
+          csrfToken={csrfToken}
+          view={data.view}
+          onClose={() => setBlockDialog(null)}
+          onRefresh={refreshBoard}
         />
       ) : null}
     </div>

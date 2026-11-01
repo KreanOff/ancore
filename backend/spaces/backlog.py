@@ -9,6 +9,7 @@ from .models import SpaceTask
 from .models import Sprint, WorkItem
 from .services import record
 from .item_query import order_items
+from .workflow import flow_snapshot
 
 
 MAX_RANK = 2147483647
@@ -22,12 +23,14 @@ def append_planned_items(request, space, items, sprint=None, *, board=False, mes
         if maximum > MAX_RANK:
             raise ValidationError('Brak miejsca na zapis kolejności. Odśwież backlog.')
         old_sprint, old_rank = item.sprint_id, item.rank
+        old_flow = flow_snapshot(item)
         item.sprint, item.in_backlog, item.rank = sprint, sprint is None and not board, maximum
         item.save(update_fields=['sprint', 'in_backlog', 'rank'])
         destination = f'do sprintu „{sprint.name}”' if sprint else 'na tablicę' if board else 'do backlogu'
         record(item, request.user, 'updated', f'przeniósł zadanie {destination}{message_suffix}', {
             'old_sprint_id': old_sprint, 'new_sprint_id': item.sprint_id,
             'old_rank': old_rank, 'new_rank': item.rank,
+            'old_flow': old_flow, 'flow': flow_snapshot(item),
         })
 
 
@@ -165,6 +168,7 @@ def move_backlog_item(request, space, item, scope):
     if item.sprint_id == target_id and original_rows == new_rows and item.in_backlog == backlog:
         return
     old_sprint, old_rank = item.sprint_id, item.rank
+    old_flow = flow_snapshot(item)
     # Hidden/filtered/closed records can bound an insertion but are never edited.
     full_rows = list(WorkItem.objects.filter(space=space, sprint_id=target_id).exclude(pk=item.pk).only('pk', 'rank').order_by('rank', 'pk'))
     full_positions = {row.pk: index for index, row in enumerate(full_rows)}
@@ -184,4 +188,5 @@ def move_backlog_item(request, space, item, scope):
     record(item, request.user, 'updated', message, {
         'old_sprint_id': old_sprint, 'new_sprint_id': target_id,
         'old_rank': old_rank, 'new_rank': item.rank,
+        'old_flow': old_flow, 'flow': flow_snapshot(item),
     })

@@ -299,3 +299,31 @@ test('summary drill-down can be searched and removed without clearing the other 
   assert.equal(app.navigations[0], '/space/produkt/?view=overview&status=new');
   assert.equal(app.closed, 1);
 });
+
+test('block filtering combines with existing board filters and clear-all removes it', () => {
+  const base = data({ priority: 'high', blocked: 'yes' });
+  const blocked = {
+    ...base,
+    filter_options: {
+      ...base.filter_options,
+      blocked: [
+        ['', 'Wszystkie zadania'],
+        ['yes', 'Zablokowane'],
+        ['no', 'Bez blokady'],
+      ],
+    },
+  };
+  const app = harness(blocked, '/space/produkt/?view=board&priority=high&blocked=yes');
+  assert.ok(
+    nodes(app.render().dropdown.props.trigger).some(
+      (node) => node.props?.['aria-label'] === 'Aktywne filtry: 2',
+    ),
+  );
+  button(app.render().menu, 'Filtr: Blokada').props.onClick();
+  assert.equal(button(app.render().menu, 'Zablokowane').props['aria-checked'], true);
+  button(app.render().menu, 'Bez blokady').props.onClick();
+  assert.equal(app.navigations[0], '/space/produkt/?view=board&priority=high&blocked=no');
+  app.render().dropdown.props.onOpen();
+  button(app.render().menu, 'Wyczyść').props.onClick();
+  assert.equal(app.navigations[1], '/space/produkt/?view=board');
+});

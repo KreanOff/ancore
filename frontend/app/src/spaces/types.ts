@@ -10,6 +10,10 @@ export interface Status {
   loaded_count?: number;
   more_url?: string;
   create_item_url?: string;
+  wip_limit?: number | null;
+  wip_count?: number;
+  flow_stage?: 'queue' | 'active' | 'done';
+  policy?: string;
 }
 export interface Item {
   id: number;
@@ -19,6 +23,7 @@ export interface Item {
   url: string;
   edit_url: string;
   action_url: string;
+  block_url?: string;
   editable: boolean;
   rank: number;
   sprint_id: number | null;
@@ -43,6 +48,18 @@ export interface Item {
   start_at: string | null;
   start_on: string | null;
   end_on?: string | null;
+  blocked?: {
+    reason: string;
+    at: string;
+    by: string | null;
+    responsible: { id: number; label: string } | null;
+  } | null;
+  blocked_revision?: number;
+  flow?: {
+    started_at: string | null;
+    stage_entered_at: string | null;
+    finished_at: string | null;
+  };
   update_dates_url?: string;
   timeline: { start: string; end: string; left: string; width: string };
 }

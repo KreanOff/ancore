@@ -8,7 +8,8 @@ def task_metadata(sender, instance, created=False, raw=False, **kwargs):
         return
     from .services import create_work_item, record
     item = create_work_item(instance)
-    record(item, getattr(instance, '_activity_actor', instance.created_by), 'created', 'utworzył zadanie', {'title': instance.title})
+    from .workflow import flow_snapshot
+    record(item, getattr(instance, '_activity_actor', instance.created_by), 'created', 'utworzył zadanie', {'title': instance.title, 'flow': flow_snapshot(item)})
 
 
 @receiver(post_delete, sender='workplaces.WorkplaceMembership')

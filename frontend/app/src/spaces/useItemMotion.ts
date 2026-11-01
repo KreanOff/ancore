@@ -177,6 +177,10 @@ export function useItemMotion(data: DetailData, onCancel: () => void) {
   function positionTarget(column: HTMLElement) {
     const current = drag.current;
     if (!current) return;
+    if (column.classList.contains('is-drop-unavailable')) {
+      if (current.target) clearTarget();
+      return;
+    }
     const list = column.querySelector<HTMLElement>('.tasks-issue-list');
     const group = column.dataset.workDropGroup!;
     const markerBounds = current.marker.getBoundingClientRect();
@@ -319,6 +323,11 @@ export function useItemMotion(data: DetailData, onCancel: () => void) {
     if (!current) return;
     const column = (event.target as Element).closest<HTMLElement>('[data-work-drop-group]');
     if (!column || !root.current?.contains(column)) return;
+    if (column.classList.contains('is-drop-unavailable')) {
+      event.dataTransfer.dropEffect = 'none';
+      if (current.target) clearTarget();
+      return;
+    }
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
     current.x = event.clientX;

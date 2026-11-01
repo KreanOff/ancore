@@ -31,12 +31,12 @@ from .avatars import save_space_avatar
 from .backlog import bulk_plan_items, move_backlog_item
 from .backlog_window import backlog_more_url, backlog_window
 from .board import move_board_item
-from .defaults import TEMPLATES, issue_type_icon, template_settings
+from .defaults import TEMPLATES, issue_type_icon, status_flow_stage, template_settings
 from .dashboard import dashboard_payload
 from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
-from .summary import filter_summary_items, space_summary
+from .summary import filter_summary_items, materialized_summary_items, space_summary
 from .item_query import item_sort, order_items
 from .list_window import group_limit, list_url, list_window, more_url, timeline_more_url
 from .reports import report_csv, space_reports
@@ -55,14 +55,14 @@ def settings_context(request, space, tab='main'):
     base = space_url(request, space, '?view=settings')
     sections = [('main', 'Ustawienia', 'settings'), ('members', 'Udostępnienia', 'users')]
     if not read_only(request) and manage_configuration(request, space):
-        sections.append(('types', 'Typy zgłoszeń', 'layers'))
+        sections.extend([('types', 'Typy zgłoszeń', 'layers'), ('statuses', 'Proces pracy', 'workflow')])
     fallback_urls = {'main': base + '#main', 'members': base + '&section=members#members',
                      **{key: space_url(request, space, f'configuration/?section={key}#{key}')
-                        for key in ('types',)}}
+                        for key in ('types', 'statuses')}}
     return {'space': space, 'space_url': space_url(request, space),
             'sidebar_mode': 'space-settings', 'space_settings_sidebar': {
         'name': space.name, 'tab': {'avatar': 'main', 'configuration': 'types',
-                                  'statuses': 'types', 'fields': 'types'}.get(tab, tab),
+                                  'fields': 'types'}.get(tab, tab),
         'links': [{'key': key, 'label': label, 'icon': icon, 'url': base + '#' + key,
                    'fallback_url': fallback_urls[key]}
                   for key, label, icon in sections],
@@ -79,6 +79,7 @@ def decorate_items(request, items):
         item.url = task_url(request, item.task)
         item.edit_url = space_url(request, item.space, f'tasks/{item.key}/edit/')
         item.action_url = space_url(request, item.space, f'tasks/{item.key}/action/')
+        item.block_url = space_url(request, item.space, f'tasks/{item.key}/?block=1')
         item.update_dates_url = space_url(request, item.space, f'tasks/{item.key}/dates/')
         if request.GET:
             item.action_url += '?' + request.GET.urlencode()
@@ -176,6 +177,8 @@ def filtered_space_items(request, space, items, now):
     work_type = request.GET.get('work_type', '').strip()[:40]
     if work_type:
         items = items.filter(work_type=work_type)
+    if request.GET.get('blocked') in {'yes', 'no'}:
+        items = items.filter(task__blocked_at__isnull=request.GET['blocked'] == 'no')
     for parameter, lookup in (('team', 'team_id'),):
         value = request.GET.get(parameter, '')
         if value.isdecimal() and len(value) < 19:
@@ -244,7 +247,9 @@ def detail_context(request, space, view):
     ]
     query = request.GET.get('q', '').strip()[:120]
     items = visible_items(request).filter(space=space)
-    assignee_options = get_user_model().objects.filter(pk__in=items.order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
+    # Keep the live ACL scope separate from the outer person lookup, as for
+    # summaries: stale PostgreSQL estimates must not multiply permission joins.
+    assignee_options = get_user_model().objects.filter(pk__in=materialized_summary_items(items).order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
     space_teams = list(teams_for(request).filter(spaces=space))
     for team_option in space_teams:
         team_option.select_photo_url = app_url(request, f'{team_option.pk}/photo/', 'teams') if team_option.photo else ''
@@ -262,7 +267,7 @@ def detail_context(request, space, view):
         'priority_options': SpaceTask.PRIORITY_CHOICES, 'space_teams': space_teams,
         'team_filter': team, 'type_options': type_options, 'type_filter': type_filter,
         'item_filter_count': sum(bool(value) for value in (
-            type_filter, team, *[summary_filters[key] for key in ('assignee_filter', 'status_filter', 'priority_filter', 'summary_filter')],
+            type_filter, team, request.GET.get('blocked') in {'yes', 'no'}, *[summary_filters[key] for key in ('assignee_filter', 'status_filter', 'priority_filter', 'summary_filter')],
         )),
     }
     if view in {'overview', 'tags', 'reports'}:
@@ -316,7 +321,9 @@ def detail_context(request, space, view):
                 continue
             item.timeline_left = str(round((item.timeline_start - start).days / duration * 100, 2))
             item.timeline_width = str(round(max((item.timeline_end - item.timeline_start).days + 1, 1) / duration * 100, 2))
-    columns = [{**s, 'items': [i for i in rows if i.status == s['key']], 'count': column_counts.get(s['key'], 0)} for s in space.statuses]
+    from .workflow import board_wip
+    wip = board_wip(space, request.user) if view == 'board' else {}
+    columns = [{**s, **wip.get(s['key'], {}), 'items': [i for i in rows if i.status == s['key']], 'count': column_counts.get(s['key'], 0)} for s in space.statuses]
     can_edit = editable_to(Space.objects.filter(pk=space.pk), request.user).exists()
     if view == 'board':
         for column in columns:
@@ -631,51 +638,64 @@ def item_edit(request, pk=None, space_pk=None, key=None):
            else list_url(request, space) if request.GET.get('view') == 'list'
            else space_url(request, space, '?view=list'))
     if request.method == 'POST':
-        with transaction.atomic():
-            if request.workplace:
-                Workplace.objects.select_for_update().get(pk=request.workplace.pk)
-            Space.objects.select_for_update().get(pk=space.pk)
-            if item:
-                require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
-                item = get_object_or_404(visible_items(request), pk=item.pk, space=space)
-            else:
-                require_editable(Space.objects.filter(pk=space.pk), request.user)
-            space = space_object(request, space.pk)
-            form_class = SubtaskForm if item and item.task.parent_id else ItemForm
-            form = form_class(request.POST, request=request, space=space, item=item, **form_options)
-            if not form.is_valid():
-                return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, **background)
-            data = form.cleaned_data
-            initial_status = next((status for status in space.statuses if status['key'] == data.get('status')), None) if not item else None
-            task = SpaceTask.objects.select_for_update().get(pk=item.task_id) if item else SpaceTask(space=space, created_by=request.user, visibility='public')
-            if initial_status:
-                task.status = initial_status['category']
-            if item and 'status' in data:
-                set_status(request, item, data['status'])
-                task.refresh_from_db()
-            for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
-                if name in data:
-                    setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
-            task._activity_actor = request.user
-            task.save()
-            if 'tags' in data:
-                task.tags.set(data['tags'])
-            item = WorkItem.objects.select_for_update().get(task=task)
-            if initial_status:
-                item.status = initial_status['key']
-            old_type, old_type_label = item.work_type, item.get_work_type_display()
-            for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
-                if name in data:
-                    setattr(item, name, data[name])
-            if not isinstance(form, SubtaskForm):
-                item.custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else '' for f in space.configuration.settings.get('fields', [])}
-            item.save()
-            if pk:
-                metadata = {'fields': ['typ zgłoszenia'], 'changes': [{
-                    'field': 'typ zgłoszenia', 'from_label': old_type_label,
-                    'to_label': item.get_work_type_display(),
-                }]} if old_type != item.work_type else {}
-                record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni', metadata)
+        try:
+            with transaction.atomic():
+                if request.workplace:
+                    Workplace.objects.select_for_update().get(pk=request.workplace.pk)
+                Space.objects.select_for_update().get(pk=space.pk)
+                if item:
+                    require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
+                    item = get_object_or_404(visible_items(request), pk=item.pk, space=space)
+                else:
+                    require_editable(Space.objects.filter(pk=space.pk), request.user)
+                space = space_object(request, space.pk)
+                form_class = SubtaskForm if item and item.task.parent_id else ItemForm
+                form = form_class(request.POST, request=request, space=space, item=item, **form_options)
+                if not form.is_valid():
+                    return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, **background)
+                data = form.cleaned_data
+                from .workflow import assert_snapshot, flow_snapshot
+                if item:
+                    assert_snapshot(item, request.POST)
+                old_flow = flow_snapshot(item) if item else None
+                initial_status = next((status for status in space.statuses if status['key'] == data.get('status')), None) if not item else None
+                task = SpaceTask.objects.select_for_update().get(pk=item.task_id) if item else SpaceTask(space=space, created_by=request.user, visibility='public')
+                if initial_status:
+                    task.status = initial_status['category']
+                    task._initial_status = initial_status['key']
+                if not item:
+                    task._initial_in_backlog = data.get('in_backlog', False)
+                    task._initial_sprint = data.get('sprint')
+                if item and 'status' in data:
+                    set_status(request, item, data['status'], in_backlog=data.get('in_backlog'))
+                    task.refresh_from_db()
+                for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
+                    if name in data:
+                        setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
+                task._activity_actor = request.user
+                task.save()
+                if 'tags' in data:
+                    task.tags.set(data['tags'])
+                item = WorkItem.objects.select_for_update().get(task=task)
+                if initial_status:
+                    item.status = initial_status['key']
+                old_type, old_type_label = item.work_type, item.get_work_type_display()
+                for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
+                    if name in data:
+                        setattr(item, name, data[name])
+                if not isinstance(form, SubtaskForm):
+                    item.custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else '' for f in space.configuration.settings.get('fields', [])}
+                item.save()
+                if pk:
+                    metadata = {'fields': ['typ zgłoszenia'], 'changes': [{
+                        'field': 'typ zgłoszenia', 'from_label': old_type_label,
+                        'to_label': item.get_work_type_display(),
+                    }]} if old_type != item.work_type else {}
+                    metadata.update(old_flow=old_flow, flow=flow_snapshot(item))
+                    record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni', metadata)
+        except ValidationError as error:
+            form.add_error(None, error)
+            return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, **background)
         return dialog_response(request, form, '', url, saved=True)
     return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, **background)
 
@@ -720,6 +740,9 @@ def item_action(request, pk=None, space_pk=None, key=None):
             item = WorkItem.objects.select_for_update().get(pk=item.pk)
             require_editable(SpaceTask.objects.filter(pk=item.task_id), request.user)
             action = request.POST.get('action')
+            from .workflow import assert_snapshot, flow_snapshot, set_block
+            if action in {'status', 'backlog', 'board'}:
+                assert_snapshot(item, request.POST)
             if action in {'position', 'plan', 'up', 'down'} and not item_sort(request)['manual']:
                 raise ValidationError('Wybierz rosnącą kolejność ręczną, aby przestawiać zadania.')
             if action == 'status':
@@ -730,10 +753,13 @@ def item_action(request, pk=None, space_pk=None, key=None):
                 active_sprint = space.sprints.filter(state='active').first()
                 move_board_item(request, space, item, items_for_view(space, candidates, 'board', active_sprint))
             elif action in {'backlog', 'board'}:
+                old_flow = flow_snapshot(item)
                 item.in_backlog = action == 'backlog'
                 item.sprint = None
                 item.save(update_fields=['in_backlog', 'sprint'])
-                record(item, request.user, 'updated', 'przeniósł zadanie do backlogu' if item.in_backlog else 'przeniósł zadanie na tablicę')
+                record(item, request.user, 'updated', 'przeniósł zadanie do backlogu' if item.in_backlog else 'przeniósł zadanie na tablicę', {'old_flow': old_flow, 'flow': flow_snapshot(item)})
+            elif action in {'block', 'unblock'}:
+                set_block(request, item, clear=action == 'unblock')
             elif action == 'plan':
                 Space.objects.select_for_update().get(pk=item.space_id)
                 space = space_object(request, item.space_id)
@@ -917,12 +943,20 @@ def configuration(request, pk):
         raise PermissionDenied
     config = space.configuration
     requested_section = request.POST.get('configuration_section', request.GET.get('section'))
-    section = 'types'
+    section = requested_section if requested_section in {'types', 'statuses'} else 'types'
     data = request.POST if request.method == 'POST' else None
     StatusSet = formset_factory(StatusForm, extra=1, can_delete=True, max_num=40, validate_max=True)
     TypeSet = formset_factory(TypeForm, extra=1, can_delete=True, max_num=30, validate_max=True)
     FieldSet = formset_factory(CustomFieldForm, extra=1, can_delete=True, max_num=30, validate_max=True)
-    sets = [StatusSet(data, initial=config.settings['statuses'], prefix='statuses', form_kwargs={'statuses': config.settings['statuses']}), TypeSet(data, initial=config.settings['types'], prefix='types'), FieldSet(data, initial=config.settings.get('fields', []), prefix='fields')]
+    status_choices = list(config.settings['statuses'])
+    if data:
+        known = {row['key'] for row in status_choices}
+        for index in range(40):
+            key = data.get(f'statuses-{index}-key')
+            if key and key not in known:
+                status_choices.append({'key': key, 'label': data.get(f'statuses-{index}-label', key)})
+                known.add(key)
+    sets = [StatusSet(data, initial=config.settings['statuses'], prefix='statuses', form_kwargs={'statuses': status_choices}), TypeSet(data, initial=config.settings['types'], prefix='types'), FieldSet(data, initial=config.settings.get('fields', []), prefix='fields')]
     revision = hashlib.sha256(json.dumps(config.settings, sort_keys=True).encode()).hexdigest()
     editor = None
     editor_index = (request.POST.get('configuration_index') if request.method == 'POST'
@@ -949,8 +983,8 @@ def configuration(request, pk):
             if len({row['key'] for row in rows}) != len(rows):
                 errors.append('Klucze w każdej sekcji muszą być unikalne.')
         keys = {row['key'] for row in settings['statuses']}
-        if {row['category'] for row in settings['statuses']} != set(dict(SpaceTask.STATUS_CHOICES)):
-            errors.append('Zachowaj co najmniej jeden status dla każdego stanu zadania.')
+        if {row['flow_stage'] for row in settings['statuses']} != {'queue', 'active', 'done'}:
+            errors.append('Proces pracy wymaga co najmniej jednej kolejki, etapu pracy w toku i zakończenia.')
         if not settings['types']:
             errors.append('Przestrzeń musi mieć co najmniej jeden typ zgłoszenia.')
         for row in settings['statuses']:
@@ -970,11 +1004,14 @@ def configuration(request, pk):
                 errors.append('Konfiguracja zmieniła się od otwarcia formularza. Odśwież stronę przed zapisem.')
             items = WorkItem.objects.filter(space__configuration=config)
             old_categories = {s['key']: s['category'] for s in config.settings['statuses']}
+            old_stages = {s['key']: status_flow_stage(s) for s in config.settings['statuses']}
             used = set(items.values_list('status', flat=True))
             if not used.issubset(keys):
                 errors.append('Nie można usunąć statusu używanego przez zadania.')
             if any(row['key'] in used and old_categories.get(row['key']) != row['category'] for row in settings['statuses']):
                 errors.append('Najpierw przenieś zadania przed zmianą stanu ich statusu.')
+            if any(row['key'] in used and old_stages.get(row['key']) != row['flow_stage'] for row in settings['statuses']):
+                errors.append('Najpierw przenieś zadania przed zmianą etapu przepływu ich statusu.')
             if items.exclude(work_type__in=[row['key'] for row in settings['types']]).exists():
                 errors.append('Nie można usunąć typu używanego przez zadania.')
             if not errors:
@@ -1004,12 +1041,13 @@ def configuration(request, pk):
             editor = {'section': section, 'index': 0, 'remove': False}
 
     labels = {
-        'statuses': ('Statusy i przejścia', 'Dodaj status', 'Edytuj status', 'Usuń status', 'Brak statusów.'),
+        'statuses': ('Proces pracy', 'Dodaj status', 'Edytuj status', 'Usuń status', 'Brak statusów.'),
         'types': ('Typy zgłoszeń', 'Dodaj typ zgłoszenia', 'Edytuj typ zgłoszenia', 'Usuń typ zgłoszenia', 'Brak typów zgłoszeń.'),
         'fields': ('Pola dodatkowe', 'Dodaj pole dodatkowe', 'Edytuj pole dodatkowe', 'Usuń pole dodatkowe', 'Brak pól dodatkowych.'),
     }
     icons = {'key': 'hash', 'label': 'align-left', 'icon': 'shapes', 'description': 'align-left',
-             'category': 'list-checks', 'transitions': 'workflow',
+             'category': 'list-checks', 'transitions': 'workflow', 'flow_stage': 'workflow',
+             'wip_limit': 'gauge', 'policy': 'file-text',
              'type': 'list-ordered', 'required': 'check'}
     groups = []
     for formset in sets:
@@ -1027,7 +1065,7 @@ def configuration(request, pk):
             cells = []
             for header in headers:
                 name = header['key']
-                value = saved.get(name)
+                value = status_flow_stage(saved) if name == 'flow_stage' else saved.get(name)
                 field = empty_form.fields[name]
                 if name == 'required':
                     value = 'Tak' if value else 'Nie'
@@ -1044,7 +1082,7 @@ def configuration(request, pk):
             rows.append({'index': index, 'label': saved.get('label', saved.get('key', '')),
                          'cells': cells, 'edit_url': f'{base_url}&edit={index}', 'remove_url': f'{base_url}&remove={index}'})
         groups.append({'key': key, 'title': title, 'formset': formset, 'headers': headers, 'rows': rows,
-                       'empty_label': empty_label, 'add_label': add_label,
+                       'empty_label': empty_label, 'add_label': add_label, 'remove_label': remove_label,
                        'add_url': f'{base_url}&edit={len(rows)}' if len(formset.forms) > len(rows) else None})
     editor_form = None
     editor_title = ''

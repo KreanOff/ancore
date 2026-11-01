@@ -51,6 +51,7 @@ def item_payload(item):
     return {
         'id': item.pk, 'task_id': task.pk, 'key': item.key, 'title': task.title,
         'url': item.url, 'edit_url': item.edit_url, 'action_url': item.action_url,
+        'block_url': getattr(item, 'block_url', ''),
         'update_dates_url': item.update_dates_url,
         'editable': item.editable, 'rank': item.rank, 'sprint_id': item.sprint_id,
         'status': item.status, 'status_label': item.status_label,
@@ -62,6 +63,15 @@ def item_payload(item):
         'team': item.team.name if item.team_id else '', 'tags_count': item.tags_count,
         'attachments_count': item.attachments_count, 'due_at': task.due_at, 'due_urgency': task.due_urgency,
         'start_at': item.start_at,
+        'blocked': {
+            'reason': task.blocked_reason, 'at': task.blocked_at,
+            'by': (task.blocked_by.get_full_name() or task.blocked_by.email) if task.blocked_by else None,
+            'responsible': {'id': task.blocked_responsible_id,
+                'label': task.blocked_responsible.get_full_name() or task.blocked_responsible.email} if task.blocked_responsible else None,
+        } if task.blocked_at else None,
+        'blocked_revision': task.blocked_revision,
+        'flow': {'started_at': item.flow_started_at, 'stage_entered_at': item.status_entered_at,
+                 'finished_at': item.flow_finished_at},
         'start_on': timezone.localtime(item.start_at).date() if item.start_at else None,
         'end_on': timezone.localtime(task.due_at).date() if task.due_at else None,
         'timeline': {key: getattr(item, 'timeline_' + key, None) for key in ('start', 'end', 'left', 'width')},
@@ -99,7 +109,7 @@ def detail_page(request, context):
         'backlog_totals': context.get('backlog_totals'), 'timeline': context.get('timeline'),
         'backlog_loaded_count': context.get('backlog_loaded_count', 0), 'backlog_more_url': context.get('backlog_more_url', ''),
         'pagination': pagination_payload(request, context.get('page')),
-        'filters': {key: request.GET.get(key, '') for key in ('q', 'work_type', 'assignee', 'team', 'status', 'priority', 'summary')},
+        'filters': {key: request.GET.get(key, '') for key in ('q', 'work_type', 'assignee', 'team', 'status', 'priority', 'summary', 'blocked')},
         'summary_filter_label': context.get('summary_filter_label', ''),
         'sort': item_sort(request, context['view']),
         'type_icons': {row['key']: row['icon'] for row in context.get('type_options', [])},
@@ -109,6 +119,7 @@ def detail_page(request, context):
             'status': [['', 'Wszystkie statusy']] + [[row['key'], row['label']] for row in space.statuses],
             'priority': [['', 'Wszystkie priorytety']] + [list(row) for row in context.get('priority_options', [])],
             'team': [['', 'Wszystkie zespoły']] + [[str(team.pk), team.name] for team in context.get('space_teams', [])],
+            'blocked': [['', 'Wszystkie zadania'], ['yes', 'Zablokowane'], ['no', 'Bez blokady']],
         },
         'members': [{'id': member.pk, 'name': member.user.get_full_name() or member.user.email,
                      'avatar': account_avatar(member.user), 'role': member.get_role_display(),
@@ -166,12 +177,15 @@ def activity_payload(activity):
 def task_page(request, context):
     from accounts.avatar import account_avatar
     from .views import decorate_items
+    from .workflow import block_responsible_people
     task, item = context['task'], context['item']
     decorate_items(request, [item])
     return {'type': 'space-task', 'title': f'{item.key} · {task.title}', 'data': {
         'item': item_payload(item), 'space': {'id': item.space_id, 'name': item.space.name, 'template': item.space.template, 'url': context['space_url']},
         'form': form_payload(context['form']), 'error': context['error'], 'can_edit': context['can_edit_task'],
         'can_manage': context['can_manage_task'], 'favorite': context['is_favorite'],
+        'block_responsible_options': [{'id': person.pk, 'label': person.get_full_name() or person.email}
+            for person in block_responsible_people(task)] if context['can_edit_task'] else [],
         'back_url': context['back_url'], 'tabs': context['task_tabs'], 'tab': context['task_tab'],
         'edit_url': context['task_edit_url'], 'member_url': context['member_edit_url'], 'team_url': context['team_url'],
         'status': context['detail_status'], 'statuses': context['space'].statuses,

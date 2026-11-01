@@ -469,10 +469,26 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
+Tablica pokazuje pod nagłówkiem aktywnej kolumny licznik widocznego WIP
+oraz limit. Zasady etapu rozwijają się w natywnym `details`; pełny limit
+wyłącza przyjęcie karty i tworzenie w kolumnie. `work-board-wip`,
+`work-board-policy` i `is-drop-unavailable` rozszerzają istniejący układ
+kolumn bez nowej palety. Licznik WIP nie zmienia się po filtrowaniu tablicy.
+Karta ma opcjonalny panel `work-card-blocked` z powodem, osobą odpowiedzialną
+i czasem blokady oraz `work-card-age` z czasem w etapie. Lista i oś czasu
+używają małej ikony blokady przy tytule, zachowując siatkę kolumn.
+„Blokada” we wspólnym filtrze pozwala wyświetlić zablokowane zadania.
+Menu karty otwiera standardowe kompaktowe okno `BlockDialog`; korzysta ono
+z istniejących klas pól i `Modal`, fokusu, Escape, stanu zapisu oraz błędów.
+Siatka `work-block-fields` pozwala polom zwężać się do szerokości panelu,
+a wspólny selektor nie dodaje zewnętrznych marginesów filtra.
+Po udanym zapisie i błędzie odczytu przycisk „Odśwież widok” ponawia odczyt.
+Bez JavaScriptu blokadę i jej usunięcie obsługują formularze w menu.
+
 Ustawienia Przestrzeni są osobną stroną `space-settings-page`. Główne lewe menu
-zastępuje menu Workspace trzema sekcjami: „Ustawienia”, „Udostępnienia”
-oraz „Typy zgłoszeń”, według uprawnień. Sekcje „Statusy i przejścia” i
-„Pola dodatkowe” usunięto z ustawień; zapisane wartości nadal służą zadaniom.
+zastępuje menu Workspace czterema sekcjami: „Ustawienia”, „Udostępnienia”,
+„Typy zgłoszeń” oraz „Proces pracy”, według uprawnień. Proces pracy używa
+wspólnego edytora konfiguracji; pola dodatkowe pozostają ukryte w ustawieniach.
 Zawiera same pozycje sekcji, bez dodatkowych nagłówków i powrotu. Wykorzystuje
 istniejące wiersze `nav-link`, ikony oraz aktywny stan menu; treść nie ma
 dodatkowej listy zakładek. Centrum Ustawień w kategorii Workspace pokazuje
@@ -566,9 +582,9 @@ zapisania lub anulowania szkicu typów, aby zmiana uprawnień go nie usunęła.
 „Anuluj” głównego formularza zachowuje kontekst powrotu
 formularza, np. katalog; domyślnie, podobnie jak strzałka w nagłówku, prowadzi
 do przestrzeni. Zmiana sekcji aktualizuje adres `?view=settings#<sekcja>`
-(`main`, `members`, `types`) oraz historię Wstecz/Dalej
-z zachowaniem formularza głównych ustawień. Starsze `#configuration`,
-`#statuses` i `#fields` otwierają typy zgłoszeń.
+(`main`, `members`, `types`, `statuses`) oraz historię Wstecz/Dalej
+z zachowaniem formularza głównych ustawień. Starsze `#configuration`
+i `#fields` otwierają typy zgłoszeń; `#statuses` otwiera Proces pracy.
 Udostępnianie i zmiana roli otwierają
 kompaktowe okno z pickerem osoby. Bezpośrednie URL ustawień i konfiguracji
 renderują tę samą stronę. Pierwszy render Django również zawiera formularze
@@ -938,7 +954,7 @@ administracyjny”, oraz listę „Ustawienia przestrzeni”. Lista obejmuje wid
 przestrzenie aktywnego Workspace; brak dostępnych przestrzeni pokazuje komunikat.
 Prawo zarządzania i konfigurowania jest sprawdzane na stronie wybranej przestrzeni.
 Na stronie centrum jest „Wróć do przestrzeni”. Strona ustawień przestrzeni
-zastępuje główne menu trzema sekcjami bez dodatkowych nagłówków i powrotu.
+zastępuje główne menu czterema sekcjami bez dodatkowych nagłówków i powrotu.
 Treść nie ma dodatkowej wewnętrznej nawigacji;
 wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
 `dashboard/SettingsPage.tsx` i `shell/Sidebar.tsx` obsługują kategorie w stałej

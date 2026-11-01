@@ -117,7 +117,7 @@ def space_summary(request, space, items, now=None):
     items = materialized_summary_items(items)
     base = space_url(request, space)
     # Preserve the existing space filters when following a chart or counter.
-    params = {key: request.GET[key] for key in ('q', 'work_type', 'group', 'team', 'assignee', 'status', 'priority') if request.GET.get(key)}
+    params = {key: request.GET[key] for key in ('q', 'work_type', 'group', 'team', 'assignee', 'status', 'priority', 'blocked') if request.GET.get(key)}
 
     def list_url(**filters):
         return base + '?' + urlencode({**params, 'view': 'list', **filters})

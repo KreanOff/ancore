@@ -42,7 +42,7 @@ def can_manage_spaces(request):
 
 def visible_items(request):
     tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
-    return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'space', 'space__configuration', 'team', 'sprint')
+    return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'task__blocked_by', 'task__blocked_responsible', 'space', 'space__configuration', 'team', 'sprint')
 
 
 def decorate_directory_spaces(request, spaces):
@@ -114,8 +114,11 @@ def create_work_item(task):
         raise ValidationError('Brak miejsca na zapis kolejności zadania. Odśwież backlog.')
     space.next_number += 1
     space.save(update_fields=['next_number'])
-    status = next(s['key'] for s in space.statuses if s['category'] == task.status)
-    return WorkItem.objects.create(task=task, space=space, number=number, key=f'{space.key}-{number}', rank=rank, status=status, work_type=space.configuration.settings['types'][0]['key'])
+    from .workflow import initial_status
+    status = initial_status(space, task.status, getattr(task, '_initial_status', None))['key']
+    return WorkItem.objects.create(task=task, space=space, number=number, key=f'{space.key}-{number}', rank=rank,
+        status=status, work_type=space.configuration.settings['types'][0]['key'],
+        in_backlog=getattr(task, '_initial_in_backlog', False), sprint=getattr(task, '_initial_sprint', None))
 
 
 def record(item, actor, action, message, metadata=None):
@@ -129,7 +132,7 @@ def transition_allowed(item, target):
     return bool(current and target in current['transitions'])
 
 
-def set_status(request, item, target):
+def set_status(request, item, target, *, in_backlog=None):
     with transaction.atomic():
         from workplaces.models import Workplace
         Workplace.objects.select_for_update().get(pk=request.workplace.pk)
@@ -139,12 +142,21 @@ def set_status(request, item, target):
         statuses = {s['key']: s for s in item.space.statuses}
         if target not in statuses or not transition_allowed(item, target):
             raise ValidationError('To przejście statusu nie jest dozwolone w tej przestrzeni.')
-        if item.status == target:
+        if item.status == target and (in_backlog is None or in_backlog == item.in_backlog):
             return
         previous = item.status
+        from .workflow import flow_snapshot
+        old_flow = flow_snapshot(item)
         # Update metadata first so the task save signal observes the selected status.
         item.status = target
-        item.save(update_fields=['status'])
+        if in_backlog is not None:
+            item.in_backlog = in_backlog
+        if statuses[target]['category'] == 'closed' and previous != target:
+            item.in_backlog = False
+        item.save(update_fields=['status', 'in_backlog'])
+        if previous == target:
+            record(item, request.user, 'flow_changed', 'zmienił miejsce planowania zadania', {'old_flow': old_flow, 'flow': flow_snapshot(item)})
+            return
         task.status = statuses[target]['category']
         task.save(update_fields=['status', 'is_completed', 'completion_date'])
         item.task = task
@@ -154,6 +166,7 @@ def set_status(request, item, target):
             'to_label': statuses[target]['label'],
             'old_status_label': statuses.get(previous, {}).get('label', previous),
             'new_status_label': statuses[target]['label'],
+            'old_flow': old_flow, 'flow': flow_snapshot(item),
         })
 
 

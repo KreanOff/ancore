@@ -62,7 +62,7 @@ class ConfigurationWriteTests(TransactionTestCase):
                 for name, value in initial.items():
                     if remove_status and prefix == 'statuses' and name == 'transitions':
                         value = [key for key in value if key != 'temporary']
-                    payload[f'{prefix}-{index}-{name}'] = value
+                    payload[f'{prefix}-{index}-{name}'] = value if value is not None else ''
                 if initial['key'] == 'temporary' and (
                     prefix == 'statuses' and remove_status or prefix == 'types' and remove_type
                 ):

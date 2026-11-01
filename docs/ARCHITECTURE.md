@@ -292,9 +292,10 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   `/space/<slug>/?view=settings` oraz bezpośrednie `edit/`, `avatar/`, `members/`
   i `configuration/`, również scoped, renderują osobną stronę ustawień
   przestrzeni. Tryb powłoki `space-settings` zastępuje główne menu sekcjami
-  „Ustawienia”, „Udostępnienia” i „Typy zgłoszeń” według uprawnień, bez
-  dodatkowych nagłówków i powrotu w menu. Sekcje „Statusy i przejścia”
-  i „Pola dodatkowe” usunięto z UI; stare adresy sekcji otwierają typy zgłoszeń.
+  „Ustawienia”, „Udostępnienia”, „Typy zgłoszeń” i „Proces pracy” według uprawnień, bez
+  dodatkowych nagłówków i powrotu w menu. Proces pracy (`statuses`) konfiguruje
+  kolumny, przejścia, etapy przepływu, limity WIP i zasady. „Pola dodatkowe”
+  pozostają ukryte; ich stare adresy otwierają typy zgłoszeń.
   Zapis typów zachowuje pełną konfigurację statusów, przejść i pól oraz wspólną
   rewizję. Dane i mechanizmy zadań pozostają dostępne.
   Strona korzysta z dotychczasowych endpointów zapisu,

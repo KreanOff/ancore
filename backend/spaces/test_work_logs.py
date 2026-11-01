@@ -119,7 +119,11 @@ class SpaceTaskWorkLogTests(TestCase):
         self.assertEqual(self.post(task=subtask).status_code, 200)
         self.assertEqual(subtask.work_logs.count(), 1)
         self.assertFalse(self.task.work_logs.exists())
-        self.assertContains(self.client.get(self.url(subtask)), 'Dziennik pracy')
+        self.assertRedirects(self.client.get(self.url(subtask)), self.url() + '?view=list&tab=subtasks')
+        # Direct subtask writes keep a separate journal; normal navigation
+        # continues to the parent's existing subtask tab.
+        parent = self.client.get(self.url(), {'tab': 'work-log'})
+        self.assertEqual(parent.context['work_log_total_minutes'], 0)
 
     def test_duration_only_calculates_interval_ending_now(self):
         now = datetime(2026, 9, 24, 14, 0, 37, tzinfo=UTC)

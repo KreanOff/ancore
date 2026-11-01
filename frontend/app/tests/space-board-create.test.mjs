@@ -24,6 +24,16 @@ const { code } = await transform(detail.getText(), {
   jsx: 'automatic',
 });
 const require = createRequire(import.meta.url);
+const kanbanModule = { exports: {} };
+vm.runInNewContext(
+  (
+    await transform(await readFile(new URL('../src/spaces/kanban.ts', import.meta.url), 'utf8'), {
+      loader: 'ts',
+      format: 'cjs',
+    })
+  ).code,
+  { module: kanbanModule, exports: kanbanModule.exports },
+);
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function nodes(element) {
@@ -59,6 +69,8 @@ function board(path = '/space/produkt/') {
 function harness(data = board()) {
   const states = [],
     refs = [],
+    effects = [],
+    listeners = new Map(),
     requests = [],
     locations = [],
     navigations = [],
@@ -71,7 +83,13 @@ function harness(data = board()) {
       type: 'form',
       data: { action: data.columns[0].create_item_url, return_url: initial.url },
     },
-    controls = { response, failure: null, wait: null };
+    controls = { response, failure: null, wait: null, modalOpen: false };
+  const surface = {
+    visibilityState: 'visible',
+    addEventListener: (name, callback) => listeners.set(name, callback),
+    removeEventListener: (name) => listeners.delete(name),
+    querySelector: () => (controls.modalOpen ? {} : null),
+  };
   let stateIndex = 0,
     refIndex = 0;
   const module = { exports: {} };
@@ -79,12 +97,15 @@ function harness(data = board()) {
     module,
     exports: module.exports,
     require,
+    ...kanbanModule.exports,
     AbortController,
     Error,
     FormData,
     Set,
     URL,
     location: { origin: 'http://localhost' },
+    window: surface,
+    document: surface,
     useState(value) {
       const index = stateIndex++;
       if (!(index in states)) states[index] = value;
@@ -100,7 +121,9 @@ function harness(data = board()) {
       if (!(index in refs)) refs[index] = { current: value };
       return refs[index];
     },
-    useEffect() {},
+    useEffect(effect) {
+      effects.push(effect);
+    },
     useLayoutEffect() {},
     useItemMotion: () => ({ root: { current: null } }),
     SpaceHeader: 'SpaceHeader',
@@ -110,6 +133,7 @@ function harness(data = board()) {
     ItemCard: 'ItemCard',
     StatusGroup: 'StatusGroup',
     FormDialog: 'FormDialog',
+    BlockDialog: 'BlockDialog',
     errorMessage: (error) => error.message,
     setPageLocation: (url) => locations.push(url),
     navigate: (url) => navigations.push(url),
@@ -129,7 +153,17 @@ function harness(data = board()) {
     render().filter(
       (node) => node.type === 'button' && node.props.className?.includes('work-board-create'),
     );
-  return { initial, controls, requests, locations, navigations, render, buttons };
+  return {
+    initial,
+    controls,
+    requests,
+    locations,
+    navigations,
+    render,
+    buttons,
+    activateEffects: () => effects.splice(0).map((effect) => effect()),
+    focus: () => listeners.get('focus')?.(),
+  };
 }
 
 test('every editable board column offers creation, including empty columns', () => {
@@ -271,4 +305,85 @@ test('an in-flight form request blocks activation while keeping its trigger focu
   await flush();
   assert.ok(app.buttons().every((button) => button.props['aria-disabled'] === false));
   assert.equal(app.render().filter((node) => node.type === 'FormDialog').length, 1);
+});
+
+test('blocking a subtask loads the exact-key action data instead of its parent navigation URL', async () => {
+  const data = board();
+  data.items[0].url = '/space/produkt/tasks/PRO-1/?tab=subtasks';
+  data.items[0].block_url = '/space/produkt/tasks/PRO-41/?block=1';
+  const app = harness(data);
+  app.controls.response = {
+    type: 'space-block',
+    data: { item: data.items[0], can_edit: true, block_responsible_options: [] },
+  };
+  const card = app.render().find((node) => node.type === 'ItemCard');
+  card.props.openBlock(card.props.item);
+  await flush();
+  assert.equal(app.requests[0].url, data.items[0].block_url);
+  const dialog = app.render().find((node) => node.type === 'BlockDialog');
+  assert.equal(dialog.props.data.item.id, 41);
+  assert.equal(dialog.props.view, 'board');
+  dialog.props.onClose();
+  assert.equal(
+    app.render().some((node) => node.type === 'BlockDialog'),
+    false,
+  );
+});
+
+test('blocking data with another task or revoked edit permission cannot open a write dialog', async () => {
+  for (const returned of [
+    { id: 88, can_edit: true },
+    { id: 41, can_edit: false },
+  ]) {
+    const app = harness();
+    app.controls.response = {
+      type: 'space-block',
+      data: { item: { id: returned.id }, can_edit: returned.can_edit },
+    };
+    const card = app.render().find((node) => node.type === 'ItemCard');
+    card.props.openBlock(card.props.item);
+    await flush();
+    assert.equal(
+      app.render().some((node) => node.type === 'BlockDialog'),
+      false,
+    );
+    assert.ok(app.render().some((node) => node.props?.role === 'alert'));
+  }
+});
+
+test('a visibly full WIP column prevents creating more work even when filters show no cards', async () => {
+  const data = board();
+  Object.assign(data.columns[0], { flow_stage: 'active', wip_limit: 2, wip_count: 2, count: 0 });
+  const app = harness(data);
+  assert.equal(app.buttons()[0].props['aria-disabled'], true);
+  app.buttons()[0].props.onClick();
+  await flush();
+  assert.equal(app.requests.length, 0);
+  assert.equal(app.buttons()[1].props['aria-disabled'], false);
+});
+
+test('returning focus refreshes the board and pauses while a modal or request is active', async () => {
+  const app = harness();
+  app.render();
+  const cleanup = app.activateEffects();
+  app.controls.response = { type: 'space-detail', data: board() };
+  app.controls.modalOpen = true;
+  await app.focus();
+  assert.equal(app.requests.length, 0);
+  app.controls.modalOpen = false;
+  let resolve;
+  app.controls.wait = new Promise((done) => (resolve = done));
+  const focused = app.focus();
+  await app.focus();
+  assert.equal(app.requests.length, 1, 'repeated focus cannot overlap a pending read');
+  assert.equal(app.requests[0].url, app.initial.url);
+  resolve();
+  await focused;
+  assert.equal(app.requests[0].body, undefined);
+  assert.equal(
+    app.render().some((node) => node.props?.role === 'alert'),
+    false,
+  );
+  cleanup.forEach((close) => close?.());
+  assert.equal(app.focus(), undefined, 'unmount removes the focus listener');
 });

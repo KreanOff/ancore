@@ -44,6 +44,14 @@ def issue_type_icon(key, configured_icon=None):
     return ISSUE_TYPE_ICONS.get(key, 'shapes') if isinstance(key, str) else 'shapes'
 
 
+FLOW_STAGES = [('queue', 'Kolejka'), ('active', 'Praca w toku'), ('done', 'Zakończone')]
+
+
+def status_flow_stage(status):
+    """Read the flow boundary also for configurations saved before Kanban fields."""
+    return status.get('flow_stage') or {'new': 'queue', 'closed': 'done'}.get(status.get('category'), 'active')
+
+
 def template_settings(template='tasks'):
     labels = {
         'marketing': ['Pomysły', 'W przygotowaniu', 'Do akceptacji', 'Opublikowane', 'Do poprawy'],
@@ -64,6 +72,7 @@ def template_settings(template='tasks'):
     if template == 'marketing':
         fields = [{'key': 'channel', 'label': 'Kanał publikacji', 'type': 'text', 'required': False}]
     return deepcopy({'statuses': [
-        {'key': key, 'label': label, 'category': key, 'transitions': [other for other in keys if other != key]}
+        {'key': key, 'label': label, 'category': key, 'transitions': [other for other in keys if other != key],
+         'flow_stage': status_flow_stage({'category': key}), 'wip_limit': None, 'policy': ''}
         for key, label in zip(keys, labels)
     ], 'types': types, 'fields': fields})

@@ -104,6 +104,11 @@ class SpaceTask(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     is_completed = models.BooleanField(default=False)
     completion_date = models.DateTimeField(null=True, blank=True)
+    blocked_reason = models.TextField(blank=True)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    blocked_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='blocked_space_tasks')
+    blocked_responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='space_task_blockers')
+    blocked_revision = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_space_tasks')
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_space_tasks')
@@ -118,6 +123,10 @@ class SpaceTask(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
+        if self._state.adding:
+            from .workflow import initial_status
+            selected = initial_status(self.space, self.status, getattr(self, '_initial_status', None))
+            self.status, self._initial_status = selected['category'], selected['key']
         self.is_completed = self.status == 'closed'
         self.completion_date = (self.completion_date or timezone.now()) if self.is_completed else None
         if kwargs.get('update_fields'):
@@ -276,16 +285,37 @@ class WorkItem(models.Model):
     points = models.PositiveIntegerField(null=True, blank=True)
     start_at = models.DateTimeField(null=True, blank=True)
     custom_values = models.JSONField(default=dict, blank=True)
+    status_entered_at = models.DateTimeField(null=True, blank=True)
+    flow_started_at = models.DateTimeField(null=True, blank=True)
+    flow_finished_at = models.DateTimeField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         from django.core.exceptions import ValidationError
-        if self.task_id and not SpaceTask.objects.filter(pk=self.task_id, space_id=self.space_id).exists():
-            raise ValidationError('Planowanie musi należeć do przestrzeni zadania.')
-        if self.pk:
-            original = type(self).objects.filter(pk=self.pk).values('space_id', 'task_id', 'key', 'number').first()
-            if original and original['task_id'] and any(original[name] != getattr(self, name) for name in original):
+        from .workflow import update_flow_times, validate_placement
+        with transaction.atomic():
+            if self.space_id:
+                self.space = Space.objects.select_for_update(of=('self',)).select_related('configuration').get(pk=self.space_id)
+            if self.task_id and not SpaceTask.objects.filter(pk=self.task_id, space_id=self.space_id).exists():
+                raise ValidationError('Planowanie musi należeć do przestrzeni zadania.')
+            original = type(self).objects.filter(pk=self.pk).values(
+                'space_id', 'task_id', 'key', 'number', 'status', 'in_backlog',
+                'status_entered_at', 'flow_started_at', 'flow_finished_at').first() if self.pk else None
+            if original and original['task_id'] and any(original[name] != getattr(self, name) for name in ('space_id', 'task_id', 'key', 'number')):
                 raise ValidationError('Klucz i przestrzeń zadania są stałe.')
-        return super().save(*args, **kwargs)
+            if self.space_id and self.task_id:
+                if original:
+                    # update_fields writes only the named values. A stale rank
+                    # object must never invent a status transition or old times.
+                    for name in ('status', 'in_backlog'):
+                        if kwargs.get('update_fields') and name not in kwargs['update_fields']:
+                            setattr(self, name, original[name])
+                    for name in ('status_entered_at', 'flow_started_at', 'flow_finished_at'):
+                        setattr(self, name, original[name])
+                validate_placement(self, original)
+                update_flow_times(self, original)
+                if kwargs.get('update_fields'):
+                    kwargs['update_fields'] = set(kwargs['update_fields']) | {'status_entered_at', 'flow_started_at', 'flow_finished_at'}
+            return super().save(*args, **kwargs)
 
     def get_work_type_display(self):
         settings = self.space.configuration.settings if self.space_id else template_settings()

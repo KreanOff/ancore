@@ -1,5 +1,53 @@
 # Przestrzenie i zespoły
 
+## Kanban: proces pracy, WIP i blokady
+
+„Proces pracy” w ustawieniach (`#statuses`, również scoped) pozwala ustalać
+kolejność kolumn, nazwy, dozwolone przejścia i zasady wejścia/wyjścia. Każdy
+status ma etap przepływu `queue`, `active` albo `done`; `closed` odpowiada
+wyłącznie `done`. Konfiguracja wymaga każdego etapu, ale nie wszystkich pięciu
+kategorii technicznych zadania, więc dopuszcza trzy kolumny. Używanego statusu
+nie można usunąć ani zmienić jego kategorii lub etapu. Starsze konfiguracje
+interpretują `new` jako kolejkę, `closed` jako koniec i pozostałe jako pracę w toku.
+Nowe pola mają zgodne wartości domyślne; zapis samych typów je zachowuje.
+
+Opcjonalny dodatni `wip_limit` dotyczy kolumny etapu `active`. Wspólna walidacja
+`spaces/workflow.py`, wywoływana przez `WorkItem.save()` pod blokadą Przestrzeni,
+obejmuje zmianę statusu, tworzenie, edycję, podzadania i przyjęcie z backlogu,
+również zbiorowe. Limit obejmuje wszystkie nieukończone karty danej kolumny
+poza backlogiem, w tym prywatne i zablokowane. Nie zależy od filtrów widoku.
+Edycja lub zmiana kolejności już przyjętej karty pozostaje możliwa po obniżeniu
+limitu poniżej aktualnej liczby. W tej wersji nie ma obejścia limitu ani limitu
+łącznego dla kilku kolumn. Nagłówek pokazuje tylko liczbę zadań dostępnych
+oglądającemu przed filtrami i jawny limit; odpowiedź API nie ujawnia ukrytych
+liczb ani wolnej pojemności. Serwer może więc odrzucić ruch mimo niższego
+widocznego licznika, bez ujawniania prywatnych kart.
+
+Blokada jest niezależna od statusu. `SpaceTask` przechowuje powód, czas,
+autora, opcjonalną osobę odpowiedzialną za usunięcie przeszkody i rewizję
+blokady. Osoba odpowiedzialna musi mieć dostęp do zadania; wybór nie nadaje
+uprawnień. Operacje `block`/`unblock` zachowują ACL, transakcję i historię.
+Obserwator widzi dostępne informacje bez prawa zmiany. Zablokowana karta nadal
+zajmuje miejsce w limicie. Filtr blokad działa we wspólnym zakresie zadań.
+
+Zakończonej karty nie można przenieść do backlogu. Zmiany z menu i formularzy
+wysyłają oczekiwany status i położenie; nieaktualny stan odrzuca zapis.
+Starsze integracje bez tych opcjonalnych pól pozostają kompatybilne. Blokada
+korzysta dodatkowo z własnej rewizji. Przeciąganie zachowuje dotychczasową
+kontrolę położenia i sąsiadów.
+
+Migracja `spaces.0005_kanban_flow` dodaje nullable `status_entered_at`,
+`flow_started_at` i `flow_finished_at` do `WorkItem` oraz pola blokady.
+Czasy odzwierciedlają zaobserwowane zdarzenia; istniejącym zadaniom migracja
+nie dopisuje wymyślonej daty rozpoczęcia. Planowane `start_at` pozostaje osobne.
+Migracja przenosi też dawne zakończone karty z backlogu na tablicę,
+zachowując status, kolejność i datę zakończenia.
+Historia utworzenia i operacji zawiera snapshot przepływu. Ponowne otwarcie
+zachowuje pierwszy zaobserwowany początek i zeruje bieżący koniec; wcześniejsze
+zdarzenia pozostają w historii. Raporty nadal mają dotychczasową semantykę
+aktualnego stanu — metryki cycle time, SLE i historyczny wykres przepływu
+nie są jeszcze częścią interfejsu.
+
 ## Raporty przestrzeni
 
 Zakładka `?view=reports` (również scoped) pokazuje bieżący stan wszystkich
@@ -43,10 +91,10 @@ nie zapisuje konfiguracji raportu ani kopii danych na serwerze.
 Workspace i uwzględnia włączenie modułu Przestrzeni. Wejścia z zakładki
 Przestrzeni oraz menu katalogu również prowadzą na tę stronę.
 
-Główne lewe menu zastępuje menu Workspace trzema sekcjami: „Ustawienia”,
-„Udostępnienia” i „Typy zgłoszeń”. Sekcje „Statusy i przejścia” oraz
-„Pola dodatkowe” usunięto z interfejsu ustawień. Zapisane statusy, przejścia
-i pola dodatkowe nadal działają w zadaniach i pozostają częścią konfiguracji.
+Główne lewe menu zastępuje menu Workspace czterema sekcjami: „Ustawienia”,
+„Udostępnienia”, „Typy zgłoszeń” i „Proces pracy”. Proces pracy udostępnia
+statusy i przejścia wraz z limitami WIP oraz zasadami kolumn. Pola dodatkowe
+pozostają ukryte w ustawieniach, ale działają w zadaniach i konfiguracji.
 Menu zawiera wyłącznie dostępne sekcje, bez dodatkowych nagłówków i linku powrotu.
 Sekcje obejmują główny formularz, tabelę członków i listę typów zgłoszeń.
 Awatar znajduje się w „Ustawienia”, po lewej stronie pól, tak jak
@@ -78,8 +126,8 @@ jeśli brak takiego kontekstu lub prowadzi on do ustawień, wraca do przestrzeni
 Bezpośrednie adresy `?view=settings`, `edit/`, `avatar/`, `members/` i
 `configuration/`, również scoped, renderują tę samą stronę w odpowiedniej
 sekcji. React normalizuje adres do `?view=settings` z fragmentem `#main`,
-`#members` albo `#types`; starsze `#configuration`, `#statuses` i `#fields`
-otwierają „Typy zgłoszeń”. Zmiany sekcji zachowują formularz głównych
+`#members`, `#types` albo `#statuses`; starsze `#configuration` i `#fields`
+otwierają „Typy zgłoszeń”, a `#statuses` — „Proces pracy”. Zmiany sekcji zachowują formularz głównych
 ustawień i historię Wstecz/Dalej.
 Zapisy nadal korzystają z istniejących widoków,
 formularzy i blokad Django; walidacja statusów, rewizja konfiguracji i zasady
@@ -96,7 +144,7 @@ nie trafia do serwera.
 Bezpośrednie `edit/`, `avatar/` i `members/` renderują formularz na stronie.
 `configuration/` pokazuje tabelę typów zgłoszeń; parametry `edit` i `remove`
 otwierają nad nią formularz pozycji albo potwierdzenie usunięcia. Stare
-`section=statuses|fields|configuration` otwierają typy bez przenoszenia
+`section=fields|configuration` otwierają typy bez przenoszenia
 indeksu edycji lub usunięcia ze starej sekcji.
 Ukryte pola zachowują pełne formsety i rewizję. Odpowiedź z błędem zapisu
 pozostawia okno z błędami, a sukces wraca do tabeli typów. Błędy zachowanych

@@ -8,20 +8,21 @@ import { type Page, pageRequest, navigate, setPageLocation } from '../shared/pag
 import { ConfigurationForm, type ConfigurationSection } from './ConfigurationPage';
 import type { DetailData } from './types';
 
-type Tab = 'main' | 'members' | 'types';
+type Tab = 'main' | 'members' | 'types' | 'statuses';
 type FormSection = 'main' | 'configuration' | 'members';
-function isConfigurationSection(value: unknown): value is 'types' {
-  return value === 'types';
+function isConfigurationSection(value: unknown): value is 'types' | 'statuses' {
+  return value === 'types' || value === 'statuses';
 }
 function tabFromHash(fallback: Tab): Tab {
   const key = location.hash.slice(1) || new URLSearchParams(location.search).get('section');
-  if (key === 'configuration' || key === 'statuses' || key === 'fields') return 'types';
+  if (key === 'configuration' || key === 'fields') return 'types';
   return key === 'main' || key === 'members' || isConfigurationSection(key) ? key : fallback;
 }
 const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'main', label: 'Ustawienia', icon: 'settings' },
   { key: 'members', label: 'Udostępnienia', icon: 'users' },
   { key: 'types', label: 'Typy zgłoszeń', icon: 'layers' },
+  { key: 'statuses', label: 'Proces pracy', icon: 'workflow' },
 ];
 
 export default function SettingsPage({
@@ -46,7 +47,7 @@ export default function SettingsPage({
   const fallbackTab =
     initialTab === 'avatar'
       ? 'main'
-      : initialTab === 'configuration' || initialTab === 'statuses' || initialTab === 'fields'
+      : initialTab === 'configuration' || initialTab === 'fields'
         ? 'types'
         : initialTab;
   const [data, setData] = useState(initialDetail);
@@ -377,6 +378,7 @@ export default function SettingsPage({
             <ConfigurationForm
               key={(configuration.data as { revision: string }).revision}
               initial={configuration}
+              section={tab === 'statuses' ? 'statuses' : 'types'}
               csrfToken={csrfToken}
               onSaved={() => stored('configuration')}
               onStateChange={reportConfiguration}

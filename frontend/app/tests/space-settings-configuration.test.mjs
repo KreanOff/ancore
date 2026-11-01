@@ -23,6 +23,10 @@ const {
   configurationEditorSchema,
   configurationHasRow,
   configurationFieldName,
+  configurationMove,
+  configurationStage,
+  configurationRemove,
+  configurationDraftSubmission,
 } = execute(helpers.outputFiles[0].text);
 const tableBundle = await build({
   entryPoints: [new URL('../src/spaces/ConfigurationTable.tsx', import.meta.url).pathname],
@@ -1662,4 +1666,77 @@ test('the type icon grid moves by eight columns vertically and one icon horizont
   app.key('Home', 'grid');
   assert.equal(app.focusedLabel(), 'Zadanie');
   assert.deepEqual(app.inputEvents, []);
+});
+
+test('workflow reorder preserves metadata and posts contiguous field identities', () => {
+  const data = fixture();
+  data.section = 'statuses';
+  data.sets[0].forms[0].fields.push(field('statuses-0-policy', 'Najpierw zakres pracy'));
+  const moved = configurationMove(data, 'statuses', 0, 1);
+  const body = configurationDraftSubmission(moved);
+  assert.equal(body.get('configuration_section'), 'statuses');
+  assert.equal(body.get('statuses-0-key'), 'done');
+  assert.equal(body.get('statuses-1-key'), 'new');
+  assert.equal(body.get('statuses-1-policy'), 'Najpierw zakres pracy');
+  assert.deepEqual(body.getAll('statuses-1-transitions'), ['done', 'new']);
+  assert.equal(configurationDraftSubmission(data).get('statuses-0-key'), 'new');
+  assert.equal(body.get('types-0-key'), 'task');
+});
+
+test('new workflow stages become transition choices before saving and removal clears incoming transitions', () => {
+  const data = fixture();
+  const draft = formValues(data.sets[0].forms[2]);
+  draft.set('statuses-2-key', 'review');
+  draft.set('statuses-2-label', 'Weryfikacja');
+  const staged = configurationStage(data, { section: 'statuses', index: 2 }, draft);
+  const transitions = staged.sets[0].forms[0].fields.find(
+    (item) => item.field_name === 'transitions',
+  );
+  assert.ok(
+    transitions.choices.some(
+      (choice) => choice.value === 'review' && choice.label === 'Weryfikacja',
+    ),
+  );
+  const removed = configurationRemove(staged, 'statuses', [1]);
+  assert.deepEqual(
+    Array.from(configurationDraftSubmission(removed).getAll('statuses-0-transitions')),
+    ['new'],
+  );
+});
+
+test('workflow editor renders every process field through the common form controls', () => {
+  const data = fixture();
+  data.sets[0].forms[0].fields.push(
+    field('statuses-0-flow_stage', 'queue', { type: 'select' }),
+    field('statuses-0-wip_limit', '', { type: 'number' }),
+    field('statuses-0-policy', '', { type: 'textarea' }),
+  );
+  const app = hookHarness(
+    formBundle.outputFiles[0].text,
+    'ConfigurationForm',
+    {
+      initial: { api_url: '/api/v1/page/', data },
+      section: 'statuses',
+      csrfToken: 'token',
+      onSaved: async () => {},
+      onStateChange() {},
+    },
+    { AbortController },
+  );
+  table(app.render()).props.onEdit(0);
+  const tree = app.render();
+  assert.equal(modal(tree).props.title, 'Edytuj status');
+  const fields = nodes(tree)
+    .filter((node) => node.props?.field)
+    .map((node) => node.props.field.field_name);
+  assert.deepEqual(fields, [
+    'key',
+    'label',
+    'category',
+    'transitions',
+    'flow_stage',
+    'wip_limit',
+    'policy',
+  ]);
+  assert.equal(fields.includes('DELETE'), false);
 });

@@ -101,7 +101,7 @@ class SpaceSettingsFrontendTests(TestCase):
             api = scoped_workplace_app_path(self.workspace, 'api', 'v1/navigation/') if scoped else '/api/v1/navigation/'
             for suffix, tab in [('?view=settings', 'main'), ('edit/', 'main'), ('avatar/', 'main'), ('members/', 'members'),
                                 ('configuration/', 'types'), ('configuration/?section=configuration', 'types'),
-                                ('configuration/?section=types', 'types'), ('configuration/?section=statuses', 'types'),
+                                ('configuration/?section=types', 'types'), ('configuration/?section=statuses', 'statuses'),
                                 ('configuration/?section=fields', 'types')]:
                 with self.subTest(scoped=scoped, suffix=suffix):
                     response = self.client.get(api, {'url': base + suffix}, follow=True)
@@ -110,7 +110,7 @@ class SpaceSettingsFrontendTests(TestCase):
                     self.assertEqual(shell['mode'], 'space-settings')
                     self.assertTrue(shell['settings_active'])
                     self.assertEqual(shell['space_settings']['tab'], tab)
-                    self.assertEqual([link['key'] for link in shell['space_settings']['links']], ['main', 'members', 'types'])
+                    self.assertEqual([link['key'] for link in shell['space_settings']['links']], ['main', 'members', 'types', 'statuses'])
                     self.assertTrue(all(f'/space/{self.space.slug}/?view=settings#' in link['url'] for link in shell['space_settings']['links']))
 
     def test_observer_sidebar_has_only_readable_sections(self):
@@ -307,10 +307,10 @@ class SpaceSettingsFrontendTests(TestCase):
             base = scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/') if scoped else f'/space/{self.space.slug}/'
             api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') if scoped else '/api/v1/page/'
             for selected in ('types', 'statuses', 'fields', 'configuration', 'unknown',
-                             'statuses&edit=0', 'fields&remove=0', '&edit=0'):
+                             'fields&remove=0', '&edit=0'):
                 with self.subTest(scoped=scoped, selected=selected):
                     target = base + 'configuration/?section=' + selected
-                    section = 'types'
+                    section = 'statuses' if selected == 'statuses' else 'types'
                     page = self.client.get(api, {'url': target}, follow=True).json()
                     data = page['data']
                     self.assertEqual(data['section'], section)

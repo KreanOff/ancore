@@ -10,6 +10,9 @@ const columnIcons: Record<string, string> = {
   description: 'file-text',
   category: 'list-checks',
   transitions: 'workflow',
+  flow_stage: 'workflow',
+  wip_limit: 'gauge',
+  policy: 'file-text',
   type: 'list-ordered',
   required: 'check',
 };
@@ -36,6 +39,7 @@ export default function ConfigurationTable({
   onAdd,
   onEdit,
   onRemove,
+  onMove,
   actions,
 }: {
   group: ConfigurationGroup;
@@ -43,6 +47,7 @@ export default function ConfigurationTable({
   onAdd: () => void;
   onEdit: (index: number) => void;
   onRemove: (indices: number[]) => void;
+  onMove?: (index: number, direction: -1 | 1) => void;
   actions: {
     dirty: boolean;
     saveDisabled?: boolean;
@@ -116,6 +121,30 @@ export default function ConfigurationTable({
           <Icon name="plus" />
           {copy.add}
         </button>
+        {onMove
+          ? ([-1, 1] as const).map((direction) => (
+              <button
+                type="button"
+                className="tasks-filter-button"
+                key={direction}
+                disabled={
+                  pending ||
+                  selectedCount !== 1 ||
+                  rows.findIndex((row) => row.index === selectedRows[0]?.index) ===
+                    (direction === -1 ? 0 : rows.length - 1)
+                }
+                onClick={() => {
+                  if (pending || selectedRows.length !== 1) return;
+                  const position = rows.findIndex((row) => row.index === selectedRows[0].index);
+                  onMove(selectedRows[0].index, direction);
+                  setSelected(new Set([rows[position + direction].index]));
+                }}
+              >
+                <Icon name={direction === -1 ? 'arrow-left' : 'arrow-right'} />
+                {direction === -1 ? 'W lewo' : 'W prawo'}
+              </button>
+            ))
+          : null}
         <div className="member-access-save-actions">
           <button
             type="button"

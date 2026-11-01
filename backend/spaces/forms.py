@@ -15,7 +15,7 @@ from tasks.models import TaskTag
 from core.work_logs import TimeLogForm
 from .models import SpaceTask, SpaceTaskWorkLog
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
-from .defaults import KINDS, MANAGEMENT, TEMPLATES, ISSUE_TYPE_ICON_CHOICES, issue_type_icon
+from .defaults import FLOW_STAGES, KINDS, MANAGEMENT, TEMPLATES, ISSUE_TYPE_ICON_CHOICES, issue_type_icon, status_flow_stage
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, transition_allowed, visible_items, visible_spaces
@@ -165,13 +165,17 @@ class ItemForm(StyledForm):
                 kwargs.setdefault('auto_id', f'subtask-{item.pk}-%s')
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
+        if item:
+            for name, value in (('source_status', item.status), ('source_in_backlog', str(item.in_backlog).lower())):
+                self.fields[name] = forms.CharField(required=False, widget=forms.HiddenInput)
+                self.initial[name] = value
         if not item and initial_status is not None:
             choices = [(status['key'], status['label']) for status in space.statuses]
             self.fields['status'] = forms.ChoiceField(label='Status', choices=choices, widget=VisualSelect(visuals={
                 status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category']}}
                 for status in space.statuses
             }))
-            default_status = next(status['key'] for status in space.statuses if status['category'] == 'new')
+            default_status = next((status['key'] for status in space.statuses if status_flow_stage(status) == 'queue'), space.statuses[0]['key'])
             self.initial['status'] = initial_status if initial_status in dict(choices) else default_status
             self.order_fields(['title', 'description', 'status'])
         if item and item.task.parent_id and self.editable_subtask_status:
@@ -282,11 +286,11 @@ class SubtaskForm(ItemForm):
         # and validation in every template.
         if 'points' not in self.fields:
             self.fields['points'] = deepcopy(ItemForm.base_fields['points'])
-        names = (*self.field_order, 'visibility') if item is None else self.field_order
+        names = (*self.field_order, 'visibility') if item is None else (*self.field_order, 'source_status', 'source_in_backlog')
         self.fields = {name: self.fields[name] for name in names}
         if item is None:
             self.fields['status'].choices = [(status['key'], status['label']) for status in space.statuses]
-            self.fields['status'].initial = space.statuses[0]['key']
+            self.fields['status'].initial = next((status['key'] for status in space.statuses if status_flow_stage(status) == 'queue'), space.statuses[0]['key'])
             self.fields['work_type'].initial = space.configuration.settings['types'][0]['key']
             if self.is_bound:
                 # Older modal callers only sent the original subtask fields.
@@ -389,11 +393,38 @@ class StatusForm(StyledForm):
     key = forms.RegexField(label='Klucz', regex=r'^[a-z][a-z0-9_]{0,39}$', max_length=40)
     label = forms.CharField(label='Nazwa statusu', max_length=80)
     category = forms.ChoiceField(label='Stan zadania', choices=SpaceTask.STATUS_CHOICES, initial='new')
+    flow_stage = forms.ChoiceField(label='Etap przepływu', choices=FLOW_STAGES, initial='queue',
+                                  help_text='Kolejka jest przed rozpoczęciem pracy; praca w toku trwa do zakończenia.')
+    wip_limit = forms.IntegerField(label='Limit pracy w toku (WIP)', required=False, min_value=1,
+                                  help_text='Maksymalna liczba zadań w tej kolumnie całej Przestrzeni. Puste pole oznacza brak limitu.')
+    policy = forms.CharField(label='Zasady wejścia i wyjścia', required=False, max_length=1000,
+                             widget=forms.Textarea(attrs={'rows': 3}))
     transitions = forms.MultipleChoiceField(label='Dozwolone przejścia', required=False)
 
     def __init__(self, *args, statuses, **kwargs):
         super().__init__(*args, **kwargs)
+        self.initial = dict(self.initial)
         self.fields['transitions'].choices = [(s['key'], s['label']) for s in statuses]
+        if self.initial:
+            self.initial.setdefault('flow_stage', status_flow_stage(self.initial))
+        if self.is_bound:
+            # Full formset submissions from older clients must retain metadata.
+            self.data = self.data.copy()
+            key = self.data.get(self.add_prefix('key'))
+            saved = next((status for status in statuses if status['key'] == key), {})
+            for name in ('flow_stage', 'wip_limit', 'policy'):
+                if self.add_prefix(name) not in self.data:
+                    fallback = status_flow_stage({'category': self.data.get(self.add_prefix('category')), **saved}) if name == 'flow_stage' else ''
+                    self.data[self.add_prefix(name)] = saved.get(name, fallback) or ''
+
+    def clean(self):
+        data = super().clean()
+        category, stage = data.get('category'), data.get('flow_stage')
+        if category and stage and (category == 'closed') != (stage == 'done'):
+            self.add_error('flow_stage', 'Etap „Zakończone” wymaga stanu „Zamknięte”, a pozostałe stany wymagają kolejki lub pracy w toku.')
+        if data.get('wip_limit') is not None and stage != 'active':
+            self.add_error('wip_limit', 'Limit WIP można ustawić wyłącznie dla pracy w toku.')
+        return data
 
 
 class ConfigurationLabelForm(StyledForm):

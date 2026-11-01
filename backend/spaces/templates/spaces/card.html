@@ -11,4 +11,6 @@
         {% if item.task.due_at %}<span class="tasks-row-date tasks-row-due tasks-row-due--{{ item.task.due_urgency }}" title="Termin: {{ item.task.due_at|date:'d.m.Y, H:i' }}" aria-label="Termin: {{ item.task.due_at|date:'d.m.Y, H:i' }}"><i data-icon="flame" aria-hidden="true"></i></span>{% endif %}
     </div>
     {% if item.team %}<div class="work-kanban-context work-sprint-card-context"><span title="Zespół: {{ item.team.name }}">{{ item.team.name }}</span></div>{% endif %}
+    {% if item.task.blocked_at %}<div class="work-card-blocked" aria-label="Blokada zadania"><span><i data-icon="circle-alert" aria-hidden="true"></i>Zablokowane · {{ item.task.blocked_at|timesince }}</span><span class="work-card-blocked-reason" title="{{ item.task.blocked_reason }}">{{ item.task.blocked_reason }}</span>{% if item.task.blocked_responsible %}<span>Odpowiedzialny: {{ item.task.blocked_responsible.get_full_name|default:item.task.blocked_responsible.email }}</span>{% endif %}</div>{% endif %}
+    {% if item.status_entered_at and item.task.status != 'closed' %}<div class="work-card-age" title="W etapie od {{ item.status_entered_at|date:'d.m.Y, H:i' }}"><i data-icon="clock" aria-hidden="true"></i>W etapie: {{ item.status_entered_at|timesince }}</div>{% endif %}
 </article>

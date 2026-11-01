@@ -488,6 +488,26 @@
 .work-sprint-card > .work-item-actions { grid-column: 4; }
 .work-sprint-card-meta { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .work-sprint-card-context { grid-column: 1 / -1; }
+.work-board-policy { flex: 0 0 auto; display: grid; gap: 6px; padding-inline: 6px; font-size: var(--font-size-sm); color: var(--text-secondary); }
+.work-board-wip, .work-card-age, .work-card-blocked > span:first-child { display: flex; align-items: center; gap: 6px; }
+.work-board-wip > svg, .work-card-age > svg, .work-card-blocked svg, .work-blocked-indicator > svg { flex: 0 0 14px; width: 14px; height: 14px; }
+.work-board-wip.is-full, .work-board-move-error, .work-blocked-indicator { color: var(--system-accent); }
+.work-blocked-indicator { display: inline-flex; flex: 0 0 auto; align-items: center; }
+.work-board-policy-details > summary { width: fit-content; cursor: pointer; border-radius: var(--radius); }
+.work-board-policy-details > summary:hover { background: var(--surface-hover); }
+.work-board-policy-details > p { max-height: 140px; overflow: auto; margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.work-board-move-error { margin: 0; overflow-wrap: anywhere; }
+.work-sprint-board > .is-drop-unavailable { background: var(--panel-bg); cursor: not-allowed; }
+.work-card-blocked { grid-column: 1 / -1; display: grid; gap: 4px; padding: 8px; border-left: 2px solid var(--system-accent); background: var(--panel-bg); border-radius: var(--radius); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.work-card-blocked-reason { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
+.work-card-age { grid-column: 1 / -1; color: var(--text-secondary); font-size: var(--font-size-sm); }
+.work-block-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.work-block-fields .documents-field, .work-block-fields .documents-field > div, .work-block-fields .ancore-custom-select__source { min-width: 0; }
+.work-block-fields .resources-react-filter { margin: 0; }
+.work-block-dialog .tasks-modal__footer { flex-wrap: wrap; }
+.work-block-fallback { padding: 6px; }
+.work-block-fallback > summary { cursor: pointer; }
+.work-block-fallback form { display: grid; gap: 8px; padding-top: 8px; }
 .work-backlog { flex: none; }
 .work-backlog-group > .tasks-issue-group-header { height: auto; min-height: 40px; flex-wrap: wrap; padding-block: 4px; }
 .work-backlog-group > .tasks-issue-group-header > :is(.tasks-icon-button, .tasks-filter-button) { height: 28px; min-height: 28px; border-color: transparent; border-radius: var(--dropdown-menu-item-radius); background: transparent; box-shadow: none; font-size: var(--font-size-sm); white-space: nowrap; }
@@ -730,6 +750,10 @@
 .tasks-directory-board.work-configuration-sheet--types.work-configuration-sheet--toolbar {
     --work-configuration-min-width: 720px;
     --tasks-directory-grid: var(--tasks-directory-select-width) minmax(140px, 1fr) minmax(180px, 1.3fr) minmax(240px, 2fr);
+}
+.tasks-directory-board.work-configuration-sheet--statuses.work-configuration-sheet--toolbar {
+    --work-configuration-min-width: 1480px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) minmax(130px, 1fr) minmax(170px, 1.2fr) minmax(140px, 1fr) minmax(150px, 1fr) 140px minmax(220px, 1.5fr) minmax(260px, 1.8fr);
 }
 .work-configuration-sheet .tasks-directory-name { gap: 8px; }
 .work-configuration-name { min-width: 0; max-width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }

@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { type FormSchema } from '../forms/FormDialog';
+import { FieldControl, type FormSchema } from '../forms/FormDialog';
 import { Modal } from '../shared/Modal';
 import SettingsPage from './SettingsPage';
 import ConfigurationTable from './ConfigurationTable';
@@ -13,6 +13,7 @@ import {
   configurationDraftKey,
   configurationDraftSubmission,
   configurationRemove,
+  configurationMove,
   configurationStage,
 } from './configuration-form';
 import { type Page, type PageProps, pageRequest, PageError } from '../shared/page';
@@ -51,7 +52,7 @@ interface EditorState extends ConfigurationEditor {
 }
 const nouns = { types: 'typ zgłoszenia', statuses: 'status', fields: 'pole dodatkowe' };
 function createEditor(data: ConfigurationData, selection: ConfigurationEditor): EditorState | null {
-  if (selection.section !== 'types') return null;
+  if (selection.section !== 'types' && selection.section !== 'statuses') return null;
   const group = data.sets.find((group) => group.key === selection.section);
   const schema = group?.forms[selection.index];
   if (!group || !schema) return null;
@@ -78,13 +79,14 @@ export function ConfigurationForm({
   onSaved,
   onStateChange,
   hostId,
+  section = 'types',
 }: PageProps & {
   onSaved: () => Promise<void>;
   onCancel?: () => void;
   onStateChange: (dirty: boolean, pending: boolean) => void;
   hostId?: string;
+  section?: 'types' | 'statuses';
 }) {
-  const section = 'types';
   const [baseline, setBaseline] = useState(initial.data as ConfigurationData);
   const [data, setData] = useState(baseline);
   const [untrustedBaseline, setUntrustedBaseline] = useState(() =>
@@ -239,7 +241,7 @@ export function ConfigurationForm({
         data.space_url + 'configuration/',
         csrfToken,
         life.signal,
-        configurationDraftSubmission(data),
+        configurationDraftSubmission({ ...data, section }),
       );
     } catch (exception) {
       if (life.signal.aborted) return;
@@ -330,6 +332,12 @@ export function ConfigurationForm({
               onAdd={add}
               onEdit={(index) => open({ section, index })}
               onRemove={remove}
+              onMove={
+                section === 'statuses'
+                  ? (index, direction) =>
+                      setData(configurationMove(data, section, index, direction))
+                  : undefined
+              }
               actions={{
                 dirty,
                 saveDisabled: conflict,
@@ -362,7 +370,9 @@ export function ConfigurationForm({
               className={
                 editor.remove
                   ? 'tasks-modal__body'
-                  : 'tasks-modal__body profile-edit-body space-settings-main app-form-avatar-layout work-type-form'
+                  : editor.section === 'types'
+                    ? 'tasks-modal__body profile-edit-body space-settings-main app-form-avatar-layout work-type-form'
+                    : 'tasks-modal__body documents-form resources-form'
               }
             >
               {[...new Set([...errors, ...editor.errors])].map((message, index) => (
@@ -384,7 +394,15 @@ export function ConfigurationForm({
                 </p>
               ) : (
                 <fieldset className="resources-react-fieldset" disabled={pending}>
-                  <TypeFields schema={editor.schema} iconDefaults={data.type_icon_defaults} />
+                  {editor.section === 'types' ? (
+                    <TypeFields schema={editor.schema} iconDefaults={data.type_icon_defaults} />
+                  ) : (
+                    <div className="app-form-layout">
+                      {editor.schema.fields.map((field) => (
+                        <FieldControl key={field.name} field={field} />
+                      ))}
+                    </div>
+                  )}
                 </fieldset>
               )}
             </div>
@@ -418,7 +436,7 @@ export default function ConfigurationPage({ initial, csrfToken }: PageProps) {
       api={initial.api_url}
       csrfToken={csrfToken}
       spaceUrl={data.space_url}
-      initialTab="types"
+      initialTab={data.section === 'statuses' ? 'statuses' : 'types'}
       initialConfiguration={initial}
     />
   );

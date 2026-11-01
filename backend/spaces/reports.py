@@ -21,7 +21,7 @@ from .summary import materialized_summary_items
 
 
 REPORT_PERIODS = (7, 30, 90)
-REPORT_FILTERS = ('q', 'work_type', 'team', 'assignee', 'status', 'priority', 'summary')
+REPORT_FILTERS = ('q', 'work_type', 'team', 'assignee', 'status', 'priority', 'summary', 'blocked')
 
 
 def report_scope(request, space, items):

@@ -11,7 +11,7 @@
         <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory member-access-toolbar">
             <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Edytuj</button>
             <button type="button" class="tasks-filter-button" disabled><i data-icon="trash-2" aria-hidden="true"></i>Usuń</button>
-            {% if group.add_url %}<a href="{{ group.add_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>Dodaj typ</a>{% endif %}
+            {% if group.add_url %}<a href="{{ group.add_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>{{ group.add_label }}</a>{% endif %}
             <div class="member-access-save-actions">
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled><i data-icon="check" aria-hidden="true"></i>Zapisz</button>
                 <button type="button" class="tasks-filter-button" disabled>Anuluj</button>
@@ -35,7 +35,7 @@
         </div>
         {% if group.rows %}
         <details class="space-settings-table-fallback">
-            <summary class="btn btn-secondary">Usuń typ zgłoszenia</summary>
+            <summary class="btn btn-secondary">{{ group.remove_label }}</summary>
             {% for row in group.rows %}<a href="{{ row.remove_url }}" class="btn btn-secondary">Usuń: {{ row.label }}</a>{% endfor %}
         </details>
         {% endif %}

@@ -15,7 +15,9 @@ export function configurationEditorSchema(schema: FormSchema): FormSchema {
       .filter((field) => configurationFieldName(field) !== 'DELETE')
       .map((field) => ({
         ...field,
-        required: ['key', 'label', 'category', 'type'].includes(configurationFieldName(field)),
+        required: ['key', 'label', 'category', 'flow_stage', 'type'].includes(
+          configurationFieldName(field),
+        ),
       })),
   };
 }
@@ -51,7 +53,7 @@ export function configurationSubmission(
 export function configurationDraftSubmission(data: ConfigurationData) {
   const values = new FormData();
   values.set('revision', data.revision);
-  values.set('configuration_section', 'types');
+  values.set('configuration_section', data.section || 'types');
   for (const group of data.sets) {
     for (const schema of [group.management, ...group.forms]) {
       for (const field of schema.fields) {
@@ -121,7 +123,7 @@ export function configurationStage(
       .find((field) => configurationFieldName(field) === 'icon')
       ?.choices?.find((choice) => choice.value === '')?.icon ||
     'shapes';
-  return {
+  return withStatusChoices({
     ...data,
     editor: null,
     errors: [],
@@ -164,7 +166,7 @@ export function configurationStage(
             ),
           },
     ),
-  };
+  });
 }
 
 export function configurationRemove(
@@ -182,7 +184,7 @@ export function configurationRemove(
   )
     throw new Error('Nie można usunąć tej pozycji.');
   const removed = new Set(indices);
-  return {
+  return withStatusChoices({
     ...data,
     errors: [],
     editor: null,
@@ -207,7 +209,7 @@ export function configurationRemove(
             ),
           },
     ),
-  };
+  });
 }
 
 export function configurationAdd(data: ConfigurationData, section: ConfigurationEditor['section']) {
@@ -223,7 +225,7 @@ export function configurationAdd(data: ConfigurationData, section: Configuration
       ?.value || 30,
   );
   if (active.length >= maximum)
-    throw new Error(`Możesz dodać maksymalnie ${maximum} typów zgłoszeń.`);
+    throw new Error(`Możesz dodać maksymalnie ${maximum} pozycji w tej sekcji.`);
   const empty = group.forms.findIndex((schema) => !configurationHasRow(schema));
   if (empty >= 0) return { data, index: empty };
   const initialCount = Number(
@@ -247,7 +249,10 @@ export function configurationAdd(data: ConfigurationData, section: Configuration
       ...field,
       name: prefix + configurationFieldName(field),
       id: 'id_' + prefix + configurationFieldName(field),
-      value: field.multiple ? [] : '',
+      value: field.multiple
+        ? []
+        : { category: 'new', flow_stage: 'queue', type: 'text' }[configurationFieldName(field)] ||
+          '',
       checked: false,
       errors: [],
       attrs: { ...field.attrs, id: 'id_' + prefix + configurationFieldName(field) },
@@ -282,5 +287,88 @@ export function configurationAdd(data: ConfigurationData, section: Configuration
             },
       ),
     },
+  };
+}
+
+function withStatusChoices(data: ConfigurationData): ConfigurationData {
+  const statuses = data.sets.find((group) => group.key === 'statuses');
+  const choices = (statuses?.forms || []).flatMap((schema) => {
+    const fields = Object.fromEntries(
+      schema.fields.map((field) => [configurationFieldName(field), field]),
+    );
+    return fields.key?.value && !fields.DELETE?.checked
+      ? [
+          {
+            value: String(fields.key.value),
+            label: String(fields.label?.value || fields.key.value),
+          },
+        ]
+      : [];
+  });
+  return {
+    ...data,
+    sets: data.sets.map((group) =>
+      group.key !== 'statuses'
+        ? group
+        : {
+            ...group,
+            forms: group.forms.map((schema) => ({
+              ...schema,
+              fields: schema.fields.map((field) =>
+                configurationFieldName(field) !== 'transitions'
+                  ? field
+                  : {
+                      ...field,
+                      choices,
+                      value: (Array.isArray(field.value) ? field.value : []).filter((value) =>
+                        choices.some((choice) => choice.value === value),
+                      ),
+                    },
+              ),
+            })),
+          },
+    ),
+  };
+}
+
+export function configurationMove(
+  data: ConfigurationData,
+  section: ConfigurationEditor['section'],
+  index: number,
+  direction: -1 | 1,
+): ConfigurationData {
+  const group = data.sets.find((group) => group.key === section);
+  if (!group) return data;
+  const visible = group.forms.flatMap((schema, position) =>
+    configurationHasRow(schema) &&
+    !schema.fields.some((field) => configurationFieldName(field) === 'DELETE' && field.checked)
+      ? [position]
+      : [],
+  );
+  const destination = visible[visible.indexOf(index) + direction];
+  if (destination === undefined) return data;
+  const forms = [...group.forms];
+  [forms[index], forms[destination]] = [forms[destination], forms[index]];
+  return {
+    ...data,
+    sets: data.sets.map((current) =>
+      current !== group
+        ? current
+        : {
+            ...current,
+            forms: forms.map((schema, position) => ({
+              ...schema,
+              fields: schema.fields.map((field) => {
+                const name = `${section}-${position}-${configurationFieldName(field)}`;
+                return {
+                  ...field,
+                  name,
+                  id: `id_${name}`,
+                  attrs: { ...field.attrs, id: `id_${name}` },
+                };
+              }),
+            })),
+          },
+    ),
   };
 }

@@ -17,7 +17,7 @@
         const values = data => {
             const result = new Map();
             for (const [name, value] of data) {
-                if (['csrfmiddlewaretoken', 'action', 'task_pk'].includes(name) || (value instanceof File && !value.name)) continue;
+                if (['csrfmiddlewaretoken', 'action', 'task_pk', 'source_status', 'source_in_backlog'].includes(name) || (value instanceof File && !value.name)) continue;
                 const entries = result.get(name) || [];
                 entries.push(value instanceof File ? [value.name, value.size, value.lastModified] : value);
                 result.set(name, entries);
@@ -78,7 +78,12 @@
                 return false;
             }
             const body = new FormData(form), sent = values(body);
-            body.set('autosave_fields', JSON.stringify(changedFields(sent)));
+            const changed = changedFields(sent);
+            body.set('autosave_fields', JSON.stringify(changed));
+            if (changed.includes('status') || changed.includes('in_backlog') || changed.includes('sprint')) {
+                body.set('source_status', saved.get('status')?.[0] || '');
+                body.set('source_in_backlog', String(['on', 'true', '1'].includes(saved.get('in_backlog')?.[0])));
+            }
             const sentFiles = [...(upload?.files || [])];
             setState('saving');
             pending = (async () => {

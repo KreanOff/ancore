@@ -62,6 +62,31 @@ Wydarzenia całodzienne zachowują daty kalendarzowe z API niezależnie od stref
 przeglądarki; ich zapis nadal normalizuje granice w Django. Te same zasady
 obowiązują w React i adapterze `calendar.js`.
 
+## Proces Kanban i blokady Przestrzeni
+
+Kolumny Page API udostępniają `flow_stage`, `wip_limit`, `wip_count`,
+`wip_full` oraz `policy`. Licznik obejmuje dostępne karty przed filtrowaniem,
+a serwer egzekwuje pojemność całej kolumny bez ujawniania prywatnych kart.
+`src/spaces/kanban.ts` współdzieli podpowiedzi i wstępną walidację ruchu
+z menu, przeciągania oraz tworzenia. Zmiana kolejności w tej samej kolumnie
+nie wymaga wolnego miejsca. Walidacja Django pozostaje rozstrzygająca.
+
+`BlockDialog` używa wspólnego `Modal`, `Select` i API stron. Odczyt
+`tasks/<key>/?block=1` zwraca typ `space-block` z konkretnym zadaniem,
+również podzadaniem, i osobami mającymi do niego dostęp. Zwykły adres
+podzadania nadal przekierowuje do zakładki podzadań rodzica. Zapis wysyła
+`source_status`, `source_in_backlog` i `source_blocked_revision`; zmiany
+statusu/planowania wysyłają dwa pierwsze pola. Po udanym POST i błędzie
+odświeżania dialog ponawia tylko GET. Autosave szczegółów zachowuje nowy
+snapshot także wtedy, gdy zamknięcie automatycznie usuwa kartę z backlogu,
+a następujący odczyt się nie uda.
+
+Tablica odświeża dane po odzyskaniu fokusu okna, gdy nie trwa zapis,
+otwarty dialog ani przeciąganie. Nie jest to synchronizacja w czasie
+rzeczywistym. Pierwszy render Django zachowuje natywne formularze blokady
+i jej usuwania oraz pola snapshotu. Semantykę pól i migracji opisuje
+[proces Kanban](SPACES.md#kanban-proces-pracy-wip-i-blokady).
+
 ## Raporty Przestrzeni
 
 `src/spaces/ReportsView.tsx` renderuje zakładkę Raporty we wspólnej powłoce
@@ -154,18 +179,18 @@ Pierwszy render Django używa `spaces/load_more.html` z etykietą końcową
 [`spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx) łączy
 pola główne, członków, awatar oraz konfigurację zadań na osobnej stronie.
 Powłoka otrzymuje tryb `space-settings` i `space_settings` z autoryzowanymi
-linkami; `shell/Sidebar.tsx` zastępuje menu Workspace trzema sekcjami
-`main` („Ustawienia”), `members` („Udostępnienia”) i `types` („Typy zgłoszeń”).
-Menu nie dodaje nagłówków ani linku powrotu; sekcja typów zależy od uprawnień
-konfiguracji. Sekcje `statuses` i `fields` usunięto z interfejsu ustawień.
+linkami; `shell/Sidebar.tsx` zastępuje menu Workspace czterema sekcjami:
+`main` („Ustawienia”), `members` („Udostępnienia”), `types` („Typy zgłoszeń”)
+i `statuses` („Proces pracy”). Menu nie dodaje nagłówków ani linku powrotu;
+typy i proces zależą od uprawnień konfiguracji. Sekcja `fields` pozostaje ukryta.
 `useShellLayout` utrzymuje osobne zwinięcie menu ustawień podczas wizyty:
 na desktopie początkowo pokazuje nazwy sekcji i nie nadpisuje preferencji
 `ancoreSidebarCollapsed` zwykłego menu. Wyjście przywraca tę preferencję,
 a ponowne wejście znów rozwija sekcje. Pierwszy render również pomija
 zapisane zwinięcie w trybie `space-settings`.
 Wejścia są normalizowane do `?view=settings#<sekcja>`. Fragment wybiera sekcję
-i zachowuje historię Wstecz/Dalej; starsze `#configuration`, `#statuses`
-i `#fields` mapują na `types`.
+i zachowuje historię Wstecz/Dalej; starsze `#configuration`
+i `#fields` mapują na `types`, a `#statuses` na Proces pracy.
 Zdarzenie `ancore:space-settings-tab` synchronizuje aktywny
 wiersz menu. Pierwszy render menu zapewnia
 `core/includes/space_settings_sidebar.html`. Centrum Ustawień otrzymuje `spaces`
@@ -282,12 +307,12 @@ Menu pierwszego renderu używa `fallback_url`; sekcja członków przekazuje
 `&section=members`, a konfiguracja `configuration/?section=types`,
 więc wybór działa także bez obsługi fragmentów przez React. Linki dodawania
 i edycji przekazują indeks przez `edit`, a usuwania przez `remove`.
-Stare `section=statuses|fields|configuration` wybierają typy i pomijają
+Stare `section=fields|configuration` wybierają typy i pomijają
 indeks edycji lub usunięcia ze starej sekcji. Szablon pokazuje kontrolki
 wybranego typu w oknie, a pozostałe formsety przekazuje jako pola ukryte.
 Błędny POST zachowuje okno, wartości i błędy;
 walidacja ukrytych formsetów pokazuje komunikaty ogólne, bez otwierania
-edytora statusu lub pola. Udany zapis wraca do typów. Ograniczenia odczytu
+edytora pola. Udany zapis wraca do edytowanej sekcji typów albo procesu. Ograniczenia odczytu
 i uprawnień są ustalane przez ten sam backend.
 
 ## Konfigurowalny pulpit Przestrzeni

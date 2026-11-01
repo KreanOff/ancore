@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 64 | 4 | 45 | 412 |
+| [backend/spaces](../backend/spaces) | 67 | 5 | 46 | 440 |
 
 ## 2. Modele i relacje
 
@@ -419,11 +419,13 @@ Pola zadeklarowane tutaj: `space` (ForeignKey), `user` (ForeignKey), `widgets` (
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task_type` (CharField), `reminder_at` (DateTimeField), `space` (ForeignKey), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `completion_date` (DateTimeField), `created_at` (DateTimeField), `created_by` (ForeignKey), `assignee` (ForeignKey), `due_at` (DateTimeField), `parent` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `visibility` (CharField), `private_owner` (ForeignKey).
+Pola zadeklarowane tutaj: `task_type` (CharField), `reminder_at` (DateTimeField), `space` (ForeignKey), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `completion_date` (DateTimeField), `blocked_reason` (TextField), `blocked_at` (DateTimeField), `blocked_by` (ForeignKey), `blocked_responsible` (ForeignKey), `blocked_revision` (PositiveIntegerField), `created_at` (DateTimeField), `created_by` (ForeignKey), `assignee` (ForeignKey), `due_at` (DateTimeField), `parent` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `visibility` (CharField), `private_owner` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `space` | `Space` | on_delete=models.CASCADE; related_name='tasks' |
+| `blocked_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='blocked_space_tasks'; null=True |
+| `blocked_responsible` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='space_task_blockers'; null=True |
 | `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='created_space_tasks'; null=True |
 | `assignee` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_space_tasks'; null=True |
 | `parent` | `'self'` | on_delete=models.CASCADE; related_name='subtasks'; null=True |
@@ -537,7 +539,7 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_at` (DateTimeField), `custom_values` (JSONField).
+Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_at` (DateTimeField), `custom_values` (JSONField), `status_entered_at` (DateTimeField), `flow_started_at` (DateTimeField), `flow_finished_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -1009,7 +1011,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/backlog_window.py](../backend/spaces/backlog_window.py) — `limit_parameter`, `backlog_window`, `backlog_more_url`
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
-- [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `issue_type_icon`, `template_settings`
+- [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `issue_type_icon`, `status_flow_stage`, `template_settings`
 - [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
@@ -1035,6 +1037,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
 - [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `settings_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `board_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
+- [backend/spaces/workflow.py](../backend/spaces/workflow.py) — `initial_status`, `assert_snapshot`, `validate_placement`, `update_flow_times`, `flow_snapshot`, `board_wip`, `block_responsible_people`, `set_block`
 
 ## 6. Szablony
 
@@ -1240,6 +1243,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/item_actions.html](../backend/spaces/templates/spaces/item_actions.html)
 - [backend/spaces/templates/spaces/item_list.html](../backend/spaces/templates/spaces/item_list.html)
 - [backend/spaces/templates/spaces/item_planning.html](../backend/spaces/templates/spaces/item_planning.html)
+- [backend/spaces/templates/spaces/item_snapshot.html](../backend/spaces/templates/spaces/item_snapshot.html)
 - [backend/spaces/templates/spaces/item_toolbar.html](../backend/spaces/templates/spaces/item_toolbar.html)
 - [backend/spaces/templates/spaces/load_more.html](../backend/spaces/templates/spaces/load_more.html)
 - [backend/spaces/templates/spaces/pagination.html](../backend/spaces/templates/spaces/pagination.html)
@@ -1490,6 +1494,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shell/types.ts](../frontend/app/src/shell/types.ts)
 - [frontend/app/src/shell/useFavorites.tsx](../frontend/app/src/shell/useFavorites.tsx)
 - [frontend/app/src/shell/useShellLayout.ts](../frontend/app/src/shell/useShellLayout.ts)
+- [frontend/app/src/spaces/BlockDialog.tsx](../frontend/app/src/spaces/BlockDialog.tsx)
 - [frontend/app/src/spaces/ConfigurationPage.tsx](../frontend/app/src/spaces/ConfigurationPage.tsx)
 - [frontend/app/src/spaces/ConfigurationTable.tsx](../frontend/app/src/spaces/ConfigurationTable.tsx)
 - [frontend/app/src/spaces/DetailPage.tsx](../frontend/app/src/spaces/DetailPage.tsx)
@@ -1508,6 +1513,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/TypeFields.tsx](../frontend/app/src/spaces/TypeFields.tsx)
 - [frontend/app/src/spaces/ViewToolbar.tsx](../frontend/app/src/spaces/ViewToolbar.tsx)
 - [frontend/app/src/spaces/configuration-form.ts](../frontend/app/src/spaces/configuration-form.ts)
+- [frontend/app/src/spaces/kanban.ts](../frontend/app/src/spaces/kanban.ts)
 - [frontend/app/src/spaces/summaryLayout.ts](../frontend/app/src/spaces/summaryLayout.ts)
 - [frontend/app/src/spaces/timeline.ts](../frontend/app/src/spaces/timeline.ts)
 - [frontend/app/src/spaces/types.ts](../frontend/app/src/spaces/types.ts)
@@ -1542,6 +1548,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
 - [frontend/app/tests/global-search.test.mjs](../frontend/app/tests/global-search.test.mjs)
 - [frontend/app/tests/item-filtering.test.mjs](../frontend/app/tests/item-filtering.test.mjs)
+- [frontend/app/tests/kanban-flow.test.mjs](../frontend/app/tests/kanban-flow.test.mjs)
 - [frontend/app/tests/member-toolbar.test.mjs](../frontend/app/tests/member-toolbar.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
@@ -2214,6 +2221,19 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ItemQueryTests`: 5 metod testowych.
 
+### backend/spaces/test_kanban_configuration.py
+
+Źródło: [backend/spaces/test_kanban_configuration.py](../backend/spaces/test_kanban_configuration.py).
+
+- `KanbanConfigurationTests`: 8 metod testowych.
+
+### backend/spaces/test_kanban_workflow.py
+
+Źródło: [backend/spaces/test_kanban_workflow.py](../backend/spaces/test_kanban_workflow.py).
+
+- `KanbanWorkflowTests`: 19 metod testowych.
+- `KanbanCapacityRaceTests`: 1 metod testowych.
+
 ### backend/spaces/test_list_window.py
 
 Źródło: [backend/spaces/test_list_window.py](../backend/spaces/test_list_window.py).
@@ -2378,6 +2398,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/spaces/migrations/0002_initial.py](../backend/spaces/migrations/0002_initial.py)
 - [backend/spaces/migrations/0003_space_dashboard_layout.py](../backend/spaces/migrations/0003_space_dashboard_layout.py)
 - [backend/spaces/migrations/0004_workitem_start_at.py](../backend/spaces/migrations/0004_workitem_start_at.py)
+- [backend/spaces/migrations/0005_kanban_flow.py](../backend/spaces/migrations/0005_kanban_flow.py)
 
 ## 10. Narzędzia i wdrożenie
 
