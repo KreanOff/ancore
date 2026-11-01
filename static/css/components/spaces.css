@@ -618,7 +618,7 @@
 }
 .work-configuration { display: grid; gap: 20px; }
 .work-configuration-section { min-width: 0; }
-.work-configuration-section > .workplace-edit-modal__team-toolbar { justify-content: flex-end; }
+.work-configuration-section > .workplace-edit-modal__team-toolbar:not(.member-access-toolbar) { justify-content: flex-end; }
 .work-configuration-section h2 { margin: 0 0 8px; font-size: var(--font-size-lg); }
 /* Configuration lists share the Members table; editing uses the standard modal. */
 .tasks-directory-board.work-configuration-sheet {
@@ -688,6 +688,44 @@
 .space-settings-page .work-member > .profile-avatar + span { flex: 1; min-width: 140px; }
 .space-settings-page .work-configuration { align-content: start; }
 .space-settings-page [data-configuration-section][hidden] { display: none !important; }
+
+/* Settings lists keep the toolbar fixed and scroll the sheet within the panel. */
+.space-settings-page .space-settings-panel > .space-settings-table-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    scrollbar-gutter: auto;
+}
+.space-settings-table-body > .work-configuration-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.space-settings-table-body .workplace-edit-modal__team-toolbar {
+    flex-shrink: 0;
+    margin: 0;
+}
+.space-settings-table-body .tasks-directory-board {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    overflow: auto;
+}
+.space-settings-table-body > :is(.workplace-team__hint, .tasks-modal__errors) {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 8px var(--app-page-padding-x);
+}
+.space-settings-table-fallback {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 50%;
+    overflow: auto;
+    padding: 8px var(--app-page-padding-x);
+}
 
 .space-settings-main { align-content: start; }
 .space-settings-page .space-settings-main { --app-form-textarea-min-height: 128px; }

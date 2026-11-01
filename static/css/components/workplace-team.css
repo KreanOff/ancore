@@ -21,6 +21,13 @@
     padding-inline: 0;
 }
 .workplace-team-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
+.tasks-directory-board.workplace-members-sheet--toolbar {
+    --tasks-directory-grid: var(--tasks-directory-select-width) minmax(240px, 1.1fr) minmax(260px, 1.2fr) 160px 150px;
+}
+.tasks-directory-board.workplace-members-sheet--toolbar .tasks-directory-header,
+.tasks-directory-board.workplace-members-sheet--toolbar .tasks-directory-list .tasks-directory-row {
+    min-width: 850px;
+}
 .workplace-team-sheet .tasks-directory-list [data-column="person"] { gap: 0.5rem; padding-right: 0.75rem; }
 /* Match the 30px person avatars in the Contacts directory. */
 .workplace-team-sheet .tasks-directory-avatar.profile-avatar {
@@ -144,3 +151,15 @@
     .workplaces-management .workplaces-task-topbar { padding-left: 3.5rem; }
     .workplaces-management .tasks-titlebar-actions { max-width: 100%; }
 }
+
+/* Shared staged access editor for Space and Dashboard settings. */
+.access-editor > .workplace-members-sheet { margin-inline: var(--app-page-padding-x); }
+.member-access-toolbar.workplace-edit-modal__team-toolbar { justify-content: flex-start; gap: 8px; border-bottom: 0; }
+.member-access-toolbar.tasks-filterbar > .tasks-filter-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+.member-access-save-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }

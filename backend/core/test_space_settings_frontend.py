@@ -246,7 +246,8 @@ class SpaceSettingsFrontendTests(TestCase):
         self.assertContains(response, self.owner.email)
         self.assertContains(response, self.admin.email)
         self.assertContains(response, self.observer.email)
-        self.assertNotContains(response, '>Odbierz dostęp</button>')
+        self.assertContains(response, 'class="tasks-filter-button" disabled><i data-icon="log-out"')
+        self.assertNotContains(response, f'action="{base}members/')
         self.assertNotContains(response, 'data-space-settings-form')
         self.assertEqual(response.context['space_settings_sidebar']['tab'], 'members')
 

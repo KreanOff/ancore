@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { pageRequest } from '../shared/page';
-interface Candidate {
+export interface Candidate {
   id?: string | number;
   name: string;
   email: string;
@@ -88,7 +88,7 @@ export default function Picker({
       try {
         const result = await pageRequest<{ results: Candidate[]; has_more: boolean }>(
           api,
-          url + '?q=' + encodeURIComponent(text.trim()),
+          url + (url.includes('?') ? '&' : '?') + 'q=' + encodeURIComponent(text.trim()),
           token,
           controller.signal,
         );

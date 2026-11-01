@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { EmbeddedForm, type FormDialogData } from '../forms/FormDialog';
-import { Members, type MemberRow } from '../shared/Members';
-import SharingDialog from '../shared/SharingDialog';
-import type { Team } from '../tasks/types';
+import AccessEditor, { type AccessTeam } from '../shared/AccessEditor';
 import { Icon } from '../shared/Icon';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
 import { errorMessage } from '../shared/api';
@@ -11,7 +9,7 @@ import { ConfigurationForm, type ConfigurationSection } from './ConfigurationPag
 import type { DetailData } from './types';
 
 type Tab = 'main' | 'members' | 'types';
-type FormSection = 'main' | 'configuration';
+type FormSection = 'main' | 'configuration' | 'members';
 function isConfigurationSection(value: unknown): value is 'types' {
   return value === 'types';
 }
@@ -57,19 +55,13 @@ export default function SettingsPage({
     initialForm && initialTab === 'main' ? { main: initialForm } : {},
   );
   const [configuration, setConfiguration] = useState(initialConfiguration);
-  const [sharing, setSharing] = useState(
-    initialTab === 'members' && tab === 'members' && !!initialForm,
-  );
   const [openAvatar] = useState(initialTab === 'avatar' && tab === 'main');
-  const [roleMember, setRoleMember] = useState<MemberRow>();
   const [states, setStates] = useState<
     Partial<Record<FormSection, { dirty: boolean; pending: boolean }>>
   >({});
-  const [acting, setActing] = useState(false);
   const [error, setError] = useState(''),
     [notice, setNotice] = useState('');
   const [life] = useState(() => new AbortController());
-  const action = useRef(false);
   useEffect(() => () => life.abort(), [life]);
   useEffect(() => {
     setPageLocation(spaceUrl + '?view=settings#' + tab);
@@ -77,6 +69,10 @@ export default function SettingsPage({
   }, [spaceUrl]);
   const reportMain = useCallback((dirty: boolean, pending: boolean) => {
     setStates((s) => ({ ...s, main: { dirty, pending } }));
+    if (dirty || pending) setNotice('');
+  }, []);
+  const reportMembers = useCallback((dirty: boolean, pending: boolean) => {
+    setStates((s) => ({ ...s, members: { dirty, pending } }));
     if (dirty || pending) setNotice('');
   }, []);
   const reportConfiguration = useCallback((dirty: boolean, pending: boolean) => {
@@ -134,7 +130,7 @@ export default function SettingsPage({
         ? data.can_manage && !forms.main
         : false);
   const dirty = Object.values(states).some((s) => s?.dirty);
-  const pending = acting || Object.values(states).some((s) => s?.pending);
+  const pending = Object.values(states).some((s) => s?.pending);
   const available = tabs.filter((t) => !isConfigurationSection(t.key) || data?.can_configure);
   useDirtyGuard(dirty, pending);
   useEffect(() => {
@@ -178,54 +174,82 @@ export default function SettingsPage({
       window.removeEventListener('popstate', sync);
     };
   }, [pending, data?.can_configure, fallbackTab, spaceUrl, tab]);
+  function clearUnavailableSections(canManage: boolean, canConfigure?: boolean) {
+    if (!canManage) setForms({});
+    if (canConfigure === false) setConfiguration(undefined);
+    if (!canManage || canConfigure === false) {
+      setStates((current) => {
+        const next = { ...current };
+        if (!canManage) delete next.main;
+        if (canConfigure === false) delete next.configuration;
+        return next;
+      });
+    }
+  }
   async function refresh() {
     const page = await request(spaceUrl + '?view=settings');
     if (!life.signal.aborted) {
       const detail = page.data as DetailData;
       setData(detail);
+      clearUnavailableSections(detail.can_manage, detail.can_configure);
       document.title = `${page.title} | ancore`;
       window.dispatchEvent(
         new CustomEvent('ancore:space-settings-saved', {
-          detail: { name: detail.space.name },
+          detail: { name: detail.space.name, canConfigure: detail.can_configure },
         }),
       );
+      return detail;
     }
   }
   async function stored(section: FormSection) {
-    await refresh();
-    if (section === 'configuration') {
-      const page = await request(spaceUrl + 'configuration/');
-      if (!life.signal.aborted) setConfiguration(page);
+    // EmbeddedForm finishes its POST before this read. Keep navigation blocked
+    // until the refreshed permissions and any configuration snapshot arrive.
+    setStates((current) => ({
+      ...current,
+      [section]: { dirty: current[section]?.dirty ?? false, pending: true },
+    }));
+    try {
+      const detail = await refresh();
+      if (section === 'configuration' && detail?.can_configure) {
+        const page = await request(spaceUrl + 'configuration/');
+        if (!life.signal.aborted) setConfiguration(page);
+      }
+      if (!life.signal.aborted) setNotice('Zmiany zostały zapisane.');
+    } finally {
+      if (!life.signal.aborted) {
+        setStates((current) =>
+          current[section]
+            ? { ...current, [section]: { ...current[section], pending: false } }
+            : current,
+        );
+      }
     }
-    if (!life.signal.aborted) setNotice('Zmiany zostały zapisane.');
   }
   function close() {
     const returnUrl = initialForm?.return_url;
     void navigate(returnUrl && !returnUrl.includes('?view=settings') ? returnUrl : spaceUrl);
   }
-  function membersSaved(team: Team) {
-    setData((current) => (current ? { ...current, team } : current));
-    setSharing(false);
-    setRoleMember(undefined);
-    setNotice('Dostęp został zapisany.');
-  }
-  async function removeMember(member: MemberRow) {
-    if (action.current || pending || !data) return;
-    action.current = true;
-    setActing(true);
-    setError('');
-    try {
-      const body = new FormData();
-      body.set('action', 'remove');
-      body.set('member_id', String(member.id));
-      const team = await pageRequest<Team>(api, data.team_url, csrfToken, life.signal, body);
-      if (!life.signal.aborted) membersSaved(team);
-    } catch (exception) {
-      if (!life.signal.aborted) setError(errorMessage(exception));
-    } finally {
-      action.current = false;
-      if (!life.signal.aborted) setActing(false);
+  function membersSaved(team: AccessTeam) {
+    if (data?.team.visibility !== team.visibility && !states.main?.dirty) {
+      setForms({});
     }
+    clearUnavailableSections(team.can_manage, team.can_configure);
+    setData((current) =>
+      current
+        ? {
+            ...current,
+            space: { ...current.space, visibility: team.visibility },
+            team,
+            can_manage: team.can_manage,
+            can_configure: team.can_configure ?? current.can_configure,
+          }
+        : current,
+    );
+    window.dispatchEvent(
+      new CustomEvent('ancore:space-settings-saved', {
+        detail: { name: team.name, canConfigure: team.can_configure },
+      }),
+    );
   }
   return (
     <>
@@ -280,8 +304,24 @@ export default function SettingsPage({
               aria-label={t.label}
               hidden={tab !== t.key}
               className="space-settings-panel"
+              onSubmitCapture={(event) => {
+                if (
+                  t.key !== 'main' ||
+                  !states.configuration?.dirty ||
+                  !data ||
+                  !(event.target instanceof HTMLFormElement)
+                )
+                  return;
+                const visibility = new FormData(event.target).get('visibility');
+                if (visibility === null || visibility === data.space.visibility) return;
+                event.preventDefault();
+                event.stopPropagation();
+                setNotice(
+                  'Najpierw zapisz lub anuluj zmiany typów zgłoszeń, aby zmienić widoczność przestrzeni.',
+                );
+              }}
             >
-              {t.key === 'main' && forms.main ? (
+              {t.key === 'main' && data?.can_manage && forms.main ? (
                 <EmbeddedForm
                   data={forms.main}
                   api={api}
@@ -316,59 +356,19 @@ export default function SettingsPage({
                 </>
               ) : null}
               {t.key === 'members' && data ? (
-                <>
-                  <div className="tasks-modal__body">
-                    <div className="workplace-edit-modal__team-toolbar">
-                      <span className="workplaces-management__count">
-                        {data.space.name} · Członkowie: {data.team.members.length}
-                      </span>
-                      {data.team.can_manage ? (
-                        <button
-                          type="button"
-                          className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                          disabled={pending}
-                          onClick={() => setSharing(true)}
-                          aria-haspopup="dialog"
-                        >
-                          <Icon name="plus" />
-                          Udostępnij
-                        </button>
-                      ) : null}
-                    </div>
-                    {data.space.visibility === 'public' ? (
-                      <p className="workplace-team__hint">
-                        Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom,
-                        zapisz widoczność „Prywatna” w zakładce „Ustawienia”.
-                      </p>
-                    ) : null}
-                    <Members
-                      members={data.team.members}
-                      isOwner={data.team.is_owner}
-                      canEditRoles={data.team.can_manage}
-                      busy={pending}
-                      onRole={setRoleMember}
-                      onRemove={(member) =>
-                        window.showConfirmModal({
-                          title: 'Odbierz dostęp',
-                          messageText: `Odebrać dostęp do przestrzeni osobie ${member.name}? Utraci też dostęp do jej zadań.`,
-                          confirmText: 'Odbierz dostęp',
-                          cancelText: 'Anuluj',
-                          onConfirm: () => void removeMember(member),
-                        })
-                      }
-                    />
-                  </div>
-                  <footer className="tasks-modal__footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={pending}
-                      onClick={close}
-                    >
-                      Zamknij
-                    </button>
-                  </footer>
-                </>
+                <AccessEditor
+                  team={data.team}
+                  publicVisibility="public"
+                  api={api}
+                  url={data.team_url}
+                  csrfToken={csrfToken}
+                  hostId={hostId}
+                  initialSharing={initialTab === 'members' && tab === 'members' && !!initialForm}
+                  settingsDirty={!!states.main?.dirty || !!states.configuration?.dirty}
+                  blocked={!!states.main?.pending || !!states.configuration?.pending}
+                  onSaved={membersSaved}
+                  onStateChange={reportMembers}
+                />
               ) : null}
             </section>
           ))}
@@ -386,22 +386,6 @@ export default function SettingsPage({
           </section>
         ) : null}
       </div>
-      {data && (sharing || roleMember) ? (
-        <SharingDialog<Team>
-          name={data.space.name}
-          schema={data.team.share_form}
-          person={roleMember}
-          api={api}
-          url={data.team_url}
-          csrfToken={csrfToken}
-          hostId={hostId}
-          onClose={() => {
-            setSharing(false);
-            setRoleMember(undefined);
-          }}
-          onSaved={membersSaved}
-        />
-      ) : null}
     </>
   );
 }

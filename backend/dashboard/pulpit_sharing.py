@@ -1,4 +1,6 @@
-"""Immediate dashboard sharing with the shared member table and person picker."""
+"""Dashboard access drafts and legacy immediate sharing operations."""
+import json
+
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -68,12 +70,77 @@ def payload(request, dashboard):
         'email': person.email, 'avatar': account_avatar(person), 'role': 'owner', 'role_label': 'Właściciel',
         'created_at': dashboard.created_at.isoformat(), 'can_change': False,
     })
-    return {'name': dashboard.name, 'can_manage': manager and not inherited, 'is_owner': creator, 'members': members,
-            'share_form': form_payload(ShareForm(dashboard=dashboard, actor=request.user)), 'visibility': dashboard.visibility}
+    return {'name': dashboard.name, 'can_manage': manager and not inherited, 'is_owner': creator,
+            'can_change_visibility': creator and manager, 'members': members,
+            'share_form': form_payload(ShareForm(dashboard=dashboard, actor=request.user)),
+            'visibility': dashboard.visibility, 'revision': dashboard.revision}
 
 
 def team_url(request, dashboard):
     return app_url(request, f'{dashboard.slug}/team/')
+
+
+def apply_access_draft(request, dashboard):
+    """Validate a complete access draft while the workspace/dashboard locks are held."""
+    try:
+        revision = int(request.POST.get('revision', ''))
+        if revision < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Nieprawidłowa wersja ustawień dostępu.'}, status=400)
+    if revision != dashboard.revision:
+        return JsonResponse({'error': 'Pulpit zmieniono w innym oknie. Odśwież dane przed zapisaniem dostępu.'}, status=409)
+    visibility = request.POST.get('visibility')
+    if visibility not in {Dashboard.Visibility.PRIVATE, Dashboard.Visibility.WORKSPACE}:
+        return JsonResponse({'error': 'Wybierz prawidłową widoczność pulpitu.'}, status=400)
+    try:
+        rows = json.loads(request.POST.get('members', ''))
+        if not isinstance(rows, list):
+            raise ValueError
+        desired = {}
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {'user_id', 'role'}:
+                raise ValueError
+            user_id, role = row['user_id'], row['role']
+            if (type(user_id) is not int or not 0 < user_id < 2 ** 63
+                    or user_id == dashboard.created_by_id or user_id in desired
+                    or role not in DashboardMembership.Role.values):
+                raise ValueError
+            desired[user_id] = role
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Nieprawidłowa lista osób lub ról. Właściciel pulpitu pozostaje bez zmian.'}, status=400)
+
+    current = {member.user_id: member for member in dashboard.memberships.all()}
+    admins = {user_id for user_id, member in current.items() if member.role == DashboardMembership.Role.ADMIN}
+    active_ids = set(workplace_people(dashboard.workplace).filter(pk__in=set(desired) | admins).values_list('pk', flat=True))
+    if not set(desired).issubset(active_ids):
+        return JsonResponse({'error': 'Wybierz wyłącznie aktywnych członków bieżącego Workspace.'}, status=400)
+    preserved = set()
+    if dashboard.created_by_id != request.user.pk:
+        if visibility != Dashboard.Visibility.PRIVATE:
+            raise PermissionDenied
+        if any(desired.get(user_id) != DashboardMembership.Role.ADMIN for user_id in admins & active_ids):
+            raise PermissionDenied
+        if any(role == DashboardMembership.Role.ADMIN and user_id not in admins for user_id, role in desired.items()):
+            raise PermissionDenied
+        # The client cannot see inactive grants. Omission must not let an admin
+        # remove a protected administrator that was outside its active snapshot.
+        preserved = admins - active_ids
+
+    if visibility == Dashboard.Visibility.WORKSPACE:
+        dashboard.shared_with.clear()
+        dashboard.visibility = Dashboard.Visibility.WORKSPACE
+    else:
+        dashboard.memberships.exclude(user_id__in=set(desired) | preserved).delete()
+        for user_id, role in desired.items():
+            member = current.get(user_id)
+            if member is None:
+                dashboard.memberships.create(user_id=user_id, role=role)
+            elif member.role != role:
+                member.role = role
+                member.save(update_fields=['role'])
+        dashboard.visibility = Dashboard.Visibility.SELECTED if desired else Dashboard.Visibility.PRIVATE
+    return None
 
 
 @login_required
@@ -87,10 +154,30 @@ def team(request, pk):
     with transaction.atomic():
         Workplace.objects.select_for_update().get(pk=request.workplace.pk)
         dashboard = get_dashboard(request, pk, manage=True, lock=True)
-        if dashboard.visibility == Dashboard.Visibility.WORKSPACE:
-            raise PermissionDenied
         action = request.POST.get('action')
-        if action == 'share':
+        creator = dashboard.created_by_id == request.user.pk
+        if action == 'save':
+            error = apply_access_draft(request, dashboard)
+            if error is not None:
+                return error
+        elif action == 'visibility':
+            if not creator:
+                raise PermissionDenied
+            visibility = request.POST.get('visibility')
+            if visibility not in {Dashboard.Visibility.PRIVATE, Dashboard.Visibility.WORKSPACE}:
+                return JsonResponse({'error': 'Wybierz prawidłową widoczność pulpitu.'}, status=400)
+            if visibility == Dashboard.Visibility.WORKSPACE:
+                dashboard.shared_with.clear()
+                dashboard.visibility = Dashboard.Visibility.WORKSPACE
+            elif dashboard.visibility == Dashboard.Visibility.SELECTED and dashboard.shared_with.exists():
+                dashboard.visibility = Dashboard.Visibility.SELECTED
+            else:
+                # Grants outside selected visibility are stale, never restore them.
+                dashboard.shared_with.clear()
+                dashboard.visibility = Dashboard.Visibility.PRIVATE
+        elif dashboard.visibility == Dashboard.Visibility.WORKSPACE:
+            raise PermissionDenied
+        elif action == 'share':
             form = ShareForm(request.POST, dashboard=dashboard, actor=request.user)
             if not form.is_valid():
                 return JsonResponse({'errors': form.errors.get_json_data()}, status=400)
@@ -99,27 +186,33 @@ def team(request, pk):
             dashboard.memberships.create(user=form.recipient, role=form.cleaned_data['role'])
             dashboard.visibility = Dashboard.Visibility.SELECTED
         elif action in {'remove', 'role'}:
+            values = request.POST.getlist('member_ids') if 'member_ids' in request.POST else request.POST.getlist('member_id')
+            if not values:
+                return JsonResponse({'error': 'Zaznacz co najmniej jedną osobę.'}, status=400)
             try:
-                member_id = int(request.POST.get('member_id', ''))
-                if not 0 < member_id < 2 ** 63:
+                member_ids = {int(value) for value in values}
+                if any(not 0 < member_id < 2 ** 63 for member_id in member_ids):
                     raise ValueError
             except (ValueError, TypeError):
                 raise Http404
-            member = dashboard.memberships.filter(user_id=member_id).exclude(user_id=dashboard.created_by_id).first()
-            if member is None:
+            members = list(dashboard.memberships.filter(user_id__in=member_ids,
+                user__in=workplace_people(dashboard.workplace)).exclude(user_id=dashboard.created_by_id))
+            if len(members) != len(member_ids):
                 raise Http404
-            creator = dashboard.created_by_id == request.user.pk
-            if not creator and member.role == 'admin':
+            if not creator and any(member.role == 'admin' for member in members):
                 raise PermissionDenied
+            role = request.POST.get('role')
+            if action == 'role' and role not in ({'admin', 'member', 'observer'} if creator else {'member', 'observer'}):
+                raise PermissionDenied
+            # Validate every selected person before changing any of the grants.
             if action == 'remove':
-                member.delete()
+                dashboard.memberships.filter(pk__in=[member.pk for member in members]).delete()
                 if not dashboard.shared_with.exists():
                     dashboard.visibility = Dashboard.Visibility.PRIVATE
-            elif request.POST.get('role') in ({'admin', 'member', 'observer'} if creator else {'member', 'observer'}):
-                member.role = request.POST['role']
-                member.save(update_fields=['role'])
             else:
-                raise PermissionDenied
+                for member in members:
+                    member.role = role
+                    member.save(update_fields=['role'])
         else:
             return JsonResponse({'error': 'Nieprawidłowa operacja.'}, status=400)
         dashboard.revision += 1
@@ -133,17 +226,19 @@ def team(request, pk):
 def candidates(request, pk):
     from .pulpit_views import get_dashboard
     dashboard = get_dashboard(request, pk, manage=True)
-    if dashboard.visibility == Dashboard.Visibility.WORKSPACE:
+    draft = request.GET.get('draft') == '1'
+    if dashboard.visibility == Dashboard.Visibility.WORKSPACE and not draft:
         raise PermissionDenied
     query = request.GET.get('q', '').strip()
     if len(query) < 2 or len(query) > 254:
         return JsonResponse({'results': [], 'has_more': False})
     people = workplace_people(dashboard.workplace).exclude(email='').exclude(pk=dashboard.created_by_id)
-    if dashboard.visibility == Dashboard.Visibility.SELECTED:
+    if dashboard.visibility == Dashboard.Visibility.SELECTED and not draft:
         people = people.exclude(pk__in=dashboard.shared_with.values('pk'))
     for term in query.split():
         people = people.filter(Q(first_name__icontains=term) | Q(last_name__icontains=term)
             | Q(middle_name__icontains=term) | Q(username__icontains=term) | Q(email__icontains=term))
     people = list(people.order_by('first_name', 'last_name', 'email')[:11])
-    return JsonResponse({'results': [{'email': person.email, 'name': person.get_full_name() or person.username,
+    return JsonResponse({'results': [{'id': person.pk, 'user_id': person.pk,
+        'email': person.email, 'name': person.get_full_name() or person.username,
         'avatar': account_avatar(person)} for person in people[:10]], 'has_more': len(people) > 10})

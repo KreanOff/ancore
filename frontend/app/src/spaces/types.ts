@@ -113,7 +113,7 @@ export interface Summary {
 }
 export interface DetailData {
   reports: import('./ReportsView').ReportsData | null;
-  team: import('../tasks/types').Team;
+  team: import('../shared/AccessEditor').AccessTeam;
   team_url: string;
   space: Space;
   view: string;

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EmbeddedForm } from '../forms/FormDialog';
-import { Members, type MemberRow } from '../shared/Members';
-import SharingDialog from '../shared/SharingDialog';
 import { Icon } from '../shared/Icon';
+import AccessEditor from './AccessEditor';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest, setPageLocation } from '../shared/page';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
@@ -18,8 +17,6 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
   const initialData = initial.data as EditData;
   const [tab, setTab] = useState<Tab>(() => tabFromHash(initialData.section));
   const [team, setTeam] = useState(initialData.team);
-  const [sharing, setSharing] = useState(false);
-  const [roleMember, setRoleMember] = useState<MemberRow>();
   const [acting, setActing] = useState(false);
   const action = useRef(false);
   const retryAction = useRef<(() => void) | undefined>();
@@ -150,42 +147,20 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
       if (!life.signal.aborted) setActing(false);
     }
   }
-  function shared(result: EditData['team']) {
+  const reportAccess = useCallback((dirty: boolean, pending: boolean) => {
+    setStates((previous) => ({ ...previous, access: { dirty, pending } }));
+  }, []);
+  function accessSaved(result: EditData['team']) {
     setTeam(result);
-    setSharing(false);
-    setRoleMember(undefined);
-    setNotice('Dostęp został zapisany.');
+    if (
+      (team.visibility === 'workspace') !== (result.visibility === 'workspace') &&
+      !states.settings?.dirty
+    ) {
+      setPages((previous) => ({ ...previous, settings: undefined }));
+    }
   }
   function close() {
     void navigate(initialData.return_url);
-  }
-  async function removeMember(member: MemberRow) {
-    if (action.current || pending) return;
-    action.current = true;
-    setActing(true);
-    setError('');
-    retryAction.current = undefined;
-    try {
-      const body = new FormData();
-      body.set('action', 'remove');
-      body.set('member_id', String(member.id));
-      const result = await pageRequest<EditData['team']>(
-        initial.api_url,
-        initialData.team_url,
-        csrfToken,
-        life.signal,
-        body,
-      );
-      if (!life.signal.aborted) shared(result);
-    } catch (exception) {
-      if (!life.signal.aborted) {
-        setError(errorMessage(exception));
-        retryAction.current = () => void removeMember(member);
-      }
-    } finally {
-      action.current = false;
-      if (!life.signal.aborted) setActing(false);
-    }
   }
   return (
     <>
@@ -243,59 +218,16 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
               className="space-settings-panel pulpit-settings-panel"
             >
               {item.key === 'access' ? (
-                <>
-                  <div className="tasks-modal__body">
-                    <div className="workplace-edit-modal__team-toolbar">
-                      <span className="workplaces-management__count">
-                        {team.name} · Osoby: {team.members.length}
-                      </span>
-                      {team.can_manage ? (
-                        <button
-                          type="button"
-                          className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                          disabled={pending}
-                          onClick={() => setSharing(true)}
-                          aria-haspopup="dialog"
-                        >
-                          <Icon name="plus" />
-                          Udostępnij
-                        </button>
-                      ) : null}
-                    </div>
-                    {team.visibility === 'workspace' ? (
-                      <p className="workplace-team__hint">
-                        Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom,
-                        zapisz widoczność „Prywatny — wybrane osoby” w zakładce „Ustawienia”.
-                      </p>
-                    ) : null}
-                    <Members
-                      members={team.members}
-                      isOwner={team.is_owner}
-                      canEditRoles={team.can_manage}
-                      busy={pending}
-                      onRole={setRoleMember}
-                      onRemove={(member) =>
-                        window.showConfirmModal({
-                          title: 'Odbierz dostęp',
-                          messageText: `Odebrać dostęp do pulpitu osobie ${member.name}?`,
-                          confirmText: 'Odbierz dostęp',
-                          cancelText: 'Anuluj',
-                          onConfirm: () => void removeMember(member),
-                        })
-                      }
-                    />
-                  </div>
-                  <footer className="tasks-modal__footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={pending}
-                      onClick={close}
-                    >
-                      Zamknij
-                    </button>
-                  </footer>
-                </>
+                <AccessEditor
+                  team={team}
+                  api={initial.api_url}
+                  url={initialData.team_url}
+                  csrfToken={csrfToken}
+                  settingsDirty={!!states.settings?.dirty}
+                  blocked={acting || !!states.settings?.pending}
+                  onSaved={accessSaved}
+                  onStateChange={reportAccess}
+                />
               ) : page && data ? (
                 <EmbeddedForm
                   data={{
@@ -315,21 +247,6 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
           );
         })}
       </div>
-      {sharing || roleMember ? (
-        <SharingDialog<EditData['team']>
-          name={team.name}
-          schema={team.share_form}
-          person={roleMember}
-          api={initial.api_url}
-          url={initialData.team_url}
-          csrfToken={csrfToken}
-          onClose={() => {
-            setSharing(false);
-            setRoleMember(undefined);
-          }}
-          onSaved={shared}
-        />
-      ) : null}
     </>
   );
 }

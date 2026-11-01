@@ -85,7 +85,12 @@ export interface DetailData {
   modal: FormDialogData | null;
 }
 export interface EditData {
-  team: Team & { name: string; visibility: string };
+  team: Team & {
+    name: string;
+    visibility: string;
+    can_change_visibility: boolean;
+    revision: number;
+  };
   team_url: string;
   settings_tabs: EditorTab[];
   dashboard: Dashboard;

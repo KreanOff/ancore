@@ -21,24 +21,43 @@ export function Members({
   busy,
   onRole,
   onRemove,
+  selection,
+  rowActions = true,
 }: {
   members: MemberRow[];
   isOwner: boolean;
   canEditRoles?: boolean;
   busy: boolean;
-  onRole: (member: MemberRow) => void;
-  onRemove: (member: MemberRow) => void;
+  onRole?: (member: MemberRow) => void;
+  onRemove?: (member: MemberRow) => void;
+  selection?: {
+    selected: Set<number | string>;
+    onChange: (next: Set<number | string>) => void;
+  };
+  rowActions?: boolean;
 }) {
-  const [selected, setSelected] = useState<Set<number | string>>(new Set()),
+  const [localSelected, setLocalSelected] = useState<Set<number | string>>(() => new Set()),
     all = useRef<HTMLInputElement>(null);
-  const selectedCount = members.filter((member) => selected.has(member.id)).length;
+  const currentSelection = selection?.selected ?? localSelected;
+  const selected = new Set(
+    members.filter((member) => currentSelection.has(member.id)).map((member) => member.id),
+  );
+  const selectedCount = selected.size;
+  function setSelected(next: Set<number | string>) {
+    if (busy) return;
+    const allowed = new Set(
+      members.filter((member) => next.has(member.id)).map((member) => member.id),
+    );
+    if (selection) selection.onChange(allowed);
+    else setLocalSelected(allowed);
+  }
   useLayoutEffect(() => {
     if (all.current)
       all.current.indeterminate = selectedCount > 0 && selectedCount < members.length;
   }, [selectedCount, members.length]);
   return (
     <div
-      className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet"
+      className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet${rowActions ? '' : ' workplace-members-sheet--toolbar'}`}
       tabIndex={0}
       role="region"
       aria-label="Członkowie — tabela"
@@ -66,6 +85,7 @@ export function Members({
               className="tasks-row-checkbox"
               aria-label="Zaznacz wszystkich członków"
               checked={members.length > 0 && selectedCount === members.length}
+              disabled={busy || members.length === 0}
               onChange={(event) =>
                 setSelected(
                   event.target.checked ? new Set(members.map((member) => member.id)) : new Set(),
@@ -73,12 +93,14 @@ export function Members({
               }
             />
           </span>
-          <span
-            className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-            data-column="action"
-            role="columnheader"
-            aria-label="Działania"
-          />
+          {rowActions ? (
+            <span
+              className="tasks-directory-sheet__cell tasks-project-sheet__cell"
+              data-column="action"
+              role="columnheader"
+              aria-label="Działania"
+            />
+          ) : null}
           {[
             ['person', 'Nazwa', 'users'],
             ['email', 'E-mail', 'mail'],
@@ -109,62 +131,65 @@ export function Members({
                 data-column="select"
                 aria-label={`Zaznacz członka ${member.name}`}
                 checked={selected.has(member.id)}
-                onChange={(event) =>
-                  setSelected((current) => {
-                    const next = new Set(current);
-                    if (event.target.checked) next.add(member.id);
-                    else next.delete(member.id);
-                    return next;
-                  })
-                }
+                disabled={busy}
+                onChange={(event) => {
+                  const next = new Set(selected);
+                  if (event.target.checked) next.add(member.id);
+                  else next.delete(member.id);
+                  setSelected(next);
+                }}
               />
-              <div
-                className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                data-column="action"
-                role="cell"
-              >
-                {member.can_change ? (
-                  <Dropdown
-                    searchable={false}
-                    label={`Działania: ${member.name}`}
-                    menuClass="documents-item-menu"
-                    trigger={<Icon name="menu" />}
-                  >
-                    {(close) => (
-                      <div className="documents-menu-actions">
-                        {canEditRoles ? (
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="tasks-project-menu-button"
-                            disabled={busy}
-                            onClick={() => {
-                              close();
-                              onRole(member);
-                            }}
-                          >
-                            <Icon name="pencil" />
-                            <span>Zmień rolę</span>
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="tasks-project-menu-button"
-                          disabled={busy}
-                          onClick={() => {
-                            close();
-                            onRemove(member);
-                          }}
-                        >
-                          <Icon name="log-out" />
-                          <span>Odbierz dostęp</span>
-                        </button>
-                      </div>
-                    )}
-                  </Dropdown>
-                ) : null}
-              </div>
+              {rowActions ? (
+                <div
+                  className="tasks-directory-sheet__cell tasks-project-sheet__cell"
+                  data-column="action"
+                  role="cell"
+                >
+                  {member.can_change && (onRole || onRemove) ? (
+                    <Dropdown
+                      searchable={false}
+                      label={`Działania: ${member.name}`}
+                      menuClass="documents-item-menu"
+                      trigger={<Icon name="menu" />}
+                    >
+                      {(close) => (
+                        <div className="documents-menu-actions">
+                          {canEditRoles && onRole ? (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="tasks-project-menu-button"
+                              disabled={busy}
+                              onClick={() => {
+                                close();
+                                onRole(member);
+                              }}
+                            >
+                              <Icon name="pencil" />
+                              <span>Zmień rolę</span>
+                            </button>
+                          ) : null}
+                          {onRemove ? (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              className="tasks-project-menu-button"
+                              disabled={busy}
+                              onClick={() => {
+                                close();
+                                onRemove(member);
+                              }}
+                            >
+                              <Icon name="log-out" />
+                              <span>Odbierz dostęp</span>
+                            </button>
+                          ) : null}
+                        </div>
+                      )}
+                    </Dropdown>
+                  ) : null}
+                </div>
+              ) : null}
               <div
                 className="tasks-directory-sheet__cell tasks-project-sheet__cell"
                 data-column="person"

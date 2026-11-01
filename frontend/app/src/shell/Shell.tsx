@@ -51,11 +51,25 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
       setModal(undefined);
     };
     const settingsSaved = (event: Event) => {
-      const { name } = (event as CustomEvent<{ name: string }>).detail;
+      const { name, canConfigure } = (
+        event as CustomEvent<{ name: string; canConfigure?: boolean }>
+      ).detail;
       const key =
         event.type === 'ancore:space-settings-saved' ? 'space_settings' : 'pulpit_settings';
       setData((previous) =>
-        previous[key] ? { ...previous, [key]: { ...previous[key], name } } : previous,
+        previous[key]
+          ? {
+              ...previous,
+              [key]: {
+                ...previous[key],
+                name,
+                links:
+                  key === 'space_settings' && canConfigure === false
+                    ? previous[key].links.filter((link) => link.key !== 'types')
+                    : previous[key].links,
+              },
+            }
+          : previous,
       );
       if (key === 'pulpit_settings')
         void refresh().catch(() => {

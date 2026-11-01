@@ -1,33 +1,50 @@
 import { useEffect, useRef, useState } from 'react';
 import { FormFields, type FormSchema } from '../forms/FormDialog';
-import Picker, { PersonIdentity } from '../workspaces/Picker';
+import Picker, { PersonIdentity, type Candidate } from '../workspaces/Picker';
 import type { MemberRow } from './Members';
 import { Modal } from './Modal';
 import { PageError, pageRequest } from './page';
 import { errorMessage } from './api';
 
+export type SharingChange =
+  | { people: MemberRow[]; role: string }
+  | { person: Candidate; role: string };
+
 export default function SharingDialog<T>({
   name,
   schema,
   person,
+  people,
   api,
   url,
   csrfToken,
   onClose,
   onSaved,
+  onStage,
+  candidatesUrl,
   hostId,
 }: {
   name: string;
   schema: FormSchema;
   person?: MemberRow;
+  people?: MemberRow[];
   api: string;
   url: string;
   csrfToken: string;
   onClose: () => void;
-  onSaved: (result: T) => void;
+  onSaved?: (result: T) => void;
+  onStage?: (change: SharingChange) => Promise<void> | void;
+  candidatesUrl?: string;
   hostId?: string;
 }) {
+  const bulk = !!people?.length;
+  const roleMembers = bulk ? people : person ? [person] : [];
+  const changingRole = roleMembers.length > 0;
+  const commonRole = roleMembers.every((member) => member.role === roleMembers[0]?.role)
+    ? roleMembers[0]?.role
+    : undefined;
   const [email, setEmail] = useState('');
+  const [candidate, setCandidate] = useState<Candidate | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
@@ -41,12 +58,12 @@ export default function SharingDialog<T>({
       .map((field) => ({
         ...field,
         value:
-          person?.role || (Array.isArray(field.value) ? field.value[0] : field.value) || 'member',
+          commonRole || (Array.isArray(field.value) ? field.value[0] : field.value) || 'member',
       })),
   }));
   return (
     <Modal
-      title={person ? 'Zmień rolę' : 'Udostępnij · ' + name}
+      title={changingRole ? 'Zmień rolę' : 'Udostępnij · ' + name}
       className="app-modal-panel--compact"
       hostId={hostId}
       dirty={dirty}
@@ -60,14 +77,26 @@ export default function SharingDialog<T>({
           event.preventDefault();
           if (sending.current) return;
           const body = new FormData(event.currentTarget);
-          body.set('action', person ? 'role' : 'share');
-          if (person) body.set('member_id', String(person.id));
+          body.set('action', changingRole ? 'role' : 'share');
+          if (bulk) {
+            roleMembers.forEach((member) => body.append('member_ids', String(member.id)));
+          } else if (person) body.set('member_id', String(person.id));
           sending.current = true;
           setPending(true);
           setError('');
           try {
-            const result = await pageRequest<T>(api, url, csrfToken, life.signal, body);
-            if (!life.signal.aborted) onSaved(result);
+            if (onStage) {
+              const role = String(body.get('role') || '');
+              if (changingRole) await onStage({ people: roleMembers, role });
+              else {
+                if (!candidate?.id || candidate.email !== email)
+                  throw new Error('Wybierz osobę z listy kont Workspace.');
+                await onStage({ person: candidate, role });
+              }
+            } else {
+              const result = await pageRequest<T>(api, url, csrfToken, life.signal, body);
+              if (!life.signal.aborted) onSaved?.(result);
+            }
           } catch (exception) {
             if (!life.signal.aborted) {
               const errors = exception instanceof PageError ? exception.data.errors : undefined;
@@ -91,28 +120,46 @@ export default function SharingDialog<T>({
               {error}
             </p>
           ) : null}
-          <p className="workplace-team__hint">
-            {person ? (
-              <PersonIdentity person={person} />
-            ) : (
-              'Wybrana osoba od razu uzyska dostęp z wybraną rolą. Wybierz osobę z bieżącego Workspace.'
-            )}
-          </p>
+          {onStage ? (
+            <p className="workplace-team__hint">
+              Dostęp zmieni się po kliknięciu „Zapisz” w sekcji „Udostępnienia”.
+            </p>
+          ) : null}
+          {changingRole ? (
+            <>
+              {roleMembers.length > 1 ? (
+                <p className="workplace-team__hint">Wybrane osoby: {roleMembers.length}</p>
+              ) : null}
+              {roleMembers.map((member) => (
+                <p className="workplace-team__hint" key={member.id}>
+                  <PersonIdentity person={member} />
+                </p>
+              ))}
+            </>
+          ) : (
+            <p className="workplace-team__hint">
+              {onStage
+                ? 'Wybierz osobę z bieżącego Workspace i jej rolę.'
+                : 'Wybrana osoba od razu uzyska dostęp z wybraną rolą. Wybierz osobę z bieżącego Workspace.'}
+            </p>
+          )}
           <fieldset className="resources-react-fieldset" disabled={pending}>
-            <div className={person ? undefined : 'workplace-invite__fields'}>
-              {!person ? (
+            <div className={changingRole ? undefined : 'workplace-invite__fields'}>
+              {!changingRole ? (
                 <div className="tasks-form-field">
                   <span>Osoba lub adres e-mail konta Ancore</span>
                   <Picker
                     api={api}
-                    url={url + 'candidates/'}
+                    url={candidatesUrl || url + 'candidates/'}
                     token={csrfToken}
                     value={email}
                     sharing
                     onChange={(value) => {
                       setEmail(value);
+                      setCandidate(null);
                       setDirty(true);
                     }}
+                    onSelect={onStage ? setCandidate : undefined}
                   />
                 </div>
               ) : null}
@@ -133,7 +180,15 @@ export default function SharingDialog<T>({
             Anuluj
           </button>
           <button type="submit" className="tasks-modal__submit" disabled={pending}>
-            {pending ? 'Zapisywanie…' : person ? 'Zapisz rolę' : 'Udostępnij'}
+            {pending
+              ? 'Zapisywanie…'
+              : onStage
+                ? changingRole
+                  ? 'Zastosuj'
+                  : 'Dodaj'
+                : changingRole
+                  ? 'Zapisz rolę'
+                  : 'Udostępnij'}
           </button>
         </footer>
       </form>
