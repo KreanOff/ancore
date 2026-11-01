@@ -12,9 +12,9 @@ import { DirectoryColumnManager, useDirectoryColumns } from '../shared/Directory
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
 import { Modal } from '../shared/Modal';
-import { type PageProps, navigate } from '../shared/page';
+import { type Page, type PageProps, navigate, pageRequest, setPageLocation } from '../shared/page';
+import { errorMessage } from '../shared/api';
 import { Resize } from '../shared/table';
-import { usePageActions } from '../shared/usePageActions';
 import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 import { dateLabel } from '../spaces/types';
 import { SpaceHeader } from '../spaces/SpaceHeader';
@@ -23,7 +23,6 @@ import type { Tag, TagsData } from './types';
 
 const columns = [
   { key: 'select', label: 'Zaznaczenie', icon: '', width: 40 },
-  { key: 'menu', label: 'Działania', icon: '', width: 40 },
   { key: 'action', label: 'Edytuj', icon: '', width: 40 },
   { key: 'info', label: 'Informacje', icon: '', width: 40 },
   { key: 'notes', label: 'Notatki', icon: '', width: 40 },
@@ -58,8 +57,17 @@ export default function TagsPage(props: PageProps) {
     [modal, setModal] = useState<FormDialogData | null>((initial.data as TagsData).modal),
     [info, setInfo] = useState<Tag | null>(null),
     [notes, setNotes] = useState<number | null>(null),
-    [query, setQuery] = useState(data.query);
-  const actions = usePageActions(props),
+    [query, setQuery] = useState(data.query),
+    [loading, setLoading] = useState(false),
+    [listError, setListError] = useState(''),
+    [notice, setNotice] = useState('');
+  const currentUrl = useRef(initial.url),
+    life = useRef(new AbortController()),
+    pending = useRef(false),
+    table = useRef<HTMLDivElement>(null),
+    scroll = useRef<{ top: number; left: number } | null>(null);
+  const currentProps = { ...props, initial: { ...initial, url: currentUrl.current } };
+  const busy = loading,
     all = useRef<HTMLInputElement>(null),
     aggregate = useRef<HTMLDetailsElement>(null),
     timer = useRef<ReturnType<typeof setTimeout>>();
@@ -72,7 +80,20 @@ export default function TagsPage(props: PageProps) {
     if (all.current)
       all.current.indeterminate = selected.size > 0 && selected.size < data.tags.length;
   }, [selected, data.tags.length]);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useLayoutEffect(() => {
+    if (scroll.current && table.current) {
+      table.current.scrollTop = scroll.current.top;
+      table.current.scrollLeft = scroll.current.left;
+      scroll.current = null;
+    }
+  }, [data]);
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      life.current.abort();
+    },
+    [],
+  );
   useEffect(() => {
     const close = (event: Event) => {
       if (!aggregate.current?.contains(event.target as Node))
@@ -97,16 +118,54 @@ export default function TagsPage(props: PageProps) {
   }, []);
   function change(values: Record<string, string>) {
     clearTimeout(timer.current);
-    const url = new URL(initial.url, location.origin);
+    const url = new URL(currentUrl.current, location.origin);
     url.searchParams.set('q', query);
     url.searchParams.delete('page');
+    url.searchParams.delete('page_size');
+    url.searchParams.delete('tags_limit');
     Object.entries(values).forEach(([key, value]) =>
       value ? url.searchParams.set(key, value) : url.searchParams.delete(key),
     );
     navigate(url.pathname + url.search);
   }
+  async function loadMore() {
+    if (pending.current || !data.window.more_url) return;
+    pending.current = true;
+    setLoading(true);
+    setListError('');
+    try {
+      const page = await pageRequest<Page>(
+        initial.api_url,
+        data.window.more_url,
+        csrfToken,
+        life.current.signal,
+      );
+      if (life.current.signal.aborted) return;
+      const next = page.data as TagsData;
+      if (page.type !== 'space-tags' || next.space.id !== data.space.id)
+        throw new Error('Nie udało się wczytać tagów. Spróbuj ponownie.');
+      if (table.current)
+        scroll.current = { top: table.current.scrollTop, left: table.current.scrollLeft };
+      currentUrl.current = data.window.more_url;
+      setPageLocation(currentUrl.current);
+      setData(next);
+      const visible = new Set(next.tags.map((tag) => tag.id));
+      setSelected((current) => new Set([...current].filter((id) => visible.has(id))));
+      setNotice(`Wczytano ${next.window.loaded_count} z ${next.window.total_tags} tagów.`);
+    } catch (exception) {
+      if (!life.current.signal.aborted)
+        setListError(
+          exception instanceof Error && exception.name === 'TimeoutError'
+            ? 'Serwer nie odpowiedział na czas. Spróbuj ponownie.'
+            : errorMessage(exception),
+        );
+    } finally {
+      pending.current = false;
+      if (!life.current.signal.aborted) setLoading(false);
+    }
+  }
   function edit(tag?: Tag) {
-    if (!data.form || actions.busy) return;
+    if (!data.form || busy || pending.current) return;
     const form = {
       ...data.form,
       submit_label: tag ? 'Zapisz zmiany' : 'Utwórz tag',
@@ -124,32 +183,15 @@ export default function TagsPage(props: PageProps) {
     };
     setModal({
       title: tag ? 'Edytuj tag' : 'Nowy tag',
-      action: initial.url,
-      return_url: initial.url,
+      action: currentUrl.current,
+      return_url: currentUrl.current,
       values: { action: tag ? 'edit_tag' : 'create_tag', tag_id: tag ? String(tag.id) : '' },
       form,
     });
   }
-  function remove(tags: Tag[]) {
-    window.showConfirmModal({
-      title: tags.length === 1 ? 'Usuń tag' : 'Usuń tagi',
-      message: window.escapeHtmlForModal(
-        tags.length === 1
-          ? `Usunąć tag „${tags[0].name}”?`
-          : `Usunąć zaznaczone tagi (${tags.length})?`,
-      ),
-      confirmText: 'Usuń',
-      cancelText: 'Anuluj',
-      confirmClass: 'btn-danger',
-      onConfirm: () =>
-        void actions.act(initial.url, {
-          action: 'delete_tag',
-          tag_ids: tags.map((tag) => String(tag.id)),
-        }),
-    });
+  function openNotes(tag: Tag) {
+    if (!busy && !pending.current) setNotes(tag.id);
   }
-  // Repeated form values are sent by the same domain endpoint, also for bulk delete.
-  const selectedTags = data.tags.filter((tag) => selected.has(tag.id));
   function cell(tag: Tag, key: string): ReactNode {
     if (key === 'select')
       return (
@@ -170,74 +212,14 @@ export default function TagsPage(props: PageProps) {
           }
         />
       );
-    if (key === 'menu')
-      return (
-        <Dropdown
-          label={`Działania tagu ${tag.name}`}
-          className="tasks-row-actions"
-          triggerClassName="tasks-project-sheet__edit-button"
-          menuClass="tasks-project-menu"
-          trigger={<Icon name="menu" />}
-        >
-          {(close) => (
-            <div>
-              {data.can_edit ? (
-                <button
-                  className="tasks-project-menu-button"
-                  disabled={actions.busy}
-                  onClick={() => {
-                    close();
-                    edit(tag);
-                  }}
-                >
-                  <Icon name="pencil" />
-                  Edytuj tag
-                </button>
-              ) : null}
-              <button
-                className="tasks-project-menu-button"
-                onClick={() => {
-                  close();
-                  setInfo(tag);
-                }}
-              >
-                <Icon name="info" />
-                Informacje o tagu
-              </button>
-              <button
-                className="tasks-project-menu-button"
-                onClick={() => {
-                  close();
-                  setNotes(tag.id);
-                }}
-              >
-                <Icon name="file-text" />
-                Notatki tagu
-              </button>
-              {data.can_edit ? (
-                <button
-                  className="tasks-project-menu-button tasks-project-menu-button--danger"
-                  disabled={actions.busy}
-                  onClick={() => {
-                    close();
-                    remove([tag]);
-                  }}
-                >
-                  <Icon name="trash-2" />
-                  Usuń tag
-                </button>
-              ) : null}
-            </div>
-          )}
-        </Dropdown>
-      );
     if (['action', 'info', 'notes'].includes(key))
       return key === 'action' && !data.can_edit ? null : (
         <button
           className="tasks-project-sheet__edit-button"
+          disabled={key !== 'info' && busy}
           aria-label={`${key === 'action' ? 'Edytuj tag' : key === 'info' ? 'Informacje o tagu' : 'Notatki tagu'} ${tag.name}`}
           onClick={() =>
-            key === 'action' ? edit(tag) : key === 'info' ? setInfo(tag) : setNotes(tag.id)
+            key === 'action' ? edit(tag) : key === 'info' ? setInfo(tag) : openNotes(tag)
           }
         >
           <Icon name={key === 'action' ? 'pencil' : key === 'info' ? 'info' : 'file-text'} />
@@ -303,7 +285,7 @@ export default function TagsPage(props: PageProps) {
   const noteTag = data.tags.find((tag) => tag.id === notes);
   return (
     <div className="tasks-page tasks-list-page work-page" data-react-screen="space-tags">
-      <section className="tasks-workspace" aria-busy={actions.busy}>
+      <section className="tasks-workspace" aria-busy={busy}>
         <SpaceHeader
           navigation={data.navigation}
           currentView="tags"
@@ -315,50 +297,14 @@ export default function TagsPage(props: PageProps) {
           }
           actions={
             data.can_edit ? (
-              <>
-                <button
-                  className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                  disabled={actions.busy}
-                  onClick={() => edit()}
-                >
-                  <Icon name="plus" />
-                  Dodaj tag
-                </button>
-                <Dropdown
-                  label="Więcej opcji"
-                  className="tasks-section-actions"
-                  triggerClassName="tasks-icon-button"
-                  menuClass="tasks-section-menu"
-                  trigger={<Icon name="ellipsis" />}
-                >
-                  {(close) => (
-                    <>
-                      <button
-                        className="tasks-project-menu-button"
-                        disabled={selected.size !== 1 || actions.busy}
-                        onClick={() => {
-                          close();
-                          edit(selectedTags[0]);
-                        }}
-                      >
-                        <Icon name="pencil" />
-                        Edytuj tag
-                      </button>
-                      <button
-                        className="tasks-project-menu-button tasks-project-menu-button--danger"
-                        disabled={!selected.size || actions.busy}
-                        onClick={() => {
-                          close();
-                          remove(selectedTags);
-                        }}
-                      >
-                        <Icon name="trash-2" />
-                        Usuń tag
-                      </button>
-                    </>
-                  )}
-                </Dropdown>
-              </>
+              <button
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                disabled={busy}
+                onClick={() => edit()}
+              >
+                <Icon name="plus" />
+                Dodaj tag
+              </button>
             ) : null
           }
         />
@@ -475,74 +421,14 @@ export default function TagsPage(props: PageProps) {
                 />
               </label>
             </form>
-            <div className="tasks-project-pagination tasks-project-pagination--toolbar">
-              <nav
-                className="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar"
-                aria-label="Strony tagów"
-              >
-                <button
-                  className="tasks-project-pagination__button"
-                  aria-label="Poprzednia strona"
-                  disabled={!data.window.previous_url}
-                  onClick={() => navigate(data.window.previous_url)}
-                >
-                  <Icon name="chevron-left" />
-                </button>
-                <span
-                  className="tasks-project-pagination__summary tasks-project-pagination__summary--compact"
-                  aria-label={data.window.summary}
-                  aria-live="polite"
-                >
-                  {data.window.compact_summary}
-                </span>
-                <button
-                  className="tasks-project-pagination__button"
-                  aria-label="Następna strona"
-                  disabled={!data.window.next_url}
-                  onClick={() => navigate(data.window.next_url)}
-                >
-                  <Icon name="chevron-right" />
-                </button>
-              </nav>
-              <Dropdown
-                label="Liczba pozycji na stronie"
-                className="tasks-project-pagination__size-control"
-                menuClass="tasks-project-pagination__size-menu"
-                trigger={
-                  <>
-                    <Icon name="rows-3" />
-                    <span>{data.window.page_size} / stronę</span>
-                    <Icon name="chevron-down" />
-                  </>
-                }
-              >
-                {(close) =>
-                  data.window.page_size_options.map((size) => (
-                    <button
-                      role="menuitemradio"
-                      key={size}
-                      aria-checked={size === data.window.page_size}
-                      className={size === data.window.page_size ? 'is-active' : ''}
-                      onClick={() => {
-                        close();
-                        change({ page_size: String(size) });
-                      }}
-                    >
-                      {size}
-                    </button>
-                  ))
-                }
-              </Dropdown>
-            </div>
           </div>
         </div>
-        {actions.error ? (
-          <div className="tasks-modal__errors task-filter-query-error" role="alert">
-            {actions.error}
-          </div>
-        ) : null}
+        <div className="u-sr-only" role="status" aria-live="polite">
+          {notice}
+        </div>
         <div className="work-content work-content--tasks">
           <div
+            ref={table}
             className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet ${data.tags.length ? '' : 'tasks-tag-board--empty'}`}
             style={sizing.style}
           >
@@ -639,6 +525,30 @@ export default function TagsPage(props: PageProps) {
                 ) : null}
               </div>
             </section>
+            {data.window.more_url || data.window.loaded_count > 20 ? (
+              <button
+                type="button"
+                className="tasks-filter-button work-list-more"
+                aria-label={`${loading ? 'Wczytywanie tagów' : data.window.more_url ? 'Pokaż więcej' : 'Wszystkie tagi'}: Tagi (${data.window.loaded_count} / ${data.window.total_tags})`}
+                aria-disabled={busy || !data.window.more_url}
+                aria-busy={loading}
+                onClick={() => void loadMore()}
+              >
+                {loading
+                  ? 'Wczytywanie…'
+                  : data.window.more_url
+                    ? 'Pokaż więcej'
+                    : 'Wszystkie tagi'}
+                <span className="work-list-more__count">
+                  ({data.window.loaded_count} / {data.window.total_tags})
+                </span>
+              </button>
+            ) : null}
+            {listError ? (
+              <div className="tasks-modal__errors work-list-more-error" role="alert">
+                {listError} Kliknij „Pokaż więcej”, aby ponowić.
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -654,7 +564,7 @@ export default function TagsPage(props: PageProps) {
       {info ? <InfoDialog tag={info} close={() => setInfo(null)} /> : null}
       {noteTag ? (
         <NotesDialog
-          {...props}
+          {...currentProps}
           tag={noteTag}
           canEdit={data.can_edit}
           close={() => setNotes(null)}

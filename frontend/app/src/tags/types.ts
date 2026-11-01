@@ -42,14 +42,8 @@ export interface TagsData {
   sort: string;
   sort_options: { value: string; label: string; icon: string; direction: string }[];
   window: {
-    page: number;
-    total_pages: number;
     total_tags: number;
-    page_size: number;
-    page_size_options: number[];
-    previous_url: string;
-    next_url: string;
-    summary: string;
-    compact_summary: string;
+    loaded_count: number;
+    more_url: string;
   };
 }

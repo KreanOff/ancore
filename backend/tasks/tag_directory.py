@@ -1,6 +1,5 @@
-"""Filtering, sorting and pagination of the current Space tag directory."""
+"""Filtering, sorting and incremental loading of the Space tag directory."""
 import unicodedata
-from urllib.parse import urlencode
 
 from django.db.models import Case, Count, IntegerField, Prefetch, Q, Value, When
 
@@ -8,8 +7,6 @@ from workplaces.services import workspace_owner
 from .models import TaskTag, TaskTagNote
 
 
-PAGE_SIZE_OPTIONS = (10, 25, 50, 100, 150, 200)
-DEFAULT_PAGE_SIZE = 50
 TAG_DEFAULT_SORT = 'name_asc'
 TAG_SORT_OPTIONS = (
     {'value': 'name_asc', 'label': 'Nazwa A-Z', 'icon': 'arrow-up-a-z', 'direction': 'asc'},
@@ -27,63 +24,6 @@ TAG_SORT_OPTIONS = (
     {'value': 'created_desc', 'label': 'Najnowsze', 'icon': 'clock-3', 'direction': 'desc'},
 )
 TAG_SORT_OPTION_MAP = {option['value']: option for option in TAG_SORT_OPTIONS}
-
-
-def _page_size(request):
-    try:
-        page_size = int(request.GET.get('page_size') or DEFAULT_PAGE_SIZE)
-    except (TypeError, ValueError):
-        return DEFAULT_PAGE_SIZE
-    return page_size if page_size in PAGE_SIZE_OPTIONS else DEFAULT_PAGE_SIZE
-
-
-def _page_number(request):
-    try:
-        page_number = int(request.GET.get('page') or 1)
-    except (TypeError, ValueError):
-        return 1
-    return max(page_number, 1)
-
-
-def _page_items(current_page, total_pages, base_params, page_param='page', base_url=None):
-    if total_pages < 1:
-        return []
-
-    if total_pages <= 7:
-        page_numbers = list(range(1, total_pages + 1))
-    elif current_page <= 4:
-        page_numbers = [1, 2, 3, 4, 5, total_pages]
-    elif current_page >= total_pages - 3:
-        page_numbers = [1, *range(total_pages - 4, total_pages + 1)]
-    else:
-        page_numbers = [1, current_page - 1, current_page, current_page + 1, total_pages]
-
-    items = []
-    previous_page = None
-    for page_number in page_numbers:
-        if previous_page and page_number - previous_page > 1:
-            items.append({'is_ellipsis': True})
-        page_params = {**base_params, page_param: page_number}
-        if page_number == 1:
-            page_params.pop(page_param, None)
-        items.append({
-            'page': page_number,
-            'url': _directory_url(page_params, base_url=base_url),
-            'is_current': page_number == current_page,
-        })
-        previous_page = page_number
-    return items
-
-
-def _directory_url(params, base_url=None):
-    cleaned_params = {
-        key: value
-        for key, value in params.items()
-        if value not in (None, '')
-    }
-    query_string = urlencode(cleaned_params)
-    base_url = base_url or ''
-    return f'{base_url}?{query_string}' if query_string else base_url
 
 
 def _normalize_query_label(value):
@@ -250,9 +190,10 @@ def _tag_sort_queryset(queryset, sort_value):
 
 
 def tag_window_for_request(request, space):
+    from spaces.list_window import LIST_BATCH_SIZE, group_limit
+    from spaces.services import space_url, visible_items
+
     workplace = getattr(request, 'workplace', None)
-    page_size = _page_size(request)
-    requested_page = _page_number(request)
     query = (request.GET.get('q') or '').strip()
     priority = (request.GET.get('priority') or '').strip()
     status = (request.GET.get('status') or '').strip()
@@ -271,51 +212,28 @@ def tag_window_for_request(request, space):
         workplace=workplace,
         space=space,
     )
-    from spaces.services import visible_items
     queryset = queryset.annotate(total_tasks=Count('space_tasks', filter=Q(space_tasks__pk__in=visible_items(request).filter(task__parent__isnull=True).values('task_id')), distinct=True))
     queryset = _tag_sort_queryset(queryset, sort)
     total_tags = queryset.count()
-    total_pages = max(1, (total_tags + page_size - 1) // page_size)
-    current_page = min(requested_page, total_pages)
-    offset = (current_page - 1) * page_size
+    limit = group_limit(request, 'tags_limit', total_tags)
 
     tags = list(
-        queryset.prefetch_related('related_tags')[offset:offset + page_size]
+        queryset.prefetch_related('related_tags')[:limit]
     )
     for tag in tags:
         related_tags = list(tag.related_tags.all())
         tag.related_tag_ids = ','.join(str(related_tag.id) for related_tag in related_tags)
         tag.related_tags_label = ', '.join(related_tag.name for related_tag in related_tags) or 'Brak powiązań'
 
-    base_params = {
-        'view': 'tags',
-        'q': query,
-        'priority': priority,
-        'status': status,
-        'category': category,
-        'scope': scope,
-        'owner': owner,
-        'sort': '' if sort == TAG_DEFAULT_SORT else sort,
-        'page_size': page_size,
-    }
-    has_previous = current_page > 1 and total_tags > 0
-    has_next = current_page < total_pages and total_tags > 0
-    previous_url = ''
-    next_url = ''
-    if has_previous:
-        previous_page_params = {**base_params, 'page': current_page - 1}
-        if current_page - 1 == 1:
-            previous_page_params.pop('page', None)
-        previous_url = _directory_url(previous_page_params, base_url=request.path)
-    if has_next:
-        next_url = _directory_url({**base_params, 'page': current_page + 1}, base_url=request.path)
-
-    if not tags:
-        summary = 'Brak tagów'
-    else:
-        first_visible = offset + 1
-        last_visible = offset + len(tags)
-        summary = f'Pokazano {first_visible}-{last_visible} z {total_tags} tagów'
+    loaded_count = len(tags)
+    more_url = ''
+    if loaded_count < total_tags:
+        params = request.GET.copy()
+        params.pop('page', None)
+        params.pop('page_size', None)
+        params['view'] = 'tags'
+        params['tags_limit'] = min(loaded_count + LIST_BATCH_SIZE, total_tags)
+        more_url = space_url(request, space) + '?' + params.urlencode()
 
     return {
         'tags': tags,
@@ -330,16 +248,7 @@ def tag_window_for_request(request, space):
         'sort_label': TAG_SORT_OPTION_MAP[sort]['label'],
         'sort_direction': TAG_SORT_OPTION_MAP[sort]['direction'],
         'filters': _tag_filter_options(workspace_owner(request), workplace=workplace, space=space),
-        'page': current_page,
-        'total_pages': total_pages,
         'total_tags': total_tags,
-        'page_size': page_size,
-        'page_size_options': PAGE_SIZE_OPTIONS,
-        'page_items': _page_items(current_page, total_pages, base_params, base_url=request.path) if total_tags else [],
-        'has_previous': has_previous,
-        'has_next': has_next,
-        'previous_url': previous_url,
-        'next_url': next_url,
-        'summary': summary,
-        'compact_summary': f'{offset + 1}-{offset + len(tags)} z {total_tags}' if tags else '0 z 0',
+        'loaded_count': loaded_count,
+        'more_url': more_url,
     }

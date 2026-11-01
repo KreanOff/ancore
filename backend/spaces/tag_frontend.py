@@ -51,6 +51,5 @@ def tags_page(request, context):
         'query': window['query'], 'filters': {key: window[key] for key in ('priority', 'status', 'category', 'scope', 'owner')},
         'filter_options': window['filters'], 'sort': window['sort'], 'sort_options': context['tag_sort_options'],
         'window': {key: value for key, value in window.items() if key in {
-            'page', 'total_pages', 'total_tags', 'page_size', 'page_size_options', 'page_items',
-            'previous_url', 'next_url', 'summary', 'compact_summary'}},
+            'total_tags', 'loaded_count', 'more_url'}},
     }}

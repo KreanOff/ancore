@@ -1,4 +1,5 @@
 from .testing import make_space
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -128,17 +129,18 @@ class SpaceTagTests(TestCase):
         self.client.force_login(self.owner)
         self.assertEqual(self.client.post(self.url(), {'action': 'delete_tag_note', 'tag_id': self.tag.pk, 'note_id': note.pk}).status_code, 404)
 
-    def test_filters_sort_pagination_and_visible_usage_counts(self):
+    def test_filters_sort_loading_and_visible_usage_counts(self):
         for n in range(27):
             TaskTag.objects.create(name=f'Wydanie {n:02}', user=self.owner, workplace=self.workspace, space=self.space, priority='high')
         url = self.url() + '&q=Wydanie&priority=high&sort=name_desc&page_size=25'
         response = self.client.get(url)
         self.assertEqual(response.context['tag_window']['total_tags'], 27)
+        self.assertEqual(response.context['tag_window']['loaded_count'], 20)
         self.assertEqual(response.context['tags'][0].name, 'Wydanie 26')
-        next_url = response.context['tag_window']['next_url']
+        next_url = response.context['tag_window']['more_url']
         self.assertTrue(next_url.startswith(self.url().split('?')[0]))
         self.assertIn('q=Wydanie', next_url)
-        self.assertEqual(len(self.client.get(next_url).context['tags']), 2)
+        self.assertEqual(len(self.client.get(next_url).context['tags']), 27)
         self.client.force_login(self.member)
         self.task.visibility = 'private'
         self.task.private_owner = self.owner
@@ -207,3 +209,135 @@ class SpaceTagTests(TestCase):
         self.assertEqual(self.tag.related_tags.get(), linked)
         self.assertEqual(self.tag.tag_notes.get(), note)
         self.assertTrue(TaskTag.objects.filter(pk=self.legacy_tag.pk, space__isnull=True).exists())
+
+
+class TagWindowTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        users = get_user_model()
+        cls.owner = users.objects.create_user(username='tag-window-owner', email='tag-window-owner@example.test')
+        cls.member = users.objects.create_user(username='tag-window-member', email='tag-window-member@example.test')
+        cls.workspace = create_workplace_for_user(cls.owner, 'Doładowywanie tagów')
+        WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
+        cls.space = make_space(user=cls.owner, workplace=cls.workspace, name='Tagi',
+                               visibility='private', private_owner=cls.owner)
+        SpaceMembership.objects.create(space=cls.space, user=cls.member)
+        cls.tags = [TaskTag.objects.create(
+            user=cls.owner, workplace=cls.workspace, space=cls.space, name=f'Wydanie {index:02}',
+            priority='high' if index % 2 == 0 else 'low', owner_label='Zespół',
+        ) for index in range(65)]
+        cls.other_workspace = create_workplace_for_user(cls.owner, 'Inne tagi')
+        WorkplaceMembership.objects.create(workplace=cls.other_workspace, user=cls.member)
+        cls.other_space = make_space(user=cls.owner, workplace=cls.other_workspace, name='Tagi', slug=cls.space.slug)
+        cls.foreign_tag = TaskTag.objects.create(user=cls.owner, workplace=cls.other_workspace,
+                                                space=cls.other_space, name='Obcy Workspace')
+
+    def setUp(self):
+        self.client.force_login(self.member)
+        session = self.client.session
+        session['active_workplace_id'] = self.workspace.pk
+        session.save()
+
+    def url(self, scoped=True, **params):
+        path = (scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/')
+                if scoped else f'/space/{self.space.slug}/')
+        return path + '?' + urlencode({'view': 'tags', **params})
+
+    def page(self, target=None, *, scoped=True, **params):
+        endpoint = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') if scoped else '/api/v1/page/'
+        response = self.client.get(endpoint, {'url': target or self.url(scoped, **params)}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        return response.json()['data']
+
+    def test_plain_and_scoped_html_and_api_load_twenty_and_remove_page_controls(self):
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                target = self.url(scoped, page=99, page_size=150)
+                response = self.client.get(target, follow=True)
+                self.assertEqual(response.status_code, 200)
+                window = response.context['tag_window']
+                self.assertEqual((window['loaded_count'], window['total_tags']), (20, 65))
+                self.assertEqual(list(response.context['tags']), self.tags[:20])
+                self.assertContains(response, 'Pokaż więcej: Tagi (20 / 65)')
+                self.assertNotContains(response, 'Strony tagów')
+                self.assertNotContains(response, 'data-project-search-page-size')
+                data = self.page(target, scoped=scoped)
+                self.assertEqual(set(data['window']), {'total_tags', 'loaded_count', 'more_url'})
+                self.assertEqual(data['window']['loaded_count'], 20)
+                self.assertEqual([tag['id'] for tag in data['tags']], [tag.pk for tag in self.tags[:20]])
+
+    def test_more_retains_prefix_and_filters_through_last_partial_batch(self):
+        params = {'q': 'Wydanie', 'category': 'general', 'scope': 'tasks', 'owner': 'Zespół',
+                  'status': 'active', 'sort': 'name_desc'}
+        data = self.page(page=2, page_size=10, **params)
+        expected = [tag.pk for tag in reversed(self.tags)]
+        for loaded in (20, 40, 60, 65):
+            with self.subTest(loaded=loaded):
+                self.assertEqual([tag['id'] for tag in data['tags']], expected[:loaded])
+                self.assertEqual(data['window']['loaded_count'], loaded)
+                self.assertEqual(data['window']['total_tags'], 65)
+                target = data['window']['more_url']
+                if loaded == 65:
+                    self.assertEqual(target, '')
+                else:
+                    query = parse_qs(urlsplit(target).query)
+                    self.assertEqual(query, {key: [str(value)] for key, value in {
+                        'view': 'tags', **params, 'tags_limit': min(loaded + 20, 65),
+                    }.items()})
+                    data = self.page(target)
+        filtered = self.page(priority='high', sort='name_desc', tags_limit=40)
+        self.assertEqual([tag['id'] for tag in filtered['tags']], [tag.pk for tag in reversed(self.tags[::2])])
+        self.assertEqual(filtered['window'], {'total_tags': 33, 'loaded_count': 33, 'more_url': ''})
+
+    def test_limits_are_bounded_and_all_rows_remain_reachable(self):
+        for value in ('', '-1', '0', '5', 'abc', '20.5', '９９', '0' * 200):
+            with self.subTest(value=value):
+                data = self.page(tags_limit=value)
+                self.assertEqual([tag['id'] for tag in data['tags']], [tag.pk for tag in self.tags[:20]])
+        for value in ('9' * 200, '0' * 200 + '65'):
+            with self.subTest(value=value):
+                data = self.page(tags_limit=value)
+                self.assertEqual([tag['id'] for tag in data['tags']], [tag.pk for tag in self.tags])
+                self.assertEqual(data['window']['more_url'], '')
+
+    def test_completed_small_and_empty_results_have_correct_footer(self):
+        response = self.client.get(self.url(tags_limit=999))
+        self.assertContains(response, 'Wszystkie tagi <span class="work-list-more__count">(65 / 65)</span>', html=False)
+        self.assertNotContains(response, 'Pokaż więcej: Tagi')
+        for query, expected_count in (('Wydanie 00', 1), ('Brak wyników', 0)):
+            with self.subTest(query=query):
+                data = self.page(q=query, tags_limit=999)
+                self.assertEqual(data['window'], {'total_tags': expected_count, 'loaded_count': expected_count, 'more_url': ''})
+                response = self.client.get(self.url(q=query, tags_limit=999))
+                self.assertNotContains(response, 'work-list-more')
+        self.assertContains(response, 'Nie znaleziono tagów.')
+
+    def test_more_rechecks_space_access_and_workspace_scope(self):
+        target = self.page()['window']['more_url']
+        SpaceMembership.objects.filter(space=self.space, user=self.member).delete()
+        endpoint = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        self.assertEqual(self.client.get(endpoint, {'url': target}).status_code, 404)
+        other_endpoint = scoped_workplace_app_path(self.other_workspace, 'api', 'v1/page/')
+        other_target = scoped_workplace_app_path(self.other_workspace, 'space', self.other_space.slug + '/')
+        response = self.client.get(other_endpoint, {'url': other_target + '?view=tags&tags_limit=100'})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()['data']
+        self.assertEqual([tag['id'] for tag in data['tags']], [self.foreign_tag.pk])
+        self.assertEqual(data['window'], {'total_tags': 1, 'loaded_count': 1, 'more_url': ''})
+
+    def test_mutations_keep_expanded_context_and_recount_remaining_rows(self):
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                target = self.url(scoped, tags_limit=40, sort='name_desc', q='Wydanie')
+                response = self.client.post(target, {
+                    'action': 'add_tag_note', 'tag_id': self.tags[-1].pk, 'message': 'Notatka',
+                })
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, target)
+                self.assertEqual(self.page(response.url, scoped=scoped)['window']['loaded_count'], 40)
+        target = self.url(tags_limit=65)
+        response = self.client.post(target, {'action': 'delete_tag', 'tag_ids': [self.tags[0].pk]})
+        self.assertEqual(response.status_code, 302)
+        data = self.page(response.url)
+        self.assertEqual(data['window'], {'total_tags': 64, 'loaded_count': 64, 'more_url': ''})
+        self.assertEqual([tag['id'] for tag in data['tags']], [tag.pk for tag in self.tags[1:]])
