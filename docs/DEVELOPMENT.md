@@ -1,5 +1,161 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Nagłówek ustawień zgodny z Przestrzenią (01.11.2026)
+
+`SettingsPage` używa `SpaceHeader`, zachowując strzałkę powrotu oraz tytuł
+„Ustawienia przestrzeni · nazwa”. Typografia i odstępy korzystają z nagłówka
+Przestrzeni. Podzakładki procesu są częścią tej samej powłoki, z jedną dolną
+ramką i bez separatora między wierszami. Pierwszy render konfiguracji,
+ustawień i formularza zachowuje tę samą treść oraz układ.
+
+Po przywróceniu treści nagłówka przeszły build z TypeScriptem,
+49 testów konfiguracji frontendu oraz 44 testy Django ustawień
+i konfiguracji. Kontrole formatowania, indeksu i `git diff --check` przeszły.
+Chrome/Playwright na izolowanej bazie QA potwierdził przy 1440×1000
+i 390×844 strzałkę z pełnym tytułem, zakładki we wspólnym nagłówku,
+przełączanie Stany/Mapa i powrót do Przestrzeni. Sprawdzono również
+natywne nagłówki konfiguracji, ustawień i edycji bez JavaScriptu.
+Nie było przepełnienia strony ani błędów JavaScript i konsoli.
+Plugin Browser był niedostępny; innych przeglądarek nie sprawdzano.
+
+## Zakładki Stany i Mapa procesu pracy (01.11.2026)
+
+Proces pracy ma wspólny z Przestrzeniami pasek zakładek „Stany” i „Mapa”.
+Lista korzysta z istniejącej tabeli konfiguracji; oba widoki współdzielą
+szkic i historię. Domyślna mapa oraz natywny parametr `workflow_view`
+zachowują zgodność wcześniejszych wejść. [Obsługa](SPACES.md#tablica-procesu-i-etapowe-przejścia),
+[implementacja](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
+
+Przeszły 44 testy Django (`spaces.test_kanban_configuration`,
+`core.test_space_settings_frontend`) na osobnej bazie testowej PostgreSQL.
+Regresje obejmują zwykłe i scoped adresy, zgodność pierwszego renderu i API,
+domyślny oraz nieznany parametr widoku, zachowanie listy po błędzie i zapisie,
+konfigurację procesu oraz istniejące granice dostępu. Kontrola systemowa
+Django w runnerze i `git diff --check` również przeszły.
+
+Przeszły build z TypeScriptem i 92 testy frontendu konfiguracji, mapy,
+kamery i minimapy. Regresje zakładek obejmują edycję listy, wspólną historię
+oraz zachowanie wyboru „Stany” po zapisaniu nowej rewizji.
+Playwright z Chrome (plugin Browser niedostępny) na izolowanym serwerze QA
+sprawdził 1440×1000 i 390×844: przełączanie myszą i klawiaturą, fokus,
+edycję, dodanie/usunięcie, zapis i przeładowanie, pusty szkic, anulowanie,
+powrót z innej sekcji oraz błąd zapisu z ponowieniem. Zwykłe i scoped
+wejścia do listy oraz natywne zakładki bez JavaScriptu działały.
+Wysokość i tekst zakładek porównano z widokami Przestrzeni; nie było błędów
+JavaScript. Jedyny błąd HTTP w konsoli pochodził z celowo zasymulowanego 503.
+Nie sprawdzano innych przeglądarek ani całego repozytorium.
+
+## Minimapa procesu pracy (01.11.2026)
+
+Nakładka w prawym dolnym rogu pokazuje etapy, połączenia i aktualny kadr.
+Kliknięcie, przeciągnięcie, klawiatura oraz suwak i przyciski skali zmieniają
+wyłącznie kamerę. [Obsługa](SPACES.md#tablica-procesu-i-etapowe-przejścia),
+[implementacja](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
+
+Przeszło 90 celowanych testów konfiguracji, grafu, kamery i geometrii minimapy,
+build z TypeScriptem, Prettier, kontrola diffu i odświeżonego indeksu.
+Chrome/Playwright na izolowanej bazie QA sprawdził zgodność ramki z kamerą,
+kliknięcie i przeciąganie, suwak i granice zoomu, klawiaturę, Escape,
+anulowanie wskaźnika i utratę fokusu, ruch/cofanie kart oraz obsługę błędu 503.
+Zbadano ekran referencyjny Typów zgłoszeń, ponowne wejście, zwykłe/scoped URL,
+szerokości 1440/390/320px i emulowany dotyk. Pusta mapa oraz współrzędne
+±1 000 000 i dopasowanie poniżej 1% używały podmiany danych tylko w przeglądarce.
+Bez błędów JavaScriptu i poziomego przepełnienia dokumentu. Plugin Browser był
+niedostępny; użyto istniejących Playwright i Chrome. Nie wykonywano testów
+Django, Safari/Firefox ani testów na fizycznym urządzeniu dotykowym.
+
+## Usunięcie kontrolek i panelu procesu (01.11.2026)
+
+Usunięto główny przycisk dodawania etapu, liczniki, sterowanie mapą,
+paski wskazówek oraz cały panel listy i szczegółów. Mapa zajmuje dostępny
+obszar również na telefonie. Enter otwiera edycję karty, a ponowne kliknięcie
+aktywnego „+” anuluje łączenie. [Aktualna obsługa](SPACES.md#tablica-procesu-i-etapowe-przejścia).
+
+Przeszły build z TypeScriptem, 84 celowane testy konfiguracji/grafu/kamery,
+Prettier, kontrola diffu i indeksu. Chrome/Playwright na osobnej bazie QA
+potwierdził brak usuniętych elementów, edycję przez dwuklik i Enter, łączenie,
+anulowanie, historię, przesuwanie i skalowanie, zapis po kontrolowanym 503
+oraz odczyt po przeładowaniu. Sprawdzono zwykły/scoped adres, referencyjne
+Typy zgłoszeń, ponowne wejście oraz szerokości 1440, 390 i 320px.
+Pustą mapę sprawdzono przez podmianę odpowiedzi tylko w przeglądarce:
+dodanie pierwszego etapu i cofnięcie działają. Bez błędów JavaScriptu
+i poziomego przepełnienia dokumentu. Plugin Browser był niedostępny;
+użyto istniejących Playwright i Chrome. Nie uruchamiano testów Django;
+nie sprawdzano Safari/Firefox ani fizycznego urządzenia dotykowego.
+
+## Proces pracy jako swobodna mapa (01.11.2026)
+
+Mapa ma niezależne przesunięcie i skalę widoku: przeciąganie tła, Spacja
+z przeciągnięciem, środkowy przycisk myszy, kółko wokół kursora oraz gesty
+dotykowe. Kamera nie zmienia szkicu ani historii. Panel etapów jest początkowo
+schowany; nowe etapy powstają w środku bieżącego widoku. Zapis pozycji
+obsługuje współrzędne od −1 000 000 do 1 000 000 bez migracji bazy.
+[Obsługa mapy](SPACES.md#tablica-procesu-i-etapowe-przejścia),
+[implementacja](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
+
+Przeszło 391 testów frontendu oraz 45 testów Django
+(`spaces.test_kanban_configuration`, `spaces.test_configuration_writes`,
+`core.test_space_settings_frontend`) na osobnej bazie PostgreSQL.
+Regresje obejmują zapis/odczyt ujemnych i skrajnych współrzędnych, starsze
+żądania, odrzucenie niepoprawnych pozycji, kamerę bez mutowania danych,
+przeliczenia przy skali CSS 98%, anulowanie gestów i przejście z dwóch
+palców do jednego. Dopasowanie rozległej mapy poniżej 1% nie odwraca
+kierunku zoomu. Strzałki powrotne zachowują kształt przy przekroczeniu
+początku układu współrzędnych. Build z TypeScriptem i `manage.py check`
+również przeszły.
+
+Chrome/Playwright na izolowanej bazie z fikcyjnymi kontami sprawdził
+przesuwanie i skalowanie bez zapisu, zapis ujemnych pozycji z przeładowaniem,
+przeciąganie po zoomie, cofanie oraz dodanie etapu w środku widoku jako
+jedną zmianę. Sprawdzono błąd 503 z zachowaniem szkicu i ponowieniem,
+Escape, Shift z kółkiem, zwykły/scoped URL, ekran referencyjny i ponowne
+wejście. Emulacja dotyku przy 390 i 320px sprawdziła przesuwanie, pinch
+z ruchomym środkiem, anulowanie gestu i anulowanie przeciągania karty
+po dołożeniu drugiego palca. Bez błędów JavaScriptu.
+Przy 1920/390/320px nie było przepełnienia dokumentu. Tab odsłania kartę
+i jej przycisk połączenia poza kadrem, a Alt + strzałki utrzymują przesuwany
+etap w widoku. Dopasowanie skrajnych pozycji ±1 mln zachowuje kierunek
+skalowania; wszystkie sprawdzone strzałki mieszczą się w dopasowanym widoku.
+Plugin Browser był niedostępny; użyto istniejącego Playwright i Chrome.
+Nie testowano Safari/Firefox ani fizycznego urządzenia dotykowego.
+
+## Edytor procesu pracy: panel i historia szkicu (01.11.2026)
+
+Proces pracy ma panel etapów/przejść, przyciski łączenia przy kartach,
+wyszukiwanie etapów, diagnostykę ścieżek oraz cofanie/ponawianie 50 zmian.
+Formularz etapu generuje klucz z nazwy; istniejący klucz i połączenia
+zostają zachowane przy zmianie nazwy. Automatyczne rozmieszczenie uwzględnia
+własne gałęzie i cykle. Zapis nadal korzysta z pełnego formsetu oraz rewizji.
+[Zachowanie](SPACES.md#tablica-procesu-i-etapowe-przejścia),
+[UI](UI.md#przestrzenie-i-zespoły), [frontend](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
+
+Weryfikacja: 370 testów frontendu oraz 44 testy Django
+(`spaces.test_kanban_configuration`, `spaces.test_configuration_writes`,
+`core.test_space_settings_frontend`) przeszły. Przeszły też build z TypeScriptem,
+formatowanie zmienionych plików, `manage.py check`, indeks kodu i kontrola diffu.
+Regresje obejmują kompletne szkice historii, ochronę zapisu, odtwarzanie
+przejść po usunięciu etapu, unikalne klucze, stabilność pola nazwy oraz
+rozgałęzione/cykliczne grafy i ich diagnostykę.
+
+Chrome/Playwright na izolowanej bazie z fikcyjnymi kontami sprawdził szerokości
+1920, 1440, 1024, 768, 390 i 320px, diagram/panel, dodawanie przejść i powrotów,
+usuwanie, cofanie/ponawianie, przeciąganie, Alt+strzałki, formularze, zapis
+z przeładowaniem i ponowne wejście. Wyszukiwanie sprawdzono z polskimi znakami
+i pustym wynikiem. Pusty szkic, fokus po zmianach panelu i mobilne operacje
+przeszły. Usunięcie używanego etapu zwróciło oczekiwane 400, a symulowany
+503 zachował szkic i umożliwił ponowienie. „Połącz kolejno” wymaga
+potwierdzenia; odmowa niczego nie zmienia, a wykonanie można cofnąć.
+Sprawdzono zwykły/scoped URL i referencyjne Udostępnienia oraz Listę zadań.
+Konflikt rewizji z drugiej karty wymaga odrzucenia szkicu i pobrania aktualnego
+stanu. Po udanym POST i błędzie GET ponowienie wykonuje wyłącznie odczyt;
+pasek pokazuje „Zmiany zapisano — odśwież widok”. Obserwator nie może
+edytować procesu ani wykonywać przejść zadania.
+Bez poziomego przepełnienia dokumentu i błędów JavaScriptu; oczekiwane błędy
+HTTP dotyczyły sprawdzanych stanów błędów. Plugin Browser był niedostępny;
+użyto istniejącego Playwright i Chrome. Testowa baza nie zawierała danych
+użytkownika. Nie badano Safari/Firefox ani wdrożenia produkcyjnego.
+Gęste grafy mogą nadal mieć przecinające się strzałki.
+
 ## Przyciski etapów na górze panelu zadania (01.11.2026)
 
 Bieżący etap ma wysokość i wcięcie zgodne z priorytetem. Akcje przejścia

@@ -2,23 +2,69 @@
 
 ## Tablica procesu i etapowe przejścia
 
-„Proces pracy” w ustawieniach Przestrzeni pokazuje graficzną tablicę etapów
-z kierunkowymi strzałkami. Etapy można dodawać, edytować, usuwać i przesuwać
-wskaźnikiem albo Alt + strzałkami. „Dodaj przejście” łączy wybrany etap
-z klikniętym celem; panel pod tablicą pokazuje następne etapy i pozwala
-usuwać pojedyncze połączenia. Powroty i odgałęzienia są pełnoprawnymi
-przejściami. Położenie węzła nie zmienia kolejności kolumn ani reguł procesu;
-kolejność zmieniają osobne strzałki w panelu etapu.
+„Proces pracy” w ustawieniach Przestrzeni ma podzakładki „Stany” i „Mapa”,
+na takim samym poziomym pasku jak widoki Przestrzeni. Domyślnie otwiera mapę.
+„Stany” pokazują listę z akcjami „Dodaj stan”, „Edytuj”, „Usuń”, „Zapisz”
+i „Anuluj”. Edycja wymaga jednego zaznaczonego wiersza lub kliknięcia nazwy;
+usuwanie obejmuje zaznaczone stany. Lista i mapa korzystają z jednego szkicu
+oraz historii zmian; przełączenie podzakładki niczego nie zapisuje ani nie odrzuca.
+Wybór podzakładki pozostaje po zapisie i przy zmianie sekcji ustawień.
+Jest lokalny dla bieżącej strony React i nie zmienia adresu.
 
-„Uporządkuj” zmienia wyłącznie układ. „Połącz kolejno” zastępuje przejścia
-w lokalnym szkicu połączeniami kolejnych etapów; końcowy `reopened` wraca do
-`in_progress`, a `on_hold`/`onhold` tworzy boczną pętlę wstrzymania.
-„Zapisz” utrwala cały szkic z istniejącą kontrolą rewizji; „Anuluj” go odrzuca.
-Nowe konfiguracje mają przebieg `new → in_progress → resolved → closed →
-reopened → in_progress`. Zapisane wcześniej przejścia nie są automatycznie
-zastępowane. Współdzielona konfiguracja nadal dotyczy korzystających z niej
-Przestrzeni. Opcjonalne `position: {x, y}` jest zapisane przy statusie w JSON
-konfiguracji; nie wymaga migracji bazy.
+„Mapa” pokazuje swobodny układ etapów z kierunkowymi strzałkami na całej
+szerokości edytora. Nie ma na niej bocznego panelu listy i szczegółów,
+liczników, dawnego paska sterowania ani pasków wskazówek.
+Podwójne kliknięcie lub Enter na karcie otwiera formularz edycji. Karty można
+przesuwać wskaźnikiem albo Alt + strzałkami, również w lewo i w górę
+od początku układu. „Dodaj pierwszy etap” jest dostępne wyłącznie na pustej
+mapie; nie ma głównego przycisku „Dodaj etap”. Nowy etap pojawia się w środku
+widoku z chwili otwarcia formularza i otrzymuje unikalny klucz z nazwy;
+zmiana nazwy istniejącego etapu zachowuje jego klucz. Błędny klucz
+z formularza serwera pozostaje dostępny do poprawienia.
+
+Przeciąganie tła przesuwa mapę. Spacja z przeciągnięciem lub środkowy
+przycisk myszy pozwalają przesuwać widok także nad kartami. Kółko myszy
+przybliża i oddala względem punktu pod kursorem; Shift z kółkiem przesuwa
+widok poziomo. Na ekranie dotykowym jeden palec przesuwa tło, a dwa
+przesuwają i skalują widok. Przy fokusie na mapie strzałki przesuwają widok,
+`+`/`−` zmieniają skalę, `0` przywraca 100%, a Home dopasowuje mapę.
+Escape anuluje bieżący gest. Przesunięcie widoku i jego skala
+są lokalnym stanem interfejsu: nie tworzą niezapisanych zmian,
+nie należą do historii szkicu i nie są zapisywane z procesem.
+
+W prawym dolnym rogu niepustej mapy jest minimapa z podglądem etapów,
+połączeń i ramką aktualnie widocznego obszaru. Kliknięcie lub przeciągnięcie
+w podglądzie przesuwa widok. Przy fokusie na minimapie strzałki przesuwają
+kamerę, a Enter, Spacja lub Home dopasowują cały proces. Escape, anulowanie
+wskaźnika lub utrata fokusu okna cofają bieżące przeciągnięcie minimapy.
+Przyciski „−” i „+” oraz suwak pod podglądem zmieniają skalę od 1% do 200%;
+dopasowanie bardzo rozległej mapy może dać skalę poniżej 1%, którą suwak
+również uwzględnia. Na wąskim ekranie minimapa ma mniejszy rozmiar.
+Jej użycie zmienia wyłącznie lokalny widok, bez zmiany szkicu i historii.
+
+Przycisk „+” przy karcie rozpoczyna łączenie. Cel wybiera się kliknięciem
+etapu na diagramie; istniejące połączenia nie są dodawane ponownie.
+Escape lub ponowne kliknięcie aktywnego „+” anuluje łączenie. Powroty i odgałęzienia są pełnoprawnymi przejściami;
+powrót dodaje się, wybierając źródło i cel w odwrotnym kierunku.
+Położenie węzła nie zmienia kolejności kolumn ani reguł procesu. Mapa
+nie udostępnia panelowych akcji usuwania etapu lub przejścia, zmiany
+kolejności kolumn ani zbiorowego zastąpienia przejść. Usuwanie stanów
+jest dostępne na liście „Stany”. Walidacja zapisu i uprawnień pozostaje
+po stronie serwera.
+
+„Cofnij” i „Ponów” obejmują ostatnie 50 lokalnych zmian etapów, połączeń
+i układu. Skróty Ctrl/⌘+Z, Ctrl/⌘+Shift+Z i Ctrl+Y działają
+w edytorze poza polami tekstowymi. „Zapisz” utrwala cały szkic z istniejącą
+kontrolą rewizji; „Anuluj” go odrzuca. Zapis i odrzucenie czyszczą historię.
+Komunikat wspólnego procesu wskazuje liczbę Przestrzeni objętych zapisem.
+
+Nowe konfiguracje mają przebieg
+`new → in_progress → resolved → closed → reopened → in_progress`.
+Zapisane wcześniej przejścia nie są automatycznie zastępowane.
+Opcjonalne `position: {x, y}` jest zapisane przy statusie w JSON
+konfiguracji. Każda współrzędna jest liczbą całkowitą od −1 000 000
+do 1 000 000. Rozszerzenie zakresu zachowuje istniejące położenia i nie
+wymaga migracji bazy.
 
 Szczegóły zadania pokazują bieżący potwierdzony etap we właściwościach.
 Na górze prawego panelu, nad widocznością, są pełnej szerokości przyciski
@@ -28,13 +74,16 @@ listy wszystkich statusów. Brak wyjść pokazuje „Brak dalszych przejść”,
 a obserwator widzi sam etap. Akcje zachowują wspólny zapis, historię,
 zakończenie, WIP i kontrolę nieaktualnego stanu. Walidacja przejść działa
 także w `WorkItem.save()`. Utworzenie nowej karty bezpośrednio w kolumnie
-pozostaje dotychczasową funkcją. Pierwszy render Django zachowuje karty
-konfiguracji z formularzami i przyciski przejść zadania.
+pozostaje dotychczasową funkcją. Pierwszy render Django zachowuje zakładki,
+listę lub karty konfiguracji z formularzami i przyciski przejść zadania.
+Parametr `workflow_view=states|map` wybiera podzakładkę natywnego widoku
+`configuration/?section=statuses`; brak lub nieznana wartość otwiera mapę.
+Linki operacji na liście i powrót po zapisie zachowują „Stany”.
 
 ## Kanban: proces pracy, WIP i blokady
 
-„Proces pracy” w ustawieniach (`#statuses`, również scoped) pozwala ustalać
-kolejność kolumn, nazwy, dozwolone przejścia i zasady wejścia/wyjścia. Każdy
+„Proces pracy” w ustawieniach (`#statuses`, również scoped) pozwala zmieniać
+nazwy i zasady etapów oraz dodawać dozwolone przejścia. Każdy
 status ma etap przepływu `queue`, `active` albo `done`; `closed` odpowiada
 wyłącznie `done`. Konfiguracja wymaga każdego etapu, ale nie wszystkich pięciu
 kategorii technicznych zadania, więc dopuszcza trzy kolumny. Używanego statusu
@@ -121,10 +170,14 @@ nie zapisuje konfiguracji raportu ani kopii danych na serwerze.
 `visible_spaces`, z linkiem do ustawień każdej z nich. Lista korzysta z aktywnego
 Workspace i uwzględnia włączenie modułu Przestrzeni. Wejścia z zakładki
 Przestrzeni oraz menu katalogu również prowadzą na tę stronę.
+Górny nagłówek zachowuje strzałkę powrotu oraz tytuł „Ustawienia przestrzeni
+· nazwa”. Typografia i odstępy odpowiadają nagłówkowi otwartej Przestrzeni.
+Zakładki procesu „Stany” i „Mapa” zajmują drugi wiersz tego samego nagłówka,
+bez separatora między wierszami, z jedną dolną ramką nad treścią.
 
 Główne lewe menu zastępuje menu Workspace czterema sekcjami: „Ustawienia”,
 „Udostępnienia”, „Typy zgłoszeń” i „Proces pracy”. Proces pracy udostępnia
-statusy i przejścia wraz z limitami WIP oraz zasadami kolumn. Pola dodatkowe
+listę stanów i mapę przejść wraz z limitami WIP oraz zasadami kolumn. Pola dodatkowe
 pozostają ukryte w ustawieniach, ale działają w zadaniach i konfiguracji.
 Menu zawiera wyłącznie dostępne sekcje, bez dodatkowych nagłówków i linku powrotu.
 Sekcje obejmują główny formularz, tabelę członków i listę typów zgłoszeń.
@@ -159,7 +212,8 @@ Bezpośrednie adresy `?view=settings`, `edit/`, `avatar/`, `members/` i
 sekcji. React normalizuje adres do `?view=settings` z fragmentem `#main`,
 `#members`, `#types` albo `#statuses`; starsze `#configuration` i `#fields`
 otwierają „Typy zgłoszeń”, a `#statuses` — „Proces pracy”. Zmiany sekcji zachowują formularz głównych
-ustawień i historię Wstecz/Dalej.
+ustawień, wybraną podzakładkę procesu i historię Wstecz/Dalej. Przełączanie
+„Stany”/„Mapa” nie dodaje wpisów do historii adresów.
 Zapisy nadal korzystają z istniejących widoków,
 formularzy i blokad Django; walidacja statusów, rewizja konfiguracji i zasady
 plików pozostają wspólne. Implementacja React:

@@ -469,17 +469,66 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
-Proces pracy ma tablicę węzłów i kierunkowych połączeń. Lokalny wariant
+Proces pracy ma podzakładki „Stany” i „Mapa” w drugim wierszu wspólnego
+nagłówka Przestrzeni, przed paskiem działań. Korzystają z `notifications-tabs work-tabs work-tabs--views`,
+jak widoki Przestrzeni: ikony `list-checks` i `workflow`, tekst 13,5px,
+fioletowe podkreślenie aktywnej pozycji i przewijanie poziome na telefonie.
+W React przyciski mają role `tablist`/`tab`/`tabpanel`, `aria-selected`
+oraz obsługę strzałek, Home i End; pierwszy render Django używa linków
+z `aria-current="page"`. Domyślnie wybrana jest „Mapa”.
+
+„Stany” pokazują istniejącą `ConfigurationTable` z zaznaczeniami i paskiem
+„Edytuj”, „Usuń”, „Dodaj stan” po lewej oraz „Zapisz”, „Anuluj” po prawej.
+Nazwa otwiera wspólny formularz etapu. Lista i mapa współdzielą szkic oraz
+historię; przełączanie nie zapisuje ani nie odrzuca zmian. Wybór podzakładki
+pozostaje po zapisie i przejściu do innej sekcji ustawień, bez zmiany adresu Reacta.
+Natywny widok przekazuje wybór przez `workflow_view=states|map`.
+
+„Mapa” pokazuje swobodny układ węzłów i kierunkowych połączeń. Lokalny wariant
 `work-flow-*` w `spaces.css` zachowuje wspólny pasek ustawień, przyciski,
 ikony statusów i tokeny powierzchni. Wybrany etap ma fioletowy obrys oraz
-wyróżnione wychodzące strzałki. Panel poniżej pokazuje dozwolone następne
-etapy i zasady. Podwójne kliknięcie otwiera istniejący modal edycji;
-przycisk „Edytuj” udostępnia tę samą akcję klawiaturą. Alt + strzałki
-przesuwają etap o 10px, z Shift o 40px. Łączenie wymaga wybrania źródła,
-„Dodaj przejście” i celu; Escape je anuluje. Układ i połączenia są szkicem
-do zapisania. Pierwsze wejście dopasowuje skalę do szerokości (minimum 50%);
-większy diagram przewija się we własnym obszarze. Kontrolki zawijają się na
-telefonie, a pasek zapisu pozostaje nad przewijaną tablicą.
+wyróżnione wejścia i wyjścia; pozostałe strzałki są przygaszone. Przy karcie
+jest przycisk „+” do połączenia. Mapa zajmuje całą szerokość edytora.
+Mapa nie ma panelu bocznego listy ani szczegółów, liczników, przycisku „Etapy”,
+starego paska sterowania mapą ani górnego i dolnego paska wskazówek.
+Sama mapa pozostaje obszarem przeciągania i skalowania.
+
+Podwójne kliknięcie lub Enter na karcie otwiera wspólny modal edycji, z nazwą na początku.
+Formularz zachowuje połączenia w ukrytych polach. Przycisk dodania pierwszego
+etapu pozostaje w stanie pustym; główny przycisk „Dodaj etap” jest usunięty.
+Nowa karta otrzymuje automatyczny klucz i pojawia się w środku bieżącego
+widoku. Alt + strzałki przesuwają etap o 10 jednostek mapy, z Shift o 40;
+układ dopuszcza współrzędne ujemne.
+Łączenie rozpoczyna „+” przy źródle, a kończy kliknięcie karty celu;
+Escape lub ponowne kliknięcie aktywnego „+” je anuluje. Przejścia są kierunkowe, więc powrót dodaje się osobno.
+Tab odsłania etap poza kadrem; przesuwanie klawiaturą utrzymuje kartę w widoku.
+
+Przeciąganie tła przesuwa mapę w dowolnym kierunku; nad kartami tę samą
+akcję wykonuje Spacja z przeciągnięciem lub środkowy przycisk myszy.
+Kółko skaluje mapę wokół kursora, Shift z kółkiem przesuwa ją poziomo.
+Dotyk obsługuje przesuwanie tła jednym palcem oraz przesuwanie i skalowanie
+dwoma. Przy fokusie na obszarze mapy strzałki przesuwają widok,
+`+`/`−` zmieniają skalę, `0` przywraca 100%, a Home dopasowuje całość.
+Escape anuluje gest. Przesunięcie i skala widoku nie zmieniają szkicu
+ani historii cofania.
+
+Minimapa w prawym dolnym rogu jest lokalną nakładką na niepustej mapie.
+Pokazuje uproszczone karty i połączenia oraz ramkę widocznego obszaru.
+Używa istniejących tokenów powierzchni, obramowania i fioletowego akcentu;
+na telefonie ma kompaktowy rozmiar. Kliknięcie lub przeciągnięcie przesuwa
+kamerę, a Escape, anulowanie wskaźnika i utrata fokusu okna cofają gest.
+Przy fokusie na podglądzie strzałki przesuwają widok, a Enter, Spacja i Home
+dopasowują całość. Pod podglądem są „−”, suwak skali i „+”. Suwak obejmuje
+1–200%, rozszerzając dolną granicę dla dopasowania poniżej 1%.
+Kontrolki minimapy zachowują fokus klawiatury i nie zmieniają danych procesu.
+
+Pasek pokazuje stan szkicu, cofanie i ponawianie oraz „Zapisz” i „Anuluj”.
+Początkowa skala ma minimum 65% dla czytelności; Home dopasowuje wszystkie
+karty, również na rozległej mapie. Akcje usuwania etapów i przejść, zmiany
+kolejności, automatycznego układu i „Połącz kolejno” nie mają kontrolek
+na mapie; usuwanie stanów jest dostępne na liście „Stany”. Kontrolki zapisu
+zawijają się na telefonie.
+Ikony ostrzeżeń przy etapach nadal sygnalizują problemy grafu; nie blokują edycji.
 
 W szczegółach zadania `TaskWorkflowStatus` zastępuje selektor statusu bieżącym
 etapem, a `TaskWorkflowActions` pokazuje dozwolone przejścia. Wariant `task-workflow-*` w
@@ -493,7 +542,7 @@ pełną akcję „Przejdź do…” opisuje etykieta dostępności.
 Komunikaty zapisu i błędy statusu są przy akcjach. Zapis wyłącza przyciski;
 błąd nie zmienia potwierdzonego etapu. Brak przejść i odczyt obserwatora
 mają osobne stany. Pierwszy render Django zachowuje przyciski, a konfiguracja
-bez JavaScriptu pokazuje karty etapów i linki do standardowych formularzy.
+bez JavaScriptu pokazuje wybraną listę lub karty etapów i linki do standardowych formularzy.
 
 Tablica pokazuje pod nagłówkiem aktywnej kolumny licznik widocznego WIP
 oraz limit. Zasady etapu rozwijają się w natywnym `details`; pełny limit
@@ -516,8 +565,9 @@ zastępuje menu Workspace czterema sekcjami: „Ustawienia”, „Udostępnienia
 „Typy zgłoszeń” oraz „Proces pracy”, według uprawnień. Proces pracy używa
 wspólnego edytora konfiguracji; pola dodatkowe pozostają ukryte w ustawieniach.
 Zawiera same pozycje sekcji, bez dodatkowych nagłówków i powrotu. Wykorzystuje
-istniejące wiersze `nav-link`, ikony oraz aktywny stan menu; treść nie ma
-dodatkowej listy zakładek. Centrum Ustawień w kategorii Workspace pokazuje
+istniejące wiersze `nav-link`, ikony oraz aktywny stan menu. Sekcja procesu
+ma dodatkowy pasek „Stany”/„Mapa”; pozostałe sekcje nie powielają menu
+w treści. Centrum Ustawień w kategorii Workspace pokazuje
 listę dostępnych przestrzeni z wejściem na tę stronę.
 
 Główny formularz rozszerza się wraz z panelem, bez stałego limitu szerokości.
@@ -674,6 +724,11 @@ w `spaces/detail.html`. Nazwa i działania pozostają w górnym wierszu, zakład
 poniżej. Jedna dolna ramka oddziela cały nagłówek od treści; między wierszami
 nie ma separatora. Podkreślenie aktywnej zakładki, polskie etykiety, wspólne
 kontrolki i poziome przewijanie zakładek na telefonie pozostają zachowane.
+Ustawienia korzystają z tej samej powłoki, typografii i odstępów, zachowując
+strzałkę powrotu oraz tytuł „Ustawienia przestrzeni · nazwa”. Podzakładki
+„Stany” i „Mapa” są częścią nagłówka, bez dodatkowej ramki między tytułem
+a zakładkami. Tytuł dokumentu również określa kontekst „Ustawienia przestrzeni”.
+Długie tytuły zawijają się jak w zwykłej Przestrzeni.
 
 Szczegóły nowego zadania (`spaces/task_detail.html`) zachowują powłokę,
 kontrolki i współdzielone include'y dawnego ekranu Tasks przez

@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 67 | 5 | 46 | 448 |
+| [backend/spaces](../backend/spaces) | 67 | 5 | 46 | 451 |
 
 ## 2. Modele i relacje
 
@@ -1513,6 +1513,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/TypeFields.tsx](../frontend/app/src/spaces/TypeFields.tsx)
 - [frontend/app/src/spaces/ViewToolbar.tsx](../frontend/app/src/spaces/ViewToolbar.tsx)
 - [frontend/app/src/spaces/WorkflowBoard.tsx](../frontend/app/src/spaces/WorkflowBoard.tsx)
+- [frontend/app/src/spaces/WorkflowMinimap.tsx](../frontend/app/src/spaces/WorkflowMinimap.tsx)
+- [frontend/app/src/spaces/WorkflowStageFields.tsx](../frontend/app/src/spaces/WorkflowStageFields.tsx)
 - [frontend/app/src/spaces/configuration-form.ts](../frontend/app/src/spaces/configuration-form.ts)
 - [frontend/app/src/spaces/kanban.ts](../frontend/app/src/spaces/kanban.ts)
 - [frontend/app/src/spaces/summaryLayout.ts](../frontend/app/src/spaces/summaryLayout.ts)
@@ -1520,7 +1522,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/types.ts](../frontend/app/src/spaces/types.ts)
 - [frontend/app/src/spaces/useItemMotion.ts](../frontend/app/src/spaces/useItemMotion.ts)
 - [frontend/app/src/spaces/useSummaryMotion.ts](../frontend/app/src/spaces/useSummaryMotion.ts)
+- [frontend/app/src/spaces/useWorkflowCamera.ts](../frontend/app/src/spaces/useWorkflowCamera.ts)
 - [frontend/app/src/spaces/workflow-board.ts](../frontend/app/src/spaces/workflow-board.ts)
+- [frontend/app/src/spaces/workflow-minimap.ts](../frontend/app/src/spaces/workflow-minimap.ts)
+- [frontend/app/src/spaces/workflow-viewport.ts](../frontend/app/src/spaces/workflow-viewport.ts)
 - [frontend/app/src/tags/NotesDialog.tsx](../frontend/app/src/tags/NotesDialog.tsx)
 - [frontend/app/src/tags/TagsPage.tsx](../frontend/app/src/tags/TagsPage.tsx)
 - [frontend/app/src/tags/types.ts](../frontend/app/src/tags/types.ts)
@@ -1574,6 +1579,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/timeline-interactions.test.mjs](../frontend/app/tests/timeline-interactions.test.mjs)
 - [frontend/app/tests/timeline.test.mjs](../frontend/app/tests/timeline.test.mjs)
 - [frontend/app/tests/workflow-board.test.mjs](../frontend/app/tests/workflow-board.test.mjs)
+- [frontend/app/tests/workflow-camera.test.mjs](../frontend/app/tests/workflow-camera.test.mjs)
+- [frontend/app/tests/workflow-minimap.test.mjs](../frontend/app/tests/workflow-minimap.test.mjs)
+- [frontend/app/tests/workflow-viewport.test.mjs](../frontend/app/tests/workflow-viewport.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ### React — frontend/board
@@ -2230,7 +2238,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_kanban_configuration.py](../backend/spaces/test_kanban_configuration.py).
 
-- `KanbanConfigurationTests`: 13 metod testowych.
+- `KanbanConfigurationTests`: 16 metod testowych.
 
 ### backend/spaces/test_kanban_workflow.py
 

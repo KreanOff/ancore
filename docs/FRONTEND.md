@@ -64,16 +64,81 @@ obowiązują w React i adapterze `calendar.js`.
 
 ## Proces Kanban i blokady Przestrzeni
 
-`spaces/WorkflowBoard.tsx` zastępuje tabelę statusów tablicą w sekcji
-`statuses`. `spaces/workflow-board.ts` przekształca ten sam formset w węzły
+Sekcja `statuses` ma podzakładki „Stany” i „Mapa” na wspólnym pasku
+`notifications-tabs work-tabs work-tabs--views`. `ConfigurationForm`
+renderuje w nich odpowiednio `ConfigurationTable` i `WorkflowBoard`.
+Domyślnie otwiera mapę; lista udostępnia „Dodaj stan”, „Edytuj”, „Usuń”,
+„Zapisz” i „Anuluj” z istniejącym formularzem etapu i zapisem konfiguracji.
+Oba widoki współdzielą `data` i historię `ConfigurationForm`.
+Wybraną podzakładkę utrzymuje `SettingsPage`, więc pozostaje ona po zapisie
+i przełączaniu sekcji. Jest to lokalny stan Reacta, bez zmiany URL.
+Początkowy wybór pochodzi z `ConfigurationData.workflow_view` (`states` lub
+`map`); Django odczytuje parametr GET o tej samej nazwie i domyślnie zwraca
+`map`, także dla nieznanej wartości. Natywne linki zachowują ten wybór podczas
+edycji, usuwania i zapisu. Ponowne zamontowanie mapy po zmianie podzakładki
+inicjalizuje jej kamerę; szkic węzłów i przejść pozostaje wspólny.
+
+`spaces/workflow-board.ts` przekształca ten sam formset w węzły
 i przejścia oraz aktualizuje szkic `ConfigurationForm`; zapis nadal wysyła
 pełną konfigurację i rewizję. Ukryte pola `position_x`/`position_y` przyjmują
-liczby całkowite 0–20000 i odpowiadają opcjonalnemu `position: {x, y}` statusu.
+liczby całkowite od −1 000 000 do 1 000 000 i odpowiadają opcjonalnemu
+`position: {x, y}` statusu. `StatusForm` odrzuca wartości poza zakresem,
+ułamkowe, nieliczbowe i nieskończone; nie zmienia to schematu bazy.
 Pominięcie tych pól w starszym żądaniu zachowuje zapisany układ. Oba puste
 pola usuwają położenie; pojedyncza współrzędna jest błędem. Istniejące
 konfiguracje bez położenia otrzymują domyślny układ przy renderowaniu.
 Węzły HTML i strzałki SVG korzystają z istniejącego Reacta, bez biblioteki grafów.
-Przesuwanie uwzględnia powiększenie tablicy i wspólną skalę aplikacji.
+
+`spaces/useWorkflowCamera.ts` zarządza lokalnym przesunięciem i skalą widoku;
+`workflow-viewport.ts` przelicza współrzędne ekranu i mapy, skaluje wokół
+wskazanego punktu oraz dopasowuje granice kart, także przy ujemnych
+współrzędnych. Warstwa kart i SVG używa wspólnego `translate`/`scale`
+w obszarze z obciętym przepełnieniem. Przesuwanie tła, Spacja z przeciągnięciem,
+środkowy przycisk myszy, kółko oraz gesty dotykowe zmieniają wyłącznie kamerę.
+Kółko zachowuje punkt mapy pod kursorem; dwa palce pozwalają jednocześnie
+skalować i przesuwać widok. Pointer capture utrzymuje gest po wyjściu
+wskaźnika z mapy; Escape, anulowanie wskaźnika i utrata fokusu okna
+anulują bieżący gest. Przeliczenia uwzględniają wspólną skalę CSS aplikacji.
+Zmiana rozmiaru obszaru zachowuje środek widoku.
+Kamera nie trafia do `ConfigurationData`, historii cofania ani żądania zapisu.
+
+Mapa nie ma panelu bocznego listy ani szczegółów, liczników, dawnego paska sterowania
+ani pasków wskazówek. Zachowuje historię szkicu i zapis, gesty oraz skróty
+kamery. Podwójne kliknięcie lub Enter na karcie otwiera edycję etapu, a „+” przy źródle
+i kliknięcie karty celu dodają przejście; Escape lub ponowne kliknięcie aktywnego „+” anuluje łączenie.
+Mapa nie ma głównego przycisku „Dodaj etap” ani panelowych akcji usuwania,
+zmiany kolejności, powrotu i „Połącz kolejno”. Dodanie pierwszego etapu pozostaje
+w stanie pustym i przekazuje do `ConfigurationForm` pozycję środka bieżącego
+widoku. Po zastosowaniu formularza `moveWorkflowNode` przypisuje ją nowemu
+etapowi; pozycja karty, w odróżnieniu od kamery, należy do szkicu.
+
+`WorkflowMinimap.tsx` pokazuje w prawym dolnym rogu niepustej mapy uproszczone
+karty, połączenia i ramkę widocznego obszaru. `workflow-minimap.ts` wylicza
+wspólną projekcję kart oraz aktualnego widoku i przelicza punkt minimapy
+na współrzędne mapy. `useWorkflowCamera` udostępnia `viewportSize` i `panTo`;
+minimapa przesuwa tę samą kamerę bez mutowania konfiguracji, rewizji ani
+historii. Podczas przeciągania zachowuje projekcję z początku gestu,
+aby zmiana kadru nie przesuwała układu współrzędnych pod wskaźnikiem.
+Escape, anulowanie wskaźnika i utrata fokusu okna przywracają kamerę sprzed
+gestu. Strzałki klawiatury przesuwają widok; Enter, Spacja i Home dopasowują
+proces. Przyciski powiększenia i pomniejszenia oraz suwak używają `zoomTo`.
+Zakres suwaka wynosi 1–200%, z obniżeniem minimum dla skali dopasowania
+poniżej 1%. Pusta mapa pomija nakładkę; CSS zmniejsza ją na wąskich ekranach.
+
+`ConfigurationForm` utrzymuje historię 50 szkiców procesu, wspólną dla
+zmian grafu, listy stanów, formularzy etapów i położenia kart. Historia nie zmienia
+rewizji API, jest blokowana podczas zapisu/konfliktu i czyszczona po sukcesie
+lub odrzuceniu. Błąd zapisu zachowuje szkic. `WorkflowStageFields` zachowuje
+stabilną tożsamość pól adaptera `FieldControl`, aby wpisywanie nazwy nie
+odtwarzało inputu. Klucz nowego etapu jest generowany lokalnie z nazwy,
+z limitem 40 znaków i unikalnym sufiksem; istniejący klucz pozostaje stały.
+`configurationStage` odrzuca duplikat klucza przed aktualizacją grafu,
+a przy dopuszczonej zmianie klucza zachowuje odwołania przejść.
+
+Helpery układu i diagnostyki grafu pozostają w `workflow-board.ts`, ale
+edytor nie udostępnia przycisku automatycznego układu ani listy diagnostyki.
+`workflowIssues` nadal steruje ikonami ostrzeżeń przy etapach. Serwer waliduje
+wymagane etapy, używane statusy, limity WIP, uprawnienia i rewizję konfiguracji.
 
 `tasks/TaskWorkflow.tsx` renderuje bieżący etap i akcje z `item.transitions`.
 `useTaskSave.changeStatus` zapisuje konkretny cel z bieżącym szkicem pól,
@@ -198,6 +263,11 @@ Pierwszy render Django używa `spaces/load_more.html` z etykietą końcową
 
 [`spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx) łączy
 pola główne, członków, awatar oraz konfigurację zadań na osobnej stronie.
+Nagłówek używa wspólnego `SpaceHeader`, zachowując strzałkę powrotu i tytuł
+„Ustawienia przestrzeni · nazwa”. `navigationContent` pozwala umieścić podzakładki
+„Stany”/„Mapa” w tej samej powłoce co zwykła nawigacja Przestrzeni,
+z jedną dolną ramką. Przyciski podzakładek należą do `SettingsPage`,
+a `ConfigurationForm` otrzymuje wyłącznie wybrany `workflowView`.
 Powłoka otrzymuje tryb `space-settings` i `space_settings` z autoryzowanymi
 linkami; `shell/Sidebar.tsx` zastępuje menu Workspace czterema sekcjami:
 `main` („Ustawienia”), `members` („Udostępnienia”), `types` („Typy zgłoszeń”)
@@ -225,17 +295,17 @@ w „Ustawienia” ten sam `shared/AvatarControl` co Profil, z wariantem `space`
 nazwami pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany
 awatar i kadr należą do formularza głównego, a picker pozostaje oknem nad stroną.
 Zapis łączy pola Przestrzeni i awatar w jednej transakcji.
-`ConfigurationForm` renderuje typy zgłoszeń przez
+`ConfigurationForm` renderuje typy zgłoszeń i podzakładkę „Stany” przez
 [`spaces/ConfigurationTable.tsx`](../frontend/app/src/spaces/ConfigurationTable.tsx).
-Proces pracy korzysta z osobnego `WorkflowBoard` opisanego wyżej.
+Podzakładka „Mapa” procesu pracy korzysta z `WorkflowBoard` opisanego wyżej.
 Tabela korzysta z klas i ról wzorca `Members` oraz takiego samego paska działań
 i bocznych odstępów jak „Udostępnienia”. Zaznaczenie jednego wiersza włącza
 „Edytuj”, jednego lub kilku — „Usuń”. „Dodaj typ” jest obok po lewej,
 a „Zapisz” i „Anuluj” po prawej (`member-access-toolbar`,
 `member-access-save-actions`). Nie ma menu wierszy, licznika ani dolnej stopki.
-Obie tabele używają wariantu `space-settings-table-body`: wypełniają dostępną
+Tabele typów, stanów i udostępnień używają wariantu `space-settings-table-body`: wypełniają dostępną
 wysokość i przewijają się we własnym kontenerze, z `--app-page-padding-x`
-po bokach. Dla typów odpowiada za to `work-configuration-sheet--toolbar`.
+po bokach. Dla typów i stanów odpowiada za to `work-configuration-sheet--toolbar`.
 Pierwszy render Django ma te same klasy i układ; rozwijany fallback zachowuje
 linki natywnego usuwania. Formularz głównych ustawień zachowuje własne odstępy.
 Typy mają kolumny `key`, `label` i `description`; ikona jest przed nazwą
