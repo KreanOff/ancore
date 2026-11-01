@@ -203,6 +203,14 @@ def backlog_url(request, space, suffix=''):
     return space_url(request, space, suffix + '?') + params.urlencode()
 
 
+def board_url(request, space, suffix=''):
+    params = request.GET.copy()
+    for key in ('initial_status', 'planning_sprint', 'page'):
+        params.pop(key, None)
+    params['view'] = 'board'
+    return space_url(request, space, suffix + '?') + params.urlencode()
+
+
 def planning_totals(items):
     totals = items.aggregate(total=Count('pk'), point_total=Sum('points', default=0),
                            finished=Count('pk', filter=Q(task__status='closed')),
@@ -309,6 +317,15 @@ def detail_context(request, space, view):
             item.timeline_left = str(round((item.timeline_start - start).days / duration * 100, 2))
             item.timeline_width = str(round(max((item.timeline_end - item.timeline_start).days + 1, 1) / duration * 100, 2))
     columns = [{**s, 'items': [i for i in rows if i.status == s['key']], 'count': column_counts.get(s['key'], 0)} for s in space.statuses]
+    can_edit = editable_to(Space.objects.filter(pk=space.pk), request.user).exists()
+    if view == 'board':
+        for column in columns:
+            column['create_item_url'] = ''
+            if can_edit and (space.template != 'scrum' or active_sprint):
+                initial = {'initial_status': column['key']}
+                if space.template == 'scrum':
+                    initial['planning_sprint'] = active_sprint.pk
+                column['create_item_url'] = board_url(request, space, 'items/create/') + '&' + urlencode(initial)
     if view == 'list':
         for column in columns:
             column['loaded_count'] = len(column['items'])
@@ -348,6 +365,7 @@ def detail_context(request, space, view):
     toolbar_context = {'item_sort': sort, 'can_reorder': sort['manual']}
     create_item_url = (backlog_url(request, space, 'items/create/') if view == 'backlog'
                        else list_url(request, space, 'items/create/') if view == 'list'
+                       else board_url(request, space, 'items/create/') if view == 'board' and space.template != 'scrum'
                        else base + 'items/create/')
     stats = {'all': all_items.count(), 'closed': all_items.filter(task__status='closed').count(), 'overdue': all_items.filter(task__due_at__lt=now).exclude(task__status='closed').count(), 'points': all_items.aggregate(n=Sum('points'))['n'] or 0}
     return {**base_context(request), **filter_context, **backlog_context, **toolbar_context,
@@ -358,7 +376,7 @@ def detail_context(request, space, view):
             'status_counts': [{**status, 'count': counts.get(status['key'], 0)} for status in space.statuses],
             'active_sprint': active_sprint, 'sprints': sprints, 'backlog_items': [item for item in rows if not item.sprint_id],
             'can_manage': manage_space(request, space), 'can_configure': manage_configuration(request, space),
-            'can_edit': editable_to(Space.objects.filter(pk=space.pk), request.user).exists(),
+            'can_edit': can_edit,
             'create_item_url': create_item_url,
             'sprint_create_url': backlog_url(request, space, 'sprints/create/'), 'edit_url': base + 'edit/',
             'configuration_url': base + 'configuration/', 'member_url': base + 'members/',
@@ -434,7 +452,7 @@ def retired_all_items(request):
     return redirect(target)
 
 
-def dialog_response(request, form, title, return_url, saved=False, directory=False, background_space=None, settings_space=None, settings_tab='main'):
+def dialog_response(request, form, title, return_url, saved=False, directory=False, background_space=None, settings_space=None, settings_tab='main', background_view='backlog'):
     if saved:
         if request.headers.get('X-Work-Modal') == 'true':
             return JsonResponse({'saved': True, 'url': return_url})
@@ -456,7 +474,7 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
         modal['directory_url'] = return_url
         return render(request, 'spaces/index.html', context, status=status)
     if background_space:
-        context.update(detail_context(request, background_space, 'backlog'))
+        context.update(detail_context(request, background_space, background_view))
         modal['directory_url'] = return_url
         return render(request, 'spaces/detail.html', context, status=status)
     return render(request, 'spaces/form_page.html', context, status=status)
@@ -591,21 +609,25 @@ def item_edit(request, pk=None, space_pk=None, key=None):
             raise PermissionDenied
     elif not editable_to(Space.objects.filter(pk=space.pk), request.user).exists():
         raise PermissionDenied
+    in_board = request.GET.get('view') == 'board'
+    form_options = {'initial_status': request.GET.get('initial_status', '')} if not item and in_board else {}
     form_class = SubtaskForm if item and item.task.parent_id else ItemForm
-    form = form_class(request.POST if request.method == 'POST' else None, request=request, space=space, item=item)
+    form = form_class(request.POST if request.method == 'POST' else None, request=request, space=space, item=item, **form_options)
     in_planning = request.GET.get('view') == 'backlog' and space.template in {'scrum', 'kanban'}
-    if not item and in_planning:
-        form.initial['in_backlog'] = True
+    if not item and (in_planning or in_board):
+        form.initial['in_backlog'] = in_planning
         if request.GET.get('planning_sprint'):
             if space.template != 'scrum':
                 raise Http404
             sprint_id = request.GET['planning_sprint']
             if not sprint_id.isascii() or not sprint_id.isdecimal() or len(sprint_id) > 18:
                 raise Http404
-            sprint = get_object_or_404(space.sprints.filter(state__in=['planned', 'active']), pk=int(sprint_id))
+            sprint = get_object_or_404(space.sprints.filter(state__in=['planned', 'active'] if in_planning else ['active']), pk=int(sprint_id))
             form.initial.update(sprint=sprint, in_backlog=False)
+    background = {'background_space': space, 'background_view': 'board' if in_board else 'backlog'} if in_planning or in_board else {}
     url = (task_subtasks_url(request, item.task) if item and item.task.parent_id
            else backlog_url(request, space) if in_planning else task_url(request, item.task) if key
+           else board_url(request, space) if in_board
            else list_url(request, space) if request.GET.get('view') == 'list'
            else space_url(request, space, '?view=list'))
     if request.method == 'POST':
@@ -620,11 +642,14 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 require_editable(Space.objects.filter(pk=space.pk), request.user)
             space = space_object(request, space.pk)
             form_class = SubtaskForm if item and item.task.parent_id else ItemForm
-            form = form_class(request.POST, request=request, space=space, item=item)
+            form = form_class(request.POST, request=request, space=space, item=item, **form_options)
             if not form.is_valid():
-                return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, background_space=space if in_planning else None)
+                return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, **background)
             data = form.cleaned_data
+            initial_status = next((status for status in space.statuses if status['key'] == data.get('status')), None) if not item else None
             task = SpaceTask.objects.select_for_update().get(pk=item.task_id) if item else SpaceTask(space=space, created_by=request.user, visibility='public')
+            if initial_status:
+                task.status = initial_status['category']
             if item and 'status' in data:
                 set_status(request, item, data['status'])
                 task.refresh_from_db()
@@ -636,6 +661,8 @@ def item_edit(request, pk=None, space_pk=None, key=None):
             if 'tags' in data:
                 task.tags.set(data['tags'])
             item = WorkItem.objects.select_for_update().get(task=task)
+            if initial_status:
+                item.status = initial_status['key']
             old_type, old_type_label = item.work_type, item.get_work_type_display()
             for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
                 if name in data:
@@ -650,7 +677,7 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 }]} if old_type != item.work_type else {}
                 record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni', metadata)
         return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, background_space=space if in_planning else None)
+    return dialog_response(request, form, f'Edytuj {item.key}' if item else 'Utwórz zadanie', url, **background)
 
 
 @login_required

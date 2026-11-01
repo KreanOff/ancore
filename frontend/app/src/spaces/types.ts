@@ -9,6 +9,7 @@ export interface Status {
   count: number;
   loaded_count?: number;
   more_url?: string;
+  create_item_url?: string;
 }
 export interface Item {
   id: number;

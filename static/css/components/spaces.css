@@ -460,6 +460,8 @@
 .work-sprint-board .tasks-issue-group-header > .status-indicator { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .work-sprint-board .tasks-issue-group-header > .tasks-rail-count { margin-left: auto; }
 .work-sprint-board .tasks-kanban-column__list { flex: 1; max-height: none; gap: 0.55rem; padding-right: 0; }
+.work-sprint-board .work-board-create { flex: 0 0 auto; color: var(--text-secondary); cursor: pointer; }
+.work-sprint-board .work-board-create[aria-disabled="true"] { opacity: .45; cursor: not-allowed; background: transparent; }
 .work-sprint-board > .tasks-kanban-column::before { content: ''; position: absolute; inset: 0; z-index: 3; border: 2px dashed var(--system-accent); border-width: calc(2px / var(--app-ui-scale, 1)); border-radius: var(--tasks-kanban-header-radius); opacity: 0; pointer-events: none; }
 .work-sprint-board .tasks-kanban-column.is-drag-over { outline: none; background: color-mix(in srgb, var(--system-accent) 4%, var(--card-bg)); }
 .work-sprint-board > .tasks-kanban-column.is-drag-over::before { opacity: 1; transition: none; }

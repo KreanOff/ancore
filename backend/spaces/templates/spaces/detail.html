@@ -43,6 +43,7 @@
                 {% include 'tasks/includes/issue_group_header.html' with category=column.category label=column.label count=column.count only %}
                 <div class="tasks-issue-list tasks-kanban-column__list">
                     {% for item in column.items %}{% include 'spaces/card.html' %}{% empty %}<div class="tasks-empty-section" role="status">Brak zadań</div>{% endfor %}
+                    {% if can_edit and column.create_item_url %}<a href="{{ column.create_item_url }}" class="tasks-project-menu-button work-board-create" data-work-open aria-haspopup="dialog" aria-label="Utwórz zadanie w statusie {{ column.label }}"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie</a>{% endif %}
                 </div>
             </section>
             {% endfor %}

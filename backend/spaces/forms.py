@@ -157,7 +157,7 @@ class ItemForm(StyledForm):
     reminder_at = forms.DateTimeField(label='Przypomnienie', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'title': 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela zadania lub przestrzeni.'}))
     due_at = ScheduleDateTimeField(label='Termin zakończenia', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
 
-    def __init__(self, *args, request, space, item=None, **kwargs):
+    def __init__(self, *args, request, space, item=None, initial_status=None, **kwargs):
         self.request, self.space, self.item = request, space, item
         if item:
             kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at')}}
@@ -165,6 +165,15 @@ class ItemForm(StyledForm):
                 kwargs.setdefault('auto_id', f'subtask-{item.pk}-%s')
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
+        if not item and initial_status is not None:
+            choices = [(status['key'], status['label']) for status in space.statuses]
+            self.fields['status'] = forms.ChoiceField(label='Status', choices=choices, widget=VisualSelect(visuals={
+                status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category']}}
+                for status in space.statuses
+            }))
+            default_status = next(status['key'] for status in space.statuses if status['category'] == 'new')
+            self.initial['status'] = initial_status if initial_status in dict(choices) else default_status
+            self.order_fields(['title', 'description', 'status'])
         if item and item.task.parent_id and self.editable_subtask_status:
             self.fields['status'] = forms.ChoiceField(label='Status', required=False, choices=[
                 (status['key'], status['label']) for status in space.statuses

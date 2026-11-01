@@ -672,6 +672,19 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                           Brak zadań
                         </div>
                       )}
+                      {data.can_edit && column.create_item_url ? (
+                        <button
+                          type="button"
+                          className="tasks-project-menu-button work-board-create"
+                          aria-disabled={busy}
+                          aria-label={`Utwórz zadanie w statusie ${column.label}`}
+                          aria-haspopup="dialog"
+                          onClick={() => void openForm(column.create_item_url!)}
+                        >
+                          <Icon name="plus" />
+                          Utwórz zadanie
+                        </button>
+                      ) : null}
                     </div>
                   );
                   return (

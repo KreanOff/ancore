@@ -229,7 +229,11 @@ export function useItemMotion(data: DetailData, onCancel: () => void) {
               !!(current.source.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING),
           );
       if (samePlace) current.marker.remove();
-      else list.insertBefore(current.marker, before || list.querySelector('.work-backlog-create'));
+      else
+        list.insertBefore(
+          current.marker,
+          before || list.querySelector('.work-backlog-create, .work-board-create'),
+        );
     } else current.marker.remove();
     animateLayout();
   }
