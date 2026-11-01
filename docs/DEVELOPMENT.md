@@ -1,5 +1,71 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Przyciski etapów na górze panelu zadania (01.11.2026)
+
+Bieżący etap ma wysokość i wcięcie zgodne z priorytetem. Akcje przejścia
+są na górze prawego panelu, nad widocznością, ułożone pionowo na całą
+szerokość. Korzystają z tego samego wariantu co „Utwórz zadanie”,
+z nazwą celu, ikoną kategorii stanu docelowego oraz pełną etykietą dostępności.
+Komunikaty zapisu i błędy są przy akcjach. React i pierwszy render Django mają ten sam układ.
+Zmieniono wersję URL `react.css`, aby przeglądarka pobrała nowe reguły.
+
+Przeszło 37 celowanych testów frontendu (`task-workflow`, `task-actions`,
+`task-refresh`, `task-members`), build z TypeScriptem, formatowanie komponentu,
+Django check, indeks kodu i kontrola diffu. Chrome/Playwright na izolowanej
+bazie QA sprawdził 1440/390/360px, porównanie z priorytetem i rzeczywistym
+przyciskiem „Utwórz zadanie”, jeden i kilka celów, etap bez wyjść, obserwatora,
+zapis przejścia, reload i ponowne wejście. Akcje są nad widocznością,
+zajmują całą szerokość i nie powtarzają się wśród właściwości.
+Sprawdzono błąd 503 oraz pierwszy render bez JavaScriptu. Nie było poziomego
+przepełnienia ani błędów JavaScriptu; konsola zawierała celową odpowiedź 503.
+Plugin Browser był niedostępny; użyto istniejącego Playwright i Chrome.
+Nie powtarzano pełnych zestawów backendu ani testów Safari i Firefox.
+
+Po zamianie strzałek na ikony docelowych stanów ponownie przeszły 3 testy
+`task-workflow`, build z TypeScriptem, formatowanie i indeks. Chrome przy
+1440/390/360px potwierdził zgodność masek i kolorów z ikonami kategorii,
+zachowanie rozmiaru przycisków, natywny render bez JavaScriptu oraz zapis
+i odczyt kolejnych etapów. Bez przepełnienia i błędów konsoli.
+
+## Graficzny proces i etapowe statusy (01.11.2026)
+
+Ustawienia Przestrzeni mają tablicę etapów z edycją położenia i kierunkowych
+przejść. Szczegóły zadania używają akcji dozwolonych przejść. Nowe konfiguracje
+otrzymują kolejny przebieg z powrotem przez ponowne otwarcie; istniejące
+przejścia pozostają zachowane. [Zakres i zapis](SPACES.md#tablica-procesu-i-etapowe-przejścia),
+[kontrakt React](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
+Położenia są częścią JSON konfiguracji; brak zmian schematu i nowych migracji.
+
+Celowane przebiegi **187 testów Django** (155 + 32) na jednorazowych bazach PostgreSQL
+objął konfigurację, pozycje (również zero), stare żądania, konflikty rewizji,
+dozwolone przejścia, odrzucanie przeskoków, zakończenie/historię, drag,
+podzadania, autosave, role, `core.test_space_settings_frontend` i
+`planner.test_task_calendar`. Przeszło **349 testów frontendu**, TypeScript,
+build, formatowanie zmienionego TypeScriptu, Django check, kontrola diffu,
+indeks kodu oraz lokalne linki zaktualizowanych rozdziałów.
+`makemigrations --check --dry-run` nie wykazał zmian modeli; połączenie
+z historią migracji lokalnej bazy było ograniczone przez sandbox, a testy
+uruchomiły migracje na świeżych bazach.
+Szerszy przebieg 480 testów przerwano na niezmienionym teście paginacji
+osi czasu (`test_timeline_show_more_keeps_order_filters_and_reaches_every_task`),
+którego kolejne odczyty zajmowały kilka minut. Nie jest to wynik pełnego
+zestawu. Runner zakończył sprzątanie i potwierdzono usunięcie jego bazy.
+
+Chrome/Playwright na osobnej bazie QA sprawdził zapis i ponowne wejście,
+przeciąganie z uwzględnieniem skali aplikacji, Alt + strzałki, łączenie
+i usuwanie przejść, anulowanie szkicu oraz ścieżkę zadania przez wstrzymanie,
+sprawdzenie, zamknięcie i ponowne otwarcie wraz z historią. Widoki procesu,
+zadania i referencyjnej Listy sprawdzono przy 1440, 390 i 320px, bez
+poziomego przepełnienia strony. Błędy POST zachowują szkice; udany POST
+i błąd GET pozwalają ponowić sam odczyt. Sprawdzono także konflikt z drugiej
+karty, etap bez wyjść, pusty szkic i obserwatora bez akcji. Tworzenie,
+edycja i usuwanie etapu z zapisem przeszły przy 320px; sprawdzono zwykłe
+i scoped adresy oraz pierwszy render bez JavaScriptu przy 1440/390px,
+łącznie z rzeczywistym natywnym POST zmiany etapu. Nie było błędów
+JavaScript; konsola zawierała wyłącznie celowo wywołane odpowiedzi 400/503.
+Plugin Browser był niedostępny, użyto istniejącego Playwright i Chrome.
+Safari, Firefox i wdrożenie produkcyjne nie były sprawdzane.
+
 ## Proces Kanban, WIP i blokady (01.11.2026)
 
 Ustawienia udostępniają Proces pracy: kolejność, etapy, przejścia, zasady

@@ -469,6 +469,32 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
+Proces pracy ma tablicę węzłów i kierunkowych połączeń. Lokalny wariant
+`work-flow-*` w `spaces.css` zachowuje wspólny pasek ustawień, przyciski,
+ikony statusów i tokeny powierzchni. Wybrany etap ma fioletowy obrys oraz
+wyróżnione wychodzące strzałki. Panel poniżej pokazuje dozwolone następne
+etapy i zasady. Podwójne kliknięcie otwiera istniejący modal edycji;
+przycisk „Edytuj” udostępnia tę samą akcję klawiaturą. Alt + strzałki
+przesuwają etap o 10px, z Shift o 40px. Łączenie wymaga wybrania źródła,
+„Dodaj przejście” i celu; Escape je anuluje. Układ i połączenia są szkicem
+do zapisania. Pierwsze wejście dopasowuje skalę do szerokości (minimum 50%);
+większy diagram przewija się we własnym obszarze. Kontrolki zawijają się na
+telefonie, a pasek zapisu pozostaje nad przewijaną tablicą.
+
+W szczegółach zadania `TaskWorkflowStatus` zastępuje selektor statusu bieżącym
+etapem, a `TaskWorkflowActions` pokazuje dozwolone przejścia. Wariant `task-workflow-*` w
+`react.css` używa dotychczasowych ikon i przycisków. Bieżący etap ma wcięcie,
+wysokość i tekst zgodne z sąsiednimi właściwościami, bez osobnego tła.
+Przejścia zajmują osobną sekcję na górze prawego panelu, przed widocznością.
+Przyciski są ułożone pionowo na całą szerokość i używają wariantu
+`tasks-tag-topbar-button--row-highlight`, tak jak „Utwórz zadanie”. Mają
+nazwę celu i jego ikonę `status-indicator` według kategorii stanu;
+pełną akcję „Przejdź do…” opisuje etykieta dostępności.
+Komunikaty zapisu i błędy statusu są przy akcjach. Zapis wyłącza przyciski;
+błąd nie zmienia potwierdzonego etapu. Brak przejść i odczyt obserwatora
+mają osobne stany. Pierwszy render Django zachowuje przyciski, a konfiguracja
+bez JavaScriptu pokazuje karty etapów i linki do standardowych formularzy.
+
 Tablica pokazuje pod nagłówkiem aktywnej kolumny licznik widocznego WIP
 oraz limit. Zasady etapu rozwijają się w natywnym `details`; pełny limit
 wyłącza przyjęcie karty i tworzenie w kolumnie. `work-board-wip`,

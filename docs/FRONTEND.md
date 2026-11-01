@@ -64,6 +64,26 @@ obowiązują w React i adapterze `calendar.js`.
 
 ## Proces Kanban i blokady Przestrzeni
 
+`spaces/WorkflowBoard.tsx` zastępuje tabelę statusów tablicą w sekcji
+`statuses`. `spaces/workflow-board.ts` przekształca ten sam formset w węzły
+i przejścia oraz aktualizuje szkic `ConfigurationForm`; zapis nadal wysyła
+pełną konfigurację i rewizję. Ukryte pola `position_x`/`position_y` przyjmują
+liczby całkowite 0–20000 i odpowiadają opcjonalnemu `position: {x, y}` statusu.
+Pominięcie tych pól w starszym żądaniu zachowuje zapisany układ. Oba puste
+pola usuwają położenie; pojedyncza współrzędna jest błędem. Istniejące
+konfiguracje bez położenia otrzymują domyślny układ przy renderowaniu.
+Węzły HTML i strzałki SVG korzystają z istniejącego Reacta, bez biblioteki grafów.
+Przesuwanie uwzględnia powiększenie tablicy i wspólną skalę aplikacji.
+
+`tasks/TaskWorkflow.tsx` renderuje bieżący etap i akcje z `item.transitions`.
+`useTaskSave.changeStatus` zapisuje konkretny cel z bieżącym szkicem pól,
+`autosave_fields` i snapshotem położenia. UI zmienia potwierdzony etap po
+odczycie serwera. Błąd POST zachowuje cel do ponowienia; po zatwierdzonym POST
+i błędzie GET kolejne przejścia są wyłączone do odświeżenia, które nie powtarza
+mutacji. Odświeżenie po komentarzu lub podzadaniu również synchronizuje
+snapshot i dostępne przejścia hooka. Natywny fallback wysyła pojedynczy cel
+przyciskiem; adapter czeka na zapis innych pól przed wysłaniem formularza.
+
 Kolumny Page API udostępniają `flow_stage`, `wip_limit`, `wip_count`,
 `wip_full` oraz `policy`. Licznik obejmuje dostępne karty przed filtrowaniem,
 a serwer egzekwuje pojemność całej kolumny bez ujawniania prywatnych kart.
@@ -205,8 +225,9 @@ w „Ustawienia” ten sam `shared/AvatarControl` co Profil, z wariantem `space`
 nazwami pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany
 awatar i kadr należą do formularza głównego, a picker pozostaje oknem nad stroną.
 Zapis łączy pola Przestrzeni i awatar w jednej transakcji.
-`ConfigurationForm` renderuje wyłącznie typy zgłoszeń przez
+`ConfigurationForm` renderuje typy zgłoszeń przez
 [`spaces/ConfigurationTable.tsx`](../frontend/app/src/spaces/ConfigurationTable.tsx).
+Proces pracy korzysta z osobnego `WorkflowBoard` opisanego wyżej.
 Tabela korzysta z klas i ról wzorca `Members` oraz takiego samego paska działań
 i bocznych odstępów jak „Udostępnienia”. Zaznaczenie jednego wiersza włącza
 „Edytuj”, jednego lub kilku — „Usuń”. „Dodaj typ” jest obok po lewej,

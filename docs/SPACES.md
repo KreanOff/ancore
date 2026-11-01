@@ -1,5 +1,36 @@
 # Przestrzenie i zespoły
 
+## Tablica procesu i etapowe przejścia
+
+„Proces pracy” w ustawieniach Przestrzeni pokazuje graficzną tablicę etapów
+z kierunkowymi strzałkami. Etapy można dodawać, edytować, usuwać i przesuwać
+wskaźnikiem albo Alt + strzałkami. „Dodaj przejście” łączy wybrany etap
+z klikniętym celem; panel pod tablicą pokazuje następne etapy i pozwala
+usuwać pojedyncze połączenia. Powroty i odgałęzienia są pełnoprawnymi
+przejściami. Położenie węzła nie zmienia kolejności kolumn ani reguł procesu;
+kolejność zmieniają osobne strzałki w panelu etapu.
+
+„Uporządkuj” zmienia wyłącznie układ. „Połącz kolejno” zastępuje przejścia
+w lokalnym szkicu połączeniami kolejnych etapów; końcowy `reopened` wraca do
+`in_progress`, a `on_hold`/`onhold` tworzy boczną pętlę wstrzymania.
+„Zapisz” utrwala cały szkic z istniejącą kontrolą rewizji; „Anuluj” go odrzuca.
+Nowe konfiguracje mają przebieg `new → in_progress → resolved → closed →
+reopened → in_progress`. Zapisane wcześniej przejścia nie są automatycznie
+zastępowane. Współdzielona konfiguracja nadal dotyczy korzystających z niej
+Przestrzeni. Opcjonalne `position: {x, y}` jest zapisane przy statusie w JSON
+konfiguracji; nie wymaga migracji bazy.
+
+Szczegóły zadania pokazują bieżący potwierdzony etap we właściwościach.
+Na górze prawego panelu, nad widocznością, są pełnej szerokości przyciski
+z ikoną stanu docelowego i nazwą celu wyłącznie dla `WorkItem.transitions` (etykieta
+dostępności: „Przejdź do: …”), w stylu „Utwórz zadanie”. Nie ma rozwijanej
+listy wszystkich statusów. Brak wyjść pokazuje „Brak dalszych przejść”,
+a obserwator widzi sam etap. Akcje zachowują wspólny zapis, historię,
+zakończenie, WIP i kontrolę nieaktualnego stanu. Walidacja przejść działa
+także w `WorkItem.save()`. Utworzenie nowej karty bezpośrednio w kolumnie
+pozostaje dotychczasową funkcją. Pierwszy render Django zachowuje karty
+konfiguracji z formularzami i przyciski przejść zadania.
+
 ## Kanban: proces pracy, WIP i blokady
 
 „Proces pracy” w ustawieniach (`#statuses`, również scoped) pozwala ustalać
