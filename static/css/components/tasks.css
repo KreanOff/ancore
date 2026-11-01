@@ -14793,6 +14793,24 @@ body.is-resizing-directory-columns {
     align-items: center;
 }
 
+/* Page directories share the inset, borderless sheet used by sharing settings.
+   Target page containers so embedded tables keep their existing parent padding. */
+:is(.work-content--directory, .work-content--tasks, .tasks-workspace, .workplaces-directory, .documents-main) > .tasks-directory-board.tasks-directory-sheet:is(.tasks-project-sheet, .tasks-tag-sheet),
+.documents-main > .documents-table-scroll {
+    width: auto;
+    min-width: 0;
+    margin-inline: var(--app-page-padding-x);
+    padding: 0;
+}
+
+.tasks-workspace:has(> .work-content--directory) > .tasks-filterbar,
+.tasks-workspace:has(> .work-content--tasks > .tasks-tag-sheet) > .tasks-filterbar,
+.resources-page > .tasks-workspace > .resources-filterbar,
+.workplaces-console > .workplaces-management__toolbar,
+.documents-page > .documents-filterbar {
+    border-bottom: 0;
+}
+
 /* Kanban boards reuse the task list's collapsible groups, grouped by space. */
 .tasks-space-board .tasks-issue-group-header {
     background: var(--panel-bg);
