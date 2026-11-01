@@ -341,7 +341,7 @@ def detail(request, space_pk, key):
     # The task uses the shared issue shell while its URL and return keep space context.
     context = detail_context(request, space, request.GET.get('view', 'list'))
     tabs = []
-    for value, label, icon in [('main', 'Główna', 'file-text'), ('subtasks', 'Podzadania', 'list-checks'), ('work-log', 'Dziennik pracy', 'clock'), ('members', 'Członkowie', 'users'), ('history', 'Historia', 'rotate-ccw')]:
+    for value, label, icon in [('main', 'Główna', 'file-text'), ('subtasks', 'Podzadania', 'list-checks'), ('work-log', 'Dziennik pracy', 'clock'), ('members', 'Udostępnienia', 'users'), ('history', 'Historia', 'rotate-ccw')]:
         params = request.GET.copy()
         params['tab'] = value
         tabs.append({'key': value, 'label': label, 'icon': icon, 'url': request.path + '?' + params.urlencode()})
