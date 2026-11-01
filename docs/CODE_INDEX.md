@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 38 | 0 | 25 | 247 |
+| [backend/core](../backend/core) | 38 | 0 | 25 | 249 |
 | [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
-| [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 290 |
+| [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 63 | 4 | 45 | 386 |
+| [backend/spaces](../backend/spaces) | 63 | 4 | 45 | 404 |
 
 ## 2. Modele i relacje
 
@@ -941,7 +941,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/pulpit_frontend.py](../backend/dashboard/pulpit_frontend.py) — `dashboard_payload`, `gadget_payload`, `pulpit_form_payload`, `modal_payload`, `directory_page`, `detail_page`, `edit_page`
 - [backend/dashboard/pulpit_grid.py](../backend/dashboard/pulpit_grid.py) — `overlaps`, `free_position`, `legacy_widgets`, `resolved_widgets`, `place_new_gadget`, `validate_widgets`
 - [backend/dashboard/pulpit_navigation.py](../backend/dashboard/pulpit_navigation.py) — `sidebar_dashboards`
-- [backend/dashboard/pulpit_sharing.py](../backend/dashboard/pulpit_sharing.py) — `ShareForm`, `payload`, `team_url`, `team`, `candidates`
+- [backend/dashboard/pulpit_sharing.py](../backend/dashboard/pulpit_sharing.py) — `ShareForm`, `payload`, `team_url`, `apply_access_draft`, `team`, `candidates`
 - [backend/dashboard/pulpit_urls.py](../backend/dashboard/pulpit_urls.py)
 - [backend/dashboard/pulpit_views.py](../backend/dashboard/pulpit_views.py) — `get_dashboard`, `index_context`, `index`, `search`, `management_url`, `manage`, `detail`, `default`, `editor_navigation_context`, `editor_context`, `gadgets`, `form_response`, `saved_response`, `edit`, `access`, `delete`, `favorite`, `gadget_edit`, `gadget_delete`, `gadget_quick_add`, `arrange`, `arrange_grid`
 - [backend/dashboard/pulpits.py](../backend/dashboard/pulpits.py) — `app_url`, `visible_dashboards`, `dashboard_role`, `can_edit_dashboard`, `can_manage_dashboard`, `default_dashboard`, `dashboard_url`, `decorate_dashboard`, `decorate_gadget`, `dashboard_data_scope`, `gadget_data`, `detail_context`
@@ -1021,7 +1021,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/schedule.py](../backend/spaces/schedule.py) — `ScheduleDateTimeField`, `local_date`, `validate_range`, `move_to_date`
 - [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `task_subtasks_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
 - [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
-- [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
+- [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `access_revision`, `payload`, `apply_access_draft`, `team`, `candidates`
 - [backend/spaces/summary.py](../backend/spaces/summary.py) — `status_arc_path`, `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
@@ -1432,6 +1432,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/filters/types.ts](../frontend/app/src/filters/types.ts)
 - [frontend/app/src/forms/FormDialog.tsx](../frontend/app/src/forms/FormDialog.tsx)
 - [frontend/app/src/main.tsx](../frontend/app/src/main.tsx)
+- [frontend/app/src/pulpits/AccessEditor.tsx](../frontend/app/src/pulpits/AccessEditor.tsx)
 - [frontend/app/src/pulpits/Actions.tsx](../frontend/app/src/pulpits/Actions.tsx)
 - [frontend/app/src/pulpits/Catalog.tsx](../frontend/app/src/pulpits/Catalog.tsx)
 - [frontend/app/src/pulpits/DetailPage.tsx](../frontend/app/src/pulpits/DetailPage.tsx)
@@ -1446,6 +1447,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/resources/Table.tsx](../frontend/app/src/resources/Table.tsx)
 - [frontend/app/src/resources/columns.tsx](../frontend/app/src/resources/columns.tsx)
 - [frontend/app/src/resources/types.ts](../frontend/app/src/resources/types.ts)
+- [frontend/app/src/shared/AccessEditor.tsx](../frontend/app/src/shared/AccessEditor.tsx)
 - [frontend/app/src/shared/Avatar.tsx](../frontend/app/src/shared/Avatar.tsx)
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
 - [frontend/app/src/shared/DashboardCanvas.tsx](../frontend/app/src/shared/DashboardCanvas.tsx)
@@ -1503,6 +1505,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/SummaryWidgetControls.tsx](../frontend/app/src/spaces/SummaryWidgetControls.tsx)
 - [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
 - [frontend/app/src/spaces/TimelineView.tsx](../frontend/app/src/spaces/TimelineView.tsx)
+- [frontend/app/src/spaces/TypeFields.tsx](../frontend/app/src/spaces/TypeFields.tsx)
 - [frontend/app/src/spaces/configuration-form.ts](../frontend/app/src/spaces/configuration-form.ts)
 - [frontend/app/src/spaces/summaryLayout.ts](../frontend/app/src/spaces/summaryLayout.ts)
 - [frontend/app/src/spaces/timeline.ts](../frontend/app/src/spaces/timeline.ts)
@@ -1538,8 +1541,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
 - [frontend/app/tests/global-search.test.mjs](../frontend/app/tests/global-search.test.mjs)
 - [frontend/app/tests/item-filtering.test.mjs](../frontend/app/tests/item-filtering.test.mjs)
+- [frontend/app/tests/member-toolbar.test.mjs](../frontend/app/tests/member-toolbar.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
+- [frontend/app/tests/pulpit-access-draft.test.mjs](../frontend/app/tests/pulpit-access-draft.test.mjs)
 - [frontend/app/tests/pulpit-grid-editor.test.mjs](../frontend/app/tests/pulpit-grid-editor.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
 - [frontend/app/tests/reports-interactions.test.mjs](../frontend/app/tests/reports-interactions.test.mjs)
@@ -1671,7 +1676,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_space_settings_frontend.py](../backend/core/test_space_settings_frontend.py).
 
-- `SpaceSettingsFrontendTests`: 26 metod testowych.
+- `SpaceSettingsFrontendTests`: 28 metod testowych.
 
 ### backend/core/test_status_updates.py
 
@@ -1956,6 +1961,8 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `PulpitSharingFixture`: 0 metod testowych.
 - `PulpitSharingTests`: 11 metod testowych.
+- `PulpitBulkSharingTests`: 13 metod testowych.
+- `PulpitAccessDraftTests`: 13 metod testowych.
 
 ### backend/dashboard/test_pulpit_urls.py
 
@@ -2233,7 +2240,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_space_sharing.py](../backend/spaces/test_space_sharing.py).
 
-- `SpaceSharingTests`: 9 metod testowych.
+- `SpaceSharingTests`: 21 metod testowych.
 
 ### backend/spaces/test_subtask_fields.py
 
@@ -2259,6 +2266,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_tags.py](../backend/spaces/test_tags.py).
 
 - `SpaceTagTests`: 14 metod testowych.
+- `TagWindowTests`: 6 metod testowych.
 
 ### backend/spaces/test_task_autosave.py
 

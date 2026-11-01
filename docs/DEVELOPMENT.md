@@ -1,5 +1,128 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Doładowywanie tagów (31.10.2026)
+
+Tagi Przestrzeni używają wspólnego paska „Pokaż więcej” i partii po 20,
+zamiast paginacji w toolbarze. `tags_limit` zachowuje rozszerzoną listę
+przy zapisie tagu/notatki i odświeżeniu; zmiana filtrów resetuje zakres.
+[Kontrakt API](FRONTEND.md#doładowywanie-tagów-przestrzeni).
+
+Przeszło 50 testów PostgreSQL przez `scripts/run_tests.py`:
+`spaces.test_tags`, `core.test_filter_frontend`, `spaces.test_list_window`.
+Obejmują zwykłe/scoped URL, dostęp, filtry/sortowanie, zakresy 20→40→60→65,
+nieprawidłowe limity, małe/puste listy oraz powrót po zapisie i usunięciu.
+Przeszło 309 istniejących testów frontendu, build z TypeScriptem, Django check,
+format zmienionych plików TypeScript, kontrola indeksu i `git diff --check`.
+
+Playwright/Chrome na osobnej bazie QA potwierdził 20→40→45, zaznaczenia,
+fokus klawiatury, przewinięcie, reload, reset filtrów i ponowne wejście,
+edycję/notatkę tagu spoza pierwszych 20 oraz błąd 503 z udanym ponowieniem.
+Odczyt blokuje otwarcie edycji, usuwania i notatek, aby ich odświeżenie
+nie nadpisało doładowanej listy. Sprawdzono desktop 1440×1000 i telefon
+390×844 i 320×844, małe/puste listy oraz referencyjną Listę zadań (20→22).
+Plugin Browser był niedostępny. Nie testowano innych przeglądarek ani
+produkcji. Bez zmian modeli i migracji.
+
+## Kolorowa siatka ikon typów (31.10.2026)
+
+Picker `TypeFields` korzysta z układu pickera emoji Pulpitów: wyszukiwarki,
+siatki ośmiu kolumn, opcji domyślnej oraz dolnego podglądu. Wszystkie 24
+symbole używają istniejącej palety kolorów typu zgłoszenia. Uwzględniono alias
+renderera `calendar-days`. Wyszukiwanie zatrzymuje zarówno `input`, jak
+i React `change`, aby nie oznaczać niezmienionego formularza jako szkicu.
+
+Przeszły 33 testy konfiguracji frontendu, 12 istniejących testów wspólnych
+stylów, TypeScript/build, Prettier, indeks kodu i kontrola diffu.
+Chrome/Playwright na osobnej bazie QA sprawdził wszystkie 24 wyliczone kolory,
+siatkę i wyszukiwanie bez polskich znaków, pusty wynik, klawiaturę, Escape
+i fokus, wybór domyślny, zapis/przeładowanie i ikonę na liście zadań.
+Sprawdzono zwykły i scoped adres, referencyjny picker Pulpitu oraz szerokości
+1440/1024/390/320px. Brak błędów JavaScriptu i konsoli. Plugin Browser był
+niedostępny; użyto istniejącego Playwright i Chrome. Safari i Firefox nie były
+sprawdzane. Bez zmian modeli, migracji i kontraktu zapisu.
+
+## Formularz typu według ustawień Przestrzeni (31.10.2026)
+
+Dodawanie i edycja typu używają `TypeFields`: podgląd ikony i „Zmień” po lewej,
+nazwa, opis oraz klucz po prawej. Picker bazuje na wspólnym `Dropdown`
+i istniejących ikonach, zachowuje nazwę pola formsetu i sygnalizuje zmianę
+formularza. Domyślny podgląd reaguje na klucz. Pierwszy render Django ma ten
+sam układ, z natywnym polem ikony rozwijanym przez „Zmień”.
+
+Przeszły **42 testy Django** (`core.test_space_settings_frontend`,
+`spaces.test_configuration_writes`, `spaces.test_issue_types`) oraz **307
+testów frontendu**, TypeScript/build, formatowanie, `manage.py check`
+i kontrola diffu. Nowe testy obejmują wartości i błędy formularza natywnego,
+pojedyncze wystąpienie każdego pola, klucz i ikonę szkicu, zdarzenia zmiany
+oraz obsługę klawiatury i powrót fokusu w pickerze.
+
+Chrome/Playwright na izolowanych danych potwierdził dodawanie i edycję przy
+1440/390/320px, wybór ikony, klawiaturę, anulowanie, lokalny szkic oraz zapis
+i ponowne otwarcie. Błąd duplikatu 400 zachował dane do poprawy. Porównano
+główne ustawienia Przestrzeni i pierwszy render Django na zwykłym/scoped URL
+przy 1440/390px; natywny wybór ikony działa. Bez JavaScriptu same glify
+pozostają puste, zgodnie z istniejącym adapterem ikon. Brak błędów JavaScriptu;
+400 było kontrolowaną próbą walidacji. Plugin Browser był niedostępny.
+Nie sprawdzano Safari, Firefoksa ani produkcji. Środowisko QA usunięto.
+
+## Typy zgłoszeń w układzie udostępnień (31.10.2026)
+
+Tabela typów ma wspólny pasek działań i boczne odstępy udostępnień, bez menu
+wierszy i dolnej stopki. Dodawanie, edycja oraz zbiorcze usuwanie tworzą szkic;
+„Zapisz” wysyła pełne formsety do istniejącego endpointu, a „Anuluj” przywraca
+stan bazowy. Payload przekazuje kanoniczne domyślne ikony z backendu.
+Bez zmian modeli i migracji.
+
+Przeszło **40 testów Django** (`core.test_space_settings_frontend`,
+`spaces.test_configuration_writes`, `spaces.test_issue_types`) na osobnej bazie
+PostgreSQL; po dodaniu mapy ikon ponownie przeszedł test kontraktu scoped
+i zwykłego API. Przeszły **304 testy frontendu**, TypeScript/build,
+formatowanie zmienionych plików, `manage.py check`, indeks kodu,
+lokalne odnośniki dokumentacji i `git diff --check`. Regresje obejmują
+szkic wielu pozycji, zachowanie statusów/przejść/pól, błędy walidacji,
+konflikt rewizji, ponowienie odczytu bez powtórzenia udanego POST oraz
+ochronę szkicu typów przed zmianą widoczności w obu formularzach.
+
+Chrome/Playwright na odizolowanej bazie sprawdził tabelę, okna i picker ikon
+przy 1440/1024/390/320px, referencyjne udostępnienia, zaznaczenie jednej i wielu
+pozycji, dwa kolejne dodania przed zapisem, anulowanie, pojedynczy końcowy POST,
+przeładowanie i powrót do sekcji. Sprawdzono pusty szkic, walidację minimum
+jednego typu i ochronę używanego typu, rzeczywisty konflikt 400 oraz symulowany
+503 podczas zapisu i odczytu po zapisie. Pierwszy render bez JavaScriptu
+sprawdzono przy 1440/390px na zwykłym i scoped URL. Końcowa próba potwierdziła
+ochronę szkicu typów przed zmianą widoczności w obu sekcjach i dozwolony zapis
+samej nazwy. Po anulowaniu szkicu i upublicznieniu przez zwykłego członka
+Workspace formularz edycji oraz link typów znikają zgodnie z nowymi uprawnieniami.
+Poprawiono wykryte wcześniej pozostawianie starego formularza i menu po głównym
+zapisie. Geometria tabel typów i udostępnień jest taka sama. Brak błędów JavaScriptu;
+odpowiedzi 400/503 pochodziły z kontrolowanych prób błędów. Plugin Browser
+był niedostępny; wykorzystano istniejący Playwright i Chrome. Nie sprawdzano
+Safari, Firefoksa ani wdrożenia produkcyjnego.
+
+## Wspólne udostępnienia Przestrzeni i Pulpitów (31.10.2026)
+
+Sekcja Przestrzeni używa `shared/AccessEditor`: widoczność, akcje zbiorcze,
+pięć kolumn oraz lokalny szkic zatwierdzany przez „Zapisz” lub odrzucany
+przez „Anuluj”. Backend `space_team.py` waliduje cały szkic pod blokadą
+Workspace i Przestrzeni, wykrywa konflikt rewizji i zachowuje role oraz
+czyszczenie udostępnień zadań. Bez zmian modeli i migracji.
+
+Przeszło **117 testów Django** na osobnych bazach PostgreSQL:
+`spaces.test_space_sharing`, `spaces.test_write_access`,
+`core.test_space_settings_frontend`, `dashboard.test_pulpit_sharing`,
+`core.test_pulpit_frontend` i `spaces.test_task_owner_membership`.
+Przeszło też **290 testów frontendu**, TypeScript/build, formatowanie
+zmienionych plików TS, `manage.py check`, kontrola indeksu, linków i diff.
+Chrome/Playwright na odizolowanej bazie sprawdził Przestrzenie przy
+1440/1024/390/320px, referencyjny Pulpit przy 1440/390px, szkic, zapis,
+anulowanie, role, ponowne wejście, błąd 503 z ponowieniem oraz pierwszy
+render Django. Dodatkowo sprawdzono pusty picker, klawiaturę, fokus oraz
+rzeczywisty konflikt 409 i wczytanie aktualnego dostępu przez „Anuluj”. Upublikowanie przez prywatnego właściciela bez roli
+zarządzania publiczną Przestrzenią od razu wyłącza edycję i usuwa typy
+z menu. Brak błędów JavaScriptu i nieoczekiwanych błędów konsoli; odpowiedzi 503/409
+pochodziły z kontrolowanych prób błędów. Plugin Browser był niedostępny; użyto istniejącego Playwright/Chrome.
+Nie sprawdzano Safari, Firefoksa ani wdrożenia produkcyjnego.
+
 ## Ikony i opisy typów zgłoszeń (31.10.2026)
 
 `TypeForm` udostępnia 24 istniejące ikony, wybór domyślny według klucza

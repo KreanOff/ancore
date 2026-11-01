@@ -140,7 +140,7 @@ Szczegóły i ograniczenia: [Backup i odtwarzanie](PRODUCTION.md#backup-i-odtwar
 
 Historyczne widoki, formularze i ekrany Tasks/Kanbana/Kontaktów usunięto.
 `tasks.forms` zawiera wyłącznie formularz tagu, a `tasks.tag_directory`
-filtrowanie, sortowanie i paginację tagów Przestrzeni. `static/js/tasks.js` nadal obsługuje
+filtrowanie, sortowanie i doładowywanie tagów Przestrzeni po 20 pozycji. `static/js/tasks.js` nadal obsługuje
 wspólne komponenty bieżących modułów. Nie zakładaj istnienia osobnej warstwy usług dla każdej
 operacji. Moduł `workplaces.services` jest rzeczywistą wspólną warstwą kontekstu.
 

@@ -14,8 +14,8 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
   komentarze ze wzmiankami i plikami, załączniki, podzadania, dziennik pracy,
   członkowie/role oraz historia.
 - **Zespoły:** katalog, szczegóły, formularz i członkostwa.
-- **Tagi Przestrzeni:** katalog, wyszukiwanie, filtry, sortowanie, paginacja,
-  układ/szerokości kolumn, CRUD, informacje, notatki i zbiorcze usuwanie.
+- **Tagi Przestrzeni:** katalog, wyszukiwanie, filtry, sortowanie, doładowywanie po 20,
+  układ/szerokości kolumn, tworzenie/edycja, informacje i notatki.
 - **Filtry zadań:** wyszukiwanie podstawowe i zaawansowane, katalog,
   zapis/edycja/kopia definicji, osobiste gwiazdki i udostępnianie.
 - **Pulpity:** katalog, pulpit domyślny, przegląd, ustawienia,
@@ -122,6 +122,25 @@ Wyszukiwanie osi także usuwa `timeline_limit`.
 Pierwszy render Django pokazuje te same limity i linki, z pełną nawigacją
 po ich kliknięciu bez Reacta.
 
+## Doładowywanie tagów Przestrzeni
+
+Page API dla `view=tags` zwraca w `window` pełne `total_tags`, bieżące
+`loaded_count` i `more_url`. `tasks.tag_directory` wczytuje pierwsze 20 tagów
+po ograniczeniu do dostępnej Przestrzeni, wyszukiwaniu, filtrach i sortowaniu.
+Parametr `tags_limit` rozszerza ten sam uporządkowany zakres, korzystając
+z istniejącego `group_limit`; stare `page` i `page_size` są ignorowane.
+Kolejny URL zwiększa zakres o 20, zachowuje filtry i zwykły/scoped adres,
+a po końcu jest pusty. Każdy odczyt ponownie sprawdza dostęp.
+
+`TagsPage` używa `pageRequest` i wspólnego paska `work-list-more` pod tabelą.
+Doładowanie zachowuje zamontowane wiersze, zaznaczenia dostępnych tagów
+oraz pionowe i poziome przewinięcie. Żądanie jest anulowane po odejściu;
+błąd pozostawia dane i URL, umożliwiając ponowienie. Rozszerzony URL trafia
+także do tworzenia, edycji, usuwania i notatek, aby zapis nie skracał listy.
+Zmiana wyszukiwania, filtrów lub sortowania usuwa `tags_limit`.
+Pierwszy render Django używa `spaces/load_more.html` z etykietą końcową
+„Wszystkie tagi”; nie wyświetla strzałek stron ani wyboru liczby wierszy.
+
 ## Strona ustawień Przestrzeni
 
 [`spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx) łączy
@@ -155,34 +174,60 @@ awatar i kadr należą do formularza głównego, a picker pozostaje oknem nad st
 Zapis łączy pola Przestrzeni i awatar w jednej transakcji.
 `ConfigurationForm` renderuje wyłącznie typy zgłoszeń przez
 [`spaces/ConfigurationTable.tsx`](../frontend/app/src/spaces/ConfigurationTable.tsx).
-Tabela korzysta z klas i ról wzorca `Members`, pokazuje zapisane wartości,
-zaznaczenie i menu wiersza. Nad nią pozostaje przycisk dodawania po prawej;
-opis konfiguracji i licznik typów są usunięte w React i pierwszym renderze Django.
-Typy mają kolumny `icon`, `key`, `label`
-i `description`; glif tabeli pochodzi z `choices[].icon` wybranej opcji pola
-formularza. `TypeForm` udostępnia ikonę przez wspólny `VisualSelect`, w tym
+Tabela korzysta z klas i ról wzorca `Members` oraz takiego samego paska działań
+i bocznych odstępów jak „Udostępnienia”. Zaznaczenie jednego wiersza włącza
+„Edytuj”, jednego lub kilku — „Usuń”. „Dodaj typ” jest obok po lewej,
+a „Zapisz” i „Anuluj” po prawej (`member-access-toolbar`,
+`member-access-save-actions`). Nie ma menu wierszy, licznika ani dolnej stopki.
+Obie tabele używają wariantu `space-settings-table-body`: wypełniają dostępną
+wysokość i przewijają się we własnym kontenerze, z `--app-page-padding-x`
+po bokach. Dla typów odpowiada za to `work-configuration-sheet--toolbar`.
+Pierwszy render Django ma te same klasy i układ; rozwijany fallback zachowuje
+linki natywnego usuwania. Formularz głównych ustawień zachowuje własne odstępy.
+Typy mają kolumny `key`, `label` i `description`; ikona jest przed nazwą
+w komórce `label`, jak na liście Przestrzeni. Glif tabeli pochodzi z `choices[].icon` wybranej opcji pola
+formularza. `TypeForm` udostępnia ikony przez wspólny `VisualSelect`, w tym
 domyślną opcję zależną od klucza; opis jest opcjonalnym polem tekstowym.
-React nie utrzymuje osobnej mapy ikon typów. Przycisk „Dodaj…”, nazwa lub „Edytuj”
-otwierają pojedynczy formularz `FormFields` we wspólnym `Modal`.
+React otrzymuje `type_icon_defaults` z kanonicznego `ISSUE_TYPE_ICONS`
+w `spaces.defaults`, aby także szkic zmienionego klucza miał poprawny symbol.
+Nie utrzymuje osobnej mapy ikon typów. Przycisk „Dodaj typ”, nazwa lub „Edytuj”
+otwierają pojedynczy formularz we wspólnym `Modal`.
+[`spaces/TypeFields.tsx`](../frontend/app/src/spaces/TypeFields.tsx) układa
+podgląd ikony z „Zmień” po lewej, a nazwę, opis i klucz po prawej, według
+struktury głównych ustawień. Pola tekstowe nadal używają `FieldControl`;
+`label` jest jawnie w `app-form-heading`, bez zmiany nazwy przesyłanej do Django.
+Picker ikon używa wspólnego `Dropdown`, serwerowych `choices` oraz układu
+`emoji-picker` z Pulpitów: wyszukiwarki, opcji domyślnej, siatki ośmiu kolumn
+i dolnego podglądu. Wszystkie 24 symbole mają wspólne kolory w `tasks.css`.
+Wyszukiwanie normalizuje polskie znaki i wielkość liter; jego zdarzenia nie
+oznaczają szkicu formularza. Klawiatura obsługuje strzałki, Home/End, Enter
+oraz Escape. Ukryte pole
+zachowuje prefiks formsetu, a zmiana wartości zgłasza standardowe zdarzenia
+formularza. Domyślna ikona reaguje na zmianę klucza, jawnie wybrana pozostaje.
+Pierwszy render używa tej samej siatki i natywnego pola w rozwijanej sekcji „Zmień”.
 Pusty dodatkowy formularz Django służy jako schemat dodawania i nie jest
-wierszem tabeli; brak takiego formularza wyłącza przycisk dodawania.
-„Usuń” otwiera okno potwierdzenia. Strona listy ma wyłącznie „Zamknij” w stopce.
+wierszem tabeli. Kolejne pozycje klonują ten schemat z nowym prefiksem
+i zwiększają `TOTAL_FORMS`; obowiązuje serwerowy limit 30 aktywnych typów.
+„Usuń” zaznacza pozycje jako `DELETE` w lokalnym szkicu.
 
 [`spaces/configuration-form.ts`](../frontend/app/src/spaces/configuration-form.ts)
-buduje żądanie z pełnych zapisanych formsetów i wspólnej rewizji, zastępując
-wartości jednej pozycji szkicem z okna albo ustawiając jej `DELETE`.
+obsługuje lokalne dodawanie, edycję i usuwanie oraz buduje końcowe żądanie
+z pełnych formsetów szkicu i wspólnej rewizji.
 Kontrakt JSON i zapis zachowują wszystkie trzy formsety, w tym statusy,
 przejścia i pola dodatkowe używane przez zadania. Wielokrotne wartości przejść
 i stan checkboxów są zachowane; niezaznaczony checkbox nie trafia do `FormData`.
-„Zapisz” od razu wykonuje istniejący POST,
-zamyka okno po sukcesie i odświeża listę. Błąd zapisu zachowuje szkic i pola
-walidacji w oknie z fokusem na błędnej kontrolce. Gdy POST się uda, a odświeżenie
+„Dodaj” lub „Zastosuj” w oknie aktualizują tylko szkic. Dopiero „Zapisz”
+na pasku wykonuje jeden istniejący POST całej sekcji i odświeża listę.
+„Anuluj” odtwarza bazowy stan. Błąd zapisu zachowuje szkic, a błędna pozycja
+otwiera się w oknie z fokusem na błędnej kontrolce. Konflikt rewizji (obecny
+backend zwraca 400 z komunikatem) blokuje ponowny zapis; „Anuluj” pobiera
+aktualny stan. Gdy POST się uda, a odświeżenie
 listy zawiedzie, ponowienie wykonuje wyłącznie odczyt.
 Przy uruchomieniu Reacta po błędnym natywnym POST odrzucenie szkicu pobiera
 czysty stan konfiguracji przed zamknięciem okna, aby odrzucone wartości
 i zaznaczenia `DELETE` nie trafiały do kolejnego zapisu.
-`Modal` chroni szkic okna przed zamknięciem i przeładowaniem. Rodzic nadal
-chroni szkic głównych ustawień przez `useDirtyGuard` i blokuje nawigację
+`Modal` chroni szkic okna przed zamknięciem i przeładowaniem. Rodzic
+chroni szkic głównych ustawień oraz typów przez `useDirtyGuard` i blokuje nawigację
 podczas zapisu konfiguracji.
 Zapis odświeża dane, nagłówek i tytuł dokumentu, pozostając na stronie;
 zdarzenie `ancore:space-settings-saved` aktualizuje także kontekst powłoki
@@ -198,6 +243,28 @@ URL konfiguracji również renderują tę stronę. Wejście `avatar/` otwiera pi
 nad „Ustawienia”, zamiast osobnej sekcji. Udostępnienie i zmiana roli zachowują
 kompaktowy `SharingDialog`, a lista członków zawiera serwerowe `can_remove`,
 odpowiadające regułom właściciela i administratora Przestrzeni.
+
+Sekcja udostępnień współdzieli `shared/AccessEditor` z Pulpitami, z parametrem
+`publicVisibility="public"`. Payload `space_team.py` zawiera nazwę, widoczność,
+rewizję dostępu, `can_change_visibility`, `can_configure` i opcjonalny wiersz
+`private_owner` dla osoby prywatyzującej publiczną Przestrzeń.
+`action=save` wysyła cały szkic `visibility=private|public` oraz JSON
+`members=[{user_id,role}]`, bez właściciela. Rewizja jest hashem bieżącego
+stanu dostępu; konflikt zwraca 409. Zapis jest atomowy, z walidacją ról,
+Workspace i aktywnych odbiorców przed zmianami. Starsze operacje pozostają zgodne.
+`team/candidates/?draft=1` zwraca ID osób i pozwala ponownie dodać osobę
+usuniętą ze szkicu. Nowe wiersze mają oddzielne identyfikatory `draft:<user_id>`,
+żeby nie kolidowały z kluczami członkostw.
+Szkic udostępnień uczestniczy w `useDirtyGuard`, przetrwa zmianę sekcji i
+nie zastępuje niezapisanych ustawień. Zmiana widoczności wymaga czystych
+ustawień i typów; po zapisie unieważnia cache głównego formularza.
+Główny formularz również blokuje zmianę widoczności przy szkicu typów,
+ale pozwala zapisać pozostałe pola bez zmiany widoczności.
+Aktualne uprawnienia odświeżają
+podgląd i dostęp do konfiguracji, również w menu bocznym. Odświeżenie po
+głównym zapisie również usuwa nieuprawnione formularze, cache konfiguracji
+i ich stan szkicu, przekazując `canConfigure` do powłoki. Nawigacja pozostaje
+zablokowana do zakończenia odczytów po zapisie.
 
 Szablony Django również renderują pełną stronę: `spaces/settings_form.html`
 zawiera formularz główny lub bezpośredni formularz edycji, awatara i członków,
@@ -503,8 +570,11 @@ Tagi i Filtry mają jawne serializery `backend/spaces/tag_frontend.py` oraz
 jest w `data.modal`, z autoryzowanym schematem pól i dodatkowymi wartościami
 akcji/powrotu. Nieprawidłowy zapis zwraca HTTP 400 z tym samym modalem;
 React pokazuje błędy bez zamykania okna. Puste notatki w API zwracają HTTP 400.
-Zbiorcze usuwanie tagów wysyła wielokrotny `tag_ids` w FormData i zachowuje
-atomową kontrolę wszystkich identyfikatorów. Edycja notatki wymaga jej autorstwa.
+Endpoint zbiorczego usuwania tagów przyjmuje wielokrotny `tag_ids` w FormData
+i zachowuje atomową kontrolę wszystkich identyfikatorów. Katalog nie pokazuje
+menu „…” ani menu wierszy; kolumnę „Działania” usunięto również z menedżera
+kolumn. Opcjonalne skróty edycji, informacji i notatek pozostają dostępne
+w konfiguracji tabeli. Edycja notatki wymaga jej autorstwa.
 Po udanym zapisie notatki tagu szkic jest czyszczony przed odświeżeniem.
 Awaria odczytu udostępnia „Odśwież notatki” i wstrzymuje dalsze operacje
 na nieaktualnej liście do udanego GET, bez powtarzania zapisanego POST.
@@ -563,9 +633,40 @@ niezapisane zmiany przy wyjściu. Zapis pozostaje na stronie i odświeża nagł�
 tytuł dokumentu oraz dane powłoki przez `ancore:pulpit-settings-saved`.
 Zamknięcie respektuje `return_url`; nie dodano nowych endpointów zapisu.
 Sekcja „Udostępnienia” używa `shared/Members`, `shared/SharingDialog` oraz
-pickera Workspace, tak jak Przestrzenie. `pulpit_sharing.py` obsługuje
+pickera Workspace, tak jak Przestrzenie. Tabela ma po bokach odstępy
+`--app-page-padding-x`, wyrównane do nagłówka i paska działań. Wypełnia pozostałą
+wysokość i przewija się niezależnie od zwartego paska działań.
+Sekcja nie ma dolnej stopki. Wariant `space-settings-table-body`
+i pasek `tasks-filterbar--directory` obejmują React i pierwszy render Django;
+istniejący formularz zgodności pod tabelą ma osobny obszar przewijania.
+Pulpity i Przestrzenie używają wariantu `Members` z `rowActions={false}` i kontrolowanym
+`selection`: pięć kolumn bez menu wiersza, zaznaczanie wszystkich wierszy,
+Ctrl/Cmd+A oraz Escape. Dopiero akcje filtrują osoby przez `can_change`,
+więc zaznaczenie właściciela nie pozwala zmieniać jego roli ani dostępu.
+Domyślny wariant pozostałych modułów zachowuje menu.
+Toolbar zawiera po lewej widoczność, zmianę roli, odebranie dostępu
+i udostępnienie, a po prawej „Zapisz” oraz „Anuluj”.
+`SharingDialog.people` rozszerza istniejący modal o zbiorczą zmianę roli.
+Opcjonalne `onStage` przekazuje lokalną zmianę zamiast POST, a `candidatesUrl`
+pozwala użyć `team/candidates/?draft=1`: kandydat ma ID, a wyszukiwanie
+obejmuje również osoby usunięte ze szkicu. Pozostali odbiorcy modala nadal
+zapisują bezpośrednio. `shared/AccessEditor` przechowuje bazową rewizję i szkic
+widoczności oraz osób; `SettingsPage` chroni go przy wyjściu i zmianie sekcji.
+„Zapisz” wysyła FormData `action=save`, `revision`, `visibility=private|workspace`
+oraz `members=JSON.stringify([{user_id,role}])`, bez właściciela.
+Backend waliduje cały snapshot przed zapisem, chroni administratorów,
+sprawdza aktywność Workspace i podnosi rewizję raz. Konflikt zwraca 409;
+„Anuluj” wtedy odrzuca szkic i wczytuje bieżącą wersję. Zwykłe anulowanie
+jest lokalne. Błąd zapisu zachowuje szkic do ponowienia.
+Starsze POST `action=role|remove|visibility|share` pozostają zgodne.
+`can_change_visibility` ogranicza kontrolkę do twórcy. Zmiana widoczności
+wymaga czystego formularza ustawień i po zapisie unieważnia jego cache;
+zmiana samych ustawień może uaktualnić rewizję bez nadpisywania szkicu dostępu.
+Pierwszy render pokazuje ten sam
+pasek z przyciskami aktywowanymi przez React; formularz zgodności nadal działa.
+`pulpit_sharing.py` obsługuje
 zwykłe/scoped `dashboards/<slug>/team/` i `team/candidates/`, także przez API strony.
-Serializer przekazuje `team` i `team_url`; tabela odświeża się po każdej operacji,
+Serializer przekazuje `team` z rewizją i `team_url`; tabela odświeża się po zapisie,
 bez odmontowania szkicu ustawień. Wspólny `EmbeddedForm` obsługuje zapis,
 błędy i fokus ustawień, w tym widoczności. Prywatny pulpit z odbiorcami zachowuje
 wewnętrzną widoczność `selected`; pierwszy odbiorca ją ustawia, a usunięcie ostatniego

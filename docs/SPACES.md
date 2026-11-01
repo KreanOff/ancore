@@ -54,24 +54,25 @@ w edycji profilu. Konfiguracja i operacje członkostwa zachowują istniejące
 uprawnienia. Osoby bez prawa zarządzania widzą podgląd i członków; publiczna
 przestrzeń pokazuje informację o dostępie przez Workspace.
 
-Zmiana sekcji zachowuje szkic głównych ustawień. „Zapisz” zapisuje
+Zmiana sekcji zachowuje szkice ustawień, udostępnień i typów. „Zapisz” zapisuje
 główne ustawienia i pozostawia użytkownika na stronie; zmieniona nazwa odświeża
-nagłówek i tytuł strony. Typy zgłoszeń mają tabelę zapisanych wartości
-według wzorca „Udostępnienia”. Dodawanie odbywa się przyciskiem nad tabelą,
-a edycja przez nazwę lub menu wiersza. Obie operacje otwierają standardowe
-okno formularza. „Zapisz” w oknie od razu utrwala wybraną pozycję i odświeża
-listę; „Usuń” wymaga potwierdzenia w oknie. Każda operacja przesyła pełne
-formsety ze wspólną rewizją i zachowanymi zapisanymi wartościami pozostałych
-pozycji do istniejącego widoku Django. W stopce listy jest „Zamknij”, bez
-globalnego zapisu konfiguracji. Błędy pozostają w oknie i zachowują szkic.
-Anulowanie zmienionego formularza wymaga potwierdzenia odrzucenia zmian.
-Nawigacja i przeładowanie chronią szkic głównych ustawień oraz otwartego okna.
+nagłówek i tytuł strony. „Typy zgłoszeń” mają pasek działań i odsuniętą od boków
+tabelę jak „Udostępnienia”. „Edytuj” obejmuje jeden zaznaczony typ, „Usuń”
+wszystkie zaznaczone, a „Dodaj typ” otwiera formularz nowej pozycji. Nazwa typu
+również otwiera edycję. W React te operacje zmieniają lokalny szkic; „Zapisz”
+utrwala całą sekcję jednym dotychczasowym POST, a „Anuluj” przywraca stan bazowy.
+Statusy i pola dodatkowe pozostają zachowane w pełnym żądaniu konfiguracji.
+Błędy pozostawiają szkic do poprawy; po konflikcie rewizji „Anuluj” pobiera
+bieżącą konfigurację. Nie ma dolnej stopki. Anulowanie zmienionego okna
+formularza wymaga potwierdzenia odrzucenia zmian. Nawigacja i przeładowanie
+chronią wszystkie szkice. Zmiana widoczności wymaga zapisania lub odrzucenia
+szkicu typów, aby utrata prawa konfiguracji go nie usunęła.
 Udostępnienie i zmiana roli używają standardowych kompaktowych okien
 i odświeżają listę członków bez
 utraty szkiców. Wiersze pokazują odbieranie dostępu tylko osobom, wobec których
 bieżący użytkownik ma takie uprawnienie. Picker awatara i kadrowanie również
 pozostają osobnymi oknami nad stroną. Strzałka w nagłówku wraca do przestrzeni.
-„Anuluj”/„Zamknij” zachowuje adres powrotu formularza, np. katalog z filtrami;
+„Anuluj” głównych ustawień zachowuje adres powrotu formularza, np. katalog z filtrami;
 jeśli brak takiego kontekstu lub prowadzi on do ustawień, wraca do przestrzeni.
 
 Bezpośrednie adresy `?view=settings`, `edit/`, `avatar/`, `members/` i
@@ -273,14 +274,19 @@ zmieniać dostępne typy w sekcji „Typy zgłoszeń” ustawień przestrzeni;
 używanego typu nie można usunąć.
 
 Typ ma klucz, nazwę, opcjonalną ikonę z lokalnego zestawu i opis przeznaczenia
-(do 500 znaków). Tabela ustawień pokazuje ikonę, klucz, nazwę i opis.
+(do 500 znaków). Tabela ustawień pokazuje klucz, nazwę z ikoną po lewej
+stronie oraz opis, tak jak nazwa i awatar na liście Przestrzeni.
+Formularz dodawania i edycji ma ikonę z przyciskiem „Zmień” po lewej, a nazwę,
+opis i klucz po prawej, jak główne ustawienia Przestrzeni. Na telefonie
+pola znajdują się pod ikoną. Wybór ikony pokazuje 24 kolorowe symbole
+istniejącego lokalnego zestawu w siatce z wyszukiwaniem, na wzór pickera Pulpitów.
 „Domyślna dla typu” używa dotychczasowego symbolu znanego klucza, a dla
 własnego typu ikony `shapes`. Wybrana ikona jest zapisywana w istniejącym
 JSON konfiguracji i trafia również do zadań, wyboru typu, filtrów, podsumowania
 oraz wyszukiwania. Opis jest informacją w ustawieniach, bez zmiany zachowania
 zadań. Starsze formularze bez nowych pól zachowują zapisane ikony i opisy;
 jawne wyczyszczenie pola przywraca domyślną ikonę lub usuwa opis.
-Konfiguracja może zawierać do 30 typów. Nad tabelą pozostaje przycisk dodawania;
+Konfiguracja może zawierać do 30 typów. Nad tabelą jest pasek działań i zapisu;
 opis konfiguracji i licznik typów nie są wyświetlane.
 
 Listy, backlog i karty tablicy pokazują ikonę i nazwę typu. Filtr „Typ zgłoszenia”
@@ -614,14 +620,23 @@ przedział po stronie serwera, bez osobnych kolumn czasu w bazie.
 
 ## Tagi przestrzeni
 
-Zakładka „Tagi” pod `/<pk>/?view=tags` (także scoped) korzysta z istniejącego
-modelu `tasks.TaskTag`, tabeli, filtrów, sortowania, paginacji, modali, informacji
+Zakładka „Tagi” pod `/space/<slug>/?view=tags` (także scoped) korzysta z istniejącego
+modelu `tasks.TaskTag`, tabeli, filtrów, sortowania, modali, informacji
 i notatek starszego katalogu. Każdy tag wskazuje dokładnie jedną przestrzeń;
 nazwa może powtarzać się w innych przestrzeniach. Osoby z prawem edycji przestrzeni
-tworzą, edytują i usuwają tagi, także zbiorczo, oraz dodają notatki. Obserwator
+tworzą i edytują tagi oraz dodają notatki. Backend zachowuje uprawnienie
+usuwania, także zbiorczego; katalog nie pokazuje już menu „…” ani menu
+wierszy. Edycję, informacje i notatki można włączyć jako kolumny tabeli. Obserwator
 ma odczyt; edycja/usunięcie notatki dodatkowo wymaga bycia jej autorem.
 Liczba zadań zachowuje zasadę starszego katalogu: dostępne zadania główne,
 bez podzadań i bez ujawniania prywatnych zadań.
+
+Lista wczytuje po 20 tagów. Wspólny pasek „Pokaż więcej” z licznikiem
+rozszerza zakres przez `tags_limit`, zachowując wcześniejsze wiersze,
+zaznaczenia i przewinięcie. Filtry, wyszukiwanie i sortowanie zaczynają od
+pierwszych 20 wyników; zapis tagu lub notatki zachowuje rozszerzony zakres.
+Nie ma strzałek stron ani wyboru liczby pozycji.
+[Kontrakt API](FRONTEND.md#doładowywanie-tagów-przestrzeni).
 
 Formularze nowego zadania i szczegółów oraz powiązania tagów ograniczają wybór
 do zapisanej przestrzeni i Workspace. Bezpośredni zapis obcego identyfikatora
@@ -647,15 +662,24 @@ wyłącznie właściciel zmienia widoczność i role administratorów. Przestrze
 publiczną zarządza właściciel/administrator Workspace lub osoba odpowiedzialna.
 Udostępnianie przestrzeni działa od razu przez `SpaceMembership`,
 bez zaproszeń. Role Workspace pozostają niezależne.
-`space_team.py` udostępnia odczyt tabeli, akcje `share`/`role`/`remove`
-pod `space/<slug>/team/` oraz wyszukiwanie `team/candidates/`, także w scoped
-Workspace i przez JSON API stron. Właściciel nadaje wszystkie trzy role;
-administrator zarządza członkami i obserwatorami, bez nadawania roli
-administratora ani operacji na innych administratorach. Wyszukiwanie pomija
-właściciela i obecnych uczestników. Zapis ponownie sprawdza bieżące członkostwo
-Workspace, uprawnienia i odbiorcę pod blokadą transakcyjną. Dotychczasowy
-adres `members/` zachowuje zgodność; aktualne UI korzysta z tabeli i osobnych
-kompaktowych okien udostępniania i roli.
+`space_team.py` udostępnia odczyt tabeli i atomowy zapis całego szkicu przez
+`action=save` pod `space/<slug>/team/`, także w scoped Workspace i przez
+JSON API stron. Widoczność, osoby i role są zapisywane po kliknięciu „Zapisz”
+w sekcji „Udostępnienia”; „Anuluj” odrzuca szkic. Rewizja hashuje aktualny
+stan dostępu bez nowego pola modelu. Nieaktualny szkic zwraca 409, a błędna
+pozycja nie zapisuje żadnej części listy. Publiczna widoczność czyści
+indywidualne członkostwa. Zmiana na prywatną ustawia wykonującego jako
+`private_owner`, zgodnie z istniejącym formularzem głównym.
+Właściciel nadaje wszystkie trzy role; administrator zarządza członkami
+i obserwatorami, bez nadawania roli administratora ani operacji na innych
+administratorach. Wyszukiwanie `team/candidates/` domyślnie pomija właściciela
+i obecnych uczestników; `draft=1` dopuszcza obecnych uczestników, aby przywracać
+ich po usunięciu ze szkicu, oraz przygotowanie prywatnego dostępu przed
+zapisem publicznej Przestrzeni. Zapis ponownie sprawdza bieżące członkostwo
+Workspace, uprawnienia i odbiorców pod blokadą transakcyjną; zachowuje
+czyszczenie udostępnień zadań przy odebraniu dostępu.
+Starsze akcje `share`/`role`/`remove` i adres `members/` zachowują zgodność.
+Aktualne UI współdzieli edytor i pięciokolumnową tabelę z Pulpitami.
 Prywatnym zadaniem zarządza jego właściciel lub administrator zadania;
 tylko właściciel zmienia widoczność i role administratorów. Kandydaci muszą
 mieć bieżący dostęp do przestrzeni i wszystkich rodziców. Zmiana zadania

@@ -175,7 +175,7 @@ w `spaces.css`. Na wąskim ekranie zakres i przyciski mogą przejść do dwóch
 wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami,
 Zespoły oraz katalog/wyniki Filtrów.
 Podsumowanie, oś czasu, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
-Tagi przestrzeni zachowują osobny mechanizm `directory_pagination_toolbar.html`.
+Tagi przestrzeni korzystają z paska „Pokaż więcej” pod tabelą.
 
 Tablica Przestrzeni nie pokazuje dolnego paska z zakresem i numerami stron,
 również w pierwszym renderze Django. Wczytuje wszystkie dostępne zadania
@@ -458,27 +458,53 @@ Na desktopie wejście do ustawień rozwija menu sekcji niezależnie od zapisanej
 preferencji zwykłego menu. Ręczne zwinięcie obowiązuje tylko podczas tej
 wizyty; powrót przywraca preferencję Workspace. Mobilne menu zachowuje
 dotychczasowy przycisk otwierania i zamykanie po wyborze sekcji.
-Tabela „Udostępnienia” zachowuje
-pełną dostępną szerokość strony. „Typy zgłoszeń” używają tego samego wzorca
-tabeli: jeden nagłówek kolumn
-z ikonami, zwarte wiersze i wspólne separatory, bez otaczających kart.
-Wariant `work-configuration-sheet` korzysta z siatki i ról tabeli wzorca
-„Udostępnienia”. Komórki pokazują ikonę, klucz, nazwę i opis typu zgłoszenia.
+Tabela „Udostępnienia” korzysta z tego samego `shared/AccessEditor` co Pulpity.
+Ma po bokach `--app-page-padding-x`, pięć kolumn bez menu wiersza oraz
+pasek widoczności i akcji nad tabelą. „Zmień rolę”, „Odbierz dostęp” i
+„Udostępnij” znajdują się po lewej; „Zapisz” i „Anuluj” po prawej.
+Nie ma licznika członków ani dolnej stopki. Wspólne klasy `access-editor`,
+`member-access-toolbar` i `member-access-save-actions` w `workplace-team.css`
+zachowują odstępy, zawijanie i wyłączone kontrolki wzorca Pulpitów.
+Wariant `space-settings-table-body` oddaje tabeli pozostałą wysokość oraz
+przewijanie w obu kierunkach. Pierwszy render Django zachowuje ten sam układ,
+a rozwijany formularz zgodności pozwala nadal korzystać ze starszych operacji.
+„Typy zgłoszeń” zachowują ten sam układ co „Udostępnienia”: wspólny pasek
+działań, tabelę odsuniętą od boków o `--app-page-padding-x` i brak dolnej
+stopki. Wariant `work-configuration-sheet--toolbar` korzysta z siatki i ról
+tabeli wzorca „Udostępnienia”. Ma checkboxy oraz kolumny klucza,
+nazwy i opisu typu zgłoszenia, bez osobnej kolumny menu wiersza.
+Ikona znajduje się po lewej stronie nazwy w tej samej komórce
+`tasks-directory-name`, z odstępem 8px jak na liście Przestrzeni.
 Ikona używa wspólnego `tasks-issue-type`, z tymi samymi symbolami i kolorami
-co zadania. Formularz ma standardowy select z podglądem ikon lokalnego zestawu
-oraz opcjonalny opis; wybór „Domyślna dla typu” przywraca symbol według klucza.
+co zadania. Formularze dodawania i edycji typu mają strukturę ustawień
+Przestrzeni: po lewej podgląd ikony 100px i „Zmień”, po prawej nazwa u góry,
+opis na całą szerokość oraz klucz poniżej. Wariant `work-type-form` korzysta
+z `app-form-avatar-layout`, `app-form-heading` i `app-form-description`;
+opis ma minimum 128px, a na telefonie pola przechodzą pod ikonę.
+„Zmień” otwiera wspólny `Dropdown` z 24 kolorowymi ikonami lokalnego zestawu.
+Picker wykorzystuje klasy `emoji-picker` ze wzorca Pulpitów: wyszukiwarkę,
+opcję domyślną, siatkę ośmiu kolumn i dolny podgląd wybranego symbolu.
+Wyszukiwanie ignoruje wielkość liter i polskie znaki, pokazuje licznik wyników
+oraz stan pusty; samo wpisywanie nie oznacza zmiany formularza.
+Strzałki poruszają się po siatce, Enter wybiera, a Escape zamyka picker
+i przywraca fokus przycisku „Zmień”. Szerokość 400px dopasowuje się do telefonu.
+Wybór „Domyślna dla typu” przywraca symbol według klucza i aktualizuje podgląd
+podczas jego wpisywania. Własna ikona pozostaje niezależna od zmiany klucza.
+Pierwszy render Django zachowuje układ; „Zmień” rozwija natywne pole ikony.
 Kolumna opisu wykorzystuje pozostałą szerokość, a pełny tekst jest dostępny
 w podpowiedzi i edycji. Brak opisu jest oznaczony „—”.
-Nad tabelą jest tylko przycisk „Dodaj typ”, wyrównany do prawej.
-Opis konfiguracji oraz licznik typów nie są wyświetlane. Nazwa i menu wiersza
-„Edytuj” otwierają standardowy `Modal`; „Usuń” otwiera potwierdzenie.
-W React checkboxy służą wyłącznie zaznaczaniu wierszy. Pusta grupa pokazuje
-komunikat i przycisk dodawania, bez dodatkowego wiersza formularza.
-Tabela wypełnia panel, a na małych ekranach przewija się poziomo we własnym
-kontenerze. Błędy i szkic pozostają w oknie edycji; wspólna powłoka zachowuje
-fokus, Escape, blokadę podczas zapisu i potwierdzenie odrzucenia zmian.
-Pierwszy render Django również pokazuje wartości i otwiera formularz wybranej
-pozycji nad tabelą. Wariant wysokości opisu głównych ustawień korzysta ze
+Na pasku po lewej są „Edytuj”, „Usuń” i „Dodaj typ”, a po prawej „Zapisz”
+i „Anuluj”, z klasami `member-access-toolbar` i `member-access-save-actions`.
+„Edytuj” wymaga dokładnie jednego zaznaczenia; „Usuń” obejmuje wszystkie
+zaznaczone pozycje. Nazwa typu również otwiera standardowy `Modal`.
+Checkboxy, Ctrl/Cmd+A i Escape obsługują zaznaczenie. Opis konfiguracji
+oraz licznik typów nie są wyświetlane. Pusta grupa pokazuje komunikat,
+zachowując pasek działań. Tabela przewija się we własnym kontenerze, także
+poziomo na małych ekranach; pasek pozostaje poza przewijaną treścią.
+Pierwszy render Django ma ten sam układ. Link nazwy i „Dodaj typ” zachowują
+natywne formularze, a rozwijana sekcja zgodności udostępnia usuwanie bez Reacta.
+Wspólna powłoka okna zachowuje fokus, Escape, blokadę podczas zapisu
+i potwierdzenie odrzucenia zmian. Wariant wysokości opisu głównych ustawień korzysta ze
 wspólnego `--app-form-textarea-min-height`, ustawionego wyłącznie wewnątrz
 strony ustawień przestrzeni.
 
@@ -493,14 +519,18 @@ awatara. `space-settings-panel` jest elastycznym kontenerem istniejącej
 treści i stopki; ukrycie głównych ustawień zachowuje ich formularz i szkic.
 Nagłówek i stopka pozostają poza przewijaną treścią. „Zapisz” głównych ustawień
 pozostawia stronę otwartą i aktualizuje nazwę w nagłówku i tytule dokumentu.
-W sekcji typów „Zapisz” w oknie od razu utrwala wybraną pozycję
-i odświeża tabelę. Żądanie zachowuje zapisane wartości pozostałych pozycji
-oraz przekazuje pełne formsety, w tym statusy i pola dodatkowe, wraz ze wspólną
-rewizją do dotychczasowej walidacji Django. Usunięcie działa tak samo po
-potwierdzeniu. Strona listy ma w stopce
-„Zamknij”, bez wspólnego przycisku zapisu konfiguracji. Nawigacja i przeładowanie
-chronią szkic głównych ustawień, a `Modal` chroni szkic otwartego okna.
-„Anuluj”/„Zamknij” strony zachowuje kontekst powrotu
+W sekcji typów „Dodaj” lub „Zastosuj” w oknie zmieniają lokalny szkic,
+podobnie jak „Usuń” na pasku. Dopiero „Zapisz” całej sekcji utrwala zmiany
+jednym żądaniem. „Anuluj” odtwarza zapisany stan, pozostając w sekcji.
+Żądanie przekazuje pełne formsety, w tym nienaruszone statusy i pola dodatkowe,
+wraz ze wspólną rewizją do dotychczasowej walidacji Django. Błąd zachowuje szkic;
+błędne pola otwierają edytor z fokusem, a konflikt wymaga odświeżenia przez
+„Anuluj”. Po zapisaniu i błędzie odczytu ponowienie tylko pobiera dane.
+Nawigacja i przeładowanie chronią szkic głównych ustawień i typów,
+a `Modal` chroni szkic otwartego okna.
+Zmiana widoczności w ustawieniach i udostępnieniach wymaga wcześniejszego
+zapisania lub anulowania szkicu typów, aby zmiana uprawnień go nie usunęła.
+„Anuluj” głównego formularza zachowuje kontekst powrotu
 formularza, np. katalog; domyślnie, podobnie jak strzałka w nagłówku, prowadzi
 do przestrzeni. Zmiana sekcji aktualizuje adres `?view=settings#<sekcja>`
 (`main`, `members`, `types`) oraz historię Wstecz/Dalej
@@ -526,19 +556,21 @@ menu wyróżniają sam przycisk neutralnym `--system-interaction-soft`.
 Reguła obejmuje listę, backlog i karty tablicy w React oraz pierwszym renderze
 Django; rozmiar i obszar kliknięcia pozostają bez zmian.
 
-Zakładka „Udostępnienia” używa wspólnego Reactowego `shared/Members`: zaznaczanie,
-menu działań, awatar i nazwa, e-mail, rola i data. Model członkostwa Przestrzeni
-nie zapisuje daty dołączenia; brak tej daty jest pokazany jako „—”. Właściciel
-ma własny, chroniony wiersz. „Udostępnij” otwiera `shared/SharingDialog`,
-z istniejącym pickerem Workspace w trybie udostępniania i wyborem roli.
-Wyszukiwanie obejmuje aktywnych członków Workspace bez dostępu do Przestrzeni,
-po imieniu, nazwisku, ID konta i e-mailu. Obsługuje klawiaturę, stan pusty,
-błąd i ochronę przed spóźnioną odpowiedzią. Zmiana roli ma osobne kompaktowe
-okno; odebranie dostępu wymaga potwierdzenia. Zapis odświeża tabelę bez utraty
-szkicu pozostałych zakładek. Publiczna Przestrzeń pokazuje osoby z Workspace
-i informację o dziedziczeniu, bez przycisku udostępniania. Okna zachowują wspólny
-fokus, Escape, `inert` oraz ochronę niezapisanych zmian. Style tabeli i pickera
-pochodzą z istniejącego `workplace-team.css`.
+Zakładka „Udostępnienia” używa `shared/Members` z kontrolowanym zaznaczeniem
+wszystkich wierszy, Ctrl/Cmd+A i Escape. Akcje obejmują tylko `can_change`,
+więc właściciel i chronieni administratorzy pozostają bez edycji. Model
+członkostwa Przestrzeni nie zapisuje daty dołączenia; brak daty pokazuje „—”.
+`SharingDialog` obsługuje picker Workspace i zbiorczą zmianę roli. „Dodaj”
+i „Zastosuj” zmieniają szkic; dopiero „Zapisz” całej sekcji utrwala widoczność,
+role i osoby. „Odbierz dostęp” usuwa zaznaczonych ze szkicu, a „Anuluj”
+odtwarza zapisany stan. Błąd zachowuje szkic, konflikt wymaga wczytania
+aktualnej wersji przez „Anuluj”. Nawigacja chroni niezapisane zmiany.
+Wyszukiwanie `draft=1` obejmuje aktywnych członków Workspace, także osoby
+usunięte ze szkicu; dodanie obecnej osoby pokazuje błąd. Publiczna Przestrzeń
+pokazuje „Dostęp z Workspace” i wyłącza indywidualne akcje. Zmiana na prywatną
+przygotowuje wiersz nowego właściciela według reguł Przestrzeni.
+Okna zachowują wspólny fokus, Escape, `inert` i ochronę szkicu; style tabeli
+i pickera pochodzą z `workplace-team.css`.
 
 Pasek zadań Listy, Tablicy, Backlogu i Osi czasu ma dwa menu:
 „Sortowanie” i „Filtrowanie”. Lista, Tablica i Backlog nie mają osobnego pola wyszukiwania zadań; Oś czasu dodaje wyszukiwanie opisane poniżej.
@@ -826,12 +858,22 @@ powiększenie i animacje ruchu; pozostawia czytelny podgląd i obrys celu.
 Zakładka „Tagi” zachowuje nagłówek i nawigację otwartej przestrzeni.
 `spaces/tags.html` korzysta ze wspólnych include'ów `tag_directory`,
 `tag_sort`, `tag_filters`, `tag_modal` i `tag_notes_modal`. Przycisk „Dodaj tag”,
-menu wiersza, informacje, notatki, wybór kolumn i operacje zbiorcze obsługuje
-`frontend/app/src/tags`, z tymi samymi klasami CSS i powłoką modali.
+edycję, informacje, notatki i wybór kolumn obsługuje `frontend/app/src/tags`,
+z tymi samymi klasami CSS i powłoką modali. Tagi nie pokazują menu „…”
+w nagłówku ani kolumny menu wiersza z trzema kreskami. Opcjonalne kolumny
+„Edytuj”, „Informacje” i „Notatki” pozostają w menedżerze kolumn tabeli.
 `tasks.js` zachowuje obsługę szablonów zgodności i pomija korzeń Reacta.
 Inicjalizacja działa również po `ancore:content-loaded`. Obserwator widzi
 informacje i notatki bez przycisków zapisu; modal edycji jest niedostępny.
-Tabela dochodzi do krawędzi kontenera jak lista zadań. Kontener tabeli tagów
+Katalog wczytuje po 20 tagów. Pod wierszami jest wspólny pasek `work-list-more`
+„Pokaż więcej (20 / 45)”, ze stanami „Wczytywanie…” i „Wszystkie tagi (45 / 45)”.
+Lista mieszcząca się w pierwszych 20 wierszach nie pokazuje paska.
+Przycisk pozostaje w szerokości widocznej tabeli również przy poziomym
+przewijaniu na telefonie. Błąd pozwala ponowić odczyt bez utraty wierszy,
+a sukces zachowuje zaznaczenia i przewinięcie. Wyszukiwanie, filtry i sortowanie
+resetują zakres do 20. Toolbar nie ma strzałek stron ani wyboru „/ stronę”.
+Pierwszy render Django zachowuje ten sam pasek jako zwykły link.
+Tabela ma po bokach odstęp `--app-page-padding-x` (15px), jak Udostępnienia. Kontener tabeli tagów
 wypełnia pozostałą wysokość panelu i obsługuje przewijanie w obu kierunkach.
 Poziomy pasek jest przy dolnej krawędzi panelu także przy krótkiej liście;
 nagłówek przestrzeni i pasek filtrów pozostają poza przewijaną treścią.
@@ -897,8 +939,8 @@ Tytuł „Przestrzenie” w katalogu również ma rozmiar 17px i grubość 700.
 Nagłówek otwartej przestrzeni, pasek zakładek i treść podsumowania mają po 15px
 odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
 `--work-space-inline-padding` obejmuje też katalog Przestrzeni: jego nagłówek,
-zakładki i filtry. Tabele katalogu oraz zarządzania w `work-content--directory`
-dochodzą do obu krawędzi kontenera, jak tabele Workspace i Projektów, również
+zakładki i filtry. Tabele katalogów w `work-content--directory`
+mają po bokach odstęp 15px, jak Udostępnienia, również
 na telefonie. Lista zadań i tablica wewnątrz przestrzeni nadal korzystają
 z pełnej szerokości; katalog Zespołów używa wspólnego odstępu 15px.
 Awatar ma 32px w nagłówku, 24px w katalogu, 20px w codziennym menu bocznym
@@ -1094,8 +1136,12 @@ przestrzeni i szczegółach zadania. Ikony typu mają wspólne kolory w opcjach,
 wybranej wartości, filtrze, wierszach, kartach i podsumowaniu: Zadanie — niebieski,
 Błąd — czerwony, Historyjka — zielony, Epik — fioletowy. Materiał i Zgłoszenie
 używają niebieskiego, Incydent czerwonego, Kandydatura fioletowego, a Kampania
-i Rozmowa bursztynowego. Barwy pochodzą z obecnych statusów, priorytetów i akcentów;
-nieznany typ zachowuje neutralną ikonę. Nazwy i tła kontrolek pozostają standardowe,
+i Rozmowa bursztynowego. Wszystkie 24 symbole katalogu mają kolor z tej samej
+palety: Usprawnienie, Wydarzenie, Raport i Konfiguracja — niebieski; Cel — czerwony;
+Wdrożenie, Bezpieczeństwo i Lista kontrolna — zielony; Kształty, Eksperyment
+i Projekt graficzny — fioletowy; Pomysł, Kamień milowy i Sprawa — bursztynowy.
+Barwy pochodzą z obecnych statusów, priorytetów i akcentów;
+nieznany typ używa fioletowych Kształtów. Nazwy i tła kontrolek pozostają standardowe,
 a kolory dotyczą tylko ikon w komponentach typu zgłoszenia.
 Toolbar zawiera filtr „Typ zgłoszenia”;
 dotychczasowe pole biznesowe w szczegółach ma etykietę „Kategoria zadania”.
@@ -1392,8 +1438,9 @@ Pulpitów, Dla ciebie, Ustawień i siatek Dysku/Dokumentów. Zmienne modułów
 `--work-space-inline-padding`, `--dashboard-inline-padding` i
 `--documents-index-padding-x` odwołują się do tego tokenu. Reguła obowiązuje
 także na telefonie; nagłówki rezerwują dodatkowe miejsce na przycisk menu.
-Tabele i tablice o pełnej szerokości oraz wewnętrzne odstępy kart, modali
-i szczegółów zadania zachowują własną geometrię.
+Tabele katalogów korzystają z tego samego odstępu, jak Udostępnienia.
+Tablice oraz wewnętrzne odstępy kart, modali i szczegółów zadania zachowują
+własną geometrię.
 
 „Dla ciebie” jest osobną pozycją nad Dashboardem, z ikoną `user-round-check`
 i obsługą ulubionych menu. Widok rozszerza `core/base.html` i komponenty
@@ -1856,6 +1903,20 @@ Ważne wyjątki:
 Referencje pokazują bieżące wzorce kodu, a nie polecenie skopiowania całych
 ekranów. Szablony mają wymagany kontekst i kontrakt z JS. Przy użyciu include'a
 sprawdź wszystkie jego zmienne oraz miejsca wywołania.
+
+### Tabele katalogów według Udostępnień
+
+Pełne listy Przestrzeni, Pulpitów, Filtrów, Tagów, Zasobów, Workspace,
+Dysków i Dokumentów oraz lista plików na Dysku zachowują wspólny boczny
+odstęp `--app-page-padding-x` (15px), jak tabela Udostępnień. Pasek filtrów
+tych katalogów nie dodaje dolnej linii nad nagłówkiem tabeli.
+Wspólne reguły w `components/tasks.css` obejmują React i pierwszy render Django.
+Kontener ma szerokość automatyczną uwzględniającą oba marginesy, bez dodatkowego
+paddingu; szeroka tabela przewija się wewnątrz niego również na telefonie.
+Kolumny, zaznaczanie, menu działań, zmiana szerokości i paginacja zachowują
+dotychczasowe mechanizmy. Udostępnienia i Typy zgłoszeń mają już ten sam
+układ. Tabele osadzone w modalach, dziennik pracy i skrót „Dla ciebie”
+korzystają z odstępów własnego rodzica, bez dodawania kolejnego marginesu.
 
 ### Ikony notatek
 
@@ -3275,7 +3336,7 @@ oraz tabeli Przestrzeni w powłoce `work-page`:
 tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet`.
 Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
 kolumny zaznaczenia, menu, nazwy, twórcy, widoczności, liczby gadżetów i opisu
-oraz ikonę pulpitu 24px. Tabela dochodzi do krawędzi kontenera i zachowuje
+oraz ikonę pulpitu 24px. Tabela ma po bokach 15px odstępu i zachowuje
 wspólne wysokości wierszy, separatory, podświetlenia oraz przewijanie.
 Nagłówek oraz toolbar mają 15px odstępu. Katalog nie ma zakładek
 Wszystkie, Ulubione i Moje; pokazuje wszystkie dostępne pulpity.
@@ -3431,11 +3492,45 @@ Szablony Django również pokazują pełną stronę i zachowują formularze POST
 odświeżanie i widoczność („Prywatny — wybrane osoby” albo „Cały Workspace”).
 „Udostępnienia” używają tych samych `shared/Members`, `shared/SharingDialog`
 i pickera osób Workspace co Przestrzenie: tabela z chronionym wierszem twórcy,
-przycisk „Udostępnij”, wyszukiwanie osoby oraz potwierdzane odebranie dostępu.
-Operacje zapisują się od razu i zachowują szkic ustawień. Udostępnienie i „Zmień rolę”
+przycisk „Udostępnij”, wyszukiwanie osoby oraz szkic zmian dostępu.
+Tabela ma po bokach odstępy `--app-page-padding-x` (15 px), wyrównane do
+nagłówka i paska przycisków, oraz wypełnia pozostałą wysokość panelu.
+Wspólny `space-settings-table-body` zapewnia własne przewijanie tabeli,
+a zwarty pasek `tasks-filterbar--directory` zawiera po lewej „Widoczność:
+Publiczna/Prywatna”, „Zmień rolę”, „Odbierz dostęp” i „Udostępnij”, a po prawej
+„Zapisz” i „Anuluj”, we wspólnej grupie `member-access-save-actions`.
+Wariant `member-access-toolbar` zawija kontrolki na wąskim ekranie i nie ma
+dolnej linii oddzielającej przyciski od nagłówka tabeli. Tabela
+`workplace-members-sheet--toolbar` pomija kolumnę i menu trzech pasków;
+checkboxy pozwalają zaznaczyć każdy wiersz, także właściciela i nagłówek
+na liście zawierającej wyłącznie właściciela. Sam wybór nie zmienia uprawnień.
+Przyciski roli i odebrania dostępu są wyłączone bez zaznaczenia edytowalnej
+osoby. Przy mieszanym zaznaczeniu operują wyłącznie na dozwolonych osobach.
+Wyłączone przyciski mają krycie 55%, kursor niedostępnej akcji i nie zmieniają
+tła ani ramki po najechaniu. Zaznaczenie edytowalnej osoby przywraca zwykły
+wygląd oraz działanie; wariant dotyczy akcji w paskach dostępu Pulpitów i Przestrzeni.
+Właściciel, dostęp odziedziczony i niedozwolone dla administratora wiersze
+pozostają chronione przy wykonywaniu akcji.
+Publiczna widoczność oznacza cały Workspace; prywatna — wybrane osoby.
+Widoczność, role, dodawanie i odbieranie dostępu tworzą wspólny szkic.
+„Zapisz” zatwierdza go w jednej operacji; „Anuluj” przywraca zapisany stan
+i usuwa zaznaczenie. Modal roli używa „Zastosuj”, a udostępnienia „Dodaj”;
+oba wyjaśniają, że zmiany czekają na główny zapis. Odebranie dostępu usuwa
+wiersz ze szkicu; można je cofnąć przed zapisem. Nie ma dolnej stopki „Zamknij”.
+Wyjście chroni potwierdzenie niezapisanych zmian, a błędy zachowują szkic.
+Pod paskiem nie ma komunikatu o niezapisanych zmianach, opisu dostępu całego
+Workspace ani potwierdzenia zapisu, anulowania lub ponownego wczytania dostępu.
+Stan szkicu wskazują przyciski zapisu i anulowania; komunikaty błędów pozostają widoczne.
+Konflikt z innym zapisem wymaga „Anuluj”, które odrzuca szkic i pobiera aktualny dostęp.
+Przy szkicu ustawień kontrolka widoczności wymaga najpierw zapisania
+ustawień, a wskazówka wyjaśnia blokadę. Po zapisaniu zmiany widoczności czysty
+formularz ustawień pobiera aktualne dane przy kolejnym wejściu.
+Układ obejmuje React i pierwszy render Django (przyciski aktywuje React);
+formularz zgodności pod tabelą zachowuje własny przewijany obszar.
+Szkic dostępu zachowuje się podczas zmiany sekcji. Udostępnienie i „Zmień rolę”
 używają ról „Administrator”, „Członek” i „Obserwator”, z domyślnym członkiem.
 Właściciel wybiera wszystkie role; administrator tylko członka i obserwatora,
-bez menu działań na innych administratorach i właścicielu. Ustawienia są dostępne
+bez możliwości zmiany innych administratorów i właściciela. Ustawienia są dostępne
 właścicielowi i administratorowi; pole widoczności jest wyłączone dla administratora.
 Gadżety i układ edytuje również członek, a obserwator ma tylko odczyt.
 Usunięcie Pulpitu jest dostępne wyłącznie właścicielowi. Daty nowych udostępnień
