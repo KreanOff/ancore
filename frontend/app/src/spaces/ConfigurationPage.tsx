@@ -4,6 +4,7 @@ import { FieldControl, type FormSchema } from '../forms/FormDialog';
 import { Modal } from '../shared/Modal';
 import SettingsPage from './SettingsPage';
 import ConfigurationTable from './ConfigurationTable';
+import WorkflowBoard from './WorkflowBoard';
 import TypeFields from './TypeFields';
 import {
   configurationEditorSchema,
@@ -325,27 +326,43 @@ export function ConfigurationForm({
             aria-label={group.title}
             data-configuration-section={group.key}
           >
-            <ConfigurationTable
-              key={group.key}
-              group={group}
-              pending={blocked}
-              onAdd={add}
-              onEdit={(index) => open({ section, index })}
-              onRemove={remove}
-              onMove={
-                section === 'statuses'
-                  ? (index, direction) =>
-                      setData(configurationMove(data, section, index, direction))
-                  : undefined
-              }
-              actions={{
-                dirty,
-                saveDisabled: conflict,
-                cancelDisabled: blocked,
-                onSave: () => void save(),
-                onCancel: () => void cancel(),
-              }}
-            />
+            {section === 'statuses' ? (
+              <WorkflowBoard
+                data={data}
+                group={group}
+                pending={blocked}
+                onChange={setData}
+                onAdd={add}
+                onEdit={(index) => open({ section, index })}
+                onRemove={remove}
+                onMove={(index, direction) =>
+                  setData(configurationMove(data, section, index, direction))
+                }
+                actions={{
+                  dirty,
+                  saveDisabled: conflict,
+                  cancelDisabled: blocked,
+                  onSave: () => void save(),
+                  onCancel: () => void cancel(),
+                }}
+              />
+            ) : (
+              <ConfigurationTable
+                key={group.key}
+                group={group}
+                pending={blocked}
+                onAdd={add}
+                onEdit={(index) => open({ section, index })}
+                onRemove={remove}
+                actions={{
+                  dirty,
+                  saveDisabled: conflict,
+                  cancelDisabled: blocked,
+                  onSave: () => void save(),
+                  onCancel: () => void cancel(),
+                }}
+              />
+            )}
           </section>
         ) : null}
       </div>

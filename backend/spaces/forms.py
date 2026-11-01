@@ -400,6 +400,10 @@ class StatusForm(StyledForm):
     policy = forms.CharField(label='Zasady wejścia i wyjścia', required=False, max_length=1000,
                              widget=forms.Textarea(attrs={'rows': 3}))
     transitions = forms.MultipleChoiceField(label='Dozwolone przejścia', required=False)
+    position_x = forms.IntegerField(label='Położenie poziome etapu', required=False, min_value=0, max_value=20000,
+                                    widget=forms.HiddenInput)
+    position_y = forms.IntegerField(label='Położenie pionowe etapu', required=False, min_value=0, max_value=20000,
+                                    widget=forms.HiddenInput)
 
     def __init__(self, *args, statuses, **kwargs):
         super().__init__(*args, **kwargs)
@@ -407,6 +411,8 @@ class StatusForm(StyledForm):
         self.fields['transitions'].choices = [(s['key'], s['label']) for s in statuses]
         if self.initial:
             self.initial.setdefault('flow_stage', status_flow_stage(self.initial))
+            position = self.initial.get('position') or {}
+            self.initial.update(position_x=position.get('x'), position_y=position.get('y'))
         if self.is_bound:
             # Full formset submissions from older clients must retain metadata.
             self.data = self.data.copy()
@@ -416,6 +422,10 @@ class StatusForm(StyledForm):
                 if self.add_prefix(name) not in self.data:
                     fallback = status_flow_stage({'category': self.data.get(self.add_prefix('category')), **saved}) if name == 'flow_stage' else ''
                     self.data[self.add_prefix(name)] = saved.get(name, fallback) or ''
+            for axis in ('x', 'y'):
+                name = self.add_prefix('position_' + axis)
+                if name not in self.data:
+                    self.data[name] = (saved.get('position') or {}).get(axis, '')
 
     def clean(self):
         data = super().clean()
@@ -424,6 +434,11 @@ class StatusForm(StyledForm):
             self.add_error('flow_stage', 'Etap „Zakończone” wymaga stanu „Zamknięte”, a pozostałe stany wymagają kolejki lub pracy w toku.')
         if data.get('wip_limit') is not None and stage != 'active':
             self.add_error('wip_limit', 'Limit WIP można ustawić wyłącznie dla pracy w toku.')
+        x, y = data.pop('position_x', None), data.pop('position_y', None)
+        if (x is None) != (y is None):
+            self.add_error(None, 'Położenie etapu wymaga obu współrzędnych tablicy.')
+        elif x is not None:
+            data['position'] = {'x': x, 'y': y}
         return data
 
 

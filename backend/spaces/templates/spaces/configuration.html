@@ -17,6 +17,19 @@
                 <button type="button" class="tasks-filter-button" disabled>Anuluj</button>
             </div>
         </div>
+        {% if group.key == 'statuses' %}
+        <div class="work-flow-editor work-flow-native" role="region" aria-label="Proces pracy — etapy">
+            <p class="workplace-team__hint">Etapy i dozwolone przejścia procesu pracy. Otwórz etap, aby zmienić jego ustawienia.</p>
+            <div class="work-flow-native-nodes">
+            {% for row in group.rows %}
+                <article class="work-flow-native-node">
+                    <a href="{{ row.edit_url }}" class="work-configuration-name">{{ row.label }}</a>
+                    {% for cell in row.cells %}{% if cell.key == 'transitions' %}<p><i data-icon="arrow-right" aria-hidden="true"></i>Dalej: {{ cell.value }}</p>{% elif cell.key == 'flow_stage' %}<p>{{ cell.value }}</p>{% endif %}{% endfor %}
+                </article>
+            {% empty %}<p>Brak etapów procesu.</p>{% endfor %}
+            </div>
+        </div>
+        {% else %}
         <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable work-configuration-sheet work-configuration-sheet--{{ group.key }} work-configuration-sheet--toolbar" role="region" aria-label="{{ group.title }} — tabela" tabindex="0">
             <section class="tasks-directory-group" role="table" aria-label="{{ group.title }}">
                 <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
@@ -33,6 +46,7 @@
                 </div>
             </section>
         </div>
+        {% endif %}
         {% if group.rows %}
         <details class="space-settings-table-fallback">
             <summary class="btn btn-secondary">{{ group.remove_label }}</summary>

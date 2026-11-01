@@ -326,7 +326,13 @@ class SpaceSettingsFrontendTests(TestCase):
                         self.assertNotContains(response, f'name="{key}-TOTAL_FORMS"')
                         if key != section:
                             self.assertNotContains(response, f'data-configuration-section="{key}"')
-                    self.assertContains(response, 'role="table"')
+                    if section == 'statuses':
+                        self.assertContains(response, 'aria-label="Proces pracy — etapy"')
+                        self.assertContains(response, 'work-flow-native-node')
+                        self.assertContains(response, 'Dalej:')
+                        self.assertNotContains(response, 'role="table"')
+                    else:
+                        self.assertContains(response, 'role="table"')
                     self.assertNotContains(response, 'Zapisz konfigurację')
 
     def test_native_configuration_error_keeps_removed_sections_closed(self):

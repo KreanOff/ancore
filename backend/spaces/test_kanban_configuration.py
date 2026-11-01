@@ -56,6 +56,55 @@ class KanbanConfigurationTests(TestCase):
             with self.subTest(template=template):
                 self.assertEqual({row['key']: row['transitions'] for row in template_settings(template)['statuses']}, expected)
 
+    def test_board_positions_round_trip_and_hidden_fields_are_not_table_columns(self):
+        payload = self.payload()
+        payload.update({'statuses-1-position_x': '320', 'statuses-1-position_y': '0'})
+        self.assertEqual(self.client.post(self.url, payload).status_code, 302)
+        self.space.configuration.refresh_from_db()
+        row = self.space.configuration.settings['statuses'][1]
+        self.assertEqual(row['position'], {'x': 320, 'y': 0})
+        self.assertNotIn('position_x', row)
+        data = self.client.get(self.api, {'url': self.url}).json()['data']
+        group = next(group for group in data['sets'] if group['key'] == 'statuses')
+        fields = {field['field_name']: field for field in group['forms'][1]['fields']}
+        headers = next(group for group in self.client.get(self.url).context['sets'] if group['key'] == 'statuses')['headers']
+        for name, value in [('position_x', 320), ('position_y', 0)]:
+            self.assertEqual(fields[name]['value'], str(value))
+            self.assertTrue(fields[name]['hidden'])
+            self.assertNotIn(name, [header['key'] for header in headers])
+
+    def test_old_clients_preserve_board_positions_and_existing_transitions(self):
+        config = self.space.configuration
+        config.settings['statuses'][0].update(position={'x': 0, 'y': 200}, transitions=['closed', 'in_progress'])
+        config.save(update_fields=['settings'])
+        before = deepcopy(config.settings['statuses'])
+        payload = {name: value for name, value in self.payload().items()
+                   if not name.endswith(('-position_x', '-position_y'))}
+        payload.update(configuration_section='types', **{'types-0-label': 'Praca'})
+        self.assertEqual(self.client.post(self.url, payload).status_code, 302)
+        config.refresh_from_db()
+        self.assertEqual(config.settings['statuses'], before)
+
+    def test_invalid_board_positions_reject_whole_snapshot(self):
+        before = deepcopy(self.space.configuration.settings)
+        for x, y in [('-1', '0'), ('20001', '0'), ('5.5', '0'), ('0', ''), ('', '20')]:
+            with self.subTest(x=x, y=y):
+                payload = self.payload()
+                payload.update({'statuses-1-position_x': x, 'statuses-1-position_y': y})
+                self.assertEqual(self.client.post(self.url, payload).status_code, 400)
+                self.space.configuration.refresh_from_db()
+                self.assertEqual(self.space.configuration.settings, before)
+
+    def test_position_write_retains_revision_conflict_protection(self):
+        stale = self.payload()
+        latest = self.payload()
+        latest.update({'statuses-0-position_x': '40', 'statuses-0-position_y': '80'})
+        self.assertEqual(self.client.post(self.url, latest).status_code, 302)
+        stale.update({'statuses-0-position_x': '120', 'statuses-0-position_y': '160'})
+        self.assertContains(self.client.post(self.url, stale), 'Konfiguracja zmieniła się', status_code=400)
+        self.space.configuration.refresh_from_db()
+        self.assertEqual(self.space.configuration.settings['statuses'][0]['position'], {'x': 40, 'y': 80})
+
     def test_three_stage_workflow_does_not_require_all_task_categories(self):
         payload = self.payload()
         payload.update({'statuses-2-DELETE': 'on', 'statuses-4-DELETE': 'on',
