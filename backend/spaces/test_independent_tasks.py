@@ -72,6 +72,8 @@ class IndependentTaskTests(TestCase):
 
 
     def test_save_status_completion_history_and_reopen(self):
+        for target in ('in_progress', 'resolved'):
+            self.assertEqual(self.client.post(self.task_url('?view=list'), self.data(status=target)).status_code, 302)
         response = self.client.post(self.task_url('?view=list'), self.data(status='closed'))
         self.assertEqual(response.status_code, 302)
         self.task.refresh_from_db()

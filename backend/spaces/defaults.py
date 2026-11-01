@@ -59,6 +59,10 @@ def template_settings(template='tasks'):
         'service': ['Nowe zgłoszenia', 'W obsłudze', 'Rozwiązane', 'Zamknięte', 'Ponownie otwarte'],
     }.get(template, ['Do zrobienia', 'W toku', 'Do sprawdzenia', 'Gotowe', 'Ponownie otwarte'])
     keys = ['new', 'in_progress', 'resolved', 'closed', 'reopened']
+    transitions = {
+        'new': ['in_progress'], 'in_progress': ['resolved'], 'resolved': ['closed'],
+        'closed': ['reopened'], 'reopened': ['in_progress'],
+    }
     types = deepcopy(ISSUE_TYPES)
     if template == 'marketing':
         types += [{'key': 'campaign', 'label': 'Kampania'}, {'key': 'content', 'label': 'Materiał'}]
@@ -72,7 +76,7 @@ def template_settings(template='tasks'):
     if template == 'marketing':
         fields = [{'key': 'channel', 'label': 'Kanał publikacji', 'type': 'text', 'required': False}]
     return deepcopy({'statuses': [
-        {'key': key, 'label': label, 'category': key, 'transitions': [other for other in keys if other != key],
+        {'key': key, 'label': label, 'category': key, 'transitions': transitions[key],
          'flow_stage': status_flow_stage({'category': key}), 'wip_limit': None, 'policy': ''}
         for key, label in zip(keys, labels)
     ], 'types': types, 'fields': fields})

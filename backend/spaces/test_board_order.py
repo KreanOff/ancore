@@ -84,7 +84,11 @@ class BoardOrderTests(TestCase):
         self.assertFalse(self.middle.in_backlog)
 
     def test_empty_target_close_reorder_and_reopen_keep_completion_rules(self):
+        for target in ('in_progress', 'resolved'):
+            self.assertEqual(self.move(self.first, status=target).status_code, 200)
         self.assertEqual(self.move(self.first, status='closed').status_code, 200)
+        for target in ('in_progress', 'resolved'):
+            self.assertEqual(self.move(self.last, status=target).status_code, 200)
         self.assertEqual(self.move(self.last, status='closed', after=self.first).status_code, 200)
         self.first.task.refresh_from_db()
         finished = self.first.task.completion_date
@@ -153,6 +157,10 @@ class BoardOrderTests(TestCase):
         self.assertEqual(self.move(self.last, before=self.middle, after=self.first, query=query).status_code, 400)
 
     def test_dense_and_duplicate_ranks_preserve_hidden_task(self):
+        # This custom process permits returning work to the queue.
+        config = self.space.configuration
+        config.settings['statuses'][1]['transitions'].append('new')
+        config.save(update_fields=['settings'])
         self.middle.task.visibility, self.middle.task.private_owner = 'private', self.owner
         self.middle.task.save(update_fields=['visibility', 'private_owner'])
         for ranks in ((0, 1, 2), (10, 10, 11)):

@@ -58,6 +58,11 @@ class SpaceWorkspaceRoleTests(TestCase):
             self.assertFalse(editable_to(SpaceTask.objects.all(), self.guest).exists())
 
     def test_owner_admin_and_member_can_write_with_a_guest_in_the_workspace(self):
+        # Exercise both write directions in an explicitly configured process.
+        for space in (self.public, self.private):
+            config = space.configuration
+            config.settings['statuses'][1]['transitions'].append('new')
+            config.save(update_fields=['settings'])
         for person in (self.owner, self.admin, self.member):
             client = self.client_for(person)
             for task in self.tasks:

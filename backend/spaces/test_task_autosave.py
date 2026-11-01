@@ -75,6 +75,8 @@ class TaskAutosaveTests(TestCase):
         self.assertEqual(self.task.description, '  Zachowany opis  ')
 
     def test_status_completion_reopen_and_noop_history(self):
+        for target in ('in_progress', 'resolved'):
+            self.assertEqual(self.save(['status'], status=target).status_code, 200)
         response = self.save(['status'], status='closed')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['task']['completion_date'])
@@ -87,7 +89,7 @@ class TaskAutosaveTests(TestCase):
         response = self.save(['status'], status='reopened')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['task']['completion_date'], '')
-        self.assertEqual(self.task.activities.filter(action='status_changed', actor=self.owner).count(), 2)
+        self.assertEqual(self.task.activities.filter(action='status_changed', actor=self.owner).count(), 4)
 
     @override_settings(TIME_ZONE='Europe/Warsaw')
     def test_schedule_controls_and_api_show_existing_dates_and_allow_empty_start(self):

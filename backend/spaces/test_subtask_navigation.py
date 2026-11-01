@@ -115,6 +115,11 @@ class SubtaskNavigationTests(TestCase):
         self.assertEqual(self.task.title, 'Praca w przestrzeni')
 
     def test_status_and_existing_autosave_write_child_only(self):
+        for target in ('in_progress', 'resolved'):
+            response = self.client.post(self.api() + '?' + urlencode({'url': self.child_url(suffix='action/')}), {
+                'action': 'status', 'status': target, 'return_view': 'list',
+            })
+            self.assertEqual(response.status_code, 200)
         response = self.client.post(self.api() + '?' + urlencode({'url': self.child_url(suffix='action/')}), {
             'action': 'status', 'status': 'closed', 'return_view': 'list',
         })
@@ -142,6 +147,8 @@ class SubtaskNavigationTests(TestCase):
         for field in fields.values():
             self.assertTrue(field['id'].startswith(f'subtask-{self.child.work_item.pk}-'), field)
         posted = {'title': 'Zamknięte podzadanie', 'priority': 'medium', 'work_type': 'task', 'status': 'closed'}
+        for target_status in ('in_progress', 'resolved'):
+            self.assertEqual(self.client.post(endpoint, {**posted, 'status': target_status}).status_code, 200)
         response = self.client.post(endpoint, posted)
         self.assertEqual(response.status_code, 200)
         self.child.refresh_from_db()

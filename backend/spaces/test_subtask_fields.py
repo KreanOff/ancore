@@ -91,7 +91,10 @@ class SubtaskFieldsTests(TestCase):
                                          {'none': 'none', 'medium': 'medium', 'high': 'high'})
                         statuses = {choice['value']: choice['status_category'] for choice in fields['status']['choices']}
                         self.assertEqual(statuses['new'], 'new')
-                        self.assertEqual(statuses['closed'], 'closed')
+                        if form_key == 'subtask_form':
+                            self.assertEqual(statuses['closed'], 'closed')
+                        else:
+                            self.assertEqual(statuses, {'new': 'new', 'in_progress': 'in_progress'})
                         assignees = {choice['value'] for choice in fields['assignee']['choices']}
                         self.assertIn(str(self.member.pk), assignees)
                         self.assertNotIn(str(self.outsider.pk), assignees)
@@ -216,6 +219,8 @@ class SubtaskFieldsTests(TestCase):
                 self.assertEqual((self.child.title, self.child.status), ('Podzadanie', 'new'))
                 self.assertFalse(self.child.is_completed)
                 self.assertFalse(self.child.activities.filter(action='status_changed').exists())
+        for target_status in ('in_progress', 'resolved'):
+            self.assertEqual(self.client.post(target, self.values(status=target_status)).status_code, 200)
         response = self.client.post(target, self.values(status='closed'))
         self.assertEqual(response.status_code, 200)
         self.child.refresh_from_db()

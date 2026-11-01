@@ -4,7 +4,7 @@ from copy import deepcopy
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
 
-from spaces.defaults import status_flow_stage
+from spaces.defaults import TEMPLATES, status_flow_stage, template_settings
 from spaces.forms import ItemForm, StatusForm, SubtaskForm
 from spaces.models import WorkItem
 from spaces.testing import make_space, make_task
@@ -48,6 +48,13 @@ class KanbanConfigurationTests(TestCase):
             self.assertContains(response, 'Proces pracy')
             for field in ('key', 'label', 'category', 'flow_stage', 'wip_limit', 'policy', 'transitions'):
                 self.assertContains(response, f'name="statuses-1-{field}"', count=1)
+
+    def test_new_templates_start_with_directional_workflow(self):
+        expected = {'new': ['in_progress'], 'in_progress': ['resolved'], 'resolved': ['closed'],
+                    'closed': ['reopened'], 'reopened': ['in_progress']}
+        for template in TEMPLATES:
+            with self.subTest(template=template):
+                self.assertEqual({row['key']: row['transitions'] for row in template_settings(template)['statuses']}, expected)
 
     def test_three_stage_workflow_does_not_require_all_task_categories(self):
         payload = self.payload()

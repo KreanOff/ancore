@@ -1,4 +1,4 @@
-"""Shared Kanban admission, flow snapshots and blockers.
+"""Shared status transitions, Kanban admission, flow snapshots and blockers.
 
 Placement writes run under the Space lock (and HTTP writers also lock the
 Workspace). Capacity always includes private cards; presentation never does.
@@ -42,6 +42,10 @@ def validate_placement(item, previous=None):
     target = definitions.get(item.status)
     if target is None:
         raise ValidationError('Wybrany status jest już niedostępny. Odśwież formularz.')
+    if previous and previous['status'] != item.status:
+        current = definitions.get(previous['status'])
+        if current is None or item.status not in current.get('transitions', []):
+            raise ValidationError('To przejście statusu nie jest dozwolone w tej przestrzeni.')
     if item.in_backlog and target['category'] == 'closed':
         raise ValidationError('Zakończonego zadania nie można umieścić w backlogu. Najpierw otwórz je ponownie.')
     limit = target.get('wip_limit')

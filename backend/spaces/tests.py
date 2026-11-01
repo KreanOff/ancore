@@ -204,12 +204,15 @@ class SpaceTests(TestCase):
 
     def test_closed_status_and_history_are_synchronized(self):
         self.client.force_login(self.member)
+        for target in ('in_progress', 'resolved'):
+            response = self.client.post(self.url(f'items/{self.item.pk}/action/'), {'action': 'status', 'status': target}, HTTP_X_WORK_ACTION='true')
+            self.assertEqual(response.status_code, 200)
         response = self.client.post(self.url(f'items/{self.item.pk}/action/'), {'action': 'status', 'status': 'closed'}, HTTP_X_WORK_ACTION='true')
         self.assertEqual(response.status_code, 200)
         self.task.refresh_from_db()
         self.assertTrue(self.task.is_completed)
         self.assertIsNotNone(self.task.completion_date)
-        event = self.task.activities.get(action='status_changed')
+        event = self.task.activities.filter(action='status_changed').latest('pk')
         self.assertEqual(event.actor, self.member)
         self.client.post(self.url(f'items/{self.item.pk}/action/'), {'action': 'status', 'status': 'reopened'})
         self.task.refresh_from_db()

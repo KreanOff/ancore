@@ -60,6 +60,49 @@ class KanbanWorkflowTests(TestCase):
                                 {'action': 'save', 'autosave_fields': json.dumps(fields), **data},
                                 HTTP_X_REQUESTED_WITH='XMLHttpRequest')
 
+    def test_directional_process_rejects_skips_and_keeps_completion_and_history(self):
+        self.assertEqual(self.action('status', status='closed').status_code, 400)
+        self.assertEqual(self.save(['status'], status='resolved').status_code, 400)
+        self.assertEqual(self.item.task.activities.count(), 1)
+        for target in ('in_progress', 'resolved', 'closed', 'reopened', 'in_progress'):
+            self.assertEqual(self.action('status', status=target).status_code, 200)
+            self.item.refresh_from_db()
+            self.assertEqual(self.item.status, target)
+            self.assertEqual(self.item.task.is_completed, target == 'closed')
+            self.assertEqual(self.item.task.completion_date is not None, target == 'closed')
+        self.assertEqual(self.item.task.activities.filter(action='status_changed').count(), 5)
+
+    def test_model_write_rechecks_direction_and_keeps_previous_flow_on_failure(self):
+        entered = self.item.status_entered_at
+        self.item.status = 'closed'
+        with self.assertRaisesMessage(ValidationError, 'przejście statusu'):
+            self.item.save(update_fields=['status'])
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.status, 'new')
+        self.assertEqual(self.item.status_entered_at, entered)
+        self.assertIsNone(self.item.flow_finished_at)
+
+    def test_branch_and_return_use_configured_edges_in_every_template(self):
+        request = RequestFactory().post('/')
+        request.user, request.workplace = self.owner, self.workspace
+        for template in ('tasks', 'service', 'scrum', 'kanban'):
+            with self.subTest(template=template):
+                space = make_space(user=self.owner, workplace=self.workspace, name=template, template=template)
+                config = space.configuration
+                config.settings['statuses'][1]['transitions'].append('on_hold')
+                config.settings['statuses'].append({'key': 'on_hold', 'label': 'Wstrzymane', 'category': 'in_progress',
+                                                    'flow_stage': 'active', 'transitions': ['in_progress']})
+                config.save(update_fields=['settings'])
+                task = SpaceTask.objects.create(space=space, title='Rozgałęzienie', created_by=self.owner)
+                item = task.work_item
+                with self.assertRaises(ValidationError):
+                    set_status(request, item, 'on_hold')
+                for target in ('in_progress', 'on_hold', 'in_progress', 'resolved'):
+                    set_status(request, item, target)
+                item.refresh_from_db()
+                self.assertEqual(item.status, 'resolved')
+                self.assertEqual(task.activities.filter(action='status_changed').count(), 4)
+
     def test_menu_snapshot_rejects_stale_status_and_backlog_without_history(self):
         count = self.item.task.activities.count()
         for values in ({'source_status': 'in_progress'}, {'source_in_backlog': 'true'}):
@@ -71,7 +114,8 @@ class KanbanWorkflowTests(TestCase):
         self.assertEqual(self.action('status', status='in_progress', source_status='new', source_in_backlog='false').status_code, 200)
 
     def test_closed_cannot_enter_backlog_from_menu_or_form(self):
-        self.assertEqual(self.action('status', status='closed').status_code, 200)
+        for target in ('in_progress', 'resolved', 'closed'):
+            self.assertEqual(self.action('status', status=target).status_code, 200)
         self.assertEqual(self.action('backlog').status_code, 400)
         self.assertEqual(self.save(['in_backlog'], in_backlog='on').status_code, 400)
         edit = self.client.post(self.url(f'tasks/{self.item.key}/edit/'),
@@ -88,6 +132,7 @@ class KanbanWorkflowTests(TestCase):
         started = self.item.flow_started_at
         self.assertIsNotNone(started)
         self.assertEqual(self.action('backlog').status_code, 200)
+        self.assertEqual(self.save(['status'], status='resolved').status_code, 200)
         self.assertEqual(self.save(['status'], status='closed').status_code, 200)
         self.item.refresh_from_db()
         self.assertFalse(self.item.in_backlog)
@@ -135,7 +180,8 @@ class KanbanWorkflowTests(TestCase):
         response = self.action('position', item=first, status='in_progress', space=self.space.pk,
                                source_status=first.status, source_sprint='', source_rank=first.rank, direction='down')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.action('status', item=last, status='closed').status_code, 200)
+        for target in ('resolved', 'closed'):
+            self.assertEqual(self.action('status', item=last, status=target).status_code, 200)
 
     def test_wip_rejects_creation_and_rolls_back_number_and_history(self):
         self.create('Zajęte', 'in_progress')
@@ -216,7 +262,8 @@ class KanbanWorkflowTests(TestCase):
                                             'flow_stage': 'done', 'transitions': ['new']})
         next(row for row in config.settings['statuses'] if row['key'] == 'closed')['transitions'].append('archived_done')
         config.save()
-        self.action('status', status='closed')
+        for target in ('in_progress', 'resolved', 'closed'):
+            self.assertEqual(self.action('status', status=target).status_code, 200)
         self.item.refresh_from_db()
         completed, finished = self.item.task.completion_date, self.item.flow_finished_at
         self.assertEqual(self.action('status', status='archived_done').status_code, 200)
