@@ -20,7 +20,9 @@ export function useTaskSave(
           .map((field) => [field.name, field.errors]),
       ),
     ),
-    [notice, setNotice] = useState('');
+    [notice, setNotice] = useState(''),
+    [requestedStatus, setRequestedStatus] = useState(''),
+    [refreshRequired, setRefreshRequired] = useState(false);
   const fieldNames = useRef(
       new Set([...initial.form.fields.map((field) => field.name), 'status', 'files']),
     ),
@@ -31,9 +33,18 @@ export function useTaskSave(
     needsRefresh = useRef(false),
     savedWorkflow = useRef({ status: initial.item.status, inBacklog: initial.item.in_backlog }),
     workflowStatuses = useRef(initial.statuses),
+    workflowTransitions = useRef(initial.item.transitions ?? []),
+    workflowCanEdit = useRef(initial.can_edit),
+    statusDraft = useRef(''),
     life = useRef(new AbortController());
   const saveRef = useRef<() => Promise<boolean>>(async () => true),
     refreshRef = useRef(refresh);
+  function synchronize(next: TaskData) {
+    savedWorkflow.current = { status: next.item.status, inBacklog: next.item.in_backlog };
+    workflowStatuses.current = next.statuses;
+    workflowTransitions.current = next.item.transitions ?? [];
+    workflowCanEdit.current = next.can_edit;
+  }
   refreshRef.current = refresh;
   saveRef.current = async () => {
     clearTimeout(timer.current);
@@ -54,6 +65,7 @@ export function useTaskSave(
         if (snapshot.size) {
           const all = new FormData(form.current!),
             body = new FormData();
+          if (snapshot.has('status') && statusDraft.current) all.set('status', statusDraft.current);
           snapshot.forEach((_, name) =>
             all.getAll(name).forEach((value) => body.append(name, value)),
           );
@@ -85,6 +97,7 @@ export function useTaskSave(
           )
             savedWorkflow.current.inBacklog = false;
           needsRefresh.current = true;
+          setRefreshRequired(true);
           snapshot.forEach((value, name) => {
             if (changed.current.get(name) === value) changed.current.delete(name);
           });
@@ -102,10 +115,14 @@ export function useTaskSave(
           life.current.signal,
         );
         const next = page.data as TaskData;
-        savedWorkflow.current = { status: next.item.status, inBacklog: next.item.in_backlog };
-        workflowStatuses.current = next.statuses;
+        synchronize(next);
         refreshRef.current(next);
         needsRefresh.current = false;
+        setRefreshRequired(false);
+        if (!changed.current.has('status')) {
+          statusDraft.current = '';
+          setRequestedStatus('');
+        }
         setErrors({});
         setNotice('Zapisano zmiany.');
         setDirty(!!changed.current.size);
@@ -202,5 +219,30 @@ export function useTaskSave(
       window.removeEventListener('beforeunload', beforeUnload);
     };
   }, []);
-  return { pending, dirty, error, errors, notice, save: () => saveRef.current() };
+  function changeStatus(status: string) {
+    if (
+      !workflowCanEdit.current ||
+      request.current ||
+      needsRefresh.current ||
+      !workflowTransitions.current.some((transition) => transition.key === status)
+    )
+      return Promise.resolve(false);
+    statusDraft.current = status;
+    changed.current.set('status', ++version.current);
+    setRequestedStatus(status);
+    setDirty(true);
+    return saveRef.current();
+  }
+  return {
+    pending,
+    dirty,
+    error,
+    errors,
+    notice,
+    requestedStatus,
+    refreshRequired,
+    changeStatus,
+    synchronize,
+    save: () => saveRef.current(),
+  };
 }

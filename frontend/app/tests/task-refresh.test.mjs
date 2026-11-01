@@ -91,6 +91,7 @@ function childHarness() {
       failRead: false,
       replyType: 'form',
       auto: {
+        synchronize() {},
         save: async () => {
           context.saves++;
           if (context.saveWait) await context.saveWait;
@@ -380,7 +381,7 @@ test('failed note POST preserves compose and edit drafts for a real retry', asyn
   assert.equal(app.context.message, '');
 });
 
-function autosaveHarness({ inBacklog = false } = {}) {
+function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
   const states = [],
     listeners = {},
     requests = [],
@@ -400,6 +401,12 @@ function autosaveHarness({ inBacklog = false } = {}) {
       ],
     },
     savedItem = { status: 'new', in_backlog: inBacklog };
+  const transitions = (status) =>
+    controls.statuses.filter((row) =>
+      (
+        ({ new: ['in_progress'], in_progress: ['closed'], closed: ['in_progress'] })[status] ?? []
+      ).includes(row.key),
+    );
   class Input {
     constructor(name) {
       this.name = name;
@@ -459,8 +466,9 @@ function autosaveHarness({ inBacklog = false } = {}) {
       return {
         data: {
           title: controls.title || 'Nowy tytuł',
-          item: { ...savedItem },
+          item: { ...savedItem, transitions: transitions(savedItem.status) },
           statuses: controls.statuses,
+          can_edit: canEdit,
         },
       };
     },
@@ -477,7 +485,7 @@ function autosaveHarness({ inBacklog = false } = {}) {
     {
       initial: {
         data: {
-          item: { ...savedItem },
+          item: { ...savedItem, transitions: transitions(savedItem.status) },
           statuses: controls.statuses,
           form: {
             fields: [
@@ -485,7 +493,7 @@ function autosaveHarness({ inBacklog = false } = {}) {
               { name: 'in_backlog', errors: [] },
             ],
           },
-          can_edit: true,
+          can_edit: canEdit,
           error: '',
         },
         api_url: '/api/',
@@ -508,10 +516,91 @@ function autosaveHarness({ inBacklog = false } = {}) {
     states,
     requests,
     fileInput,
+    savedItem,
     change: (name) => listeners.input({ target: input(name) }),
     blur: (name) => listeners.change({ target: input(name) }),
   };
 }
+
+test('task transitions reject skipped stages and read-only changes before sending', async () => {
+  const app = autosaveHarness();
+  assert.equal(await app.hook.changeStatus('closed'), false);
+  assert.equal(app.requests.length, 0);
+  const readOnly = autosaveHarness({ canEdit: false });
+  assert.equal(await readOnly.hook.changeStatus('in_progress'), false);
+  assert.equal(readOnly.requests.length, 0);
+});
+
+test('a transition saves the selected stage with an existing draft and blocks duplicate clicks', async () => {
+  const app = autosaveHarness(),
+    post = deferred();
+  app.controls.failRefresh = false;
+  app.controls.postWait = post.promise;
+  app.change('title');
+  const first = app.hook.changeStatus('in_progress');
+  assert.equal(await app.hook.changeStatus('in_progress'), false);
+  assert.equal(app.requests.length, 1);
+  assert.equal(app.requests[0].get('title'), 'Nowy tytuł');
+  assert.equal(app.requests[0].get('status'), 'in_progress');
+  assert.equal(app.requests[0].get('source_status'), 'new');
+  assert.deepEqual(JSON.parse(app.requests[0].get('autosave_fields')), ['title', 'status']);
+  assert.equal(app.controls.updates.length, 0, 'the visible stage changes only after confirmation');
+  post.resolve();
+  assert.equal(await first, true);
+  assert.equal(app.controls.updates[0].item.status, 'in_progress');
+  assert.equal(
+    await app.hook.changeStatus('closed'),
+    true,
+    'the next stage uses refreshed transitions',
+  );
+  assert.equal(app.requests[2].get('source_status'), 'in_progress');
+});
+
+test('a rejected transition preserves its target and other edits for retry', async () => {
+  const app = autosaveHarness();
+  app.controls.failPost = true;
+  app.change('title');
+  assert.equal(await app.hook.changeStatus('in_progress'), false);
+  assert.equal(app.controls.updates.length, 0);
+  app.controls.failPost = false;
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests[1].get('status'), 'in_progress');
+  assert.equal(app.requests[1].get('title'), 'Nowy tytuł');
+  assert.equal(app.requests[1].get('source_status'), 'new');
+});
+
+test('a committed transition blocks further stages until a failed refresh is retried', async () => {
+  const app = autosaveHarness();
+  assert.equal(await app.hook.changeStatus('in_progress'), false);
+  assert.equal(await app.hook.changeStatus('in_progress'), false);
+  assert.equal(app.requests.length, 2);
+  app.controls.failRefresh = false;
+  assert.equal(await app.hook.save(), true);
+  assert.deepEqual(app.requests.slice(1), ['GET', 'GET']);
+  assert.equal(await app.hook.changeStatus('closed'), true);
+  assert.equal(app.requests[3].get('source_status'), 'in_progress');
+});
+
+test('an external task refresh synchronizes transition targets, permissions and source snapshots', async () => {
+  const app = autosaveHarness();
+  app.controls.failRefresh = false;
+  app.savedItem.status = 'closed';
+  app.hook.synchronize({
+    item: { ...app.savedItem, transitions: [{ key: 'in_progress' }] },
+    statuses: app.controls.statuses,
+    can_edit: true,
+  });
+  assert.equal(await app.hook.changeStatus('in_progress'), true);
+  assert.equal(app.requests[0].get('source_status'), 'closed');
+  app.hook.synchronize({
+    item: { ...app.savedItem, transitions: [{ key: 'closed' }] },
+    statuses: app.controls.statuses,
+    can_edit: false,
+  });
+  assert.equal(await app.hook.changeStatus('closed'), false);
+  assert.equal(app.requests.length, 2);
+});
 
 test('blurring an unchanged text field after a committed autosave retries only GET', async () => {
   const app = autosaveHarness();

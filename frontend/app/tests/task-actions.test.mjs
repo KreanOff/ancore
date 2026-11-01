@@ -39,7 +39,7 @@ const bundle = await build({
           contents: args.path.endsWith('useTaskSave')
             ? `export const useTaskSave = () => ({
                 save: globalThis.taskControls.save, dirty: false, pending: false,
-                errors: {}, error: '', notice: ''
+                errors: {}, error: '', notice: '', synchronize() {}
               });`
             : `export default function Composer(props) { globalThis.taskComposer = props; return null; }`,
         }));

@@ -16,6 +16,7 @@ import CommentComposer from './CommentComposer';
 import { Description } from './Description';
 import SchemaDialog, { type DialogData } from './SchemaDialog';
 import { useTaskSave } from './useTaskSave';
+import { TaskWorkflowActions, TaskWorkflowStatus } from './TaskWorkflow';
 import type { Log, TaskData } from './types';
 const SIDE = [
   'visibility',
@@ -77,7 +78,9 @@ export default function TaskPage(props: PageProps) {
       csrfToken,
       life.current.signal,
     );
-    setData(page.data as TaskData);
+    const next = page.data as TaskData;
+    auto.synchronize(next);
+    setData(next);
     setRefreshFailed(false);
     setError('');
   }
@@ -238,27 +241,6 @@ export default function TaskPage(props: PageProps) {
       </div>
     );
   }
-  const status: Field = {
-    ...schema.fields[0],
-    id: 'react-task-status',
-    name: 'status',
-    label: 'Status',
-    type: 'select',
-    value: (initial.data as TaskData).status,
-    choices: data.statuses.map((status) => ({
-      value: status.key,
-      label: status.label,
-      status_category: status.category,
-    })),
-    hidden: false,
-    required: true,
-    disabled: !data.can_edit,
-    help_text: '',
-    errors: [],
-    attrs: {},
-  };
-  // Keep the status widget stable while other fields are being autosaved.
-  const [statusField] = useState(status);
   return (
     <div
       className={`tasks-page tasks-issue-page work-task-page ${data.can_edit ? '' : 'tasks-issue-form--readonly'}`}
@@ -944,21 +926,20 @@ export default function TaskPage(props: PageProps) {
               </div>
             </main>
             <aside className="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+              <TaskWorkflowActions
+                item={data.item}
+                canEdit={data.can_edit}
+                disabled={busy || auto.pending || auto.refreshRequired}
+                pending={auto.pending && !!auto.requestedStatus}
+                requestedStatus={auto.requestedStatus}
+                onTransition={(status) => void auto.changeStatus(status)}
+                errors={auto.errors.status}
+              />
               <section className="tasks-issue-side-section" aria-label="Widoczność zadania">
                 {field('visibility')}
               </section>
               <section className="tasks-issue-side-section" aria-label="Właściwości zadania">
-                <div className="tasks-issue-field">
-                  <span className="tasks-issue-field-label">
-                    <label htmlFor={statusField.id}>Status</label>
-                  </span>
-                  <FieldControl field={statusField} bare />
-                  {auto.errors.status?.map((message) => (
-                    <span role="alert" className="tasks-modal__errors" key={message}>
-                      {message}
-                    </span>
-                  ))}
-                </div>
+                <TaskWorkflowStatus item={data.item} />
                 {['priority', 'assignee', 'work_type', 'task_type', 'tags'].map((name) => (
                   <div key={name} className="react-field-slot">
                     {field(name)}

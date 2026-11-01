@@ -24,7 +24,7 @@
         </div>
         {% if planning_has_errors %}<div class="tasks-modal__errors" role="alert">{% for field in form %}{% if field.errors and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'visibility' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>{% endif %}
         <form id="space-task-form" method="post" enctype="multipart/form-data"{% if can_edit_task %} data-space-task-autosave{% endif %}>
-            {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="task_pk" value="{{ task.pk }}">
+            {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="task_pk" value="{{ task.pk }}"><input type="hidden" name="status" value="{{ item.status }}">
             {% for field in form %}{% if not field.errors and field.name != 'visibility' and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}{{ field.as_hidden }}{% endif %}{% endfor %}
             {% if can_edit_task %}<noscript><button type="submit" class="tasks-issue-save">Zapisz</button></noscript>{% endif %}
         </form>
@@ -81,17 +81,23 @@
                 </div>
             </main>
             <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+                {% if can_edit_task %}<section class="tasks-issue-side-section task-workflow-actions" aria-label="Zmiana etapu zadania">
+                    {% if item.transitions %}
+                    <form method="post" class="task-workflow__transitions" aria-label="Dostępne przejścia" data-space-task-transition>
+                        {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="autosave_fields" value='["status"]'><input type="hidden" name="source_status" value="{{ item.status }}"><input type="hidden" name="source_in_backlog" value="{{ item.in_backlog|yesno:'true,false' }}">
+                        {% for status in item.transitions %}<button type="submit" name="status" value="{{ status.key }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight task-workflow__transition" aria-label="Przejdź do: {{ status.label }}" title="{% if status.policy %}{{ status.policy }}{% else %}Przejdź do: {{ status.label }}{% endif %}"><span class="status-indicator status-{{ status.category }}" aria-hidden="true"></span><span>{{ status.label }}</span></button>{% endfor %}
+                    </form>
+                    {% else %}<p class="task-workflow__hint">Brak dalszych przejść.</p>{% endif %}
+                    {{ form.status.errors }}
+                </section>{% endif %}
                 <section class="tasks-issue-side-section" aria-label="Widoczność zadania">
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.visibility.id_for_label }}">Widoczność</label></span>
                         {{ form.visibility }}{{ form.visibility.errors }}
                     </div>
                 </section>
                 <section class="tasks-issue-side-section" aria-label="Właściwości zadania">
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="space-task-status">Status</label></span>
-                        <select id="space-task-status" class="form-select" name="status" form="space-task-form"{% if not can_edit_task %} disabled{% endif %}>
-                            {% for status in space.statuses %}<option value="{{ status.key }}" data-ancore-option-preview="space-status-{{ forloop.counter }}"{% if detail_status == status.key %} selected{% endif %}>{{ status.label }}</option>{% endfor %}
-                        </select>
-                        {% for status in space.statuses %}<template id="space-status-{{ forloop.counter }}"><span class="status-indicator status-{{ status.category }} tasks-filter-status-icon" aria-hidden="true"></span></template>{% endfor %}
+                    <div class="tasks-issue-field task-workflow-field"><span class="tasks-issue-field-label" id="task-workflow-label">Etap zadania</span>
+                        <div class="task-workflow__current" aria-label="Bieżący etap: {{ item.status_label }}"><span class="status-indicator status-{{ task.status }}" aria-hidden="true"></span><span>{{ item.status_label }}</span></div>
                     </div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_priority">Priorytet</label></span>
                         <select id="id_priority" class="form-select" name="priority" form="space-task-form"{% if not can_edit_task %} disabled{% endif %}>{% for value, label in form.priority.field.choices %}<option value="{{ value }}" data-ancore-option-preview="space-priority-{{ value }}"{% if form.priority.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>

@@ -17,6 +17,19 @@
 [data-react-screen="space-task"] .tasks-issue-chat-message { white-space: pre-wrap; }
 [data-react-screen="space-task"] .tasks-issue-side-section .form-input { max-width: 100%; }
 [data-react-screen="space-task"] .tasks-mention-menu:not([hidden]) { display: grid; }
+.tasks-issue-field.task-workflow-field { align-items: start; }
+.task-workflow-field > .tasks-issue-field-label { min-height: var(--tasks-detail-control-height); }
+.task-workflow__current { display: flex; align-items: center; gap: 0.5rem; min-height: var(--tasks-detail-control-height); padding: 0.4rem calc(0.75rem + 1px); box-sizing: border-box; color: var(--tasks-detail-control-text); }
+.task-workflow__current > .status-indicator { flex: 0 0 auto; }
+.task-workflow__current > span:last-child { overflow-wrap: anywhere; }
+.task-workflow__transitions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; min-width: 0; }
+.task-workflow__transition.tasks-tag-topbar-button { width: 100%; height: auto; min-height: 30px; padding-block: 0.25rem; line-height: 1.35; white-space: normal; }
+.task-workflow__transition > span { min-width: 0; overflow-wrap: anywhere; }
+.task-workflow__hint { margin: 0; color: var(--text-secondary); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.task-workflow__transition:focus-visible { outline: 2px solid var(--system-accent) !important; outline-offset: 2px; }
+@media (max-width: 360px) {
+  .task-workflow-field > .tasks-issue-field-label { min-height: 0; }
+}
 
 [data-react-screen] [hidden], .tasks-form-modal [hidden] { display: none !important; }
 [data-react-screen="space-task"] .workplace-members-sheet .tasks-directory-header svg.ancore-icon,

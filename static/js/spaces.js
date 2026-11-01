@@ -82,7 +82,7 @@
             body.set('autosave_fields', JSON.stringify(changed));
             if (changed.includes('status') || changed.includes('in_backlog') || changed.includes('sprint')) {
                 body.set('source_status', saved.get('status')?.[0] || '');
-                body.set('source_in_backlog', String(['on', 'true', '1'].includes(saved.get('in_backlog')?.[0])));
+                body.set('source_in_backlog', String(['on', 'true', '1'].includes(String(saved.get('in_backlog')?.[0]).toLowerCase())));
             }
             const sentFiles = [...(upload?.files || [])];
             setState('saving');
@@ -176,6 +176,27 @@
         form.addEventListener('submit', event => {
             event.preventDefault();
             saveChanges();
+        }, { signal });
+        const transitionForm = page.querySelector('[data-space-task-transition]');
+        let transitionPending = false;
+        transitionForm?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const target = event.submitter?.value;
+            if (!canAutosave || transitionPending || !target) return;
+            transitionPending = true;
+            const buttons = [...transitionForm.querySelectorAll('button')];
+            buttons.forEach(button => { button.disabled = true; });
+            if (!await flushSave()) {
+                transitionPending = false;
+                buttons.forEach(button => { button.disabled = false; });
+                return;
+            }
+            transitionForm.elements.source_status.value = saved.get('status')?.[0] || '';
+            transitionForm.elements.source_in_backlog.value = String(['on', 'true', '1'].includes(String(saved.get('in_backlog')?.[0]).toLowerCase()));
+            const status = document.createElement('input');
+            status.type = 'hidden'; status.name = 'status'; status.value = target;
+            transitionForm.append(status);
+            HTMLFormElement.prototype.submit.call(transitionForm);
         }, { signal });
         document.addEventListener('ancore:before-navigate', event => {
             if (canAutosave && (pending || dirty())) event.detail.waitUntil(flushSave());
