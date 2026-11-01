@@ -1,5 +1,60 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Tworzenie zadań w kolumnach tablicy (01.11.2026)
+
+Kolumny Tablicy Przestrzeni otwierają wspólny formularz z początkowym
+statusem i, w Scrum, aktywnym sprintem. Zapis wraca na tablicę z filtrami
+i sortowaniem. [Zachowanie](SPACES.md#tworzenie-zadań-na-tablicy),
+[kontrakt API](FRONTEND.md#doładowywanie-listy-zadań-przestrzeni)
+i [wygląd akcji](UI.md#dolny-pasek-stron-przestrzeni).
+
+Przeszło 316 testów frontendu (w tym 7 nowych), build z TypeScriptem,
+formatowanie zmienionych plików TS, Django check, indeks i kontrola diffu.
+Na jednorazowych bazach PostgreSQL sprawdzono 61 testów Django:
+`spaces.test_board_create`, `spaces.test_board_order`,
+`spaces.test_backlog_planning`, `spaces.test_subtask_fields` oraz
+`spaces.test_configuration_writes`. Regresje obejmują zwykłe/scoped URL,
+status własny i zakończony, datę zakończenia, autora i historię, zachowanie
+filtrów, aktywny sprint, błędny/usunięty status i granice dostępu.
+Bez zmian modeli i migracji.
+
+Chrome/Playwright na osobnej bazie QA sprawdził tablicę przy 1440/390/320px,
+tworzenie w pustej/zapełnionej kolumnie i w aktywnym sprincie, zapis/reload,
+ponowne wejście, obserwatora oraz referencyjną Listę zadań i Backlog.
+Rzeczywista walidacja 400 oraz symulowane błędy odczytu/zapisu 503 zachowały
+możliwość ponowienia bez duplikacji zadania. Przeciąganie i znacznik miejsca
+pozostają nad akcją tworzenia. Pierwszy render Django bez JavaScriptu
+zweryfikowano dla zwykłych/scoped adresów przy 1440/390px.
+Poprawiono utratę fokusu przy pobieraniu formularza: lokalne `aria-disabled`
+i blokada żądania zachowują przycisk wywołujący. Escape przywraca go po
+otwarciu myszą, klawiaturą oraz ponowieniu błędu. Zmiana pola Status
+przed zapisem poprawnie zastępuje status wybranej kolumny.
+Brak błędów JavaScriptu; konsola zgłaszała tylko kontrolowane 400/503.
+Plugin Browser był niedostępny; użyto istniejących Playwright i Chrome.
+Nie sprawdzano Safari, Firefoksa ani wdrożenia produkcyjnego.
+
+## Wspólne paski widoków Przestrzeni (01.11.2026)
+
+Podsumowanie, Lista, Tablica/aktywny sprint, Backlog, Oś czasu, Raporty i Tagi
+korzystają ze wspólnego `ViewToolbar` oraz klas pierwszego renderu Django.
+[Układ i geometria](UI.md#wspólny-pasek-widoków-przestrzeni).
+
+Przeszło 309 testów frontendu, build TypeScript i 36 testów Django:
+`spaces.test_reports`, `spaces.test_tags`, `spaces.test_item_query`, przez
+`scripts/run_tests.py` na osobnej bazie PostgreSQL. Sprawdzono także Django check,
+format zmienionych plików, kompilację/render szablonów, unikalność pól formularzy,
+linki dokumentacji, indeks kodu i `git diff --check`.
+
+Chrome/Playwright na izolowanej bazie QA potwierdził wspólne położenie i wysokość
+kontrolek, zawijanie bez przepełnienia przy 1440/1024/390/320px, sortowanie,
+filtrowanie, wyszukiwanie, skale osi, okres raportu, eksport CSV oraz edycję
+i anulowanie Podsumowania. Sprawdzono klawiaturę, Escape i powrót fokusu,
+puste wyniki i ponowne wejście, zwykłe/scoped URL, referencyjny katalog,
+a także pierwszy render bez JavaScriptu przy 1440/390px. Symulowany błąd 503
+odświeżania raportu pozwolił ponowić odczyt. Bez nieoczekiwanych błędów JS/konsoli.
+Plugin Browser był niedostępny; użyto istniejącego Playwright i Chrome.
+Nie testowano Safari, Firefoksa ani produkcji. Bez zmian modeli i migracji.
+
 ## Doładowywanie tagów (31.10.2026)
 
 Tagi Przestrzeni używają wspólnego paska „Pokaż więcej” i partii po 20,

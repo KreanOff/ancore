@@ -182,6 +182,16 @@ również w pierwszym renderze Django. Wczytuje wszystkie dostępne zadania
 pasujące do filtrów, bez podziału po 100 wyników; karty przewijają się
 w dotychczasowych kolumnach. Nagłówki statusów zachowują liczniki.
 
+Pod kartami każdej kolumny jest „Utwórz zadanie” z ikoną plusa, również
+w pustej kolumnie. Wariant `work-board-create` używa istniejącego
+`tasks-project-menu-button`, zachowuje szare interakcje i nie kurczy się
+w przewijanej kolumnie. Otwiera wspólny modal z wybranym statusem; jego
+nazwa dostępności zawiera nazwę kolumny. W czasie odczytu jest wyłączony,
+a obserwator go nie widzi. `aria-disabled` i blokada ponownego żądania
+zachowują fokus przycisku, dzięki czemu Escape wraca do tej samej kolumny.
+W Scrum akcja wymaga aktywnego sprintu.
+Pierwszy render Django zachowuje ten sam wygląd i adres formularza.
+
 Lista zadań otwartej Przestrzeni ładuje osobno po 20 pozycji w każdym statusie.
 Nagłówek grupy pokazuje pełną liczbę dostępnych wyników po filtrowaniu.
 Pod wierszami jest pełnej szerokości, wyśrodkowany pasek „Pokaż więcej (20 / 21)”.
@@ -207,6 +217,29 @@ zaznaczenia, zwinięcia sekcji i pozycję przewijania; filtry i sortowanie
 resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
 „Na stronie”. Sprint zawierający wyłącznie ukończone zadania pokazuje
 „Wszystkie zadania w tym sprincie są ukończone.”.
+
+## Wspólny pasek widoków Przestrzeni
+
+Podsumowanie, Lista zadań, Tablica, Backlog, Oś czasu, Raporty i Tagi
+korzystają z `spaces/ViewToolbar.tsx` oraz wariantu `work-view-toolbar`
+w `spaces.css`. Pierwszy render Django używa tych samych klas.
+Pasek zaczyna się 5px pod zakładkami i zachowuje boczny odstęp
+`--app-page-padding-x`. Kontrolki mają wspólną wysokość `--control-height`
+(32px), tekst `--font-size-sm` i odstępy 8px.
+
+Po lewej znajdują się „Sortowanie” i „Filtrowanie” (jeśli dany widok
+je obsługuje), dodatkowe kontrolki oraz wyszukiwanie; akcje widoku są
+po prawej. Kolejność wizualna odpowiada kolejności klawiatury.
+Wyszukiwanie Tagów i Osi czasu ma jednakową szerokość 230px oraz przycisk
+ze strzałką. Tagi zachowują wyszukiwanie po 350ms od wpisania tekstu,
+a Oś czasu po zatwierdzeniu. Na małych ekranach grupy zawijają się,
+a wyszukiwarka zajmuje cały wiersz.
+
+Raporty mają pasek nad nagłówkiem, z filtrowaniem, okresem, sprintem
+(w Scrum) i wykonawcą po lewej oraz odświeżaniem i eksportem po prawej.
+Etykiety selektorów pozostają dostępne dla czytników ekranu.
+Przełączniki skali Osi czasu zachowują wspólny segment i aktywny stan.
+Zakres danych, uprawnienia oraz sposób zapisu filtrów pozostają bez zmian.
 
 ## Raporty Przestrzeni
 

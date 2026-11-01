@@ -110,6 +110,14 @@ ale wczytuje od razu wszystkie dostępne, przefiltrowane zadania tablicy.
 React i pierwszy render Django nie pokazują dolnego paska stron.
 Przeciąganie i menu kolejności używają tego samego pełnego zakresu tablicy.
 
+Kolumny tablicy udostępniają `create_item_url` dla uprawnionych osób
+(w Scrum tylko przy aktywnym sprincie). Adres formularza `items/create/`
+zawiera `view=board`, osobny `initial_status` i parametry filtrów/sortowania.
+`initial_status` ustawia początkową wartość pola Status, bez nadpisywania
+filtra `status`. `DetailPage` otwiera istniejący `FormDialog`; zapis wraca
+do tablicy, a parametry inicjalizacji nie trafiają do adresu powrotu.
+Serwer ponownie waliduje status, planowanie i dostęp podczas zapisu.
+
 `DetailPage` pobiera rozszerzony obraz listy, backlogu lub osi czasu z `more_url` przez istniejący
 `pageRequest`, bez ponownego montowania grup/wierszy. Jednoczesne odczyty
 i zapisy są blokowane, a odejście ze strony anuluje żądanie. Dopiero sukces

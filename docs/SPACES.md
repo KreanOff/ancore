@@ -314,6 +314,21 @@ przekierowuje do „Filtry → Wyszukaj zadania”. [Schemat i migracje](DATABAS
 
 ## Dostępne funkcje
 
+### Tworzenie zadań na tablicy
+
+Każda kolumna tablicy ma akcję „Utwórz zadanie”, dostępną dla osób
+z prawem edycji Przestrzeni. Wspólny formularz otwiera się ze statusem
+wybranej kolumny; można go zmienić przed zapisem. Zadanie trafia poza
+backlog, a w Scrum domyślnie do aktywnego sprintu. Bez aktywnego sprintu
+kolumny Scrum nie udostępniają tej akcji.
+
+Zapis wraca na tablicę z zachowanymi filtrami i sortowaniem. Nowa karta
+pojawia się, jeśli spełnia bieżące filtry. Status jest walidowany względem
+konfiguracji Przestrzeni; tworzenie w statusie zakończonym zachowuje datę
+zakończenia i historię utworzenia ze wskazaniem faktycznego autora.
+Zwykłe i scoped adresy korzystają z tego samego formularza oraz kontroli
+właściciela Workspace, widoczności i prawa edycji.
+
 ### Planowanie w Backlogu
 
 Backlog Scrum pokazuje aktywny sprint jako pierwszy, następnie sprinty planowane
