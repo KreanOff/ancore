@@ -1,3 +1,4 @@
+import { ViewToolbar } from './ViewToolbar';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { DashboardCanvas } from '../shared/DashboardCanvas';
 import { EmptyState } from '../shared/EmptyState';
@@ -134,66 +135,68 @@ export default function SummaryDashboard({
   }
   return (
     <div className={`work-summary-dashboard ${editing ? 'is-editing' : ''}`} aria-busy={busy}>
-      <div className="work-summary-toolbar">
-        <div className="work-summary-toolbar-title">
-          {filters}
-          {editing ? (
-            <span className="work-caption">{dirty ? 'Niezapisane zmiany' : 'Tryb edycji'}</span>
-          ) : null}
-        </div>
-        <div className="work-summary-toolbar-actions">
-          {editing ? (
-            <>
-              <button
-                ref={addButton}
-                type="button"
-                className="tasks-filter-button"
-                disabled={busy}
-                onClick={() => setCatalog(true)}
-              >
-                <Icon name="plus" />
-                Dodaj gadżet
-              </button>
-              <button
-                type="button"
-                className="tasks-filter-button"
-                disabled={busy}
-                onClick={cancel}
-              >
-                Anuluj
-              </button>
-              <button
-                type="button"
-                className="tasks-filter-button work-summary-save"
-                disabled={busy}
-                onClick={() => void save()}
-              >
-                <Icon name="check" />
-                {busy ? 'Zapisywanie…' : 'Zapisz układ'}
-              </button>
-            </>
-          ) : (
-            <>
-              {!readOnly && saved.save_url ? (
+      <ViewToolbar
+        className="work-summary-toolbar"
+        actions={
+          <>
+            {editing ? (
+              <>
                 <button
-                  ref={editButton}
+                  ref={addButton}
                   type="button"
                   className="tasks-filter-button"
                   disabled={busy}
-                  onClick={() => {
-                    setEditing(true);
-                    setError('');
-                    setNotice('Włączono edycję pulpitu.');
-                  }}
+                  onClick={() => setCatalog(true)}
                 >
-                  <Icon name="pencil" />
-                  Edytuj pulpit
+                  <Icon name="plus" />
+                  Dodaj gadżet
                 </button>
-              ) : null}
-            </>
-          )}
-        </div>
-      </div>
+                <button
+                  type="button"
+                  className="tasks-filter-button"
+                  disabled={busy}
+                  onClick={cancel}
+                >
+                  Anuluj
+                </button>
+                <button
+                  type="button"
+                  className="tasks-filter-button work-summary-save"
+                  disabled={busy}
+                  onClick={() => void save()}
+                >
+                  <Icon name="check" />
+                  {busy ? 'Zapisywanie…' : 'Zapisz układ'}
+                </button>
+              </>
+            ) : (
+              <>
+                {!readOnly && saved.save_url ? (
+                  <button
+                    ref={editButton}
+                    type="button"
+                    className="tasks-filter-button"
+                    disabled={busy}
+                    onClick={() => {
+                      setEditing(true);
+                      setError('');
+                      setNotice('Włączono edycję pulpitu.');
+                    }}
+                  >
+                    <Icon name="pencil" />
+                    Edytuj pulpit
+                  </button>
+                ) : null}
+              </>
+            )}
+          </>
+        }
+      >
+        {filters}
+        {editing ? (
+          <span className="work-caption">{dirty ? 'Niezapisane zmiany' : 'Tryb edycji'}</span>
+        ) : null}
+      </ViewToolbar>
       {editing ? (
         <p className="work-caption work-summary-edit-hint">
           <span className="work-summary-edit-hint-desktop">

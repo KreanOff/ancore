@@ -14,16 +14,17 @@
     <input type="hidden" name="priority" value="{{ tag_priority_filter }}" data-project-filter-input="priority">
     <input type="hidden" name="sort" value="{{ tag_sort_param }}" data-project-sort-input>
 </form>
-<div class="tasks-filterbar tasks-filterbar--directory">
-    <div class="tasks-filterbar-left">
-        {% include 'tasks/includes/directory_column_manager.html' %}
-        {% include 'tasks/includes/tag_sort.html' %}
-        {% include 'tasks/includes/directory_filter_aggregate.html' with has_active_filters=tag_status_filter|default:tag_priority_filter|default:tag_category_filter|default:tag_scope_filter|default:tag_owner_filter only %}
+<div class="tasks-filterbar tasks-filterbar--directory work-view-toolbar">
+    <div class="tasks-filterbar-left work-view-toolbar-controls">
+        {% include 'tasks/includes/tag_sort.html' with toolbar_label='Sortowanie' compact_sort=True %}
+        {% include 'tasks/includes/directory_filter_aggregate.html' with toolbar_label='Filtrowanie' has_active_filters=tag_status_filter|default:tag_priority_filter|default:tag_category_filter|default:tag_scope_filter|default:tag_owner_filter only %}
         {% include 'tasks/includes/tag_filters.html' %}
-    </div>
-    <div class="tasks-filterbar-center"></div>
-    <div class="tasks-filterbar-right">
-        <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="projects-search-form" value="{{ tag_query }}" placeholder="Szukaj tagów" aria-label="Szukaj tagów" autocomplete="off"></label>
+        {% include 'tasks/includes/directory_column_manager.html' %}
+        <div class="tasks-search-field work-view-toolbar-search" role="search">
+            <i data-icon="search" aria-hidden="true"></i>
+            <input id="filter-search" type="search" name="q" form="projects-search-form" value="{{ tag_query }}" placeholder="Szukaj tagów" aria-label="Szukaj tagów" autocomplete="off">
+            <button type="submit" form="projects-search-form" class="tasks-filter-button" aria-label="Szukaj tagów"><i data-icon="arrow-right" aria-hidden="true"></i></button>
+        </div>
     </div>
 </div>
 {% endblock %}

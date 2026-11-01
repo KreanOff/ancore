@@ -1,3 +1,4 @@
+import { ViewToolbar } from './ViewToolbar';
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { EmptyState } from '../shared/EmptyState';
@@ -365,6 +366,72 @@ export default function ReportsView({
   const snapshot = report?.snapshot;
   return (
     <div className="work-reports" aria-busy={busy}>
+      <ViewToolbar
+        actions={
+          <>
+            <button
+              type="button"
+              className="tasks-filter-button"
+              disabled={busy}
+              onClick={() => void reload()}
+            >
+              <Icon name="refresh-cw" />
+              {busy ? 'Odświeżanie…' : 'Odśwież'}
+            </button>
+            {report ? (
+              <a
+                className="tasks-filter-button"
+                href={report.export_url}
+                title="Eksportuj bieżące zadania po filtrach, niezależnie od okresu aktywności"
+                download
+              >
+                <Icon name="download" />
+                Eksport CSV
+              </a>
+            ) : null}
+          </>
+        }
+      >
+        {report ? (
+          <>
+            <fieldset disabled={busy} className="work-view-toolbar-fields">
+              <ItemFiltering data={data} url={url} />
+              <Select
+                hideLabel
+                label="Okres aktywności"
+                name="report_period"
+                value={report.filters.report_period}
+                options={PERIODS}
+                onChange={(value) => navigate(reportUrl(url, 'report_period', value))}
+              />
+              {data.space.template === 'scrum' ? (
+                <Select
+                  hideLabel
+                  label="Sprint"
+                  name="report_sprint"
+                  value={report.filters.report_sprint}
+                  options={report.sprint_options.map((option) => [option.value, option.label])}
+                  onChange={(value) => navigate(reportUrl(url, 'report_sprint', value))}
+                />
+              ) : null}
+              <Select
+                hideLabel
+                label="Wykonawca"
+                name="assignee"
+                value={data.filters.assignee || ''}
+                options={data.filter_options.assignee || [['', 'Wszyscy wykonawcy']]}
+                onChange={(value) => navigate(reportUrl(url, 'assignee', value))}
+              />
+            </fieldset>
+            {hasFilters ? (
+              <a className="tasks-filter-button" href={report.reset_url}>
+                <Icon name="x" />
+                Wyczyść filtry
+              </a>
+            ) : null}
+          </>
+        ) : null}
+      </ViewToolbar>
       <header className="work-reports-header">
         <div>
           <h2>Raporty przestrzeni</h2>
@@ -372,65 +439,9 @@ export default function ReportsView({
             Postęp, obciążenie i terminowość dostępnych dla Ciebie zadań.
           </p>
         </div>
-        <div className="work-reports-actions">
-          <button
-            type="button"
-            className="tasks-filter-button"
-            disabled={busy}
-            onClick={() => void reload()}
-          >
-            <Icon name="refresh-cw" />
-            {busy ? 'Odświeżanie…' : 'Odśwież'}
-          </button>
-          {report ? (
-            <a
-              className="tasks-filter-button"
-              href={report.export_url}
-              title="Eksportuj bieżące zadania po filtrach, niezależnie od okresu aktywności"
-              download
-            >
-              <Icon name="download" />
-              Eksport CSV
-            </a>
-          ) : null}
-        </div>
       </header>
       {report ? (
-        <div className="work-reports-filters">
-          <fieldset disabled={busy} className="work-reports-filter-fields">
-            <Select
-              label="Okres aktywności"
-              name="report_period"
-              value={report.filters.report_period}
-              options={PERIODS}
-              onChange={(value) => navigate(reportUrl(url, 'report_period', value))}
-            />
-            {data.space.template === 'scrum' ? (
-              <Select
-                label="Sprint"
-                name="report_sprint"
-                value={report.filters.report_sprint}
-                options={report.sprint_options.map((option) => [option.value, option.label])}
-                onChange={(value) => navigate(reportUrl(url, 'report_sprint', value))}
-              />
-            ) : null}
-            <Select
-              label="Wykonawca"
-              name="assignee"
-              value={data.filters.assignee || ''}
-              options={data.filter_options.assignee || [['', 'Wszyscy wykonawcy']]}
-              onChange={(value) => navigate(reportUrl(url, 'assignee', value))}
-            />
-            <div className="work-reports-more-filters">
-              <ItemFiltering data={data} url={url} />
-            </div>
-          </fieldset>
-          {hasFilters ? (
-            <a className="tasks-filter-button" href={report.reset_url}>
-              <Icon name="x" />
-              Wyczyść filtry
-            </a>
-          ) : null}
+        <>
           {activeFilters.length ? (
             <div className="work-reports-filter-summary" aria-label="Aktywne filtry">
               {activeFilters.map(([key, value]) => (
@@ -445,7 +456,7 @@ export default function ReportsView({
               ))}
             </div>
           ) : null}
-        </div>
+        </>
       ) : null}
       {error || report?.filter_error ? (
         <div className="tasks-modal__errors work-reports-error" role="alert">

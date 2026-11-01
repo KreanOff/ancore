@@ -551,7 +551,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           onPointerDownCapture={motion.pointerDown}
           onDragOverCapture={motion.over}
           onDragEnterCapture={motion.over}
-          className={`work-content ${tableView || data.view === 'overview' ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''} ${data.view === 'timeline' ? 'work-content--timeline' : ''}`}
+          className={`work-content ${tableView || data.view === 'overview' || data.view === 'reports' ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''} ${data.view === 'timeline' ? 'work-content--timeline' : ''}`}
         >
           {tableView ? (
             <>

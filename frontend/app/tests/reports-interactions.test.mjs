@@ -8,7 +8,7 @@ import { build } from 'esbuild';
 // Run production callbacks and chart rendering, replacing only React's hook storage and navigation.
 const bundle = await build({
   stdin: {
-    contents: `${await readFile(new URL('../src/spaces/ReportsView.tsx', import.meta.url), 'utf8')}\nexport { TrendChart };`,
+    contents: `${await readFile(new URL('../src/spaces/ReportsView.tsx', import.meta.url), 'utf8')}\nexport { TrendChart, ViewToolbar };`,
     sourcefile: 'ReportsView.tsx',
     resolveDir: new URL('../src/spaces', import.meta.url).pathname,
     loader: 'tsx',
@@ -66,13 +66,24 @@ function harness(name, initialProps) {
           ? { navigate: (url) => navigations.push(url) }
           : require(name),
   });
+  // Render the stateless toolbar shell so its action slot matches the visible React tree.
+  function renderToolbar(element) {
+    if (!element || typeof element !== 'object') return element;
+    if (Array.isArray(element)) return element.map(renderToolbar);
+    if (element.type === module.exports.ViewToolbar)
+      return renderToolbar(element.type(element.props));
+    return {
+      ...element,
+      props: { ...element.props, children: renderToolbar(element.props?.children) },
+    };
+  }
   return {
     navigations,
     render(next = {}) {
       cursor = 0;
       refCursor = 0;
       props = { ...props, ...next };
-      const tree = module.exports[name](props);
+      const tree = renderToolbar(module.exports[name](props));
       mounted = true;
       return tree;
     },

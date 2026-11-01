@@ -1,8 +1,6 @@
 <div class="work-overview work-summary">
     <div class="work-summary-dashboard">
-        <div class="work-summary-toolbar">
-            <div class="work-summary-toolbar-title">{% include 'spaces/item_toolbar.html' with filters_only=True %}</div>
-        </div>
+        {% include 'spaces/item_toolbar.html' with filters_only=True extra_class='work-summary-toolbar' %}
         {% if summary.dashboard.widgets %}
         <div class="work-summary-canvas" style="--summary-row-height: 48px; --summary-grid-gap: 12px" aria-label="Gadżety pulpitu przestrzeni">
             {% for widget in summary.dashboard.widgets|dictsort:'x'|dictsort:'y' %}

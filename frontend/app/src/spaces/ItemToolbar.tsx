@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { ViewToolbar } from './ViewToolbar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { navigate } from '../shared/page';
@@ -27,122 +28,131 @@ function changeQuery(url: string, values: Record<string, string>) {
   navigate(next.pathname + next.search);
 }
 
-export function ItemToolbar({ data, url }: { data: DetailData; url: string }) {
+export function ItemToolbar({
+  data,
+  url,
+  children,
+  actions,
+}: {
+  data: DetailData;
+  url: string;
+  children?: ReactNode;
+  actions?: ReactNode;
+}) {
   const [sortQuery, setSortQuery] = useState('');
   const sortFields = data.sort.fields.filter(({ label }) => matches(label, sortQuery));
 
   const change = (values: Record<string, string>) => changeQuery(url, values);
 
   return (
-    <div className="tasks-filterbar tasks-filterbar--directory work-item-toolbar">
-      <div className="tasks-filterbar-left">
-        <Dropdown
-          label={`Sortowanie: ${data.sort.label}, ${data.sort.direction === 'asc' ? 'rosnąco' : 'malejąco'}`}
-          role="dialog"
-          className="tasks-project-sort-builder"
-          menuClass="tasks-project-query-panel tasks-project-sort-panel"
-          triggerClassName="tasks-filter-button tasks-project-query-trigger"
-          onOpen={() => setSortQuery('')}
-          trigger={
-            <>
-              <Icon
-                name={
-                  data.sort.direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'
-                }
-              />
-              <span>Sortowanie</span>
-              <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-            </>
-          }
-        >
-          {(close) => (
-            <>
-              <header className="tasks-project-query-panel__header tasks-project-query-panel__header--main">
-                <span className="tasks-project-query-panel__title-icon">
-                  <Icon name="arrow-up-down" />
-                </span>
-                <strong>Sortowanie zadań</strong>
+    <ViewToolbar className="work-item-toolbar" actions={actions}>
+      <Dropdown
+        label={`Sortowanie: ${data.sort.label}, ${data.sort.direction === 'asc' ? 'rosnąco' : 'malejąco'}`}
+        role="dialog"
+        className="tasks-project-sort-builder"
+        menuClass="tasks-project-query-panel tasks-project-sort-panel"
+        triggerClassName="tasks-filter-button tasks-project-query-trigger"
+        onOpen={() => setSortQuery('')}
+        trigger={
+          <>
+            <Icon
+              name={
+                data.sort.direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'
+              }
+            />
+            <span>Sortowanie</span>
+            <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+          </>
+        }
+      >
+        {(close) => (
+          <>
+            <header className="tasks-project-query-panel__header tasks-project-query-panel__header--main">
+              <span className="tasks-project-query-panel__title-icon">
+                <Icon name="arrow-up-down" />
+              </span>
+              <strong>Sortowanie zadań</strong>
+              <button
+                type="button"
+                className="tasks-project-query-panel__clear"
+                onClick={() => {
+                  close();
+                  change({ sort: '' });
+                }}
+              >
+                Domyślnie
+              </button>
+            </header>
+            <div
+              className="tasks-project-sort-directions"
+              role="radiogroup"
+              aria-label="Kierunek sortowania"
+            >
+              {['asc', 'desc'].map((direction) => (
                 <button
+                  key={direction}
                   type="button"
-                  className="tasks-project-query-panel__clear"
+                  role="radio"
+                  aria-checked={data.sort.direction === direction}
+                  className={data.sort.direction === direction ? 'is-active' : ''}
                   onClick={() => {
                     close();
-                    change({ sort: '' });
+                    change({ sort: `${data.sort.field}_${direction}` });
                   }}
                 >
-                  Domyślnie
+                  <Icon
+                    name={direction === 'asc' ? 'arrow-up-narrow-wide' : 'arrow-down-wide-narrow'}
+                  />
+                  {direction === 'asc' ? 'Rosnąco' : 'Malejąco'}
                 </button>
-              </header>
-              <div
-                className="tasks-project-sort-directions"
-                role="radiogroup"
-                aria-label="Kierunek sortowania"
-              >
-                {['asc', 'desc'].map((direction) => (
-                  <button
-                    key={direction}
-                    type="button"
-                    role="radio"
-                    aria-checked={data.sort.direction === direction}
-                    className={data.sort.direction === direction ? 'is-active' : ''}
-                    onClick={() => {
-                      close();
-                      change({ sort: `${data.sort.field}_${direction}` });
-                    }}
-                  >
-                    <Icon
-                      name={direction === 'asc' ? 'arrow-up-narrow-wide' : 'arrow-down-wide-narrow'}
-                    />
-                    {direction === 'asc' ? 'Rosnąco' : 'Malejąco'}
-                  </button>
-                ))}
-              </div>
-              <label className="tasks-project-query-search">
-                <Icon name="search" />
-                <input
-                  type="search"
-                  placeholder="Szukaj pola sortowania"
-                  aria-label="Szukaj pola sortowania"
-                  value={sortQuery}
-                  onChange={(event) => setSortQuery(event.target.value)}
-                />
-              </label>
-              <div
-                className="tasks-project-sort-field-list"
-                role="radiogroup"
-                aria-label="Pole sortowania"
-              >
-                {sortFields.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={data.sort.field === option.value}
-                    className={data.sort.field === option.value ? 'is-active' : ''}
-                    onClick={() => {
-                      close();
-                      change({ sort: `${option.value}_${data.sort.direction}` });
-                    }}
-                  >
-                    <span className="tasks-project-query-field-icon">
-                      <Icon name={option.icon} />
-                    </span>
-                    <span>{option.label}</span>
-                    <Icon name="check" />
-                  </button>
-                ))}
-                {!sortFields.length ? (
-                  <p className="tasks-project-filter-menu-empty" role="status">
-                    Brak pasujących pól
-                  </p>
-                ) : null}
-              </div>
-            </>
-          )}
-        </Dropdown>
-        <ItemFiltering data={data} url={url} />
-      </div>
-    </div>
+              ))}
+            </div>
+            <label className="tasks-project-query-search">
+              <Icon name="search" />
+              <input
+                type="search"
+                placeholder="Szukaj pola sortowania"
+                aria-label="Szukaj pola sortowania"
+                value={sortQuery}
+                onChange={(event) => setSortQuery(event.target.value)}
+              />
+            </label>
+            <div
+              className="tasks-project-sort-field-list"
+              role="radiogroup"
+              aria-label="Pole sortowania"
+            >
+              {sortFields.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={data.sort.field === option.value}
+                  className={data.sort.field === option.value ? 'is-active' : ''}
+                  onClick={() => {
+                    close();
+                    change({ sort: `${option.value}_${data.sort.direction}` });
+                  }}
+                >
+                  <span className="tasks-project-query-field-icon">
+                    <Icon name={option.icon} />
+                  </span>
+                  <span>{option.label}</span>
+                  <Icon name="check" />
+                </button>
+              ))}
+              {!sortFields.length ? (
+                <p className="tasks-project-filter-menu-empty" role="status">
+                  Brak pasujących pól
+                </p>
+              ) : null}
+            </div>
+          </>
+        )}
+      </Dropdown>
+      <ItemFiltering data={data} url={url} />
+      {children}
+    </ViewToolbar>
   );
 }
 

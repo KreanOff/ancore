@@ -346,9 +346,40 @@ export default function Timeline({ data, url, csrfToken, busy, moreControl, onUp
 
   return (
     <section className="work-timeline" aria-label="Oś czasu zadań" style={style}>
-      <div className="work-timeline-toolbar">
+      <ItemToolbar
+        data={data}
+        url={url}
+        actions={
+          <div
+            className="tasks-segments work-timeline-navigation work-timeline-scales"
+            role="group"
+            aria-label="Nawigacja osi czasu"
+          >
+            <button
+              type="button"
+              className="tasks-filter-button"
+              disabled={locked}
+              onClick={() => focusDay(todayDay())}
+            >
+              Dzisiaj
+            </button>
+            {SCALES.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`tasks-filter-button${scale === value ? ' is-active' : ''}`}
+                aria-pressed={scale === value}
+                disabled={locked}
+                onClick={() => focusDay(visibleDay(), value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        }
+      >
         <form
-          className="tasks-search-field work-timeline-search"
+          className="tasks-search-field work-view-toolbar-search"
           role="search"
           onSubmit={(event) => {
             event.preventDefault();
@@ -371,34 +402,7 @@ export default function Timeline({ data, url, csrfToken, busy, moreControl, onUp
             <Icon name="arrow-right" />
           </button>
         </form>
-        <ItemToolbar data={data} url={url} />
-        <div
-          className="tasks-segments work-timeline-navigation work-timeline-scales"
-          role="group"
-          aria-label="Nawigacja osi czasu"
-        >
-          <button
-            type="button"
-            className="tasks-filter-button"
-            disabled={locked}
-            onClick={() => focusDay(todayDay())}
-          >
-            Dzisiaj
-          </button>
-          {SCALES.map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={`tasks-filter-button${scale === value ? ' is-active' : ''}`}
-              aria-pressed={scale === value}
-              disabled={locked}
-              onClick={() => focusDay(visibleDay(), value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      </ItemToolbar>
       {error && !editing ? (
         <div className="tasks-modal__errors work-timeline-error" role="alert">
           {error}

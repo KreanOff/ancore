@@ -18,6 +18,7 @@ import { Resize } from '../shared/table';
 import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 import { dateLabel } from '../spaces/types';
 import { SpaceHeader } from '../spaces/SpaceHeader';
+import { ViewToolbar } from '../spaces/ViewToolbar';
 import NotesDialog from './NotesDialog';
 import type { Tag, TagsData } from './types';
 
@@ -308,121 +309,118 @@ export default function TagsPage(props: PageProps) {
             ) : null
           }
         />
-        <div className="tasks-filterbar tasks-filterbar--directory">
-          <div className="tasks-filterbar-left">
-            <DirectoryColumnManager
-              columns={columns}
-              layout={sizing.layout}
-              save={sizing.saveLayout}
-              reset={sizing.reset}
-            />
-            <Dropdown
-              label={`Sortowanie: ${sort.label}`}
-              className="tasks-sort-dropdown"
-              menuClass="tasks-sort-menu"
-              trigger={
-                <>
-                  <Icon
-                    name={
-                      sort.direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-wide-narrow'
-                    }
-                  />
-                  <span>Sortuj</span>
-                  <span className="tasks-project-sort-current">{sort.label}</span>
-                  <Icon name="chevron-down" />
-                </>
-              }
-            >
-              {(close) =>
-                data.sort_options.map((option) => (
-                  <button
-                    type="button"
-                    role="menuitemradio"
-                    key={option.value}
-                    aria-checked={data.sort === option.value}
-                    className={data.sort === option.value ? 'is-active' : ''}
-                    onClick={() => {
-                      close();
-                      change({ sort: option.value });
-                    }}
-                  >
-                    <Icon name={option.icon} />
-                    <span>{option.label}</span>
-                  </button>
-                ))
-              }
-            </Dropdown>
-            <details
-              ref={aggregate}
-              className={`tasks-project-filter-builder tasks-directory-filter-aggregate ${activeFilters ? 'is-active' : ''}`}
-            >
-              <summary
-                className="tasks-filter-button tasks-project-query-trigger"
-                aria-label="Filtruj listę"
-              >
-                <Icon name="list-filter" />
-                <span>Filtruj</span>
-                <Icon name="chevron-down" />
-              </summary>
-              <div
-                className="tasks-project-query-panel tasks-directory-filter-aggregate__panel"
-                aria-label="Filtry listy"
-              >
-                <header className="tasks-project-query-panel__header tasks-project-query-panel__header--main">
-                  <Icon name="list-filter" />
-                  <strong>Filtry</strong>
-                </header>
-                <div className="tasks-directory-filter-aggregate__controls">
-                  {filters.map(([key, optionKey, label, icon]) => (
-                    <TagFilter
-                      key={key}
-                      label={label}
-                      icon={icon}
-                      value={data.filters[key]}
-                      options={data.filter_options[optionKey]}
-                      change={(value) => change({ [key]: value })}
-                    />
-                  ))}
-                  {activeFilters ? (
-                    <button
-                      className="tasks-filter-button"
-                      onClick={() => change(Object.fromEntries(filters.map(([key]) => [key, ''])))}
-                    >
-                      Wyczyść filtry
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </details>
-          </div>
-          <div className="tasks-filterbar-center" />
-          <div className="tasks-filterbar-right">
-            <form
-              className="react-field-slot"
-              onSubmit={(event) => {
-                event.preventDefault();
-                change({});
-              }}
-            >
-              <label className="tasks-search-field tasks-project-search">
-                <Icon name="search" />
-                <input
-                  type="search"
-                  value={query}
-                  placeholder="Szukaj tagów"
-                  aria-label="Szukaj tagów"
-                  autoComplete="off"
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setQuery(value);
-                    clearTimeout(timer.current);
-                    timer.current = setTimeout(() => change({ q: value }), 350);
-                  }}
+        <ViewToolbar>
+          <Dropdown
+            label={`Sortowanie: ${sort.label}`}
+            className="tasks-sort-dropdown"
+            menuClass="tasks-sort-menu"
+            triggerClassName="tasks-filter-button tasks-project-query-trigger"
+            trigger={
+              <>
+                <Icon
+                  name={
+                    sort.direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'
+                  }
                 />
-              </label>
-            </form>
-          </div>
-        </div>
+                <span>Sortowanie</span>
+                <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+              </>
+            }
+          >
+            {(close) =>
+              data.sort_options.map((option) => (
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  key={option.value}
+                  aria-checked={data.sort === option.value}
+                  className={data.sort === option.value ? 'is-active' : ''}
+                  onClick={() => {
+                    close();
+                    change({ sort: option.value });
+                  }}
+                >
+                  <Icon name={option.icon} />
+                  <span>{option.label}</span>
+                </button>
+              ))
+            }
+          </Dropdown>
+          <details
+            ref={aggregate}
+            className={`tasks-project-filter-builder tasks-directory-filter-aggregate ${activeFilters ? 'is-active' : ''}`}
+          >
+            <summary
+              className="tasks-filter-button tasks-project-query-trigger"
+              aria-label="Filtrowanie tagów"
+            >
+              <Icon name="list-filter" />
+              <span>Filtrowanie</span>
+              <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+            </summary>
+            <div
+              className="tasks-project-query-panel tasks-directory-filter-aggregate__panel"
+              aria-label="Filtry listy"
+            >
+              <header className="tasks-project-query-panel__header tasks-project-query-panel__header--main">
+                <Icon name="list-filter" />
+                <strong>Filtry</strong>
+              </header>
+              <div className="tasks-directory-filter-aggregate__controls">
+                {filters.map(([key, optionKey, label, icon]) => (
+                  <TagFilter
+                    key={key}
+                    label={label}
+                    icon={icon}
+                    value={data.filters[key]}
+                    options={data.filter_options[optionKey]}
+                    change={(value) => change({ [key]: value })}
+                  />
+                ))}
+                {activeFilters ? (
+                  <button
+                    className="tasks-filter-button"
+                    onClick={() => change(Object.fromEntries(filters.map(([key]) => [key, ''])))}
+                  >
+                    Wyczyść filtry
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </details>
+          <DirectoryColumnManager
+            columns={columns}
+            layout={sizing.layout}
+            save={sizing.saveLayout}
+            reset={sizing.reset}
+          />
+          <form
+            className="tasks-search-field work-view-toolbar-search"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              change({});
+            }}
+          >
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              placeholder="Szukaj tagów"
+              aria-label="Szukaj tagów"
+              autoComplete="off"
+              onChange={(event) => {
+                const value = event.target.value;
+                setQuery(value);
+                clearTimeout(timer.current);
+                timer.current = setTimeout(() => change({ q: value }), 350);
+              }}
+            />
+            <button type="submit" className="tasks-filter-button" aria-label="Szukaj tagów">
+              <Icon name="arrow-right" />
+            </button>
+          </form>
+        </ViewToolbar>
         <div className="u-sr-only" role="status" aria-live="polite">
           {notice}
         </div>

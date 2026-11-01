@@ -1,7 +1,7 @@
 <details class="tasks-project-filter-builder tasks-directory-filter-aggregate{% if has_active_filters %} is-active{% endif %}" data-directory-filter-aggregate>
     <summary class="tasks-filter-button tasks-project-query-trigger" aria-label="Filtruj listę">
         <i data-icon="list-filter" aria-hidden="true"></i>
-        <span>Filtruj</span>
+        <span>{{ toolbar_label|default:'Filtruj' }}</span>
         <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
     </summary>
     <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel" aria-label="Filtry listy" data-directory-filter-aggregate-panel>

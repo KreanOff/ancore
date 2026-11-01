@@ -1,12 +1,12 @@
 {% load account_avatar %}
-<form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get">
+{% if not toolbar_controls_only %}<form class="tasks-filterbar tasks-filterbar--directory work-view-toolbar work-item-toolbar{% if extra_class %} {{ extra_class }}{% endif %}" method="get">
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
     {% if not filters_only %}<input type="hidden" name="sort" value="{{ item_sort.value }}">{% endif %}
-    {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+    {% if query and view != 'timeline' %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
     {% if summary_filter %}<input type="hidden" name="summary" value="{{ summary_filter }}">{% endif %}
-    <div class="tasks-filterbar-left">
+    <div class="tasks-filterbar-left work-view-toolbar-controls">{% endif %}
         {% if not filters_only %}<details class="tasks-directory-filter-aggregate tasks-project-sort-builder" data-directory-filter-aggregate>
-            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortowanie</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
+            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="{% if item_sort.direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-narrow-wide{% endif %}" aria-hidden="true"></i><span>Sortowanie</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
             <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="arrow-up-down" aria-hidden="true"></i><strong>Sortowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{% querystring item_query_params sort=None page=None %}">Domyślnie</a></header>
                 <div class="tasks-project-filter-choice-list">
@@ -23,9 +23,9 @@
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="list-filter" aria-hidden="true"></i><strong>Filtrowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{% querystring item_query_params work_type=None assignee=None status=None priority=None team=None summary=None page=None %}">Wyczyść</a></header>
                 <div class="tasks-project-filter-detail__body">
         <select class="tasks-inline-select" name="work_type" aria-label="Typ zgłoszenia"><option value="">Wszystkie typy</option>{% for type in type_options %}<option value="{{ type.key }}" data-ancore-option-icon="{{ type.icon }}"{% if type_filter == type.key %} selected{% endif %}>{{ type.label }}</option>{% endfor %}</select>
-        <select class="tasks-inline-select" name="assignee" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me" data-ancore-option-preview="work-filter-current-user"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option>{% if space %}<option value="unassigned"{% if assignee_filter == 'unassigned' %} selected{% endif %}>Nieprzypisane</option>{% for person in assignee_options %}<option value="{{ person.pk }}" data-ancore-option-preview="work-filter-user-{{ person.pk }}"{% if assignee_filter == person.pk|stringformat:'s' %} selected{% endif %}>{{ person.get_full_name|default:person.email }}</option>{% endfor %}{% endif %}</select>
+        {% if not hide_assignee %}<select class="tasks-inline-select" name="assignee" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me" data-ancore-option-preview="work-filter-current-user"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option>{% if space %}<option value="unassigned"{% if assignee_filter == 'unassigned' %} selected{% endif %}>Nieprzypisane</option>{% for person in assignee_options %}<option value="{{ person.pk }}" data-ancore-option-preview="work-filter-user-{{ person.pk }}"{% if assignee_filter == person.pk|stringformat:'s' %} selected{% endif %}>{{ person.get_full_name|default:person.email }}</option>{% endfor %}{% endif %}</select>
         {% user_avatar request.user as current_avatar %}<template id="work-filter-current-user">{% include 'accounts/includes/user_avatar.html' with avatar=current_avatar avatar_class='tasks-issue-mini-avatar' only %}</template>
-        {% for person in assignee_options %}{% user_avatar person as person_avatar %}<template id="work-filter-user-{{ person.pk }}">{% include 'accounts/includes/user_avatar.html' with avatar=person_avatar avatar_class='tasks-issue-mini-avatar' only %}</template>{% endfor %}
+        {% for person in assignee_options %}{% user_avatar person as person_avatar %}<template id="work-filter-user-{{ person.pk }}">{% include 'accounts/includes/user_avatar.html' with avatar=person_avatar avatar_class='tasks-issue-mini-avatar' only %}</template>{% endfor %}{% endif %}
         {% if space %}
         <select class="tasks-inline-select" name="status" aria-label="Status"><option value="">Wszystkie statusy</option>{% for status in space.statuses %}<option value="{{ status.key }}" data-ancore-option-preview="work-filter-status-{{ forloop.counter }}"{% if status_filter == status.key %} selected{% endif %}>{{ status.label }}</option>{% endfor %}</select>
         {% for status in space.statuses %}<template id="work-filter-status-{{ forloop.counter }}">{% include 'core/includes/select_status.html' with category=status.category only %}</template>{% endfor %}
@@ -37,6 +37,9 @@
                 </div>
             </div>
         </details>
+    {% if not toolbar_controls_only %}
+        {% if view == 'timeline' %}<label class="tasks-search-field work-view-toolbar-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj na osi czasu" aria-label="Szukaj na osi czasu"><button type="submit" class="tasks-filter-button" aria-label="Szukaj zadań"><i data-icon="arrow-right" aria-hidden="true"></i></button></label>{% endif %}
     </div>
 </form>
 {% if summary_filter %}<div class="work-summary-filter" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring item_query_params summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}
+{% endif %}

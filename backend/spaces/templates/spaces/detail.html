@@ -13,7 +13,7 @@
 </nav>
 {% endif %}
 {% endblock %}
-{% block work_content_class %}{% if view == 'overview' or view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %} work-content--items{% endif %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% if view == 'settings' %} space-settings-panel{% endif %}{% endblock %}
+{% block work_content_class %}{% if view == 'overview' or view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' or view == 'reports' %} work-content--items{% endif %}{% if view == 'list' or view == 'board' or view == 'backlog' %} work-content--tasks{% endif %}{% if view == 'settings' %} space-settings-panel{% endif %}{% endblock %}
 {% block work_pagination %}{% endblock %}
 {% block work_content %}
 {% if view == 'list' or view == 'board' or view == 'backlog' or view == 'timeline' %}{% include 'spaces/item_toolbar.html' %}{% endif %}

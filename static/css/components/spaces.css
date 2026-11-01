@@ -192,12 +192,6 @@
 .work-summary-filter { display: flex; align-items: center; gap: 12px; padding: 8px var(--work-space-inline-padding, var(--app-page-padding-x)); border-bottom: 1px solid var(--border-color); font-size: var(--font-size-sm); }
 /* Personal space dashboard: existing summary panels on an editable, responsive grid. */
 .work-summary-dashboard { container-type: inline-size; min-width: 0; }
-.work-summary-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
-.work-summary-toolbar-title, .work-summary-toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.work-summary-toolbar-title > .work-caption { margin-left: 8px; }
-.work-summary-toolbar .tasks-filter-button { gap: 6px; font-size: 12px; }
-.work-summary-toolbar .tasks-project-query-trigger { font-size: var(--font-size-sm); }
-.work-summary-toolbar .work-item-toolbar { display: flex; min-height: 0; margin: 0; padding: 0; border: 0; }
 .work-summary-toolbar .work-summary-save { background: var(--primary-button-bg); border-color: transparent; }
 .work-summary-edit-hint { margin: -4px 0 16px; }
 .work-summary-edit-hint-mobile { display: none; }
@@ -284,7 +278,6 @@
     .work-summary-widget.is-metric .work-summary-widget-body > .work-panel { min-height: 120px; }
     .work-summary-drag-handle { touch-action: pan-y; cursor: default; }
     .work-summary-resize-handle { display: none; }
-    .work-summary-toolbar-title > .work-caption { margin-left: 0; }
 }
 /* Interactive summary: keep the shared neutral controls and reporting palette. */
 .work-summary-metric { transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
@@ -558,6 +551,87 @@
 .work-content--tasks > .work-panel-heading { padding: 12px 16px 0; flex-wrap: wrap; }
 .work-page .work-content.work-content--items { display: flex; flex-direction: column; gap: 8px; padding: 5px var(--work-space-inline-padding, var(--app-page-padding-x)); }
 .work-content--items > .work-item-toolbar { min-height: 0; padding: 0; border: 0; }
+/* All Space views share the same compact toolbar and DOM control order. */
+.work-page .tasks-filterbar.work-view-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+    gap: 8px;
+    min-height: var(--control-height);
+    height: auto;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+.work-page .work-view-toolbar-controls,
+.work-page .work-view-toolbar-actions,
+.work-page .work-view-toolbar-fields {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.work-page .work-view-toolbar-controls { flex: 1 1 auto; }
+.work-page .work-view-toolbar-actions { flex: 0 1 auto; margin-left: auto; }
+.work-page .work-view-toolbar .work-view-toolbar-controls > * { order: 0; }
+.work-page .work-view-toolbar :is(.tasks-filter-button, .ancore-custom-select__button, .tasks-inline-select) {
+    height: var(--control-height);
+    min-height: var(--control-height);
+    font-size: var(--font-size-sm);
+    gap: 6px;
+}
+.work-page .work-view-toolbar-fields > .documents-field,
+.work-page .work-view-toolbar-field {
+    display: block;
+    width: 190px;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+}
+.work-page .work-view-toolbar-fields > .documents-field > div { display: block; }
+.work-page .work-view-toolbar-fields .ancore-custom-select { width: 100%; min-width: 0; max-width: none; }
+.work-page .work-view-toolbar .tasks-search-field.work-view-toolbar-search {
+    flex: 0 1 230px;
+    width: 230px;
+    min-width: 0;
+    max-width: 100%;
+    height: var(--control-height);
+    margin: 0;
+    padding-inline: 9px 2px;
+    gap: 7px;
+    border-radius: var(--dropdown-control-radius);
+}
+.work-view-toolbar-search > [data-icon] { width: 16px; height: 16px; flex-shrink: 0; }
+.work-view-toolbar-search input { flex: 1; min-width: 0; margin-left: 0; }
+.work-page .work-view-toolbar-search .tasks-filter-button {
+    border: 0;
+    background: transparent;
+    min-width: 28px;
+    padding: 4px;
+    height: calc(var(--control-height) - 4px);
+    min-height: 0;
+}
+.work-page .work-view-toolbar .work-timeline-scales { height: var(--control-height); box-sizing: border-box; }
+.work-page .work-view-toolbar .work-timeline-scales .tasks-filter-button { height: calc(var(--control-height) - 6px); min-height: 0; }
+.work-page .tasks-workspace > .work-view-toolbar { margin: 5px var(--work-space-inline-padding) 8px; }
+.work-page .tasks-workspace > .work-view-toolbar ~ .work-content--tasks { padding-top: 0; }
+.work-page .work-summary-toolbar.work-view-toolbar { margin-bottom: 8px; }
+.work-page .work-reports > .work-view-toolbar { margin-bottom: -8px; }
+@media (max-width: 650px) {
+    .work-page .work-view-toolbar-controls { flex-basis: 100%; }
+    .work-page .work-view-toolbar .tasks-search-field.work-view-toolbar-search { flex-basis: 100%; width: 100%; }
+    .work-page .work-view-toolbar-fields { flex: 1 1 100%; }
+    .work-page .work-view-toolbar-fields > .documents-field,
+    .work-page .work-view-toolbar-field { flex: 1 1 190px; }
+    .work-page .work-view-toolbar-actions { margin-left: 0; }
+    .work-page .work-reports > .work-view-toolbar { margin-bottom: -4px; }
+}
 .work-content--items > .tasks-board { padding: 0; }
 .work-content--items > .work-panel-heading { padding: 0; }
 .work-content--items > .work-summary-filter { flex-shrink: 0; padding: 0; border: 0; }
@@ -850,12 +924,6 @@
 /* Timeline uses the shared controls, status colors and modal shell. */
 .work-page .work-content.work-content--timeline { overflow: hidden; }
 .work-timeline { --timeline-grid-color: color-mix(in srgb, var(--border-color) 55%, transparent); --timeline-row-height: 40px; display: flex; flex: 1; flex-direction: column; min-height: 0; min-width: 0; gap: 8px; }
-.work-timeline-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
-.work-timeline-toolbar > .work-item-toolbar { border: 0; padding: 0; min-height: 0; width: auto; margin: 0; }
-.work-timeline-search { width: 230px; height: var(--control-height); padding-inline: 9px 2px; gap: 7px; }
-.work-timeline-search > [data-icon] { width: 16px; height: 16px; flex-shrink: 0; }
-.work-timeline-search input { flex: 1; margin-left: 0; }
-.work-timeline-search .tasks-filter-button { border: 0; background: transparent; min-width: 28px; padding: 4px; height: 28px; }
 .work-timeline-navigation { margin-left: auto; }
 .work-timeline-scales { flex-wrap: nowrap; background: var(--secondary-menu-bg); border: 1px solid var(--border-color); border-radius: var(--dropdown-control-radius); }
 .work-timeline-scales .tasks-filter-button { height: 26px; border-radius: 4px; background: transparent; box-shadow: none; }
@@ -931,9 +999,6 @@
     .work-timeline-table { --timeline-meta: 190px; --timeline-panel-inset: 4px; --timeline-panel-padding: 6px; }
     .work-timeline-table tbody > tr:first-child > .work-timeline-heading { --timeline-panel-top: 4px; }
     .work-timeline-table tbody > tr:last-child > .work-timeline-heading { --timeline-panel-bottom: 4px; }
-    .work-timeline-toolbar { gap: 6px; }
-    .work-timeline-search { width: 100%; }
-    .work-timeline-toolbar .tasks-filterbar-left { flex-wrap: nowrap; }
     .work-timeline-scales .tasks-filter-button { padding-inline: 7px; font-size: 11px; }
     .work-timeline-table .work-timeline-heading > .tasks-issue-row.work-issue-row { grid-template-columns: 18px 20px minmax(0, 1fr); grid-template-rows: 18px 18px; gap: 0 4px; padding-block: 1px; }
     .work-timeline-heading .tasks-row-priority { grid-column: 1; grid-row: 1 / 3; }
@@ -961,20 +1026,12 @@
 
 /* Reports extend the existing panels, controls and compact space typography. */
 .work-reports { display: grid; gap: 16px; min-width: 0; }
-.work-reports-header, .work-reports-actions, .work-reports-panel-heading, .work-reports-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.work-reports-header, .work-reports-panel-heading, .work-reports-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
 .work-reports-header { flex-wrap: wrap; }
 .work-reports-header h2 { font-size: 17px; margin: 0 0 4px; }
 .work-reports-header p, .work-reports-panel-heading p { margin: 0; }
-.work-reports-actions { flex-wrap: wrap; gap: 8px; }
 .work-reports .tasks-filter-button { text-decoration: none; }
 .work-reports :is(a, button, summary, [tabindex="0"]):focus-visible { outline: 2px solid var(--system-accent) !important; outline-offset: 2px; }
-.work-reports-filters { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; padding: 12px 0 16px; border-bottom: 1px solid var(--border-color); }
-.work-reports-filter-fields { display: flex; align-items: flex-end; flex-wrap: wrap; flex: 1; min-width: 0; border: 0; padding: 0; margin: 0; gap: 12px; }
-.work-reports-filter-fields > .documents-field { width: 190px; min-width: 0; margin: 0; gap: 5px; }
-.work-reports-filter-fields .ancore-custom-select { width: 100%; min-width: 0; }
-.work-reports-filter-fields .ancore-custom-select__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.work-reports-filter-fields .ancore-custom-select__button { min-height: 32px; height: 32px; }
-.work-reports-filter-fields label { font-size: 12px; }
 .work-reports-filter-summary { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 .work-reports-filter-summary > span { padding: 3px 8px; background: var(--panel-bg); border-radius: var(--radius); font-size: 12px; overflow-wrap: anywhere; }
 .work-reports-section-heading { flex-wrap: wrap; margin-bottom: -6px; }
@@ -1084,11 +1141,6 @@
 @media (max-width: 650px) {
     .work-reports { gap: 12px; }
     .work-reports-header { align-items: flex-start; }
-    .work-reports-actions { width: 100%; }
-    .work-reports-actions > * { flex: 1; justify-content: center; }
-    .work-reports-filter-fields { gap: 10px; flex-basis: 100%; }
-    .work-reports-filter-fields > .documents-field { width: calc(50% - 5px); flex: 1 1 calc(50% - 5px); }
-    .work-reports-filter-fields > .documents-field:first-child { flex-basis: 100%; }
     .work-reports .work-panel { padding: 12px; }
     .work-reports-kpis { gap: 8px; }
     .work-reports-kpi { gap: 10px; }
