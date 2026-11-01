@@ -1,10 +1,28 @@
 /* Spaces reuse Ancore's directory, tab, form, modal and status components. */
 .work-task-page .tasks-issue-title-field .form-input { font-size: 20px; }
-.work-task-page .tasks-issue-tabs { overflow-x: auto; white-space: nowrap; }
 .work-task-page .work-task-visibility { text-decoration: none; }
 .work-task-visibility > [data-icon] { flex-shrink: 0; }
 .work-task-visibility > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .work-task-page .tasks-issue-field > .errorlist { grid-column: 2; margin: 0; }
+.work-task-page .tasks-issue-primary { --tasks-issue-content-padding-x: var(--app-page-padding-x); }
+/* Task properties share the timeline's floating panel surface. */
+.work-task-page .tasks-issue-sidebar {
+    align-self: start;
+    min-height: 0;
+    max-height: calc(100% - 10px);
+    margin: 5px var(--app-page-padding-x);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+}
+.work-task-page .tasks-issue-sidebar > .tasks-issue-side-section:last-child { border-bottom: 0; }
+@media (max-width: 1024px) {
+    .work-task-page .tasks-issue-sidebar { max-height: none; }
+}
+@media (max-width: 650px) {
+    .work-task-page .tasks-issue-sidebar { margin-block: 4px; }
+}
 /* Keep task properties aligned, including React field wrappers and validation. */
 .work-task-page .tasks-issue-sidebar .tasks-issue-side-section {
     display: grid;
@@ -51,23 +69,25 @@
 }
 .work-task-page .tasks-attachment-info > [data-icon] { width: 24px; height: 24px; flex-shrink: 0; }
 .work-page .tasks-workspace { min-height: 0; display: flex; flex-direction: column; }
-.work-page .tasks-topbar-title { margin: 0; }
-.work-page .work-space-title,
+.work-page .tasks-topbar-title,
+.work-task-page .tasks-topbar-title { margin: 0; }
+.work-space-header .work-space-title,
 .work-page:has(.work-content--directory) .tasks-topbar-title { font-size: 17px; font-weight: 700 !important; }
 .work-page { --work-space-inline-padding: var(--app-page-padding-x); }
 .work-page .tasks-topbar--directory:has(.work-space-title),
 .work-page:has(.work-content--directory) :is(.tasks-topbar--directory, .work-item-toolbar) {
     padding-inline: var(--work-space-inline-padding);
 }
-.work-page .tasks-titlebar-left { gap: 10px; min-width: 0; }
+.work-page .tasks-titlebar-left,
+.work-task-page .tasks-titlebar-left { gap: 10px; min-width: 0; }
 .work-page .tasks-titlebar-actions a { text-decoration: none; }
 .work-space-header { flex-shrink: 0; min-width: 0; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
 .work-space-header > .tasks-topbar,
 .work-space-header > .work-tabs { border-bottom: 0; }
 .work-space-header .work-space-title { overflow-wrap: anywhere; }
 .work-tabs { flex-shrink: 0; padding: 0 var(--work-space-inline-padding, var(--app-page-padding-x)); overflow-x: auto; white-space: nowrap; }
-.work-tabs > a { gap: 8px; font-size: 13.5px; }
-.work-tabs > a:not([aria-current="page"]):hover { border-bottom-color: var(--system-interaction); }
+.work-tabs > :is(a, button) { gap: 8px; font-size: 13.5px; }
+.work-tabs > :is(a:not([aria-current="page"]), button:not([aria-selected="true"])):hover { border-bottom-color: var(--system-interaction); }
 .work-tabs [data-icon] { width: 18px; height: 18px; flex-shrink: 0; }
 .work-content { overflow: auto; flex: 1; min-height: 0; padding: 20px var(--work-space-inline-padding, var(--app-page-padding-x)) 32px; font-size: var(--font-size-sm, 13px); }
 .work-page a { color: inherit; }

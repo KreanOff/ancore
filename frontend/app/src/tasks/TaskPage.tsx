@@ -247,16 +247,68 @@ export default function TaskPage(props: PageProps) {
       data-react-screen="space-task"
     >
       <div className="tasks-issue-shell">
-        <header className="tasks-issue-header">
-          <div className="tasks-issue-breadcrumb">
-            <a className="tasks-issue-close" href={data.back_url} aria-label="Wróć do przestrzeni">
-              <Icon name="arrow-left" />
-            </a>
-            <span className="tasks-issue-divider" />
-            <span className="tasks-issue-crumb tasks-issue-crumb--current">
-              <span>{data.item.title}</span>
-            </span>
+        <header className="work-space-header">
+          <div className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
+            <div className="tasks-titlebar-left">
+              <a
+                className="tasks-issue-close"
+                href={data.back_url}
+                aria-label="Wróć do przestrzeni"
+                title="Wróć do przestrzeni"
+              >
+                <Icon name="arrow-left" />
+              </a>
+              <h1 className="tasks-topbar-title work-space-title">{data.item.title}</h1>
+            </div>
+            <div className="tasks-titlebar-actions">
+              {tab === 'work-log' && data.can_edit ? (
+                <button
+                  type="button"
+                  className="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                  disabled={busy}
+                  onClick={() => openLog()}
+                >
+                  <Icon name="plus" />
+                  <span>Dodaj czas</span>
+                </button>
+              ) : null}
+            </div>
           </div>
+          <nav
+            className="notifications-tabs work-tabs work-tabs--views"
+            role="tablist"
+            aria-label="Widok zadania"
+          >
+            {data.tabs.map((nav, index) => (
+              <button
+                key={nav.key}
+                type="button"
+                role="tab"
+                id={`task-tab-${nav.key}`}
+                aria-controls={`task-${nav.key}`}
+                aria-selected={tab === nav.key}
+                tabIndex={tab === nav.key ? 0 : -1}
+                onClick={() => switchTab(nav.key)}
+                onKeyDown={(event) => {
+                  if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
+                    event.preventDefault();
+                    const target =
+                      event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? data.tabs.length - 1
+                          : (index + (event.key === 'ArrowRight' ? 1 : -1) + data.tabs.length) %
+                            data.tabs.length;
+                    switchTab(data.tabs[target].key);
+                    document.getElementById(`task-tab-${data.tabs[target].key}`)?.focus();
+                  }
+                }}
+              >
+                <Icon name={nav.icon} />
+                {nav.label}
+              </button>
+            ))}
+          </nav>
         </header>
         <span className="u-sr-only" role="status" aria-live="polite">
           {auto.notice}
@@ -295,56 +347,6 @@ export default function TaskPage(props: PageProps) {
         >
           <div className="tasks-issue-main">
             <main className="tasks-issue-primary">
-              <div className="tasks-issue-tabbar">
-                <nav
-                  className="notifications-tabs tasks-issue-tabs"
-                  role="tablist"
-                  aria-label="Widok zadania"
-                >
-                  {data.tabs.map((nav, index) => (
-                    <button
-                      key={nav.key}
-                      type="button"
-                      role="tab"
-                      id={`task-tab-${nav.key}`}
-                      aria-controls={`task-${nav.key}`}
-                      aria-selected={tab === nav.key}
-                      tabIndex={tab === nav.key ? 0 : -1}
-                      onClick={() => switchTab(nav.key)}
-                      onKeyDown={(event) => {
-                        if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
-                          event.preventDefault();
-                          const target =
-                            event.key === 'Home'
-                              ? 0
-                              : event.key === 'End'
-                                ? data.tabs.length - 1
-                                : (index +
-                                    (event.key === 'ArrowRight' ? 1 : -1) +
-                                    data.tabs.length) %
-                                  data.tabs.length;
-                          switchTab(data.tabs[target].key);
-                          document.getElementById(`task-tab-${data.tabs[target].key}`)?.focus();
-                        }
-                      }}
-                    >
-                      <Icon name={nav.icon} />
-                      {nav.label}
-                    </button>
-                  ))}
-                </nav>
-                {tab === 'work-log' && data.can_edit ? (
-                  <button
-                    type="button"
-                    className="tasks-filter-button tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                    disabled={busy}
-                    onClick={() => openLog()}
-                  >
-                    <Icon name="plus" />
-                    <span>Dodaj czas</span>
-                  </button>
-                ) : null}
-              </div>
               <div className="tasks-issue-primary-body">
                 <section
                   className="tasks-issue-content tasks-issue-overview"

@@ -113,7 +113,7 @@
                         attachments.innerHTML = payload.attachments_html;
                         window.AncoreIcons?.render(attachments);
                     }
-                    const title = page.querySelector('[data-space-task-title-current] span');
+                    const title = page.querySelector('[data-space-task-title-current]');
                     if (title) title.textContent = form.elements.title.value.trim() || payload.task.title;
                     const completion = page.querySelector('[data-space-task-completion-date]');
                     if (completion) completion.textContent = payload.task.completion_date || 'Nie zamknięto';
