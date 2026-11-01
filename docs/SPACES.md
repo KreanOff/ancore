@@ -667,8 +667,10 @@ poziomy pozostają osiągalne.
 Trwałe adresy konkretnych podzadań nadal przechodzą własną kontrolę dostępu;
 usunięte lub niedostępne podzadanie nie ujawnia adresu rodzica. Dane i operacje
 podzadań pozostają w dotychczasowych modelach. Wspólna powłoka
-zadania pokazuje strzałkę powrotu i tytuł, zakładki i treść po lewej
-oraz właściwości po prawej, bez powtarzania nagłówka przestrzeni. Powrót
+zadania pokazuje strzałkę powrotu i tytuł oraz zakładki w jednym nagłówku
+na całą szerokość, zgodnym z paskiem Przestrzeni. Pod nim treść jest po lewej,
+a właściwości po prawej. „Dodaj czas” w Dzienniku pracy zajmuje miejsce akcji
+w górnym wierszu nagłówka. Powrót
 zachowuje widok i filtry. Wszystkie pięć zakładek używa układu starszego ekranu
 Zadań i wspólnych tabel, modali oraz strumienia historii. Kategoria i
 przypomnienie są polami `SpaceTask`; pozostałe planowanie pozostaje w istniejącej edycji
@@ -703,7 +705,7 @@ z niezapisanymi zmianami chroni `beforeunload`; szkic nie jest utrwalany poza
 otwartą stroną. Bez JavaScript pozostaje zwykły przycisk „Zapisz” i POST.
 Załączniki wybrane przy „Dodaj załącznik” zapisują się razem z danymi zadania,
 z walidacją i wycofaniem całej operacji przy błędzie. „Główna”, „Podzadania”, „Dziennik pracy”,
-„Członkowie” i „Historia” mają własne operacje w `backend/spaces/task_views.py`.
+„Udostępnienia” i „Historia” mają własne operacje w `backend/spaces/task_views.py`.
 Pliki są walidowane i pobierane po ponownej kontroli dostępu. Usunięcie
 zadania wymaga prawa edycji wszystkich kaskadowo usuwanych potomków.
 

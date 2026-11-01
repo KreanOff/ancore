@@ -677,8 +677,14 @@ kontrolki i poziome przewijanie zakładek na telefonie pozostają zachowane.
 
 Szczegóły nowego zadania (`spaces/task_detail.html`) zachowują powłokę,
 kontrolki i współdzielone include'y dawnego ekranu Tasks przez
-`spaces/base.html` oraz `core/base.html`. Nagłówek ma strzałkę powrotu,
-tytuł. Adres i nawigacja zachowują przestrzeń, a powrót `view`
+`spaces/base.html` oraz `core/base.html`. Nagłówek współdzieli z Przestrzenią
+`work-space-header`, `tasks-topbar--directory` i `work-tabs`: strzałka powrotu
+i tytuł 17px/700 są w pierwszym wierszu, zakładki w drugim, ponad obiema
+kolumnami zadania. „Dodaj czas” jest po prawej stronie pierwszego wiersza
+przy aktywnym Dzienniku pracy i prawie edycji. Jedna dolna ramka oddziela
+cały nagłówek od treści, bez separatora między wierszami. Długie tytuły
+zawijają się; zakładki przewijają się poziomo. React i pierwszy render Django
+zachowują ten sam układ. Adres i nawigacja zachowują przestrzeń, a powrót `view`
 i filtry. Panel po prawej zaczyna się osobną sekcją widoczności. Właściwości
 zadania mają kolejność: status, priorytet, przypisane do, typ zgłoszenia,
 kategoria zadania i tagi. Następna sekcja zawiera terminy: datę rozpoczęcia,
@@ -745,7 +751,7 @@ głównego. Istniejące dalsze poziomy są widoczne w tej samej płaskiej liści
 Dziennik pracy korzysta
 z `tasks/includes/work_log_list.html`, `work_log_modal.html` i wspólnego
 `core.work_logs.TimeLogForm`: suma minut, paginacja, awatary, edycja i usuwanie
-przez modal. Członkowie używają `project_members_panel.html`, wspólnej tabeli
+przez modal. Zakładka „Udostępnienia” używa `project_members_panel.html`, wspólnej tabeli
 Workspace oraz modali udostępniania i ról; publiczne zadanie pokazuje osoby
 z dostępem odziedziczonym. Endpointy tabeli i pickera należą do przestrzeni.
 Historia i komentarze współdzielą `task_activity_item.html`, z awatarami,
@@ -1492,7 +1498,7 @@ z wyłączonymi polami i listą członków. Obsługa błędów, szkicu, fokusu, 
 i ponownego wejścia po częściowej nawigacji pozostaje wspólna.
 
 W szczegółach zadania „Widoczność” jest pierwszą sekcją bocznego panelu.
-Zakładka „Członkowie” korzysta z istniejącego systemu zakładek `task-work-log.js`
+Zakładka „Udostępnienia” korzysta z istniejącego systemu zakładek `task-work-log.js`
 i wspólnej tabeli zespołu. `project-team.js` obsługuje `task-detail-form` oraz
 osobny host modali `data-project-team-modal-host="task"`; zachowuje szkic pól,
 błędy, fokus, Escape i inicjalizację po `ancore:content-loaded`. Po zapisaniu
@@ -1502,7 +1508,7 @@ widoczności, domyślnie prywatnej, zgodnie z opisem Przestrzeni powyżej.
 Historyczny wzorzec tworzenia zadania używa wiersza tytułu z widocznością,
 domyślnie „Prywatne — wybrane osoby”. Publiczne zadanie pokazuje dostęp
 odziedziczony, bez osobnego przycisku udostępnienia. Prywatne udostępnia się
-od razu przez „Członkowie” → „Udostępnij”, bez wysłanych zaproszeń.
+od razu przez „Udostępnienia” → „Udostępnij”, bez wysłanych zaproszeń.
 
 ## 2. Powłoka aplikacji
 
@@ -2616,22 +2622,22 @@ pokazuje pola szacowanego czasu ani kolumny „Czas (min)”. Zmiany statusu są
 widoczne w zakładce „Historia”.
 Wspólne style czasu pracy i historii są nadal używane przez Kanban.
 
-Zakładki „Główna”, „Podzadania”, „Dziennik pracy”, „Członkowie” i „Historia” (`tasks-issue-tabbar`) znajdują się
-w lewej kolumnie szczegółów (`tasks-issue-primary`), bezpośrednio nad tematem
-zadania i są wyrównane do jego lewej krawędzi, także na telefonie.
-Pasek zakładek i ich treść mają po 50px odstępu od obu krawędzi lewej kolumny
-(`--tasks-issue-content-padding-x`), także na telefonie. Treść wykorzystuje całą
-pozostałą szerokość bez limitu 980px; wariant dotyczy zadań i podzadań.
-Korzystają z `notifications-tabs`, z fioletowym podkreśleniem. Tekst zakładek
-ma rozmiar `--font-size-lg` (15px); wariant jest ograniczony do szczegółów
-zadania i podzadania. Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
+Zakładki „Główna”, „Podzadania”, „Dziennik pracy”, „Udostępnienia” i „Historia”
+znajdują się w pełnym nagłówku szczegółów, nad lewą kolumną i panelem
+właściwości. Pasek `notifications-tabs work-tabs` ma boczny odstęp
+`--app-page-padding-x` i tekst 13,5px, tak jak w Przestrzeni. Wspólne style
+obejmują linki widoków i przyciski zakładek; aktywny przycisk zachowuje
+`aria-selected` i fioletowe podkreślenie. Treść lewej kolumny bieżącego zadania
+Przestrzeni ma boczne odstępy `--app-page-padding-x` (15px), przez lokalny
+`--tasks-issue-content-padding-x`, i całą pozostałą szerokość
+bez limitu 980px. Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
 przy „Główna”, listę przy „Podzadania”, zegar przy „Dziennik pracy”, osoby
-przy „Członkowie” i strzałkę historii przy „Historia”. Mają 18px i odstęp 8px
+przy „Udostępnienia” i strzałkę historii przy „Historia”. Mają 18px i odstęp 8px
 od etykiety, tak jak zakładki Przestrzeni; dziedziczą kolor tekstu. Pasek
 zachowuje przewijanie poziome na telefonie i obsługę klawiatury.
 Edytowalny tytuł w treści tych widoków ma 20px,
 także na telefonie, zgodnie z rozmiarem nagłówków standardowych modali.
-Pod paskiem zakładek nie ma poziomej linii oddzielającej go od treści.
+Pod paskiem zakładek jest wspólna dolna ramka nagłówka na całą szerokość.
 Temat i opis (`tasks-issue-overview`) są widoczne tylko w „Głównej”,
 przed załącznikami i czatem. „Dziennik pracy” zaczyna się od podsumowania
 i listy wpisów, również przy bezpośrednim wejściu z `tab=work-log`.
@@ -2643,10 +2649,19 @@ zakładki (na wąskich ekranach główny obszar szczegółów). Czat zachowuje w
 limit wysokości. Zapis wpisu czasu odświeża tylko tabelę i historię, zachowując wartości
 tematu i opisu. Dotyczy to zadań i podzadań.
 Prawy panel szczegółów jest wspólny dla wszystkich zakładek zadania
-i podzadania; na wąskich ekranach pozostaje pod treścią zgodnie ze wspólnym
-układem szczegółów. Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
+i podzadania. W bieżących zadaniach Przestrzeni `.work-task-page .tasks-issue-sidebar`
+tworzy pływającą kartę jak lista Osi czasu: obrys `--border-color`,
+zaokrąglenie `--radius`, tło `--card-bg` i cień `--shadow-md`.
+Odstęp poziomy wynosi `--app-page-padding-x` (15px), jak w treści Przestrzeni,
+również na telefonie. Odstęp pionowy wynosi 5px, a do 650px — 4px. Karta kończy się
+na ostatniej sekcji, bez dodatkowego separatora; przy długiej zawartości
+przewija się w dostępnej wysokości. Do 1024px pozostaje pod treścią,
+bez limitu wysokości i z przewijaniem wspólnego obszaru szczegółów.
+Wariant obejmuje React i pierwszy render Django, bez zmiany pól i autosave.
+Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
 ten sam formularz, w tym zmiany z panelu bocznego. „Dodaj czas” pojawia się
-obok zakładek w lewej kolumnie i zapisuje wpisy przez osobny formularz modala.
+po prawej stronie górnego wiersza nagłówka w Dzienniku pracy
+i zapisuje wpisy przez osobny formularz modala.
 Panel boczny szczegółów zadania i podzadania nie pokazuje wierszy „Przestrzeń”
 ani „Grupa”. Ostatnia sekcja panelu występuje wyłącznie w podzadaniu i zawiera
 wybór zadania nadrzędnego. Okno „Planowanie i zespół” również nie pozwala zmienić grupy;
