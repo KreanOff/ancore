@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from core.frontend import form_payload, pagination_payload
 from .avatars import space_avatar
+from .defaults import ISSUE_TYPE_ICONS
 
 
 def space_payload(space):
@@ -128,6 +129,7 @@ def configuration_page(request, context):
         'name': config.name, 'shared': config.shared, 'spaces_count': config.spaces.count(),
         'space_url': context['space_url'], 'revision': context['revision'], 'errors': context['errors'],
         'section': section, 'editor': context.get('editor'),
+        'type_icon_defaults': ISSUE_TYPE_ICONS,
         'sets': [{'key': group['key'], 'title': group['title'], 'management': form_payload(group['formset'].management_form),
                   'errors': list(group['formset'].non_form_errors()),
                   'forms': [form_payload(form) for form in group['formset']]} for group in context['sets']],

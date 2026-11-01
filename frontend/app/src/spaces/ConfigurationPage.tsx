@@ -1,14 +1,19 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { FormFields, type FormSchema } from '../forms/FormDialog';
+import { type FormSchema } from '../forms/FormDialog';
 import { Modal } from '../shared/Modal';
 import SettingsPage from './SettingsPage';
 import ConfigurationTable from './ConfigurationTable';
+import TypeFields from './TypeFields';
 import {
   configurationEditorSchema,
   configurationFieldName,
   configurationHasRow,
-  configurationSubmission,
+  configurationAdd,
+  configurationDraftKey,
+  configurationDraftSubmission,
+  configurationRemove,
+  configurationStage,
 } from './configuration-form';
 import { type Page, type PageProps, pageRequest, PageError } from '../shared/page';
 import { errorMessage } from '../shared/api';
@@ -36,6 +41,7 @@ export interface ConfigurationData {
   section?: ConfigurationSection;
   editor?: ConfigurationEditor | null;
   sets: ConfigurationGroup[];
+  type_icon_defaults?: Record<string, string>;
 }
 interface EditorState extends ConfigurationEditor {
   schema: FormSchema;
@@ -71,7 +77,6 @@ export function ConfigurationForm({
   csrfToken,
   onSaved,
   onStateChange,
-  onCancel,
   hostId,
 }: PageProps & {
   onSaved: () => Promise<void>;
@@ -80,29 +85,62 @@ export function ConfigurationForm({
   hostId?: string;
 }) {
   const section = 'types';
-  const [data, setData] = useState(initial.data as ConfigurationData);
+  const [baseline, setBaseline] = useState(initial.data as ConfigurationData);
+  const [data, setData] = useState(baseline);
+  const [untrustedBaseline, setUntrustedBaseline] = useState(() =>
+    baseline.sets.some((group) => group.forms.some((schema) => schema.bound)),
+  );
   const [editor, setEditor] = useState<EditorState | null>(() =>
     data.editor ? createEditor(data, data.editor) : null,
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [refreshError, setRefreshError] = useState('');
+  const [conflict, setConflict] = useState(() =>
+    data.errors.some((message) => message.includes('Konfiguracja zmieniła się')),
+  );
+  const [committed, setCommitted] = useState(false);
   const [life] = useState(() => new AbortController());
   const form = useRef<HTMLFormElement>(null);
   const sending = useRef(false);
-  // Modal owns draft protection. Parent only blocks navigation while saving.
-  useEffect(() => setData(initial.data as ConfigurationData), [initial.data]);
-  useEffect(() => onStateChange(false, pending), [pending, onStateChange]);
+  const source = useRef(initial.data);
+  const nativeEditor = useRef(untrustedBaseline && !!data.editor);
+  const dirty =
+    !committed &&
+    (untrustedBaseline || configurationDraftKey(data) !== configurationDraftKey(baseline));
+  const blocked = pending || committed || !!refreshError;
+
+  useEffect(() => {
+    if (initial.data === source.current || (dirty && !committed)) return;
+    source.current = initial.data;
+    const clean = initial.data as ConfigurationData;
+    setData(clean);
+    setBaseline(clean);
+    setUntrustedBaseline(false);
+    setCommitted(false);
+    setConflict(false);
+    setError('');
+  }, [initial.data, dirty, committed]);
+  useEffect(() => onStateChange(dirty, pending), [dirty, pending, onStateChange]);
   useEffect(() => () => life.abort(), [life]);
-  async function closeEditor() {
-    if (pending || sending.current) return;
-    const boundInitial =
-      data.editor && data.sets.some((group) => group.forms.some((schema) => schema.bound));
-    if (!boundInitial) {
-      setEditor(null);
-      setError('');
+
+  function acceptClean(clean: ConfigurationData) {
+    setData(clean);
+    setBaseline(clean);
+    setUntrustedBaseline(false);
+    nativeEditor.current = false;
+    setEditor(null);
+    setError('');
+    setConflict(false);
+    setCommitted(false);
+  }
+  async function cancel() {
+    if (pending || sending.current || committed) return;
+    if (!untrustedBaseline && !conflict) {
+      acceptClean(baseline);
       return;
     }
+    sending.current = true;
     setPending(true);
     setError('');
     try {
@@ -113,19 +151,27 @@ export function ConfigurationForm({
         life.signal,
       );
       if (clean.type !== 'space-configuration') throw new Error('Nieprawidłowa odpowiedź serwera.');
-      if (!life.signal.aborted) {
-        setData(clean.data as ConfigurationData);
-        setEditor(null);
-        setError('');
-      }
+      if (!life.signal.aborted) acceptClean(clean.data as ConfigurationData);
     } catch (exception) {
       if (!life.signal.aborted)
         setError('Nie udało się odrzucić zmian i odświeżyć listy. ' + errorMessage(exception));
     } finally {
+      sending.current = false;
       if (!life.signal.aborted) setPending(false);
     }
   }
+  async function closeEditor() {
+    if (pending || sending.current) return;
+    if (nativeEditor.current) {
+      await cancel();
+      return;
+    }
+    setEditor(null);
+    setError('');
+  }
   async function refresh() {
+    if (sending.current) return;
+    sending.current = true;
     setRefreshError('');
     setPending(true);
     try {
@@ -136,19 +182,54 @@ export function ConfigurationForm({
           'Zmiany zapisano, ale nie udało się odświeżyć listy. ' + errorMessage(exception),
         );
     } finally {
+      sending.current = false;
       if (!life.signal.aborted) setPending(false);
     }
   }
   function open(selection: ConfigurationEditor) {
-    if (pending || refreshError) return;
+    if (blocked || sending.current) return;
     setError('');
     setEditor(createEditor(data, selection));
   }
-  async function save(event: FormEvent) {
+  function add() {
+    if (blocked || sending.current) return;
+    try {
+      const next = configurationAdd(data, section);
+      setData(next.data);
+      setError('');
+      setEditor(createEditor(next.data, { section, index: next.index }));
+    } catch (exception) {
+      setError(errorMessage(exception));
+    }
+  }
+  function remove(indices: number[]) {
+    if (blocked || sending.current || !indices.length) return;
+    try {
+      setData(configurationRemove(data, section, indices));
+      setError('');
+    } catch (exception) {
+      setError(errorMessage(exception));
+    }
+  }
+  function stage(event: FormEvent) {
     event.preventDefault();
-    if (sending.current || !editor || !form.current) return;
+    if (blocked || sending.current || !editor || !form.current) return;
     if (!editor.remove && !form.current.reportValidity()) return;
-    const values = configurationSubmission(data, editor, new FormData(form.current));
+    try {
+      setData(
+        editor.remove
+          ? configurationRemove(data, editor.section, [editor.index])
+          : configurationStage(data, editor, new FormData(form.current)),
+      );
+      nativeEditor.current = false;
+      setEditor(null);
+      setError('');
+    } catch (exception) {
+      setError(errorMessage(exception));
+    }
+  }
+  async function save() {
+    if (sending.current || blocked || !dirty || conflict || editor) return;
     sending.current = true;
     setPending(true);
     setError('');
@@ -158,39 +239,48 @@ export function ConfigurationForm({
         data.space_url + 'configuration/',
         csrfToken,
         life.signal,
-        values,
+        configurationDraftSubmission(data),
       );
     } catch (exception) {
       if (life.signal.aborted) return;
+      let explained = false;
       if (exception instanceof PageError) {
         const response = exception.data as unknown as Page;
         if (response.type === 'space-configuration') {
           const corrected = response.data as ConfigurationData;
-          const row = corrected.sets.find((group) => group.key === editor.section)?.forms[
-            editor.index
-          ];
-          const group = corrected.sets.find((group) => group.key === editor.section);
-          if (row && group) {
-            flushSync(() => {
-              setPending(false);
-              setEditor({
-                ...editor,
-                schema: configurationEditorSchema(row),
-                errors: [...corrected.errors, ...group.errors, ...row.errors],
-              });
-            });
-            requestAnimationFrame(() => focusError(form.current));
-          }
-        }
+          const group = corrected.sets.find((group) => group.key === section);
+          const index =
+            group?.forms.findIndex(
+              (schema) =>
+                !schema.fields.some(
+                  (field) => configurationFieldName(field) === 'DELETE' && field.checked,
+                ) &&
+                (schema.errors.length > 0 ||
+                  schema.fields.some((field) => field.errors.length > 0)),
+            ) ?? -1;
+          const stale =
+            exception.status === 409 ||
+            corrected.errors.some((message) => message.includes('Konfiguracja zmieniła się'));
+          explained = corrected.errors.length > 0 || !!group?.errors.length || index >= 0;
+          flushSync(() => {
+            setData(corrected);
+            setConflict(stale);
+            setPending(false);
+            if (index >= 0 && !stale) setEditor(createEditor(corrected, { section, index }));
+          });
+          if (index >= 0 && !stale) requestAnimationFrame(() => focusError(form.current));
+        } else if (exception.status === 409) setConflict(true);
       }
-      setError(errorMessage(exception));
+      if (!explained) setError(errorMessage(exception));
       sending.current = false;
       setPending(false);
       return;
     }
-    // The mutation succeeded. Close the draft before refreshing so a failed GET
-    // offers a read retry instead of a second create/delete request.
-    setEditor(null);
+    // The POST is committed. Every retry from this point only reloads data.
+    flushSync(() => {
+      setCommitted(true);
+      setEditor(null);
+    });
     sending.current = false;
     await refresh();
   }
@@ -198,9 +288,10 @@ export function ConfigurationForm({
   const title = editor
     ? `${editor.remove ? 'Usuń' : editor.adding ? 'Dodaj' : 'Edytuj'} ${nouns[editor.section]}`
     : '';
+  const errors = [...new Set([error, ...data.errors, ...(group?.errors || [])].filter(Boolean))];
   return (
     <>
-      <div className="tasks-modal__body work-configuration">
+      <div className="tasks-modal__body work-configuration space-settings-table-body">
         {refreshError ? (
           <div className="tasks-modal__errors" role="alert">
             {refreshError}
@@ -214,6 +305,17 @@ export function ConfigurationForm({
             </button>
           </div>
         ) : null}
+        {!editor &&
+          errors.map((message, index) => (
+            <p className="tasks-modal__errors" role="alert" key={index}>
+              {message}
+            </p>
+          ))}
+        {conflict ? (
+          <p className="tasks-modal__errors" role="alert">
+            Wybierz „Anuluj”, aby odrzucić szkic i pobrać aktualną konfigurację.
+          </p>
+        ) : null}
         {group ? (
           <section
             className="work-configuration-section"
@@ -224,22 +326,21 @@ export function ConfigurationForm({
             <ConfigurationTable
               key={group.key}
               group={group}
-              pending={pending || !!refreshError}
-              onAdd={() => {
-                const index = group.forms.findIndex((schema) => !configurationHasRow(schema));
-                if (index >= 0) open({ section, index });
-              }}
+              pending={blocked}
+              onAdd={add}
               onEdit={(index) => open({ section, index })}
-              onRemove={(index) => open({ section, index, remove: true })}
+              onRemove={remove}
+              actions={{
+                dirty,
+                saveDisabled: conflict,
+                cancelDisabled: blocked,
+                onSave: () => void save(),
+                onCancel: () => void cancel(),
+              }}
             />
           </section>
         ) : null}
       </div>
-      <footer className="tasks-modal__footer">
-        <button type="button" className="btn btn-secondary" disabled={pending} onClick={onCancel}>
-          Zamknij
-        </button>
-      </footer>
       {editor ? (
         <Modal
           title={title}
@@ -253,17 +354,18 @@ export function ConfigurationForm({
             ref={form}
             className="tasks-modal__form"
             noValidate
-            onSubmit={save}
+            onSubmit={stage}
             onChange={() => setEditor((current) => (current ? { ...current, dirty: true } : null))}
             onInput={() => setEditor((current) => (current ? { ...current, dirty: true } : null))}
           >
-            <div className="tasks-modal__body">
-              {error ? (
-                <p className="tasks-modal__errors" role="alert" tabIndex={-1}>
-                  {error}
-                </p>
-              ) : null}
-              {editor.errors.map((message, index) => (
+            <div
+              className={
+                editor.remove
+                  ? 'tasks-modal__body'
+                  : 'tasks-modal__body profile-edit-body space-settings-main app-form-avatar-layout work-type-form'
+              }
+            >
+              {[...new Set([...errors, ...editor.errors])].map((message, index) => (
                 <p className="tasks-modal__errors" role="alert" tabIndex={-1} key={index}>
                   {message}
                 </p>
@@ -282,7 +384,7 @@ export function ConfigurationForm({
                 </p>
               ) : (
                 <fieldset className="resources-react-fieldset" disabled={pending}>
-                  <FormFields schema={editor.schema} layout />
+                  <TypeFields schema={editor.schema} iconDefaults={data.type_icon_defaults} />
                 </fieldset>
               )}
             </div>
@@ -299,7 +401,7 @@ export function ConfigurationForm({
                 Anuluj
               </button>
               <button type="submit" className="tasks-modal__submit" disabled={pending}>
-                {pending ? 'Zapisywanie…' : editor.remove ? 'Usuń' : 'Zapisz'}
+                {editor.remove ? 'Usuń' : editor.adding ? 'Dodaj' : 'Zastosuj'}
               </button>
             </footer>
           </form>

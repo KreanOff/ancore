@@ -1,12 +1,10 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { Field } from '../forms/FormDialog';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import type { ConfigurationGroup } from './ConfigurationPage';
-import { configurationFieldName as fieldName, configurationHasRow } from './configuration-form';
+import { configurationFieldName as fieldName } from './configuration-form';
 
 const columnIcons: Record<string, string> = {
-  icon: 'shapes',
   key: 'hash',
   label: 'align-left',
   description: 'file-text',
@@ -38,14 +36,22 @@ export default function ConfigurationTable({
   onAdd,
   onEdit,
   onRemove,
+  actions,
 }: {
   group: ConfigurationGroup;
   pending: boolean;
   onAdd: () => void;
   onEdit: (index: number) => void;
-  onRemove: (index: number) => void;
+  onRemove: (indices: number[]) => void;
+  actions: {
+    dirty: boolean;
+    saveDisabled?: boolean;
+    cancelDisabled?: boolean;
+    onSave: () => void;
+    onCancel: () => void;
+  };
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const all = useRef<HTMLInputElement>(null);
   const rows = group.forms.flatMap((schema, index) => {
     const fields = Object.fromEntries(schema.fields.map((field) => [fieldName(field), field]));
@@ -53,21 +59,53 @@ export default function ConfigurationTable({
     return key && !fields.DELETE?.checked ? [{ index, fields, key }] : [];
   });
   const columns =
-    group.forms[0]?.fields.filter((field) => !field.hidden && fieldName(field) !== 'DELETE') || [];
+    group.forms[0]?.fields.filter(
+      (field) =>
+        !field.hidden &&
+        fieldName(field) !== 'DELETE' &&
+        !(group.key === 'types' && fieldName(field) === 'icon'),
+    ) || [];
   if (group.key === 'types') {
-    const order = ['icon', 'key', 'label', 'description'];
+    const order = ['key', 'label', 'description'];
     columns.sort((left, right) => order.indexOf(fieldName(left)) - order.indexOf(fieldName(right)));
   }
   const copy = labels[group.key];
-  const canAdd = group.forms.some((schema) => !configurationHasRow(schema));
-  const selectedCount = rows.filter((row) => selected.has(row.key)).length;
+  const maxForms = group.management.fields.find((field) => field.name.endsWith('-MAX_NUM_FORMS'));
+  const canAdd = rows.length < Number(maxForms?.value || 30);
+  const selectedRows = rows.filter((row) => selected.has(row.index));
+  const selectedCount = selectedRows.length;
   useLayoutEffect(() => {
     if (all.current) all.current.indeterminate = selectedCount > 0 && selectedCount < rows.length;
   }, [selectedCount, rows.length]);
 
   return (
     <>
-      <div className="workplace-edit-modal__team-toolbar">
+      <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar">
+        <button
+          type="button"
+          className="tasks-filter-button"
+          disabled={pending || selectedCount !== 1}
+          onClick={() => {
+            if (!pending && selectedRows.length === 1) onEdit(selectedRows[0].index);
+          }}
+          aria-haspopup="dialog"
+        >
+          <Icon name="pencil" />
+          Edytuj
+        </button>
+        <button
+          type="button"
+          className="tasks-filter-button"
+          disabled={pending || !selectedCount}
+          onClick={() => {
+            if (pending || !selectedRows.length) return;
+            onRemove(selectedRows.map((row) => row.index));
+            setSelected(new Set());
+          }}
+        >
+          <Icon name="trash-2" />
+          Usuń
+        </button>
         <button
           type="button"
           className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
@@ -78,10 +116,33 @@ export default function ConfigurationTable({
           <Icon name="plus" />
           {copy.add}
         </button>
+        <div className="member-access-save-actions">
+          <button
+            type="button"
+            className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+            disabled={pending || !actions.dirty || actions.saveDisabled}
+            onClick={actions.onSave}
+          >
+            <Icon name="check" />
+            {pending ? 'Zapisywanie…' : 'Zapisz'}
+          </button>
+          <button
+            type="button"
+            className="tasks-filter-button"
+            disabled={pending || (actions.cancelDisabled ?? (!actions.dirty && !selectedCount))}
+            onClick={() => {
+              if (pending) return;
+              setSelected(new Set());
+              actions.onCancel();
+            }}
+          >
+            Anuluj
+          </button>
+        </div>
       </div>
       {rows.length ? (
         <div
-          className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable work-configuration-sheet work-configuration-sheet--${group.key}`}
+          className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable work-configuration-sheet work-configuration-sheet--${group.key} work-configuration-sheet--toolbar`}
           role="region"
           aria-label={`${group.title} — tabela`}
           tabIndex={0}
@@ -89,7 +150,7 @@ export default function ConfigurationTable({
             if (event.target !== event.currentTarget || pending) return;
             if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
               event.preventDefault();
-              setSelected(new Set(rows.map((row) => row.key)));
+              setSelected(new Set(rows.map((row) => row.index)));
             } else if (event.key === 'Escape') setSelected(new Set());
           }}
         >
@@ -112,17 +173,11 @@ export default function ConfigurationTable({
                   checked={selectedCount === rows.length}
                   onChange={(event) =>
                     setSelected(
-                      event.target.checked ? new Set(rows.map((row) => row.key)) : new Set(),
+                      event.target.checked ? new Set(rows.map((row) => row.index)) : new Set(),
                     )
                   }
                 />
               </span>
-              <span
-                className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                data-column="action"
-                role="columnheader"
-                aria-label="Działania"
-              />
               {columns.map((field) => (
                 <span
                   key={field.name}
@@ -140,98 +195,61 @@ export default function ConfigurationTable({
               ))}
             </div>
             <div className="tasks-issue-list tasks-directory-list" role="rowgroup">
-              {rows.map(({ index, fields, key }) => {
+              {rows.map(({ index, fields }) => {
                 const name = displayValue(fields.label);
+                const iconValue = fields.icon?.value;
+                const selectedIcon = Array.isArray(iconValue) ? iconValue[0] : iconValue;
+                const iconChoice = fields.icon?.choices?.find(
+                  (option) => option.value === (selectedIcon || ''),
+                );
                 return (
                   <div
-                    className={`tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ${selected.has(key) ? 'checked' : ''}`}
+                    className={`tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ${selected.has(index) ? 'checked' : ''}`}
                     role="row"
-                    key={key}
+                    key={index}
                   >
-                    <input
-                      type="checkbox"
-                      className="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell"
-                      data-column="select"
-                      aria-label={`Zaznacz: ${name}`}
-                      disabled={pending}
-                      checked={selected.has(key)}
-                      onChange={(event) =>
-                        setSelected((current) => {
-                          const next = new Set(current);
-                          if (event.target.checked) next.add(key);
-                          else next.delete(key);
-                          return next;
-                        })
-                      }
-                    />
-                    <div
+                    <span
                       className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                      data-column="action"
+                      data-column="select"
                       role="cell"
                     >
-                      <Dropdown
-                        searchable={false}
-                        label={`Działania: ${name}`}
-                        menuClass="documents-item-menu"
+                      <input
+                        type="checkbox"
+                        className="tasks-row-checkbox"
+                        aria-label={`Zaznacz: ${name}`}
                         disabled={pending}
-                        trigger={<Icon name="menu" />}
-                      >
-                        {(close) => (
-                          <div className="documents-menu-actions">
-                            <button
-                              type="button"
-                              role="menuitem"
-                              className="tasks-project-menu-button"
-                              disabled={pending}
-                              onClick={() => {
-                                close();
-                                onEdit(index);
-                              }}
-                            >
-                              <Icon name="pencil" />
-                              <span>Edytuj</span>
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              className="tasks-project-menu-button"
-                              disabled={pending}
-                              onClick={() => {
-                                close();
-                                onRemove(index);
-                              }}
-                            >
-                              <Icon name="trash-2" />
-                              <span>Usuń</span>
-                            </button>
-                          </div>
-                        )}
-                      </Dropdown>
-                    </div>
+                        checked={selected.has(index)}
+                        onChange={(event) =>
+                          setSelected((current) => {
+                            const next = new Set(current);
+                            if (event.target.checked) next.add(index);
+                            else next.delete(index);
+                            return next;
+                          })
+                        }
+                      />
+                    </span>
                     {columns.map((column) => {
                       const columnKey = fieldName(column);
-                      const value = fields[columnKey].value;
-                      const selectedValue = Array.isArray(value) ? value[0] : value;
-                      const choice = fields[columnKey].choices?.find(
-                        (option) => option.value === (selectedValue || ''),
-                      );
-                      const text =
-                        columnKey === 'icon'
-                          ? choice?.label || 'Domyślna dla typu'
-                          : displayValue(fields[columnKey]);
+                      const text = displayValue(fields[columnKey]);
                       return (
                         <div
                           key={columnKey}
-                          className="tasks-directory-sheet__cell tasks-project-sheet__cell"
+                          className={`tasks-directory-sheet__cell tasks-project-sheet__cell${columnKey === 'label' ? ' tasks-directory-name' : ''}`}
                           data-column={columnKey}
                           role="cell"
                           title={text}
                         >
-                          {columnKey === 'icon' ? (
-                            <span className="tasks-issue-type" aria-label={`Ikona: ${text}`}>
-                              <Icon name={choice?.icon || 'shapes'} />
+                          {group.key === 'types' && columnKey === 'label' && (
+                            <span
+                              className="tasks-issue-type"
+                              aria-label={`Ikona: ${iconChoice?.label || 'Domyślna dla typu'}`}
+                              title={iconChoice?.label || 'Domyślna dla typu'}
+                            >
+                              <Icon name={iconChoice?.icon || 'shapes'} />
                             </span>
-                          ) : columnKey === 'label' ? (
+                          )}
+                          {columnKey === 'label' ? (
                             <button
                               type="button"
                               className="work-configuration-name"

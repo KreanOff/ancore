@@ -629,7 +629,7 @@
 }
 .tasks-directory-board.work-configuration-sheet--types {
     --work-configuration-min-width: 760px;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 80px minmax(140px, 1fr) minmax(180px, 1.3fr) minmax(240px, 2fr);
+    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(140px, 1fr) minmax(180px, 1.3fr) minmax(240px, 2fr);
 }
 .tasks-directory-board.work-configuration-sheet--statuses {
     --work-configuration-min-width: 960px;
@@ -645,6 +645,16 @@
     width: 100%; min-width: var(--work-configuration-min-width); padding-inline: 0;
 }
 .work-configuration-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
+/* Type settings use the same inset sheet and toolbar as sharing. */
+.tasks-directory-board.work-configuration-sheet--toolbar {
+    margin-inline: var(--app-page-padding-x);
+    width: auto;
+}
+.tasks-directory-board.work-configuration-sheet--types.work-configuration-sheet--toolbar {
+    --work-configuration-min-width: 720px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) minmax(140px, 1fr) minmax(180px, 1.3fr) minmax(240px, 2fr);
+}
+.work-configuration-sheet .tasks-directory-name { gap: 8px; }
 .work-configuration-name { min-width: 0; max-width: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .work-configuration-name:hover:not(:disabled) { text-decoration: underline; }
 .work-configuration-name:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
@@ -751,6 +761,57 @@
     .space-settings-page .space-settings-main .app-form-layout,
     .space-settings-page .space-settings-main .app-form-heading:has(> :nth-child(2)) { grid-template-columns: minmax(0, 1fr); }
     .space-settings-page .space-settings-main.app-form-avatar-layout > .app-form-layout { grid-column: 1 / -1; }
+}
+
+/* Type dialogs follow the Space form: icon beside name, description and key. */
+.tasks-modal.app-modal-panel .work-type-form {
+    --app-form-textarea-min-height: 128px;
+    grid-template-columns: 100px minmax(0, 1fr);
+    row-gap: 12px;
+    column-gap: 32px;
+}
+.tasks-modal.app-modal-panel .work-type-form .app-form-layout { row-gap: 12px; column-gap: 48px; }
+.tasks-modal.app-modal-panel .work-type-form .space-settings-fields { grid-column: 2; }
+.work-type-form > .tasks-modal__errors { grid-column: 1 / -1; }
+.work-type-icon-control { align-self: start; }
+.work-type-icon-control .work-type-icon-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    margin: 0;
+    border-radius: var(--dropdown-control-radius);
+    background: var(--secondary-menu-bg);
+}
+.work-type-icon-preview [data-icon] { width: 48px; height: 48px; }
+.work-type-icon-trigger {
+    display: grid;
+    justify-items: center;
+    gap: 0.55rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+.work-type-icon-trigger:focus-visible { outline: none; }
+.work-type-icon-trigger:focus-visible .profile-photo-button { box-shadow: var(--focus-ring); }
+.work-type-icon-menu { min-width: var(--dropdown-menu-min-width); }
+.work-type-icon-menu :is(.emoji-picker-default, .emoji-picker-footer) > .tasks-issue-type { flex: 0 0 auto; }
+.work-type-icon-menu .emoji-picker-grid .tasks-issue-type { padding: 0; background: transparent; }
+.work-type-icon-menu .emoji-picker-grid .tasks-issue-type [data-icon] { width: 28px; height: 28px; }
+.work-type-icon-native { min-width: 0; width: 100%; text-align: center; }
+.work-type-icon-options { margin-top: 12px; text-align: left; }
+@media (max-width: 960px) {
+    .tasks-modal.app-modal-panel .work-type-form { column-gap: 24px; }
+    .tasks-modal.app-modal-panel .work-type-form .app-form-layout { column-gap: 24px; }
+}
+@media (max-width: 640px) {
+    .tasks-modal.app-modal-panel .work-type-form { grid-template-columns: minmax(0, 1fr); }
+    .tasks-modal.app-modal-panel .work-type-form .space-settings-fields { grid-column: 1 / -1; }
+    .tasks-modal.app-modal-panel .work-type-form .app-form-layout { grid-template-columns: minmax(0, 1fr); }
+    .work-type-icon-control { justify-self: start; }
 }
 
 /* Widget catalog: actual rendered widgets shown as inert miniatures. */

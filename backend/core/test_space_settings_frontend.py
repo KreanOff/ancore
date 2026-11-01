@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.http import QueryDict
 from django.test import TestCase
 
+from spaces.defaults import ISSUE_TYPE_ICONS
 from spaces.models import SpaceMembership
 from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
@@ -313,6 +314,7 @@ class SpaceSettingsFrontendTests(TestCase):
                     page = self.client.get(api, {'url': target}, follow=True).json()
                     data = page['data']
                     self.assertEqual(data['section'], section)
+                    self.assertEqual(data['type_icon_defaults'], ISSUE_TYPE_ICONS)
                     self.assertIsNone(data['editor'])
                     self.assertEqual([group['key'] for group in data['sets']], ['statuses', 'types', 'fields'])
                     self.assertEqual(page['title'], next(group['title'] for group in data['sets'] if group['key'] == section))
@@ -376,6 +378,49 @@ class SpaceSettingsFrontendTests(TestCase):
             config.refresh_from_db()
             before['types'][0]['label'] = 'Zmieniony typ'
             self.assertEqual(config.settings, before)
+
+    def test_native_type_editor_uses_settings_layout_and_one_control_per_field(self):
+        self.client.force_login(self.owner)
+        for scoped in (True, False):
+            with self.subTest(scoped=scoped):
+                base = scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/') if scoped else f'/space/{self.space.slug}/'
+                response = self.client.get(base + 'configuration/?section=types&edit=0', follow=True)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context['editor_type_icon'], 'square-check')
+                self.assertContains(response, 'app-form-avatar-layout work-type-form')
+                self.assertContains(response, 'aria-label="Zmień ikonę typu">Zmień</summary>')
+                self.assertNotContains(response, '<details class="work-type-icon-native" open>')
+                for name in ('icon', 'label', 'description', 'key'):
+                    self.assertContains(response, f'name="types-0-{name}"', count=1)
+                self.assertNotContains(response, 'name="types-0-visibility"')
+                content = response.content.decode()
+                self.assertLess(content.index('name="types-0-label"'), content.index('name="types-0-description"'))
+                self.assertLess(content.index('name="types-0-description"'), content.index('name="types-0-key"'))
+                removed = self.client.get(base + 'configuration/?section=types&remove=0', follow=True)
+                self.assertContains(removed, 'Czy na pewno chcesz usunąć')
+                self.assertNotContains(removed, 'work-type-icon-native')
+
+    def test_native_type_editor_keeps_bound_preview_and_reveals_invalid_icon(self):
+        self.client.force_login(self.owner)
+        target = scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/configuration/?section=types')
+        api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/')
+        before = deepcopy(self.space.configuration.settings)
+        values = self.configuration_values(self.client.get(api, {'url': target}).json()['data'])
+        values.update({'types-0-label': '', 'types-0-description': 'Niezapisany opis', 'types-0-icon': 'target'})
+        response = self.client.post(target, values)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.context['editor_type_icon'], 'target')
+        self.assertContains(response, 'Niezapisany opis', status_code=400)
+        self.assertContains(response, 'name="types-0-icon"', count=1, status_code=400)
+        values['types-0-icon'] = '<svg onload="alert(1)">'
+        response = self.client.post(target, values)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.context['editor_type_icon'], 'square-check')
+        self.assertContains(response, '<details class="work-type-icon-native" open>', status_code=400)
+        self.assertContains(response, 'id="id_types-0-icon_error"', status_code=400)
+        self.assertNotContains(response, 'data-icon="<svg', status_code=400)
+        self.space.configuration.refresh_from_db()
+        self.assertEqual(self.space.configuration.settings, before)
 
     def test_native_type_add_and_remove_change_only_the_requested_row(self):
         self.client.force_login(self.owner)
@@ -482,8 +527,11 @@ class SpaceSettingsFrontendTests(TestCase):
                 self.assertEqual(config.settings, expected)
                 response = self.client.get(target)
                 group = next(group for group in response.context['sets'] if group['key'] == 'types')
-                self.assertEqual([header['key'] for header in group['headers']], ['icon', 'key', 'label', 'description'])
-                self.assertEqual(group['rows'][0]['cells'][0], {'key': 'icon', 'icon': 'target', 'value': 'Cel'})
+                self.assertEqual([header['key'] for header in group['headers']], ['key', 'label', 'description'])
+                self.assertEqual(group['rows'][0]['cells'][1], {
+                    'key': 'label', 'value': expected['types'][0]['label'], 'icon': 'target', 'icon_label': 'Cel',
+                })
+                self.assertNotContains(response, 'data-column="icon"')
                 self.assertContains(response, 'Planowanie celów zespołu')
 
                 values = self.configuration_values(self.client.get(api, {'url': target}).json()['data'])

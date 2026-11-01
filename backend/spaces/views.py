@@ -991,9 +991,10 @@ def configuration(request, pk):
         base_url = space_url(request, space, f'configuration/?section={key}')
         empty_form = formset.empty_form
         headers = [{'key': field.name, 'label': field.label, 'icon': icons.get(field.name, 'align-left')}
-                   for field in empty_form.visible_fields() if field.name != 'DELETE']
+                   for field in empty_form.visible_fields()
+                   if field.name != 'DELETE' and not (key == 'types' and field.name == 'icon')]
         if key == 'types':
-            headers.sort(key=lambda header: ('icon', 'key', 'label', 'description').index(header['key']))
+            headers.sort(key=lambda header: ('key', 'label', 'description').index(header['key']))
         rows = []
         for index, saved in enumerate(config.settings.get(key, [])):
             cells = []
@@ -1001,10 +1002,6 @@ def configuration(request, pk):
                 name = header['key']
                 value = saved.get(name)
                 field = empty_form.fields[name]
-                if key == 'types' and name == 'icon':
-                    icon = issue_type_icon(saved['key'], value)
-                    cells.append({'key': name, 'value': dict(field.choices)[icon], 'icon': icon})
-                    continue
                 if name == 'required':
                     value = 'Tak' if value else 'Nie'
                 elif name == 'transitions':
@@ -1012,7 +1009,11 @@ def configuration(request, pk):
                     value = ', '.join(choices.get(item, item) for item in (value or []))
                 elif hasattr(field, 'choices'):
                     value = dict(field.choices).get(value, value)
-                cells.append({'key': name, 'value': value or '—'})
+                cell = {'key': name, 'value': value or '—'}
+                if key == 'types' and name == 'label':
+                    icon = issue_type_icon(saved['key'], saved.get('icon'))
+                    cell.update(icon=icon, icon_label=dict(empty_form.fields['icon'].choices)[icon])
+                cells.append(cell)
             rows.append({'index': index, 'label': saved.get('label', saved.get('key', '')),
                          'cells': cells, 'edit_url': f'{base_url}&edit={index}', 'remove_url': f'{base_url}&remove={index}'})
         groups.append({'key': key, 'title': title, 'formset': formset, 'headers': headers, 'rows': rows,
@@ -1021,11 +1022,14 @@ def configuration(request, pk):
     editor_form = None
     editor_title = ''
     editor_fields = []
+    editor_type_icon = ''
     if editor:
         editor_group = next(group for group in groups if group['key'] == editor['section'])
         if editor['index'] < len(editor_group['formset'].forms):
             editor_form = editor_group['formset'].forms[editor['index']]
             editor_fields = [field for field in editor_form.visible_fields() if field.name != 'DELETE']
+            if editor['section'] == 'types':
+                editor_type_icon = issue_type_icon(editor_form['key'].value(), editor_form['icon'].value())
         _, add_label, edit_label, remove_label, _ = labels[editor['section']]
         editor_title = remove_label if editor['remove'] else (edit_label if editor['index'] < len(editor_group['rows']) else add_label)
     return render(request, 'spaces/configuration.html', {
@@ -1033,7 +1037,7 @@ def configuration(request, pk):
         'space': space, 'space_url': space_url(request, space), 'config': config, 'revision': revision,
         'configuration_section': section,
         'sets': groups, 'editor': editor, 'editor_form': editor_form, 'editor_fields': editor_fields,
-        'editor_title': editor_title,
+        'editor_title': editor_title, 'editor_type_icon': editor_type_icon,
         'configuration_url': space_url(request, space, f'configuration/?section={section}'),
         'errors': errors,
     }, status=400 if request.method == 'POST' else 200)
