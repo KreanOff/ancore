@@ -400,9 +400,9 @@ class StatusForm(StyledForm):
     policy = forms.CharField(label='Zasady wejścia i wyjścia', required=False, max_length=1000,
                              widget=forms.Textarea(attrs={'rows': 3}))
     transitions = forms.MultipleChoiceField(label='Dozwolone przejścia', required=False)
-    position_x = forms.IntegerField(label='Położenie poziome etapu', required=False, min_value=0, max_value=20000,
+    position_x = forms.IntegerField(label='Położenie poziome etapu', required=False, min_value=-1000000, max_value=1000000,
                                     widget=forms.HiddenInput)
-    position_y = forms.IntegerField(label='Położenie pionowe etapu', required=False, min_value=0, max_value=20000,
+    position_y = forms.IntegerField(label='Położenie pionowe etapu', required=False, min_value=-1000000, max_value=1000000,
                                     widget=forms.HiddenInput)
 
     def __init__(self, *args, statuses, **kwargs):

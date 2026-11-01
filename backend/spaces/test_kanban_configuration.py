@@ -49,6 +49,45 @@ class KanbanConfigurationTests(TestCase):
             for field in ('key', 'label', 'category', 'flow_stage', 'wip_limit', 'policy', 'transitions'):
                 self.assertContains(response, f'name="statuses-1-{field}"', count=1)
 
+    def test_workflow_views_share_native_and_api_state_in_both_url_scopes(self):
+        for scoped in (False, True):
+            url = self.url if scoped else f'/space/{self.space.slug}/configuration/?section=statuses'
+            api = self.api if scoped else '/api/v1/page/'
+            for value, expected in [('', 'map'), ('map', 'map'), ('states', 'states'), ('unknown', 'map')]:
+                with self.subTest(scoped=scoped, value=value):
+                    target = url + ('&workflow_view=' + value if value else '')
+                    response = self.client.get(target)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.context['workflow_view'], expected)
+                    self.assertContains(response, 'aria-label="Widoki procesu pracy"')
+                    self.assertContains(response, f'href="{self.url}&amp;workflow_view={expected}" aria-current="page"')
+                    if expected == 'states':
+                        self.assertContains(response, 'work-configuration-sheet--statuses')
+                        self.assertNotContains(response, 'class="work-flow-native-nodes"')
+                        group = next(group for group in response.context['sets'] if group['key'] == 'statuses')
+                        self.assertIn('workflow_view=states', group['add_url'])
+                        self.assertTrue(all('workflow_view=states' in row['edit_url'] and
+                                            'workflow_view=states' in row['remove_url'] for row in group['rows']))
+                    else:
+                        self.assertContains(response, 'class="work-flow-native-nodes"')
+                        self.assertNotContains(response, 'work-configuration-sheet--statuses')
+                    payload = self.client.get(api, {'url': target}).json()['data']
+                    self.assertEqual(payload['workflow_view'], expected)
+
+    def test_native_status_edit_stays_on_states_after_validation_and_save(self):
+        url = self.url + '&workflow_view=states'
+        payload = self.payload()
+        payload.update(configuration_index='1', **{'statuses-1-label': ''})
+        response = self.client.post(url, payload)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.context['workflow_view'], 'states')
+        self.assertEqual(response.context['configuration_url'], url)
+        payload['statuses-1-label'] = 'Rozpoczęte'
+        response = self.client.post(url, payload)
+        self.assertRedirects(response, url + '#statuses', fetch_redirect_response=False)
+        self.space.configuration.refresh_from_db()
+        self.assertEqual(self.space.configuration.settings['statuses'][1]['label'], 'Rozpoczęte')
+
     def test_new_templates_start_with_directional_workflow(self):
         expected = {'new': ['in_progress'], 'in_progress': ['resolved'], 'resolved': ['closed'],
                     'closed': ['reopened'], 'reopened': ['in_progress']}
@@ -75,7 +114,7 @@ class KanbanConfigurationTests(TestCase):
 
     def test_old_clients_preserve_board_positions_and_existing_transitions(self):
         config = self.space.configuration
-        config.settings['statuses'][0].update(position={'x': 0, 'y': 200}, transitions=['closed', 'in_progress'])
+        config.settings['statuses'][0].update(position={'x': -80000, 'y': 250000}, transitions=['closed', 'in_progress'])
         config.save(update_fields=['settings'])
         before = deepcopy(config.settings['statuses'])
         payload = {name: value for name, value in self.payload().items()
@@ -85,9 +124,29 @@ class KanbanConfigurationTests(TestCase):
         config.refresh_from_db()
         self.assertEqual(config.settings['statuses'], before)
 
+    def test_free_map_positions_round_trip_in_all_directions_and_at_bounds(self):
+        for x, y in [(-420, -280), (-85000, 64000), (1000000, -1000000), (-1000000, 1000000)]:
+            with self.subTest(x=x, y=y):
+                payload = self.payload()
+                payload.update({'statuses-1-position_x': str(x), 'statuses-1-position_y': str(y)})
+                self.assertEqual(self.client.post(self.url, payload).status_code, 302)
+                self.space.configuration.refresh_from_db()
+                self.assertEqual(self.space.configuration.settings['statuses'][1]['position'], {'x': x, 'y': y})
+                data = self.client.get(self.api, {'url': self.url}).json()['data']
+                group = next(group for group in data['sets'] if group['key'] == 'statuses')
+                fields = {field['field_name']: field for field in group['forms'][1]['fields']}
+                for axis, value in [('x', x), ('y', y)]:
+                    self.assertEqual(fields['position_' + axis]['value'], str(value))
+                    self.assertTrue(fields['position_' + axis]['hidden'])
+                response = self.client.get(self.url + '&edit=1')
+                self.assertContains(response, f'name="statuses-1-position_x" value="{x}"')
+                self.assertContains(response, f'name="statuses-1-position_y" value="{y}"')
+
     def test_invalid_board_positions_reject_whole_snapshot(self):
         before = deepcopy(self.space.configuration.settings)
-        for x, y in [('-1', '0'), ('20001', '0'), ('5.5', '0'), ('0', ''), ('', '20')]:
+        for x, y in [('-1000001', '0'), ('1000001', '0'), ('0', '-1000001'), ('0', '1000001'),
+                     ('5.5', '0'), ('0', '-5.5'), ('NaN', '0'), ('0', 'Infinity'), ('-Infinity', '0'),
+                     ('invalid', '0'), ('0', '1e100'), ('0', ''), ('', '-20')]:
             with self.subTest(x=x, y=y):
                 payload = self.payload()
                 payload.update({'statuses-1-position_x': x, 'statuses-1-position_y': y})

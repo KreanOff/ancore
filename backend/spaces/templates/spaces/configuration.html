@@ -1,7 +1,15 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}Ustawienia przestrzeni · {{ space.name }}{% endblock %}
 {% block work_page_class %} space-settings-page{% endblock %}
-{% block work_heading %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">Ustawienia przestrzeni · {{ space.name }}</h1>{% endblock %}
+{% block work_header %}<div class="work-space-header">{{ block.super }}</div>{% endblock %}
+{% block work_heading %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title work-space-title">Ustawienia przestrzeni · {{ space.name }}</h1>{% endblock %}
+{% block work_navigation %}
+{% if configuration_section == 'statuses' %}
+<nav class="notifications-tabs work-tabs work-tabs--views" aria-label="Widoki procesu pracy">
+    {% for tab in workflow_tabs %}<a href="{{ tab.url }}"{% if workflow_view == tab.key %} aria-current="page"{% endif %}><i data-icon="{{ tab.icon }}" aria-hidden="true"></i>{{ tab.label }}</a>{% endfor %}
+</nav>
+{% endif %}
+{% endblock %}
 {% block work_content_class %} space-settings-panel{% endblock %}
 {% block work_content %}
 <div class="tasks-modal__body work-configuration space-settings-table-body">
@@ -11,13 +19,13 @@
         <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory member-access-toolbar">
             <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Edytuj</button>
             <button type="button" class="tasks-filter-button" disabled><i data-icon="trash-2" aria-hidden="true"></i>Usuń</button>
-            {% if group.add_url %}<a href="{{ group.add_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>{{ group.add_label }}</a>{% endif %}
+            {% if group.add_url %}{% if group.key != 'statuses' or workflow_view == 'states' %}<a href="{{ group.add_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>{{ group.add_label }}</a>{% endif %}{% endif %}
             <div class="member-access-save-actions">
                 <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled><i data-icon="check" aria-hidden="true"></i>Zapisz</button>
                 <button type="button" class="tasks-filter-button" disabled>Anuluj</button>
             </div>
         </div>
-        {% if group.key == 'statuses' %}
+        {% if group.key == 'statuses' and workflow_view != 'states' %}
         <div class="work-flow-editor work-flow-native" role="region" aria-label="Proces pracy — etapy">
             <p class="workplace-team__hint">Etapy i dozwolone przejścia procesu pracy. Otwórz etap, aby zmienić jego ustawienia.</p>
             <div class="work-flow-native-nodes">

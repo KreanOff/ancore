@@ -944,6 +944,8 @@ def configuration(request, pk):
     config = space.configuration
     requested_section = request.POST.get('configuration_section', request.GET.get('section'))
     section = requested_section if requested_section in {'types', 'statuses'} else 'types'
+    workflow_view = 'states' if request.GET.get('workflow_view') == 'states' else 'map'
+    workflow_query = '&workflow_view=states' if workflow_view == 'states' else ''
     data = request.POST if request.method == 'POST' else None
     StatusSet = formset_factory(StatusForm, extra=1, can_delete=True, max_num=40, validate_max=True)
     TypeSet = formset_factory(TypeForm, extra=1, can_delete=True, max_num=30, validate_max=True)
@@ -1019,7 +1021,8 @@ def configuration(request, pk):
                 config.save(update_fields=['settings'])
                 messages.success(request, 'Konfiguracja została zapisana.')
                 if editor:
-                    return redirect(space_url(request, space, f'configuration/?section={section}#{section}'))
+                    view_query = workflow_query if section == 'statuses' else ''
+                    return redirect(space_url(request, space, f'configuration/?section={section}{view_query}#{section}'))
                 return redirect(space_url(request, space, '?view=settings'))
     if request.method == 'POST':
         # A rejected write must not silently acquire a newer revision for retry.
@@ -1041,7 +1044,7 @@ def configuration(request, pk):
             editor = {'section': section, 'index': 0, 'remove': False}
 
     labels = {
-        'statuses': ('Proces pracy', 'Dodaj status', 'Edytuj status', 'Usuń status', 'Brak statusów.'),
+        'statuses': ('Proces pracy', 'Dodaj stan', 'Edytuj status', 'Usuń status', 'Brak stanów.'),
         'types': ('Typy zgłoszeń', 'Dodaj typ zgłoszenia', 'Edytuj typ zgłoszenia', 'Usuń typ zgłoszenia', 'Brak typów zgłoszeń.'),
         'fields': ('Pola dodatkowe', 'Dodaj pole dodatkowe', 'Edytuj pole dodatkowe', 'Usuń pole dodatkowe', 'Brak pól dodatkowych.'),
     }
@@ -1054,6 +1057,8 @@ def configuration(request, pk):
         key = formset.prefix
         title, add_label, edit_label, remove_label, empty_label = labels[key]
         base_url = space_url(request, space, f'configuration/?section={key}')
+        if key == 'statuses':
+            base_url += workflow_query
         empty_form = formset.empty_form
         headers = [{'key': field.name, 'label': field.label, 'icon': icons.get(field.name, 'align-left')}
                    for field in empty_form.visible_fields()
@@ -1100,9 +1105,14 @@ def configuration(request, pk):
     return render(request, 'spaces/configuration.html', {
         **base_context(request), **settings_context(request, space, section),
         'space': space, 'space_url': space_url(request, space), 'config': config, 'revision': revision,
-        'configuration_section': section,
+        'configuration_section': section, 'workflow_view': workflow_view,
+        'workflow_tabs': [
+            {'key': key, 'label': label, 'icon': icon,
+             'url': space_url(request, space, f'configuration/?section=statuses&workflow_view={key}')}
+            for key, label, icon in [('states', 'Stany', 'list-checks'), ('map', 'Mapa', 'workflow')]
+        ],
         'sets': groups, 'editor': editor, 'editor_form': editor_form, 'editor_fields': editor_fields,
         'editor_title': editor_title, 'editor_type_icon': editor_type_icon,
-        'configuration_url': space_url(request, space, f'configuration/?section={section}'),
+        'configuration_url': space_url(request, space, f'configuration/?section={section}') + (workflow_query if section == 'statuses' else ''),
         'errors': errors,
     }, status=400 if request.method == 'POST' else 200)
