@@ -1,5 +1,356 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Kategorie i grupy bez dekoracji (03.11.2026)
+
+Nazwy kategorii i grup w ustawieniach Przestrzeni oraz selektorach zadania
+są zwykłym tekstem, bez ikon i kolorowego tła. Formularze zawierają nazwę,
+opis i klucz, bez wyboru wyglądu oraz kolumny ikony. Starsze metadane wyglądu
+pozostają w konfiguracji, ale UI ich nie używa. Zmiana nie wymaga migracji.
+
+Przeszły 412 testów frontendu, build z TypeScript oraz 55 testów Django:
+`spaces.test_task_classification`, `core.test_space_settings_frontend`
+i `spaces.test_issue_types`. Dostosowano istniejące oczekiwania schematu
+do pól tekstowych. Sprawdzono także Django, składnię `custom-select.js`,
+kompilację szablonu oraz poprawność diffu i indeksu kodu.
+
+Playwright z lokalnym Chrome na osobnej bazie QA przeszedł 11 scenariuszy:
+sprawdził listy, edycję,
+zapis i odświeżenie, pusty wynik, walidację, selektory zadania oraz ponowne
+wejście. Użyto także zapisanych wcześniej ikon i kolorów. Zweryfikowano
+1440×1000 i 390×844, zwykłe/scoped adresy, referencyjne Typy zgłoszeń
+oraz pierwszy render tabel i formularzy bez JavaScriptu. Nie było błędów JavaScript.
+Kontrola wizualna
+wykryła zastępczą ikonę wybranej wartości i zawężony formularz; oba problemy
+poprawiono i ponownie sprawdzono. Plugin Browser był niedostępny;
+innych przeglądarek i produkcji nie sprawdzano.
+
+## Kategorie i grupy zadań (03.11.2026)
+
+Ustawienia Przestrzeni udostępniają słowniki „Kategorie” i „Grupy”. Zadanie
+korzysta z dotychczasowego `task_type` i nowego opcjonalnego `task_group`;
+oba pola mają zapis, historię oraz walidację bieżącej konfiguracji. Migracja
+`spaces.0006_task_classification` zachowuje istniejące przypisania kategorii.
+Szczegóły danych i UI opisują [Przestrzenie](SPACES.md#pełne-szczegóły-niezależnego-zadania)
+oraz [baza danych](DATABASE.md).
+
+Przeszły 412 testów frontendu, build z TypeScript oraz 119 wybranych testów
+Django w kolejnych uruchomieniach: `spaces.test_task_classification`,
+`spaces.test_task_detail_parity`, `spaces.test_subtask_fields`,
+`spaces.test_configuration_writes`, `spaces.test_issue_types`,
+`spaces.test_kanban_configuration`, `core.test_space_settings_frontend`
+i `spaces.test_management`. Nowe 14 testów obejmuje zwykłe/scoped adresy,
+API i formularze, autosave, historię, izolację Workspace, role, współdzielone
+konfiguracje i prywatne zadania, używane klucze, starszych klientów oraz
+podzadania po usunięciu domyślnej kategorii. Trzy wcześniejsze oczekiwania
+UI zaktualizowano do nowych etykiet, menu i zestawu formularzy.
+Kontrole Django, migracji, diffu i indeksu kodu przeszły.
+
+Playwright z lokalnym Chrome na osobnej bazie QA potwierdził dodawanie,
+edycję i usuwanie słowników, pusty wynik, wybór obu pól i zapis po odświeżeniu,
+historię, ochronę używanych wartości, walidację klucza, błąd serwera z ponowieniem,
+ponowne wejście oraz zwykłe/scoped adresy. Sprawdzono 1440×1000 i 390×844,
+referencyjny ekran Typów zgłoszeń oraz pierwszy render bez JavaScriptu.
+Nie było nieoczekiwanych błędów konsoli ani przepełnienia strony.
+Plugin Browser był niedostępny; innych przeglądarek i produkcji nie sprawdzano.
+
+## Wspólny kolor typu zgłoszenia (03.11.2026)
+
+Kolor typu z konfiguracji Przestrzeni trafia do etykiet zadań, filtrów,
+formularzy, podsumowania, Filtrów i Dla ciebie. Etykiety mają takie samo tło
+jak w ustawieniach; podglądy samych ikon używają pełnego koloru typu.
+Kolor zależy od definicji typu, również gdy dwa typy mają tę samą ikonę.
+Zmiana nie wymaga migracji ani aktualizacji zapisanych zadań.
+
+Przeszło 105 testów Django: `spaces.test_issue_types`,
+`spaces.test_status_colors`, `spaces.test_kanban_configuration`,
+`core.test_filter_frontend`, `dashboard.test_for_you`, `spaces.test_summary`.
+Przeszły także 409 testów frontendu, build z TypeScript, `manage.py check`,
+`makemigrations --check --dry-run`, kontrola diffu i indeksu kodu.
+
+Playwright z lokalnym Chrome na izolowanej bazie QA potwierdził zgodność
+etykiet z ustawieniami, doładowanie listy, tablicę, backlog, podsumowanie,
+formularz i rozmiar ikon 16px, niezależne kolory typów z tą samą ikoną,
+zapis i odczyt nowego koloru, walidację HEX, reset, pusty wynik i ponowne
+wejście. Sprawdzono 1440, 1024 i 390px, zwykłe/scoped adresy oraz pierwszy
+render bez JavaScriptu. Nie było błędów JavaScript ani przepełnienia strony.
+Plugin Browser był niedostępny; innych przeglądarek nie sprawdzano.
+Inne otwarte karty otrzymują kolor przy kolejnym pobraniu danych widoku.
+
+## Wspólny kolor etapu Przestrzeni (03.11.2026)
+
+Kolor z konfiguracji procesu jest przekazywany do nagłówków listy/tablicy,
+ikon zadań i przejść, formularzy, podzadań, osi czasu oraz wykresów.
+`spaces.test_status_colors` sprawdza własny i domyślny kolor, dwa etapy tej
+samej kategorii, ponowny odczyt po zmianie/resetowaniu konfiguracji,
+zwykłe/scoped API, pierwszy render oraz granicę Workspace. Zmiana nie wymaga
+migracji ani aktualizacji zapisanych zadań.
+
+Weryfikacja: 54 istniejące testy `spaces.test_kanban_configuration`
+i `core.test_space_settings_frontend`, 120 testów listy, backlogu,
+podsumowania, raportów, osi czasu, Filtrów i Dla ciebie oraz 3 nowe testy
+kolorów przeszły. Nowe testy wymagały korekty fixture przejść i routingu API;
+po poprawieniu uruchomiono je ponownie z wynikiem OK. `pnpm --dir frontend/app test`
+(409 testów), `build`, `manage.py check`, `git diff --check` i kontrola indeksu
+również przeszły.
+
+Playwright z lokalnym Chrome na izolowanej bazie QA (port 8038) potwierdził:
+identyczne tło etykiety ustawień i nagłówków, różne kolory etapów tej samej
+kategorii, doładowanie/zwijanie listy, puste kolumny, oś czasu, wykresy,
+szczegóły zadania, przejście do innego etapu i jego trwałość, zapis nowego
+koloru, walidację błędnego HEX, przywrócenie domyślnego koloru, ponowne
+wejście i pusty wynik. Sprawdzono 1440, 1024 i 390 px, zwykły/scoped URL
+oraz pierwszy render listy, tablicy i podsumowania bez JavaScriptu.
+Nie odnotowano błędów JavaScript ani przepełnienia szerokości strony.
+Plugin Browser był niedostępny. Nie testowano pozostałych przeglądarek
+ani równoczesnego odświeżania innych otwartych kart; kolory aktualizują się
+przy kolejnym pobraniu danych widoku.
+
+
+## Podglądy ikon typów i etapów bez tła (03.11.2026)
+
+Wspólna reguła `.work-type-icon-preview` w `spaces.css` ma przezroczyste tło.
+Odświeżono wersję arkusza w szablonie Przestrzeni. Playwright/Chrome na osobnej
+bazie QA potwierdził brak tła w obu formularzach przy 1440 i 390px oraz bez JS.
+Rozmiary i kolory ikon pozostały takie same jak przed zmianą. Sprawdzono
+otwieranie pickera, pusty wynik, Escape i powrót fokusu, wymagane pole nazwy
+oraz ponowne wejście. Konsola nie zawierała błędów ani ostrzeżeń.
+Zmiana dotyczy CSS; nie uruchamiano ponownie testów backendu ani buildu Reacta.
+Plugin Browser był niedostępny; innych przeglądarek nie sprawdzano.
+
+## Domyślna karta Stany w Procesie pracy (03.11.2026)
+
+Nowe wejście w Proces pracy otwiera „Stany” w React i pierwszym renderze
+Django. Jawne `workflow_view=map` nadal wybiera mapę; linki natywnych operacji
+zachowują wybraną kartę. Wybór podczas bieżącej wizyty pozostaje bez zmian.
+
+Przeszły build z TypeScript, 55 testów konfiguracji frontendu oraz 54 testy
+Django (`spaces.test_kanban_configuration`, `core.test_space_settings_frontend`)
+na jednorazowej bazie PostgreSQL. Playwright/Chrome na osobnym serwerze QA
+potwierdził zwykłe/scoped adresy, wejście i odświeżenie, przełączanie kart,
+powrót przez Typy zgłoszeń, klawiaturę, pusty wynik wyszukiwania i ponowienie
+po symulowanym HTTP 500. Sprawdzono 1440, 1024 i 390px oraz widok bez JS.
+Nie było błędów JavaScript; jedyny wpis konsoli dotyczył symulowanego HTTP 500.
+Plugin Browser był niedostępny. Nie testowano innych przeglądarek ani całego
+repozytorium.
+
+## Jednakowy rozmiar etykiet typów, etapów i Tagów (03.11.2026)
+
+Ikony nowych nazw miały 24px, ponieważ rozmiar 16px był przypisany wyłącznie
+do komórki `tasks-tag-sheet__visual`. Reguła w `tasks.css` obejmuje teraz także
+bezpośrednie SVG `tasks-project-value-badge--tag-visual`, zachowując 16×16px
+i `flex: 0 0 16px`. Tagi zachowują dotychczasowe wymiary, a etykiety typów
+oraz etapów przestają być wyższe od wzorca. Podbito wersje arkusza i importu CSS.
+
+Playwright/Chrome na osobnej bazie QA porównał przed i po zmianie rzeczywiste
+wymiary. Po poprawce wszystkie nazwy typów i etapów mają identyczne jak Tagi:
+wysokość, padding, odstęp, promień, rozmiar/wagę/interlinię tekstu, kolor tekstu
+oraz rozmiar, flex i kolor ikon. Sprawdzono 1440×1000 i 390×844, pusty wynik,
+otwarcie edytora etapu, Escape, powrót przez menu i pierwszy render Django.
+Brak błędów i ostrzeżeń konsoli. Przeszły `git diff --check` i kontrola indeksu.
+Plugin Browser był niedostępny; nie sprawdzano innych przeglądarek. Nie
+uruchamiano ponownie testów backendu ani buildu Reacta — korekta dotyczy CSS.
+
+
+## Kolorowe nazwy typów i etapów (03.11.2026)
+
+Nazwy w ustawieniach używają etykiet Tagów. Edytory udostępniają próbkę,
+kod HEX, podgląd i przywrócenie domyślnego koloru. Kolor etapu obejmuje też
+mapę, a zapis nadal korzysta ze szkicu procesu. Opcjonalne `color` w JSON
+konfiguracji ma walidację; pominięte pole zachowuje wcześniejszy kolor,
+a jawnie puste usuwa nadpisanie. Nie zmieniono modeli ani migracji.
+
+Wykonano 68 testów Django (`spaces.test_kanban_configuration`,
+`spaces.test_issue_types`, `core.test_space_settings_frontend`,
+`spaces.test_configuration_writes`) na jednorazowej bazie PostgreSQL.
+Nowe przypadki obejmują kolory obu rodzajów nazw, normalizację HEX,
+niepoprawne wartości bez zapisu, odczyt API, pierwszy render, starszych
+klientów, reset oraz zwykłe/scoped adresy. Przeszły także 72 testy frontendu
+konfiguracji i grafu, TypeScript/build, formatowanie, diff i indeks kodu.
+
+Playwright z Chrome (plugin Browser niedostępny), na osobnej bazie QA,
+sprawdził 1440×1000 i 390×844: zgodność etykiet z Tagami, próbkę i wpisanie
+HEX, zapis i odczyt po odświeżeniu, reset, Escape/anulowanie, walidację,
+etap w szkicu i zapis przez mapę, pusty wynik wyszukiwania, ponowne wejście,
+zwykłe/scoped URL oraz formularz i etykiety Django bez JavaScriptu.
+Kontrolowane HTTP 503 zachowało szkic, a ponowienie zapisało kolor.
+Nie było błędów JavaScriptu ani nieoczekiwanych ostrzeżeń konsoli.
+Nie sprawdzano innych przeglądarek ani produkcji.
+
+
+## Jeden pasek tabel ustawień Przestrzeni (03.11.2026)
+
+Akcje Udostępnień, Typów zgłoszeń i Stanów są przekazywane do
+`LocalDirectoryTable` jako `children` do prawej grupy `ViewToolbar.actions`.
+Sortowanie, filtry, zarządzanie kolumnami i wyszukiwanie są po lewej.
+Wszystkie kontrolki tworzą jeden
+wiersz na szerokim ekranie; małe ekrany zachowują zawijanie `ViewToolbar`.
+
+Wykonano build z TypeScript, 74 istniejące testy konfiguracji i dostępu,
+kontrolę formatowania, diffu oraz indeksu kodu. Playwright z Chrome
+(plugin Browser niedostępny), na osobnej bazie z fikcyjnymi danymi,
+potwierdził jeden wiersz z działaniami wyrównanymi do prawej przy 1440×1000,
+układ przy 1024×900 i 390×844,
+zgodność tabel z Tagami, wyszukiwanie i pusty wynik, zaznaczenia, sortowanie,
+filtry, ustawienia kolumn, modale, ponowne wejście oraz zwykłe/scoped URL.
+Sprawdzono mobilne menu, kontrolowany błąd 503 zapisu oraz pierwszy render
+Django. Zwykły przebieg nie zgłosił błędów ani ostrzeżeń konsoli.
+Nie uruchamiano testów backendu ani innych przeglądarek; zmiana dotyczy układu UI.
+
+## Tabele ustawień Przestrzeni według Tagów (02.11.2026)
+
+„Udostępnienia”, „Typy zgłoszeń” i „Proces pracy → Stany” korzystają z
+`LocalDirectoryTable`: arkusza Tagów, lokalnego sortowania, filtrowania,
+wyszukiwania oraz wspólnego zarządzania kolumnami. `MemberDirectory`
+adaptuje członków wyłącznie dla Przestrzeni; pozostali odbiorcy `Members`
+zachowują dotychczasową tabelę. Pierwszy render Django ma te same szerokości.
+
+Wykonano:
+
+- `pnpm --dir frontend/app build` — typy TypeScript i bundle poprawne.
+- Testy Node `space-settings-configuration.test.mjs` i `pulpit-access-draft.test.mjs`
+  — 74 testy, w tym zachowanie indeksu formularza po filtrowaniu.
+- Testy Django `spaces.test_kanban_configuration`, `spaces.test_issue_types`
+  i `spaces.test_management` — 45 testów na osobnej bazie PostgreSQL.
+- Playwright z istniejącym Chrome (plugin Browser niedostępny), na osobnej
+  bazie QA i fikcyjnych danych: trzy sekcje przy 1440×1000, 1024×900 i 390×844,
+  porównanie wysokości, fontu i separatorów z Tagami, sortowanie, wyszukiwanie
+  bez polskich znaków, filtr roli, pusty wynik, zaznaczenia, ochrona właściciela,
+  właściwy formularz po filtrowaniu, zmiana szerokości, ukrycie, zapis po
+  przeładowaniu i reset kolumn, przejście Stany/Mapa/Stany, oba zakresy URL.
+- Mobilne menu filtrów i kolumn, symulowany HTTP 503 przy zapisie typu
+  (okno zachowane, anulowanie przywraca wiersz), trzy pierwsze rendery Django
+  bez JavaScriptu. W zwykłym przebiegu brak błędów i ostrzeżeń konsoli.
+- Formatowanie zmienionych plików TypeScript, `git diff --check`
+  oraz aktualność indeksu kodu.
+
+Nie sprawdzano Safari ani Firefox. Testy UI nie używały biznesowych danych
+z lokalnej bazy użytkownika i nie zmieniały jej członkostw ani konfiguracji.
+
+## Przyciski głównych ustawień Przestrzeni (02.11.2026)
+
+Główny formularz używa `EmbeddedForm.actionsPosition="toolbar"`: „Zapisz”
+z ikoną i „Anuluj” są nad polami po prawej, jak na mapie Procesu pracy.
+Pierwszy render Django zachowuje ten układ. Domyślna stopka innych formularzy
+pozostaje dostępna; anulowanie głównych ustawień nadal korzysta z ochrony szkicu
+i istniejącego adresu powrotu. [Standard UI](UI.md), [implementacja](FRONTEND.md#strona-ustawień-przestrzeni).
+
+Przeszło 30 testów Django (`core.test_space_settings_frontend`,
+`core.test_form_payload`), 73 testy frontendu konfiguracji i dostępu, TypeScript,
+build, formatowanie, sprawdzenie indeksu, lokalnych linków dokumentacji i diffu.
+Playwright/Chrome na tymczasowej bazie potwierdził zgodność wymiarów i stylów
+przycisków z mapą, kolejność, zapis i odczyt po przeładowaniu, walidację pustej
+nazwy, kontrolowany 503 z ponowieniem, anulowanie i powrót do edycji,
+ponowne wejście, zwykłe/scoped URL oraz podgląd obserwatora.
+Sprawdzono 1440×1000, 390×844 i 320×844, przewijanie formularza oraz pierwszy
+render Django bez JavaScriptu. Brak błędów JavaScriptu; dwa błędy HTTP konsoli
+pochodziły z celowych prób 400/503. Plugin Browser był niedostępny;
+nie sprawdzano Safari, Firefoksa ani produkcji.
+
+## Typy i udostępnienia bez przycisków zapisu na pasku (02.11.2026)
+
+„Typy zgłoszeń” i „Udostępnienia” nie pokazują prawej pary „Zapisz” /
+„Anuluj”, także w pierwszym renderze Django. Typy używają
+`ConfigurationForm.commitOnSubmit`: dodawanie i edycję zapisuje formularz,
+a zbiorcze usuwanie — kompaktowe potwierdzenie. Zachowany jest jeden POST
+pełnej konfiguracji wraz z wcześniejszym szkicem procesu oraz rewizją.
+Nieudany zapis można poprawić lub ponowić; anulowanie odtwarza stan sprzed
+otwarcia okna. Konflikt udostępnia „Wczytaj aktualną konfigurację”.
+
+Przestrzenie włączają `AccessEditor.saveOnAction`: role/osoby zatwierdza
+`SharingDialog`, a odebranie dostępu i widoczność mają potwierdzenie.
+Zapis zachowuje istniejący atomowy endpoint, walidację uprawnień i rewizji.
+Ponowienie udostępnienia buduje operację od zapisanego dostępu, więc nie
+dodaje dwóch osób, gdy po błędzie zmieniono odbiorcę. Konflikt blokuje zapis;
+anulowanie pobiera aktualny dostęp. Pulpity zachowują domyślny wariant
+szkicu i przyciski na pasku.
+
+Przeszło 87 testów Django (`core.test_space_settings_frontend`,
+`spaces.test_space_sharing`, `spaces.test_configuration_writes`,
+`spaces.test_issue_types`, `spaces.test_kanban_configuration`) oraz 128
+testów frontendu konfiguracji, dostępu, udostępniania, zadań i grafu.
+Nowe regresje obejmują zapis bez przycisków na pasku, pełny szkic procesu,
+potwierdzenia, ponowienia, anulowanie i konflikty. Build, TypeScript,
+formatowanie, indeks i diff przeszły.
+
+Playwright/Chrome na tymczasowej bazie sprawdził dodawanie, edycję i usuwanie
+typów, zmianę ról, udostępnienie przez picker Workspace, odebranie dostępu,
+widoczność publiczną/prywatną, anulowanie potwierdzeń i przeładowanie.
+Trzy celowo zasymulowane odpowiedzi 503 sprawdziły ponowienia edycji typu,
+roli i udostępnienia; brak innych błędów konsoli i błędów JavaScriptu.
+Sprawdzono 1440×1000, 390×844 i 320×844, pustą listę typów, powrót na ekran,
+referencyjną mapę procesu oraz natywne paski Django. Plugin Browser był
+niedostępny; nie sprawdzano Safari, Firefoksa ani produkcji.
+
+## Pasek listy stanów bez przycisków zapisu (02.11.2026)
+
+Podzakładka „Stany” nie pokazuje prawej pary „Zapisz” / „Anuluj”, także
+w pierwszym renderze Django. „Edytuj”, „Usuń” i „Dodaj stan” pozostają.
+Zapis i odrzucenie wspólnych zmian procesu są dostępne w „Mapie”;
+lista informuje o tym przy niezapisanych zmianach i konflikcie rewizji.
+Formularze etapów i pasek typów zgłoszeń zachowują swoje przyciski.
+
+Przeszły 52 testy `spaces.test_kanban_configuration` i
+`core.test_space_settings_frontend`, 93 testy frontendu konfiguracji i grafu,
+build oraz sprawdzenie indeksu i diffu. Playwright/Chrome na tymczasowej bazie
+sprawdził listę przy 1440×1000, 390×844 i 320×844, pusty widok, walidację,
+zapis i odrzucenie zmian przez mapę, przeładowanie, powrót z referencyjnej
+listy typów oraz natywne zwykłe i scoped adresy. Brak błędów JavaScriptu
+i konsoli. Plugin Browser był niedostępny; nie sprawdzano innych przeglądarek.
+
+## Osobne ikony statusów (02.11.2026)
+
+`StatusForm` udostępnia 16 lokalnych symboli z `STATUS_ICON_CHOICES`,
+oddzielnie od 24 ikon typów zgłoszeń. Picker pokazuje „Ikony statusów”.
+Wcześniej zapisany symbol typu jest zachowany wyłącznie przy swoim etapie;
+opcja z `preserve_only` nie przechodzi do formularza nowego etapu.
+Zapis pozostaje w JSON konfiguracji, bez migracji.
+
+Przeszły 24 testy `spaces.test_kanban_configuration`, w tym rozdzielenie
+katalogów, odrzucenie ikony typu jako nowego wyboru, zachowanie starej ikony,
+jej zastąpienie oraz zwykłe i scoped adresy. Przeszło także 67 testów
+WIP, zapisu konfiguracji, uprawnień, typów i payloadu formularza
+(`spaces.test_kanban_workflow`, `spaces.test_configuration_writes`,
+`core.test_space_settings_frontend`, `spaces.test_issue_types`,
+`core.test_form_payload`), 93 testy frontendu konfiguracji i grafu oraz build.
+
+Playwright/Chrome na tymczasowej bazie potwierdził oba oddzielne katalogi,
+renderowanie wszystkich glifów statusów, wybór, zapis i odczyt po przeładowaniu,
+ikonę na liście i mapie, wyszukiwanie i pusty wynik, Escape/fokus oraz powrót
+z referencyjnego formularza typu. Sprawdzono 1440×1000, 390×844 i 320×844,
+błąd formularza oraz natywny zapis Django na obu wariantach adresu.
+Brak błędów JavaScriptu i konsoli. Plugin Browser był niedostępny;
+nie sprawdzano Safari, Firefoksa ani produkcji.
+
+## Formularz etapu z kluczem i ikoną (02.11.2026)
+
+Formularz etapu używa układu typu zgłoszenia: nazwa, opis zasad wejścia
+i wyjścia, edytowalny klucz, WIP oraz wspólny `ConfigurationIcon`.
+Stan zadania, etap przepływu, przejścia i położenie pozostają zachowane.
+Nowe etapy są pracą w toku; kolejka i zakończenie mają WIP tylko do odczytu.
+Ikona jest walidowana według osobnego katalogu statusów i zapisywana w istniejącym JSON,
+bez migracji. Lista stanów i mapa pokazują wybrany symbol.
+Wspólny serializer formularzy przekazuje `pattern` i `readonly`.
+
+Przeszło 87 testów dotyczących konfiguracji, WIP, zapisu, uprawnień i typów
+(`spaces.test_kanban_configuration`, `spaces.test_kanban_workflow`,
+`spaces.test_configuration_writes`, `core.test_space_settings_frontend`,
+`spaces.test_issue_types`) oraz 2 testy `core.test_form_payload`.
+Z 20 dodatkowych testów `core.test_frontend` przeszło 19; wcześniejszy
+`ReactPageApiTests.test_item_api_preserves_status_history_and_completion`
+otrzymuje 400 zamiast 200 przy bezpośrednim przejściu do `closed`.
+Ten sam wynik potwierdzono na niezmienionym HEAD w osobnej bazie.
+Przeszły 93 testy frontendu konfiguracji, grafu, kamery i minimapy, build
+z TypeScriptem, Prettier zmienionych plików, indeks, linki dokumentacji i diff.
+
+Playwright/Chrome na osobnej bazie QA sprawdził 1440×1000, 390×844 i 320×844:
+dodawanie, generowanie i ręczną edycję klucza, wymagane pola, wybór ikony,
+wyszukiwanie i pusty wynik, Escape/fokus, duplikat klucza, zapis/przeładowanie,
+edycję z mapy i listy, anulowanie oraz powrót z typów zgłoszeń. Porównano
+referencyjny picker typu. Natywna wersja Django zachowała pola ukryte i zapis
+ikony/opisu klawiaturą na zwykłym i scoped adresie. Brak błędów JavaScriptu
+i konsoli, przepełnienia strony oraz pickera na telefonie.
+Plugin Browser był niedostępny. Nie sprawdzano Safari, Firefoksa ani produkcji.
+
 ## Nagłówek ustawień zgodny z Przestrzenią (01.11.2026)
 
 `SettingsPage` używa `SpaceHeader`, zachowując strzałkę powrotu oraz tytuł

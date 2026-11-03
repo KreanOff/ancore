@@ -3,9 +3,11 @@
 ## Tablica procesu i etapowe przejścia
 
 „Proces pracy” w ustawieniach Przestrzeni ma podzakładki „Stany” i „Mapa”,
-na takim samym poziomym pasku jak widoki Przestrzeni. Domyślnie otwiera mapę.
-„Stany” pokazują listę z akcjami „Dodaj stan”, „Edytuj”, „Usuń”, „Zapisz”
-i „Anuluj”. Edycja wymaga jednego zaznaczonego wiersza lub kliknięcia nazwy;
+na takim samym poziomym pasku jak widoki Przestrzeni. Domyślnie otwiera „Stany”.
+„Stany” pokazują listę z akcjami „Dodaj stan”, „Edytuj” i „Usuń”.
+„Zapisz” i „Anuluj” dla całego procesu pozostają w zakładce „Mapa”;
+lista przypomina o tym przy niezapisanych zmianach.
+Edycja wymaga jednego zaznaczonego wiersza lub kliknięcia nazwy;
 usuwanie obejmuje zaznaczone stany. Lista i mapa korzystają z jednego szkicu
 oraz historii zmian; przełączenie podzakładki niczego nie zapisuje ani nie odrzuca.
 Wybór podzakładki pozostaje po zapisie i przy zmianie sekcji ustawień.
@@ -19,8 +21,23 @@ przesuwać wskaźnikiem albo Alt + strzałkami, również w lewo i w górę
 od początku układu. „Dodaj pierwszy etap” jest dostępne wyłącznie na pustej
 mapie; nie ma głównego przycisku „Dodaj etap”. Nowy etap pojawia się w środku
 widoku z chwili otwarcia formularza i otrzymuje unikalny klucz z nazwy;
-zmiana nazwy istniejącego etapu zachowuje jego klucz. Błędny klucz
-z formularza serwera pozostaje dostępny do poprawienia.
+zmiana nazwy istniejącego etapu zachowuje jego klucz. Pole „Klucz” jest widoczne
+i edytowalne; ręczna edycja zatrzymuje generowanie z nazwy. Klucza używanego
+przez zadania nie można zmienić. Zmiana nieużywanego klucza w React aktualizuje
+odwołania przejść w lokalnym szkicu.
+
+Formularz etapu zawiera nazwę, opis zasad wejścia i wyjścia, klucz, limit WIP
+oraz ikonę z osobnego katalogu 16 symboli statusów (`STATUS_ICON_CHOICES`),
+wyświetlanego we wspólnym pickerze. Ikona jest opcjonalna,
+zapisywana w JSON konfiguracji i wyświetlana na mapie oraz liście stanów.
+Wybór domyślny zachowuje symbol kategorii. Pominięcie pola przez starszego
+klienta zachowuje ikonę; jawne wyczyszczenie przywraca domyślną.
+Wcześniej zapisana ikona z katalogu typów zgłoszeń może pozostać na swoim
+etapie, ale nie jest proponowana ani akceptowana jako nowy wybór innych etapów.
+Stan zadania i etap przepływu pozostają ukryte w formularzu, z zachowaniem
+zapisanych wartości. Nowy etap otrzymuje `in_progress`/`active`.
+WIP dla kolejki i zakończenia jest tylko do odczytu; istniejąca walidacja
+pracy w toku, zakończenia i przejść pozostaje aktywna.
 
 Przeciąganie tła przesuwa mapę. Spacja z przeciągnięciem lub środkowy
 przycisk myszy pozwalają przesuwać widok także nad kartami. Kółko myszy
@@ -77,8 +94,8 @@ także w `WorkItem.save()`. Utworzenie nowej karty bezpośrednio w kolumnie
 pozostaje dotychczasową funkcją. Pierwszy render Django zachowuje zakładki,
 listę lub karty konfiguracji z formularzami i przyciski przejść zadania.
 Parametr `workflow_view=states|map` wybiera podzakładkę natywnego widoku
-`configuration/?section=statuses`; brak lub nieznana wartość otwiera mapę.
-Linki operacji na liście i powrót po zapisie zachowują „Stany”.
+`configuration/?section=statuses`; brak lub nieznana wartość otwiera „Stany”.
+Linki operacji i powrót po zapisie zachowują wybraną podzakładkę.
 
 ## Kanban: proces pracy, WIP i blokady
 
@@ -165,6 +182,23 @@ nie zapisuje konfiguracji raportu ani kopii danych na serwerze.
 
 ## Strona ustawień przestrzeni
 
+Nazwy typów zgłoszeń i etapów w ustawieniach mają kolorowe etykiety jak Tagi.
+W edytorze „Kolor nazwy” pozwala wybrać kolor z palety, wpisać kod HEX lub
+przywrócić „Domyślny”. Kolor etapu jest wspólny dla ustawień, mapy procesu, nagłówków Listy zadań
+i Tablicy, ikon zadań i przejść, formularzy wyboru statusu, osi czasu,
+podsumowania oraz raportów. Etapy z tą samą kategorią stanu mogą mieć różne
+kolory. Zapis konfiguracji jest odczytywany przy następnym pobraniu widoku;
+nie wymaga aktualizacji rekordów zadań.
+Kolor typu również pochodzi z konfiguracji Przestrzeni: etykiety w wierszach,
+kartach, backlogu, podzadaniach, Filtrach, Zespołach i Dla ciebie mają to samo
+pastelowe tło co w ustawieniach. Ikony opcji formularzy oraz podsumowania
+używają pełnego koloru typu, niezależnie od wybranego symbolu.
+Typ zapisuje się przy zatwierdzeniu formularza; etap pozostaje częścią szkicu
+procesu zapisywanego w zakładce „Mapa”. Zmiana koloru nie zmienia stanu zadania,
+przejść, WIP ani uprawnień. Własny kolor jest opcjonalnym `color` w JSON
+konfiguracji; pusta wartość przywraca dotychczasową paletę typu/stanu.
+
+
 „Ustawienia przestrzeni” jest osobną stroną w powłoce aplikacji. Centrum
 `/settings/` pokazuje w kategorii Workspace listę przestrzeni dostępnych przez
 `visible_spaces`, z linkiem do ustawień każdej z nich. Lista korzysta z aktywnego
@@ -175,12 +209,17 @@ Górny nagłówek zachowuje strzałkę powrotu oraz tytuł „Ustawienia przestr
 Zakładki procesu „Stany” i „Mapa” zajmują drugi wiersz tego samego nagłówka,
 bez separatora między wierszami, z jedną dolną ramką nad treścią.
 
-Główne lewe menu zastępuje menu Workspace czterema sekcjami: „Ustawienia”,
-„Udostępnienia”, „Typy zgłoszeń” i „Proces pracy”. Proces pracy udostępnia
+Główne lewe menu zastępuje menu Workspace sześcioma sekcjami: „Ustawienia”,
+„Udostępnienia”, „Typy zgłoszeń”, „Kategorie”, „Grupy” i „Proces pracy”. Proces pracy udostępnia
 listę stanów i mapę przejść wraz z limitami WIP oraz zasadami kolumn. Pola dodatkowe
 pozostają ukryte w ustawieniach, ale działają w zadaniach i konfiguracji.
 Menu zawiera wyłącznie dostępne sekcje, bez dodatkowych nagłówków i linku powrotu.
 Sekcje obejmują główny formularz, tabelę członków i listę typów zgłoszeń.
+Tabele członków, typów i stanów procesu używają arkusza jak Tagi:
+sortowania, filtrów, wyszukiwania oraz zapamiętywanej kolejności, widoczności
+i szerokości kolumn. Operacje dotyczą już pobranych danych; sortowanie stanów
+nie zmienia kolejności procesu. Zmiana wyszukiwania lub filtra czyści zaznaczenie,
+a zaznaczenie wszystkich obejmuje tylko widoczne wyniki.
 Awatar znajduje się w „Ustawienia”, po lewej stronie pól, tak jak
 w edycji profilu. Konfiguracja i operacje członkostwa zachowują istniejące
 uprawnienia. Osoby bez prawa zarządzania widzą podgląd i członków; publiczna
@@ -188,14 +227,18 @@ przestrzeń pokazuje informację o dostępie przez Workspace.
 
 Zmiana sekcji zachowuje szkice ustawień, udostępnień i typów. „Zapisz” zapisuje
 główne ustawienia i pozostawia użytkownika na stronie; zmieniona nazwa odświeża
-nagłówek i tytuł strony. „Typy zgłoszeń” mają pasek działań i odsuniętą od boków
+nagłówek i tytuł strony. Przyciski głównych ustawień są nad formularzem po prawej,
+w kolejności „Zapisz” (z ikoną) i „Anuluj”, jak na mapie Procesu pracy.
+Nie ma dolnej stopki; w React zapis jest nieaktywny do zmiany danych.
+„Typy zgłoszeń” mają pasek działań i odsuniętą od boków
 tabelę jak „Udostępnienia”. „Edytuj” obejmuje jeden zaznaczony typ, „Usuń”
 wszystkie zaznaczone, a „Dodaj typ” otwiera formularz nowej pozycji. Nazwa typu
-również otwiera edycję. W React te operacje zmieniają lokalny szkic; „Zapisz”
-utrwala całą sekcję jednym dotychczasowym POST, a „Anuluj” przywraca stan bazowy.
-Statusy i pola dodatkowe pozostają zachowane w pełnym żądaniu konfiguracji.
-Błędy pozostawiają szkic do poprawy; po konflikcie rewizji „Anuluj” pobiera
-bieżącą konfigurację. Nie ma dolnej stopki. Anulowanie zmienionego okna
+również otwiera edycję. Pasek typów nie ma „Zapisz” / „Anuluj”. Zatwierdzenie
+formularza typu lub okna usuwania zapisuje pełną konfigurację jednym
+dotychczasowym POST; statusy, ich wcześniejszy szkic i pola dodatkowe pozostają
+zachowane. Błędy pozostawiają okno do poprawy lub ponowienia; po konflikcie
+rewizji „Wczytaj aktualną konfigurację” pobiera bieżący stan. Anulowanie
+nieudanego zapisu przywraca szkic sprzed otwarcia okna. Nie ma dolnej stopki. Anulowanie zmienionego okna
 formularza wymaga potwierdzenia odrzucenia zmian. Nawigacja i przeładowanie
 chronią wszystkie szkice. Zmiana widoczności wymaga zapisania lub odrzucenia
 szkicu typów, aby utrata prawa konfiguracji go nie usunęła.
@@ -521,17 +564,20 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   obsługa zgłoszeń. Szablon określa początkowe statusy, typy i pola.
 - Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty, tagi i ustawienia.
   Lista i wszystkie tablice współdzielą kolorowe, zwijane nagłówki statusów
-  oraz styl zadań. Tak jak backlog pokazują punkty w Scrum, awatar wykonawcy
-  i menu z trzema paskami dla zadań z prawem edycji. Wszystkie szablony używają
-  osobnych, zwartych kafelków w kolumnach, według wzorca aktywnego sprintu: priorytet, status,
-  klucz i zawijany tytuł u góry, metadane poniżej oraz menu po prawej.
-  Puste kolumny mają obramowany komunikat „Brak zadań”. Przeciąganie zapisuje
+  oraz styl zadań. Tak jak backlog pokazują punkty w Scrum i awatar wykonawcy.
+  Lista i karty Tablicy nie pokazują menu działań; tytuł nadal otwiera zadanie.
+  Backlog zachowuje menu z trzema paskami dla zadań z prawem edycji.
+  Wszystkie szablony tablic używają
+  osobnych, zwartych kafelków w kolumnach, według wzorca aktywnego sprintu: priorytet, klucz,
+  status i zawijany tytuł u góry oraz metadane poniżej, bez osobnej kolumny menu.
+  Puste kolumny nie pokazują ramki ani komunikatu „Brak zadań”; zachowują
+  nagłówek z licznikiem i dostępną akcję „Utwórz zadanie”. Przeciąganie zapisuje
   kolejność w kolumnie oraz miejsce wstawienia w innym statusie. Podgląd śledzi kursor, a przerywane
   pole wskazuje miejsce wstawienia i płynnie rozsuwa sąsiadów. Po upuszczeniu
   karta od razu przemieszcza się do celu; odrzucony zapis przywraca poprzedni
   układ. Backlog współdzieli te animacje, także przy przenoszeniu między sprintami.
   Efekty respektują ustawienie ograniczonego ruchu.
-  Status i kolejność można zmienić również przez menu działań,
+  Status i kolejność w Backlogu można zmienić również przez menu działań,
   dostępne również klawiaturą. Pasek ma dwa menu: „Sortowanie” i „Filtrowanie”,
   bez osobnej wyszukiwarki. Filtry obejmują typ, wykonawcę, status, priorytet i zespół;
   można je łączyć, przeszukiwać opcje i wyczyścić warunki.
@@ -617,7 +663,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Oś czasu: przypięte kompaktowe wiersze obok wspólnego kalendarza.
   Lista tworzy pływający panel z zaokrąglonymi rogami, obrysem i delikatnym
   cieniem. Zachowuje wspólne przewijanie pionowe i wyrównanie z paskami zadań.
-  Współdzielą z Listą zadań priorytet, status, klucz/tytuł i awatar wykonawcy.
+  Współdzielą z Listą zadań priorytet, klucz, status, tytuł i awatar wykonawcy.
   Obok awatara jest imię i nazwisko; bez wykonawcy — „Nie przypisano”.
   Na telefonie awatar i nazwa wykonawcy są pod tytułem zadania.
   Nagłówek jest jednym ciągłym paskiem dat na całej szerokości tabeli,
@@ -814,8 +860,10 @@ Udostępnianie przestrzeni działa od razu przez `SpaceMembership`,
 bez zaproszeń. Role Workspace pozostają niezależne.
 `space_team.py` udostępnia odczyt tabeli i atomowy zapis całego szkicu przez
 `action=save` pod `space/<slug>/team/`, także w scoped Workspace i przez
-JSON API stron. Widoczność, osoby i role są zapisywane po kliknięciu „Zapisz”
-w sekcji „Udostępnienia”; „Anuluj” odrzuca szkic. Rewizja hashuje aktualny
+JSON API stron. Osoby i role zapisuje zatwierdzenie okna udostępniania lub
+zmiany roli. Widoczność i odebranie dostępu mają okna potwierdzenia.
+Nie ma „Zapisz” / „Anuluj” na pasku sekcji; anulowanie w oknie odrzuca
+niezapisaną operację, a przy konflikcie pobiera aktualny dostęp. Rewizja hashuje aktualny
 stan dostępu bez nowego pola modelu. Nieaktualny szkic zwraca 409, a błędna
 pozycja nie zapisuje żadnej części listy. Publiczna widoczność czyści
 indywidualne członkostwa. Zmiana na prywatną ustawia wykonującego jako
@@ -923,6 +971,23 @@ Kontrole Django, zgodności migracji, składni `tasks.js`, linków dokumentacji,
 indeksu kodu i `git diff --check` przeszły.
 
 ## Pełne szczegóły niezależnego zadania
+
+„Kategoria” rozwija dotychczasowe `SpaceTask.task_type`, zachowując istniejące
+klucze i przypisania. „Grupa” jest opcjonalną klasyfikacją `SpaceTask.task_group`;
+nie nadaje uprawnień i jest niezależna od Zespołu. Oba wybory są dostępne
+w formularzu zadania i bocznym panelu szczegółów, z automatycznym zapisem
+oraz historią zmian. Ustawienia Przestrzeni udostępniają osobne listy
+„Kategorie” i „Grupy”, z nazwą, kluczem i opisem. Nazwy na listach i w polach
+zadania są zwykłym tekstem, bez ikon oraz kolorowego tła. Formularze tych
+słowników nie zawierają wyboru ikony ani koloru; wcześniejsze metadane
+wyglądu pozostają zapisane, ale nie wpływają na prezentację.
+Lista kategorii musi zawierać co najmniej jedną pozycję; lista grup może być pusta.
+Konfiguracje bez tych list korzystają z dotychczasowych dziewięciu kategorii
+i pustej listy grup. Nie można usunąć ani zmienić klucza używanego przez zadanie,
+także prywatne w innej Przestrzeni współdzielącej konfigurację. Zmiana nazwy
+zachowuje przypisania. Zapis sprawdza aktualną konfigurację i jej rewizję.
+Krótki formularz podzadania zachowuje dotychczasowy zakres i nie zmienia
+zapisanej kategorii ani grupy.
 
 `backend/spaces/task_views.py` obsługuje właściwości, podzadania, wpisy czasu,
 pliki i komentarze, a `backend/spaces/task_team.py` tabelę członków, kandydatów,

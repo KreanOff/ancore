@@ -26,7 +26,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
 | [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 67 | 5 | 46 | 451 |
+| [backend/spaces](../backend/spaces) | 69 | 6 | 47 | 480 |
 
 ## 2. Modele i relacje
 
@@ -419,7 +419,7 @@ Pola zadeklarowane tutaj: `space` (ForeignKey), `user` (ForeignKey), `widgets` (
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task_type` (CharField), `reminder_at` (DateTimeField), `space` (ForeignKey), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `completion_date` (DateTimeField), `blocked_reason` (TextField), `blocked_at` (DateTimeField), `blocked_by` (ForeignKey), `blocked_responsible` (ForeignKey), `blocked_revision` (PositiveIntegerField), `created_at` (DateTimeField), `created_by` (ForeignKey), `assignee` (ForeignKey), `due_at` (DateTimeField), `parent` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `visibility` (CharField), `private_owner` (ForeignKey).
+Pola zadeklarowane tutaj: `task_type` (CharField), `task_group` (CharField), `reminder_at` (DateTimeField), `space` (ForeignKey), `title` (CharField), `description` (TextField), `priority` (CharField), `status` (CharField), `is_completed` (BooleanField), `completion_date` (DateTimeField), `blocked_reason` (TextField), `blocked_at` (DateTimeField), `blocked_by` (ForeignKey), `blocked_responsible` (ForeignKey), `blocked_revision` (PositiveIntegerField), `created_at` (DateTimeField), `created_by` (ForeignKey), `assignee` (ForeignKey), `due_at` (DateTimeField), `parent` (ForeignKey), `tags` (ManyToManyField), `favorited_by` (ManyToManyField), `visibility` (CharField), `private_owner` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -433,7 +433,7 @@ Pola zadeklarowane tutaj: `task_type` (CharField), `reminder_at` (DateTimeField)
 | `favorited_by` | `settings.AUTH_USER_MODEL` | related_name='favorite_space_tasks' |
 | `private_owner` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='private_space_tasks'; null=True |
 
-Metody/properties: `__str__`, `save`, `due_urgency`.
+Metody/properties: `__str__`, `get_task_type_display`, `get_task_group_display`, `save`, `due_urgency`.
 
 ### `SpaceTaskMembership`
 
@@ -549,7 +549,7 @@ Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (C
 | `sprint` | `Sprint` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `epic` | `'self'` | on_delete=models.SET_NULL; related_name='epic_items'; null=True |
 
-Metody/properties: `save`, `get_work_type_display`, `type_icon`.
+Metody/properties: `save`, `get_work_type_display`, `type_color`, `type_icon`.
 
 ## 3. Formularze
 
@@ -615,9 +615,13 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `SprintCloseForm`
 - `TeamForm`
 - `MemberForm`
+- `ConfigurationColorField`
 - `StatusForm`
 - `ConfigurationLabelForm`
 - `TypeForm`
+- `ClassificationForm`
+- `CategoryForm`
+- `GroupForm`
 - `CustomFieldForm`
 
 ## 4. Routing
@@ -1011,8 +1015,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/backlog_window.py](../backend/spaces/backlog_window.py) — `limit_parameter`, `backlog_window`, `backlog_more_url`
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
-- [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `issue_type_icon`, `status_flow_stage`, `template_settings`
-- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `CustomFieldForm`
+- [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `classification_options`, `classification_label`, `issue_type_icon`, `configuration_name_color`, `status_appearance`, `status_icon`, `status_flow_stage`, `template_settings`
+- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
@@ -1031,7 +1035,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/team_urls.py](../backend/spaces/team_urls.py)
 - [backend/spaces/teams.py](../backend/spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
 - [backend/spaces/templatetags/__init__.py](../backend/spaces/templatetags/__init__.py)
-- [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `pagination_pages`, `space_avatar`, `status_groups`
+- [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `type_badge_style`, `status_style`, `pagination_pages`, `space_avatar`, `status_groups`
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
 - [backend/spaces/timeline.py](../backend/spaces/timeline.py) — `local_end`, `posted_date`, `posted_source`, `serialized_precision`, `posted_datetime`, `datetime_label`, `error_response`, `update_dates`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
@@ -1270,6 +1274,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/teams.html](../backend/spaces/templates/spaces/teams.html)
 - [backend/spaces/templates/spaces/template_picker.html](../backend/spaces/templates/spaces/template_picker.html)
 - [backend/spaces/templates/spaces/timeline.html](../backend/spaces/templates/spaces/timeline.html)
+- [backend/spaces/templates/spaces/type_option.html](../backend/spaces/templates/spaces/type_option.html)
 
 ## 7. Zasoby frontendowe
 
@@ -1462,6 +1467,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/EmptyState.tsx](../frontend/app/src/shared/EmptyState.tsx)
 - [frontend/app/src/shared/FieldLabel.tsx](../frontend/app/src/shared/FieldLabel.tsx)
 - [frontend/app/src/shared/Icon.tsx](../frontend/app/src/shared/Icon.tsx)
+- [frontend/app/src/shared/LocalDirectoryTable.tsx](../frontend/app/src/shared/LocalDirectoryTable.tsx)
+- [frontend/app/src/shared/MemberDirectory.tsx](../frontend/app/src/shared/MemberDirectory.tsx)
 - [frontend/app/src/shared/Members.tsx](../frontend/app/src/shared/Members.tsx)
 - [frontend/app/src/shared/Modal.tsx](../frontend/app/src/shared/Modal.tsx)
 - [frontend/app/src/shared/Pagination.tsx](../frontend/app/src/shared/Pagination.tsx)
@@ -1472,7 +1479,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/api.ts](../frontend/app/src/shared/api.ts)
 - [frontend/app/src/shared/clipboard.ts](../frontend/app/src/shared/clipboard.ts)
 - [frontend/app/src/shared/globals.d.ts](../frontend/app/src/shared/globals.d.ts)
+- [frontend/app/src/shared/issue-type-color.ts](../frontend/app/src/shared/issue-type-color.ts)
 - [frontend/app/src/shared/page.ts](../frontend/app/src/shared/page.ts)
+- [frontend/app/src/shared/status-color.ts](../frontend/app/src/shared/status-color.ts)
 - [frontend/app/src/shared/table.tsx](../frontend/app/src/shared/table.tsx)
 - [frontend/app/src/shared/useDirtyGuard.ts](../frontend/app/src/shared/useDirtyGuard.ts)
 - [frontend/app/src/shared/usePageActions.ts](../frontend/app/src/shared/usePageActions.ts)
@@ -1495,6 +1504,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shell/useFavorites.tsx](../frontend/app/src/shell/useFavorites.tsx)
 - [frontend/app/src/shell/useShellLayout.ts](../frontend/app/src/shell/useShellLayout.ts)
 - [frontend/app/src/spaces/BlockDialog.tsx](../frontend/app/src/spaces/BlockDialog.tsx)
+- [frontend/app/src/spaces/ConfigurationColor.tsx](../frontend/app/src/spaces/ConfigurationColor.tsx)
+- [frontend/app/src/spaces/ConfigurationIcon.tsx](../frontend/app/src/spaces/ConfigurationIcon.tsx)
 - [frontend/app/src/spaces/ConfigurationPage.tsx](../frontend/app/src/spaces/ConfigurationPage.tsx)
 - [frontend/app/src/spaces/ConfigurationTable.tsx](../frontend/app/src/spaces/ConfigurationTable.tsx)
 - [frontend/app/src/spaces/DetailPage.tsx](../frontend/app/src/spaces/DetailPage.tsx)
@@ -1515,6 +1526,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/WorkflowBoard.tsx](../frontend/app/src/spaces/WorkflowBoard.tsx)
 - [frontend/app/src/spaces/WorkflowMinimap.tsx](../frontend/app/src/spaces/WorkflowMinimap.tsx)
 - [frontend/app/src/spaces/WorkflowStageFields.tsx](../frontend/app/src/spaces/WorkflowStageFields.tsx)
+- [frontend/app/src/spaces/configuration-appearance.ts](../frontend/app/src/spaces/configuration-appearance.ts)
 - [frontend/app/src/spaces/configuration-form.ts](../frontend/app/src/spaces/configuration-form.ts)
 - [frontend/app/src/spaces/kanban.ts](../frontend/app/src/spaces/kanban.ts)
 - [frontend/app/src/spaces/summaryLayout.ts](../frontend/app/src/spaces/summaryLayout.ts)
@@ -2226,7 +2238,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_issue_types.py](../backend/spaces/test_issue_types.py).
 
-- `IssueTypeTests`: 11 metod testowych.
+- `IssueTypeTests`: 13 metod testowych.
 
 ### backend/spaces/test_item_query.py
 
@@ -2238,7 +2250,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_kanban_configuration.py](../backend/spaces/test_kanban_configuration.py).
 
-- `KanbanConfigurationTests`: 16 metod testowych.
+- `KanbanConfigurationTests`: 26 metod testowych.
 
 ### backend/spaces/test_kanban_workflow.py
 
@@ -2283,6 +2295,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `SpaceSharingTests`: 21 metod testowych.
 
+### backend/spaces/test_status_colors.py
+
+Źródło: [backend/spaces/test_status_colors.py](../backend/spaces/test_status_colors.py).
+
+- `StatusColorTests`: 3 metod testowych.
+
 ### backend/spaces/test_subtask_fields.py
 
 Źródło: [backend/spaces/test_subtask_fields.py](../backend/spaces/test_subtask_fields.py).
@@ -2314,6 +2332,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_task_autosave.py](../backend/spaces/test_task_autosave.py).
 
 - `TaskAutosaveTests`: 23 metod testowych.
+
+### backend/spaces/test_task_classification.py
+
+Źródło: [backend/spaces/test_task_classification.py](../backend/spaces/test_task_classification.py).
+
+- `TaskClassificationTests`: 14 metod testowych.
 
 ### backend/spaces/test_task_detail_parity.py
 
@@ -2412,6 +2436,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/spaces/migrations/0003_space_dashboard_layout.py](../backend/spaces/migrations/0003_space_dashboard_layout.py)
 - [backend/spaces/migrations/0004_workitem_start_at.py](../backend/spaces/migrations/0004_workitem_start_at.py)
 - [backend/spaces/migrations/0005_kanban_flow.py](../backend/spaces/migrations/0005_kanban_flow.py)
+- [backend/spaces/migrations/0006_task_classification.py](../backend/spaces/migrations/0006_task_classification.py)
 
 ## 10. Narzędzia i wdrożenie
 

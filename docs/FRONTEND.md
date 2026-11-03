@@ -67,8 +67,9 @@ obowiązują w React i adapterze `calendar.js`.
 Sekcja `statuses` ma podzakładki „Stany” i „Mapa” na wspólnym pasku
 `notifications-tabs work-tabs work-tabs--views`. `ConfigurationForm`
 renderuje w nich odpowiednio `ConfigurationTable` i `WorkflowBoard`.
-Domyślnie otwiera mapę; lista udostępnia „Dodaj stan”, „Edytuj”, „Usuń”,
-„Zapisz” i „Anuluj” z istniejącym formularzem etapu i zapisem konfiguracji.
+Domyślnie otwiera „Stany”; lista udostępnia „Dodaj stan”, „Edytuj” i „Usuń"
+z istniejącym formularzem etapu. „Zapisz” i „Anuluj” pozostają na mapie.
+Przy niezapisanych zmianach lub konflikcie lista kieruje użytkownika do mapy.
 Oba widoki współdzielą `data` i historię `ConfigurationForm`.
 Wybraną podzakładkę utrzymuje `SettingsPage`, więc pozostaje ona po zapisie
 i przełączaniu sekcji. Jest to lokalny stan Reacta, bez zmiany URL.
@@ -131,9 +132,24 @@ rewizji API, jest blokowana podczas zapisu/konfliktu i czyszczona po sukcesie
 lub odrzuceniu. Błąd zapisu zachowuje szkic. `WorkflowStageFields` zachowuje
 stabilną tożsamość pól adaptera `FieldControl`, aby wpisywanie nazwy nie
 odtwarzało inputu. Klucz nowego etapu jest generowany lokalnie z nazwy,
-z limitem 40 znaków i unikalnym sufiksem; istniejący klucz pozostaje stały.
+z limitem 40 znaków i unikalnym sufiksem, dopóki użytkownik nie zmieni widocznego
+pola klucza ręcznie. Edycja samej nazwy istniejącego etapu nie zmienia klucza.
 `configurationStage` odrzuca duplikat klucza przed aktualizacją grafu,
 a przy dopuszczonej zmianie klucza zachowuje odwołania przejść.
+
+`WorkflowStageFields` używa układu typu zgłoszenia: ikona po lewej, nazwa,
+opis zasad oraz klucz i WIP po prawej. `ConfigurationIcon` współdzieli picker
+z `TypeFields`, z osobnymi etykietami „Domyślna dla etapu/typu”. Katalogi są
+oddzielne: 16 ikon statusów oraz 24 ikony typów. Opcje i ich walidację dostarcza
+Django; wcześniej zapisana ikona typu pozostaje dostępna tylko na swoim etapie.
+Opcja zgodności ma `preserve_only`; `configurationAdd` pomija ją przy tworzeniu
+nowego formularza, także po zmianie kolejności etapów.
+Formularz ukrywa kategorię i etap przepływu, zachowując ich wartości, przejścia i położenie.
+Nowe etapy otrzymują `in_progress`/`active`; WIP poza `active` ma `readonly`.
+Wspólny `form_payload` przekazuje bezpieczne atrybuty `pattern` i `readonly`,
+pomijając wyłączony atrybut logiczny, aby ograniczenia Reacta odpowiadały Django.
+Własna ikona trafia do `WorkflowNode` i tabeli stanów przez opcje schematu.
+Zmiana klucza etapu nie przelicza ikony według domyślnych ikon typów zgłoszeń.
 
 Helpery układu i diagnostyki grafu pozostają w `workflow-board.ts`, ale
 edytor nie udostępnia przycisku automatycznego układu ani listy diagnostyki.
@@ -261,6 +277,38 @@ Pierwszy render Django używa `spaces/load_more.html` z etykietą końcową
 
 ## Strona ustawień Przestrzeni
 
+`ConfigurationColor` współdzieli z Dokumentami próbkę koloru i przycisk
+„Domyślny”, dodając pole HEX oraz podgląd etykiety. `configuration-appearance.ts`
+udostępnia klasę etykiety Tagów i rozwiązywanie koloru. `ConfigurationTable`
+ukrywa techniczne pole `color` jako kolumnę i wyświetla je w nazwie; mapa
+korzysta z tego samego koloru. Django przekazuje domyślny kolor w `placeholder`
+pola, waliduje sześciocyfrowy HEX i zapisuje opcjonalne `color` w konfiguracji.
+Pominięte pole zachowuje poprzedni kolor przy żądaniach starszych klientów;
+jawnie puste usuwa nadpisanie. Pierwszy render Django pokazuje te same
+etykiety, a formularz bez JavaScriptu pozwala wpisać HEX. Migracja nie jest potrzebna.
+
+`status_appearance` rozwiązuje kolor etapu przez `configuration_name_color`
+bez zmieniania zapisanej konfiguracji. Payload zadań zawiera `status_color`,
+a kolumny, przejścia, statusy podsumowania i raportów — rozwiązane `color`.
+Opcje formularza przekazują `status_color` obok `status_category`. Wspólny
+helper React `shared/status-color.ts` i filtr Django `status_style` nadpisują
+kolory kategorii na konkretnych elementach. Optymistyczne przeniesienie karty
+na Tablicy aktualizuje również jej kolor. Grupy zadań w Filtrach i Zespołach
+uwzględniają kolor w kluczu, aby nie łączyć różnie oznaczonych etapów.
+Ikony statusu w `ForYouTaskRow`, używanym przez Dla ciebie, Filtry i Zespoły,
+nadal korzystają z koloru kategorii; komponent nie odczytuje `status_color`.
+
+Odczytowa właściwość `WorkItem.type_color` rozwiązuje kolor typu w konfiguracji
+jego Przestrzeni. Payload zadania i Dla ciebie przekazuje `type_color`,
+filtry Przestrzeni — `type_colors`, a podsumowanie — `types[].color`.
+`IssueTypeSelect` rozszerza `VisualSelect` o podgląd `spaces/type_option.html`;
+`form_payload` przekazuje `type_color` obok ikony opcji. Adapter formularza
+React używa tego samego podglądu przez `AncoreCustomSelect`. Helper
+`shared/issue-type-color.ts` i filtr Django `type_badge_style` zachowują
+kolor etykiety zgodny z ustawieniami również po zmianie typu lub doładowaniu
+zadań. To wyłącznie dane prezentacji; nie ma nowych pól ani migracji.
+
+
 [`spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx) łączy
 pola główne, członków, awatar oraz konfigurację zadań na osobnej stronie.
 Nagłówek używa wspólnego `SpaceHeader`, zachowując strzałkę powrotu i tytuł
@@ -269,10 +317,20 @@ Nagłówek używa wspólnego `SpaceHeader`, zachowując strzałkę powrotu i tyt
 z jedną dolną ramką. Przyciski podzakładek należą do `SettingsPage`,
 a `ConfigurationForm` otrzymuje wyłącznie wybrany `workflowView`.
 Powłoka otrzymuje tryb `space-settings` i `space_settings` z autoryzowanymi
-linkami; `shell/Sidebar.tsx` zastępuje menu Workspace czterema sekcjami:
+linkami; `shell/Sidebar.tsx` zastępuje menu Workspace sześcioma sekcjami:
 `main` („Ustawienia”), `members` („Udostępnienia”), `types` („Typy zgłoszeń”)
-i `statuses` („Proces pracy”). Menu nie dodaje nagłówków ani linku powrotu;
-typy i proces zależą od uprawnień konfiguracji. Sekcja `fields` pozostaje ukryta.
+i `statuses` („Proces pracy”), a także `categories` („Kategorie”) i `groups`
+(„Grupy”). Menu nie dodaje nagłówków ani linku powrotu;
+słowniki i proces zależą od uprawnień konfiguracji. Sekcja `fields` pozostaje ukryta.
+Kategorie i grupy używają `ConfigurationTable`, `TypeFields` oraz tego samego
+zapisu całej konfiguracji z rewizją co typy zgłoszeń. Zatwierdzenie okna zapisuje
+wiersz; błąd zachowuje szkic, a usuwanie wymaga potwierdzenia we wspólnym modalu.
+Ich schemat zawiera wyłącznie nazwę, klucz i opis. Tabela renderuje nazwy
+bez ikon i tła etykiety, a modal używa zwykłego układu formularza bez kolumny
+awatara. Zachowane w starszej konfiguracji ikony i kolory są pomijane w UI.
+`TaskPage` renderuje pola `task_type` i `task_group` ze schematu Django,
+przez dotychczasowy `FieldControl` i `useTaskSave`. Opcje pochodzą wyłącznie
+z konfiguracji bieżącej Przestrzeni i mają postać zwykłego tekstu.
 `useShellLayout` utrzymuje osobne zwinięcie menu ustawień podczas wizyty:
 na desktopie początkowo pokazuje nazwy sekcji i nie nadpisuje preferencji
 `ancoreSidebarCollapsed` zwykłego menu. Wyjście przywraca tę preferencję,
@@ -290,7 +348,13 @@ Workspace, także w widoku Ogólne.
 Dane sekcji są ładowane przy jej pierwszym otwarciu, a formularz głównych
 ustawień pozostaje zamontowany po ukryciu panelu. `EmbeddedForm`
 z `forms/FormDialog.tsx` współdzieli pola, upload,
-walidację i zapis z `FormDialog`. `SpaceForm.inline_avatar` udostępnia
+walidację i zapis z `FormDialog`.
+Główny formularz włącza `actionsPosition="toolbar"`: „Zapisz” z ikoną i „Anuluj”
+są po prawej nad polami, we wspólnych klasach paska Procesu pracy. Nie renderuje
+dolnej stopki; zapis jest wyłączony przed zmianą danych i podczas wysyłania.
+Pozostali odbiorcy `EmbeddedForm` zachowują domyślną stopkę. Anulowanie nadal
+korzysta z dotychczasowego adresu powrotu oraz ochrony niezapisanych zmian.
+`SpaceForm.inline_avatar` udostępnia
 w „Ustawienia” ten sam `shared/AvatarControl` co Profil, z wariantem `space`,
 nazwami pól `avatar_photo*` i dotychczasową pulą ilustracji Przestrzeni. Wybrany
 awatar i kadr należą do formularza głównego, a picker pozostaje oknem nad stroną.
@@ -298,14 +362,29 @@ Zapis łączy pola Przestrzeni i awatar w jednej transakcji.
 `ConfigurationForm` renderuje typy zgłoszeń i podzakładkę „Stany” przez
 [`spaces/ConfigurationTable.tsx`](../frontend/app/src/spaces/ConfigurationTable.tsx).
 Podzakładka „Mapa” procesu pracy korzysta z `WorkflowBoard` opisanego wyżej.
-Tabela korzysta z klas i ról wzorca `Members` oraz takiego samego paska działań
-i bocznych odstępów jak „Udostępnienia”. Zaznaczenie jednego wiersza włącza
-„Edytuj”, jednego lub kilku — „Usuń”. „Dodaj typ” jest obok po lewej,
-a „Zapisz” i „Anuluj” po prawej (`member-access-toolbar`,
-`member-access-save-actions`). Nie ma menu wierszy, licznika ani dolnej stopki.
+`ConfigurationTable` i `MemberDirectory` korzystają ze wspólnego
+[`shared/LocalDirectoryTable.tsx`](../frontend/app/src/shared/LocalDirectoryTable.tsx),
+który używa arkusza Tagów, `ViewToolbar`, `DirectoryColumnManager`,
+`useDirectoryColumns` oraz `Resize`. Przyciski działań przekazane jako `children`
+trafiają do `ViewToolbar.actions` po prawej, a narzędzia tabeli pozostają
+po lewej w tym samym pasku; `MemberDirectory`
+przekazuje je z `AccessEditor`. Sortowanie, filtrowanie i wyszukiwanie
+operują na już załadowanych wierszach; nie zmieniają formsetów ani uprawnień.
+Identyfikatory zaznaczeń pozostają indeksami formularzy lub ID członkostw,
+nie pozycjami w posortowanym wyniku. Zmiana zapytania lub filtra czyści zaznaczenie.
+Układ i szerokości kolumn mają osobne klucze `space-settings-types`,
+`space-settings-statuses` i `space-settings-members` w localStorage.
+`AccessEditor.directory` włącza ten wariant tylko dla Przestrzeni;
+Pulpity i pozostałe listy członków zachowują `Members`.
+Tabela zachowuje pasek działań i boczne odstępy „Udostępnień”. Zaznaczenie jednego wiersza włącza
+„Edytuj”, jednego lub kilku — „Usuń”. „Dodaj typ” jest obok w grupie po prawej,
+a pary „Zapisz” / „Anuluj” nie ma. Typy używają wariantu
+`ConfigurationForm.commitOnSubmit`: formularz lub potwierdzenie usuwania
+wysyła konfigurację. Lista stanów nadal odkłada zapis i odrzucenie na mapę.
+Nie ma menu wierszy, licznika ani dolnej stopki.
 Tabele typów, stanów i udostępnień używają wariantu `space-settings-table-body`: wypełniają dostępną
 wysokość i przewijają się we własnym kontenerze, z `--app-page-padding-x`
-po bokach. Dla typów i stanów odpowiada za to `work-configuration-sheet--toolbar`.
+po bokach. Odpowiada za to wspólny wariant `settings-directory-sheet`.
 Pierwszy render Django ma te same klasy i układ; rozwijany fallback zachowuje
 linki natywnego usuwania. Formularz głównych ustawień zachowuje własne odstępy.
 Typy mają kolumny `key`, `label` i `description`; ikona jest przed nazwą
@@ -332,7 +411,7 @@ Pierwszy render używa tej samej siatki i natywnego pola w rozwijanej sekcji „
 Pusty dodatkowy formularz Django służy jako schemat dodawania i nie jest
 wierszem tabeli. Kolejne pozycje klonują ten schemat z nowym prefiksem
 i zwiększają `TOTAL_FORMS`; obowiązuje serwerowy limit 30 aktywnych typów.
-„Usuń” zaznacza pozycje jako `DELETE` w lokalnym szkicu.
+„Usuń” otwiera potwierdzenie; dopiero jego zatwierdzenie przesyła `DELETE`.
 
 [`spaces/configuration-form.ts`](../frontend/app/src/spaces/configuration-form.ts)
 obsługuje lokalne dodawanie, edycję i usuwanie oraz buduje końcowe żądanie
@@ -340,12 +419,14 @@ z pełnych formsetów szkicu i wspólnej rewizji.
 Kontrakt JSON i zapis zachowują wszystkie trzy formsety, w tym statusy,
 przejścia i pola dodatkowe używane przez zadania. Wielokrotne wartości przejść
 i stan checkboxów są zachowane; niezaznaczony checkbox nie trafia do `FormData`.
-„Dodaj” lub „Zastosuj” w oknie aktualizują tylko szkic. Dopiero „Zapisz”
-na pasku wykonuje jeden istniejący POST całej sekcji i odświeża listę.
-„Anuluj” odtwarza bazowy stan. Błąd zapisu zachowuje szkic, a błędna pozycja
+„Dodaj” lub „Zapisz” w formularzu typu wykonują jeden istniejący POST całej
+konfiguracji i odświeżają listę. Żądanie zachowuje również wcześniejszy szkic
+procesu. Formularze etapów nadal aktualizują szkic zapisywany na mapie.
+Anulowanie nieudanego zapisu typu przywraca stan sprzed otwarcia jego okna,
+z zachowaniem wcześniejszych zmian procesu. Błąd zapisu zachowuje szkic, a błędna pozycja
 otwiera się w oknie z fokusem na błędnej kontrolce. Konflikt rewizji (obecny
-backend zwraca 400 z komunikatem) blokuje ponowny zapis; „Anuluj” pobiera
-aktualny stan. Gdy POST się uda, a odświeżenie
+backend zwraca 400 z komunikatem) blokuje ponowny zapis; typy udostępniają
+„Wczytaj aktualną konfigurację”, a mapa — „Anuluj”. Gdy POST się uda, a odświeżenie
 listy zawiedzie, ponowienie wykonuje wyłącznie odczyt.
 Przy uruchomieniu Reacta po błędnym natywnym POST odrzucenie szkicu pobiera
 czysty stan konfiguracji przed zamknięciem okna, aby odrzucone wartości
@@ -369,7 +450,12 @@ kompaktowy `SharingDialog`, a lista członków zawiera serwerowe `can_remove`,
 odpowiadające regułom właściciela i administratora Przestrzeni.
 
 Sekcja udostępnień współdzieli `shared/AccessEditor` z Pulpitami, z parametrem
-`publicVisibility="public"`. Payload `space_team.py` zawiera nazwę, widoczność,
+`publicVisibility="public"` i `saveOnAction`. W Przestrzeniach nie ma prawej
+pary przycisków na pasku. `SharingDialog.saveOnStage` zatwierdza rolę/osobę
+bezpośrednio, a widoczność i odebranie dostępu używają kompaktowego `Modal`.
+Nieudany zapis pozostawia okno do ponowienia; anulowanie odrzuca operację,
+a przy konflikcie najpierw pobiera aktualny dostęp. Pulpity zachowują domyślny
+wariant szkicu z przyciskami na pasku. Payload `space_team.py` zawiera nazwę, widoczność,
 rewizję dostępu, `can_change_visibility`, `can_configure` i opcjonalny wiersz
 `private_owner` dla osoby prywatyzującej publiczną Przestrzeń.
 `action=save` wysyła cały szkic `visibility=private|public` oraz JSON
@@ -445,7 +531,7 @@ nie są zapisywane jako część osobistego układu gadżetów.
 Wszystkie sześć szablonów tablic Przestrzeni korzysta z jednego `ItemCard`
 i `StatusGroup` w `spaces/DetailPage.tsx`. Wspólny wariant `work-sprint-board`
 zachowuje wygląd aktywnego sprintu: kolorowe, zwijane kolumny, zwarte karty
-i obramowane puste stany. Django używa tego samego układu przez
+i puste kolumny bez ramki „Brak zadań”. Django używa tego samego układu przez
 `spaces/card.html`; `spaces/sprint_card.html` pozostaje aliasem.
 
 `spaces/useItemMotion.ts` łączy natywne przeciąganie z podglądem karty,

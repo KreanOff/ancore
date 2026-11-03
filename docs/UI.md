@@ -183,7 +183,9 @@ pasujące do filtrów, bez podziału po 100 wyników; karty przewijają się
 w dotychczasowych kolumnach. Nagłówki statusów zachowują liczniki.
 
 Pod kartami każdej kolumny jest „Utwórz zadanie” z ikoną plusa, również
-w pustej kolumnie. Wariant `work-board-create` używa istniejącego
+w pustej kolumnie. Puste kolumny nie wyświetlają ramki ani komunikatu
+„Brak zadań”, zarówno w React, jak i pierwszym renderze Django.
+Wariant `work-board-create` używa istniejącego
 `tasks-project-menu-button`, zachowuje szare interakcje i nie kurczy się
 w przewijanej kolumnie. Otwiera wspólny modal z wybranym statusem; jego
 nazwa dostępności zawiera nazwę kolumny. W czasie odczytu jest wyłączony,
@@ -193,6 +195,10 @@ W Scrum akcja wymaga aktywnego sprintu.
 Pierwszy render Django zachowuje ten sam wygląd i adres formularza.
 
 Lista zadań otwartej Przestrzeni ładuje osobno po 20 pozycji w każdym statusie.
+Wiersze nie pokazują przycisku trzech kresek ani menu działań i nie rezerwują
+na nie osobnej kolumny. Dotyczy to Reacta oraz pierwszego renderu Django.
+Tytuł nadal otwiera zadanie, a checkbox służy do zaznaczania. Menu działań
+pozostaje w wierszach Backlogu.
 Nagłówek grupy pokazuje pełną liczbę dostępnych wyników po filtrowaniu.
 Pod wierszami jest pełnej szerokości, wyśrodkowany pasek „Pokaż więcej (20 / 21)”.
 Wariant `work-list-more` rozszerza `tasks-filter-button` w `spaces.css`:
@@ -217,6 +223,16 @@ zaznaczenia, zwinięcia sekcji i pozycję przewijania; filtry i sortowanie
 resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
 „Na stronie”. Sprint zawierający wyłącznie ukończone zadania pokazuje
 „Wszystkie zadania w tym sprincie są ukończone.”.
+
+## Kolejność identyfikacji zadania
+
+Wiersze i karty zadań zachowują kolejność: priorytet → klucz (np. `HELP-24`)
+→ stan → tytuł. Dotyczy to Listy zadań, Backlogu, Tablicy, Osi czasu,
+„Dla ciebie”, wyników Filtrów, zadań Zespołu i Podzadań. Klucz ma osobny
+tor siatki o szerokości treści i pozostaje klikalny tak jak tytuł; w Podzadaniach
+otwiera dotychczasowy modal edycji, z zachowaniem uprawnień.
+React i wspólne szablony Django `spaces/row.html` oraz `spaces/card.html`
+zachowują tę samą kolejność. Kolory, ikony i metadane pozostają wspólne.
 
 ## Wspólny pasek widoków Przestrzeni
 
@@ -277,7 +293,7 @@ miesiąca/roku utrzymuje się przy lewej krawędzi w granicach swojego okresu.
 Wspólna komórka ma nazwę „Zadania i kalendarz” dla czytników ekranu;
 statyczny pierwszy render Django ma osobne kolumny i ukrytą nazwę „Zadania”.
 Kompaktowy `TimelineItemRow` z `spaces/Item.tsx` współdzieli
-z Listą zadań priorytet, wskaźnik statusu, klucz/tytuł i awatar wykonawcy.
+z Listą zadań priorytet, klucz, wskaźnik statusu, tytuł i awatar wykonawcy.
 Obok awatara pokazuje imię i nazwisko z `assignee.label` (lub e-mail, gdy
 profil nie ma nazwy); brak przypisania opisuje „Nie przypisano”. Wariant
 `work-backlog-assignee--named` zachowuje wspólny awatar, skraca długi tekst
@@ -379,8 +395,8 @@ directory_row_menu oraz tabeli tasks-directory-sheet. Wariant
 task-filter-directory określa kolumny katalogu; ich szerokości mają
 osobny klucz ustawień w tasks.js. Wyniki w „Wyszukaj zadania” i zapisanych
 filtrach korzystają z spaces/item_list.html i spaces/row.html: kolorowych
-grup statusów, zwijania oraz wierszy z checkboxem, priorytetem, statusem,
-kluczem, tytułem, typem, licznikami tagów/załączników i oznaczeniem terminu.
+grup statusów, zwijania oraz wierszy z checkboxem, priorytetem, kluczem,
+statusem, tytułem, typem, licznikami tagów/załączników i oznaczeniem terminu.
 Grupy obejmują bieżącą stronę wyników, a sortowanie zachowuje kolejność
 zadań wewnątrz grup. Wyniki nie używają tabeli z nagłówkami kolumn.
 
@@ -469,20 +485,60 @@ aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces
 
 ## Przestrzenie i zespoły
 
+Nazwy typów i etapów w tabelach ustawień oraz nazwy etapów na mapie używają
+`tasks-project-value-badge--tag-visual`: pastelowego tła o 16% udziału
+wybranego koloru i ciemnego tekstu, jak kolumna „Kolor / ikona” Tagów.
+Ikona i nazwa są we wspólnej etykiecie; długie nazwy skraca wielokropek.
+Bezpośrednia ikona SVG etykiety `tasks-project-value-badge--tag-visual`
+ma 16×16px i stały udział 16px w układzie flex również poza komórką Tagów.
+Dzięki temu nazwy typów i etapów mają tę samą wysokość co etykiety Tagów;
+nie dziedziczą domyślnej ikony 24px.
+`work-configuration-badge-label` i ograniczenie szerokości w `spaces.css`
+chronią układ tabeli. Pole „Kolor nazwy” wykorzystuje `documents-color-control`
+i `documents-color-input`, kod HEX, przycisk „Domyślny” oraz podgląd.
+Minimalny wariant `work-configuration-color` ogranicza szerokość pola HEX;
+kontrolki zawijają się na wąskim ekranie. Domyślne barwy pochodzą z istniejącej
+palety ikon typów i stanów; własny kolor jest niezależny od wybranej ikony.
+Kolor etapu w ustawieniach jest źródłem wyglądu w całej Przestrzeni.
+`shared/status-color.ts` oraz filtr Django `status_style` przekazują wspólne
+zmienne `--tasks-status-color`, `--tasks-status-background` (16% koloru)
+i `--tasks-status-border` (30% koloru). Lista i tablica mają takie samo tło
+nagłówka jak etykieta ustawień; ikony zadań i przejść używają pełnego koloru.
+Oś czasu i wykresy korzystają z tych samych zmiennych, zachowując swoje
+istniejące proporcje mieszania. Nagłówki sprintów nadal określają stan sprintu.
+
+
 Proces pracy ma podzakładki „Stany” i „Mapa” w drugim wierszu wspólnego
 nagłówka Przestrzeni, przed paskiem działań. Korzystają z `notifications-tabs work-tabs work-tabs--views`,
 jak widoki Przestrzeni: ikony `list-checks` i `workflow`, tekst 13,5px,
 fioletowe podkreślenie aktywnej pozycji i przewijanie poziome na telefonie.
 W React przyciski mają role `tablist`/`tab`/`tabpanel`, `aria-selected`
 oraz obsługę strzałek, Home i End; pierwszy render Django używa linków
-z `aria-current="page"`. Domyślnie wybrana jest „Mapa”.
+z `aria-current="page"`. Domyślnie wybrane są „Stany”.
 
 „Stany” pokazują istniejącą `ConfigurationTable` z zaznaczeniami i paskiem
-„Edytuj”, „Usuń”, „Dodaj stan” po lewej oraz „Zapisz”, „Anuluj” po prawej.
+„Edytuj”, „Usuń”, „Dodaj stan” po lewej. Lista nie pokazuje prawej pary
+„Zapisz” / „Anuluj”; zapis i odrzucenie całego procesu są dostępne na „Mapie”.
+Przy niezapisanych zmianach lista wskazuje tę zakładkę w komunikacie.
 Nazwa otwiera wspólny formularz etapu. Lista i mapa współdzielą szkic oraz
 historię; przełączanie nie zapisuje ani nie odrzuca zmian. Wybór podzakładki
 pozostaje po zapisie i przejściu do innej sekcji ustawień, bez zmiany adresu Reacta.
 Natywny widok przekazuje wybór przez `workflow_view=states|map`.
+
+Dodawanie i edycja etapu używają wariantu `work-type-form`, tak jak okno
+„Dodaj typ zgłoszenia”: podgląd ikony 100px z „Zmień” po lewej, pełna szerokość
+nazwy i opisu zasad po prawej, a poniżej klucz i WIP w dwóch kolumnach.
+Na telefonie pola przechodzą pod ikonę. Wspólny `ConfigurationIcon` zachowuje
+siatkę ikon, wyszukiwanie, pusty wynik, klawiaturę i powrót fokusu.
+Etapy mają osobny katalog 16 ikon statusów (m.in. kolejka, oczekiwanie,
+blokada i zakończenie), z podpisem „Ikony statusów”. Typy zgłoszeń nadal
+korzystają ze swojego zestawu 24 ikon. Zapisana wcześniej ikona typu pozostaje
+dostępna wyłącznie przy jej etapie jako „Dotychczasowa ikona”.
+Pole klucza jest zawsze widoczne; ręczne wpisanie blokuje dalsze generowanie
+z nazwy. „Stan zadania” i „Etap przepływu” są ukryte z zachowaniem danych.
+WIP poza pracą w toku pozostaje tylko do odczytu, z wyjaśnieniem pod „!”.
+Ikona jest widoczna przed nazwą w tabeli i na mapie. Pierwszy render Django
+zachowuje ten sam układ i natywny wybór ikony rozwijany przez „Zmień”.
 
 „Mapa” pokazuje swobodny układ węzłów i kierunkowych połączeń. Lokalny wariant
 `work-flow-*` w `spaces.css` zachowuje wspólny pasek ustawień, przyciski,
@@ -561,8 +617,8 @@ Po udanym zapisie i błędzie odczytu przycisk „Odśwież widok” ponawia odc
 Bez JavaScriptu blokadę i jej usunięcie obsługują formularze w menu.
 
 Ustawienia Przestrzeni są osobną stroną `space-settings-page`. Główne lewe menu
-zastępuje menu Workspace czterema sekcjami: „Ustawienia”, „Udostępnienia”,
-„Typy zgłoszeń” oraz „Proces pracy”, według uprawnień. Proces pracy używa
+zastępuje menu Workspace sześcioma sekcjami: „Ustawienia”, „Udostępnienia”,
+„Typy zgłoszeń”, „Kategorie”, „Grupy” oraz „Proces pracy”, według uprawnień. Proces pracy używa
 wspólnego edytora konfiguracji; pola dodatkowe pozostają ukryte w ustawieniach.
 Zawiera same pozycje sekcji, bez dodatkowych nagłówków i powrotu. Wykorzystuje
 istniejące wiersze `nav-link`, ikony oraz aktywny stan menu. Sekcja procesu
@@ -583,10 +639,31 @@ Na desktopie wejście do ustawień rozwija menu sekcji niezależnie od zapisanej
 preferencji zwykłego menu. Ręczne zwinięcie obowiązuje tylko podczas tej
 wizyty; powrót przywraca preferencję Workspace. Mobilne menu zachowuje
 dotychczasowy przycisk otwierania i zamykanie po wyborze sekcji.
+Tabele „Udostępnienia”, „Typy zgłoszeń” i „Proces pracy → Stany” używają
+`LocalDirectoryTable` z klasami arkusza Tagów (`tasks-tag-sheet`,
+`tasks-spreadsheet-sheet`). Mają wiersze 35px, kolumnę zaznaczeń 40px,
+te same separatory i przewijanie. „Sortowanie”, „Filtrowanie”, „Zarządzaj tabelą”
+oraz wyszukiwarka są po lewej, a grupa działań po prawej we wspólnym pasku.
+Na szerokim ekranie mieszczą się w jednym wierszu; przy braku miejsca zawijają
+się według wspólnego wzorca `ViewToolbar`. Kontener działań wewnątrz
+`settings-directory-toolbar` jest przezroczysty dla układu (`display: contents`).
+Wyszukiwanie obejmuje także ukryte kolumny i ignoruje polskie znaki.
+Sortowanie zmienia wyłącznie widok; domyślna kolejność stanów pozostaje
+kolejnością procesu. Filtry typów obejmują klucz, stanów klucz, kategorię
+i etap przepływu, a osób rolę. Zmiana wyszukiwania lub filtra czyści
+zaznaczenie; checkbox nagłówka i Ctrl/Cmd+A zaznaczają widoczne wyniki.
+Wspólne `DirectoryColumnManager`, `useDirectoryColumns` i `Resize` zapisują
+lokalnie kolejność, widoczność i szerokość kolumn osobno dla każdej sekcji.
+Reset przywraca układ. Długie tabele przewijają się poziomo także na telefonie,
+a brak wyników używa wspólnego `EmptyState`. Pierwszy render Django ma
+te same domyślne szerokości; kontrolki tabeli są dostępne po uruchomieniu Reacta.
+
 Tabela „Udostępnienia” korzysta z tego samego `shared/AccessEditor` co Pulpity.
 Ma po bokach `--app-page-padding-x`, pięć kolumn bez menu wiersza oraz
 pasek widoczności i akcji nad tabelą. „Zmień rolę”, „Odbierz dostęp” i
-„Udostępnij” znajdują się po lewej; „Zapisz” i „Anuluj” po prawej.
+„Udostępnij” wraz z widocznością znajdują się po prawej. Pasek nie ma „Zapisz” ani „Anuluj”.
+Zmiany osób i ról zapisuje zatwierdzenie formularza; zmiana widoczności
+i odebranie dostępu wymagają zatwierdzenia kompaktowego okna.
 Nie ma licznika członków ani dolnej stopki. Wspólne klasy `access-editor`,
 `member-access-toolbar` i `member-access-save-actions` w `workplace-team.css`
 zachowują odstępy, zawijanie i wyłączone kontrolki wzorca Pulpitów.
@@ -595,17 +672,19 @@ przewijanie w obu kierunkach. Pierwszy render Django zachowuje ten sam układ,
 a rozwijany formularz zgodności pozwala nadal korzystać ze starszych operacji.
 „Typy zgłoszeń” zachowują ten sam układ co „Udostępnienia”: wspólny pasek
 działań, tabelę odsuniętą od boków o `--app-page-padding-x` i brak dolnej
-stopki. Wariant `work-configuration-sheet--toolbar` korzysta z siatki i ról
-tabeli wzorca „Udostępnienia”. Ma checkboxy oraz kolumny klucza,
+stopki. Wariant `settings-directory-sheet` korzysta z siatki i ról
+tabeli Tagów. Ma checkboxy oraz kolumny klucza,
 nazwy i opisu typu zgłoszenia, bez osobnej kolumny menu wiersza.
-Ikona znajduje się po lewej stronie nazwy w tej samej komórce
-`tasks-directory-name`, z odstępem 8px jak na liście Przestrzeni.
+Ikona znajduje się w komórce nazwy, po jej lewej stronie,
+z odstępem 8px jak na liście Przestrzeni.
 Ikona używa wspólnego `tasks-issue-type`, z tymi samymi symbolami i kolorami
 co zadania. Formularze dodawania i edycji typu mają strukturę ustawień
 Przestrzeni: po lewej podgląd ikony 100px i „Zmień”, po prawej nazwa u góry,
 opis na całą szerokość oraz klucz poniżej. Wariant `work-type-form` korzysta
 z `app-form-avatar-layout`, `app-form-heading` i `app-form-description`;
 opis ma minimum 128px, a na telefonie pola przechodzą pod ikonę.
+Podglądy ikon typów i etapów mają przezroczyste tło w React i pierwszym
+renderze Django; wielkość ikon oraz położenie przycisku „Zmień” są wspólne.
 „Zmień” otwiera wspólny `Dropdown` z 24 kolorowymi ikonami lokalnego zestawu.
 Picker wykorzystuje klasy `emoji-picker` ze wzorca Pulpitów: wyszukiwarkę,
 opcję domyślną, siatkę ośmiu kolumn i dolny podgląd wybranego symbolu.
@@ -616,10 +695,11 @@ i przywraca fokus przycisku „Zmień”. Szerokość 400px dopasowuje się do t
 Wybór „Domyślna dla typu” przywraca symbol według klucza i aktualizuje podgląd
 podczas jego wpisywania. Własna ikona pozostaje niezależna od zmiany klucza.
 Pierwszy render Django zachowuje układ; „Zmień” rozwija natywne pole ikony.
-Kolumna opisu wykorzystuje pozostałą szerokość, a pełny tekst jest dostępny
+Kolumna opisu ma domyślnie 320px, a pełny tekst jest dostępny
 w podpowiedzi i edycji. Brak opisu jest oznaczony „—”.
-Na pasku po lewej są „Edytuj”, „Usuń” i „Dodaj typ”, a po prawej „Zapisz”
-i „Anuluj”, z klasami `member-access-toolbar` i `member-access-save-actions`.
+Na pasku są „Edytuj”, „Usuń” i „Dodaj typ”, z klasą `member-access-toolbar`.
+Nie ma prawej pary „Zapisz” / „Anuluj”. Dodawanie i edycję zapisuje przycisk
+w formularzu; zbiorcze usuwanie ma kompaktowe okno potwierdzenia.
 „Edytuj” wymaga dokładnie jednego zaznaczenia; „Usuń” obejmuje wszystkie
 zaznaczone pozycje. Nazwa typu również otwiera standardowy `Modal`.
 Checkboxy, Ctrl/Cmd+A i Escape obsługują zaznaczenie. Opis konfiguracji
@@ -641,16 +721,22 @@ Wspólny `AvatarControl` pokazuje pod awatarem przycisk „Zmień”. Wybór
 ilustracji, upload i kadrowanie zachowują istniejący picker; szkic awatara
 zapisuje się dopiero z całym formularzem ustawień. Nie ma osobnej sekcji
 awatara. `space-settings-panel` jest elastycznym kontenerem istniejącej
-treści i stopki; ukrycie głównych ustawień zachowuje ich formularz i szkic.
-Nagłówek i stopka pozostają poza przewijaną treścią. „Zapisz” głównych ustawień
+treści; ukrycie głównych ustawień zachowuje ich formularz i szkic.
+Główne ustawienia mają nad formularzem pasek z przyciskami po prawej:
+„Zapisz” z ikoną `check`, następnie „Anuluj”, zgodnie z mapą Procesu pracy.
+Pasek korzysta z `member-access-toolbar` i `member-access-save-actions`;
+wariant formularza zeruje tylko jego dolny margines. Nie ma dolnej stopki.
+W React zapis jest nieaktywny przed zmianą danych i podczas wysyłania;
+natywny formularz Django zachowuje aktywny submit. Nagłówek i pasek pozostają
+poza przewijaną treścią. „Zapisz” głównych ustawień
 pozostawia stronę otwartą i aktualizuje nazwę w nagłówku i tytule dokumentu.
-W sekcji typów „Dodaj” lub „Zastosuj” w oknie zmieniają lokalny szkic,
-podobnie jak „Usuń” na pasku. Dopiero „Zapisz” całej sekcji utrwala zmiany
-jednym żądaniem. „Anuluj” odtwarza zapisany stan, pozostając w sekcji.
+W sekcjach typów, kategorii i grup zatwierdzenie okna zapisuje dodanie lub
+edycję, a usuwanie wymaga potwierdzenia. „Anuluj” w oknie odtwarza stan
+sprzed jego otwarcia, pozostając w sekcji.
 Żądanie przekazuje pełne formsety, w tym nienaruszone statusy i pola dodatkowe,
 wraz ze wspólną rewizją do dotychczasowej walidacji Django. Błąd zachowuje szkic;
-błędne pola otwierają edytor z fokusem, a konflikt wymaga odświeżenia przez
-„Anuluj”. Po zapisaniu i błędzie odczytu ponowienie tylko pobiera dane.
+błędne pola otwierają edytor z fokusem, a konflikt wymaga wybrania
+„Wczytaj aktualną konfigurację”. Po zapisaniu i błędzie odczytu ponowienie tylko pobiera dane.
 Nawigacja i przeładowanie chronią szkic głównych ustawień i typów,
 a `Modal` chroni szkic otwartego okna.
 Zmiana widoczności w ustawieniach i udostępnieniach wymaga wcześniejszego
@@ -681,15 +767,16 @@ menu wyróżniają sam przycisk neutralnym `--system-interaction-soft`.
 Reguła obejmuje listę, backlog i karty tablicy w React oraz pierwszym renderze
 Django; rozmiar i obszar kliknięcia pozostają bez zmian.
 
-Zakładka „Udostępnienia” używa `shared/Members` z kontrolowanym zaznaczeniem
+Zakładka „Udostępnienia” używa `shared/MemberDirectory` z kontrolowanym zaznaczeniem
 wszystkich wierszy, Ctrl/Cmd+A i Escape. Akcje obejmują tylko `can_change`,
 więc właściciel i chronieni administratorzy pozostają bez edycji. Model
 członkostwa Przestrzeni nie zapisuje daty dołączenia; brak daty pokazuje „—”.
-`SharingDialog` obsługuje picker Workspace i zbiorczą zmianę roli. „Dodaj”
-i „Zastosuj” zmieniają szkic; dopiero „Zapisz” całej sekcji utrwala widoczność,
-role i osoby. „Odbierz dostęp” usuwa zaznaczonych ze szkicu, a „Anuluj”
-odtwarza zapisany stan. Błąd zachowuje szkic, konflikt wymaga wczytania
-aktualnej wersji przez „Anuluj”. Nawigacja chroni niezapisane zmiany.
+`SharingDialog` obsługuje picker Workspace i zbiorczą zmianę roli.
+„Udostępnij” i „Zapisz rolę” w oknie od razu zapisują operację.
+Widoczność i „Odbierz dostęp” mają oddzielne potwierdzenie; „Anuluj” w oknie
+odrzuca niezapisaną operację. Błąd pozostawia okno do poprawy lub ponowienia,
+a konflikt blokuje zapis do wczytania aktualnego dostępu przez anulowanie.
+Nawigacja chroni niezapisane zmiany.
 Wyszukiwanie `draft=1` obejmuje aktywnych członków Workspace, także osoby
 usunięte ze szkicu; dodanie obecnej osoby pokazuje błąd. Publiczna Przestrzeń
 pokazuje „Dostęp z Workspace” i wyłącza indywidualne akcje. Zmiana na prywatną
@@ -864,19 +951,19 @@ Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Tagi, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Filtry z wyszukiwaniem zadań i Zespoły.
 
-Wiersze backlogu i Listy zadań przestrzeni z prawem edycji używają wariantu `work-issue-row--actions`
+Wiersze Backlogu z prawem edycji używają wariantu `work-issue-row--actions`
 z dodatkową kolumną 30px i istniejącym include'em `spaces/item_actions.html`.
 Menu oferuje edycję, zmianę statusu i kolejności oraz przeniesienie na tablicę
 Kanbana. Obsługuje je wspólny `row-actions.js`, również po podmianie treści.
-Obserwatorzy zachowują wiersze bez przycisków zapisu.
+Obserwatorzy oraz Lista zadań zachowują wiersze bez tego menu i jego kolumny.
 
 Backlog, Lista zadań przestrzeni i kafelki Aktywnego sprintu współdzielą
 `spaces/item_planning.html`: awatar przypisanego wykonawcy lub ikonę osoby
 oraz, w Scrum, małą etykietę punktów. Zero wyświetla się jako `0`, a brak
 estymacji jako `—`. Wariant `work-issue-row--planning` rezerwuje kolumny
-punktów i awatara na liście/backlogu; menu z trzema paskami pochodzi z tego
-samego `spaces/item_actions.html` i pozostaje dostępne tylko przy prawie
-edycji. `show_work_metadata` włącza ten wariant dla listy otwartej przestrzeni;
+punktów i awatara na liście/backlogu. Menu z trzema paskami w Backlogu
+pochodzi z `spaces/item_actions.html` i pozostaje dostępne tylko
+przy prawie edycji. `show_work_metadata` włącza metadane dla listy otwartej przestrzeni;
 pozostali odbiorcy `row.html` (Filtry, Dla ciebie, Zespoły i podzadania)
 zachowują dotychczasowy wariant.
 Nie ma osobnego nagłówka „Planowanie sprintów” ani stałego paska zaznaczania.
@@ -937,8 +1024,10 @@ kategorii, wysokość nagłówka 40px, ikony statusów, liczniki i przyciski zwi
 Szerokość kolumny dodaje 10px do wspólnego `--tasks-kanban-column-width`:
 zakres wynosi 240–310px, z dotychczasową responsywnością i przewijaniem poziomym.
 Karta `tasks-issue-row work-issue-row work-sprint-card` zawiera priorytet,
-status, klucz i zawijany tytuł w pierwszym wierszu, menu działań po prawej
-oraz metadane poniżej: typ, wykonawcę, tagi, załączniki i oznaczenie terminu.
+klucz, status i zawijany tytuł w pierwszym wierszu oraz metadane poniżej:
+typ, wykonawcę, tagi, załączniki i oznaczenie terminu. Karty nie pokazują
+przycisku trzech kresek ani menu działań, również w pierwszym renderze Django.
+Siatka ma cztery kolumny; klucz ma własny tor o szerokości treści, a tytuł wykorzystuje pozostałe miejsce.
 Punkty są widoczne tylko w Scrum, zgodnie z formularzami planowania.
 Opcjonalny zespół pozostaje opisem. Każdy kafelek ma białą powierzchnię, pełne obramowanie
 `--border-color` i zaokrąglenie nagłówka Kanbana. Odstęp kart wynosi `0.55rem`,
@@ -953,7 +1042,7 @@ React renderuje jeden `ItemCard` i jeden `StatusGroup` dla każdego szablonu,
 bez osobnej karty i szarego nagłówka Kanbana. Pierwszy render Django używa
 `spaces/card.html` oraz wspólnego `issue_group_header.html`. Historyczne nazwy
 klas z prefiksem `work-sprint-` oznaczają teraz wspólny wzorzec tablic.
-Przeciąganie, animacje, zwijanie, menu i pola docelowe mają to samo zachowanie.
+Przeciąganie, animacje, zwijanie i pola docelowe mają to samo zachowanie.
 
 `spaces/useItemMotion.ts` obsługuje efekty natywnego przeciągania kart i wierszy
 backlogu. Elementy mają `data-work-motion-item`, a sekcje docelowe
@@ -961,7 +1050,7 @@ backlogu. Elementy mają `data-work-motion-item`, a sekcje docelowe
 kliknięcie tytułu nadal otwiera zadanie. Kontrolki i menu nie rozpoczynają gestu.
 Obserwator i widok sortowany inaczej niż rosnąca kolejność ręczna nie
 udostępniają przeciągania. W backlogu pierwszą kontrolką pozostaje checkbox;
-nie dodano osobnego uchwytu. Menu „Przesuń wyżej/niżej” i przeniesienia między
+nie dodano osobnego uchwytu. Menu Backlogu „Przesuń wyżej/niżej” i przeniesienia między
 sprintami pozostają alternatywą klawiaturową.
 
 Podgląd `work-board-drag-preview` jest nieinteraktywną kopią całej karty lub
@@ -1041,7 +1130,7 @@ administracyjny”, oraz listę „Ustawienia przestrzeni”. Lista obejmuje wid
 przestrzenie aktywnego Workspace; brak dostępnych przestrzeni pokazuje komunikat.
 Prawo zarządzania i konfigurowania jest sprawdzane na stronie wybranej przestrzeni.
 Na stronie centrum jest „Wróć do przestrzeni”. Strona ustawień przestrzeni
-zastępuje główne menu czterema sekcjami bez dodatkowych nagłówków i powrotu.
+zastępuje główne menu sześcioma sekcjami bez dodatkowych nagłówków i powrotu.
 Treść nie ma dodatkowej wewnętrznej nawigacji;
 wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
 `dashboard/SettingsPage.tsx` i `shell/Sidebar.tsx` obsługują kategorie w stałej
@@ -1261,30 +1350,40 @@ podkreślenia przy najechaniu. Wzorzec obejmuje też backlog i sprinty;
 zaznaczenie checkboxa utrzymuje to samo fioletowe tło i pasek również po
 odsunięciu kursora i utracie fokusu, tak jak zaznaczenie w katalogu Projektów.
 Include `spaces/issue_type.html` dodaje wspólne oznaczenie `tasks-issue-type`:
-ikonę z lokalnego `AncoreIcons` i nazwę typu zgłoszenia w neutralnym tle.
+ikonę z lokalnego `AncoreIcons` i nazwę typu zgłoszenia na pastelowym tle
+o 16% udziału koloru z konfiguracji, takim jak etykieta w ustawieniach.
+Ikona etykiety ma neutralny kolor tekstu; geometria wiersza i karty pozostaje wspólna.
 Oznaczenie jest widoczne po prawej stronie wiersza, bezpośrednio przed licznikiem
 tagów, oraz w metadanych karty; długą nazwę skraca wielokropek, a pełną udostępnia
 `title` i etykieta dostępności. Wspólny wiersz `work-issue-row` ma osobną kolumnę
 typu również w backlogu i sprintach; „Dla ciebie” zachowuje ten układ bez checkboxa.
 Kolumna klucza i tytułu może się zwężać, zachowując wielokropek i jedną linię metadanych.
 `IssueTypeSelect` używa istniejących ikon opcji `AncoreCustomSelect` w formularzu
-przestrzeni i szczegółach zadania. Ikony typu mają wspólne kolory w opcjach,
-wybranej wartości, filtrze, wierszach, kartach i podsumowaniu: Zadanie — niebieski,
-Błąd — czerwony, Historyjka — zielony, Epik — fioletowy. Materiał i Zgłoszenie
-używają niebieskiego, Incydent czerwonego, Kandydatura fioletowego, a Kampania
-i Rozmowa bursztynowego. Wszystkie 24 symbole katalogu mają kolor z tej samej
-palety: Usprawnienie, Wydarzenie, Raport i Konfiguracja — niebieski; Cel — czerwony;
-Wdrożenie, Bezpieczeństwo i Lista kontrolna — zielony; Kształty, Eksperyment
-i Projekt graficzny — fioletowy; Pomysł, Kamień milowy i Sprawa — bursztynowy.
-Barwy pochodzą z obecnych statusów, priorytetów i akcentów;
-nieznany typ używa fioletowych Kształtów. Nazwy i tła kontrolek pozostają standardowe,
-a kolory dotyczą tylko ikon w komponentach typu zgłoszenia.
+przestrzeni i szczegółach zadania. Kolor typu jest rozwiązywany przez `configuration_name_color('types', ...)`,
+nie przez symbol ikony. Domyślne Zadanie jest niebieskie, Błąd czerwony,
+Historyjka zielona, a Epik fioletowy; własny kolor nadpisuje tę paletę.
+Etykiety używają `issueTypeBadgeStyle` w React i filtra `type_badge_style`
+w Django. Zmienna `--tasks-type-icon-color` pozwala zachować ciemną ikonę
+etykiety i pełny kolor typu w opcjach formularzy oraz podsumowaniu.
+Wariant podglądu opcji `tasks-type-option` zachowuje dotychczasowe 16×16px
+ikony, także po wybraniu wartości oraz w pierwszym renderze Django.
+Picker ikon nadal pokazuje dotychczasową paletę symboli; ich wybór nie zmienia
+koloru zapisanego typu. Bez metadanych koloru wspólny komponent zachowuje
+wygląd domyślny. Filtr typu w Przestrzeni korzysta z jej konfiguracji.
 Toolbar zawiera filtr „Typ zgłoszenia”;
-dotychczasowe pole biznesowe w szczegółach ma etykietę „Kategoria zadania”.
+dotychczasowe pole biznesowe w szczegółach ma etykietę „Kategoria”, a obok
+niego znajduje się opcjonalna „Grupa” z pustą opcją „Brak grupy”. Oba pola
+korzystają ze wspólnego selektora i automatycznego zapisu. Ich listy
+w ustawieniach Przestrzeni używają tabeli i modali Typów zgłoszeń:
+wyszukiwania, zaznaczeń oraz edycji nazwy, klucza i opisu. Nazwy kategorii
+i grup są zwykłym tekstem, bez ikon i tła etykiety, również w selektorach
+zadań. Modale nie mają kolumny podglądu ikony ani kontrolek koloru;
+korzystają ze wspólnego układu formularza. Pierwszy render Django zachowuje
+tę samą prezentację oraz siatkę kolumn listy co Typy zgłoszeń.
 Pierwsza kolumna wiersza zawiera stale widoczny, standardowy `tasks-row-checkbox`
 z etykietą zawierającą kod i tytuł zadania. Zaznaczenie myszą lub Spacją podświetla
 wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list nie pokazują
-menu trzech pasków; backlog i sprinty udostępniają je osobom z prawem edycji
+menu trzech pasków; wiersze Backlogu i jego sprintów udostępniają je osobom z prawem edycji
 przez `spaces/item_actions.html`. Checkbox służy lokalnemu zaznaczeniu,
 bez operacji zbiorczych i utrwalania wyboru po zmianie widoku.
 Grupowanie dotyczy dostępnej strony wyników; rozróżnia nazwy własnych statusów
@@ -1649,9 +1748,9 @@ Zakładki pozostają w jednym wierszu i przewijają się poziomo,
 gdy brakuje miejsca, także na telefonie. Etykiety i licznik nie zawijają się.
 Zadania we wszystkich pięciu zakładkach używają wspólnego `spaces/row.html`,
 tak jak „Wyszukaj zadania” w Filtrach: wiersza `tasks-issue-row` z priorytetem,
-ikoną statusu, oznaczeniem typu zgłoszenia, kluczem, tytułem, licznikami tagów
-i załączników oraz ikoną terminu. Link obejmujący typ, klucz i tytuł w „Dla ciebie”
-nie ma podkreślenia tekstu, również po najechaniu kursorem.
+kluczem, ikoną statusu, tytułem, oznaczeniem typu zgłoszenia, licznikami tagów
+i załączników oraz ikoną terminu. Linki klucza i tytułu w „Dla ciebie”
+nie mają podkreślenia tekstu, również po najechaniu kursorem.
 Wariant `hide_selection=True` nie renderuje
 checkboxa ani jego toru siatki w „Dla ciebie”. Lokalizacja i czas ostatniej aktywności są dostępne w `title` linku,
 a własna nazwa statusu i termin w etykietach ikon. Liczniki są pobierane zbiorczo
@@ -2683,9 +2782,15 @@ właściwości. Pasek `notifications-tabs work-tabs` ma boczny odstęp
 `--app-page-padding-x` i tekst 13,5px, tak jak w Przestrzeni. Wspólne style
 obejmują linki widoków i przyciski zakładek; aktywny przycisk zachowuje
 `aria-selected` i fioletowe podkreślenie. Treść lewej kolumny bieżącego zadania
-Przestrzeni ma boczne odstępy `--app-page-padding-x` (15px), przez lokalny
-`--tasks-issue-content-padding-x`, i całą pozostałą szerokość
-bez limitu 980px. Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
+Przestrzeni ma od krawędzi strony odstęp `--app-page-padding-x` (15px), przez lokalny
+`--tasks-issue-content-padding-x`, i całą pozostałą szerokość bez limitu 980px.
+Powyżej 1024px prawe wcięcie treści wynosi 0: odstęp 15px od panelu właściwości
+zapewnia jego lewy margines, dzięki czemu nie sumuje się z wcięciem treści.
+Do 1024px treść zachowuje po 15px z obu stron, a panel znajduje się pod nią.
+Wyjątkiem jest sekcja tematu i opisu (`tasks-issue-overview`): ma 50px od lewej
+krawędzi strony i 50px od prawego panelu, wliczając jego margines. Do 1024px
+ma po 50px wcięcia z obu stron. Pozostałe sekcje zachowują odstępy 15px.
+Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
 przy „Główna”, listę przy „Podzadania”, zegar przy „Dziennik pracy”, osoby
 przy „Udostępnienia” i strzałkę historii przy „Historia”. Mają 18px i odstęp 8px
 od etykiety, tak jak zakładki Przestrzeni; dziedziczą kolor tekstu. Pasek
@@ -2975,6 +3080,8 @@ Listy wielokrotnego wyboru i zwykłe selecty z ponad ośmioma opcjami mają
 wyszukiwarkę również poza modalami; wyszukiwanie pomija polskie znaki.
 `AncoreCustomSelect` zachowuje podglądy `data-ancore-option-preview`
 i ikony `data-ancore-option-icon`, a pozostałym opcjom dobiera ikonę pola.
+Pola klasyfikacji zadania `task_type` i `task_group` wyświetla wyłącznie
+tekstowo, pomijając również wcześniejsze metadane wyglądu.
 Wspólna warstwa uzupełnia ikony prostych filtrów, sortowania i paginacji.
 `core.widgets.VisualSelect/VisualSelectMultiple` przekazują serwerowe ikony
 lub podglądy przez lokalne szablony, bez zmiany wartości opcji i walidacji.

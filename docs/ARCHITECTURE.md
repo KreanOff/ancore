@@ -292,7 +292,7 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   `/space/<slug>/?view=settings` oraz bezpośrednie `edit/`, `avatar/`, `members/`
   i `configuration/`, również scoped, renderują osobną stronę ustawień
   przestrzeni. Tryb powłoki `space-settings` zastępuje główne menu sekcjami
-  „Ustawienia”, „Udostępnienia”, „Typy zgłoszeń” i „Proces pracy” według uprawnień, bez
+  „Ustawienia”, „Udostępnienia”, „Typy zgłoszeń”, „Kategorie”, „Grupy” i „Proces pracy” według uprawnień, bez
   dodatkowych nagłówków i powrotu w menu. Proces pracy (`statuses`) konfiguruje
   kolumny, przejścia, etapy przepływu, limity WIP i zasady. „Pola dodatkowe”
   pozostają ukryte; ich stare adresy otwierają typy zgłoszeń.
