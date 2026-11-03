@@ -10,13 +10,14 @@ import {
   ConfigurationForm,
   type ConfigurationData,
   type ConfigurationSection,
+  type EditableConfigurationSection,
 } from './ConfigurationPage';
 import type { DetailData } from './types';
 
-type Tab = 'main' | 'members' | 'types' | 'statuses';
+type Tab = 'main' | 'members' | EditableConfigurationSection;
 type FormSection = 'main' | 'configuration' | 'members';
-function isConfigurationSection(value: unknown): value is 'types' | 'statuses' {
-  return value === 'types' || value === 'statuses';
+function isConfigurationSection(value: unknown): value is EditableConfigurationSection {
+  return value === 'types' || value === 'statuses' || value === 'categories' || value === 'groups';
 }
 function tabFromHash(fallback: Tab): Tab {
   const key = location.hash.slice(1) || new URLSearchParams(location.search).get('section');
@@ -27,6 +28,8 @@ const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'main', label: 'Ustawienia', icon: 'settings' },
   { key: 'members', label: 'Udostępnienia', icon: 'users' },
   { key: 'types', label: 'Typy zgłoszeń', icon: 'layers' },
+  { key: 'categories', label: 'Kategorie', icon: 'list' },
+  { key: 'groups', label: 'Grupy', icon: 'folder' },
   { key: 'statuses', label: 'Proces pracy', icon: 'workflow' },
 ];
 const workflowViews = [
@@ -66,9 +69,9 @@ export default function SettingsPage({
   );
   const [configuration, setConfiguration] = useState(initialConfiguration);
   const [workflowView, setWorkflowView] = useState<'states' | 'map'>(() =>
-    (initialConfiguration?.data as ConfigurationData | undefined)?.workflow_view === 'states'
-      ? 'states'
-      : 'map',
+    (initialConfiguration?.data as ConfigurationData | undefined)?.workflow_view === 'map'
+      ? 'map'
+      : 'states',
   );
   const [openAvatar] = useState(initialTab === 'avatar' && tab === 'main');
   const [states, setStates] = useState<
@@ -368,7 +371,7 @@ export default function SettingsPage({
                 event.preventDefault();
                 event.stopPropagation();
                 setNotice(
-                  'Najpierw zapisz lub anuluj zmiany typów zgłoszeń, aby zmienić widoczność przestrzeni.',
+                  'Najpierw zapisz lub anuluj zmiany konfiguracji zadań, aby zmienić widoczność przestrzeni.',
                 );
               }}
             >
@@ -380,6 +383,7 @@ export default function SettingsPage({
                   onSaved={() => stored('main')}
                   onStateChange={reportMain}
                   onCancel={close}
+                  actionsPosition="toolbar"
                   openAvatar={openAvatar}
                 />
               ) : null}
@@ -408,6 +412,8 @@ export default function SettingsPage({
               ) : null}
               {t.key === 'members' && data ? (
                 <AccessEditor
+                  saveOnAction
+                  directory
                   team={data.team}
                   publicVisibility="public"
                   api={api}
@@ -428,8 +434,9 @@ export default function SettingsPage({
             <ConfigurationForm
               key={(configuration.data as { revision: string }).revision}
               initial={configuration}
-              section={tab === 'statuses' ? 'statuses' : 'types'}
+              section={isConfigurationSection(tab) ? tab : 'types'}
               workflowView={workflowView}
+              commitOnSubmit={isConfigurationSection(tab) && tab !== 'statuses'}
               csrfToken={csrfToken}
               onSaved={() => stored('configuration')}
               onStateChange={reportConfiguration}

@@ -1,8 +1,16 @@
-import { useId, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+} from 'react';
 import { Icon } from '../shared/Icon';
 import type { ConfigurationData, ConfigurationGroup } from './ConfigurationPage';
 import { useWorkflowCamera } from './useWorkflowCamera';
 import WorkflowMinimap from './WorkflowMinimap';
+import { configurationBadgeClass } from './configuration-appearance';
 import {
   connectWorkflow,
   moveWorkflowNode,
@@ -418,11 +426,20 @@ export default function WorkflowBoard({
                       }}
                       title={`${node.label}. Przeciągnij lub użyj Alt + strzałek. Kliknij dwukrotnie lub naciśnij Enter, aby edytować.`}
                     >
-                      <span className="work-flow-node-label">
-                        <span
-                          className={`status-indicator status-${node.category}`}
-                          aria-hidden="true"
-                        />
+                      <span
+                        className={`work-flow-node-label ${configurationBadgeClass}`}
+                        style={{ '--tag-color': node.color } as CSSProperties}
+                      >
+                        {node.icon ? (
+                          <span className="tasks-issue-type" aria-hidden="true">
+                            <Icon name={node.icon} />
+                          </span>
+                        ) : (
+                          <span
+                            className={`status-indicator status-${node.category}`}
+                            aria-hidden="true"
+                          />
+                        )}
                         <span>{node.label}</span>
                       </span>
                       <span className="work-flow-node-meta">

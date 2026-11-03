@@ -26,6 +26,7 @@ const {
   configurationMove,
   configurationStage,
   configurationStatusKey,
+  configurationAdd,
   configurationRemove,
   configurationDraftSubmission,
 } = execute(helpers.outputFiles[0].text);
@@ -84,7 +85,7 @@ test('type table renders the configured and default icons from Django single-sel
     { value: '', label: 'Domyślna dla typu', icon: 'square-check' },
     { value: 'rocket', label: 'Wdrożenie', icon: 'rocket' },
   ];
-  for (const [value, expected, label] of [
+  for (const [value, expected] of [
     [[''], 'square-check', 'Domyślna dla typu'],
     [['rocket'], 'rocket', 'Wdrożenie'],
     ['rocket', 'rocket', 'Wdrożenie'],
@@ -95,29 +96,28 @@ test('type table renders the configured and default icons from Django single-sel
         key: 'types',
         title: 'Typy zgłoszeń',
         management: fixture().sets[1].management,
-        forms: [row('types', 0, 'task', [['icon', value, { type: 'select', choices }]])],
+        forms: [
+          row('types', 0, 'task', [
+            ['icon', value, { type: 'select', choices }],
+            ['color', '#a153cc'],
+          ]),
+        ],
       },
       pending: false,
       actions: { dirty: false, onSave() {}, onCancel() {} },
     });
-    const cells = [];
-    const iconColumns = [];
-    function visit(element) {
-      if (Array.isArray(element)) return element.forEach(visit);
-      if (!element?.props) return;
-      if (element.props['data-column'] === 'icon') iconColumns.push(element);
-      if (element.props['data-column'] === 'label' && element.props.role === 'cell')
-        cells.push(element);
-      visit(element.props.children);
-    }
-    visit(table);
-    assert.equal(iconColumns.length, 0);
-    assert.equal(cells.length, 1);
-    const [icon, name] = cells[0].props.children;
-    assert.equal(icon.props.children.props.name, expected);
-    assert.equal(icon.props.title, label);
+    const directory = nodes(table).find((element) => element?.props?.rows);
+    assert.equal(
+      directory.props.columns.some((column) => ['icon', 'color'].includes(column.key)),
+      false,
+    );
+    assert.equal(directory.props.rows.length, 1);
+    const name = directory.props.rows[0].cells.label.props.children;
+    assert.equal(name.props.children.props.style['--tag-color'], '#a153cc');
+    const [icon, label] = name.props.children.props.children;
+    assert.equal(icon.props.name, expected);
     assert.equal(name.type, 'button');
-    assert.equal(name.props.children, 'Nazwa task');
+    assert.equal(label.props.children, 'Nazwa task');
   }
 });
 function fixture() {
@@ -700,6 +700,142 @@ function assertPreservedGroups(values) {
   assert.equal(values.get('fields-1-key'), 'notes');
 }
 
+for (const [section, noun] of [
+  ['categories', 'kategorię'],
+  ['groups', 'grupę'],
+]) {
+  test(`${section} edits submit the selected dictionary and preserve the rest of the configuration`, async () => {
+    const data = fixture();
+    for (const key of ['categories', 'groups']) {
+      data.sets.push({
+        key,
+        title: key,
+        errors: [],
+        management: schema([
+          field(`${key}-TOTAL_FORMS`, '2', { hidden: true }),
+          field(`${key}-INITIAL_FORMS`, '1', { hidden: true }),
+        ]),
+        forms: [row(key, 0, 'general'), row(key, 1, '')],
+      });
+    }
+    const app = harness(data, section);
+    app.refreshed = { ...data, revision: 'revision-2' };
+    app.render({ commitOnSubmit: true });
+    let tree = app.open(0);
+    assert.equal(modal(tree).props.title, `Edytuj ${noun}`);
+    app.change(`${section}-0-label`, 'Nowa nazwa');
+    app.postStatus = 503;
+    tree = await app.stage();
+    assert.ok(modal(tree), 'A failed save retains the editor and draft');
+    assert.equal(app.form.values.get(`${section}-0-label`), 'Nowa nazwa');
+    app.postStatus = 200;
+    await app.stage();
+    const body = app.requests.at(-1).body;
+    assert.equal(body.get('configuration_section'), section);
+    assert.equal(body.get(`${section}-0-label`), 'Nowa nazwa');
+    assert.equal(
+      body.get(`${section === 'groups' ? 'categories' : 'groups'}-0-label`),
+      'Nazwa general',
+    );
+    assert.equal(body.get('types-0-key'), 'task');
+    assertPreservedGroups(body);
+    assert.equal(modal(app.render()), undefined);
+  });
+}
+
+test('type dialog commits the complete configuration once and keeps the dialog locked until saved', async () => {
+  const app = harness(fixture(), 'statuses');
+  await stageWorkflowEdit(app, 0, 'Szkic procesu');
+  let tree = app.render({ section: 'types', commitOnSubmit: true });
+  assert.equal(table(tree).props.actions, undefined);
+  app.open(1);
+  app.change('types-1-label', 'Nowy błąd');
+  let release;
+  app.postGate = new Promise((resolve) => (release = resolve));
+  const submit = form(app.render()).props.onSubmit;
+  const saving = submit({ preventDefault() {} });
+  submit({ preventDefault() {} });
+  tree = app.render();
+  assert.equal(app.requests.length, 1);
+  assert.equal(modal(tree).props.pending, true);
+  assert.equal(app.requests[0].body.get('types-1-label'), 'Nowy błąd');
+  assert.equal(app.requests[0].body.get('statuses-0-label'), 'Szkic procesu');
+  assertPreservedGroups(app.requests[0].body);
+  release();
+  await saving;
+  tree = await app.settle();
+  assert.equal(modal(tree), undefined);
+  assert.deepEqual(app.states.at(-1), { dirty: false, pending: false });
+});
+
+test('failed direct type save can be retried or canceled without losing an earlier workflow draft', async () => {
+  const app = harness(fixture(), 'statuses');
+  await stageWorkflowEdit(app, 0, 'Wcześniejszy szkic');
+  app.render({ section: 'types', commitOnSubmit: true });
+  app.postError = new Error('POST 503');
+  let tree = await stageEdit(app, 1, 'Nie zapisano');
+  assert.ok(modal(tree));
+  assert.match(text(tree), /POST 503/);
+  app.closeEditor();
+  tree = app.render();
+  assert.equal(typeField(tree, 1, 'label').value, 'Nazwa bug');
+  tree = app.render({ section: 'statuses', commitOnSubmit: false });
+  assert.equal(workflowValues(tree).get('statuses-0-label'), 'Wcześniejszy szkic');
+  app.render({ section: 'types', commitOnSubmit: true });
+  app.postError = null;
+  await stageEdit(app, 1, 'Zapisana nazwa');
+  assert.equal(app.requests.length, 2);
+  assert.equal(app.requests[1].body.get('types-1-label'), 'Zapisana nazwa');
+});
+
+test('type deletion asks for confirmation and retries a failed request without staging other deletions', async () => {
+  const app = harness();
+  app.render({ commitOnSubmit: true });
+  let tree = app.remove(1);
+  assert.equal(app.requests.length, 0);
+  button(modal(tree), 'Anuluj').props.onClick();
+  tree = app.render();
+  assert.equal(deleted(tree, 1), false);
+  tree = app.remove(1);
+  app.postError = new Error('POST 503');
+  button(modal(tree), 'Usuń').props.onClick();
+  tree = await app.settle();
+  assert.ok(modal(tree));
+  assert.match(text(tree), /POST 503/);
+  app.postError = null;
+  button(modal(tree), 'Usuń').props.onClick();
+  tree = await app.settle();
+  assert.equal(modal(tree), undefined);
+  assert.equal(app.requests.length, 2);
+  assert.equal(app.requests[1].body.get('types-1-DELETE'), 'on');
+  assert.equal(app.requests[1].body.has('types-0-DELETE'), false);
+  assertPreservedGroups(app.requests[1].body);
+});
+
+test('direct type save keeps validation errors editable and offers conflict recovery inside the dialog', async () => {
+  const app = harness();
+  app.render({ commitOnSubmit: true });
+  app.postStatus = 400;
+  const corrected = fixture();
+  corrected.sets[1].forms[1].fields[1].value = 'Błędna nazwa';
+  corrected.sets[1].forms[1].fields[1].errors = ['Błąd walidacji'];
+  app.postResponse = { type: 'space-configuration', data: corrected };
+  let tree = await stageEdit(app, 1, 'Błędna nazwa');
+  assert.ok(modal(tree));
+  assert.ok(app.focused > 0);
+  app.postStatus = 409;
+  app.postResponse = { error: 'Konfiguracja zmieniła się' };
+  tree = await app.stage();
+  assert.equal(button(modal(tree), 'Zapisz').props.disabled, true);
+  button(modal(tree), 'Wczytaj aktualną konfigurację').props.onClick();
+  tree = await app.settle();
+  assert.equal(modal(tree), undefined);
+  assert.deepEqual(
+    app.requests.map((request) => request.method),
+    ['POST', 'POST', 'GET'],
+  );
+});
+
 function workflowValues(tree) {
   return configurationDraftSubmission(table(tree).props.data);
 }
@@ -1220,17 +1356,32 @@ function tableHarness(group = fixture().sets[1]) {
   const edits = [],
     removals = [],
     cancels = [];
-  const app = hookHarness(tableBundle.outputFiles[0].text, 'default', {
-    group,
-    pending: false,
-    onAdd() {},
-    onEdit: (index) => edits.push(index),
-    onRemove: (indices) => removals.push(indices),
-    actions: { dirty: true, onSave() {}, onCancel: () => cancels.push(true) },
-  });
+  const app = hookHarness(
+    tableBundle.outputFiles[0].text,
+    'default',
+    {
+      group,
+      pending: false,
+      onAdd() {},
+      onEdit: (index) => edits.push(index),
+      onRemove: (indices) => removals.push(indices),
+      actions: { dirty: true, onSave() {}, onCancel: () => cancels.push(true) },
+    },
+    { document: { addEventListener() {}, removeEventListener() {} } },
+  );
   app.edits = edits;
   app.removals = removals;
   app.cancels = cancels;
+  app.expand = function expand(element) {
+    if (Array.isArray(element)) return element.map(expand);
+    if (!element?.props) return element;
+    if (
+      (element.props.rows && element.props.onSelect) ||
+      (typeof element.type === 'function' && element.type.name === 'ViewToolbar')
+    )
+      return expand(element.type(element.props));
+    return { ...element, props: { ...element.props, children: expand(element.props.children) } };
+  };
   app.select = (label, checked = true) => {
     const checkbox = nodes(app.render()).find(
       (node) => node.type === 'input' && node.props['aria-label'] === label,
@@ -1266,7 +1417,7 @@ test('issue-type toolbar enables Edit for one selection and Delete for current m
 
 test('table Cancel clears selection and pending locks toolbar and selection controls', () => {
   const app = tableHarness();
-  let tree = app.select('Zaznacz wszystkie pozycje');
+  let tree = app.select('Zaznacz wszystkie widoczne pozycje');
   button(tree, 'Anuluj').props.onClick();
   tree = app.render();
   assert.equal(app.cancels.length, 1);
@@ -1301,6 +1452,24 @@ test('table selection follows row positions across staged key edits and ignores 
   tree = app.render({ group: { ...changed } });
   assert.equal(button(tree, 'Edytuj').props.disabled, true);
   assert.equal(button(tree, 'Usuń').props.disabled, true);
+});
+
+test('filtering clears hidden selections and editing a filtered row uses its original form index', () => {
+  const app = tableHarness();
+  app.select('Zaznacz: Nazwa task');
+  let tree = app.render();
+  const search = nodes(tree).find((node) => node.type === 'input' && node.props.type === 'search');
+  search.props.onChange({ target: { value: 'BUG' } });
+  tree = app.render();
+  assert.equal(button(tree, 'Edytuj').props.disabled, true);
+  assert.equal(nodes(tree).filter((node) => node.props?.role === 'row').length, 2);
+  tree = app.select('Zaznacz wszystkie widoczne pozycje');
+  button(tree, 'Edytuj').props.onClick();
+  assert.deepEqual(app.edits, [1]);
+  search.props.onChange({ target: { value: 'brak-wyników' } });
+  tree = app.render();
+  assert.equal(button(tree, 'Usuń').props.disabled, true);
+  assert.ok(nodes(tree).some((node) => node.props?.title === 'Nie znaleziono wyników.'));
 });
 
 const settingsBundle = await build({
@@ -1465,9 +1634,21 @@ function settingsHarness(configurationData = fixture(), initialTab = 'main') {
   return app;
 }
 
+test('settings routes categories and groups to their own immediately saved dictionary', () => {
+  for (const section of ['categories', 'groups']) {
+    const settings = settingsHarness(fixture(), section);
+    assert.equal(settings.configuration().props.section, section);
+    assert.equal(settings.configuration().props.commitOnSubmit, true);
+  }
+});
+
 test('settings retains the selected workflow view when a saved revision remounts the configuration', async () => {
   const app = settingsHarness(fixture(), 'statuses');
   let configuration = app.configuration();
+  assert.equal(configuration.props.workflowView, 'states');
+  assert.equal(button(app.navigation(), 'Stany').props['aria-selected'], true);
+  button(app.navigation(), 'Mapa').props.onClick();
+  configuration = app.configuration();
   assert.equal(configuration.props.workflowView, 'map');
   assert.equal(button(app.navigation(), 'Mapa').props['aria-selected'], true);
   button(app.navigation(), 'Stany').props.onClick();
@@ -1507,6 +1688,9 @@ test('settings retains the selected workflow view when a saved revision remounts
   const nativeStates = settingsHarness({ ...fixture(), workflow_view: 'states' }, 'statuses');
   assert.equal(nativeStates.configuration().props.workflowView, 'states');
   assert.equal(button(nativeStates.navigation(), 'Stany').props['aria-selected'], true);
+  const nativeMap = settingsHarness({ ...fixture(), workflow_view: 'map' }, 'statuses');
+  assert.equal(nativeMap.configuration().props.workflowView, 'map');
+  assert.equal(button(nativeMap.navigation(), 'Mapa').props['aria-selected'], true);
 });
 
 test('a staged configuration blocks the access visibility control until the configuration is saved or canceled', () => {
@@ -1528,7 +1712,7 @@ test('main settings cannot change visibility and unmount unsaved types, but name
   let result = app.submitSettings('public');
   assert.equal(result.event.prevented, true);
   assert.equal(result.event.stopped, true);
-  assert.match(text(result.tree), /Najpierw zapisz lub anuluj zmiany typów zgłoszeń/);
+  assert.match(text(result.tree), /Najpierw zapisz lub anuluj zmiany konfiguracji zadań/);
   assert.equal(app.configuration(result.tree).key, original.key);
   assert.equal(app.configuration(result.tree).props.initial, original.props.initial);
   result = app.submitSettings('private');
@@ -2052,7 +2236,7 @@ class StageInput {
   }
 }
 
-test('editing a stage name preserves its hidden key, transitions and board positions', () => {
+test('editing a stage name preserves its visible key, transitions and board positions', () => {
   const data = fixture();
   data.sets[0].forms[0].fields.push(
     field('statuses-0-position_x', '0', { hidden: true }),
@@ -2065,10 +2249,15 @@ test('editing a stage name preserves its hidden key, transitions and board posit
     { HTMLInputElement: StageInput },
   );
   let tree = app.render();
-  tree.props.onInput({ target: new StageInput('statuses-0-label', 'Nowa nazwa kolejki') });
+  nodes(tree)
+    .find((node) => node.props.className === 'space-settings-fields work-flow-stage-form')
+    .props.onInput({ target: new StageInput('statuses-0-label', 'Nowa nazwa kolejki') });
   tree = app.render();
   const inputs = nodes(tree).filter((node) => node.type === 'input');
-  assert.equal(inputs.find((node) => node.props.name === 'statuses-0-key').props.value, 'new');
+  assert.equal(
+    nodes(tree).find((node) => node.props?.field?.field_name === 'key').props.field.value,
+    'new',
+  );
   assert.deepEqual(
     inputs
       .filter((node) => node.props.name === 'statuses-0-transitions')
@@ -2084,7 +2273,7 @@ test('editing a stage name preserves its hidden key, transitions and board posit
   }
 });
 
-test('adding a stage derives a unique key from its name without exposing technical key entry', () => {
+test('adding a stage derives a unique key from its name and allows an explicit key override', () => {
   const data = fixture();
   const app = hookHarness(
     stageBundle.outputFiles[0].text,
@@ -2093,23 +2282,36 @@ test('adding a stage derives a unique key from its name without exposing technic
     { HTMLInputElement: StageInput },
   );
   let tree = app.render();
-  tree.props.onInput({ target: new StageInput('statuses-2-label', 'New') });
+  nodes(tree)
+    .find((node) => node.props.className === 'space-settings-fields work-flow-stage-form')
+    .props.onInput({ target: new StageInput('statuses-2-label', 'New') });
   tree = app.render();
   assert.equal(
-    nodes(tree).find((node) => node.type === 'input' && node.props.name === 'statuses-2-key').props
-      .value,
+    nodes(tree).find((node) => node.props?.field?.field_name === 'key').props.field.value,
     'new_2',
   );
   assert.equal(
-    nodes(tree).some((node) => node.props?.field?.field_name === 'key'),
-    false,
+    nodes(tree).some((node) => node.props?.field?.field_name === 'key' && !node.props.field.hidden),
+    true,
   );
-  tree.props.onInput({ target: new StageInput('statuses-2-label', 'Do sprawdzenia') });
+  nodes(tree)
+    .find((node) => node.props.className === 'space-settings-fields work-flow-stage-form')
+    .props.onInput({ target: new StageInput('statuses-2-label', 'Do sprawdzenia') });
   assert.equal(
-    nodes(app.render()).find(
-      (node) => node.type === 'input' && node.props.name === 'statuses-2-key',
-    ).props.value,
+    nodes(app.render()).find((node) => node.props?.field?.field_name === 'key').props.field.value,
     'do_sprawdzenia',
+  );
+  tree = app.render();
+  const keyControl = nodes(tree).find((node) => node.props?.field?.field_name === 'key');
+  const edit = nodes(tree).find(
+    (node) => node.props.className === 'space-settings-fields work-flow-stage-form',
+  ).props.onInput;
+  edit({ target: new StageInput('statuses-2-key', 'moj_klucz') });
+  edit({ target: new StageInput('statuses-2-label', 'Inna nazwa') });
+  assert.strictEqual(
+    nodes(app.render()).find((node) => node.props?.field?.field_name === 'key').props.field,
+    keyControl.props.field,
+    'Manual key input must not be recreated or overwritten when the name changes',
   );
 });
 
@@ -2127,16 +2329,62 @@ test('generating the new stage key keeps the imperative name control stable whil
   // FieldControl recreates its DOM input whenever this object changes. Updating
   // the generated key must therefore retain this object, typed text and focus.
   for (const label of ['D', 'Do', 'Do sprawdzenia']) {
-    tree.props.onInput({ target: new StageInput('statuses-2-label', label) });
+    nodes(tree)
+      .find((node) => node.props.className === 'space-settings-fields work-flow-stage-form')
+      .props.onInput({ target: new StageInput('statuses-2-label', label) });
     tree = app.render();
     assert.strictEqual(
       nodes(tree).find((node) => node.props?.field?.field_name === 'label').props.field,
       nameField,
     );
     assert.equal(
-      nodes(tree).find((node) => node.type === 'input' && node.props.name === 'statuses-2-key')
-        .props.value,
+      nodes(tree).find((node) => node.props?.field?.field_name === 'key').props.field.value,
       configurationStatusKey(data, label),
     );
   }
+});
+
+test('stage icons keep their own default while editing keys, and new stages allow WIP', () => {
+  const data = fixture();
+  const statuses = data.sets[0];
+  statuses.forms = statuses.forms.slice(0, 1);
+  statuses.forms[0].fields.push(
+    field('statuses-0-flow_stage', 'queue', { type: 'select' }),
+    field('statuses-0-wip_limit', '', { type: 'number', attrs: { readonly: 'true' } }),
+    field('statuses-0-icon', '', {
+      type: 'select',
+      choices: [
+        { value: '', label: 'Domyślna dla etapu', icon: 'circle-dashed' },
+        { value: 'hourglass', label: 'Oczekiwanie', icon: 'hourglass' },
+        {
+          value: 'rocket',
+          label: 'Dotychczasowa ikona: Wdrożenie',
+          icon: 'rocket',
+          preserve_only: true,
+        },
+      ],
+    }),
+  );
+  data.type_icon_defaults = { task: 'square-check' };
+  const edited = rowDraft(data, 'statuses', 0);
+  edited.set('statuses-0-key', 'task');
+  edited.set('statuses-0-icon', 'hourglass');
+  const staged = configurationStage(data, { section: 'statuses', index: 0 }, edited);
+  const icon = staged.sets[0].forms[0].fields.find((entry) => entry.field_name === 'icon');
+  assert.equal(icon.value, 'hourglass');
+  assert.equal(icon.choices[0].icon, 'circle-dashed');
+  assert.equal(configurationDraftSubmission(staged).get('statuses-0-icon'), 'hourglass');
+  const added = configurationAdd(staged, 'statuses');
+  const fields = Object.fromEntries(
+    added.data.sets[0].forms[added.index].fields.map((entry) => [entry.field_name, entry]),
+  );
+  assert.equal(fields.category.value, 'in_progress');
+  assert.equal(fields.flow_stage.value, 'active');
+  assert.equal(fields.wip_limit.attrs.readonly, undefined);
+  assert.equal(fields.icon.value, '');
+  assert.equal(fields.icon.choices[0].icon, 'clock');
+  assert.deepEqual(
+    fields.icon.choices.map((choice) => choice.value),
+    ['', 'hourglass'],
+  );
 });

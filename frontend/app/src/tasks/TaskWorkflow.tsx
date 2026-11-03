@@ -1,3 +1,4 @@
+import { statusColorStyle } from '../shared/status-color';
 import type { Item } from '../spaces/types';
 
 export function TaskWorkflowStatus({ item }: { item: Item }) {
@@ -7,7 +8,11 @@ export function TaskWorkflowStatus({ item }: { item: Item }) {
         Etap zadania
       </span>
       <div className="task-workflow__current" aria-label={`Bieżący etap: ${item.status_label}`}>
-        <span className={`status-indicator status-${item.category}`} aria-hidden="true" />
+        <span
+          className={`status-indicator status-${item.category}`}
+          style={statusColorStyle(item.status_color)}
+          aria-hidden="true"
+        />
         <span>{item.status_label}</span>
       </div>
     </div>
@@ -52,7 +57,11 @@ export function TaskWorkflowActions({
               title={status.policy || `Przejdź do: ${status.label}`}
               onClick={() => onTransition(status.key)}
             >
-              <span className={`status-indicator status-${status.category}`} aria-hidden="true" />
+              <span
+                className={`status-indicator status-${status.category}`}
+                style={statusColorStyle(status.color)}
+                aria-hidden="true"
+              />
               <span>{status.label}</span>
             </button>
           ))}

@@ -1,8 +1,10 @@
 import { type DragEventHandler, type ReactNode, useState } from 'react';
 import { Icon } from './Icon';
+import { statusHeaderStyle } from './status-color';
 export function StatusGroup({
   label,
   category,
+  color,
   icon = 'layers',
   count,
   children,
@@ -15,6 +17,7 @@ export function StatusGroup({
 }: {
   label: string;
   category?: string;
+  color?: string;
   icon?: string;
   count: number;
   children: ReactNode;
@@ -35,6 +38,7 @@ export function StatusGroup({
       onDrop={onDrop}
     >
       <header
+        style={statusHeaderStyle(color)}
         className={`tasks-issue-group-header ${category ? `tasks-status-block-header tasks-status-block-header--${category}` : ''}`}
       >
         <button

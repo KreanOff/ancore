@@ -1,3 +1,4 @@
+import { issueTypeBadgeStyle } from '../shared/issue-type-color';
 import { type ReactNode, useState } from 'react';
 import { ViewToolbar } from './ViewToolbar';
 import { Dropdown } from '../shared/Dropdown';
@@ -161,7 +162,10 @@ export function ItemFiltering({
   data,
   url,
 }: {
-  data: Pick<DetailData, 'filters' | 'filter_options' | 'type_icons' | 'summary_filter_label'>;
+  data: Pick<
+    DetailData,
+    'filters' | 'filter_options' | 'type_icons' | 'type_colors' | 'summary_filter_label'
+  >;
   url: string;
 }) {
   const [field, setField] = useState<(typeof FILTERS)[number] | null>(null);
@@ -267,7 +271,10 @@ export function ItemFiltering({
                   }}
                 >
                   {field.key === 'work_type' ? (
-                    <span className="tasks-issue-type">
+                    <span
+                      className="tasks-issue-type"
+                      style={issueTypeBadgeStyle(data.type_colors?.[value])}
+                    >
                       <Icon name={data.type_icons?.[value] || 'shapes'} />
                       <span>{label}</span>
                     </span>

@@ -1,3 +1,5 @@
+import { issueTypeBadgeStyle } from '../shared/issue-type-color';
+import { statusColorStyle } from '../shared/status-color';
 import { type DragEvent } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
@@ -25,7 +27,11 @@ export function Priority({ value, label = value }: { value: string; label?: stri
 }
 export function ItemType({ item }: { item: Item }) {
   return (
-    <span className="tasks-issue-type" title={`Typ zgłoszenia: ${item.type_label}`}>
+    <span
+      className="tasks-issue-type"
+      style={issueTypeBadgeStyle(item.type_color)}
+      title={`Typ zgłoszenia: ${item.type_label}`}
+    >
       <Icon name={item.type_icon} />
       <span>{item.type_label}</span>
     </span>
@@ -151,7 +157,10 @@ export function ItemActions({ item, data, busy, openForm, openBlock, act }: Acti
                   });
                 }}
               >
-                <span className={`status-indicator status-${status.category}`} />
+                <span
+                  className={`status-indicator status-${status.category}`}
+                  style={statusColorStyle(status.color)}
+                />
                 <span>Zmień na: {status.label}</span>
               </button>
             );
@@ -256,8 +265,12 @@ function ItemIdentity({ item }: { item: Item }) {
   return (
     <>
       <Priority value={item.priority} label={item.priority_label} />
+      <a href={item.url} className="work-item-key" title={`${item.key} · ${item.title}`}>
+        {item.key}
+      </a>
       <span
         className={`status-indicator status-${item.category}`}
+        style={statusColorStyle(item.status_color)}
         title={item.status_label}
         aria-label={item.status_label}
       />
@@ -268,7 +281,6 @@ function ItemIdentity({ item }: { item: Item }) {
       >
         <span className="tasks-row-title-content">
           <span className="tasks-row-title-main">
-            <span className="work-item-key">{item.key}</span>
             <span className="tasks-row-title-text">{item.title}</span>
             {item.blocked ? (
               <span
@@ -309,7 +321,7 @@ export function ItemRow(props: RowProps) {
   return (
     <article
       data-work-motion-item={item.id}
-      className={`tasks-issue-row work-issue-row work-issue-row--planning ${item.editable ? 'work-issue-row--actions' : ''} ${planning && item.editable && data.sort.manual ? 'work-issue-row--draggable' : ''} ${item.category === 'closed' ? 'completed' : ''} ${selected ? 'checked' : ''}`}
+      className={`tasks-issue-row work-issue-row work-issue-row--planning ${planning && item.editable ? 'work-issue-row--actions' : ''} ${planning && item.editable && data.sort.manual ? 'work-issue-row--draggable' : ''} ${item.category === 'closed' ? 'completed' : ''} ${selected ? 'checked' : ''}`}
       draggable={planning && item.editable && data.sort.manual && !props.busy}
       onDragStart={props.onDragStart}
       onDragEnd={props.onDragEnd}
@@ -335,7 +347,7 @@ export function ItemRow(props: RowProps) {
       <ItemType item={item} />
       <Planning item={item} scrum={data.space.template === 'scrum'} />
       <Counts item={item} />
-      <ItemActions {...props} />
+      {planning ? <ItemActions {...props} /> : null}
     </article>
   );
 }
@@ -368,11 +380,17 @@ export function ItemCard(
       {...drag}
     >
       <Priority value={item.priority} label={item.priority_label} />
-      <span className={`status-indicator status-${item.category}`} title={item.status_label} />
-      <a href={item.url} className="tasks-row-title">
-        <span className="work-item-key">{item.key}</span> {item.title}
+      <a href={item.url} className="work-item-key" title={`${item.key} · ${item.title}`}>
+        {item.key}
       </a>
-      <ItemActions {...props} />
+      <span
+        className={`status-indicator status-${item.category}`}
+        style={statusColorStyle(item.status_color)}
+        title={item.status_label}
+      />
+      <a href={item.url} className="tasks-row-title">
+        {item.title}
+      </a>
       <div className="work-sprint-card-meta" aria-label="Metadane zadania">
         <ItemType item={item} />
         <Planning item={item} scrum={scrum} />

@@ -155,6 +155,7 @@
     }
 
     function optionVisual(option, select) {
+        if (select?.name === 'task_type' || select?.name === 'task_group') return null;
         const templateId = option?.dataset.ancoreOptionPreview;
         const template = templateId ? document.getElementById(templateId) : null;
         if (template instanceof HTMLTemplateElement && template.content.firstElementChild) {
@@ -181,7 +182,7 @@
         const fieldIcons = {
             assignee: 'user-round', assigned_to: 'user-round', responsible_user: 'user-round', shared_with: 'users',
             space: 'layers', team: 'users', tags: 'tag', tag: 'tag',
-            work_type: 'shapes', type: 'shapes', task_type: 'list',
+            work_type: 'shapes', type: 'shapes',
             sort: 'arrow-up-down', visibility: 'users', kind: 'layers',
             management: 'building-2', configuration: 'settings', sprint: 'timer', epic: 'zap',
         };
@@ -267,7 +268,8 @@
         label.textContent = selectedLabel(select);
         button.querySelector('.ancore-custom-select__icon, .ancore-custom-select__preview')?.remove();
         const icon = select.getAttribute('data-ancore-custom-select-icon');
-        const visual = (select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0], select) : null)
+        const plain = select.name === 'task_type' || select.name === 'task_group';
+        const visual = plain ? null : (select.selectedOptions.length === 1 ? optionVisual(select.selectedOptions[0], select) : null)
             || window.AncoreIcons?.create(icon || 'list-filter', { className: 'ancore-custom-select__icon' });
         if (visual) {
             button.prepend(visual);

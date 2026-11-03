@@ -21,7 +21,8 @@ import {
 import { type Page, type PageProps, pageRequest, PageError } from '../shared/page';
 import { errorMessage } from '../shared/api';
 
-export type ConfigurationSection = 'types' | 'statuses' | 'fields';
+export type ConfigurationSection = 'types' | 'statuses' | 'fields' | 'categories' | 'groups';
+export type EditableConfigurationSection = Exclude<ConfigurationSection, 'fields'>;
 export interface ConfigurationGroup {
   key: ConfigurationSection;
   title: string;
@@ -53,9 +54,21 @@ interface EditorState extends ConfigurationEditor {
   dirty: boolean;
   adding: boolean;
 }
-const nouns = { types: 'typ zgłoszenia', statuses: 'etap', fields: 'pole dodatkowe' };
+const nouns = {
+  types: 'typ zgłoszenia',
+  statuses: 'etap',
+  fields: 'pole dodatkowe',
+  categories: 'kategorię',
+  groups: 'grupę',
+};
+const pluralNouns = {
+  types: 'typy zgłoszeń',
+  statuses: 'etapy',
+  categories: 'kategorie',
+  groups: 'grupy',
+};
 function createEditor(data: ConfigurationData, selection: ConfigurationEditor): EditorState | null {
-  if (selection.section !== 'types' && selection.section !== 'statuses') return null;
+  if (selection.section === 'fields') return null;
   const group = data.sets.find((group) => group.key === selection.section);
   const schema = group?.forms[selection.index];
   if (!group || !schema) return null;
@@ -84,13 +97,15 @@ export function ConfigurationForm({
   hostId,
   section = 'types',
   workflowView,
+  commitOnSubmit = false,
 }: PageProps & {
   onSaved: () => Promise<void>;
   onCancel?: () => void;
   onStateChange: (dirty: boolean, pending: boolean) => void;
   hostId?: string;
-  section?: 'types' | 'statuses';
+  section?: EditableConfigurationSection;
   workflowView: 'states' | 'map';
+  commitOnSubmit?: boolean;
 }) {
   const [baseline, setBaseline] = useState(initial.data as ConfigurationData);
   const [data, setData] = useState(baseline);
@@ -105,6 +120,9 @@ export function ConfigurationForm({
     data.editor ? createEditor(data, data.editor) : null,
   );
   const [pending, setPending] = useState(false);
+  const [removal, setRemoval] = useState<{ indices: number[]; before: ConfigurationData } | null>(
+    null,
+  );
   const [error, setError] = useState('');
   const [refreshError, setRefreshError] = useState('');
   const [conflict, setConflict] = useState(() =>
@@ -115,6 +133,7 @@ export function ConfigurationForm({
   const form = useRef<HTMLFormElement>(null);
   const sending = useRef(false);
   const source = useRef(initial.data);
+  const editorBaseline = useRef(data);
   const nativeEditor = useRef(untrustedBaseline && !!data.editor);
   const newStagePosition = useRef<Position | null>(null);
   const dirty =
@@ -144,6 +163,7 @@ export function ConfigurationForm({
     setUntrustedBaseline(false);
     nativeEditor.current = false;
     setEditor(null);
+    setRemoval(null);
     setError('');
     setConflict(false);
     setCommitted(false);
@@ -199,6 +219,7 @@ export function ConfigurationForm({
       await cancel();
       return;
     }
+    if (commitOnSubmit) setData(editorBaseline.current);
     setEditor(null);
     setError('');
   }
@@ -222,12 +243,14 @@ export function ConfigurationForm({
   function open(selection: ConfigurationEditor) {
     if (blocked || sending.current) return;
     setError('');
+    editorBaseline.current = data;
     setEditor(createEditor(data, selection));
   }
   function add(position?: Position) {
     if (blocked || sending.current) return;
     try {
       const next = configurationAdd(data, section);
+      editorBaseline.current = data;
       newStagePosition.current = section === 'statuses' && position ? position : null;
       setData(next.data);
       setError('');
@@ -238,6 +261,11 @@ export function ConfigurationForm({
   }
   function remove(indices: number[]) {
     if (blocked || sending.current || !indices.length) return;
+    if (commitOnSubmit) {
+      setError('');
+      setRemoval({ indices, before: data });
+      return;
+    }
     try {
       change(configurationRemove(data, section, indices));
       setError('');
@@ -245,7 +273,7 @@ export function ConfigurationForm({
       setError(errorMessage(exception));
     }
   }
-  function stage(event: FormEvent) {
+  async function stage(event: FormEvent) {
     event.preventDefault();
     if (blocked || sending.current || !editor || !form.current) return;
     if (!editor.remove && !form.current.reportValidity()) return;
@@ -269,14 +297,18 @@ export function ConfigurationForm({
       change(next);
       newStagePosition.current = null;
       nativeEditor.current = false;
+      if (commitOnSubmit) {
+        await save(next);
+        return;
+      }
       setEditor(null);
       setError('');
     } catch (exception) {
       setError(errorMessage(exception));
     }
   }
-  async function save() {
-    if (sending.current || blocked || !dirty || conflict || editor) return;
+  async function save(snapshot?: ConfigurationData) {
+    if (sending.current || blocked || conflict || (!snapshot && (!dirty || editor))) return false;
     sending.current = true;
     setPending(true);
     setError('');
@@ -286,10 +318,10 @@ export function ConfigurationForm({
         data.space_url + 'configuration/',
         csrfToken,
         life.signal,
-        configurationDraftSubmission({ ...data, section }),
+        configurationDraftSubmission({ ...(snapshot || data), section }),
       );
     } catch (exception) {
-      if (life.signal.aborted) return;
+      if (life.signal.aborted) return false;
       let explained = false;
       if (exception instanceof PageError) {
         const response = exception.data as unknown as Page;
@@ -313,7 +345,10 @@ export function ConfigurationForm({
             setData(corrected);
             setConflict(stale);
             setPending(false);
-            if (index >= 0 && !stale) setEditor(createEditor(corrected, { section, index }));
+            if (index >= 0 && !stale) {
+              setRemoval(null);
+              setEditor(createEditor(corrected, { section, index }));
+            }
           });
           if (index >= 0 && !stale) requestAnimationFrame(() => focusError(form.current));
         } else if (exception.status === 409) setConflict(true);
@@ -321,16 +356,18 @@ export function ConfigurationForm({
       if (!explained) setError(errorMessage(exception));
       sending.current = false;
       setPending(false);
-      return;
+      return false;
     }
     // The POST is committed. Every retry from this point only reloads data.
     flushSync(() => {
       setCommitted(true);
       setHistory({ past: [], future: [] });
       setEditor(null);
+      setRemoval(null);
     });
     sending.current = false;
     await refresh();
+    return true;
   }
   const group = data.sets.find((group) => group.key === section);
   const title = editor
@@ -359,9 +396,26 @@ export function ConfigurationForm({
               {message}
             </p>
           ))}
-        {conflict ? (
+        {conflict && !commitOnSubmit ? (
           <p className="tasks-modal__errors" role="alert">
-            Wybierz „Anuluj”, aby odrzucić szkic i pobrać aktualną konfigurację.
+            {section === 'statuses' && workflowView === 'states'
+              ? 'Przejdź do zakładki „Mapa” i wybierz „Anuluj”, aby odrzucić szkic i pobrać aktualną konfigurację.'
+              : 'Wybierz „Anuluj”, aby odrzucić szkic i pobrać aktualną konfigurację.'}
+          </p>
+        ) : null}
+        {conflict && commitOnSubmit && !editor && !removal ? (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={pending}
+            onClick={() => void cancel()}
+          >
+            Wczytaj aktualną konfigurację
+          </button>
+        ) : null}
+        {section === 'statuses' && workflowView === 'states' && dirty && !conflict ? (
+          <p className="workplace-team__hint" role="status">
+            Niezapisane zmiany. Zapisz lub odrzuć je w zakładce „Mapa”.
           </p>
         ) : null}
         {group ? (
@@ -416,13 +470,17 @@ export function ConfigurationForm({
                   onAdd={() => add()}
                   onEdit={(index) => open({ section, index })}
                   onRemove={remove}
-                  actions={{
-                    dirty,
-                    saveDisabled: conflict,
-                    cancelDisabled: blocked,
-                    onSave: () => void save(),
-                    onCancel: () => void cancel(),
-                  }}
+                  actions={
+                    commitOnSubmit
+                      ? undefined
+                      : {
+                          dirty,
+                          saveDisabled: conflict,
+                          cancelDisabled: blocked,
+                          onSave: () => void save(),
+                          onCancel: () => void cancel(),
+                        }
+                  }
                 />
               )}
             </div>
@@ -450,7 +508,7 @@ export function ConfigurationForm({
               className={
                 editor.remove
                   ? 'tasks-modal__body'
-                  : editor.section === 'types'
+                  : editor.section === 'types' || editor.section === 'statuses'
                     ? 'tasks-modal__body profile-edit-body space-settings-main app-form-avatar-layout work-type-form'
                     : 'tasks-modal__body documents-form resources-form'
               }
@@ -460,6 +518,16 @@ export function ConfigurationForm({
                   {message}
                 </p>
               ))}
+              {commitOnSubmit && conflict ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={pending}
+                  onClick={() => void cancel()}
+                >
+                  Wczytaj aktualną konfigurację
+                </button>
+              ) : null}
               {editor.remove ? (
                 <p>
                   Usunąć pozycję „
@@ -474,13 +542,32 @@ export function ConfigurationForm({
                 </p>
               ) : (
                 <fieldset className="resources-react-fieldset" disabled={pending}>
-                  {editor.section === 'types' ? (
-                    <TypeFields schema={editor.schema} iconDefaults={data.type_icon_defaults} />
-                  ) : (
+                  {editor.section === 'statuses' ? (
                     <WorkflowStageFields
                       schema={editor.schema}
                       data={data}
                       adding={editor.adding}
+                    />
+                  ) : (
+                    <TypeFields
+                      schema={editor.schema}
+                      subject={
+                        editor.section === 'categories'
+                          ? 'kategorii'
+                          : editor.section === 'groups'
+                            ? 'grupy'
+                            : 'typu'
+                      }
+                      iconDefaults={
+                        editor.section === 'types' ? data.type_icon_defaults : undefined
+                      }
+                      fallbackIcon={
+                        editor.section === 'categories'
+                          ? 'list'
+                          : editor.section === 'groups'
+                            ? 'folder'
+                            : 'shapes'
+                      }
                     />
                   )}
                 </fieldset>
@@ -498,11 +585,90 @@ export function ConfigurationForm({
               >
                 Anuluj
               </button>
-              <button type="submit" className="tasks-modal__submit" disabled={pending}>
-                {editor.remove ? 'Usuń' : editor.adding ? 'Dodaj' : 'Zastosuj'}
+              <button
+                type="submit"
+                className="tasks-modal__submit"
+                disabled={pending || (commitOnSubmit && conflict)}
+              >
+                {pending
+                  ? 'Zapisywanie…'
+                  : editor.remove
+                    ? 'Usuń'
+                    : editor.adding
+                      ? 'Dodaj'
+                      : commitOnSubmit
+                        ? 'Zapisz'
+                        : 'Zastosuj'}
               </button>
             </footer>
           </form>
+        </Modal>
+      ) : null}
+      {removal ? (
+        <Modal
+          title={`Usuń ${pluralNouns[section]}`}
+          className="app-modal-panel--compact"
+          hostId={hostId}
+          pending={pending}
+          onClose={() => {
+            if (!pending) {
+              setData(removal.before);
+              setRemoval(null);
+              setError('');
+            }
+          }}
+        >
+          <div className="tasks-modal__body">
+            <p>
+              Czy usunąć zaznaczone {pluralNouns[section]} ({removal.indices.length})?
+            </p>
+            {data.shared ? (
+              <p>Zmiana obejmie wszystkie przestrzenie korzystające z tej konfiguracji.</p>
+            ) : null}
+            {errors.map((message, index) => (
+              <p className="tasks-modal__errors" role="alert" key={index}>
+                {message}
+              </p>
+            ))}
+            {conflict ? (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={pending}
+                onClick={() => void cancel()}
+              >
+                Wczytaj aktualną konfigurację
+              </button>
+            ) : null}
+          </div>
+          <footer className="tasks-modal__footer">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={pending}
+              onClick={() => {
+                setData(removal.before);
+                setRemoval(null);
+                setError('');
+              }}
+            >
+              Anuluj
+            </button>
+            <button
+              type="button"
+              className="tasks-modal__submit"
+              disabled={pending || conflict}
+              onClick={() => {
+                try {
+                  void save(configurationRemove(data, section, removal.indices));
+                } catch (exception) {
+                  setError(errorMessage(exception));
+                }
+              }}
+            >
+              {pending ? 'Usuwanie…' : 'Usuń'}
+            </button>
+          </footer>
         </Modal>
       ) : null}
     </>

@@ -1,3 +1,4 @@
+import { statusColorStyle } from '../shared/status-color';
 import { type CSSProperties, type ReactNode, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
@@ -52,6 +53,7 @@ function StatusChart({ data: s }: { data: Data }) {
                   <path
                     key={status.key}
                     data-status-key={status.key}
+                    style={statusColorStyle(status.color)}
                     className={`work-summary-donut-arc status-${status.category} ${active?.key === status.key ? 'is-active' : ''}`}
                     d={status.path}
                     onPointerEnter={() => setHovered(status.key)}
@@ -82,7 +84,10 @@ function StatusChart({ data: s }: { data: Data }) {
                 onBlur={() => setFocused(null)}
               >
                 <span className="work-summary-label">
-                  <span className={`work-summary-dot status-${status.category}`} />
+                  <span
+                    className={`work-summary-dot status-${status.category}`}
+                    style={statusColorStyle(status.color)}
+                  />
                   {status.label}
                 </span>
                 <span className="work-summary-legend-values">

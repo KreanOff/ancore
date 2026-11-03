@@ -39,7 +39,8 @@ export default function TeamsPage(props: PageProps) {
     directory = initial.type === 'teams',
     d = initial.data as Directory,
     t = initial.data as Detail;
-  const groupKey = (item: Item) => `${item.status_order}:${item.category}:${item.status_label}`;
+  const groupKey = (item: Item) =>
+    `${item.status_order}:${item.category}:${item.status_label}:${item.status_color || ''}`;
   const groups = directory
     ? []
     : [...new Set([...t.items].sort((a, b) => a.status_order - b.status_order).map(groupKey))].map(
@@ -220,6 +221,7 @@ export default function TeamsPage(props: PageProps) {
                         key={group.key}
                         label={group.items[0].status_label}
                         category={group.items[0].category}
+                        color={group.items[0].status_color}
                         count={group.items.length}
                       >
                         <div className="tasks-issue-list">
@@ -243,6 +245,7 @@ export default function TeamsPage(props: PageProps) {
                                   priority_label: item.priority_label,
                                   type_label: item.type_label,
                                   type_icon: item.type_icon,
+                                  type_color: item.type_color,
                                   tags_count: item.tags_count,
                                   attachments_count: item.attachments_count,
                                   due_urgency: item.due_urgency,

@@ -337,6 +337,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           ...dragged,
           status: String(group),
           status_label: column?.label || dragged.status_label,
+          status_color: column?.color,
           category: column?.category || dragged.category,
         }
       : { ...dragged, sprint_id: group as number | null, in_backlog: group === null };
@@ -702,6 +703,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                     <StatusGroup
                       key={column.key}
                       category={column.category}
+                      color={column.color}
                       label={column.label}
                       count={column.count}
                     >
@@ -764,26 +766,20 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                         </div>
                       ) : null}
                       <div className="tasks-issue-list tasks-kanban-column__list">
-                        {rows.length ? (
-                          rows.map((item) => (
-                            <ItemCard
-                              key={item.id}
-                              item={item}
-                              {...actionProps}
-                              dragging={!!dragged}
-                              onDragStart={(event) => dragStart(event, item)}
-                              onDragEnd={() => {
-                                motion.clearDrag();
-                                setDragged(null);
-                              }}
-                              onDrop={(event) => drop(event, column.key, item)}
-                            />
-                          ))
-                        ) : (
-                          <div className="tasks-empty-section" role="status">
-                            Brak zadań
-                          </div>
-                        )}
+                        {rows.map((item) => (
+                          <ItemCard
+                            key={item.id}
+                            item={item}
+                            {...actionProps}
+                            dragging={!!dragged}
+                            onDragStart={(event) => dragStart(event, item)}
+                            onDragEnd={() => {
+                              motion.clearDrag();
+                              setDragged(null);
+                            }}
+                            onDrop={(event) => drop(event, column.key, item)}
+                          />
+                        ))}
                         {data.can_edit && column.create_item_url ? (
                           <button
                             type="button"
@@ -813,6 +809,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
                       dropGroup={column.key}
                       className={`tasks-kanban-column${moveError ? ' is-drop-unavailable' : ''}`}
                       category={column.category}
+                      color={column.color}
                       label={column.label}
                       count={column.count}
                       onDragOver={

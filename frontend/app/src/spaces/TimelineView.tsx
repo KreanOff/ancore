@@ -1,3 +1,4 @@
+import { statusColorStyle } from '../shared/status-color';
 import {
   type CSSProperties,
   type PointerEvent,
@@ -504,7 +505,11 @@ export default function Timeline({ data, url, csrfToken, busy, moreControl, onUp
                         {range && geometry ? (
                           <div
                             className={`work-timeline-bar status-${item.category} ${preview?.id === item.id ? 'is-dragging' : ''} ${geometry.clippedStart ? 'is-clipped-start' : ''} ${geometry.clippedEnd ? 'is-clipped-end' : ''} ${!item.start_on || !item.end_on ? 'is-partial' : ''}`}
-                            style={{ left: geometry.left, width: Math.max(geometry.width, 6) }}
+                            style={{
+                              ...statusColorStyle(item.status_color),
+                              left: geometry.left,
+                              width: Math.max(geometry.width, 6),
+                            }}
                           >
                             <button
                               type="button"

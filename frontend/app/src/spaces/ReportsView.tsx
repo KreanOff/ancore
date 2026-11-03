@@ -1,3 +1,4 @@
+import { statusColorStyle } from '../shared/status-color';
 import { ViewToolbar } from './ViewToolbar';
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
@@ -574,27 +575,20 @@ export default function ReportsView({
                 {report.statuses.map((status) => (
                   <a
                     className={`work-reports-bar-row status-${status.category}`}
+                    style={statusColorStyle(status.color)}
                     key={status.key}
                     href={status.url}
                     aria-label={`Filtruj raport: ${status.label}, ${status.count} zadań`}
                   >
                     <span className="work-reports-bar-label">
-                      <i
-                        style={status.color ? { background: status.color } : undefined}
-                        aria-hidden="true"
-                      />
+                      <i aria-hidden="true" />
                       {status.label}
                     </span>
                     <span className="work-reports-bar-count">
                       {format(status.count)}
                       <small>{percent(status.percent)}</small>
                     </span>
-                    <Meter
-                      value={status.count}
-                      max={snapshot.total}
-                      label={status.label}
-                      color={status.color}
-                    />
+                    <Meter value={status.count} max={snapshot.total} label={status.label} />
                   </a>
                 ))}
               </div>

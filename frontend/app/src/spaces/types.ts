@@ -6,6 +6,7 @@ export interface Status {
   key: string;
   label: string;
   category: string;
+  color?: string;
   count: number;
   loaded_count?: number;
   more_url?: string;
@@ -29,6 +30,7 @@ export interface Item {
   sprint_id: number | null;
   status: string;
   status_label: string;
+  status_color?: string;
   category: string;
   status_order: number;
   transitions: Status[];
@@ -37,6 +39,11 @@ export interface Item {
   work_type: string;
   type_label: string;
   type_icon: string;
+  type_color?: string;
+  task_type?: string;
+  task_type_label?: string;
+  task_group?: string;
+  task_group_label?: string;
   points: number | null;
   in_backlog: boolean;
   assignee: { label: string; avatar: AvatarData } | null;
@@ -96,6 +103,7 @@ interface Distribution {
   percent: number;
   url: string;
   icon?: string;
+  color?: string;
   avatar?: AvatarData;
 }
 export interface Summary {
@@ -178,6 +186,7 @@ export interface DetailData {
   summary_filter_label: string;
   filter_options: Record<string, [string, string][]>;
   type_icons?: Record<string, string>;
+  type_colors?: Record<string, string>;
   members: {
     id: number;
     name: string;

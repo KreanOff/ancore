@@ -1,3 +1,4 @@
+import { issueTypeIconStyle } from '../shared/issue-type-color';
 import { type CSSProperties, type ReactNode, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Dropdown } from '../shared/Dropdown';
@@ -120,7 +121,11 @@ export function SummaryDistribution({
               return (
                 <li key={row.url}>
                   <a href={row.url} title={details} aria-label={`${details}. Wyświetl zadania.`}>
-                    <span className="work-summary-label" title={row.label}>
+                    <span
+                      className="work-summary-label"
+                      title={row.label}
+                      style={people ? undefined : issueTypeIconStyle(row.color)}
+                    >
                       {row.avatar ? (
                         <Avatar data={row.avatar} className="tasks-issue-mini-avatar" />
                       ) : people ? (

@@ -42,10 +42,13 @@ export interface Field {
     avatar?: AvatarData;
     group?: string;
     icon?: string;
+    preserve_only?: boolean;
     description?: string;
     photo_url?: string;
     space_avatar?: AvatarData;
     status_category?: string;
+    status_color?: string;
+    type_color?: string;
     priority?: string;
     layout_preview?: string;
   }[];
@@ -179,6 +182,19 @@ export function FieldControl({
       for (const choice of field.choices || []) {
         const option = new Option(choice.label, choice.value, false, chosen.has(choice.value));
         if (choice.icon) option.dataset.ancoreOptionIcon = choice.icon;
+        if (choice.type_color && /^#[0-9a-f]{6}$/i.test(choice.type_color) && choice.icon) {
+          const template = document.createElement('template');
+          template.id = `${field.id}_type_${choice.value}`;
+          const preview = document.createElement('span');
+          preview.className = 'tasks-type-option';
+          preview.style.setProperty('--tasks-type-icon-color', choice.type_color);
+          preview.setAttribute('aria-hidden', 'true');
+          const icon = window.AncoreIcons?.create(choice.icon);
+          if (icon) preview.append(icon);
+          template.content.append(preview);
+          root.append(template);
+          option.dataset.ancoreOptionPreview = template.id;
+        }
         if (choice.layout_preview) {
           const template = document.createElement('template');
           template.id = `${field.id}_layout_${choice.value}`;
@@ -215,6 +231,9 @@ export function FieldControl({
           template.id = `${field.id}_status_${choice.value}`;
           const indicator = document.createElement('span');
           indicator.className = `status-indicator status-${choice.status_category} tasks-filter-status-icon`;
+          if (choice.status_color && /^#[0-9a-f]{6}$/i.test(choice.status_color)) {
+            indicator.style.setProperty('--tasks-status-color', choice.status_color);
+          }
           indicator.setAttribute('aria-hidden', 'true');
           template.content.append(indicator);
           root.append(template);
@@ -482,8 +501,10 @@ export function EmbeddedForm({
   onInvalidSection,
   revisionChange,
   onCancel,
+  actionsPosition = 'footer',
 }: {
   onCancel?: () => void;
+  actionsPosition?: 'footer' | 'toolbar';
   openAvatar?: boolean;
   data: FormDialogData;
   api: string;
@@ -651,6 +672,28 @@ export function EmbeddedForm({
       {Object.entries(data.values || {}).map(([name, value]) => (
         <input type="hidden" key={name} name={name} value={value} />
       ))}
+      {actionsPosition === 'toolbar' ? (
+        <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
+          <div className="member-access-save-actions">
+            <button
+              type="submit"
+              className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+              disabled={pending || !dirty}
+            >
+              <Icon name="check" />
+              {pending ? 'Zapisywanie…' : schema.submit_label}
+            </button>
+            <button
+              type="button"
+              className="tasks-filter-button"
+              disabled={pending}
+              onClick={close}
+            >
+              Anuluj
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div
         className={`tasks-modal__body ${schema.inline_avatar || pulpitAvatar ? 'profile-edit-body space-settings-main app-form-avatar-layout' : schema.layout === 'tag' ? 'tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body' : schema.layout === 'filter' ? 'documents-form task-filter-form' : schema.layout === 'pulpit' ? 'documents-form pulpit-form' : 'documents-form resources-form'}${pulpitAvatar ? ' pulpit-profile-form' : ''}`}
       >
@@ -945,20 +988,22 @@ export function EmbeddedForm({
           </fieldset>
         )}
       </div>
-      <footer className="tasks-modal__footer">
-        <button type="button" className="btn btn-secondary" disabled={pending} onClick={close}>
-          Anuluj
-        </button>
-        {!schema.templates || template ? (
-          <button type="submit" className="tasks-modal__submit" disabled={pending}>
-            {pending
-              ? 'Zapisywanie…'
-              : schema.templates
-                ? 'Utwórz przestrzeń'
-                : schema.submit_label}
+      {actionsPosition === 'footer' ? (
+        <footer className="tasks-modal__footer">
+          <button type="button" className="btn btn-secondary" disabled={pending} onClick={close}>
+            Anuluj
           </button>
-        ) : null}
-      </footer>
+          {!schema.templates || template ? (
+            <button type="submit" className="tasks-modal__submit" disabled={pending}>
+              {pending
+                ? 'Zapisywanie…'
+                : schema.templates
+                  ? 'Utwórz przestrzeń'
+                  : schema.submit_label}
+            </button>
+          ) : null}
+        </footer>
+      ) : null}
     </form>
   );
 }

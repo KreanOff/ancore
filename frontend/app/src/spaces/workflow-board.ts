@@ -1,6 +1,7 @@
 import type { ConfigurationData, ConfigurationGroup } from './ConfigurationPage';
 import { configurationFieldName } from './configuration-form';
 import type { Field } from '../forms/FormDialog';
+import { configurationColor } from './configuration-appearance';
 
 export const NODE_WIDTH = 220;
 export const NODE_HEIGHT = 88;
@@ -13,6 +14,8 @@ export interface WorkflowNode extends Position {
   label: string;
   index: number;
   category: string;
+  icon?: string;
+  color?: string;
   stage: string;
   stageLabel: string;
   limit: string;
@@ -38,6 +41,10 @@ export function workflowNodes(group: ConfigurationGroup): WorkflowNode[] {
         index,
         label: scalar(fields.label) || key,
         category,
+        color: configurationColor(fields.color),
+        icon: scalar(fields.icon)
+          ? fields.icon?.choices?.find((choice) => choice.value === scalar(fields.icon))?.icon
+          : undefined,
         stage,
         stageLabel:
           fields.flow_stage?.choices?.find((choice) => choice.value === stage)?.label ||

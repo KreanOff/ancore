@@ -12593,7 +12593,8 @@ body.is-resizing-directory-columns {
     gap: 0.45rem;
 }
 
-.tasks-tag-sheet__visual svg {
+.tasks-tag-sheet__visual svg,
+.tasks-project-value-badge--tag-visual > svg {
     width: 16px;
     height: 16px;
     flex: 0 0 16px;
@@ -14666,30 +14667,33 @@ body.is-resizing-directory-columns {
 .tasks-issue-type > :last-child { overflow: hidden; text-overflow: ellipsis; }
 .tasks-issue-type [data-icon] { width: 14px; height: 14px; flex-shrink: 0; }
 
+.tasks-type-option { display: inline-flex; align-items: center; width: 16px; height: 16px; flex: 0 0 16px; }
+.tasks-type-option [data-icon] { width: 16px; height: 16px; color: var(--tasks-type-icon-color, currentColor); }
+
 /* Every icon in ISSUE_TYPE_ICON_CHOICES shares its color across type UI. */
 :is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select:is([name="work_type"], [name="type"][multiple])))
 :is([data-icon="square-check"], [data-icon="file-text"], [data-icon="ticket"], [data-icon="wrench"], [data-icon="calendar"], [data-icon="calendar-days"], [data-icon="chart-column"], [data-icon="settings"]) {
-    color: #2563eb;
+    color: var(--tasks-type-icon-color, #2563eb);
 }
 
 :is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select:is([name="work_type"], [name="type"][multiple])))
 :is([data-icon="circle-alert"], [data-icon="siren"], [data-icon="target"]) {
-    color: #dc4b3e;
+    color: var(--tasks-type-icon-color, #dc4b3e);
 }
 
 :is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select:is([name="work_type"], [name="type"][multiple])))
 :is([data-icon="book-open"], [data-icon="rocket"], [data-icon="shield-check"], [data-icon="list-checks"]) {
-    color: var(--accent-green);
+    color: var(--tasks-type-icon-color, var(--accent-green));
 }
 
 :is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select:is([name="work_type"], [name="type"][multiple])))
 :is([data-icon="zap"], [data-icon="user-round"], [data-icon="shapes"], [data-icon="flask-conical"], [data-icon="palette"]) {
-    color: var(--system-accent);
+    color: var(--tasks-type-icon-color, var(--system-accent));
 }
 
 :is(.tasks-issue-type, .work-summary-bars--types, .ancore-custom-select:has(> select:is([name="work_type"], [name="type"][multiple])))
 :is([data-icon="megaphone"], [data-icon="messages-square"], [data-icon="lightbulb"], [data-icon="flag"], [data-icon="briefcase"]) {
-    color: #c18a34;
+    color: var(--tasks-type-icon-color, #c18a34);
 }
 
 .tasks-issue-row.tasks-issue-row--with-favorite {

@@ -1,3 +1,4 @@
+import { statusColorStyle } from '../shared/status-color';
 import { setPageLocation } from '../shared/page';
 import { useEffect, useRef, useState } from 'react';
 import { FieldControl, FormDialog, type Field, type FormDialogData } from '../forms/FormDialog';
@@ -24,6 +25,7 @@ const SIDE = [
   'tags',
   'work_type',
   'task_type',
+  'task_group',
   'assignee',
   'start_at',
   'due_at',
@@ -525,6 +527,7 @@ export default function TaskPage(props: PageProps) {
                             key={status.key}
                             label={status.label}
                             category={status.category}
+                            color={status.color}
                             count={children.length}
                           >
                             <div className="tasks-issue-list">
@@ -544,8 +547,24 @@ export default function TaskPage(props: PageProps) {
                                     onChange={(event) => choose(item, event.target.checked)}
                                   />
                                   <Priority value={item.priority} label={item.priority_label} />
+                                  <a
+                                    href={item.editable ? item.edit_url : undefined}
+                                    className="work-item-key"
+                                    aria-haspopup={item.editable ? 'dialog' : undefined}
+                                    aria-disabled={item.editable && busy ? true : undefined}
+                                    title={
+                                      item.editable ? `Edytuj podzadanie ${item.key}` : undefined
+                                    }
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      void editChild(item);
+                                    }}
+                                  >
+                                    {item.key}
+                                  </a>
                                   <span
                                     className={`status-indicator status-${item.category}`}
+                                    style={statusColorStyle(item.status_color)}
                                     title={item.status_label}
                                   />
                                   <a
@@ -563,7 +582,6 @@ export default function TaskPage(props: PageProps) {
                                   >
                                     <span className="tasks-row-title-content">
                                       <span className="tasks-row-title-main">
-                                        <span className="work-item-key">{item.key}</span>
                                         <span className="tasks-row-title-text">{item.title}</span>
                                       </span>
                                     </span>
@@ -942,11 +960,13 @@ export default function TaskPage(props: PageProps) {
               </section>
               <section className="tasks-issue-side-section" aria-label="Właściwości zadania">
                 <TaskWorkflowStatus item={data.item} />
-                {['priority', 'assignee', 'work_type', 'task_type', 'tags'].map((name) => (
-                  <div key={name} className="react-field-slot">
-                    {field(name)}
-                  </div>
-                ))}
+                {['priority', 'assignee', 'work_type', 'task_type', 'task_group', 'tags'].map(
+                  (name) => (
+                    <div key={name} className="react-field-slot">
+                      {field(name)}
+                    </div>
+                  ),
+                )}
               </section>
               <section
                 className="tasks-issue-side-section"

@@ -1,3 +1,4 @@
+import { issueTypeBadgeStyle } from '../shared/issue-type-color';
 import { EmptyState } from '../shared/EmptyState';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
@@ -33,6 +34,7 @@ interface Row {
     priority_label?: string;
     type_label: string;
     type_icon: string;
+    type_color?: string;
     tags_count: number;
     attachments_count: number;
     due_urgency: string;
@@ -88,6 +90,9 @@ export function ForYouTaskRow({ row, selectable = false }: { row: Row; selectabl
           <Icon name={priority[task.priority] || 'circle'} />
         </span>
       </span>
+      <a href={row.url} className="work-item-key" title={`${row.key} · ${row.title}`}>
+        {row.key}
+      </a>
       <span
         className={`status-indicator status-${task.status}`}
         title={row.status_label}
@@ -100,12 +105,15 @@ export function ForYouTaskRow({ row, selectable = false }: { row: Row; selectabl
       >
         <span className="tasks-row-title-content">
           <span className="tasks-row-title-main">
-            <span className="work-item-key">{row.key}</span>
             <span className="tasks-row-title-text">{row.title}</span>
           </span>
         </span>
       </a>
-      <span className="tasks-issue-type" title={`Typ zgłoszenia: ${task.type_label}`}>
+      <span
+        className="tasks-issue-type"
+        style={issueTypeBadgeStyle(task.type_color)}
+        title={`Typ zgłoszenia: ${task.type_label}`}
+      >
         <Icon name={task.type_icon} />
         <span>{task.type_label}</span>
       </span>

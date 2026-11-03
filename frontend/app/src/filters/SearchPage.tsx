@@ -18,7 +18,7 @@ export default function SearchPage(props: PageProps) {
     saved = data.saved_filter;
   const groups = new Map<string, Item[]>();
   for (const item of data.items) {
-    const key = `${item.category}:${item.status_label}`;
+    const key = `${item.category}:${item.status_label}:${item.status_color || ''}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(item);
   }
@@ -186,6 +186,7 @@ export default function SearchPage(props: PageProps) {
                 <StatusGroup
                   key={key}
                   category={items[0].category}
+                  color={items[0].status_color}
                   label={items[0].status_label}
                   count={items.length}
                 >
@@ -210,6 +211,7 @@ export default function SearchPage(props: PageProps) {
                             priority_label: item.priority_label,
                             type_label: item.type_label,
                             type_icon: item.type_icon,
+                            type_color: item.type_color,
                             tags_count: item.tags_count,
                             attachments_count: item.attachments_count,
                             due_urgency: item.due_urgency,

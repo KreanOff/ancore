@@ -22,7 +22,7 @@ export function configurationEditorSchema(schema: FormSchema): FormSchema {
   };
 }
 
-// The existing endpoint validates all three formsets and their common revision.
+// The endpoint validates every configuration formset and their common revision.
 // Keep every saved value, including repeated transition values, and replace only
 // the row edited in the dialog. Unchecked checkboxes are absent from FormData.
 export function configurationSubmission(
@@ -200,7 +200,7 @@ export function configurationStage(
                         errors: [],
                         checked: field.type === 'checkbox' && draft.has(field.name),
                         choices:
-                          configurationFieldName(field) === 'icon'
+                          editor.section === 'types' && configurationFieldName(field) === 'icon'
                             ? field.choices?.map((choice) =>
                                 choice.value === '' ? { ...choice, icon: defaultIcon } : choice,
                               )
@@ -323,16 +323,34 @@ export function configurationAdd(data: ConfigurationData, section: Configuration
       id: 'id_' + prefix + configurationFieldName(field),
       value: field.multiple
         ? []
-        : { category: 'new', flow_stage: 'queue', type: 'text' }[configurationFieldName(field)] ||
-          '',
+        : { category: 'in_progress', flow_stage: 'active', type: 'text' }[
+            configurationFieldName(field)
+          ] || '',
       checked: false,
       errors: [],
-      attrs: { ...field.attrs, id: 'id_' + prefix + configurationFieldName(field) },
-      choices: field.choices?.map((choice) =>
-        choice.value === '' && configurationFieldName(field) === 'icon'
-          ? { ...choice, icon: 'shapes' }
-          : choice,
-      ),
+      attrs: {
+        ...Object.fromEntries(
+          Object.entries(field.attrs).filter(
+            ([name]) =>
+              !(
+                section === 'statuses' &&
+                configurationFieldName(field) === 'wip_limit' &&
+                name === 'readonly'
+              ),
+          ),
+        ),
+        id: 'id_' + prefix + configurationFieldName(field),
+        ...(configurationFieldName(field) === 'color'
+          ? { placeholder: section === 'statuses' ? '#c18a34' : '#64748b' }
+          : {}),
+      },
+      choices: field.choices
+        ?.filter((choice) => !choice.preserve_only)
+        .map((choice) =>
+          choice.value === '' && configurationFieldName(field) === 'icon'
+            ? { ...choice, icon: section === 'statuses' ? 'clock' : 'shapes' }
+            : choice,
+        ),
     })),
   };
   return {

@@ -1,3 +1,4 @@
+import { statusColorStyle } from '../shared/status-color';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Icon } from '../shared/Icon';
 import {
@@ -178,6 +179,7 @@ export default function WorkflowMinimap({
               <rect
                 key={node.key}
                 className={`work-flow-minimap-node status-${node.category}${selected === node.key ? ' is-selected' : ''}`}
+                style={statusColorStyle(node.color)}
                 x={node.x}
                 y={node.y}
                 width={NODE_WIDTH}
