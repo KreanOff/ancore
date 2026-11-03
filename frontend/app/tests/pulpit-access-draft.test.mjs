@@ -220,6 +220,121 @@ function harness(initial = fixture(), options = {}) {
   return app;
 }
 
+test('space role and sharing dialogs save immediately with the current revision and retain errors for retry', async () => {
+  const app = harness(fixture(), { saveOnAction: true, publicVisibility: 'public' });
+  let tree = app.render();
+  assert.equal(
+    nodes(tree).filter((node) => node.props?.className === 'member-access-save-actions').length,
+    0,
+  );
+  button(app.select(3), 'Zmień rolę').props.onClick();
+  let sharing = dialog(app.render());
+  app.failure = new Error('Sieć niedostępna');
+  await assert.rejects(
+    sharing.props.onStage({ people: sharing.props.people, role: 'observer' }),
+    /Sieć niedostępna/,
+  );
+  assert.ok(dialog(app.render()));
+  assert.equal(app.saved.length, 0);
+  app.failure = null;
+  app.result = fixture({
+    revision: 8,
+    members: [member(1, 'owner'), member(2, 'admin'), member(3, 'observer'), member(4, 'observer')],
+  });
+  sharing = dialog(app.render());
+  await sharing.props.onStage({ people: sharing.props.people, role: 'observer' });
+  tree = app.render();
+  assert.equal(app.requests.length, 2);
+  assert.equal(app.requests[1].body.get('revision'), '7');
+  assert.equal(
+    JSON.parse(app.requests[1].body.get('members')).some((row) => row.user_id === 1),
+    false,
+  );
+  button(tree, 'Udostępnij').props.onClick();
+  app.result = fixture({ revision: 9, members: [...app.result.members, member(5, 'member')] });
+  await dialog(app.render()).props.onStage({ person: candidate, role: 'member' });
+  assert.equal(app.requests[2].body.get('revision'), '8');
+  assert.equal(app.saved.length, 2);
+});
+
+test('space visibility and removal wait for confirmation, and cancellation never writes access', async () => {
+  const app = harness(fixture(), { saveOnAction: true, publicVisibility: 'public' });
+  let tree = app.visibility('public');
+  let confirmation = nodes(tree).find((node) => node.props?.title === 'Zmień widoczność');
+  assert.equal(app.requests.length, 0);
+  button(confirmation, 'Anuluj').props.onClick();
+  tree = await app.settle();
+  assert.equal(visibility(tree).props.label, 'Widoczność: Prywatna');
+  tree = app.remove(3, 4);
+  confirmation = nodes(tree).find((node) => node.props?.title === 'Odbierz dostęp');
+  assert.equal(app.requests.length, 0);
+  app.failure = new Error('POST 503');
+  await button(confirmation, 'Odbierz dostęp').props.onClick();
+  tree = app.render();
+  confirmation = nodes(tree).find((node) => node.props?.title === 'Odbierz dostęp');
+  assert.match(text(confirmation), /POST 503/);
+  button(confirmation, 'Anuluj').props.onClick();
+  tree = await app.settle();
+  assert.equal(snapshot(tree).length, 4);
+  app.failure = null;
+  tree = app.visibility('public');
+  confirmation = nodes(tree).find((node) => node.props?.title === 'Zmień widoczność');
+  app.result = fixture({ revision: 8, visibility: 'public' });
+  await button(confirmation, 'Zmień widoczność').props.onClick();
+  assert.equal(app.requests[1].body.get('visibility'), 'public');
+  assert.deepEqual(JSON.parse(app.requests[1].body.get('members')), []);
+});
+
+test('retrying a failed immediate share replaces the attempted recipient instead of granting both', async () => {
+  const app = harness(fixture(), { saveOnAction: true, publicVisibility: 'public' });
+  button(app.render(), 'Udostępnij').props.onClick();
+  app.failure = new Error('POST 503');
+  await assert.rejects(dialog(app.render()).props.onStage({ person: candidate, role: 'member' }));
+  await assert.rejects(
+    dialog(app.render()).props.onStage({ person: candidate, role: 'observer' }),
+    /POST 503/,
+  );
+  assert.equal(app.requests.length, 2);
+  app.failure = null;
+  const replacement = { ...candidate, id: 6, email: 'nowa@example.test' };
+  app.result = fixture({ revision: 8, members: [...fixture().members, member(6, 'observer')] });
+  await dialog(app.render()).props.onStage({ person: replacement, role: 'observer' });
+  const rows = JSON.parse(app.requests[2].body.get('members'));
+  assert.equal(
+    rows.some((row) => row.user_id === 5),
+    false,
+  );
+  assert.deepEqual(
+    rows.find((row) => row.user_id === 6),
+    { user_id: 6, role: 'observer' },
+  );
+});
+
+test('space sharing conflict blocks another mutation and closing the dialog reloads current access', async () => {
+  const app = harness(fixture(), { saveOnAction: true, publicVisibility: 'public' });
+  button(app.select(3), 'Zmień rolę').props.onClick();
+  let sharing = dialog(app.render());
+  app.status = 409;
+  app.result = { error: 'Dostęp zmienił się' };
+  await assert.rejects(sharing.props.onStage({ people: sharing.props.people, role: 'observer' }));
+  sharing = dialog(app.render());
+  assert.equal(sharing.props.stageBlocked, true);
+  await sharing.props.onStage({ people: sharing.props.people, role: 'observer' });
+  assert.equal(app.requests.length, 1);
+  app.status = 200;
+  app.result = fixture({ revision: 9 });
+  sharing.props.onClose();
+  const tree = await app.settle();
+  assert.equal(
+    nodes(tree).some((node) => node.props?.onStage),
+    false,
+  );
+  assert.deepEqual(
+    app.requests.map((request) => request.method),
+    ['POST', 'GET'],
+  );
+});
+
 test('role, removal, sharing and visibility edits remain local, and Cancel restores the saved access', () => {
   const initial = fixture();
   const app = harness(initial);

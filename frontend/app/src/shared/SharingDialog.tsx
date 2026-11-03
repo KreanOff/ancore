@@ -23,6 +23,8 @@ export default function SharingDialog<T>({
   onStage,
   candidatesUrl,
   hostId,
+  saveOnStage = false,
+  stageBlocked = false,
 }: {
   name: string;
   schema: FormSchema;
@@ -36,6 +38,8 @@ export default function SharingDialog<T>({
   onStage?: (change: SharingChange) => Promise<void> | void;
   candidatesUrl?: string;
   hostId?: string;
+  saveOnStage?: boolean;
+  stageBlocked?: boolean;
 }) {
   const bulk = !!people?.length;
   const roleMembers = bulk ? people : person ? [person] : [];
@@ -75,7 +79,7 @@ export default function SharingDialog<T>({
         onChange={() => setDirty(true)}
         onSubmit={async (event) => {
           event.preventDefault();
-          if (sending.current) return;
+          if (sending.current || stageBlocked) return;
           const body = new FormData(event.currentTarget);
           body.set('action', changingRole ? 'role' : 'share');
           if (bulk) {
@@ -120,7 +124,12 @@ export default function SharingDialog<T>({
               {error}
             </p>
           ) : null}
-          {onStage ? (
+          {stageBlocked ? (
+            <p className="tasks-modal__errors" role="alert">
+              Dostęp zmienił się w innym oknie. Wybierz „Anuluj”, aby wczytać aktualny stan.
+            </p>
+          ) : null}
+          {onStage && !saveOnStage ? (
             <p className="workplace-team__hint">
               Dostęp zmieni się po kliknięciu „Zapisz” w sekcji „Udostępnienia”.
             </p>
@@ -138,12 +147,12 @@ export default function SharingDialog<T>({
             </>
           ) : (
             <p className="workplace-team__hint">
-              {onStage
+              {onStage && !saveOnStage
                 ? 'Wybierz osobę z bieżącego Workspace i jej rolę.'
                 : 'Wybrana osoba od razu uzyska dostęp z wybraną rolą. Wybierz osobę z bieżącego Workspace.'}
             </p>
           )}
-          <fieldset className="resources-react-fieldset" disabled={pending}>
+          <fieldset className="resources-react-fieldset" disabled={pending || stageBlocked}>
             <div className={changingRole ? undefined : 'workplace-invite__fields'}>
               {!changingRole ? (
                 <div className="tasks-form-field">
@@ -179,10 +188,10 @@ export default function SharingDialog<T>({
           >
             Anuluj
           </button>
-          <button type="submit" className="tasks-modal__submit" disabled={pending}>
+          <button type="submit" className="tasks-modal__submit" disabled={pending || stageBlocked}>
             {pending
               ? 'Zapisywanie…'
-              : onStage
+              : onStage && !saveOnStage
                 ? changingRole
                   ? 'Zastosuj'
                   : 'Dodaj'

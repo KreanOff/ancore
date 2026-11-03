@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Members, type MemberRow } from './Members';
+import { MemberDirectory } from './MemberDirectory';
 import SharingDialog, { type SharingChange } from './SharingDialog';
 import { Dropdown } from './Dropdown';
 import { Icon } from './Icon';
+import { Modal } from './Modal';
 import { PageError, pageRequest } from './page';
 import { errorMessage } from './api';
 import type { Team } from '../tasks/types';
@@ -51,6 +53,8 @@ export default function AccessEditor<T extends AccessTeam>({
   blocked,
   onSaved,
   onStateChange,
+  saveOnAction = false,
+  directory = false,
 }: {
   team: T;
   publicVisibility?: 'workspace' | 'public';
@@ -63,6 +67,8 @@ export default function AccessEditor<T extends AccessTeam>({
   blocked: boolean;
   onSaved: (team: T) => void;
   onStateChange: (dirty: boolean, pending: boolean) => void;
+  saveOnAction?: boolean;
+  directory?: boolean;
 }) {
   const [baseline, setBaseline] = useState(team);
   const [draft, setDraft] = useState(() => draftFrom(team, publicVisibility));
@@ -72,6 +78,12 @@ export default function AccessEditor<T extends AccessTeam>({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [conflict, setConflict] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    next: Draft;
+    title: string;
+    message: string;
+    submit: string;
+  } | null>(null);
   const [life] = useState(() => new AbortController());
   const sending = useRef(false);
   const dirty =
@@ -113,32 +125,36 @@ export default function AccessEditor<T extends AccessTeam>({
     setError('');
   }
   function stageSharing(change: SharingChange) {
-    if (busy || publicAccess || !canManage) return;
+    if (busy || sending.current || publicAccess || !canManage) return;
+    // Each confirmed action starts from saved access, including a retry after
+    // a failed share where the person or role may have changed in the dialog.
+    const current = saveOnAction ? draftFrom(baseline, publicVisibility) : draft;
     const roleField = baseline.share_form.fields.find((field) => field.name === 'role');
     const roleLabel =
       roleField?.choices?.find((choice) => choice.value === change.role)?.label || change.role;
+    let next: Draft;
     if ('people' in change) {
       const ids = new Set(
         change.people.filter((member) => member.can_change).map((member) => member.id),
       );
-      stage({
-        ...draft,
-        members: draft.members.map((member) =>
+      next = {
+        ...current,
+        members: current.members.map((member) =>
           ids.has(member.id) && member.can_change
             ? { ...member, role: change.role, role_label: roleLabel }
             : member,
         ),
-      });
+      };
     } else {
       const person = change.person;
       const userId = Number(person.id);
       if (!Number.isSafeInteger(userId) || userId <= 0) throw new Error('Wybierz osobę z listy.');
-      if (draft.members.some((member) => member.user_id === userId))
+      if (current.members.some((member) => member.user_id === userId))
         throw new Error('Ta osoba jest już na liście dostępu.');
-      stage({
-        ...draft,
+      next = {
+        ...current,
         members: [
-          ...draft.members,
+          ...current.members,
           {
             id: `draft:${userId}`,
             user_id: userId,
@@ -154,16 +170,35 @@ export default function AccessEditor<T extends AccessTeam>({
             can_change: true,
           },
         ],
-      });
+      };
     }
-    setSharing(false);
-    setRoleMembers(undefined);
-    setSelected(new Set());
+    stage(next);
+    const close = () => {
+      setSharing(false);
+      setRoleMembers(undefined);
+      setSelected(new Set());
+    };
+    if (saveOnAction)
+      return save(next, true).then((saved) => {
+        if (saved) close();
+      });
+    close();
   }
   function removeSelected() {
-    if (busy || !selectedMembers.length) return;
+    if (busy || sending.current || !selectedMembers.length) return;
     const ids = new Set(selectedMembers.map((member) => member.id));
-    stage({ ...draft, members: draft.members.filter((member) => !ids.has(member.id)) });
+    const next = { ...draft, members: draft.members.filter((member) => !ids.has(member.id)) };
+    if (saveOnAction) {
+      setError('');
+      setConfirmation({
+        next,
+        title: 'Odbierz dostęp',
+        message: `Odebrać dostęp zaznaczonym osobom (${ids.size})?`,
+        submit: 'Odbierz dostęp',
+      });
+      return;
+    }
+    stage(next);
     setSelected(new Set());
   }
   function applySaved(result: T) {
@@ -173,8 +208,15 @@ export default function AccessEditor<T extends AccessTeam>({
     setConflict(false);
     onSaved(result);
   }
-  async function save() {
-    if (sending.current || busy || !dirty || (settingsDirty && visibilityChanged)) return;
+  async function save(next = draft, rethrow = false) {
+    const changedVisibility =
+      (next.visibility === publicVisibility) !== (baseline.visibility === publicVisibility);
+    if (sending.current || busy || conflict || (settingsDirty && changedVisibility)) return false;
+    if (
+      draftKey(next, publicVisibility) ===
+      draftKey(draftFrom(baseline, publicVisibility), publicVisibility)
+    )
+      return true;
     sending.current = true;
     setPending(true);
     setError('');
@@ -182,13 +224,13 @@ export default function AccessEditor<T extends AccessTeam>({
       const body = new FormData();
       body.set('action', 'save');
       body.set('revision', String(baseline.revision));
-      body.set('visibility', draft.visibility);
+      body.set('visibility', next.visibility);
       body.set(
         'members',
         JSON.stringify(
-          publicAccess
+          next.visibility === publicVisibility
             ? []
-            : draft.members
+            : next.members
                 .filter((member) => member.role !== 'owner')
                 .map((member) => ({ user_id: member.user_id, role: member.role })),
         ),
@@ -197,23 +239,26 @@ export default function AccessEditor<T extends AccessTeam>({
       if (!life.signal.aborted) {
         applySaved(result);
       }
+      return true;
     } catch (exception) {
       if (!life.signal.aborted) {
         setError(errorMessage(exception));
         setConflict(exception instanceof PageError && exception.status === 409);
       }
+      if (rethrow) throw exception;
+      return false;
     } finally {
       sending.current = false;
       if (!life.signal.aborted) setPending(false);
     }
   }
   async function cancel() {
-    if (sending.current || busy) return;
+    if (sending.current || busy) return false;
     if (!conflict) {
       setDraft(draftFrom(baseline, publicVisibility));
       setSelected(new Set());
       setError('');
-      return;
+      return true;
     }
     sending.current = true;
     setPending(true);
@@ -223,109 +268,137 @@ export default function AccessEditor<T extends AccessTeam>({
         applySaved(result);
         setError('');
       }
+      return true;
     } catch (exception) {
       if (!life.signal.aborted) setError(errorMessage(exception));
+      return false;
     } finally {
       sending.current = false;
       if (!life.signal.aborted) setPending(false);
     }
   }
+  async function closeAction() {
+    if (saveOnAction && !(await cancel())) return;
+    setSharing(false);
+    setRoleMembers(undefined);
+    setConfirmation(null);
+  }
+
+  const toolbar = (
+    <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar">
+      <Dropdown
+        label={`Widoczność: ${publicAccess ? 'Publiczna' : 'Prywatna'}`}
+        searchable={false}
+        disabled={busy || settingsDirty || !baseline.can_change_visibility}
+        trigger={
+          <>
+            <Icon name={publicAccess ? 'users' : 'lock'} />
+            <span>Widoczność: {publicAccess ? 'Publiczna' : 'Prywatna'}</span>
+            <Icon name="chevron-down" />
+          </>
+        }
+      >
+        {(close) => (
+          <div className="documents-menu-actions">
+            {(
+              [
+                { value: publicVisibility, label: 'Publiczna — cały Workspace', icon: 'users' },
+                { value: 'private', label: 'Prywatna — wybrane osoby', icon: 'lock' },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="menuitemradio"
+                aria-checked={draft.visibility === option.value}
+                className="tasks-project-menu-button"
+                onClick={() => {
+                  if (busy || sending.current || settingsDirty || !baseline.can_change_visibility)
+                    return;
+                  close();
+                  const next = { ...draft, visibility: option.value };
+                  if (saveOnAction && next.visibility !== baseline.visibility) {
+                    setError('');
+                    setConfirmation({
+                      next,
+                      title: 'Zmień widoczność',
+                      message:
+                        option.value === publicVisibility
+                          ? 'Udostępnić przestrzeń całemu Workspace?'
+                          : 'Ograniczyć dostęp do właściciela i wybranych osób?',
+                      submit: 'Zmień widoczność',
+                    });
+                  } else stage(next);
+                  setSelected(new Set());
+                }}
+              >
+                <Icon name={option.icon} />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Dropdown>
+      <button
+        type="button"
+        className="tasks-filter-button"
+        disabled={busy || !selectedMembers.length}
+        onClick={() => setRoleMembers(selectedMembers)}
+        aria-haspopup="dialog"
+      >
+        <Icon name="pencil" />
+        Zmień rolę
+      </button>
+      <button
+        type="button"
+        className="tasks-filter-button"
+        disabled={busy || !selectedMembers.length}
+        onClick={removeSelected}
+      >
+        <Icon name="log-out" />
+        Odbierz dostęp
+      </button>
+      {canManage ? (
+        <button
+          type="button"
+          className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+          disabled={busy || publicAccess}
+          onClick={() => setSharing(true)}
+          aria-haspopup="dialog"
+        >
+          <Icon name="plus" />
+          Udostępnij
+        </button>
+      ) : null}
+      {!saveOnAction ? (
+        <div className="member-access-save-actions">
+          <button
+            type="button"
+            className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+            disabled={busy || !dirty || conflict || (settingsDirty && visibilityChanged)}
+            onClick={() => void save()}
+          >
+            <Icon name="check" />
+            {pending ? 'Zapisywanie…' : 'Zapisz'}
+          </button>
+          <button
+            type="button"
+            className="tasks-filter-button"
+            disabled={busy || (!dirty && !selected.size && !error)}
+            onClick={() => void cancel()}
+          >
+            Anuluj
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
       <div className="tasks-modal__body space-settings-table-body access-editor">
-        <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar">
-          <Dropdown
-            label={`Widoczność: ${publicAccess ? 'Publiczna' : 'Prywatna'}`}
-            searchable={false}
-            disabled={busy || settingsDirty || !baseline.can_change_visibility}
-            trigger={
-              <>
-                <Icon name={publicAccess ? 'users' : 'lock'} />
-                <span>Widoczność: {publicAccess ? 'Publiczna' : 'Prywatna'}</span>
-                <Icon name="chevron-down" />
-              </>
-            }
-          >
-            {(close) => (
-              <div className="documents-menu-actions">
-                {(
-                  [
-                    { value: publicVisibility, label: 'Publiczna — cały Workspace', icon: 'users' },
-                    { value: 'private', label: 'Prywatna — wybrane osoby', icon: 'lock' },
-                  ] as const
-                ).map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={draft.visibility === option.value}
-                    className="tasks-project-menu-button"
-                    onClick={() => {
-                      close();
-                      stage({ ...draft, visibility: option.value });
-                      setSelected(new Set());
-                    }}
-                  >
-                    <Icon name={option.icon} />
-                    <span>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </Dropdown>
-          <button
-            type="button"
-            className="tasks-filter-button"
-            disabled={busy || !selectedMembers.length}
-            onClick={() => setRoleMembers(selectedMembers)}
-            aria-haspopup="dialog"
-          >
-            <Icon name="pencil" />
-            Zmień rolę
-          </button>
-          <button
-            type="button"
-            className="tasks-filter-button"
-            disabled={busy || !selectedMembers.length}
-            onClick={removeSelected}
-          >
-            <Icon name="log-out" />
-            Odbierz dostęp
-          </button>
-          {canManage ? (
-            <button
-              type="button"
-              className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={busy || publicAccess}
-              onClick={() => setSharing(true)}
-              aria-haspopup="dialog"
-            >
-              <Icon name="plus" />
-              Udostępnij
-            </button>
-          ) : null}
-          <div className="member-access-save-actions">
-            <button
-              type="button"
-              className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={busy || !dirty || conflict || (settingsDirty && visibilityChanged)}
-              onClick={() => void save()}
-            >
-              <Icon name="check" />
-              {pending ? 'Zapisywanie…' : 'Zapisz'}
-            </button>
-            <button
-              type="button"
-              className="tasks-filter-button"
-              disabled={busy || (!dirty && !selected.size && !error)}
-              onClick={() => void cancel()}
-            >
-              Anuluj
-            </button>
-          </div>
-        </div>
-        {error ? (
+        {directory ? null : toolbar}
+        {error && !saveOnAction ? (
           <p className="tasks-modal__errors" role="alert">
             {error}
             {conflict
@@ -338,13 +411,24 @@ export default function AccessEditor<T extends AccessTeam>({
             Zapisz zmiany w „Ustawieniach”, aby zmienić widoczność tutaj.
           </p>
         ) : null}
-        <Members
-          members={displayedMembers}
-          isOwner={baseline.is_owner}
-          busy={busy}
-          rowActions={false}
-          selection={{ selected, onChange: setSelected }}
-        />
+        {directory ? (
+          <MemberDirectory
+            members={displayedMembers}
+            busy={busy}
+            selected={selected}
+            onSelect={setSelected}
+          >
+            {toolbar}
+          </MemberDirectory>
+        ) : (
+          <Members
+            members={displayedMembers}
+            isOwner={baseline.is_owner}
+            busy={busy}
+            rowActions={false}
+            selection={{ selected, onChange: setSelected }}
+          />
+        )}
       </div>
       {sharing || roleMembers ? (
         <SharingDialog
@@ -357,11 +441,50 @@ export default function AccessEditor<T extends AccessTeam>({
           candidatesUrl={url + 'candidates/?draft=1'}
           csrfToken={csrfToken}
           onStage={stageSharing}
-          onClose={() => {
-            setSharing(false);
-            setRoleMembers(undefined);
-          }}
+          saveOnStage={saveOnAction}
+          stageBlocked={saveOnAction && conflict}
+          onClose={() => void closeAction()}
         />
+      ) : null}
+      {confirmation ? (
+        <Modal
+          title={confirmation.title}
+          className="app-modal-panel--compact"
+          hostId={hostId}
+          pending={pending}
+          onClose={() => void closeAction()}
+        >
+          <div className="tasks-modal__body">
+            <p>{confirmation.message}</p>
+            {error ? (
+              <p className="tasks-modal__errors" role="alert">
+                {error}
+                {conflict ? ' Wybierz „Anuluj”, aby wczytać aktualny dostęp.' : ''}
+              </p>
+            ) : null}
+          </div>
+          <footer className="tasks-modal__footer">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={pending}
+              onClick={() => void closeAction()}
+            >
+              Anuluj
+            </button>
+            <button
+              type="button"
+              className="tasks-modal__submit"
+              disabled={pending || conflict}
+              onClick={async () => {
+                stage(confirmation.next);
+                if (await save(confirmation.next)) setConfirmation(null);
+              }}
+            >
+              {pending ? 'Zapisywanie…' : confirmation.submit}
+            </button>
+          </footer>
+        </Modal>
       ) : null}
     </>
   );
