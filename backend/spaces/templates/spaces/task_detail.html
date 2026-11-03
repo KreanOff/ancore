@@ -1,5 +1,5 @@
 {% extends 'spaces/base.html' %}
-{% load account_avatar static %}
+{% load account_avatar static space_ui %}
 {% block extra_head %}{{ block.super }}
 <link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261010-task-parity">
 <script src="{% static 'js/workplace-team.js' %}?v=20261025-existing-members-copy" defer></script>
@@ -29,10 +29,10 @@
             <span data-space-task-save-message>{{ error }}{{ form.non_field_errors }}</span>
             {% if can_edit_task %}<button type="submit" form="space-task-form" class="btn btn-secondary" data-space-task-retry{% if not error %} hidden{% endif %}>Spróbuj ponownie</button>{% endif %}
         </div>
-        {% if planning_has_errors %}<div class="tasks-modal__errors" role="alert">{% for field in form %}{% if field.errors and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'visibility' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>{% endif %}
+        {% if planning_has_errors %}<div class="tasks-modal__errors" role="alert">{% for field in form %}{% if field.errors and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'task_group' and field.name != 'reminder_at' and field.name != 'visibility' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}<div class="tasks-form-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endif %}{% endfor %}</div>{% endif %}
         <form id="space-task-form" method="post" enctype="multipart/form-data"{% if can_edit_task %} data-space-task-autosave{% endif %}>
             {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="task_pk" value="{{ task.pk }}"><input type="hidden" name="status" value="{{ item.status }}">
-            {% for field in form %}{% if not field.errors and field.name != 'visibility' and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'reminder_at' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}{{ field.as_hidden }}{% endif %}{% endfor %}
+            {% for field in form %}{% if not field.errors and field.name != 'visibility' and field.name != 'title' and field.name != 'description' and field.name != 'priority' and field.name != 'tags' and field.name != 'work_type' and field.name != 'task_type' and field.name != 'task_group' and field.name != 'reminder_at' and field.name != 'assignee' and field.name != 'due_at' and field.name != 'start_at' %}{{ field.as_hidden }}{% endif %}{% endfor %}
             {% if can_edit_task %}<noscript><button type="submit" class="tasks-issue-save">Zapisz</button></noscript>{% endif %}
         </form>
         <div class="tasks-issue-main">
@@ -67,7 +67,7 @@
                         </div>
                         {% if subtask_count %}<div class="tasks-table-wrap tasks-board tasks-subtasks-board">
                             {% for group in subtask_status_groups %}{% if group.tasks %}<section class="tasks-issue-group tasks-status-block">
-                                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ group.status }}"><span class="status-indicator status-{{ group.status }}">{{ group.label }}</span><span class="tasks-rail-count">{{ group.tasks|length }}</span></header>
+                                <header class="tasks-issue-group-header tasks-status-block-header tasks-status-block-header--{{ group.status }}" style="{{ group.appearance|status_style }} border-color: var(--tasks-status-border);"><span class="status-indicator status-{{ group.status }}">{{ group.label }}</span><span class="tasks-rail-count">{{ group.tasks|length }}</span></header>
                                 <div class="tasks-issue-list">{% for item in group.tasks %}{% include 'spaces/row.html' with view='subtasks' %}{% endfor %}</div>
                             </section>{% endif %}{% endfor %}
                         </div>{% else %}<p class="tasks-issue-empty-feed">Brak podzadań.</p>{% endif %}
@@ -86,7 +86,7 @@
                     {% if item.transitions %}
                     <form method="post" class="task-workflow__transitions" aria-label="Dostępne przejścia" data-space-task-transition>
                         {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="autosave_fields" value='["status"]'><input type="hidden" name="source_status" value="{{ item.status }}"><input type="hidden" name="source_in_backlog" value="{{ item.in_backlog|yesno:'true,false' }}">
-                        {% for status in item.transitions %}<button type="submit" name="status" value="{{ status.key }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight task-workflow__transition" aria-label="Przejdź do: {{ status.label }}" title="{% if status.policy %}{{ status.policy }}{% else %}Przejdź do: {{ status.label }}{% endif %}"><span class="status-indicator status-{{ status.category }}" aria-hidden="true"></span><span>{{ status.label }}</span></button>{% endfor %}
+                        {% for status in item.transitions %}<button type="submit" name="status" value="{{ status.key }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight task-workflow__transition" aria-label="Przejdź do: {{ status.label }}" title="{% if status.policy %}{{ status.policy }}{% else %}Przejdź do: {{ status.label }}{% endif %}"><span class="status-indicator status-{{ status.category }}" style="{{ status|status_style }}" aria-hidden="true"></span><span>{{ status.label }}</span></button>{% endfor %}
                     </form>
                     {% else %}<p class="task-workflow__hint">Brak dalszych przejść.</p>{% endif %}
                     {{ form.status.errors }}
@@ -98,7 +98,7 @@
                 </section>
                 <section class="tasks-issue-side-section" aria-label="Właściwości zadania">
                     <div class="tasks-issue-field task-workflow-field"><span class="tasks-issue-field-label" id="task-workflow-label">Etap zadania</span>
-                        <div class="task-workflow__current" aria-label="Bieżący etap: {{ item.status_label }}"><span class="status-indicator status-{{ task.status }}" aria-hidden="true"></span><span>{{ item.status_label }}</span></div>
+                        <div class="task-workflow__current" aria-label="Bieżący etap: {{ item.status_label }}"><span class="status-indicator status-{{ task.status }}" style="{{ item.status_color|status_style }}" aria-hidden="true"></span><span>{{ item.status_label }}</span></div>
                     </div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_priority">Priorytet</label></span>
                         <select id="id_priority" class="form-select" name="priority" form="space-task-form"{% if not can_edit_task %} disabled{% endif %}>{% for value, label in form.priority.field.choices %}<option value="{{ value }}" data-ancore-option-preview="space-priority-{{ value }}"{% if form.priority.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
@@ -107,7 +107,8 @@
                     </div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_assignee">Przypisane do</label></span>{{ form.assignee }}{{ form.assignee.errors }}</div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_work_type">Typ zgłoszenia</label></span>{{ form.work_type }}{{ form.work_type.errors }}</div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_task_type">Kategoria zadania</label></span>{{ form.task_type }}{{ form.task_type.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_task_type">Kategoria</label></span>{{ form.task_type }}{{ form.task_type.errors }}</div>
+                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_task_group">Grupa</label></span>{{ form.task_group }}{{ form.task_group.errors }}</div>
                     <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_tags">Tagi</label></span>{{ form.tags }}{{ form.tags.errors }}</div>
                 </section>
                 <section class="tasks-issue-side-section" aria-label="Terminy zadania">

@@ -210,3 +210,54 @@ class IssueTypeTests(TestCase):
                 with self.subTest(key=key, configured=configured):
                     self.assertEqual(issue_type_icon(key, configured), expected)
             self.assertEqual(issue_type_icon(key, 'target'), 'target')
+
+
+    def test_type_colors_follow_configuration_in_views_forms_and_first_render(self):
+        config = self.space.configuration
+        config.settings['types'].append({'key': 'review', 'label': 'Przegląd', 'icon': 'square-check', 'color': '#ee33cc'})
+        config.save()
+        self.item.work_type = 'review'
+        self.item.save(update_fields=['work_type'])
+        for scoped in (False, True):
+            base = self.url(self.space.slug + '/', app='space', scoped=scoped)
+            api = self.url('v1/page/', app='api', scoped=scoped)
+            for view in ('list', 'board', 'backlog', 'timeline', 'summary', 'reports'):
+                with self.subTest(scoped=scoped, view=view):
+                    response = self.client.get(api, {'url': base + '?view=' + view}, follow=True)
+                    self.assertEqual(response.status_code, 200)
+                    data = response.json()['data']
+                    self.assertEqual(data['type_colors']['review'], '#ee33cc')
+                    self.assertEqual(data['type_colors']['task'], '#2563eb')
+                    for item in data['items']:
+                        if item['id'] == self.item.pk:
+                            self.assertEqual(item['type_color'], '#ee33cc')
+                    if view == 'summary':
+                        self.assertEqual(next(t['color'] for t in data['summary']['types'] if t['key'] == 'review'), '#ee33cc')
+                    if view in ('list', 'board'):
+                        self.assertContains(self.client.get(base + '?view=' + view), 'background-color: color-mix(in srgb, #ee33cc 16%, #ffffff)')
+            detail = self.client.get(api, {'url': self.detail_url(scoped)}, follow=True).json()['data']
+            self.assertEqual(detail['item']['type_color'], '#ee33cc')
+            choices = next(f['choices'] for f in detail['form']['fields'] if f['field_name'] == 'work_type')
+            self.assertEqual(next(c['type_color'] for c in choices if c['value'] == 'review'), '#ee33cc')
+            response = self.client.get(self.detail_url(scoped))
+            self.assertContains(response, '--tasks-type-icon-color: #ee33cc')
+            filter_form = BasicTaskSearchForm(request=response.wsgi_request)
+            choices = next(f['choices'] for f in form_payload(filter_form)['fields'] if f['field_name'] == 'type')
+            self.assertEqual(next(c['type_color'] for c in choices if c['value'] == 'review'), '#ee33cc')
+
+    def test_type_color_is_local_to_space_and_reset_does_not_change_task(self):
+        config = self.space.configuration
+        other_space = make_space(user=self.owner, workplace=self.workspace, name='Inny kolor')
+        other_task = SpaceTask.objects.create(created_by=self.owner, space=other_space, title='Niezależny kolor')
+        for color, expected in [('#27ab91', '#27ab91'), ('', '#2563eb')]:
+            definition = next(t for t in config.settings['types'] if t['key'] == 'task')
+            definition.update(icon='circle-alert', color=color)
+            config.save()
+            item = WorkItem.objects.select_related('space__configuration').get(pk=self.item.pk)
+            self.assertEqual(item.type_color, expected)
+            self.assertEqual(item.type_icon, 'circle-alert')
+            self.assertEqual(other_task.work_item.type_color, '#2563eb')
+            self.assertEqual(item.work_type, 'task')
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.status, 'new')
+        self.assertIsNone(self.task.completion_date)

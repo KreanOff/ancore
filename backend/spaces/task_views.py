@@ -65,7 +65,8 @@ def property_snapshot(task, item):
 
     assignee = task.assignee
     return {'tytuł': task.title, 'opis': task.description, 'priorytet': task.get_priority_display(),
-            'kategoria zadania': task.get_task_type_display(), 'przypisane do': (assignee.get_full_name() or assignee.email or assignee.username) if assignee else '—',
+            'kategoria zadania': task.get_task_type_display(), 'grupa': task.get_task_group_display(),
+            'przypisane do': (assignee.get_full_name() or assignee.email or assignee.username) if assignee else '—',
             'planowane rozpoczęcie': datetime_label(item.start_at),
             'termin wykonania': datetime_label(task.due_at), 'przypomnienie': datetime_label(task.reminder_at),
             'widoczność': 'Prywatne' if task.visibility == 'private' else 'Publiczne',
@@ -191,7 +192,7 @@ def detail(request, space_pk, key):
                             planning_backlog = False
                         set_status(request, item, target, in_backlog=planning_backlog)
                         task.refresh_from_db()
-                        for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
+                        for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'task_group', 'reminder_at'):
                             if name in changed_fields:
                                 setattr(task, name, data[name])
                         if 'visibility' in changed_fields:
@@ -366,9 +367,9 @@ def detail(request, space_pk, key):
     for child in children:
         child.url = task_url(request, child.task)
         child.status_label = next((status['label'] for status in space.statuses if status['key'] == child.status), child.status)
-    context['subtask_status_groups'] = [{'status': status['category'], 'label': status['label'], 'tasks': [child for child in children if child.status == status['key']]} for status in space.statuses]
+    context['subtask_status_groups'] = [{'status': status['category'], 'appearance': status, 'label': status['label'], 'tasks': [child for child in children if child.status == status['key']]} for status in space.statuses]
     context['subtask_count'] = len(children)
-    context['planning_has_errors'] = any(field.errors for field in form if field.name not in {'title', 'description', 'priority', 'tags', 'work_type', 'assignee', 'start_at', 'due_at', 'task_type', 'reminder_at', 'visibility'})
+    context['planning_has_errors'] = any(field.errors for field in form if field.name not in {'title', 'description', 'priority', 'tags', 'work_type', 'assignee', 'start_at', 'due_at', 'task_type', 'task_group', 'reminder_at', 'visibility'})
     context.update(mention_people=mention_choices(task), comment_placeholder='Napisz komentarz; wpisz @ i imię osoby...', comment_image_limit=MAX_COMMENT_ATTACHMENTS,
                    comment_image_max_size=DEFAULT_ATTACHMENT_MAX_SIZE, comment_attachment_accept=','.join(sorted(ATTACHMENT_ALLOWED_EXTENSIONS)),
                    comment_draft=request.POST.get('message') or request.POST.get('activity_comment', ''))

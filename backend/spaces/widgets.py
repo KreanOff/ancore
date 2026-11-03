@@ -2,21 +2,24 @@ from django import forms
 
 from core.widgets import VisualSelect
 from workplaces.services import scoped_workplace_app_path
-from .defaults import issue_type_icon
+from .defaults import configuration_name_color, issue_type_icon
 
 
-class IssueTypeSelect(forms.Select):
+class IssueTypeSelect(VisualSelect):
     """Reuse the shared select's option icons, including custom type fallbacks."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.type_icons = {}
+        self.type_colors = {}
 
-    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-        option = super().create_option(name, value, label, selected, index, subindex, attrs)
-        if value:
-            option['attrs']['data-ancore-option-icon'] = issue_type_icon(value, self.type_icons.get(str(value)))
-        return option
+    def option_visual(self, value):
+        if not value:
+            return {}
+        icon = issue_type_icon(value, self.type_icons.get(str(value)))
+        color = configuration_name_color('types', {'key': str(value), 'color': self.type_colors.get(str(value))})
+        return {'icon': icon, 'template': 'spaces/type_option.html',
+                'context': {'icon': icon, 'type_color': color}}
 
 
 class TaskVisibilitySelect(forms.Select):

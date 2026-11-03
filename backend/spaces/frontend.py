@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from core.frontend import form_payload, pagination_payload
 from .avatars import space_avatar
-from .defaults import ISSUE_TYPE_ICONS
+from .defaults import ISSUE_TYPE_ICONS, classification_label, status_appearance
 
 
 def space_payload(space):
@@ -54,10 +54,12 @@ def item_payload(item):
         'block_url': getattr(item, 'block_url', ''),
         'update_dates_url': item.update_dates_url,
         'editable': item.editable, 'rank': item.rank, 'sprint_id': item.sprint_id,
-        'status': item.status, 'status_label': item.status_label,
+        'status': item.status, 'status_label': item.status_label, 'status_color': item.status_color,
         'category': task.status, 'status_order': item.status_order, 'transitions': item.transitions,
         'priority': task.priority, 'priority_label': task.get_priority_display(),
-        'work_type': item.work_type, 'type_label': item.type_label, 'type_icon': item.type_icon,
+        'task_type': task.task_type, 'task_type_label': classification_label(item.space.configuration.settings, 'categories', task.task_type),
+        'task_group': task.task_group, 'task_group_label': classification_label(item.space.configuration.settings, 'groups', task.task_group),
+        'work_type': item.work_type, 'type_label': item.type_label, 'type_icon': item.type_icon, 'type_color': item.type_color,
         'points': item.points, 'in_backlog': item.in_backlog,
         'assignee': {'label': task.assignee.get_full_name() or task.assignee.email, 'avatar': account_avatar(task.assignee)} if task.assignee else None,
         'team': item.team.name if item.team_id else '', 'tags_count': item.tags_count,
@@ -100,10 +102,11 @@ def detail_page(request, context):
         **{key: context.get(key, '') for key in ('can_manage', 'can_configure', 'can_edit', 'create_item_url',
             'sprint_create_url', 'edit_url', 'configuration_url', 'member_url', 'bulk_plan_url', 'backlog_create_url')},
         'configuration': {'name': space.configuration.name, 'shared': space.configuration.shared},
-        'summary': context.get('summary'), 'reports': context.get('reports'),
+        'summary': {**context['summary'], 'statuses': [status_appearance(s) for s in context['summary']['statuses']]} if context.get('summary') else None,
+        'reports': {**context['reports'], 'statuses': [status_appearance(s) for s in context['reports']['statuses']]} if context.get('reports') else None,
         'items': [item_payload(item) for item in context.get('items', [])],
-        'stats': context.get('stats'), 'status_counts': context.get('status_counts', []),
-        'columns': [{key: value for key, value in column.items() if key != 'items'} for column in context.get('columns', [])],
+        'stats': context.get('stats'), 'status_counts': [status_appearance(s) for s in context.get('status_counts', [])],
+        'columns': [status_appearance({key: value for key, value in column.items() if key != 'items'}) for column in context.get('columns', [])],
         'sprints': [sprint_payload(sprint) for sprint in context.get('sprints', [])],
         'active_sprint': sprint_payload(context['active_sprint']) if context.get('active_sprint') else None,
         'backlog_totals': context.get('backlog_totals'), 'timeline': context.get('timeline'),
@@ -113,6 +116,7 @@ def detail_page(request, context):
         'summary_filter_label': context.get('summary_filter_label', ''),
         'sort': item_sort(request, context['view']),
         'type_icons': {row['key']: row['icon'] for row in context.get('type_options', [])},
+        'type_colors': {row['key']: row['color'] for row in context.get('type_options', [])},
         'filter_options': {
             'work_type': [['', 'Wszystkie typy']] + [[row['key'], row['label']] for row in context.get('type_options', [])],
             'assignee': [['', 'Wszyscy wykonawcy'], ['me', 'Przypisane do mnie'], ['unassigned', 'Nieprzypisane']] + [[str(person.pk), person.get_full_name() or person.email] for person in context.get('assignee_options', [])],
@@ -188,7 +192,7 @@ def task_page(request, context):
             for person in block_responsible_people(task)] if context['can_edit_task'] else [],
         'back_url': context['back_url'], 'tabs': context['task_tabs'], 'tab': context['task_tab'],
         'edit_url': context['task_edit_url'], 'member_url': context['member_edit_url'], 'team_url': context['team_url'],
-        'status': context['detail_status'], 'statuses': context['space'].statuses,
+        'status': context['detail_status'], 'statuses': [status_appearance(s) for s in context['space'].statuses],
         'created_at': task.created_at, 'completion_date': task.completion_date,
         'created_by': {'name': task.created_by.get_full_name() or task.created_by.email, 'avatar': account_avatar(task.created_by)} if task.created_by else None,
         'visibility': task.visibility, 'comments': [activity_payload(activity) for activity in context['comments']],

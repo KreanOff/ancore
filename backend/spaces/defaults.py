@@ -1,8 +1,23 @@
 from copy import deepcopy
+import re
 
 
 KINDS = [('software', 'Programistyczna'), ('business', 'Biznesowa'), ('service', 'Obsługowa')]
 MANAGEMENT = [('team', 'Zarządzana przez zespół'), ('company', 'Zarządzana przez organizację')]
+TASK_CATEGORY_CHOICES = [('general', 'Ogólne'), ('call', 'Telefon'), ('email', 'E-mail'), ('meeting', 'Spotkanie'), ('offer', 'Oferta'), ('invoice', 'Faktura'), ('complaint', 'Reklamacja'), ('onboarding', 'Onboarding'), ('internal', 'Wewnętrzne')]
+
+
+def classification_options(settings, section):
+    """Read task dictionaries also for configurations saved before they existed."""
+    fallback = [{'key': key, 'label': label} for key, label in TASK_CATEGORY_CHOICES] if section == 'categories' else []
+    return settings.get(section, fallback)
+
+
+def classification_label(settings, section, key):
+    fallback = dict(TASK_CATEGORY_CHOICES).get(key, key) if section == 'categories' else key or 'Brak grupy'
+    return next((row['label'] for row in classification_options(settings, section) if row['key'] == key), fallback)
+
+
 TEMPLATES = {
     'kanban': {'label': 'Kanban', 'kind': 'software', 'description': 'Ciągły przepływ pracy na tablicy i w backlogu.'},
     'scrum': {'label': 'Scrum', 'kind': 'software', 'description': 'Backlog, sprinty, epiki i estymacje.'},
@@ -45,6 +60,49 @@ def issue_type_icon(key, configured_icon=None):
 
 
 FLOW_STAGES = [('queue', 'Kolejka'), ('active', 'Praca w toku'), ('done', 'Zakończone')]
+STATUS_ICONS = {
+    'new': 'circle-dashed', 'in_progress': 'clock', 'resolved': 'circle-check',
+    'closed': 'circle-x', 'reopened': 'circle-minus',
+}
+STATUS_ICON_CHOICES = [
+    ('circle-dashed', 'Nowe'), ('layout-list', 'W kolejce'),
+    ('circle-dot', 'Gotowe do rozpoczęcia'), ('calendar-clock', 'Zaplanowane'),
+    ('clock', 'W toku'), ('loader-circle', 'W realizacji'),
+    ('hourglass', 'Oczekiwanie'), ('circle-minus', 'Wstrzymane'),
+    ('ban', 'Zablokowane'), ('clock-alert', 'Opóźnione'),
+    ('eye', 'Do sprawdzenia'), ('refresh-cw', 'Do poprawy'),
+    ('circle-check', 'Zakończone'), ('circle-x', 'Zamknięte'),
+    ('rotate-ccw', 'Ponownie otwarte'), ('archive', 'Zarchiwizowane'),
+]
+STATUS_ICON_VALUES = frozenset(icon for icon, _ in STATUS_ICON_CHOICES)
+
+# Reuse the existing type/status palette for names without a custom color.
+CONFIGURATION_NAME_COLORS = {
+    'types': {'task': '#2563eb', 'bug': '#dc4b3e', 'story': '#4f8f63', 'epic': '#5b5fc7'},
+    'statuses': {'new': '#2563eb', 'in_progress': '#c18a34', 'resolved': '#759d42',
+                 'closed': '#8a909a', 'reopened': '#7c6bd0'},
+}
+
+
+def configuration_name_color(section, row):
+    color = row.get('color')
+    if isinstance(color, str) and re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+        return color.lower()
+    key = row.get('category' if section == 'statuses' else 'key')
+    return CONFIGURATION_NAME_COLORS.get(section, {}).get(key, '#64748b')
+
+
+def status_appearance(status):
+    """Resolve the shared stage color without changing persisted configuration."""
+    return {**status, 'color': configuration_name_color('statuses', status)}
+
+
+def status_icon(status):
+    """Resolve status icons, retaining icons saved before the catalogs split."""
+    icon = status.get('icon')
+    if isinstance(icon, str) and (icon in STATUS_ICON_VALUES or icon in ISSUE_TYPE_ICON_VALUES):
+        return icon
+    return STATUS_ICONS.get(status.get('category'), 'clock')
 
 
 def status_flow_stage(status):
@@ -79,4 +137,5 @@ def template_settings(template='tasks'):
         {'key': key, 'label': label, 'category': key, 'transitions': transitions[key],
          'flow_stage': status_flow_stage({'category': key}), 'wip_limit': None, 'policy': ''}
         for key, label in zip(keys, labels)
-    ], 'types': types, 'fields': fields})
+    ], 'types': types, 'fields': fields,
+        'categories': classification_options({}, 'categories'), 'groups': []})

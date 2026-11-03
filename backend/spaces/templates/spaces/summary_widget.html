@@ -1,3 +1,4 @@
+{% load space_ui %}
 {% if widget.id == 'completed' or widget.id == 'updated' or widget.id == 'created' or widget.id == 'due' %}
     {% for metric in summary.metrics %}{% if metric.key == widget.id %}
         <a class="work-panel work-summary-metric" href="{{ metric.url }}" aria-label="{{ metric.label }}: {{ metric.count }}. {% if metric.key == 'due' %}Najbliższe 7 dni{% else %}Ostatnie 7 dni{% endif %}. Wyświetl zadania.">
@@ -14,12 +15,12 @@
             <div class="work-summary-donut">
                 <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
                     <circle class="work-summary-donut-track" cx="50" cy="50" r="40" />
-                    {% for status in summary.statuses %}{% if status.count %}<path class="work-summary-donut-arc status-{{ status.category }}" d="{{ status.path }}" />{% endif %}{% endfor %}
+                    {% for status in summary.statuses %}{% if status.count %}<path class="work-summary-donut-arc status-{{ status.category }}" style="{{ status|status_style }}" d="{{ status.path }}" />{% endif %}{% endfor %}
                 </svg>
                 <div class="work-summary-donut-total"><strong>{{ summary.status_total }}</strong><span>zadań</span></div>
             </div>
             <ul class="work-summary-legend">
-                {% for status in summary.statuses %}<li><a href="{{ status.url }}"><span class="work-summary-label"><span class="work-summary-dot status-{{ status.category }}" aria-hidden="true"></span>{{ status.label }}</span><span class="work-summary-status-count">{{ status.count }}</span></a></li>{% endfor %}
+                {% for status in summary.statuses %}<li><a href="{{ status.url }}"><span class="work-summary-label"><span class="work-summary-dot status-{{ status.category }}" style="{{ status|status_style }}" aria-hidden="true"></span>{{ status.label }}</span><span class="work-summary-status-count">{{ status.count }}</span></a></li>{% endfor %}
             </ul>
         </div>
         {% if not summary.total %}<p class="work-caption work-summary-note">Utwórz pierwsze zadanie, aby zobaczyć postęp pracy.</p>{% elif not summary.status_total %}<p class="work-caption work-summary-note">Brak otwartych ani niedawno zakończonych zadań.</p>{% endif %}
@@ -62,7 +63,7 @@
         <ul class="work-summary-bars work-summary-bars--distribution work-summary-bars--types">
             {% for type in summary.types %}
             <li><a href="{{ type.url }}" title="{{ type.label }}: {{ type.count }} z {{ summary.total }} zadań">
-                <span class="work-summary-label"><i data-icon="{{ type.icon }}" aria-hidden="true"></i>{{ type.label }}</span>
+                <span class="work-summary-label" style="--tasks-type-icon-color: {{ type.color }};"><i data-icon="{{ type.icon }}" aria-hidden="true"></i>{{ type.label }}</span>
                 <span class="work-summary-distribution">
                     <progress value="{{ type.count }}" max="{{ summary.total|default:1 }}" aria-label="{{ type.label }}: {{ type.count }} z {{ summary.total }} zadań">{{ type.percent }}%</progress>
                     {% if type.count %}<span class="work-summary-distribution-percent{% if type.percent < 20 %} work-summary-distribution-percent--small{% endif %}" aria-hidden="true">{% if type.percent %}{{ type.percent }}%{% else %}&lt;1%{% endif %}</span>{% endif %}

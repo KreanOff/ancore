@@ -1,3 +1,4 @@
+{% load space_ui %}
 <div class="documents-item-actions work-item-actions" data-row-actions>
     <button type="button" class="tasks-icon-button documents-icon-button" data-row-actions-toggle popovertarget="work-item-{{ item.pk }}-actions" aria-controls="work-item-{{ item.pk }}-actions" aria-expanded="false" aria-label="Działania {{ item.key }}" title="Działania {{ item.key }}"><i data-icon="menu" aria-hidden="true"></i></button>
     <div id="work-item-{{ item.pk }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania {{ item.key }}" data-row-actions-panel>
@@ -19,7 +20,7 @@
                 </form>
             </details>
             {% for status in item.transitions %}
-            <form method="post" action="{{ item.action_url }}" data-work-action>{% csrf_token %}{% include 'spaces/item_snapshot.html' %}<input type="hidden" name="action" value="status"><input type="hidden" name="status" value="{{ status.key }}"><input type="hidden" name="return_view" value="{{ view|default:'list' }}"><button class="tasks-project-menu-button" type="submit"><span class="status-indicator status-{{ status.category }}" aria-hidden="true"></span><span>Zmień na: {{ status.label }}</span></button></form>
+            <form method="post" action="{{ item.action_url }}" data-work-action>{% csrf_token %}{% include 'spaces/item_snapshot.html' %}<input type="hidden" name="action" value="status"><input type="hidden" name="status" value="{{ status.key }}"><input type="hidden" name="return_view" value="{{ view|default:'list' }}"><button class="tasks-project-menu-button" type="submit"><span class="status-indicator status-{{ status.category }}" style="{{ status|status_style }}" aria-hidden="true"></span><span>Zmień na: {{ status.label }}</span></button></form>
             {% endfor %}
             {% if view == 'board' and can_reorder %}
             {% include 'spaces/board_order_form.html' with direction='up' icon='arrow-up' label='Przesuń wyżej' %}

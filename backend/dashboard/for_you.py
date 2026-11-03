@@ -53,7 +53,7 @@ def _row(obj, workplace, now):
         url = scoped_workplace_app_path(workplace, 'space', f'{space.slug}/tasks/{key}/?view=list')
         status_order, status_label = next(((n, s['label']) for n, s in enumerate(space.statuses) if s['key'] == item.status), (0, obj.get_status_display()))
         task_row = {'pk': item.pk, 'task': obj, 'url': url, 'key': key, 'status_label': status_label, 'status_order': status_order,
-                    'space': space, 'type_label': item.get_work_type_display(), 'get_work_type_display': item.get_work_type_display(), 'type_icon': item.type_icon}
+                    'space': space, 'type_label': item.get_work_type_display(), 'get_work_type_display': item.get_work_type_display(), 'type_icon': item.type_icon, 'type_color': item.type_color}
     else:
         url = scoped_workplace_app_path(workplace, 'space', f'{space.slug}/') if space else scoped_workplace_app_path(workplace, 'tasks', f'groups/{obj.pk}/')
     due = obj.due_at if is_task else None

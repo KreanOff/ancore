@@ -31,9 +31,9 @@ from .avatars import save_space_avatar
 from .backlog import bulk_plan_items, move_backlog_item
 from .backlog_window import backlog_more_url, backlog_window
 from .board import move_board_item
-from .defaults import TEMPLATES, issue_type_icon, status_flow_stage, template_settings
+from .defaults import TEMPLATES, classification_options, configuration_name_color, issue_type_icon, status_appearance, status_flow_stage, status_icon, template_settings
 from .dashboard import dashboard_payload
-from .forms import CustomFieldForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
+from .forms import CategoryForm, CustomFieldForm, GroupForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, materialized_summary_items, space_summary
@@ -55,10 +55,11 @@ def settings_context(request, space, tab='main'):
     base = space_url(request, space, '?view=settings')
     sections = [('main', 'Ustawienia', 'settings'), ('members', 'Udostępnienia', 'users')]
     if not read_only(request) and manage_configuration(request, space):
-        sections.extend([('types', 'Typy zgłoszeń', 'layers'), ('statuses', 'Proces pracy', 'workflow')])
+        sections.extend([('types', 'Typy zgłoszeń', 'layers'), ('categories', 'Kategorie', 'list'),
+                         ('groups', 'Grupy', 'folder'), ('statuses', 'Proces pracy', 'workflow')])
     fallback_urls = {'main': base + '#main', 'members': base + '&section=members#members',
                      **{key: space_url(request, space, f'configuration/?section={key}#{key}')
-                        for key in ('types', 'statuses')}}
+                        for key in ('types', 'statuses', 'categories', 'groups')}}
     return {'space': space, 'space_url': space_url(request, space),
             'sidebar_mode': 'space-settings', 'space_settings_sidebar': {
         'name': space.name, 'tab': {'avatar': 'main', 'configuration': 'types',
@@ -86,9 +87,11 @@ def decorate_items(request, items):
             item.edit_url += '?' + request.GET.urlencode()
         item.editable = item.task_id in editable_ids and item.space_id is not None
         settings = item.space.configuration.settings if item.space_id else template_settings()
-        item.status_label = next((s['label'] for s in settings['statuses'] if s['key'] == item.status), item.task.get_status_display())
+        status = next((s for s in settings['statuses'] if s['key'] == item.status), {'category': item.task.status, 'label': item.task.get_status_display()})
+        item.status_label = status['label']
+        item.status_color = configuration_name_color('statuses', status)
         item.type_label = item.get_work_type_display()
-        item.transitions = [s for s in settings['statuses'] if s['key'] != item.status and item.space_id and transition_allowed(item, s['key'])]
+        item.transitions = [status_appearance(s) for s in settings['statuses'] if s['key'] != item.status and item.space_id and transition_allowed(item, s['key'])]
         item.status_order = next((n for n, s in enumerate(settings['statuses']) if s['key'] == item.status), 0)
         item.tags_count = counts[item.task_id]['tags_total']
         item.attachments_count = counts[item.task_id]['attachments_total']
@@ -103,7 +106,7 @@ def issue_type_filters(request, space=None):
     options = {}
     for config in configurations:
         for row in config['types']:
-            options.setdefault(row['key'], {**row, 'icon': issue_type_icon(row['key'], row.get('icon'))})
+            options.setdefault(row['key'], {**row, 'icon': issue_type_icon(row['key'], row.get('icon')), 'color': configuration_name_color('types', row)})
     return list(options.values()), request.GET.get('work_type', '').strip()[:40]
 
 
@@ -669,9 +672,10 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 if item and 'status' in data:
                     set_status(request, item, data['status'], in_backlog=data.get('in_backlog'))
                     task.refresh_from_db()
-                for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at'):
+                classification_before = {'kategoria zadania': task.get_task_type_display(), 'grupa': task.get_task_group_display()}
+                for name in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'task_group', 'reminder_at'):
                     if name in data:
-                        setattr(task, name, data[name] or ('general' if name == 'task_type' else data[name]))
+                        setattr(task, name, data[name])
                 task._activity_actor = request.user
                 task.save()
                 if 'tags' in data:
@@ -691,6 +695,12 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                         'field': 'typ zgłoszenia', 'from_label': old_type_label,
                         'to_label': item.get_work_type_display(),
                     }]} if old_type != item.work_type else {}
+                    classification_after = {'kategoria zadania': task.get_task_type_display(), 'grupa': task.get_task_group_display()}
+                    changes = [{'field': name, 'from_label': value, 'to_label': classification_after[name]}
+                               for name, value in classification_before.items() if value != classification_after[name]]
+                    if changes:
+                        metadata.setdefault('changes', []).extend(changes)
+                        metadata.setdefault('fields', []).extend(change['field'] for change in changes)
                     metadata.update(old_flow=old_flow, flow=flow_snapshot(item))
                     record(item, request.user, 'updated', 'zaktualizował zadanie w przestrzeni', metadata)
         except ValidationError as error:
@@ -943,13 +953,26 @@ def configuration(request, pk):
         raise PermissionDenied
     config = space.configuration
     requested_section = request.POST.get('configuration_section', request.GET.get('section'))
-    section = requested_section if requested_section in {'types', 'statuses'} else 'types'
-    workflow_view = 'states' if request.GET.get('workflow_view') == 'states' else 'map'
-    workflow_query = '&workflow_view=states' if workflow_view == 'states' else ''
-    data = request.POST if request.method == 'POST' else None
+    section = requested_section if requested_section in {'types', 'statuses', 'categories', 'groups'} else 'types'
+    workflow_view = 'map' if request.GET.get('workflow_view') == 'map' else 'states'
+    workflow_query = f'&workflow_view={workflow_view}'
+    data = request.POST.copy() if request.method == 'POST' else None
     StatusSet = formset_factory(StatusForm, extra=1, can_delete=True, max_num=40, validate_max=True)
     TypeSet = formset_factory(TypeForm, extra=1, can_delete=True, max_num=30, validate_max=True)
     FieldSet = formset_factory(CustomFieldForm, extra=1, can_delete=True, max_num=30, validate_max=True)
+    CategorySet = formset_factory(CategoryForm, extra=1, can_delete=True, max_num=50, validate_max=True)
+    GroupSet = formset_factory(GroupForm, extra=1, can_delete=True, max_num=50, validate_max=True)
+    classification_initial = {key: classification_options(config.settings, key) for key in ('categories', 'groups')}
+    if data is not None:
+        # Old editors only know the original three formsets. Preserve the new
+        # dictionaries unless that section was explicitly submitted for editing.
+        for key, rows in classification_initial.items():
+            if f'{key}-TOTAL_FORMS' not in data and section != key:
+                data[f'{key}-TOTAL_FORMS'] = str(len(rows))
+                data[f'{key}-INITIAL_FORMS'] = str(len(rows))
+                for index, row in enumerate(rows):
+                    for name, value in row.items():
+                        data[f'{key}-{index}-{name}'] = value
     status_choices = list(config.settings['statuses'])
     if data:
         known = {row['key'] for row in status_choices}
@@ -958,7 +981,9 @@ def configuration(request, pk):
             if key and key not in known:
                 status_choices.append({'key': key, 'label': data.get(f'statuses-{index}-label', key)})
                 known.add(key)
-    sets = [StatusSet(data, initial=config.settings['statuses'], prefix='statuses', form_kwargs={'statuses': status_choices}), TypeSet(data, initial=config.settings['types'], prefix='types'), FieldSet(data, initial=config.settings.get('fields', []), prefix='fields')]
+    sets = [StatusSet(data, initial=config.settings['statuses'], prefix='statuses', form_kwargs={'statuses': status_choices}), TypeSet(data, initial=config.settings['types'], prefix='types'), FieldSet(data, initial=config.settings.get('fields', []), prefix='fields'),
+            CategorySet(data, initial=classification_initial['categories'], prefix='categories'),
+            GroupSet(data, initial=classification_initial['groups'], prefix='groups')]
     revision = hashlib.sha256(json.dumps(config.settings, sort_keys=True).encode()).hexdigest()
     editor = None
     editor_index = (request.POST.get('configuration_index') if request.method == 'POST'
@@ -974,13 +999,13 @@ def configuration(request, pk):
         except (TypeError, ValueError):
             raise Http404('Nie znaleziono pozycji konfiguracji.')
         selected_set = next(formset for formset in sets if formset.prefix == section)
-        count = len(config.settings.get(section, [])) if removing else len(selected_set.forms)
+        count = len(classification_initial.get(section, config.settings.get(section, []))) if removing else len(selected_set.forms)
         if not 0 <= index < count:
             raise Http404('Nie znaleziono pozycji konfiguracji.')
         editor = {'section': section, 'index': index, 'remove': removing}
     errors = []
     if request.method == 'POST' and all([formset.is_valid() for formset in sets]):
-        settings = {key: [{k: v for k, v in form.cleaned_data.items() if k != 'DELETE'} for form in formset if form.cleaned_data and not form.cleaned_data.get('DELETE')] for key, formset in zip(('statuses', 'types', 'fields'), sets)}
+        settings = {formset.prefix: [{k: v for k, v in form.cleaned_data.items() if k != 'DELETE'} for form in formset if form.cleaned_data and not form.cleaned_data.get('DELETE')] for formset in sets}
         for key, rows in settings.items():
             if len({row['key'] for row in rows}) != len(rows):
                 errors.append('Klucze w każdej sekcji muszą być unikalne.')
@@ -989,6 +1014,8 @@ def configuration(request, pk):
             errors.append('Proces pracy wymaga co najmniej jednej kolejki, etapu pracy w toku i zakończenia.')
         if not settings['types']:
             errors.append('Przestrzeń musi mieć co najmniej jeden typ zgłoszenia.')
+        if not settings['categories']:
+            errors.append('Przestrzeń musi mieć co najmniej jedną kategorię.')
         for row in settings['statuses']:
             if any(key not in keys for key in row['transitions']):
                 errors.append('Usuń przejścia prowadzące do usuniętego statusu.')
@@ -1016,8 +1043,13 @@ def configuration(request, pk):
                 errors.append('Najpierw przenieś zadania przed zmianą etapu przepływu ich statusu.')
             if items.exclude(work_type__in=[row['key'] for row in settings['types']]).exists():
                 errors.append('Nie można usunąć typu używanego przez zadania.')
+            tasks = SpaceTask.objects.filter(space__configuration=config)
+            if tasks.exclude(task_type__in=[row['key'] for row in settings['categories']]).exists():
+                errors.append('Nie można usunąć kategorii używanej przez zadania.')
+            if tasks.exclude(task_group='').exclude(task_group__in=[row['key'] for row in settings['groups']]).exists():
+                errors.append('Nie można usunąć grupy używanej przez zadania.')
             if not errors:
-                config.settings = settings
+                config.settings = {**config.settings, **settings}
                 config.save(update_fields=['settings'])
                 messages.success(request, 'Konfiguracja została zapisana.')
                 if editor:
@@ -1044,9 +1076,11 @@ def configuration(request, pk):
             editor = {'section': section, 'index': 0, 'remove': False}
 
     labels = {
-        'statuses': ('Proces pracy', 'Dodaj stan', 'Edytuj status', 'Usuń status', 'Brak stanów.'),
+        'statuses': ('Proces pracy', 'Dodaj stan', 'Edytuj etap', 'Usuń etap', 'Brak stanów.'),
         'types': ('Typy zgłoszeń', 'Dodaj typ zgłoszenia', 'Edytuj typ zgłoszenia', 'Usuń typ zgłoszenia', 'Brak typów zgłoszeń.'),
         'fields': ('Pola dodatkowe', 'Dodaj pole dodatkowe', 'Edytuj pole dodatkowe', 'Usuń pole dodatkowe', 'Brak pól dodatkowych.'),
+        'categories': ('Kategorie', 'Dodaj kategorię', 'Edytuj kategorię', 'Usuń kategorię', 'Brak kategorii.'),
+        'groups': ('Grupy', 'Dodaj grupę', 'Edytuj grupę', 'Usuń grupę', 'Brak grup.'),
     }
     icons = {'key': 'hash', 'label': 'align-left', 'icon': 'shapes', 'description': 'align-left',
              'category': 'list-checks', 'transitions': 'workflow', 'flow_stage': 'workflow',
@@ -1062,11 +1096,11 @@ def configuration(request, pk):
         empty_form = formset.empty_form
         headers = [{'key': field.name, 'label': field.label, 'icon': icons.get(field.name, 'align-left')}
                    for field in empty_form.visible_fields()
-                   if field.name != 'DELETE' and not (key == 'types' and field.name == 'icon')]
-        if key == 'types':
+                   if field.name not in {'DELETE', 'icon', 'color'}]
+        if key in {'types', 'categories', 'groups'}:
             headers.sort(key=lambda header: ('key', 'label', 'description').index(header['key']))
         rows = []
-        for index, saved in enumerate(config.settings.get(key, [])):
+        for index, saved in enumerate(classification_initial.get(key, config.settings.get(key, []))):
             cells = []
             for header in headers:
                 name = header['key']
@@ -1080,11 +1114,12 @@ def configuration(request, pk):
                 elif hasattr(field, 'choices'):
                     value = dict(field.choices).get(value, value)
                 cell = {'key': name, 'value': value or '—'}
-                if key == 'types' and name == 'label':
-                    icon = issue_type_icon(saved['key'], saved.get('icon'))
-                    cell.update(icon=icon, icon_label=dict(empty_form.fields['icon'].choices)[icon])
+                if key in {'types', 'statuses'} and name == 'label':
+                    icon = issue_type_icon(saved['key'], saved.get('icon')) if key == 'types' else status_icon(saved)
+                    cell.update(icon=icon, icon_label=dict(empty_form.fields['icon'].choices).get(icon, 'Domyślna dla etapu'))
                 cells.append(cell)
             rows.append({'index': index, 'label': saved.get('label', saved.get('key', '')),
+                         'color': configuration_name_color(key, saved),
                          'cells': cells, 'edit_url': f'{base_url}&edit={index}', 'remove_url': f'{base_url}&remove={index}'})
         groups.append({'key': key, 'title': title, 'formset': formset, 'headers': headers, 'rows': rows,
                        'empty_label': empty_label, 'add_label': add_label, 'remove_label': remove_label,
@@ -1093,6 +1128,7 @@ def configuration(request, pk):
     editor_title = ''
     editor_fields = []
     editor_type_icon = ''
+    editor_icon_subject = 'typu'
     if editor:
         editor_group = next(group for group in groups if group['key'] == editor['section'])
         if editor['index'] < len(editor_group['formset'].forms):
@@ -1100,8 +1136,13 @@ def configuration(request, pk):
             editor_fields = [field for field in editor_form.visible_fields() if field.name != 'DELETE']
             if editor['section'] == 'types':
                 editor_type_icon = issue_type_icon(editor_form['key'].value(), editor_form['icon'].value())
+            elif editor['section'] == 'statuses':
+                editor_icon_subject = 'etapu'
+                editor_type_icon = status_icon({'category': editor_form['category'].value(), 'icon': editor_form['icon'].value()})
         _, add_label, edit_label, remove_label, _ = labels[editor['section']]
         editor_title = remove_label if editor['remove'] else (edit_label if editor['index'] < len(editor_group['rows']) else add_label)
+        if editor['section'] == 'statuses' and not editor['remove'] and editor['index'] >= len(editor_group['rows']):
+            editor_title = 'Dodaj etap'
     return render(request, 'spaces/configuration.html', {
         **base_context(request), **settings_context(request, space, section),
         'space': space, 'space_url': space_url(request, space), 'config': config, 'revision': revision,
@@ -1112,7 +1153,7 @@ def configuration(request, pk):
             for key, label, icon in [('states', 'Stany', 'list-checks'), ('map', 'Mapa', 'workflow')]
         ],
         'sets': groups, 'editor': editor, 'editor_form': editor_form, 'editor_fields': editor_fields,
-        'editor_title': editor_title, 'editor_type_icon': editor_type_icon,
+        'editor_title': editor_title, 'editor_type_icon': editor_type_icon, 'editor_icon_subject': editor_icon_subject,
         'configuration_url': space_url(request, space, f'configuration/?section={section}') + (workflow_query if section == 'statuses' else ''),
         'errors': errors,
     }, status=400 if request.method == 'POST' else 200)

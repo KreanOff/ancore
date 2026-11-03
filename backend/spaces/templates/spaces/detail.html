@@ -40,13 +40,13 @@
         <div class="tasks-table-wrap tasks-board tasks-kanban-board work-sprint-board" data-work-board data-space-id="{{ space.pk }}">
             {% for column in columns %}
             <section class="tasks-kanban-column tasks-issue-group tasks-status-block" data-work-column="{{ column.key }}" aria-label="{{ column.label }}">
-                {% include 'tasks/includes/issue_group_header.html' with category=column.category label=column.label count=column.count only %}
+                {% include 'tasks/includes/issue_group_header.html' with category=column.category status=column label=column.label count=column.count only %}
                 {% if column.flow_stage == 'active' or column.policy %}<div class="work-board-policy">
                     {% if column.flow_stage == 'active' %}<span class="work-board-wip{% if column.wip_full %} is-full{% endif %}" title="Liczba dostępnych zadań w etapie, niezależnie od filtrów. Limit obejmuje całą tablicę."><i data-icon="{% if column.wip_full %}circle-alert{% else %}layers{% endif %}" aria-hidden="true"></i>WIP: {{ column.wip_count|default:0 }} widoczne · {% if column.wip_limit %}limit {{ column.wip_limit }}{% else %}bez limitu{% endif %}</span>{% endif %}
                     {% if column.policy %}<details class="work-board-policy-details"><summary>Zasady etapu</summary><p>{{ column.policy }}</p></details>{% endif %}
                 </div>{% endif %}
                 <div class="tasks-issue-list tasks-kanban-column__list">
-                    {% for item in column.items %}{% include 'spaces/card.html' %}{% empty %}<div class="tasks-empty-section" role="status">Brak zadań</div>{% endfor %}
+                    {% for item in column.items %}{% include 'spaces/card.html' %}{% endfor %}
                     {% if can_edit and column.create_item_url %}<a href="{{ column.create_item_url }}" class="tasks-project-menu-button work-board-create" data-work-open aria-haspopup="dialog" aria-label="Utwórz zadanie w statusie {{ column.label }}"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie</a>{% endif %}
                 </div>
             </section>

@@ -22,7 +22,7 @@ def _row(row, request):
     result['space'] = _space(row['space'], request) if row.get('space') else None
     if task:
         result['task'] = {'status': task.status, 'priority': task.priority, 'type_label': row['task_row']['type_label'],
-                          'type_icon': row['task_row']['type_icon'], 'tags_count': row['task_row']['tags_count'],
+                          'type_icon': row['task_row']['type_icon'], 'type_color': row['task_row']['type_color'], 'tags_count': row['task_row']['tags_count'],
                           'attachments_count': row['task_row']['attachments_count'], 'due_urgency': task.due_urgency}
     return result
 

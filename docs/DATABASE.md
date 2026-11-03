@@ -5,6 +5,15 @@ z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikac
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
 Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
+`spaces.0006_task_classification` (03.11.2026) dodaje opcjonalny klucz grupy
+`SpaceTask.task_group` z pustą wartością dla istniejących zadań. Kategoria
+`task_type` zachowuje dane i limit 20 znaków, a jej wybory są walidowane
+przez formularze według konfiguracji Przestrzeni zamiast stałej listy modelu.
+Kategorie i grupy są słownikami w istniejącym JSON `SpaceConfiguration.settings`;
+starsze konfiguracje odczytują dotychczasowe kategorie i pustą listę grup.
+Migracja nie przepisuje przypisań, kluczy zadań ani uprawnień. Zastosuj
+`manage.py migrate`; cofnięcie usuwa zapisane przypisania grup.
+
 `spaces.0004_workitem_start_at` (29.10.2026) zastępuje datę rozpoczęcia
 `WorkItem.start_on` pełną datą i godziną `start_at`. Migracja kopiuje istniejące
 dni jako 00:00 w `settings.TIME_ZONE`, niezależnie od strefy połączenia bazy;

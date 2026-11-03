@@ -3,7 +3,7 @@ from django import forms
 from accounts.avatar import account_avatar
 from accounts.widgets import UserSelectMultiple
 from core.widgets import VisualSelectMultiple
-from spaces.defaults import issue_type_icon
+from spaces.defaults import configuration_name_color, issue_type_icon
 from spaces.models import SpaceTask
 from spaces.services import app_url, teams_for, visible_spaces
 from tasks.models import TaskTag
@@ -41,7 +41,8 @@ class BasicTaskSearchForm(forms.Form):
                 for row in space.configuration.settings.get(key, []):
                     choices.setdefault(row['key'], row['label'])
                     visuals[field].setdefault(row['key'],
-                        {'icon': issue_type_icon(row['key'], row.get('icon'))} if field == 'type' else
+                        {'icon': issue_type_icon(row['key'], row.get('icon')), 'template': 'spaces/type_option.html',
+                         'context': {'icon': issue_type_icon(row['key'], row.get('icon')), 'type_color': configuration_name_color('types', row)}} if field == 'type' else
                         {'template': 'core/includes/select_status.html', 'context': {'category': row['category']}})
             self.fields[field].choices = list(choices.items())
         people = list(workplace_people(request.workplace, request.user))

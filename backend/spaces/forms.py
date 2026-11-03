@@ -15,7 +15,7 @@ from tasks.models import TaskTag
 from core.work_logs import TimeLogForm
 from .models import SpaceTask, SpaceTaskWorkLog
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
-from .defaults import FLOW_STAGES, KINDS, MANAGEMENT, TEMPLATES, ISSUE_TYPE_ICON_CHOICES, issue_type_icon, status_flow_stage
+from .defaults import FLOW_STAGES, KINDS, MANAGEMENT, TEMPLATES, ISSUE_TYPE_ICON_CHOICES, STATUS_ICON_CHOICES, classification_options, configuration_name_color, issue_type_icon, status_flow_stage, status_icon
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
 from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
 from .services import teams_for, transition_allowed, visible_items, visible_spaces
@@ -153,18 +153,26 @@ class ItemForm(StyledForm):
     epic = forms.ModelChoiceField(label='Epik', queryset=WorkItem.objects.none(), required=False)
     points = forms.IntegerField(label='Estymacja (punkty)', min_value=0, max_value=10000, required=False)
     start_at = ScheduleDateTimeField(label='Data rozpoczęcia', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
-    task_type = forms.ChoiceField(label='Kategoria zadania', choices=SpaceTask.TASK_TYPE_CHOICES, required=False, initial='general')
+    task_type = forms.ChoiceField(label='Kategoria', required=False, initial='general')
+    task_group = forms.ChoiceField(label='Grupa', required=False)
     reminder_at = forms.DateTimeField(label='Przypomnienie', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local', 'title': 'Powiadomienie w aplikacji dla wykonawcy, a bez wykonawcy — właściciela zadania lub przestrzeni.'}))
     due_at = ScheduleDateTimeField(label='Termin zakończenia', required=False, widget=forms.DateTimeInput(format='%Y-%m-%dT%H:%M', attrs={'type': 'datetime-local'}))
 
     def __init__(self, *args, request, space, item=None, initial_status=None, **kwargs):
         self.request, self.space, self.item = request, space, item
         if item:
-            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'reminder_at')}}
+            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'task_group', 'reminder_at')}}
             if item.task.parent_id:
                 kwargs.setdefault('auto_id', f'subtask-{item.pk}-%s')
         super().__init__(*args, **kwargs)
         config = space.configuration.settings
+        for name, section in (('task_type', 'categories'), ('task_group', 'groups')):
+            options = classification_options(config, section)
+            self.fields[name].choices = ([('', 'Brak grupy')] if name == 'task_group' else []) + [(row['key'], row['label']) for row in options]
+        categories = dict(self.fields['task_type'].choices)
+        self.default_task_type = 'general' if 'general' in categories else next(iter(categories), 'general')
+        if not item:
+            self.initial['task_type'] = self.default_task_type
         if item:
             for name, value in (('source_status', item.status), ('source_in_backlog', str(item.in_backlog).lower())):
                 self.fields[name] = forms.CharField(required=False, widget=forms.HiddenInput)
@@ -172,7 +180,7 @@ class ItemForm(StyledForm):
         if not item and initial_status is not None:
             choices = [(status['key'], status['label']) for status in space.statuses]
             self.fields['status'] = forms.ChoiceField(label='Status', choices=choices, widget=VisualSelect(visuals={
-                status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category']}}
+                status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category'], 'color': configuration_name_color('statuses', status)}}
                 for status in space.statuses
             }))
             default_status = next((status['key'] for status in space.statuses if status_flow_stage(status) == 'queue'), space.statuses[0]['key'])
@@ -191,6 +199,7 @@ class ItemForm(StyledForm):
             self.initial['tags'] = item.task.tags.all()
         self.fields['work_type'].choices = [(t['key'], t['label']) for t in config['types']]
         self.fields['work_type'].widget.type_icons = {t['key']: t.get('icon') for t in config['types']}
+        self.fields['work_type'].widget.type_colors = {t['key']: configuration_name_color('types', t) for t in config['types']}
         self.fields['assignee'].queryset = workplace_people(request.workplace)
         self.fields['team'].queryset = teams_for(request).filter(spaces=space).select_related('workplace')
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
@@ -216,6 +225,14 @@ class ItemForm(StyledForm):
     def clean_status(self):
         # Older edit forms did not submit status; keep their current value.
         return self.cleaned_data.get('status') or self.item.status
+
+    def clean_task_type(self):
+        return self.cleaned_data.get('task_type') or (self.item.task.task_type if self.item else self.default_task_type)
+
+    def clean_task_group(self):
+        if self.item and self.add_prefix('task_group') not in self.data:
+            return self.item.task.task_group
+        return self.cleaned_data.get('task_group') or ''
 
     def clean(self):
         data = super().clean()
@@ -270,10 +287,6 @@ class DetailForm(ItemForm):
     def clean_visibility(self):
         return self.cleaned_data.get('visibility') or self.item.task.visibility
 
-    def clean_task_type(self):
-        return self.cleaned_data.get('task_type') or (self.item.task.task_type if self.item else 'general')
-
-
 class SubtaskForm(ItemForm):
     """Shared subtask properties, independent of the space's planning template."""
     field_order = ('title', 'description', 'status', 'priority', 'assignee', 'work_type', 'start_at', 'due_at', 'points')
@@ -300,7 +313,7 @@ class SubtaskForm(ItemForm):
                 for name in ('priority', 'work_type'):
                     self.data.setdefault(self.add_prefix(name), self.fields[name].initial)
         visuals = {
-            'status': {status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category']}}
+            'status': {status['key']: {'template': 'core/includes/select_status.html', 'context': {'category': status['category'], 'color': configuration_name_color('statuses', status)}}
                        for status in space.statuses},
             'priority': {key: {'template': 'core/includes/select_priority.html', 'context': {'priority': key}}
                          for key, _ in SpaceTask.PRIORITY_CHOICES},
@@ -389,16 +402,37 @@ class MemberForm(StyledForm):
             self.fields['role'].choices = self.fields['role'].choices[:2]
 
 
+class ConfigurationColorField(forms.CharField):
+    def __init__(self):
+        super().__init__(label='Kolor nazwy', required=False, max_length=7,
+                         help_text='Wybierz kolor lub wpisz #RRGGBB. Puste pole przywraca kolor domyślny.',
+                         widget=forms.TextInput(attrs={'pattern': '#?[0-9a-fA-F]{6}'}))
+
+    def clean(self, value):
+        value = super().clean(value)
+        if not value:
+            return ''
+        if not re.fullmatch(r'#?[0-9a-fA-F]{6}', value):
+            raise forms.ValidationError('Podaj kolor w formacie #RRGGBB.')
+        return '#' + value.lstrip('#').lower()
+
+
 class StatusForm(StyledForm):
-    key = forms.RegexField(label='Klucz', regex=r'^[a-z][a-z0-9_]{0,39}$', max_length=40)
-    label = forms.CharField(label='Nazwa statusu', max_length=80)
-    category = forms.ChoiceField(label='Stan zadania', choices=SpaceTask.STATUS_CHOICES, initial='new')
-    flow_stage = forms.ChoiceField(label='Etap przepływu', choices=FLOW_STAGES, initial='queue',
+    key = forms.RegexField(label='Klucz', regex=r'^[a-z][a-z0-9_]{0,39}$', max_length=40,
+                           help_text='Małe litery, cyfry i podkreślenia; pierwszym znakiem musi być litera. Klucza etapu używanego przez zadania nie można zmienić.',
+                           widget=forms.TextInput(attrs={'pattern': '[a-z][a-z0-9_]{0,39}'}))
+    label = forms.CharField(label='Nazwa etapu', max_length=80)
+    color = ConfigurationColorField()
+    category = forms.ChoiceField(label='Stan zadania', choices=SpaceTask.STATUS_CHOICES, initial='in_progress')
+    flow_stage = forms.ChoiceField(label='Etap przepływu', choices=FLOW_STAGES, initial='active',
                                   help_text='Kolejka jest przed rozpoczęciem pracy; praca w toku trwa do zakończenia.')
     wip_limit = forms.IntegerField(label='Limit pracy w toku (WIP)', required=False, min_value=1,
                                   help_text='Maksymalna liczba zadań w tej kolumnie całej Przestrzeni. Puste pole oznacza brak limitu.')
     policy = forms.CharField(label='Zasady wejścia i wyjścia', required=False, max_length=1000,
                              widget=forms.Textarea(attrs={'rows': 3}))
+    icon = forms.ChoiceField(label='Ikona', required=False,
+                             choices=[('', 'Domyślna dla etapu'), *STATUS_ICON_CHOICES],
+                             widget=VisualSelect)
     transitions = forms.MultipleChoiceField(label='Dozwolone przejścia', required=False)
     position_x = forms.IntegerField(label='Położenie poziome etapu', required=False, min_value=-1000000, max_value=1000000,
                                     widget=forms.HiddenInput)
@@ -413,19 +447,40 @@ class StatusForm(StyledForm):
             self.initial.setdefault('flow_stage', status_flow_stage(self.initial))
             position = self.initial.get('position') or {}
             self.initial.update(position_x=position.get('x'), position_y=position.get('y'))
+        saved = self.initial
         if self.is_bound:
             # Full formset submissions from older clients must retain metadata.
             self.data = self.data.copy()
             key = self.data.get(self.add_prefix('key'))
-            saved = next((status for status in statuses if status['key'] == key), {})
-            for name in ('flow_stage', 'wip_limit', 'policy'):
+            saved = next((status for status in statuses if status['key'] == key and 'category' in status), self.initial)
+            for name in ('category', 'flow_stage', 'wip_limit', 'policy', 'icon', 'color'):
                 if self.add_prefix(name) not in self.data:
-                    fallback = status_flow_stage({'category': self.data.get(self.add_prefix('category')), **saved}) if name == 'flow_stage' else ''
+                    fallback = ('in_progress' if name == 'category' else
+                                status_flow_stage({'category': self.data.get(self.add_prefix('category')), **saved})
+                                if name == 'flow_stage' else '')
                     self.data[self.add_prefix(name)] = saved.get(name, fallback) or ''
             for axis in ('x', 'y'):
                 name = self.add_prefix('position_' + axis)
                 if name not in self.data:
                     self.data[name] = (saved.get('position') or {}).get(axis, '')
+        # A previously saved type icon may stay on its own stage. It is not
+        # offered to other stages or accepted as a new status icon.
+        saved_icon = saved.get('icon')
+        legacy_label = dict(ISSUE_TYPE_ICON_CHOICES).get(saved_icon) if isinstance(saved_icon, str) else None
+        if legacy_label:
+            self.fields['icon'].choices = [*self.fields['icon'].choices,
+                                           (saved_icon, f'Dotychczasowa ikona: {legacy_label}')]
+        category = self['category'].value()
+        self.fields['color'].widget.attrs['placeholder'] = configuration_name_color('statuses', {'category': category})
+        self.fields['icon'].widget.visuals = {
+            '': {'icon': status_icon({'category': category})},
+            **{icon: {'icon': icon} for icon, _ in self.fields['icon'].choices if icon},
+        }
+        if legacy_label:
+            self.fields['icon'].widget.visuals[saved_icon]['preserve_only'] = True
+        if self['flow_stage'].value() != 'active':
+            self.fields['wip_limit'].widget.attrs['readonly'] = True
+            self.fields['wip_limit'].help_text = 'Limit WIP jest dostępny wyłącznie dla etapów pracy w toku.'
 
     def clean(self):
         data = super().clean()
@@ -439,6 +494,10 @@ class StatusForm(StyledForm):
             self.add_error(None, 'Położenie etapu wymaga obu współrzędnych tablicy.')
         elif x is not None:
             data['position'] = {'x': x, 'y': y}
+        if not data.get('icon'):
+            data.pop('icon', None)
+        if not data.get('color'):
+            data.pop('color', None)
         return data
 
 
@@ -448,6 +507,7 @@ class ConfigurationLabelForm(StyledForm):
 
 
 class TypeForm(ConfigurationLabelForm):
+    color = ConfigurationColorField()
     icon = forms.ChoiceField(label='Ikona', required=False,
                              choices=[('', 'Domyślna dla typu'), *ISSUE_TYPE_ICON_CHOICES],
                              widget=VisualSelect)
@@ -461,10 +521,11 @@ class TypeForm(ConfigurationLabelForm):
             # Older clients still submit only key/label. Explicit empty values
             # clear metadata; an omitted field keeps its previously saved value.
             self.data = self.data.copy()
-            for name in ('icon', 'description'):
+            for name in ('icon', 'description', 'color'):
                 if self.add_prefix(name) not in self.data and name in self.initial:
                     self.data[self.add_prefix(name)] = self.initial[name]
         key = self.data.get(self.add_prefix('key'), '') if self.is_bound else self.initial.get('key', '')
+        self.fields['color'].widget.attrs['placeholder'] = configuration_name_color('types', {'key': key})
         self.fields['icon'].widget.visuals = {
             '': {'icon': issue_type_icon(key)},
             **{icon: {'icon': icon} for icon, _ in ISSUE_TYPE_ICON_CHOICES},
@@ -473,10 +534,45 @@ class TypeForm(ConfigurationLabelForm):
     def clean(self):
         data = super().clean()
         # Keep old JSON rows unchanged when their optional metadata is empty.
-        for name in ('icon', 'description'):
+        for name in ('icon', 'description', 'color'):
             if not data.get(name):
                 data.pop(name, None)
         return data
+
+
+class ClassificationForm(ConfigurationLabelForm):
+    subject = 'grupy'
+    description = forms.CharField(label='Opis', required=False, max_length=500,
+                                  widget=forms.Textarea(attrs={'rows': 3}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['key'].label = f'Klucz {self.subject}'
+        self.fields['label'].label = f'Nazwa {self.subject}'
+        self.fields['description'].help_text = f'Wyjaśnij, kiedy używać tej {self.subject}.'
+        if self.is_bound and self.add_prefix('description') not in self.data and 'description' in self.initial:
+            self.data = self.data.copy()
+            self.data[self.add_prefix('description')] = self.initial['description']
+
+    def clean(self):
+        data = super().clean()
+        if not data.get('description'):
+            data.pop('description', None)
+        # Appearance is no longer edited or displayed for classifications.
+        # Keep earlier metadata in storage without accepting new appearance input.
+        for name in ('icon', 'color'):
+            if name in self.initial:
+                data[name] = self.initial[name]
+        return data
+
+
+class CategoryForm(ClassificationForm):
+    subject = 'kategorii'
+    key = forms.RegexField(label='Klucz kategorii', regex=r'^[a-z][a-z0-9_]{0,19}$', max_length=20)
+
+
+class GroupForm(ClassificationForm):
+    pass
 
 
 class CustomFieldForm(ConfigurationLabelForm):

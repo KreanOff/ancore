@@ -2,7 +2,7 @@
 <div class="tasks-table-wrap tasks-board work-item-list work-item-list--incremental">
     {% for column in columns %}{% if column.count %}
     <section class="tasks-issue-group tasks-status-block" aria-label="{{ column.label }}">
-        {% include 'tasks/includes/issue_group_header.html' with category=column.category label=column.label count=column.count only %}
+        {% include 'tasks/includes/issue_group_header.html' with category=column.category status=column label=column.label count=column.count only %}
         <div class="tasks-issue-list">
             {% for item in column.items %}{% include 'spaces/row.html' %}{% endfor %}
         </div>

@@ -122,7 +122,11 @@ def form_payload(form):
             'hidden': bound.is_hidden, 'checked': bool(bound.value()) if isinstance(widget, forms.CheckboxInput) else False,
             'help_text': str(field.help_text), 'errors': list(bound.errors),
             'type': 'textarea' if isinstance(widget, forms.Textarea) else getattr(widget, 'input_type', 'text'),
-            'attrs': {key: str(val) for key, val in {**widget.attrs, **field.widget_attrs(widget)}.items() if key in {'placeholder', 'min', 'max', 'step', 'rows', 'accept', 'title'} or key.startswith('data-ancore-custom-select-')},
+            'attrs': {
+                key: str(val) for key, val in {**widget.attrs, **field.widget_attrs(widget)}.items()
+                if (key in {'placeholder', 'min', 'max', 'step', 'rows', 'accept', 'title', 'pattern', 'readonly'}
+                    or key.startswith('data-ancore-custom-select-')) and (key != 'readonly' or val)
+            },
         }
         if getattr(field, 'max_length', None):
             info['attrs']['maxlength'] = str(field.max_length)
@@ -143,6 +147,10 @@ def form_payload(form):
                     visual = widget.option_visual(option_value)
                     if visual.get('icon'):
                         choice['icon'] = visual['icon']
+                    if visual.get('context', {}).get('type_color'):
+                        choice['type_color'] = visual['context']['type_color']
+                    if visual.get('preserve_only'):
+                        choice['preserve_only'] = True
                     if visual.get('context', {}).get('photo_url'):
                         choice['photo_url'] = visual['context']['photo_url']
                     if visual.get('context', {}).get('space'):
@@ -152,6 +160,8 @@ def form_payload(form):
                         choice['avatar'] = visual['context']['avatar']
                     if visual.get('context', {}).get('category'):
                         choice['status_category'] = visual['context']['category']
+                        if visual['context'].get('color'):
+                            choice['status_color'] = visual['context']['color']
                     if visual.get('context', {}).get('priority'):
                         choice['priority'] = visual['context']['priority']
                 elif hasattr(widget, 'create_option'):

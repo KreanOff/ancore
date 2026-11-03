@@ -102,6 +102,7 @@ class SpaceSettingsFrontendTests(TestCase):
             for suffix, tab in [('?view=settings', 'main'), ('edit/', 'main'), ('avatar/', 'main'), ('members/', 'members'),
                                 ('configuration/', 'types'), ('configuration/?section=configuration', 'types'),
                                 ('configuration/?section=types', 'types'), ('configuration/?section=statuses', 'statuses'),
+                                ('configuration/?section=categories', 'categories'), ('configuration/?section=groups', 'groups'),
                                 ('configuration/?section=fields', 'types')]:
                 with self.subTest(scoped=scoped, suffix=suffix):
                     response = self.client.get(api, {'url': base + suffix}, follow=True)
@@ -110,7 +111,7 @@ class SpaceSettingsFrontendTests(TestCase):
                     self.assertEqual(shell['mode'], 'space-settings')
                     self.assertTrue(shell['settings_active'])
                     self.assertEqual(shell['space_settings']['tab'], tab)
-                    self.assertEqual([link['key'] for link in shell['space_settings']['links']], ['main', 'members', 'types', 'statuses'])
+                    self.assertEqual([link['key'] for link in shell['space_settings']['links']], ['main', 'members', 'types', 'categories', 'groups', 'statuses'])
                     self.assertTrue(all(f'/space/{self.space.slug}/?view=settings#' in link['url'] for link in shell['space_settings']['links']))
 
     def test_observer_sidebar_has_only_readable_sections(self):
@@ -306,33 +307,28 @@ class SpaceSettingsFrontendTests(TestCase):
         for scoped in (True, False):
             base = scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/') if scoped else f'/space/{self.space.slug}/'
             api = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') if scoped else '/api/v1/page/'
-            for selected in ('types', 'statuses', 'fields', 'configuration', 'unknown',
+            for selected in ('types', 'statuses', 'categories', 'groups', 'fields', 'configuration', 'unknown',
                              'fields&remove=0', '&edit=0'):
                 with self.subTest(scoped=scoped, selected=selected):
                     target = base + 'configuration/?section=' + selected
-                    section = 'statuses' if selected == 'statuses' else 'types'
+                    section = selected if selected in {'statuses', 'categories', 'groups'} else 'types'
                     page = self.client.get(api, {'url': target}, follow=True).json()
                     data = page['data']
                     self.assertEqual(data['section'], section)
                     self.assertEqual(data['type_icon_defaults'], ISSUE_TYPE_ICONS)
                     self.assertIsNone(data['editor'])
-                    self.assertEqual([group['key'] for group in data['sets']], ['statuses', 'types', 'fields'])
+                    self.assertEqual([group['key'] for group in data['sets']], ['statuses', 'types', 'fields', 'categories', 'groups'])
                     self.assertEqual(page['title'], next(group['title'] for group in data['sets'] if group['key'] == section))
                     response = self.client.get(target, follow=True)
                     self.assertEqual(response.status_code, 200)
                     self.assertNotContains(response, 'class="tasks-modal__form"')
                     self.assertContains(response, f'data-configuration-section="{section}">')
-                    for key in ('statuses', 'types', 'fields'):
+                    for key in ('statuses', 'types', 'fields', 'categories', 'groups'):
                         self.assertNotContains(response, f'name="{key}-TOTAL_FORMS"')
                         if key != section:
                             self.assertNotContains(response, f'data-configuration-section="{key}"')
-                    if section == 'statuses':
-                        self.assertContains(response, 'aria-label="Proces pracy — etapy"')
-                        self.assertContains(response, 'work-flow-native-node')
-                        self.assertContains(response, 'Dalej:')
-                        self.assertNotContains(response, 'role="table"')
-                    else:
-                        self.assertContains(response, 'role="table"')
+                    self.assertContains(response, 'role="table"')
+                    self.assertNotContains(response, 'work-flow-native-node')
                     self.assertNotContains(response, 'Zapisz konfigurację')
 
     def test_native_configuration_error_keeps_removed_sections_closed(self):

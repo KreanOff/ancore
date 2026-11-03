@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils import timezone
 from core.comment_images import comment_image_storage, AttachmentPresentation
 
-from .defaults import KINDS, MANAGEMENT, TEMPLATES, issue_type_icon, template_settings
+from .defaults import KINDS, MANAGEMENT, TEMPLATES, TASK_CATEGORY_CHOICES, classification_label, classification_options, configuration_name_color, issue_type_icon, template_settings
 from .avatars import avatar_upload_path
 from .identifiers import SLUG_MAX_LENGTH, unique_space_slug
 
@@ -94,8 +94,9 @@ class SpaceTask(models.Model):
     """Task content owned by a space, without a legacy project or group."""
     PRIORITY_CHOICES = [('none', 'Brak priorytetu'), ('low', 'Niski'), ('medium', 'Średni'), ('high', 'Wysoki'), ('urgent', 'Pilny')]
     STATUS_CHOICES = [('new', 'Nowe'), ('in_progress', 'Realizowane'), ('resolved', 'Rozwiązane'), ('closed', 'Zamknięte'), ('reopened', 'Ponownie otwarte')]
-    TASK_TYPE_CHOICES = [('general', 'Ogólne'), ('call', 'Telefon'), ('email', 'E-mail'), ('meeting', 'Spotkanie'), ('offer', 'Oferta'), ('invoice', 'Faktura'), ('complaint', 'Reklamacja'), ('onboarding', 'Onboarding'), ('internal', 'Wewnętrzne')]
-    task_type = models.CharField(max_length=20, choices=TASK_TYPE_CHOICES, default='general')
+    TASK_TYPE_CHOICES = TASK_CATEGORY_CHOICES
+    task_type = models.CharField(max_length=20, default='general')
+    task_group = models.CharField(max_length=40, blank=True, default='')
     reminder_at = models.DateTimeField(null=True, blank=True)
     space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=255)
@@ -122,6 +123,12 @@ class SpaceTask(models.Model):
     def __str__(self):
         return self.title
 
+    def get_task_type_display(self):
+        return classification_label(self.space.configuration.settings, 'categories', self.task_type)
+
+    def get_task_group_display(self):
+        return classification_label(self.space.configuration.settings, 'groups', self.task_group)
+
     def save(self, *args, **kwargs):
         if self._state.adding:
             from .workflow import initial_status
@@ -132,7 +139,14 @@ class SpaceTask(models.Model):
         if kwargs.get('update_fields'):
             kwargs['update_fields'] = set(kwargs['update_fields']) | {'is_completed', 'completion_date'}
         with transaction.atomic():
-            Space.objects.select_for_update().get(pk=self.space_id)
+            locked_space = Space.objects.select_for_update(of=('self',)).select_related('configuration').get(pk=self.space_id)
+            if self._state.adding:
+                # A task can be created from an older in-memory Space. Resolve
+                # its default only after serializing with dictionary writes.
+                self.space = locked_space
+                categories = classification_options(locked_space.configuration.settings, 'categories')
+                if self.task_type == 'general' and categories and not any(row['key'] == 'general' for row in categories):
+                    self.task_type = categories[0]['key']
             from django.core.exceptions import ValidationError
             if self.pk and type(self).objects.filter(pk=self.pk).exclude(space_id=self.space_id).exists():
                 raise ValidationError('Zadanie musi pozostać w swojej przestrzeni.')
@@ -320,6 +334,12 @@ class WorkItem(models.Model):
     def get_work_type_display(self):
         settings = self.space.configuration.settings if self.space_id else template_settings()
         return next((row['label'] for row in settings['types'] if row['key'] == self.work_type), self.work_type)
+
+    @property
+    def type_color(self):
+        types = self.space.configuration.settings.get('types', []) if self.space_id else []
+        definition = next((row for row in types if row['key'] == self.work_type), {'key': self.work_type})
+        return configuration_name_color('types', definition)
 
     @property
     def type_icon(self):

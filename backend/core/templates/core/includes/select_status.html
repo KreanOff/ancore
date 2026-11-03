@@ -1,1 +1,2 @@
-<span class="status-indicator status-{{ category }} tasks-filter-status-icon" aria-hidden="true"></span>
+{% load space_ui %}
+<span class="status-indicator status-{{ category }} tasks-filter-status-icon" style="{% if status %}{{ status|status_style }}{% else %}{{ color|status_style }}{% endif %}" aria-hidden="true"></span>

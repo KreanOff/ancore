@@ -1,1 +1,2 @@
-<span class="tasks-issue-type" title="Typ zgłoszenia: {{ item.get_work_type_display }}" aria-label="Typ zgłoszenia: {{ item.get_work_type_display }}"><i data-icon="{{ item.type_icon }}" aria-hidden="true"></i><span>{{ item.get_work_type_display }}</span></span>
+{% load space_ui %}
+<span class="tasks-issue-type" style="{{ item.type_color|type_badge_style }}" title="Typ zgłoszenia: {{ item.get_work_type_display }}" aria-label="Typ zgłoszenia: {{ item.get_work_type_display }}"><i data-icon="{{ item.type_icon }}" aria-hidden="true"></i><span>{{ item.get_work_type_display }}</span></span>

@@ -1,5 +1,11 @@
 <form method="post" action="{{ modal.action }}" enctype="multipart/form-data" class="tasks-modal__form" data-space-settings-form>
     {% csrf_token %}
+    <div class="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
+        <div class="member-access-save-actions">
+            <button type="submit" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="check" aria-hidden="true"></i>{{ modal.form.submit_label|default:'Zapisz' }}</button>
+            <a href="{{ space_url }}" class="tasks-filter-button">Anuluj</a>
+        </div>
+    </div>
     <div class="tasks-modal__body{% if modal.form.inline_avatar %} profile-edit-body space-settings-main app-form-avatar-layout{% else %} documents-form resources-form app-form-layout{% endif %}">
         {% if modal.form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
         {% if modal.form.inline_avatar %}
@@ -22,8 +28,4 @@
             {% include 'core/includes/modal_form_fields.html' with form=modal.form only %}
         {% endif %}
     </div>
-    <footer class="tasks-modal__footer">
-        <a href="{{ space_url }}" class="btn btn-secondary">Anuluj</a>
-        <button type="submit" class="tasks-modal__submit">{{ modal.form.submit_label|default:'Zapisz' }}</button>
-    </footer>
 </form>
