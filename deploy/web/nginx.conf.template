@@ -21,7 +21,7 @@ server {
         expires 1h;
         disable_symlinks on;
     }
-    location ~* ^/media/(profile_photos|workplace_photos)/([^/]+\.(?:jpg|jpeg|png|webp))$ {
+    location ~* ^/media/(profile_photos|profile_banners|workplace_photos)/([^/]+\.(?:jpg|jpeg|png|webp))$ {
         alias /srv/media/$1/$2;
         disable_symlinks on;
     }

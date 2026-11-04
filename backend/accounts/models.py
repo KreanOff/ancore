@@ -1,6 +1,6 @@
 import re
 
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractUser
@@ -30,6 +30,14 @@ class User(AbstractUser):
         blank=True,
         validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
     )
+    profile_banner = models.FileField(
+        upload_to='profile_banners/',
+        blank=True,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+    )
+    profile_banner_x = models.FloatField(default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    profile_banner_y = models.FloatField(default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    profile_banner_zoom = models.FloatField(default=1, validators=[MinValueValidator(1), MaxValueValidator(3)])
     phone_number = models.CharField(max_length=32, blank=True)
     job_title = models.CharField(max_length=120, blank=True)
     bio = models.TextField(blank=True)

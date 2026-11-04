@@ -20,6 +20,7 @@ from .models import (
 
 
 PROFILE_PHOTO_MAX_SIZE = getattr(settings, 'MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)
+PROFILE_BANNER_MAX_SIZE = 5 * 1024 * 1024
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -85,6 +86,98 @@ class UserRegistrationForm(UserCreationForm):
                     raise
             else:
                 break
+        return user
+
+
+class UserBannerForm(forms.ModelForm):
+    crop_defaults = {'profile_banner_x': 50, 'profile_banner_y': 50, 'profile_banner_zoom': 1}
+
+    profile_banner = forms.FileField(
+        label='Baner profilu', required=False,
+        help_text='JPG, PNG lub WebP, maksymalnie 5 MB.',
+        widget=forms.FileInput(attrs={
+            'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
+            'class': 'form-input',
+        }),
+    )
+    remove_banner = forms.BooleanField(label='Przywróć domyślny baner', required=False)
+    profile_banner_x = forms.FloatField(
+        label='Pozycja pozioma (%)', required=False, min_value=0, max_value=100,
+        widget=forms.NumberInput(attrs={'class': 'form-input', 'step': 'any'}),
+    )
+    profile_banner_y = forms.FloatField(
+        label='Pozycja pionowa (%)', required=False, min_value=0, max_value=100,
+        widget=forms.NumberInput(attrs={'class': 'form-input', 'step': 'any'}),
+    )
+    profile_banner_zoom = forms.FloatField(
+        label='Powiększenie', required=False, min_value=1, max_value=3,
+        widget=forms.NumberInput(attrs={'class': 'form-input', 'step': 'any'}),
+    )
+
+    class Meta:
+        model = User
+        fields = ('profile_banner', 'profile_banner_x', 'profile_banner_y', 'profile_banner_zoom')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_banner = self.instance.profile_banner.name
+        self.original_crop = {name: getattr(self.instance, name) for name in self.crop_defaults}
+
+    def clean_profile_banner(self):
+        upload = self.files.get('profile_banner')
+        if upload:
+            validate_image_upload(upload, PROFILE_BANNER_MAX_SIZE)
+        return self.cleaned_data.get('profile_banner')
+
+    def clean(self):
+        data = super().clean()
+        upload = self.files.get('profile_banner')
+        remove = data.get('remove_banner') and not upload
+        self.submitted_crop = {
+            name for name in self.crop_defaults
+            if self.data.get(self.add_prefix(name)) not in self.fields[name].empty_values
+        }
+        if not upload and not remove and not (self.original_banner and self.submitted_crop):
+            self.add_error('profile_banner', 'Wybierz obraz, zmień kadr własnego banera lub przywróć domyślny baner.')
+        for name, default in self.crop_defaults.items():
+            if name in self.errors:
+                continue
+            if remove:
+                data[name] = default
+            elif data.get(name) is None:
+                data[name] = default if upload else self.original_crop[name]
+        return data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if self.files.get('profile_banner') and not user.profile_banner._committed:
+            # Every upload gets a new URL, even after deleting a previous banner.
+            extension = user.profile_banner.name.rsplit('.', 1)[-1].lower()
+            user.profile_banner.name = f'banner_{uuid.uuid4().hex}.{extension}'
+        elif self.cleaned_data.get('remove_banner') and not self.files.get('profile_banner'):
+            user.profile_banner = ''
+        if commit:
+            with transaction.atomic():
+                # Serialize replacements and leave unrelated profile fields intact.
+                previous = User.objects.select_for_update().only(*self._meta.fields).get(pk=user.pk)
+                old_name = previous.profile_banner.name
+                replaces_file = bool(self.files.get('profile_banner') or self.cleaned_data.get('remove_banner'))
+                if replaces_file:
+                    update_fields = self._meta.fields
+                else:
+                    if not old_name or old_name != self.original_banner:
+                        raise forms.ValidationError('Baner został zmieniony. Odśwież profil i ponownie ustaw kadr.')
+                    update_fields = self.submitted_crop
+                    for name in self.crop_defaults.keys() - self.submitted_crop:
+                        setattr(user, name, getattr(previous, name))
+                user.save(update_fields=update_fields)
+                if replaces_file and old_name and old_name != user.profile_banner.name:
+                    storage = user._meta.get_field('profile_banner').storage
+
+                    def cleanup():
+                        if not User.objects.filter(profile_banner=old_name).exists():
+                            storage.delete(old_name)
+                    transaction.on_commit(cleanup, robust=True)
         return user
 
 
@@ -280,7 +373,7 @@ class UserProfileForm(forms.ModelForm):
 
         if commit:
             with transaction.atomic():
-                user.save()
+                user.save(update_fields=self._meta.fields if user.pk else None)
                 old_name = self.original_photo
                 if old_name and old_name != user.profile_photo.name:
                     storage = user._meta.get_field('profile_photo').storage
