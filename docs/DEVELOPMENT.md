@@ -1,5 +1,98 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Weryfikacja przed commitami Zasobów i Zespołów (04.11.2026)
+
+Przed podziałem zmian na commity ponowiono weryfikację bieżącego drzewa:
+
+- `scripts/run_tests.py resources spaces.test_teams spaces.tests core.test_navigation_frontend workplaces.test_workspace_system dashboard.test_search_regressions`
+  — 150 testów Django na osobnej, tymczasowej bazie PostgreSQL i storage;
+  wszystkie przeszły, w tym testy migracji Zasobów i równoczesnych zmian ról.
+- `pnpm --dir frontend/app test` — 418 testów, wszystkie przeszły.
+- `pnpm --dir frontend/app build` — kontrola TypeScript i budowanie zakończone powodzeniem.
+- `manage.py check` — brak problemów; `makemigrations --check --dry-run`
+  z dostępem do PostgreSQL nie wykazało brakujących migracji.
+- Kontrola indeksu kodu, 33 dodanych lokalnych linków dokumentacji i diffu przeszła.
+
+Nie ponawiano testów przeglądarkowych; wcześniejsze scenariusze UI i ich
+ograniczenia zapisano w rozdziałach poniżej. Nie wykonywano migracji na bazie
+z danymi użytkownika ani wdrożenia.
+
+## System Zespołów (04.11.2026)
+
+Zespoły mają katalog z wyszukiwaniem i sortowaniem oraz profil z podsumowaniem,
+zadaniami, członkami i przestrzeniami. [Funkcje i parametry](SPACES.md#system-zespołów-04112026),
+[uprawnienia](TEAMWORK.md), [kontrakt React](FRONTEND.md#katalog-i-karta-zespołu)
+i [warianty UI](UI.md#katalog-i-profile-zespołów).
+Nie zmieniono modeli ani migracji.
+
+Wykonane sprawdzenia:
+
+- `scripts/run_tests.py spaces.test_teams spaces.tests core.test_navigation_frontend workplaces.test_workspace_system`
+  — 79 testów na osobnej bazie PostgreSQL, w tym równoczesne odebranie dwóch
+  ról administratorów, filtrowanie prywatnych danych, scoped/zwykłe adresy,
+  CSRF, role gościa, unieważnienie dostępu, retencja zadań po usunięciu zespołu,
+  pliki zdjęcia i stała liczba zapytań katalogu względem liczby zespołów.
+- Po końcowej korekcie pełnych nazw osób i zakresu administratorów ponowiono
+  `scripts/run_tests.py spaces.test_teams` — wszystkie 21 testów przeszło.
+- `pnpm --dir frontend/app test` — 418 testów; build z TypeScriptem,
+  format zmienionego komponentu, `manage.py check`, kontrola diffu i indeksu.
+- Playwright/Chrome na `127.0.0.1:8042`, z fikcyjnymi danymi w odrębnej bazie:
+  katalog, pusty wynik, liczniki i filtrowanie po terminie, dodanie osoby,
+  promocja, anulowanie/potwierdzenie usunięcia, powiązanie przestrzeni,
+  duplikat nazwy, utworzenie i usunięcie zespołu z kontrolą nazwy.
+  Symulowany błąd 500 zachował szkic i pozwolił ponowić zapis.
+  Sprawdzono referencyjną Przestrzeń, powrót przez nawigację React, Escape,
+  1440×1000, 1024×844 i 390×844 oraz pierwszy render bez JavaScriptu.
+  Brak wyjątków JavaScript; wpisy konsoli 400/500 pochodziły wyłącznie
+  z celowo wywołanych walidacji i błędu zapisu.
+
+Wtyczka Browser nie była dostępna, dlatego użyto lokalnego Playwrighta.
+Nie wykonywano testów obciążeniowych ani prób w innych silnikach przeglądarek.
+
+## Ewidencja i obieg Zasobów (04.11.2026)
+
+Zasoby mają kartę pod `/<pk>/`, historię zmian i notatek, przekazanie/zwrot,
+planowany termin zwrotu, operacje zbiorcze, filtry terminów, liczniki i eksport
+CSV. Nowe akcje korzystają z sesji, CSRF i dotychczasowej polityki Workspace;
+gość ma tylko odczyt. Operacje blokują rekordy, sprawdzają cały zestaw i jego
+wersje przed zapisem. Historia oraz zmiana danych należą do jednej transakcji.
+Formularze React/HTML przekazują rewizję; historyczni klienci edycji bez niej
+zachowują zgodność. Ograniczenia i kontrakt: [Zasoby](MODULES.md#12-zasoby--resources),
+[API React](FRONTEND.md) i [migracje](DATABASE.md).
+
+Migracje `resources.0002_resourceactivity_resource_return_due_on_and_more`
+i `0003_alter_resourceactivity_actor_name` dodają historię, opcjonalny termin
+zwrotu oraz pełny limit nazwy autora. Istniejąca ewidencja pozostaje zachowana;
+wcześniejsze zdarzenia nie są odtwarzane. Przed uruchomieniem nowego kodu
+zastosuj `manage.py migrate resources`, a następnie zbuduj frontend.
+
+Wykonana weryfikacja: 99 testów Django, obejmujących Zasoby, migrację danych,
+nawigację React, politykę Workspace i globalne wyszukiwanie; 418 testów frontendu;
+budowanie z kontrolą TypeScript. Polecenia:
+
+```sh
+.venv/bin/python scripts/run_tests.py resources core.test_navigation_frontend workplaces.test_workspace_system dashboard.test_search_regressions
+pnpm --dir frontend/app test
+pnpm --dir frontend/app build
+.venv/bin/python manage.py makemigrations --check --dry-run
+.venv/bin/python scripts/update_code_index.py --check
+```
+
+Chrome/Playwright na osobnej bazie z fikcyjnymi danymi, przy 1440×1000,
+1024×844 i 390×844: katalog → zaznaczenie dwóch zasobów → walidacja → przekazanie
+→ karta → przeładowanie → notatka i ochrona szkicu → zwrot → historia. Sprawdzono
+rzeczywistą równoczesną zmianę (409 bez nadpisania), edycję, duplikat numeru,
+tworzenie/usunięcie, paginację, filtry, CSV, pusty wynik, błąd sieci i ponowienie,
+powrót z referencyjnej Przestrzeni oraz pierwszy render bez JavaScriptu.
+Dodatkowo potwierdzono zachowanie wcześniejszego układu/szerokości/ukrytych kolumn,
+Wstecz/Dalej bez przeładowania dokumentu i powrót fokusu po Escape. Inicjator
+formularza jest zachowywany przed asynchronicznym pobraniem; fokus wraca dopiero
+po usunięciu `inert` przez sprzątanie modala.
+Brak błędów JavaScript i poziomego przepełnienia strony; ostrzeżenia sieciowe
+dotyczyły wyłącznie celowo wymuszonych 400, 409 i przerwanego żądania.
+Plugin Browser był niedostępny. Nie sprawdzano innych przeglądarek ani całego
+zestawu backendu; terminy nie uruchamiają automatycznych powiadomień.
+
 ## Edytor banera zgodny z edytorem zdjęcia (04.11.2026)
 
 Baner korzysta z dużej powłoki zdjęcia profilowego: panelu wysuwanego z góry,

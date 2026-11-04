@@ -25,8 +25,8 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
-| [backend/resources](../backend/resources) | 10 | 1 | 4 | 35 |
-| [backend/spaces](../backend/spaces) | 69 | 6 | 47 | 480 |
+| [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
+| [backend/spaces](../backend/spaces) | 71 | 6 | 47 | 501 |
 
 ## 2. Modele i relacje
 
@@ -350,7 +350,7 @@ Pola zadeklarowane tutaj: `document` (ForeignKey), `drive_document` (ForeignKey)
 
 Źródło: [backend/resources/models.py](../backend/resources/models.py).
 
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `kind` (CharField), `inventory_number` (CharField), `serial_number` (CharField), `status` (CharField), `assigned_to` (ForeignKey), `location` (CharField), `purchased_on` (DateField), `expires_on` (DateField), `notes` (TextField), `created_by` (ForeignKey), `updated_by` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
+Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `kind` (CharField), `inventory_number` (CharField), `serial_number` (CharField), `status` (CharField), `assigned_to` (ForeignKey), `location` (CharField), `purchased_on` (DateField), `expires_on` (DateField), `return_due_on` (DateField), `notes` (TextField), `created_by` (ForeignKey), `updated_by` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -361,6 +361,17 @@ Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `name`
 | `updated_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='updated_resources'; null=True |
 
 Metody/properties: `icon`, `__str__`.
+
+### `ResourceActivity`
+
+Źródło: [backend/resources/models.py](../backend/resources/models.py).
+
+Pola zadeklarowane tutaj: `resource` (ForeignKey), `actor` (ForeignKey), `actor_name` (CharField), `action` (CharField), `changes` (JSONField), `note` (TextField), `created_at` (DateTimeField).
+
+| Relacja | Cel | Ustawienia |
+| --- | --- | --- |
+| `resource` | `Resource` | on_delete=models.CASCADE; related_name='activities' |
+| `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='resource_activities'; null=True |
 
 ## Modele: spaces
 
@@ -599,7 +610,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 Źródło: [backend/resources/forms.py](../backend/resources/forms.py).
 
-- `ResourceForm` — Meta.fields: `['name', 'kind', 'inventory_number', 'serial_number', 'status', 'assigned_to', 'location', 'purchased_on', 'expires_on', 'notes']`
+- `ResourceForm` — Meta.fields: `['name', 'kind', 'inventory_number', 'serial_number', 'status', 'assigned_to', 'location', 'purchased_on', 'expires_on', 'return_due_on', 'notes']`
+- `ResourceOperationForm`
 
 ### spaces
 
@@ -615,6 +627,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `SprintForm`
 - `SprintCloseForm`
 - `TeamForm`
+- `TeamDeleteForm`
 - `MemberForm`
 - `ConfigurationColorField`
 - `StatusForm`
@@ -771,10 +784,14 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | --- | --- | --- |
 | `'api/v1/'` | `api.collection` | 'api-list' |
 | `'api/v1/new/'` | `api.new` | 'api-new' |
+| `'api/v1/operate/'` | `api.operate` | 'api-operate' |
+| `'api/v1/export/'` | `api.export` | 'api-export' |
+| `'api/v1/<int:pk>/overview/'` | `api.overview` | 'api-overview' |
 | `'api/v1/<int:pk>/'` | `api.detail` | 'api-detail' |
 | `'api/v1/<int:pk>/delete/'` | `api.delete` | 'api-delete' |
 | `''` | `views.index` | 'index' |
 | `'create/'` | `views.edit` | 'create' |
+| `'<int:pk>/'` | `views.overview` | 'detail' |
 | `'<int:pk>/edit/'` | `views.edit` | 'edit' |
 | `'<int:pk>/delete/'` | `views.delete` | 'delete' |
 
@@ -996,13 +1013,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### resources
 
 - [backend/resources/__init__.py](../backend/resources/__init__.py)
-- [backend/resources/api.py](../backend/resources/api.py) — `resource_payload`, `editor_payload`, `directory_payload`, `collection`, `new`, `detail`, `delete`
+- [backend/resources/api.py](../backend/resources/api.py) — `resource_payload`, `editor_payload`, `directory_payload`, `collection`, `new`, `detail`, `delete`, `overview_payload`, `overview`, `operate`, `csv_cell`, `export`
 - [backend/resources/apps.py](../backend/resources/apps.py) — `ResourcesConfig`
-- [backend/resources/forms.py](../backend/resources/forms.py) — `ResourceForm`
-- [backend/resources/models.py](../backend/resources/models.py) — `Resource`
-- [backend/resources/services.py](../backend/resources/services.py) — `resource_scope`, `resource_base_url`, `resource_params`, `directory_url`, `directory_context`, `save_resource_form`
+- [backend/resources/forms.py](../backend/resources/forms.py) — `ResourceForm`, `ResourceOperationForm`
+- [backend/resources/models.py](../backend/resources/models.py) — `Resource`, `ResourceActivity`
+- [backend/resources/services.py](../backend/resources/services.py) — `resource_scope`, `resource_base_url`, `resource_params`, `directory_url`, `filtered_resources`, `resource_summary`, `directory_context`, `resource_snapshot`, `record_activity`, `save_resource_form`
 - [backend/resources/urls.py](../backend/resources/urls.py)
-- [backend/resources/views.py](../backend/resources/views.py) — `index`, `edit`, `delete`
+- [backend/resources/views.py](../backend/resources/views.py) — `index`, `edit`, `overview`, `delete`
 
 ### spaces
 
@@ -1015,7 +1032,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
 - [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `classification_options`, `classification_label`, `issue_type_icon`, `configuration_name_color`, `status_appearance`, `status_icon`, `status_flow_stage`, `template_settings`
-- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
+- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `TeamDeleteForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
@@ -1031,8 +1048,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
 - [backend/spaces/task_views.py](../backend/spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `detail_post_data`, `work_log_context`, `detail`, `members`, `download`
+- [backend/spaces/team_queries.py](../backend/spaces/team_queries.py) — `administrators`, `directory_context`, `detail_context`
 - [backend/spaces/team_urls.py](../backend/spaces/team_urls.py)
-- [backend/spaces/teams.py](../backend/spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `photo`
+- [backend/spaces/teams.py](../backend/spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `delete`, `photo`
 - [backend/spaces/templatetags/__init__.py](../backend/spaces/templatetags/__init__.py)
 - [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `type_badge_style`, `status_style`, `pagination_pages`, `space_avatar`, `status_groups`
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
@@ -1219,6 +1237,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### resources
 
+- [backend/resources/templates/resources/detail.html](../backend/resources/templates/resources/detail.html)
 - [backend/resources/templates/resources/directory.html](../backend/resources/templates/resources/directory.html)
 - [backend/resources/templates/resources/form.html](../backend/resources/templates/resources/form.html)
 - [backend/resources/templates/resources/index.html](../backend/resources/templates/resources/index.html)
@@ -1453,7 +1472,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/pulpits/autoRefresh.ts](../frontend/app/src/pulpits/autoRefresh.ts)
 - [frontend/app/src/pulpits/types.ts](../frontend/app/src/pulpits/types.ts)
 - [frontend/app/src/resources/App.tsx](../frontend/app/src/resources/App.tsx)
+- [frontend/app/src/resources/Detail.tsx](../frontend/app/src/resources/Detail.tsx)
 - [frontend/app/src/resources/Editor.tsx](../frontend/app/src/resources/Editor.tsx)
+- [frontend/app/src/resources/Operation.tsx](../frontend/app/src/resources/Operation.tsx)
 - [frontend/app/src/resources/Table.tsx](../frontend/app/src/resources/Table.tsx)
 - [frontend/app/src/resources/columns.tsx](../frontend/app/src/resources/columns.tsx)
 - [frontend/app/src/resources/types.ts](../frontend/app/src/resources/types.ts)
@@ -2176,6 +2197,18 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `ResourceApiTests`: 16 metod testowych.
 
+### backend/resources/test_lifecycle.py
+
+Źródło: [backend/resources/test_lifecycle.py](../backend/resources/test_lifecycle.py).
+
+- `ResourceLifecycleTests`: 16 metod testowych.
+
+### backend/resources/test_migrations.py
+
+Źródło: [backend/resources/test_migrations.py](../backend/resources/test_migrations.py).
+
+- `ResourceLifecycleMigrationTests`: 1 metod testowych.
+
 ### backend/resources/tests.py
 
 Źródło: [backend/resources/tests.py](../backend/resources/tests.py).
@@ -2359,6 +2392,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `TaskOwnerMembershipTests`: 8 metod testowych.
 
+### backend/spaces/test_teams.py
+
+Źródło: [backend/spaces/test_teams.py](../backend/spaces/test_teams.py).
+
+- `TeamSystemTests`: 20 metod testowych.
+- `TeamAdminConcurrencyTests`: 1 metod testowych.
+
 ### backend/spaces/test_timeline.py
 
 Źródło: [backend/spaces/test_timeline.py](../backend/spaces/test_timeline.py).
@@ -2438,6 +2478,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### resources
 
 - [backend/resources/migrations/0001_initial.py](../backend/resources/migrations/0001_initial.py)
+- [backend/resources/migrations/0002_resourceactivity_resource_return_due_on_and_more.py](../backend/resources/migrations/0002_resourceactivity_resource_return_due_on_and_more.py)
+- [backend/resources/migrations/0003_alter_resourceactivity_actor_name.py](../backend/resources/migrations/0003_alter_resourceactivity_actor_name.py)
 
 ### spaces
 

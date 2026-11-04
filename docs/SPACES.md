@@ -1,5 +1,58 @@
 # Przestrzenie i zespoły
 
+## System Zespołów (04.11.2026)
+
+`/teams/` oraz scoped odpowiednik udostępniają katalog z wyszukiwaniem nazwy
+lub opisu, zakładkami „Wszystkie zespoły”, „Moje zespoły” i „Zarządzane przeze
+mnie”, sortowaniem po nazwie, dacie utworzenia lub liczbie aktywnych członków
+oraz paginacją po 24 rekordy. Karta pokazuje osoby, otwarte zadania i powiązane
+przestrzenie. Liczniki pracy i przestrzeni powstają z zakresu widoczności osoby
+oglądającej; zapytania są grupowane dla całej strony katalogu.
+
+Profil zespołu ma cztery zakładki (`view`):
+
+- `overview` — opis i zdjęcie, otwarte zadania, zadania po terminie, z terminem
+  w najbliższych 7 dniach i zablokowane; postęp zamkniętych zadań, otwarte bez
+  wykonawcy, ośmiu wykonawców z największą liczbą otwartych zadań oraz do ośmiu
+  najbliższych zadań. Liczniki i wykonawcy prowadzą do odpowiednich wyników.
+- `work` — zadania przypisane do zespołu, wyszukiwanie tytułu/klucza, zakres
+  `scope` (`all`, `open`, `closed`, `overdue`, `due`, `blocked`, `unassigned`)
+  i filtr `assignee` (`me`, `unassigned` lub ID); 30 wyników na stronę.
+  Otwarte oznacza status zadania inny niż `closed`; liczniki terminów i blokad
+  pomijają zamknięte zadania. Filtr wykonawcy nadal korzysta z pełnego ACL.
+- `members` — aktywne osoby Workspace, wyszukiwanie imienia, nazwiska, e-maila
+  lub ID konta, filtr roli i 30 wyników na stronę. Osobne formularze dodawania
+  i zmiany roli; usunięcie wymaga potwierdzenia w interfejsie React.
+- `spaces` — wyłącznie dostępne powiązane przestrzenie, wyszukiwanie nazwy
+  lub klucza i 24 wyniki na stronę. Powiązania zmienia formularz profilu.
+
+Zespół tworzy właściciel, administrator lub członek Workspace. Twórca staje się
+administratorem zespołu. Profil, skład oraz usuwanie obsługują administratorzy
+zespołu i zarządzający Workspace. Gość pozostaje w odczycie nawet ze starszą
+rolą administratora zespołu; nie można mu jej nadać w formularzu. Nie można
+obniżyć roli ani usunąć ostatniego aktywnego administratora z prawem zapisu.
+Zmiany blokują kolejno Workspace i zespół oraz ponawiają kontrolę uprawnień;
+równoczesne usuwanie dwóch administratorów pozostawia jednego.
+
+Dodawanie osoby nie zmienia dostępu do przestrzeni, prywatnych rodziców ani
+zadań. Usunięcie osoby zachowuje jej dostęp do Workspace, niezależne
+udostępnienia i przypisania zadań. Usunięcie/wyłączenie członkostwa Workspace
+nadal czyści role zespołów. Zarządzający Workspace może uzupełnić skład zespołu,
+który stracił administratorów wskutek takiego odebrania dostępu.
+
+Formularz profilu zachowuje niedostępne powiązania i nie ujawnia ich ID.
+Przed zapisem ponownie sprawdza widoczność wybranych przestrzeni. Zdjęcie
+korzysta z istniejącej walidacji i prywatnego endpointu; usunięcie lub wymiana
+czyści plik dopiero po zatwierdzeniu transakcji.
+
+`<pk>/delete/` pokazuje formularz, a POST wymaga przepisania aktualnej nazwy.
+Usunięcie zespołu kasuje jego skład i powiązania, pozostawiając zadania,
+przestrzenie, niezależne dostępy, statusy, historię i trwałe klucze.
+`WorkItem.team` przechodzi na `NULL` przez istniejące `SET_NULL`.
+Nie dodano modeli ani migracji. Zapytania i podsumowania:
+`backend/spaces/team_queries.py`; operacje: `teams.py`; interfejs:
+`frontend/app/src/spaces/TeamsPage.tsx`. [Zasady dostępu](TEAMWORK.md).
+
 ## Tablica procesu i etapowe przejścia
 
 „Proces pracy” w ustawieniach Przestrzeni ma podzakładki „Stany” i „Mapa”,

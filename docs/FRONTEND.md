@@ -1,10 +1,30 @@
 # Frontend React i backend Django
 
+## Katalog i karta Zespołu
+
+`TeamsPage.tsx` obsługuje typy `teams` i `team`. API katalogu przekazuje
+`tabs`, `sort`, członkostwo użytkownika i liczniki dla widocznych danych.
+Karta ma `view`, `tabs`, `counts`, `progress`, `workload`, `member_rows`
+(serializowane jako `members`), `spaces`, `items` i paginację aktywnej zakładki.
+Wyszukiwanie, filtry i strony wyników są parametrami URL; zmiana filtra usuwa
+numer strony. Dane po zapisach ponownie pobiera wspólny mechanizm nawigacji.
+
+Formularze używają `FormDialog`, listy wspólnych klas, `Avatar`, `Select`,
+`Dropdown`, `StatusGroup` i `Pagination`. Błędy zachowują szkic, Escape przywraca
+fokus, a potwierdzenie usuwa członka przez istniejący POST. Osobna trasa
+`members/<member_pk>/edit/` unieruchamia pole osoby i zmienia tylko jej rolę.
+`delete/` wymaga wpisania nazwy zespołu. Obie trasy mają zwykły/scoped wariant
+oraz delegowane JSON API; API sprawdza aktualny Workspace, role, CSRF i stan
+włączenia modułu. Pierwszy render i formularze Django pozostają działające.
+`page_styles` dołącza CSS tabel członków także po nawigacji do `team`/`teams`.
+[Zakres funkcji i parametrów](SPACES.md#system-zespołów-04112026).
+
 ## Zakres migracji
 
 Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekrany:
 
-- **Zasoby:** katalog, filtry, sortowanie, paginacja, kolumny i pełne CRUD.
+- **Zasoby:** katalog, karta i historia, przekazania/zwroty, operacje zbiorcze,
+  filtry terminów, eksport, sortowanie, paginacja, kolumny i pełne CRUD.
 - **Kalendarz:** miesiąc/tydzień/dzień/rok, plan, filtry, wydarzenia i terminy zadań.
 - **Dla ciebie** oraz centrum **Ustawień**.
 - **Przestrzenie:** katalog, kreator szablonu, formularze, awatary,
@@ -1200,8 +1220,11 @@ aby zmiana aktywnego Workspace w innej karcie nie zmieniała celu zapisu.
 | `/<pk>/` | GET | Pola formularza istniejącego zasobu |
 | `/<pk>/` | PUT | Pełny zapis edytowalnych pól zasobu |
 | `/<pk>/delete/` | POST | Usunięcie zasobu |
+| `/<pk>/overview/` | GET | Dane i historia zasobu; `history_page`, po 20 wpisów |
+| `/operate/` | POST | Atomowa operacja na 1–100 zasobach |
+| `/export/` | GET | CSV wszystkich wyników filtrów, z pominięciem paginacji |
 
-GET listy obsługuje `q`, `kind`, `status`, `assignee`, `sort`, `page_size` i `page`
+GET listy obsługuje `q`, `kind`, `status`, `assignee`, `deadline`, `sort`, `page_size` i `page`
 z tymi samymi ograniczeniami co dotychczasowy katalog. Zapis przyjmuje płaski
 obiekt `application/json` i nagłówek `X-CSRFToken`. Brak sesji zwraca JSON 401,
 brak dostępu 403 lub 404, błędna metoda 405, a walidacja JSON 400 z `message`,
@@ -1214,7 +1237,26 @@ widokami HTML a API. Każdy obiekt jest ograniczony jednocześnie przez
 `workspace_owner(request)` i `request.workplace`. `ResourceForm` nadal
 waliduje osobę, typ, status, daty i unikalny numer ewidencyjny. Pola właściciela,
 Workspace i autora nie są edytowalne przez klienta; autorem pozostaje faktyczny
-`request.user`. Nie zmieniono modeli ani migracji.
+`request.user`. Migracja `resources.0002_resourceactivity_resource_return_due_on_and_more`
+dodaje opcjonalny `return_due_on`, ograniczenie jego statusu i historię `ResourceActivity`.
+Katalog zwraca również `summary` (liczniki całego Workspace) i `export_url`.
+Formularz zwraca `revision`; PUT przesyła ją do ochrony przed równoczesną zmianą.
+Starsze wywołania bez wersji zachowują dotychczasową zgodność.
+
+`operate/` przyjmuje płaski JSON: `ids` jako ciąg identyfikatorów oddzielonych
+przecinkami, `revisions` jako serializowany JSON mapy ID → `updated_at`,
+`action` (`handover`, `return`, `status`, `location`, `note`) i odpowiednie pola
+`assigned_to`, `return_due_on`, `status`, `location`, `note`.
+Wersje są obowiązkowe; HTTP 409 oznacza konflikt, 404 niedostępny element,
+400 błędne dane/stany. Zapis i historia całej grupy są w jednej transakcji.
+Operacje nie obchodzą polityki gościa, wyłączonego modułu, sesji ani CSRF.
+CSV jest strumieniowane, ma `no-store`, BOM UTF-8 i ochronę przed formułami.
+
+`src/resources/Detail.tsx` renderuje kartę i historię pod `/resources/<pk>/`
+oraz odpowiednikiem scoped. Nazwa w tabeli i globalne wyszukiwanie prowadzą do
+karty; stary `/<pk>/edit/` nadal działa. `Operation.tsx` używa wspólnego `Modal`
+w istniejącym wariancie kompaktowym. Katalog przechowuje zaznaczenie bieżącej
+strony; po zmianie wyników resetuje je. Powrót z karty zachowuje filtry listy.
 Formularz Zasobów używa wspólnego `app-page-modals`, obecnego zarówno przy
 pierwszym renderze Django, jak i po nawigacji JSON. Kontener starego formularza
 HTML pozostaje wyłącznie fallbackiem pierwszego renderu.

@@ -5,6 +5,19 @@ z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikac
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
 Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
+`resources.0002_resourceactivity_resource_return_due_on_and_more` (04.11.2026)
+dodaje opcjonalny `Resource.return_due_on` i tabelę historii `ResourceActivity`.
+Istniejące zasoby zachowują identyfikatory, dane i przypisania; termin zwrotu
+pozostaje pusty, a wcześniejsze zdarzenia nie są odtwarzane. Ograniczenie
+`resource_return_in_use` dopuszcza datę zwrotu tylko przy statusie `in_use`.
+Zastosuj `manage.py migrate resources` po sprawdzeniu planu. Historia jest
+usuwana wraz z zasobem; usunięcie autora zeruje FK, zachowując jego zapisaną nazwę.
+Cofnięcie migracji usuwa historię i daty zwrotów. Test
+`resources.test_migrations` sprawdza zachowanie istniejącej ewidencji podczas
+przejścia z migracji początkowej.
+`resources.0003_alter_resourceactivity_actor_name` poszerza nazwę autora
+do 500 znaków, obejmując pełne limity trzech członów nazwy konta.
+
 `accounts.0004_user_profile_banner_crop` (04.11.2026) dodaje do `User` pola
 `profile_banner_x`, `profile_banner_y` i `profile_banner_zoom`. Istniejące konta
 otrzymują wartości 50, 50 i 1, zachowujące dotychczasowy centralny kadr.

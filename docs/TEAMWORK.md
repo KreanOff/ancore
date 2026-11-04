@@ -6,7 +6,15 @@ Dostęp dotyczy aktualnych Przestrzeni i modułów Workspace.
 ## Zespoły pracy a członkostwo Workspace
 
 Moduł `/teams/` grupuje aktywnych członków Workspace w zespoły z własnymi
-administratorami i profilami. Powiązanie z przestrzenią i przypisanie zadania
+administratorami i profilami. Katalog, podsumowanie pracy oraz zakładki zadań,
+członków i przestrzeni opisuje [System Zespołów](SPACES.md#system-zespołów-04112026).
+Profilem i składem zarządzają administratorzy zespołu oraz właściciel i administrator
+Workspace. Zwykły członek Workspace może utworzyć własny zespół. Gość nie
+zarządza zespołem również wtedy, gdy zachował dawną rolę administratora.
+Ochrona ostatniego administratora liczy wyłącznie aktywne osoby z prawem zapisu
+w tym Workspace. Usunięcie zespołu wymaga jego aktualnej nazwy i pozostawia
+zadania, przestrzenie oraz ich niezależne dostępy; usuwa powiązanie z zespołem.
+Powiązanie z przestrzenią i przypisanie zadania
 do zespołu nie nadaje dostępu do danych. Obowiązują role Workspace oraz niezależne członkostwa Przestrzeni i ich zadań. „Zarządzana przez zespół” w kreatorze
 przestrzeni oznacza niezależną konfigurację, nie automatyczne udostępnienie
 członkom zespołu. [Pełny opis](SPACES.md).
@@ -40,6 +48,10 @@ Osobą odpowiedzialną może być aktywne konto właściciela lub członka tego 
 samo przypisanie nie nadaje dostępu. Odebranie członkostwa odbiera dostęp także
 do przypisanych zasobów. Dawne przypisanie pozostaje w ewidencji do edycji,
 podczas której formularz wymaga wyboru aktywnej osoby lub wyczyszczenia przypisania.
+Karta, historia i eksport mają ten sam zakres. Gość może je czytać, lecz nie
+przekazuje, nie zwraca ani nie zmienia zasobów. Każdy wpis historii zapisuje
+faktycznego autora; operacje zbiorcze sprawdzają dostęp do wszystkich zasobów
+przed zapisem. Historia nie nadaje dodatkowych uprawnień.
 
 ## Role Pulpitów
 

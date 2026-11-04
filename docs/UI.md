@@ -1,5 +1,27 @@
 # Standard UI Ancore
 
+## Katalog i profile Zespołów
+
+Zespoły zachowują wspólny nagłówek, zakładki `work-tabs`, wyszukiwarkę,
+karty `work-space-card`, formularze i paginację. Karty pokazują członkostwo
+oraz linki z liczbą osób, otwartych zadań i przestrzeni. Profil rozdziela
+„Podsumowanie”, „Zadania”, „Członkowie” i „Przestrzenie”. Podsumowanie rozszerza
+istniejące `work-panel`, `work-summary-metrics` i `work-summary-grid`;
+procent zamkniętych zadań ma natywny, opisany pasek `progress` w kolorze akcentu.
+
+Wariant `.teams-page` dodaje wyłącznie lokalny układ profilu, liczniki kart,
+listę wykonawców i kontrolki filtrów. Do 800px metryki mają dwie kolumny,
+a dolne panele jedną. Lista członków używa wspólnych komórek i menu wiersza,
+z lokalnym wariantem `.team-members-sheet` bez zaznaczania zbiorczego i daty
+członkostwa, której model nie przechowuje. Na wąskim ekranie tabela przewija
+się poziomo. Lista zadań zachowuje układ bez pól zaznaczenia.
+
+Dodawanie i zmiana roli korzystają ze wspólnego kompaktowego `FormDialog`.
+Ostatni aktywny administrator nie ma menu odebrania roli. Usuwanie osoby
+potwierdza wspólny modal, a usuwanie zespołu formularz z nazwą; zapisy blokują
+kontrolki, błędy zachowują dane. Puste wyniki mają istniejące ilustracje i tekst
+zależny od kontekstu. [Funkcje Zespołów](SPACES.md#system-zespołów-04112026).
+
 ## Wspólna powłoka React
 
 `frontend/app/src/shell/Shell.tsx` renderuje nagłówek, menu Workspace,
@@ -3625,18 +3647,37 @@ menu filtrów/sortowania oraz wygląd wspólnej paginacji. Lista używa
 wspólnej tabeli Projektów (`tasks-directory-sheet tasks-project-sheet`) z wariantem
 `resources-sheet`: wiersze 35px, separatory, nagłówki z ikonami, checkboxy
 z podświetleniem zaznaczenia oraz menu działań po lewej. Dalej są numer ewidencyjny,
-nazwa z ikoną typu, typ, status, osoba, lokalizacja i ważność/gwarancja.
+nazwa z ikoną typu, typ, status, osoba, lokalizacja, ważność/gwarancja i planowany zwrot.
 Miniony termin korzysta ze wspólnego oznaczenia `tasks-project-value-badge--due-overdue`.
-Menu wiersza używa adaptera `AncoreDropdownLayer`, oferuje edycję i usunięcie z potwierdzeniem.
+Menu wiersza używa adaptera `AncoreDropdownLayer`, oferuje kartę, edycję i usunięcie z potwierdzeniem.
 Zamknięcie edycji przywraca fokus do przycisku menu.
 
 Pasek zachowuje wygląd zarządzania kolumnami, agregatu „Filtruj”
 i sortowania z widoczną bieżącą opcją. Komponent `columns.tsx` obsługuje szerokości,
 kolejność i widoczność kolumn; Zasoby mają oddzielny klucz ustawień `resources`,
 wspólny dla zwykłego i scoped URL. Checkbox nagłówka zaznacza bieżącą stronę,
-a częściowy wybór pokazuje stan pośredni; nie uruchamia operacji zbiorczych.
+a częściowy wybór pokazuje stan pośredni. Po zaznaczeniu pojawia się pasek
+przekazania, zwrotu, zmiany statusu i lokalizacji; akcje niedostępne dla wybranego
+zestawu są wyłączone. Gość nie zaznacza ani nie edytuje zasobów.
 Kolumny przewijają się poziomo także na telefonie, a pasek narzędzi zawija.
-Pusty katalog i brak wyników mają osobne komunikaty i działające akcje.
+Pusty katalog i brak wyników mają osobne komunikaty, a działania pozostają w pasku.
+
+Zwarty `resources-summary` nad filtrami pokazuje liczniki całego Workspace.
+Przyciski używają `tasks-filter-button`, ikon i istniejących tokenów; kliknięcie
+resetuje filtry do wskazanego zakresu. Aktywne filtry mają osobny, zawijany wiersz
+z usuwaniem. „Eksport CSV” jest w nagłówku, a odświeżanie obok kolumn.
+Nazwa otwiera kartę z danymi i historią. Minimalne warianty
+`resources-detail-panel`, `resources-properties` i `resources-history`
+w `resources.css` zachowują ramki, odstępy i font wspólnej aplikacji;
+poniżej 1100px panele układają się pionowo, przewijane we wspólnej treści.
+Historia pokazuje autora, czas, wartości przed/po i notatkę; długie wartości mają
+własne przewijanie. Terminy wymagające uwagi mają opis tekstowy w karcie.
+Przekazanie, zwrot, status, lokalizacja i notatka korzystają ze wspólnego `Modal`
+z istniejącym `app-modal-panel--compact`, custom selectów i ochrony szkicu.
+Walidacja zachowuje pola i ogłasza błąd. Konflikt blokuje zapis i udostępnia
+„Odrzuć szkic i odśwież”. Karta jest dostępna również dla gościa i w pierwszym
+renderze Django; operacje wymagają Reacta. Dodanie kolumny zwrotu kopiuje
+wcześniejsze preferencje układu i szerokości do rozszerzonego schematu.
 
 `resources.css` ustala wariant siatki oraz dwukolumnowy układ formularza,
 który przechodzi w jedną kolumnę na telefonie. Powłoka, pola i przyciski

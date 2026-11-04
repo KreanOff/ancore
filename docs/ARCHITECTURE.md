@@ -199,7 +199,7 @@ Użytkownik → Workspace
   │           └─ SpaceTaskWorkLog
   ├─ Team → TeamMembership
   ├─ CalendarEvent + terminy SpaceTask
-  ├─ Resource
+  ├─ Resource → ResourceActivity (historia, przekazania i zwroty)
   ├─ DocumentLibrary → Folder / Document
   └─ WorkspaceDocument
 
@@ -344,6 +344,11 @@ odpytywania centrum powiadomień; nie wymagają workera. Aktualne ograniczenia i
 [MODULES.md](MODULES.md) i [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Przestrzenie i zespoły (10.10.2026)
+
+`spaces.teams` obsługuje katalog, profil i operacje Zespołów, a
+`spaces.team_queries` grupuje liczniki i zapytania w zakresie widoczności
+użytkownika. Zespół organizuje pracę; nie stanowi dodatkowego źródła ACL.
+[Zakres bieżącego systemu](SPACES.md#system-zespołów-04112026).
 
 `Space` → `SpaceTask` → podzadanie ma własne członkostwa, historię, pliki
 i dziennik pracy. `WorkItem` przechowuje planowanie i trwały klucz, np. `PRO-1`.

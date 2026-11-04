@@ -21,6 +21,9 @@ błąd zachowuje szkic i udostępnia ponowienie. Komentarze są wysyłane osobno
 Główne menu używa Przestrzeni, Wszystkich zadań i Zespołów. Starsze systemy
 projektów, grup, zadań, ulubionych projektów i szablonów są wycofane.
 Nowy przepływ pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
+Zespoły mają katalog „Wszystkie / Moje / Zarządzane”, podsumowanie terminów i postępu,
+filtry zadań, zarządzanie członkami i powiązania przestrzeni. Usunięcie zespołu
+z potwierdzeniem nazwy zachowuje zadania i przestrzenie. [Szczegóły](SPACES.md#system-zespołów-04112026).
 
 Backlog udostępnia indywidualne i zbiorcze planowanie, estymacje, wykonawców,
 tworzenie w sekcji, edycję sprintu oraz zamknięcie z przeniesieniem pracy
@@ -629,28 +632,57 @@ Przed rozwinięciem tych obszarów sprawdź ich aktualne wywołania i testy.
 [frontend React](../frontend/app/src/resources/App.tsx),
 [powłoka](../backend/resources/templates/resources/react.html).
 
-Lista i formularze są pierwszym modułem przeniesionym do Reacta z TypeScriptem.
-Django udostępnia JSON API v1 i nadal odpowiada za sesję, CSRF, zakres danych
-oraz walidację. Pozostałe moduły zachowują dotychczasowy frontend.
-Budowanie i granice migracji: [Frontend React](FRONTEND.md).
+Katalog, karta zasobu i formularze korzystają z Reacta z TypeScriptem.
+Django udostępnia JSON API v1 i odpowiada za sesję, CSRF, zakres danych,
+walidację oraz historię. Budowanie: [Frontend React](FRONTEND.md).
 
 Katalog „Zasoby” jest dostępny w menu Workspace pod `/resources/` oraz
 `/workplaces/<slug>/resources/`. Przechowuje sprzęt, licencje i narzędzia:
 nazwę, opcjonalny numer ewidencyjny i seryjny, status (Dostępny, W użyciu,
 W serwisie, Wycofany), osobę odpowiedzialną, lokalizację, datę zakupu,
-termin ważności/gwarancji i notatki. Numer ewidencyjny jest unikalny w Workspace
+termin ważności/gwarancji, planowany zwrot i notatki. Numer ewidencyjny jest unikalny w Workspace
 bez rozróżniania wielkości liter; puste numery mogą się powtarzać.
-Termin ważności nie może poprzedzać daty zakupu. Miniony termin ma oznaczenie
-w tabeli, ale nie zmienia automatycznie statusu ani nie wysyła przypomnienia.
+Termin ważności nie może poprzedzać daty zakupu. Planowany zwrot jest opcjonalny
+i występuje wyłącznie przy statusie „W użyciu”; zapis innego statusu usuwa datę.
+Ograniczenie jest również w bazie. Minione terminy i ważność do 30 dni mają
+oznaczenia w tabeli i karcie. Nie zmieniają automatycznie statusu ani nie wysyłają
+przypomnienia. Wycofane zasoby nie wchodzą do alertów ważności.
 
 Lista udostępnia wyszukiwanie nazwy, numerów, lokalizacji i notatek,
-łączone filtry typu, statusu i przypisania (do mnie / nieprzypisane),
-sortowanie według nazwy, daty utworzenia i ważności oraz paginację 25/50/100.
+łączone filtry typu, statusu, przypisania (do mnie / nieprzypisane) i terminów:
+ważność po terminie, najbliższe 30 dni, oba zakresy, zwrot po terminie,
+zwrot w najbliższych 7 dniach oraz brak daty ważności. Sortowanie obejmuje nazwę,
+datę utworzenia, ostatnią zmianę, ważność i zwrot; brakujące daty są na końcu.
+Paginacja ma 25/50/100 pozycji. Liczniki nad katalogiem dotyczą całego Workspace;
+kliknięcie otwiera wskazany zakres i resetuje pozostałe filtry.
 Układ listy odpowiada katalogowi Projektów: zarządzanie kolumnami, zbiorcze
 menu filtrów, checkboxy z podświetleniem zaznaczenia i menu działań wiersza
-z edycją/usunięciem. Ustawienia kolumn są zapisywane lokalnie dla Zasobów.
+z kartą, edycją i usunięciem. Ustawienia kolumn są zapisywane lokalnie dla Zasobów;
+nowa kolumna zwrotu zachowuje wcześniejsze preferencje.
 Globalne wyszukiwanie ma osobną kategorię Zasoby z limitem 20 wyników i linkami
-do edycji. Moduł można dodać do osobistych ulubionych menu.
+do karty. Moduł można dodać do osobistych ulubionych menu.
+
+Karta pod `/<pk>/` ma dane, notatki ewidencyjne i historię `ResourceActivity`
+stronicowaną po 20 wpisów. Zapisuje faktycznego autora, czas, rodzaj operacji,
+zmienione pola przed/po oraz opcjonalną notatkę do operacji (do 2000 znaków).
+Nazwa autora pozostaje po usunięciu konta. Historia zaczyna się od wdrożenia
+mechanizmu; migracja nie odtwarza wcześniejszych zdarzeń. Notatka do historii
+nie nadpisuje ogólnych notatek zasobu. Nazwy i tekst są renderowane bez interpretacji HTML.
+
+„Przekaż” wybiera aktywną osobę Workspace, ustawia „W użyciu” i opcjonalną datę
+zwrotu (dzisiaj lub później). Dotyczy zasobów dostępnych lub w użyciu; pozwala
+również przekazać zasób kolejnej osobie. „Przyjmij zwrot” wymaga „W użyciu”,
+ustawia „Dostępny” i usuwa przypisanie oraz termin. Zmiana samego statusu
+zachowuje osobę odpowiedzialną. Karta udostępnia też notatkę do historii.
+Zaznaczenie obejmuje bieżącą stronę (maksymalnie 100 zasobów) i pozwala zbiorczo
+przekazać, przyjąć zwrot, zmienić status lub lokalizację. Walidacja całego zestawu,
+zapis i historia są atomowe, z blokadą rekordów. Niedostępny zasób, błędny stan
+lub nieaktualna wersja zatrzymuje całą operację. Dialog konfliktu pozwala odrzucić
+szkic i pobrać bieżące dane. Zmiana wyników czyści zaznaczenie.
+
+„Eksport CSV” pobiera wszystkie wyniki bieżących filtrów i sortowania, niezależnie
+od strony. Plik ma UTF-8 z BOM, separator średnik i neutralizację komórek mogących
+uruchomić formułę w arkuszu. Zachowuje ten sam zakres Workspace co katalog.
 
 Dodawanie i edycja używają standardowego modala nad katalogiem; błędy walidacji
 zachowują pola, błędy sieci pozwalają ponowić zapis. Zamknięcie niezapisanego
@@ -660,7 +692,12 @@ Po zapisie/usunięciu lista zachowuje filtry, sortowanie i bieżącą stronę
 
 Dane należą do właściciela i aktywnego Workspace; rzeczywisty autor utworzenia
 oraz ostatniej zmiany jest zapisany osobno. Formularz przypisania ogranicza
-osoby do aktywnego zespołu. Model nie zawiera kluczy licencyjnych, załączników,
+osoby do aktywnego zespołu. Gość odczytuje katalog, kartę, historię i eksport,
+ale nie zapisuje zmian. Formularze interfejsu przekazują wersję `updated_at`,
+chroniąc przed nadpisaniem równoczesnej zmiany. Starsze wywołania edycji bez wersji
+pozostają zgodne; nowe operacje wymagają wersji wszystkich wskazanych zasobów.
+Usunięcie zasobu usuwa również jego historię; wycofanie przez status zachowuje ją.
+Model nie zawiera kluczy licencyjnych, załączników,
 rezerwacji, amortyzacji ani automatycznego śledzenia dostępności.
 
 ## Zakres frontendu React
