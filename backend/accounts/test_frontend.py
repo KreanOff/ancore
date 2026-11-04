@@ -9,7 +9,6 @@ from django.urls import reverse
 
 from workplaces.models import create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, WORKPLACE_URL_SCOPE_SESSION_KEY
-from .views import SWITCH_ACCOUNTS_HASHES_KEY, SWITCH_ACCOUNTS_SESSION_KEY
 
 
 class AccountFrontendTests(TestCase):
@@ -37,9 +36,6 @@ class AccountFrontendTests(TestCase):
         return {'first_name': 'Anna', 'last_name': 'Nowak', 'email': self.user.email,
                 'username': self.user.username, 'presence_status': 'busy', **extra}
 
-    def add(self):
-        return self.api('add_account', {'username': self.other.email, 'password': self.password})
-
     def test_public_screens_have_safe_bootstrap_and_no_store(self):
         for name in ('login', 'register'):
             with self.subTest(name=name):
@@ -64,14 +60,14 @@ class AccountFrontendTests(TestCase):
         self.assertEqual(self.client.get(reverse('react-page'), {'url': reverse('login')}).status_code, 401)
 
     def test_private_account_routes_require_session(self):
-        for name in ('profile', 'select_workspace', 'add_account', 'switch_account', 'remove_account', 'update_presence_status', 'logout'):
+        for name in ('profile', 'select_workspace', 'update_profile_banner', 'update_presence_status', 'logout'):
             for body in (None, {}):
                 with self.subTest(name=name, body=body):
                     self.assertEqual(self.api(name, body).status_code, 401)
 
     def test_methods_and_json_shape_are_checked(self):
         self.client.force_login(self.user)
-        for name in ('switch_account', 'remove_account', 'update_presence_status', 'logout'):
+        for name in ('update_profile_banner', 'update_presence_status', 'logout'):
             response = self.api(name)
             self.assertEqual(response.status_code, 405)
             self.assertEqual(response['Allow'], 'POST')
@@ -120,6 +116,7 @@ class AccountFrontendTests(TestCase):
         created = get_user_model().objects.get(email=payload['email'])
         self.assertTrue(created.check_password(self.password))
         self.assertEqual(self.client.session[SESSION_KEY], str(created.pk))
+        self.client.logout()
         payload['email'] = payload['email'].upper()
         self.assertEqual(self.api('register', payload).status_code, 400)
 
@@ -130,19 +127,20 @@ class AccountFrontendTests(TestCase):
             self.assertEqual(response.status_code, 403)
             self.assertEqual(response['Content-Type'], 'application/json')
         client.force_login(self.user)
-        for name in ('profile', 'add_account', 'switch_account', 'remove_account', 'update_presence_status', 'logout'):
+        for name in ('profile', 'update_profile_banner', 'update_presence_status', 'logout'):
             self.assertEqual(self.api(name, {}, client=client).status_code, 403)
         client.get(reverse('profile'))
         token = client.cookies['csrftoken'].value
         self.assertEqual(self.api('profile', self.profile_data(), client=client, HTTP_X_CSRFTOKEN=token).status_code, 200)
 
-    def test_profile_only_exposes_current_identity_and_authenticated_switcher(self):
+    def test_profile_only_exposes_current_identity_without_saved_accounts(self):
         self.client.force_login(self.user)
         response = self.api('profile')
         self.assertEqual(response.status_code, 200)
         data = response.json()['data']
         self.assertEqual(data['user']['email'], self.user.email)
-        self.assertEqual([a['id'] for a in data['accounts']], [str(self.user.pk)])
+        self.assertNotIn('accounts', data)
+        self.assertEqual(set(data['urls']), {'profile', 'update_profile_banner', 'update_presence_status', 'logout'})
         self.assertEqual(len(data['form']['avatars']), 30)
         self.assertNotIn(self.other.email, response.content.decode())
         self.assertNotIn(self.user.get_session_auth_hash(), response.content.decode())
@@ -193,41 +191,68 @@ class AccountFrontendTests(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.presence_status, 'busy')
 
-    def test_adding_switching_and_removing_current_account_preserves_proven_credentials(self):
+    def test_selecting_active_clears_manual_status_in_api_and_html(self):
+        self.client.force_login(self.user)
+        for manual_status in ('busy', 'out_of_office', 'do_not_disturb'):
+            for api in (True, False):
+                with self.subTest(manual_status=manual_status, api=api):
+                    self.user.presence_status = manual_status
+                    self.user.save(update_fields=['presence_status'])
+                    payload = {'presence_status': 'active'}
+                    if api:
+                        response = self.api('update_presence_status', payload)
+                        self.assertEqual(response.json(), {'redirect': reverse('profile')})
+                    else:
+                        response = self.client.post(reverse('update_presence_status'), payload)
+                        self.assertRedirects(response, reverse('profile'), fetch_redirect_response=False)
+                    self.user.refresh_from_db()
+                    self.assertEqual(self.user.presence_status, 'active')
+
+    def test_retired_account_api_targets_return_404_without_changing_identity(self):
+        for authenticated in (False, True):
+            if authenticated:
+                self.client.force_login(self.user)
+            for action in ('add-account', 'switch-account', 'remove-account'):
+                for method in ('get', 'post'):
+                    with self.subTest(authenticated=authenticated, action=action, method=method):
+                        url = reverse('accounts-api') + f'?url=/accounts/profile/{action}/'
+                        response = self.client.get(url) if method == 'get' else self.client.post(url, {'user_id': self.other.pk})
+                        self.assertEqual(response.status_code, 404)
+                        self.assertEqual(response['Cache-Control'], 'no-store')
+                        self.assertEqual(self.client.session.get(SESSION_KEY), str(self.user.pk) if authenticated else None)
+
+    def test_logged_in_auth_api_cannot_replace_identity_or_create_second_account(self):
+        self.client.force_login(self.user)
+        before = get_user_model().objects.count()
+        for route, body in (
+            ('login', {'username': self.other.email, 'password': self.password}),
+            ('register', {'first_name': 'Ewa', 'last_name': 'Testowa', 'email': 'new.frontend@example.test',
+                          'password1': self.password, 'password2': self.password}),
+        ):
+            for payload in (None, body):
+                with self.subTest(route=route, payload=payload):
+                    response = self.api(route, payload)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertIn('redirect', response.json())
+                    self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+                    self.assertEqual(get_user_model().objects.count(), before)
+
+    def test_logout_then_login_changes_account_without_old_workspace_or_credentials(self):
         self.client.force_login(self.user)
         self.client.get(reverse('profile'))
-        self.assertEqual(self.add().json(), {'redirect': reverse('profile')})
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
-        self.assertEqual(len(self.api('profile').json()['data']['accounts']), 2)
-        self.assertEqual(self.api('switch_account', {'user_id': self.user.pk}).status_code, 200)
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-        self.assertEqual(self.api('remove_account', {'user_id': self.user.pk}).status_code, 200)
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
-        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.other.pk)])
-        self.assertEqual(self.api('remove_account', {'user_id': self.other.pk}).status_code, 400)
-
-    def test_password_change_invalidates_switch_and_cannot_remove_current_to_bypass_it(self):
-        self.client.force_login(self.user)
-        self.add()
-        self.user.set_password('updated-frontend-password-84!'); self.user.save()
-        self.assertEqual(self.api('switch_account', {'user_id': self.user.pk}).status_code, 403)
-        self.assertEqual(self.api('remove_account', {'user_id': self.other.pk}).status_code, 400)
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
-        self.assertNotIn(str(self.user.pk), [a['id'] for a in self.api('profile').json()['data']['accounts']])
-
-    def test_switcher_ids_without_authentication_hashes_never_grant_access(self):
-        self.client.force_login(self.user)
         session = self.client.session
-        session[SWITCH_ACCOUNTS_SESSION_KEY] = [str(self.user.pk), str(self.other.pk)]
+        session['switch_account_user_ids'] = [str(self.user.pk), str(self.other.pk)]
+        session['switch_account_auth_hashes'] = {
+            str(user.pk): user.get_session_auth_hash() for user in (self.user, self.other)
+        }
         session.save()
-        self.assertEqual(self.api('switch_account', {'user_id': self.other.pk}).status_code, 403)
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-
-    def test_logout_clears_both_accounts_and_session(self):
-        self.client.force_login(self.user)
-        self.add()
         self.assertEqual(self.api('logout', {}).status_code, 200)
         self.assertNotIn(SESSION_KEY, self.client.session)
-        self.assertNotIn(SWITCH_ACCOUNTS_HASHES_KEY, self.client.session)
-        self.assertNotIn(SWITCH_ACCOUNTS_SESSION_KEY, self.client.session)
+        self.assertNotIn(ACTIVE_WORKPLACE_SESSION_KEY, self.client.session)
+        self.assertNotIn('switch_account_user_ids', self.client.session)
+        self.assertNotIn('switch_account_auth_hashes', self.client.session)
         self.assertEqual(self.api('profile').status_code, 401)
+        response = self.api('login', {'username': self.other.email, 'password': self.password})
+        self.assertEqual(response.json(), {'redirect': reverse('register_workspace')})
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
+        self.assertNotIn(ACTIVE_WORKPLACE_SESSION_KEY, self.client.session)

@@ -49,7 +49,6 @@ def for_you_page(request, context):
 def settings_page(request, context):
     rows = [
         {'category': 'account', 'url': reverse('profile'), 'icon': 'circle-user-round', 'title': 'Profil użytkownika', 'description': 'Dane osobowe, zdjęcie i status dostępności.'},
-        {'category': 'account', 'url': reverse('add_account'), 'icon': 'user-round-plus', 'title': 'Dodaj konto', 'description': 'Korzystaj z kilku kont bez wylogowywania.'},
         {'category': 'workspace', 'url': reverse('workplaces:workplaces'), 'icon': 'folder', 'title': 'Zarządzaj Workspace', 'description': 'Wszystkie Workspace, ich ustawienia, członkowie i linki do dołączenia.'},
     ]
     if request.user.is_staff:

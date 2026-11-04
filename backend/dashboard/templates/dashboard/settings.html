@@ -24,12 +24,10 @@
                     <a href="{% url 'profile' %}" class="settings-button">Edytuj profil</a>
                 </div>
                 <section class="settings-group" id="account" data-settings-group="account" aria-labelledby="settings-account-title">
-                    <header class="settings-group-heading"><h2 id="settings-account-title">Konto i dostęp</h2><p>Dane osobowe i konta, z których korzystasz.</p></header>
+                    <header class="settings-group-heading"><h2 id="settings-account-title">Konto i dostęp</h2><p>Dane osobowe i ustawienia konta.</p></header>
                     <div class="settings-rows">
                         {% url 'profile' as profile_url %}
                         {% include 'dashboard/includes/settings_row.html' with href=profile_url icon='circle-user-round' title='Profil użytkownika' description='Dane osobowe, zdjęcie i status dostępności.' only %}
-                        {% url 'add_account' as add_account_url %}
-                        {% include 'dashboard/includes/settings_row.html' with href=add_account_url icon='user-round-plus' title='Dodaj konto' description='Korzystaj z kilku kont bez wylogowywania.' only %}
                     </div>
                 </section>
                 <section class="settings-group" id="workspace" data-settings-group="workspace" aria-labelledby="settings-workspace-title">

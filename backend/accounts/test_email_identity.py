@@ -71,6 +71,7 @@ class EmailIdentityTests(TestCase):
             with self.subTest(email=email):
                 self.assertEqual(authenticate(username=email, password=password), self.user)
                 self.assertEqual(async_to_sync(aauthenticate)(email=email, password=password), self.user)
+                self.client.logout()
                 response = self.client.post(reverse('login'), {'username': email, 'password': password})
                 self.assertEqual(response.status_code, 302)
                 self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
@@ -83,12 +84,13 @@ class EmailIdentityTests(TestCase):
         self.user.save(update_fields=['is_active'])
         self.assertIsNone(authenticate(username='ANNA@EXAMPLE.TEST', password='email-authentication-83!'))
 
-    def test_case_variant_also_works_when_adding_account(self):
+    def test_case_variant_works_after_logging_out_of_another_account(self):
         self.user.set_password('email-authentication-83!')
         self.user.save(update_fields=['password'])
         other = get_user_model().objects.create_user(username='signed-in', email='signed-in@example.test')
         self.client.force_login(other)
-        response = self.client.post(reverse('add_account'), {'username': 'ANNA@EXAMPLE.TEST', 'password': 'email-authentication-83!'})
+        self.client.post(reverse('logout'))
+        response = self.client.post(reverse('login'), {'username': 'ANNA@EXAMPLE.TEST', 'password': 'email-authentication-83!'})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
 

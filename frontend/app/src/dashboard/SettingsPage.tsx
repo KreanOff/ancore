@@ -68,7 +68,7 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
             ) : null}
             {(
               [
-                ['account', 'Konto i dostęp', 'Dane osobowe i konta, z których korzystasz.'],
+                ['account', 'Konto i dostęp', 'Dane osobowe i ustawienia konta.'],
                 ['workspace', 'Workspace', 'Organizacja pracy, przestrzenie, pulpity i filtry.'],
               ] as const
             )

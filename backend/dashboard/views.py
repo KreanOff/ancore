@@ -15,7 +15,6 @@ from django.views.decorators.http import require_GET, require_POST
 from workplaces.services import workspace_owner
 
 from accounts.avatar import account_avatar
-from accounts.views import _switch_account_context
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
 from planner.models import CalendarEvent
 from resources.models import Resource
@@ -347,7 +346,6 @@ def settings(request):
     settings_spaces = [{'name': space.name, 'url': space_url(request, space, '?view=settings')} for space in spaces]
     return render(request, 'dashboard/settings.html', {
         'current_account_avatar': account_avatar(request.user),
-        'switch_accounts': _switch_account_context(request),
         'settings_spaces': settings_spaces,
     })
 

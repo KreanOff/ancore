@@ -42,9 +42,13 @@ export default function WorkspacePickerPage({ initial, csrfToken }: PageProps) {
               <p>
                 Chcesz utworzyć kolejny Workspace? <a href={data.urls.create}>Utwórz Workspace</a>
               </p>
-              <p>
-                Nie widzisz swojego Workspace? <a href={data.urls.login}>Zmień konto</a>
-              </p>
+              <form method="post" action={data.urls.logout} className="auth-logout-form">
+                <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+                Nie widzisz swojego Workspace?{' '}
+                <button type="submit" className="auth-link-button">
+                  Wyloguj się i zmień konto
+                </button>
+              </form>
             </div>
           </div>
         </section>

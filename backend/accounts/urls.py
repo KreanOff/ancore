@@ -10,9 +10,7 @@ urlpatterns = [
     path('register/workspace/', views.register_workspace, name='register_workspace'),
     path('workspaces/', views.select_workspace, name='select_workspace'),
     path('profile/', views.profile, name='profile'),
+    path('profile/banner/', views.update_profile_banner, name='update_profile_banner'),
     path('profile/status/', views.update_presence_status, name='update_presence_status'),
-    path('profile/add-account/', views.add_account, name='add_account'),
-    path('profile/switch-account/', views.switch_account, name='switch_account'),
-    path('profile/remove-account/', views.remove_account, name='remove_account'),
     path('presence/ping/', views.presence_ping, name='presence_ping'),
 ]

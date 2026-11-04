@@ -58,12 +58,6 @@
     </nav>
 
     <div class="profile-rail-actions" aria-label="Akcje konta">
-        <a href="{% url 'add_account' %}" class="tasks-rail-link profile-rail-action {% if request.resolver_match.view_name == 'add_account' %}is-active{% endif %}">
-            <span class="tasks-rail-icon" aria-hidden="true">
-                <i data-icon="user-plus" aria-hidden="true"></i>
-            </span>
-            Dodaj konto
-        </a>
         <form method="post" action="{% url 'logout' %}" class="profile-rail-action-form">
             {% csrf_token %}
             <button type="submit" class="tasks-rail-link profile-rail-action profile-rail-action--logout">

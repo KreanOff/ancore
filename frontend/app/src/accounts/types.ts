@@ -1,8 +1,9 @@
 import type { FormSchema } from '../forms/FormDialog';
 import type { AvatarData } from '../shared/Avatar';
 import type { AvatarForm } from '../shared/AvatarControl';
+import type { BannerCrop } from './banner-crop';
 export interface AuthData {
-  mode: 'login' | 'register' | 'workspace' | 'add';
+  mode: 'login' | 'register' | 'workspace';
   form: FormSchema;
   urls: Record<string, string>;
   logo: string;
@@ -10,7 +11,7 @@ export interface AuthData {
 }
 export interface WorkspacePickerData {
   workspaces: { id: string; name: string; switch_url: string }[];
-  urls: { home: string; create: string; login: string };
+  urls: { home: string; create: string; logout: string };
 }
 export interface ProfileData {
   user: {
@@ -30,16 +31,8 @@ export interface ProfileData {
     joined: string;
     last_login: string;
   };
+  banner: { url: string; default_url: string; custom: boolean; max_size: number; crop: BannerCrop };
+  banner_form: FormSchema;
   form: AvatarForm;
-  accounts: {
-    id: string;
-    name: string;
-    email: string;
-    username: string;
-    current: boolean;
-    avatar: AvatarData;
-    presence_status: string;
-    presence_label: string;
-  }[];
   urls: Record<string, string>;
 }

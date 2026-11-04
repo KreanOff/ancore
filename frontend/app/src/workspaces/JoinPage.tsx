@@ -80,7 +80,7 @@ export default function JoinPage({ initial, csrfToken }: PageProps) {
             )}
             {error && data.authenticated ? (
               <p>
-                <a href={data.urls.profile}>Przejdź do profilu i zmień konto</a>
+                <a href={data.urls.profile}>Przejdź do profilu</a>
               </p>
             ) : null}
           </div>

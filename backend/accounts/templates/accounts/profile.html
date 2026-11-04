@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static l10n %}
 
 {% block title %}Profil | ancore{% endblock %}
 
@@ -17,211 +18,223 @@
     <div class="tasks-issue-shell profile-issue-shell">
         <header class="tasks-issue-header">
             <div class="tasks-issue-breadcrumb">
-                <span class="tasks-issue-crumb tasks-issue-crumb--current">
-                    <span id="profile-title">Profil użytkownika</span>
-                </span>
+                <h1 class="tasks-issue-crumb tasks-issue-crumb--current" id="profile-title">Profil użytkownika</h1>
             </div>
-
             <div class="tasks-issue-actions">
-                <div class="contacts-actions-menu" data-profile-actions>
-                    <button type="button"
-                            class="tasks-icon-button contacts-actions-menu__toggle"
-                            aria-label="Opcje profilu"
-                            title="Opcje profilu"
-                            aria-haspopup="menu"
-                            aria-expanded="false"
-                            aria-controls="profile-actions-menu"
-                            data-contact-actions-toggle
-                            data-profile-actions-toggle>
-                        <i data-icon="ellipsis" aria-hidden="true" stroke-width="2.2"></i>
-                    </button>
-                    <div class="contacts-actions-menu__panel" id="profile-actions-menu" role="menu" aria-label="Opcje profilu">
-                        <button type="button" class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open>
-                            <i data-icon="pencil" aria-hidden="true"></i>
-                            Edytuj
-                        </button>
-                    </div>
-                </div>
+                <button type="button" class="tasks-filter-button" data-profile-edit-open>
+                    <i data-icon="pencil" aria-hidden="true"></i>
+                    Edytuj profil
+                </button>
             </div>
         </header>
 
-        <main class="tasks-issue-main profile-issue-main">
-            <section class="tasks-issue-content profile-issue-content" aria-label="Dane profilu">
-                <div class="profile-detail-form profile-summary">
-                    <div class="profile-title-area profile-summary-area">
-                        <div class="profile-photo-control profile-photo-control--static">
-                            <button type="button" class="profile-photo-preview-button" aria-label="Zmień awatar użytkownika" title="Zmień awatar użytkownika" data-profile-edit-open data-profile-edit-avatar>
-                                {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='profile-page-avatar' only %}
-                            </button>
-                        </div>
+        {% with profile_user=frontend_bootstrap.data.user %}
+        <main class="tasks-issue-main profile-issue-main profile-overview">
+            <div class="profile-overview-inner">
+                <section class="profile-hero profile-summary" aria-label="Dane profilu">
+                    <div class="profile-banner">
+                        <img class="profile-banner-image" src="{{ frontend_bootstrap.data.banner.url }}" alt="" style="object-position: {{ frontend_bootstrap.data.banner.crop.x|unlocalize }}% {{ frontend_bootstrap.data.banner.crop.y|unlocalize }}%; transform: scale({{ frontend_bootstrap.data.banner.crop.zoom|unlocalize }}); transform-origin: {{ frontend_bootstrap.data.banner.crop.x|unlocalize }}% {{ frontend_bootstrap.data.banner.crop.y|unlocalize }}%;">
+                    </div>
+                    <details class="profile-banner-settings"{% if banner_form.errors %} open{% endif %}>
+                        <summary class="tasks-filter-button profile-banner-action"><i data-icon="image" aria-hidden="true"></i>Zmień baner</summary>
+                        <form method="post" action="{% url 'update_profile_banner' %}" enctype="multipart/form-data" class="profile-banner-fallback" novalidate>
+                            {% csrf_token %}
+                            {% if banner_form.errors %}
+                            <div class="tasks-error-banner" role="alert">
+                                {{ banner_form.non_field_errors }}
+                                {{ banner_form.profile_banner.errors }}
+                                {{ banner_form.remove_banner.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="app-form-field">
+                                <label for="{{ banner_form.profile_banner.id_for_label }}">Obraz banera</label>
+                                {{ banner_form.profile_banner }}
+                                <p class="profile-banner-help">PNG, JPG lub WebP · do 5 MB. Zalecany rozmiar: 1600 × 400 px. Ustaw pozycję i powiększenie kadru bez zmieniania oryginalnego obrazu.</p>
+                            </div>
+                            <div class="profile-banner-crop-fields">
+                                <div class="app-form-field">
+                                    <label for="{{ banner_form.profile_banner_x.id_for_label }}">{{ banner_form.profile_banner_x.label }}</label>
+                                    {{ banner_form.profile_banner_x }}
+                                    {{ banner_form.profile_banner_x.errors }}
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="{{ banner_form.profile_banner_y.id_for_label }}">{{ banner_form.profile_banner_y.label }}</label>
+                                    {{ banner_form.profile_banner_y }}
+                                    {{ banner_form.profile_banner_y.errors }}
+                                </div>
+                                <div class="app-form-field">
+                                    <label for="{{ banner_form.profile_banner_zoom.id_for_label }}">{{ banner_form.profile_banner_zoom.label }}</label>
+                                    {{ banner_form.profile_banner_zoom }}
+                                    {{ banner_form.profile_banner_zoom.errors }}
+                                </div>
+                            </div>
+                            {% if frontend_bootstrap.data.banner.custom %}
+                            <label class="form-check">{{ banner_form.remove_banner }} Przywróć domyślny baner</label>
+                            {% endif %}
+                            <div class="profile-banner-controls"><button type="submit" class="tasks-filter-button">Zapisz baner</button></div>
+                        </form>
+                    </details>
+                    <div class="profile-hero-identity">
+                        <button type="button" class="profile-photo-preview-button profile-hero-avatar" aria-label="Zmień awatar użytkownika" title="Zmień awatar użytkownika" data-profile-edit-open data-profile-edit-avatar>
+                            {% include 'accounts/includes/user_avatar.html' with avatar=profile_user.avatar avatar_class='profile-page-avatar' only %}
+                            <span class="profile-avatar-edit" aria-hidden="true"><i data-icon="image"></i></span>
+                        </button>
                         <div class="profile-title-fields">
-                            <div class="tasks-issue-title-field profile-name-fields profile-display-name-fields" aria-label="Imię, drugie imię i nazwisko">
-                                {% if request.user.first_name or request.user.middle_name or request.user.last_name %}
-                                    {% if request.user.first_name %}
-                                    <strong class="profile-display-name">{{ request.user.first_name }}</strong>
-                                    {% endif %}
-                                    {% if request.user.middle_name %}
-                                    <strong class="profile-display-name">{{ request.user.middle_name }}</strong>
-                                    {% endif %}
-                                    {% if request.user.last_name %}
-                                    <strong class="profile-display-name">{{ request.user.last_name }}</strong>
-                                    {% endif %}
-                                {% else %}
-                                    <strong class="profile-display-name">Nie podano</strong>
+                            <h2 class="profile-display-name">{{ profile_user.name }}</h2>
+                            <div class="profile-identity-line">
+                                <span class="profile-identity-handle">{{ profile_user.username }}</span>
+                                <span class="profile-presence-badge presence-{{ profile_user.presence_status }}">
+                                    {% include 'accounts/includes/presence_status_icon.html' with status=profile_user.presence_status only %}
+                                    {% for option in presence_status_options %}{% if option.value == profile_user.presence_status %}{{ option.label }}{% endif %}{% endfor %}
+                                </span>
+                            </div>
+                            {% if profile_user.job_title %}
+                            <p class="profile-hero-job"><i data-icon="briefcase" aria-hidden="true"></i>{{ profile_user.job_title }}</p>
+                            {% else %}
+                            <button type="button" class="profile-text-action" data-profile-edit-open><i data-icon="plus" aria-hidden="true"></i>Dodaj stanowisko</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+                <div class="profile-details-grid">
+                    <div class="profile-about-column">
+                        <section class="profile-overview-card profile-about" aria-labelledby="profile-bio-title">
+                            <div class="profile-section-heading">
+                                <h2 class="profile-section-title" id="profile-bio-title"><i data-icon="user-round" aria-hidden="true"></i>O mnie</h2>
+                                <button type="button" class="tasks-filter-button profile-icon-action" aria-label="Edytuj opis" title="Edytuj opis" data-profile-edit-open><i data-icon="pencil" aria-hidden="true"></i></button>
+                            </div>
+                            {% if profile_user.bio.strip %}
+                            <p class="profile-display-value profile-display-bio react-profile-bio">{{ profile_user.bio }}</p>
+                            {% else %}
+                            <div class="profile-bio-empty">
+                                <p class="profile-empty-title">Daj się poznać</p>
+                                <p>Opowiedz, czym się zajmujesz, co Cię interesuje i w czym możesz pomóc.</p>
+                                <button type="button" class="tasks-filter-button" data-profile-edit-open><i data-icon="plus" aria-hidden="true"></i>Dodaj opis</button>
+                            </div>
+                            {% endif %}
+                        </section>
+                        {% if not profile_user.job_title.strip or not profile_user.bio.strip or not profile_user.phone_number.strip %}
+                        <section class="profile-overview-card profile-completion" aria-labelledby="profile-completion-title">
+                            <div class="profile-section-heading">
+                                <h2 class="profile-section-title" id="profile-completion-title">Uzupełnij swój profil</h2>
+                                {% with job_done=profile_user.job_title.strip|yesno:"1,0" bio_done=profile_user.bio.strip|yesno:"1,0" phone_done=profile_user.phone_number.strip|yesno:"1,0" %}
+                                <span class="profile-completion-count">{{ job_done|add:bio_done|add:phone_done }}/3</span>
+                                {% endwith %}
+                            </div>
+                            <p class="profile-section-description">Kilka szczegółów ułatwi współpracę w zespole. Uzupełnij je, kiedy chcesz.</p>
+                            <div class="profile-completion-list">
+                                {% if not profile_user.job_title.strip %}
+                                <button type="button" class="profile-completion-action" data-profile-edit-open>
+                                    <span class="profile-completion-icon"><i data-icon="briefcase" aria-hidden="true"></i></span>
+                                    <span class="profile-completion-copy"><span>Dodaj stanowisko</span><small>Czym zajmujesz się na co dzień?</small></span>
+                                    <i data-icon="chevron-right" aria-hidden="true"></i>
+                                </button>
+                                {% endif %}
+                                {% if not profile_user.bio.strip %}
+                                <button type="button" class="profile-completion-action" data-profile-edit-open>
+                                    <span class="profile-completion-icon"><i data-icon="user-round" aria-hidden="true"></i></span>
+                                    <span class="profile-completion-copy"><span>Napisz kilka słów o sobie</span><small>Podziel się swoim doświadczeniem i zainteresowaniami.</small></span>
+                                    <i data-icon="chevron-right" aria-hidden="true"></i>
+                                </button>
+                                {% endif %}
+                                {% if not profile_user.phone_number.strip %}
+                                <button type="button" class="profile-completion-action" data-profile-edit-open>
+                                    <span class="profile-completion-icon"><i data-icon="phone" aria-hidden="true"></i></span>
+                                    <span class="profile-completion-copy"><span>Dodaj numer telefonu</span><small>Ułatw kontakt ze sobą.</small></span>
+                                    <i data-icon="chevron-right" aria-hidden="true"></i>
+                                </button>
                                 {% endif %}
                             </div>
-
-                            <div class="profile-stacked-field profile-bio-field">
-                                <span class="profile-field-label">Bio</span>
-                                <strong class="profile-display-value profile-display-bio">{{ request.user.bio|default:"Nie podano"|linebreaksbr }}</strong>
+                        </section>
+                        {% endif %}
+                        <p class="profile-scope-note"><i data-icon="info" aria-hidden="true"></i>Dane profilu są wspólne dla Twoich Workspace.</p>
+                    </div>
+                    <aside class="tasks-issue-sidebar profile-issue-sidebar" aria-label="Szczegóły profilu">
+                        <section class="tasks-issue-side-section" aria-labelledby="profile-contact-title">
+                            <div class="profile-section-heading">
+                                <h2 class="profile-section-title" id="profile-contact-title"><i data-icon="contact" aria-hidden="true"></i>Dane kontaktowe</h2>
+                                <button type="button" class="tasks-filter-button profile-icon-action" aria-label="Edytuj dane kontaktowe" title="Edytuj dane kontaktowe" data-profile-edit-open><i data-icon="pencil" aria-hidden="true"></i></button>
                             </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                <section class="tasks-issue-activity profile-accounts-activity" id="accounts" aria-label="Konta w sesji">
-                    <div class="tasks-issue-activity-head">
-                        <h2>
-                            <i data-icon="users" aria-hidden="true"></i>
-                            Konta w sesji
-                        </h2>
-                        <a href="{% url 'add_account' %}" class="tasks-issue-activity-chip profile-add-chip">
-                            <span>Dodaj konto</span>
-                            <i data-icon="plus" aria-hidden="true"></i>
-                        </a>
-                    </div>
-
-                    <div class="tasks-issue-feed profile-account-feed">
-                        {% for account in switch_accounts %}
-                        <article class="tasks-issue-feed-item profile-account-feed-item {% if account.is_current %}is-current{% endif %}">
-                            {% include 'accounts/includes/user_avatar.html' with avatar=account.avatar avatar_class='tasks-issue-avatar' only %}
-                            <div class="tasks-issue-feed-body profile-account-feed-body">
-                                <p>
-                                    <strong>{{ account.user.get_full_name|default:account.user.email }}</strong>
-                                    {% if account.is_current %}
-                                    <time>aktywne teraz</time>
-                                    {% else %}
-                                    <time>dodane do przełącznika</time>
-                                    {% endif %}
-                                </p>
-                                <div class="profile-account-line">{{ account.user.username }} · {{ account.user.email }}</div>
-                                <span class="profile-presence-badge {{ account.user.presence_status_class }}">
-                                    {% include 'accounts/includes/presence_status_icon.html' with status=account.user.presence_status %}
-                                    {{ account.user.get_presence_status_display }}
-                                </span>
-                                <div class="profile-account-actions">
-                                    {% if account.is_current %}
-                                    <span class="profile-current-badge">Teraz</span>
-                                    {% else %}
-                                    <form method="post" action="{% url 'switch_account' %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="user_id" value="{{ account.user.pk }}">
-                                        <button type="submit" class="profile-inline-button">Przełącz</button>
-                                    </form>
-                                    {% endif %}
-                                    <form method="post" action="{% url 'remove_account' %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="user_id" value="{{ account.user.pk }}">
-                                        <button type="submit" class="profile-icon-button" aria-label="Usuń konto z przełącznika" title="Usuń konto z przełącznika">
-                                            {% include 'core/includes/trash_icon.html' %}
+                            <dl class="profile-contact-list">
+                                <div class="profile-contact-row">
+                                    <i data-icon="mail" aria-hidden="true"></i>
+                                    <div class="profile-contact-value"><dt>E-mail</dt><dd><a href="mailto:{{ profile_user.email }}">{{ profile_user.email }}</a></dd></div>
+                                </div>
+                                <div class="profile-contact-row">
+                                    <i data-icon="circle-user-round" aria-hidden="true"></i>
+                                    <div class="profile-contact-value"><dt>ID Ancore</dt><dd><span>{{ profile_user.username }}</span></dd></div>
+                                </div>
+                                <div class="profile-contact-row">
+                                    <i data-icon="phone" aria-hidden="true"></i>
+                                    <div class="profile-contact-value"><dt>Telefon</dt><dd>{% if profile_user.phone_number %}<a href="tel:{{ profile_user.phone_number|cut:' '|cut:'-'|cut:'('|cut:')' }}">{{ profile_user.phone_number }}</a>{% else %}<button type="button" class="profile-text-action" data-profile-edit-open>Dodaj numer telefonu</button>{% endif %}</dd></div>
+                                </div>
+                            </dl>
+                        </section>
+                        <section class="tasks-issue-side-section" aria-labelledby="profile-account-title">
+                            <div class="profile-section-heading">
+                                <h2 class="profile-section-title" id="profile-account-title"><i data-icon="shield-check" aria-hidden="true"></i>Konto i aktywność</h2>
+                            </div>
+                            <div class="tasks-issue-field profile-status-side-field">
+                                <span>Status</span>
+                                <form method="post"
+                                      action="{% url 'update_presence_status' %}"
+                                      class="profile-side-status-form"
+                                      data-profile-status-form>
+                                    {% csrf_token %}
+                                    <div class="profile-status-dropdown profile-status-dropdown--side" data-profile-status-dropdown>
+                                        <select name="presence_status" class="form-input profile-status-source" aria-label="Status użytkownika">
+                                            {% for option in presence_status_options %}
+                                            <option value="{{ option.value }}" {% if option.value == profile_user.presence_status %}selected{% endif %}>{{ option.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="button"
+                                                class="profile-status-button profile-status-button--side"
+                                                aria-haspopup="listbox"
+                                                aria-expanded="false"
+                                                data-profile-status-toggle>
+                                            {% for option in presence_status_options %}
+                                                {% if option.value == profile_user.presence_status %}
+                                                <span class="profile-status-button-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-selected-icon>
+                                                    {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
+                                                </span>
+                                                <span data-profile-status-selected-label>{{ option.label }}</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <i class="profile-status-caret" data-icon="chevron-down" aria-hidden="true"></i>
                                         </button>
-                                    </form>
-                                </div>
+                                        <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
+                                            {% for option in presence_status_options %}
+                                            <button type="button"
+                                                    class="profile-status-option {% if option.value == profile_user.presence_status %}is-selected{% endif %}"
+                                                    role="option"
+                                                    aria-selected="{% if option.value == profile_user.presence_status %}true{% else %}false{% endif %}"
+                                                    data-profile-status-option
+                                                    data-value="{{ option.value }}"
+                                                    data-label="{{ option.label }}">
+                                                <span class="profile-status-option-check" aria-hidden="true"></span>
+                                                <span class="profile-status-option-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-option-icon>
+                                                    {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
+                                                </span>
+                                                <span>{{ option.label }}</span>
+                                            </button>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                        </article>
-                        {% endfor %}
-                    </div>
-                </section>
-            </section>
-
-            <aside class="tasks-issue-sidebar profile-issue-sidebar" aria-label="Szczegóły profilu">
-                <section class="tasks-issue-side-section">
-                    <div class="tasks-issue-field profile-status-side-field">
-                        <span>Status</span>
-                        <form method="post"
-                              action="{% url 'update_presence_status' %}"
-                              class="profile-side-status-form"
-                              data-profile-status-form>
-                            {% csrf_token %}
-                            <div class="profile-status-dropdown profile-status-dropdown--side" data-profile-status-dropdown>
-                                <select name="presence_status" class="form-input profile-status-source" aria-label="Status użytkownika">
-                                    {% for option in presence_status_options %}
-                                    <option value="{{ option.value }}" {% if option.is_selected %}selected{% endif %}>{{ option.label }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="button"
-                                        class="profile-status-button profile-status-button--side"
-                                        aria-haspopup="listbox"
-                                        aria-expanded="false"
-                                        data-profile-status-toggle>
-                                    {% for option in presence_status_options %}
-                                        {% if option.is_selected %}
-                                        <span class="profile-status-button-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-selected-icon>
-                                            {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
-                                        </span>
-                                        <span data-profile-status-selected-label>{{ option.label }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                    <i class="profile-status-caret" data-icon="chevron-down" aria-hidden="true"></i>
-                                </button>
-                                <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
-                                    {% for option in presence_status_options %}
-                                    <button type="button"
-                                            class="profile-status-option {% if option.is_selected %}is-selected{% endif %}"
-                                            role="option"
-                                            aria-selected="{% if option.is_selected %}true{% else %}false{% endif %}"
-                                            data-profile-status-option
-                                            data-value="{{ option.value }}"
-                                            data-label="{{ option.label }}">
-                                        <span class="profile-status-option-check" aria-hidden="true"></span>
-                                        <span class="profile-status-option-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-option-icon>
-                                            {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
-                                        </span>
-                                        <span>{{ option.label }}</span>
-                                    </button>
-                                    {% endfor %}
-                                </div>
+                            <div class="tasks-issue-field">
+                                <span>Dostęp</span>
+                                <strong class="profile-account-access{% if profile_user.active %} is-active{% endif %}">{% if profile_user.active %}Aktywny{% else %}Nieaktywny{% endif %}</strong>
                             </div>
-                        </form>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Dostęp</span>
-                        <strong class="profile-account-access {% if request.user.is_active %}is-active{% endif %}">
-                            {% if request.user.is_active %}Aktywne{% else %}Nieaktywne{% endif %}
-                        </strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Rola</span>
-                        <strong>{% if request.user.is_superuser %}Administrator{% elif request.user.is_staff %}Pracownik{% else %}Użytkownik{% endif %}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Dołączono</span>
-                        <strong>{{ request.user.date_joined|date:"d.m.Y, H:i" }}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Ostatnie logowanie</span>
-                        <strong class="tasks-issue-muted">{{ request.user.last_login|date:"d.m.Y, H:i"|default:"Brak danych" }}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Email</span>
-                        <strong>{{ request.user.email }}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>ID Ancore</span>
-                        <strong>{{ request.user.username }}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Telefon</span>
-                        <strong class="tasks-issue-muted">{{ request.user.phone_number|default:"Nie podano" }}</strong>
-                    </div>
-                    <div class="tasks-issue-field">
-                        <span>Stanowisko</span>
-                        <strong class="tasks-issue-muted">{{ request.user.job_title|default:"Nie podano" }}</strong>
-                    </div>
-                </section>
-            </aside>
+                            <div class="tasks-issue-field"><span>Rola w aplikacji</span><strong>{{ profile_user.role }}</strong></div>
+                            <div class="tasks-issue-field"><span>Dołączono</span><strong>{{ profile_user.joined }}</strong></div>
+                            <div class="tasks-issue-field"><span>Ostatnie logowanie</span><strong class="tasks-issue-muted">{{ profile_user.last_login }}</strong></div>
+                        </section>
+                    </aside>
+                </div>
+            </div>
         </main>
+        {% endwith %}
 
         <div class="profile-edit-overlay app-modal-panel {% if form.errors %}is-open{% endif %}"
              role="dialog"
@@ -233,7 +246,7 @@
                 <header class="profile-edit-header">
                     <div>
                         <h2 id="profile-edit-title">Edytuj profil</h2>
-                        <p>{{ request.user.get_full_name|default:request.user.email }}</p>
+                        <p>{{ frontend_bootstrap.data.user.name }}</p>
                     </div>
                     <button type="button" class="profile-edit-close" aria-label="Zamknij edycję profilu" title="Zamknij" data-profile-edit-close>
                         <i data-icon="x" aria-hidden="true"></i>
@@ -244,7 +257,7 @@
                     {% csrf_token %}
 
                     {% if form.errors %}
-                    <div class="tasks-error-banner">
+                    <div class="tasks-error-banner" role="alert" tabindex="-1">
                         <strong>Wystąpiły błędy:</strong>
                         <ul>
                             {% for field in form %}
@@ -259,114 +272,144 @@
                     </div>
                     {% endif %}
 
-                    <div class="profile-edit-body app-form-avatar-layout">
-                        <div class="profile-photo-control profile-photo-control--modal"
-                             data-profile-photo-editor
-                             {% if current_account_avatar.photo_url %}data-profile-photo-url="{{ current_account_avatar.photo_url }}"{% endif %}>
-                            <button type="button"
-                                    class="profile-photo-preview-button"
-                                    aria-label="Zmień awatar użytkownika"
-                                    title="Zmień awatar użytkownika"
-                                    aria-haspopup="dialog" aria-expanded="false"
-                                    data-workplace-avatar-open>
-                                <span class="profile-avatar profile-page-avatar profile-avatar--user {{ current_account_avatar.color_class }} {% if current_account_avatar.photo_url %}has-photo{% else %}user-avatar-art {{ current_account_avatar.preset_class }}{% endif %}"
-                                      style="{{ current_account_avatar.color_style }}"
-                                      aria-hidden="true"
-                                      data-profile-photo-preview>
-                                    {% if current_account_avatar.photo_url %}
-                                    <img src="{{ current_account_avatar.photo_url }}" alt="">
-                                    {% endif %}
-                                </span>
-                            </button>
-                            <template data-profile-photo-fallback>
-                                {% include 'accounts/includes/user_avatar_icon.html' %}
-                            </template>
-                            <button type="button" class="profile-photo-button" title="Zmień awatar" aria-haspopup="dialog" aria-expanded="false" data-workplace-avatar-open>Zmień</button>
-                            {% include 'core/includes/avatar_picker.html' with form=form form_id='profile-detail-form' photo_field=form.profile_photo photo_crop_field=form.profile_photo_crop photo_remove_field=form.profile_photo_remove editor_title='Edytuj zdjęcie użytkownika' canvas_label='Kadr zdjęcia użytkownika' empty_label='Wybierz zdjęcie użytkownika' only %}
-                        </div>
-
-                        <div class="profile-edit-fields app-form-layout">
-                            <div class="app-form-heading"><div class="profile-name-fields">
-                                <div class="profile-inline-field app-form-field">
-                                    <label class="profile-field-label" for="{{ form.first_name.id_for_label }}">Imię</label>
-                                    {{ form.first_name }}
-                                </div>
-                                <div class="profile-inline-field app-form-field">
-                                    <label class="profile-field-label" for="{{ form.middle_name.id_for_label }}">Drugie imię</label>
-                                    {{ form.middle_name }}
-                                </div>
-                                <div class="profile-inline-field app-form-field">
-                                    <label class="profile-field-label" for="{{ form.last_name.id_for_label }}">Nazwisko</label>
-                                    {{ form.last_name }}
-                                </div>
-                            </div></div>
-
-                            <div class="profile-stacked-field profile-bio-field app-form-field app-form-description">
-                                <label class="profile-field-label" for="{{ form.bio.id_for_label }}">Bio</label>
-                                {{ form.bio }}
-                            </div>
-
-                            <div class="profile-stacked-field app-form-field">
-                                <label class="profile-field-label" for="{{ form.email.id_for_label }}">Email</label>
-                                {{ form.email }}
-                            </div>
-
-                            <div class="profile-stacked-field app-form-field">
-                                <label class="profile-field-label" for="{{ form.username.id_for_label }}">ID Ancore</label>
-                                {{ form.username }}
-                            </div>
-
-                            <div class="profile-status-field app-form-field">
-                                <label for="{{ form.presence_status.id_for_label }}">Status</label>
-                                <div class="profile-status-dropdown" data-profile-status-dropdown data-profile-status-select="{{ form.presence_status.id_for_label }}">
-                                    {{ form.presence_status }}
+                    <fieldset class="resources-react-fieldset">
+                        <div class="profile-edit-body app-form-avatar-layout">
+                            {% with avatar_errors=form.avatar.errors photo_errors=form.profile_photo.errors crop_errors=form.profile_photo_crop.errors remove_errors=form.profile_photo_remove.errors %}
+                            <div class="profile-edit-avatar" role="group" aria-label="Awatar użytkownika">
+                                <div class="profile-photo-control profile-photo-control--modal"
+                                     data-profile-photo-editor
+                                     {% if current_account_avatar.photo_url %}data-profile-photo-url="{{ current_account_avatar.photo_url }}"{% endif %}>
                                     <button type="button"
-                                            class="profile-status-button"
-                                            aria-haspopup="listbox"
-                                            aria-expanded="false"
-                                            data-profile-status-toggle>
-                                        {% for option in presence_status_options %}
-                                            {% if option.is_selected %}
-                                            <span class="profile-status-button-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-selected-icon>
-                                                {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
-                                            </span>
-                                            <span data-profile-status-selected-label>{{ option.label }}</span>
+                                            class="profile-photo-preview-button"
+                                            aria-label="Zmień awatar użytkownika"
+                                            title="Zmień awatar użytkownika"
+                                            aria-haspopup="dialog" aria-expanded="false"
+                                            {% if avatar_errors or photo_errors or crop_errors or remove_errors %}aria-invalid="true" aria-describedby="profile-avatar-errors"{% endif %}
+                                            data-workplace-avatar-open>
+                                        <span class="profile-avatar profile-page-avatar profile-avatar--user {{ current_account_avatar.color_class }} {% if current_account_avatar.photo_url %}has-photo{% else %}user-avatar-art {{ current_account_avatar.preset_class }}{% endif %}"
+                                              style="{{ current_account_avatar.color_style }}"
+                                              aria-hidden="true"
+                                              data-profile-photo-preview>
+                                            {% if current_account_avatar.photo_url %}
+                                            <img src="{{ current_account_avatar.photo_url }}" alt="">
                                             {% endif %}
-                                        {% endfor %}
-                                        <i class="profile-status-caret" data-icon="chevron-down" aria-hidden="true"></i>
+                                        </span>
                                     </button>
-                                    <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
-                                        {% for option in presence_status_options %}
-                                        <button type="button"
-                                                class="profile-status-option {% if option.is_selected %}is-selected{% endif %}"
-                                                role="option"
-                                                aria-selected="{% if option.is_selected %}true{% else %}false{% endif %}"
-                                                data-profile-status-option
-                                                data-value="{{ option.value }}"
-                                                data-label="{{ option.label }}">
-                                            <span class="profile-status-option-check" aria-hidden="true"></span>
-                                            <span class="profile-status-option-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-option-icon>
-                                                {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
-                                            </span>
-                                            <span>{{ option.label }}</span>
-                                        </button>
-                                        {% endfor %}
-                                    </div>
+                                    <template data-profile-photo-fallback>
+                                        {% include 'accounts/includes/user_avatar_icon.html' %}
+                                    </template>
+                                    <button type="button" class="profile-photo-button" title="Zmień awatar" aria-haspopup="dialog" aria-expanded="false" {% if avatar_errors or photo_errors or crop_errors or remove_errors %}aria-invalid="true" aria-describedby="profile-avatar-errors"{% endif %} data-workplace-avatar-open>Zmień</button>
+                                    {% include 'core/includes/avatar_picker.html' with form=form form_id='profile-detail-form' photo_field=form.profile_photo photo_crop_field=form.profile_photo_crop photo_remove_field=form.profile_photo_remove editor_title='Edytuj zdjęcie użytkownika' canvas_label='Kadr zdjęcia użytkownika' empty_label='Wybierz zdjęcie użytkownika' only %}
                                 </div>
+                                {% if avatar_errors or photo_errors or crop_errors or remove_errors %}
+                                <ul class="errorlist" id="profile-avatar-errors">
+                                    {% for error in avatar_errors %}<li>{{ error }}</li>{% endfor %}
+                                    {% for error in photo_errors %}<li>{{ error }}</li>{% endfor %}
+                                    {% for error in crop_errors %}<li>{{ error }}</li>{% endfor %}
+                                    {% for error in remove_errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
                             </div>
+                            {% endwith %}
 
-                            <div class="profile-stacked-field app-form-field">
-                                <label class="profile-field-label" for="{{ form.phone_number.id_for_label }}">Numer telefonu</label>
-                                {{ form.phone_number }}
+                            <div class="profile-edit-fields app-form-layout">
+                                <div class="app-form-heading"><div class="profile-name-fields">
+                                    <div class="profile-inline-field app-form-field">
+                                        <div class="app-field-label"><label for="{{ form.first_name.id_for_label }}">Imię{% if form.first_name.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label></div>
+                                        {{ form.first_name }}
+                                        {{ form.first_name.errors }}
+                                    </div>
+                                    <div class="profile-inline-field app-form-field">
+                                        <div class="app-field-label"><label for="{{ form.last_name.id_for_label }}">Nazwisko{% if form.last_name.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label></div>
+                                        {{ form.last_name }}
+                                        {{ form.last_name.errors }}
+                                    </div>
+                                </div></div>
+
+                                <div class="profile-stacked-field app-form-field app-form-wide">
+                                    <div class="app-field-label"><label for="{{ form.middle_name.id_for_label }}">Drugie imię (opcjonalne)</label></div>
+                                    {{ form.middle_name }}
+                                    {{ form.middle_name.errors }}
+                                </div>
+
+                                <div class="profile-stacked-field profile-bio-field app-form-field app-form-description">
+                                    <div class="app-field-label"><label for="{{ form.bio.id_for_label }}">O mnie</label></div>
+                                    {{ form.bio }}
+                                    {{ form.bio.errors }}
+                                </div>
+
+                                <div class="profile-stacked-field app-form-field">
+                                    <div class="app-field-label"><label for="{{ form.email.id_for_label }}">E-mail{% if form.email.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label></div>
+                                    {{ form.email }}
+                                    {{ form.email.errors }}
+                                </div>
+
+                                <div class="profile-stacked-field app-form-field">
+                                    <div class="app-field-label">
+                                        <label for="{{ form.username.id_for_label }}">ID Ancore{% if form.username.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label>
+                                        {% include 'core/includes/field_help.html' with text=form.username.help_text label=form.username.label id=form.username.auto_id|add:'_helptext' only %}
+                                    </div>
+                                    {{ form.username }}
+                                    {{ form.username.errors }}
+                                </div>
+
+                                <div class="profile-status-field app-form-field">
+                                    <div class="app-field-label"><label id="profile-status-label" for="{{ form.presence_status.id_for_label }}">Status{% if form.presence_status.field.required %}<span aria-hidden="true"> *</span>{% endif %}</label></div>
+                                    <div class="profile-status-dropdown" data-profile-status-dropdown data-profile-status-select="{{ form.presence_status.id_for_label }}">
+                                        {{ form.presence_status }}
+                                        <button type="button"
+                                                class="profile-status-button"
+                                                aria-labelledby="profile-status-label"
+                                                aria-haspopup="listbox"
+                                                aria-expanded="false"
+                                                {% if form.presence_status.errors %}aria-invalid="true" aria-describedby="{{ form.presence_status.auto_id }}_error"{% endif %}
+                                                data-profile-status-toggle>
+                                            {% for option in presence_status_options %}
+                                                {% if option.is_selected %}
+                                                <span class="profile-status-button-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-selected-icon>
+                                                    {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
+                                                </span>
+                                                <span data-profile-status-selected-label>{{ option.label }}</span>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <i class="profile-status-caret" data-icon="chevron-down" aria-hidden="true"></i>
+                                        </button>
+                                        <div class="profile-status-menu" role="listbox" aria-label="Wybierz status użytkownika" hidden data-profile-status-menu>
+                                            {% for option in presence_status_options %}
+                                            <button type="button"
+                                                    class="profile-status-option {% if option.is_selected %}is-selected{% endif %}"
+                                                    role="option"
+                                                    aria-selected="{% if option.is_selected %}true{% else %}false{% endif %}"
+                                                    data-profile-status-option
+                                                    data-value="{{ option.value }}"
+                                                    data-label="{{ option.label }}">
+                                                <span class="profile-status-option-check" aria-hidden="true"></span>
+                                                <span class="profile-status-option-icon presence-{{ option.value }}" aria-hidden="true" data-profile-status-option-icon>
+                                                    {% include 'accounts/includes/presence_status_icon.html' with status=option.value %}
+                                                </span>
+                                                <span>{{ option.label }}</span>
+                                            </button>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {{ form.presence_status.errors }}
+                                </div>
+
+                                <div class="profile-stacked-field app-form-field">
+                                    <div class="app-field-label"><label for="{{ form.phone_number.id_for_label }}">Numer telefonu</label></div>
+                                    {{ form.phone_number }}
+                                    {{ form.phone_number.errors }}
+                                </div>
+                                <div class="profile-stacked-field app-form-field">
+                                    <div class="app-field-label"><label for="{{ form.job_title.id_for_label }}">Stanowisko</label></div>
+                                    {{ form.job_title }}
+                                    {{ form.job_title.errors }}
+                                </div>
+
+
                             </div>
-                            <div class="profile-stacked-field app-form-field">
-                                <label class="profile-field-label" for="{{ form.job_title.id_for_label }}">Stanowisko</label>
-                                {{ form.job_title }}
-                            </div>
-
-
                         </div>
-                    </div>
+                    </fieldset>
 
                     <footer class="profile-edit-footer">
                         <button type="button" class="tasks-issue-side-button profile-edit-cancel" data-profile-edit-close>Anuluj</button>

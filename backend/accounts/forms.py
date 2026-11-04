@@ -201,14 +201,18 @@ class UserProfileForm(forms.ModelForm):
         **{'placeholder': 'Nazwisko'},
         **_input_attrs,
     }))
-    email = forms.EmailField(label='Email', required=True, widget=forms.EmailInput(attrs={
+    email = forms.EmailField(label='E-mail', required=True, widget=forms.EmailInput(attrs={
         **{'placeholder': 'Adres email', 'autocomplete': 'email'},
         **_input_attrs,
     }))
-    username = forms.CharField(label='ID Ancore', max_length=150, required=True, widget=forms.TextInput(attrs={
-        **{'placeholder': '@imie.nazwisko', 'autocomplete': 'off', 'spellcheck': 'false'},
-        **_profile_input_attrs,
-    }))
+    username = forms.CharField(
+        label='ID Ancore', max_length=150, required=True,
+        help_text='Twój unikalny identyfikator, np. @imie.nazwisko. Do logowania używasz adresu e-mail.',
+        widget=forms.TextInput(attrs={
+            **{'placeholder': '@imie.nazwisko', 'autocomplete': 'off', 'spellcheck': 'false'},
+            **_profile_input_attrs,
+        }),
+    )
     profile_photo = forms.FileField(label='Zdjęcie użytkownika', required=False, widget=forms.FileInput(attrs={
         'accept': '.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp',
         'class': 'profile-photo-input',

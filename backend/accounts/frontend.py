@@ -1,4 +1,4 @@
-"""Typed account data. Credentials and switcher authentication hashes stay server-side."""
+"""Typed current-account data. Credentials stay server-side."""
 from django.contrib.auth import get_user_model
 from django.templatetags.static import static
 from django.urls import reverse
@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from core.frontend import form_payload
 from .avatar import account_avatar
+from .forms import PROFILE_BANNER_MAX_SIZE
 
 
 def _form(form):
@@ -23,7 +24,7 @@ def _form(form):
 def _auth_page(context, mode, title):
     return {'type': 'account-auth', 'title': title, 'api_url': reverse('accounts-api'), 'data': {
         'mode': mode, 'form': _form(context['form']),
-        'urls': {name: reverse(name) for name in ('login', 'register', 'profile', 'home', 'add_account')},
+        'urls': {name: reverse(name) for name in ('login', 'register', 'profile', 'home')},
         'logo': static('img/logo-ancore.png'),
     }}
 
@@ -50,12 +51,8 @@ def select_workspace_page(request, context):
             'id': str(workplace.pk), 'name': workplace.name,
             'switch_url': reverse('workplaces:switch', args=[workplace.pk]),
         } for workplace in context['workspaces']],
-        'urls': {'home': reverse('home'), 'create': reverse('register_workspace'), 'login': reverse('login')},
+        'urls': {'home': reverse('home'), 'create': reverse('register_workspace'), 'logout': reverse('logout')},
     }}
-
-
-def add_account_page(request, context):
-    return _auth_page(context, 'add', 'Dodaj konto')
 
 
 def _date(value):
@@ -69,6 +66,7 @@ def profile_page(request, context):
     context['form'].current_avatar = account_avatar(user)
     schema = _form(context['form'])
     schema.update(automatic_avatar=context['form'].automatic_avatar, current_avatar=account_avatar(user))
+    default_banner = static('img/auth/wallpaper-fluent-bloom-light-4k.webp')
     return {'type': 'account-profile', 'title': 'Profil', 'api_url': reverse('accounts-api'), 'data': {
         'user': {
             'name': user.get_full_name() or user.email, 'first_name': user.first_name,
@@ -81,14 +79,15 @@ def profile_page(request, context):
             'joined': _date(user.date_joined), 'last_login': _date(user.last_login),
         },
         'form': schema,
-        'accounts': [{
-            'id': str(entry['user'].pk), 'name': entry['user'].get_full_name() or entry['user'].email,
-            'email': entry['user'].email, 'username': entry['user'].username,
-            'current': entry['is_current'], 'avatar': entry['avatar'],
-            'presence_status': entry['user'].presence_status,
-            'presence_label': entry['user'].get_presence_status_display(),
-        } for entry in context['switch_accounts']],
+        'banner': {
+            'url': user.profile_banner.url if user.profile_banner else default_banner,
+            'default_url': default_banner,
+            'custom': bool(user.profile_banner),
+            'max_size': PROFILE_BANNER_MAX_SIZE,
+            'crop': {'x': user.profile_banner_x, 'y': user.profile_banner_y, 'zoom': user.profile_banner_zoom},
+        },
+        'banner_form': _form(context['banner_form']),
         'urls': {name: reverse(name) for name in (
-            'profile', 'add_account', 'update_presence_status', 'switch_account', 'remove_account', 'logout',
+            'profile', 'update_profile_banner', 'update_presence_status', 'logout',
         )},
     }}

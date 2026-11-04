@@ -1,19 +1,44 @@
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { errorMessage } from '../shared/api';
+import { copyText } from '../shared/clipboard';
 import { pageRequest, type PageProps } from '../shared/page';
 import PresenceSelect, { PresenceIcon } from './PresenceSelect';
 import ProfileEditor from './ProfileEditor';
+import BannerEditor from './BannerEditor';
+import { bannerCropStyle } from './banner-crop';
 import type { ProfileData } from './types';
 
 export default function ProfilePage({ initial, csrfToken }: PageProps) {
   const data = initial.data as ProfileData,
     user = data.user;
-  const [editor, setEditor] = useState<'fields' | 'avatar' | null>(
-    data.form.bound ? 'fields' : null,
+  const [editor, setEditor] = useState<'fields' | 'avatar' | 'banner' | null>(
+    data.banner_form.bound ? 'banner' : data.form.bound ? 'fields' : null,
   );
+  const [focusField, setFocusField] = useState<string>();
+  const [copied, setCopied] = useState('');
+  const [copyError, setCopyError] = useState('');
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(''), 2500);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+  const edit = (field?: string) => {
+    setFocusField(field);
+    setEditor('fields');
+  };
+  async function copy(value: string, label: string) {
+    setCopyError('');
+    setCopied('');
+    try {
+      await copyText(value);
+      if (!life.signal.aborted) setCopied(label);
+    } catch {
+      if (!life.signal.aborted)
+        setCopyError('Nie udało się skopiować danych. Zaznacz tekst i skopiuj go ręcznie.');
+    }
+  }
   const [pending, setPending] = useState(false),
     [error, setError] = useState('');
   const sending = useRef(false),
@@ -44,20 +69,58 @@ export default function ProfilePage({ initial, csrfToken }: PageProps) {
       setPending(false);
     }
   }
-  const details = [
+  const accountDetails = [
     [
       'Dostęp',
-      user.active ? 'Aktywne' : 'Nieaktywne',
+      user.active ? 'Aktywny' : 'Nieaktywny',
       'profile-account-access' + (user.active ? ' is-active' : ''),
     ],
-    ['Rola', user.role],
+    ['Rola w aplikacji', user.role],
     ['Dołączono', user.joined],
     ['Ostatnie logowanie', user.last_login, 'tasks-issue-muted'],
-    ['Email', user.email],
-    ['ID Ancore', user.username],
-    ['Telefon', user.phone_number || 'Nie podano', 'tasks-issue-muted'],
-    ['Stanowisko', user.job_title || 'Nie podano', 'tasks-issue-muted'],
   ];
+  const contactDetails = [
+    {
+      label: 'E-mail',
+      value: user.email,
+      icon: 'mail',
+      href: `mailto:${user.email}`,
+      field: 'email',
+    },
+    { label: 'ID Ancore', value: user.username, icon: 'circle-user-round', field: 'username' },
+    {
+      label: 'Telefon',
+      value: user.phone_number,
+      icon: 'phone',
+      href: `tel:${user.phone_number.replace(/[^+\d]/g, '')}`,
+      field: 'phone_number',
+    },
+  ];
+  const suggestions = [
+    {
+      field: 'job_title',
+      value: user.job_title,
+      icon: 'briefcase',
+      label: 'Dodaj stanowisko',
+      description: 'Czym zajmujesz się na co dzień?',
+    },
+    {
+      field: 'bio',
+      value: user.bio,
+      icon: 'user-round',
+      label: 'Napisz kilka słów o sobie',
+      description: 'Podziel się swoim doświadczeniem i zainteresowaniami.',
+    },
+    {
+      field: 'phone_number',
+      value: user.phone_number,
+      icon: 'phone',
+      label: 'Dodaj numer telefonu',
+      description: 'Ułatw kontakt ze sobą.',
+    },
+  ].filter((item) => !item.value.trim());
+  const presenceChoices =
+    data.form.fields.find((field) => field.name === 'presence_status')?.choices || [];
   return (
     <div
       className="profile-page tasks-page tasks-issue-page"
@@ -68,35 +131,20 @@ export default function ProfilePage({ initial, csrfToken }: PageProps) {
       <div className="tasks-issue-shell profile-issue-shell">
         <header className="tasks-issue-header">
           <div className="tasks-issue-breadcrumb">
-            <span className="tasks-issue-crumb tasks-issue-crumb--current">
-              <span id="profile-title">Profil użytkownika</span>
-            </span>
+            <h1 className="tasks-issue-crumb tasks-issue-crumb--current" id="profile-title">
+              Profil użytkownika
+            </h1>
           </div>
           <div className="tasks-issue-actions">
-            <Dropdown
-              label="Opcje profilu"
-              searchable={false}
+            <button
+              type="button"
+              className="tasks-filter-button"
               disabled={pending}
-              className="contacts-actions-menu"
-              triggerClassName="tasks-icon-button contacts-actions-menu__toggle"
-              menuClass="contacts-actions-menu__panel"
-              trigger={<Icon name="ellipsis" />}
+              onClick={() => edit()}
             >
-              {(close) => (
-                <button
-                  type="button"
-                  className="contacts-actions-menu__item"
-                  role="menuitem"
-                  onClick={() => {
-                    close();
-                    setEditor('fields');
-                  }}
-                >
-                  <Icon name="pencil" />
-                  Edytuj
-                </button>
-              )}
-            </Dropdown>
+              <Icon name="pencil" />
+              Edytuj profil
+            </button>
           </div>
         </header>
         {error ? (
@@ -104,162 +152,270 @@ export default function ProfilePage({ initial, csrfToken }: PageProps) {
             {error}
           </div>
         ) : null}
-        <main className="tasks-issue-main profile-issue-main">
-          <section className="tasks-issue-content profile-issue-content" aria-label="Dane profilu">
-            <div className="profile-detail-form profile-summary">
-              <div className="profile-title-area profile-summary-area">
-                <div className="profile-photo-control profile-photo-control--static">
-                  <button
-                    type="button"
-                    className="profile-photo-preview-button"
-                    disabled={pending}
-                    aria-label="Zmień awatar użytkownika"
-                    title="Zmień awatar użytkownika"
-                    onClick={() => setEditor('avatar')}
-                  >
-                    <Avatar data={user.avatar} className="profile-page-avatar" />
-                  </button>
-                </div>
-                <div className="profile-title-fields">
-                  <div
-                    className="tasks-issue-title-field profile-name-fields profile-display-name-fields"
-                    aria-label="Imię, drugie imię i nazwisko"
-                  >
-                    {[user.first_name, user.middle_name, user.last_name].some(Boolean) ? (
-                      [user.first_name, user.middle_name, user.last_name].map((name, i) =>
-                        name ? (
-                          <strong key={i} className="profile-display-name">
-                            {name}
-                          </strong>
-                        ) : null,
-                      )
-                    ) : (
-                      <strong className="profile-display-name">Nie podano</strong>
-                    )}
-                  </div>
-                  <div className="profile-stacked-field profile-bio-field">
-                    <span className="profile-field-label">Bio</span>
-                    <strong className="profile-display-value profile-display-bio react-profile-bio">
-                      {user.bio || 'Nie podano'}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <section
-              className="tasks-issue-activity profile-accounts-activity"
-              id="accounts"
-              aria-label="Konta w sesji"
-            >
-              <div className="tasks-issue-activity-head">
-                <h2>
-                  <Icon name="users" />
-                  Konta w sesji
-                </h2>
-                <a
-                  href={data.urls.add_account}
-                  className="tasks-issue-activity-chip profile-add-chip"
+        <main className="tasks-issue-main profile-issue-main profile-overview">
+          <div className="profile-overview-inner">
+            <section className="profile-hero profile-summary" aria-label="Dane profilu">
+              <div className="profile-banner">
+                <img
+                  className="profile-banner-image"
+                  src={data.banner.url}
+                  alt=""
+                  style={bannerCropStyle(data.banner.crop)}
+                />
+                <button
+                  type="button"
+                  className="tasks-filter-button profile-banner-action"
+                  disabled={pending}
+                  onClick={() => setEditor('banner')}
                 >
-                  <span>Dodaj konto</span>
-                  <Icon name="plus" />
-                </a>
+                  <Icon name="image" />
+                  Zmień baner
+                </button>
               </div>
-              <div className="tasks-issue-feed profile-account-feed">
-                {data.accounts.map((account) => (
-                  <article
-                    key={account.id}
-                    className={
-                      'tasks-issue-feed-item profile-account-feed-item' +
-                      (account.current ? ' is-current' : '')
-                    }
-                  >
-                    <Avatar data={account.avatar} className="tasks-issue-avatar" />
-                    <div className="tasks-issue-feed-body profile-account-feed-body">
-                      <p>
-                        <strong>{account.name}</strong>{' '}
-                        <time>{account.current ? 'aktywne teraz' : 'dodane do przełącznika'}</time>
-                      </p>
-                      <div className="profile-account-line">
-                        {account.username} · {account.email}
-                      </div>
-                      <span
-                        className={'profile-presence-badge presence-' + account.presence_status}
+              <div className="profile-hero-identity">
+                <button
+                  type="button"
+                  className="profile-photo-preview-button profile-hero-avatar"
+                  disabled={pending}
+                  aria-label="Zmień awatar użytkownika"
+                  title="Zmień awatar użytkownika"
+                  onClick={() => setEditor('avatar')}
+                >
+                  <Avatar data={user.avatar} className="profile-page-avatar" />
+                  <span className="profile-avatar-edit" aria-hidden="true">
+                    <Icon name="image" />
+                  </span>
+                </button>
+                <div className="profile-title-fields">
+                  <h2 className="profile-display-name">{user.name}</h2>
+                  <div className="profile-identity-line">
+                    <span className="profile-identity-handle">{user.username}</span>
+                    <span className={'profile-presence-badge presence-' + user.presence_status}>
+                      <PresenceIcon value={user.presence_status} />
+                      {
+                        presenceChoices.find((choice) => choice.value === user.presence_status)
+                          ?.label
+                      }
+                    </span>
+                  </div>
+                  {user.job_title ? (
+                    <p className="profile-hero-job">
+                      <Icon name="briefcase" />
+                      {user.job_title}
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="profile-text-action"
+                      disabled={pending}
+                      onClick={() => edit('job_title')}
+                    >
+                      <Icon name="plus" />
+                      Dodaj stanowisko
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+            <div className="profile-details-grid">
+              <div className="profile-about-column">
+                <section
+                  className="profile-overview-card profile-about"
+                  aria-labelledby="profile-bio-title"
+                >
+                  <div className="profile-section-heading">
+                    <h2 className="profile-section-title" id="profile-bio-title">
+                      <Icon name="user-round" />O mnie
+                    </h2>
+                    <button
+                      type="button"
+                      className="tasks-filter-button profile-icon-action"
+                      aria-label="Edytuj opis"
+                      title="Edytuj opis"
+                      disabled={pending}
+                      onClick={() => edit('bio')}
+                    >
+                      <Icon name="pencil" />
+                    </button>
+                  </div>
+                  {user.bio.trim() ? (
+                    <p className="profile-display-value profile-display-bio react-profile-bio">
+                      {user.bio}
+                    </p>
+                  ) : (
+                    <div className="profile-bio-empty">
+                      <p className="profile-empty-title">Daj się poznać</p>
+                      <p>Opowiedz, czym się zajmujesz, co Cię interesuje i w czym możesz pomóc.</p>
+                      <button
+                        type="button"
+                        className="tasks-filter-button"
+                        disabled={pending}
+                        onClick={() => edit('bio')}
                       >
-                        <PresenceIcon value={account.presence_status} />
-                        {account.presence_label}
-                      </span>
-                      <div className="profile-account-actions">
-                        {account.current ? (
-                          <span className="profile-current-badge">Teraz</span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="profile-inline-button"
-                            disabled={pending}
-                            onClick={() =>
-                              void action(data.urls.switch_account, { user_id: account.id })
-                            }
-                          >
-                            Przełącz
-                          </button>
-                        )}
+                        <Icon name="plus" />
+                        Dodaj opis
+                      </button>
+                    </div>
+                  )}
+                </section>
+                {suggestions.length ? (
+                  <section
+                    className="profile-overview-card profile-completion"
+                    aria-labelledby="profile-completion-title"
+                  >
+                    <div className="profile-section-heading">
+                      <h2 className="profile-section-title" id="profile-completion-title">
+                        Uzupełnij swój profil
+                      </h2>
+                      <span className="profile-completion-count">{3 - suggestions.length}/3</span>
+                    </div>
+                    <p className="profile-section-description">
+                      Kilka szczegółów ułatwi współpracę w zespole. Uzupełnij je, kiedy chcesz.
+                    </p>
+                    <div className="profile-completion-list">
+                      {suggestions.map((item) => (
                         <button
                           type="button"
-                          className="profile-icon-button"
+                          key={item.field}
+                          className="profile-completion-action"
                           disabled={pending}
-                          aria-label={'Usuń konto z przełącznika: ' + account.email}
-                          title="Usuń konto z przełącznika"
-                          onClick={() =>
-                            void action(data.urls.remove_account, { user_id: account.id })
-                          }
+                          onClick={() => edit(item.field)}
                         >
-                          <Icon name="trash-2" />
+                          <span className="profile-completion-icon">
+                            <Icon name={item.icon} />
+                          </span>
+                          <span className="profile-completion-copy">
+                            <span>{item.label}</span>
+                            <small>{item.description}</small>
+                          </span>
+                          <Icon name="chevron-right" />
                         </button>
-                      </div>
+                      ))}
                     </div>
-                  </article>
-                ))}
+                  </section>
+                ) : null}
+                <p className="profile-scope-note">
+                  <Icon name="info" />
+                  Dane profilu są wspólne dla Twoich Workspace.
+                </p>
               </div>
-            </section>
-          </section>
-          <aside
-            className="tasks-issue-sidebar profile-issue-sidebar"
-            aria-label="Szczegóły profilu"
-          >
-            <section className="tasks-issue-side-section">
-              <div className="tasks-issue-field profile-status-side-field">
-                <span>Status</span>
-                <div className="profile-side-status-form">
-                  <PresenceSelect
-                    side
-                    value={user.presence_status}
-                    choices={
-                      data.form.fields.find((field) => field.name === 'presence_status')!.choices ||
-                      []
-                    }
-                    disabled={pending}
-                    onChange={(value) =>
-                      void action(data.urls.update_presence_status, { presence_status: value })
-                    }
-                  />
-                </div>
-              </div>
-              {details.map(([label, value, className]) => (
-                <div className="tasks-issue-field" key={label}>
-                  <span>{label}</span>
-                  <strong className={className}>{value}</strong>
-                </div>
-              ))}
-            </section>
-          </aside>
+              <aside
+                className="tasks-issue-sidebar profile-issue-sidebar"
+                aria-label="Szczegóły profilu"
+              >
+                <section
+                  className="tasks-issue-side-section"
+                  aria-labelledby="profile-contact-title"
+                >
+                  <div className="profile-section-heading">
+                    <h2 className="profile-section-title" id="profile-contact-title">
+                      <Icon name="contact" />
+                      Dane kontaktowe
+                    </h2>
+                    <button
+                      type="button"
+                      className="tasks-filter-button profile-icon-action"
+                      aria-label="Edytuj dane kontaktowe"
+                      title="Edytuj dane kontaktowe"
+                      disabled={pending}
+                      onClick={() => edit('email')}
+                    >
+                      <Icon name="pencil" />
+                    </button>
+                  </div>
+                  <dl className="profile-contact-list">
+                    {contactDetails.map(({ label, value, icon, href, field }) => (
+                      <div className="profile-contact-row" key={label}>
+                        <Icon name={icon} />
+                        <div className="profile-contact-value">
+                          <dt>{label}</dt>
+                          <dd>
+                            {value ? (
+                              href ? (
+                                <a href={href}>{value}</a>
+                              ) : (
+                                <span>{value}</span>
+                              )
+                            ) : (
+                              <button
+                                type="button"
+                                className="profile-text-action"
+                                disabled={pending}
+                                onClick={() => edit(field)}
+                              >
+                                Dodaj numer telefonu
+                              </button>
+                            )}
+                          </dd>
+                        </div>
+                        {value ? (
+                          <button
+                            type="button"
+                            className="tasks-filter-button profile-icon-action"
+                            aria-label={`Kopiuj ${label.toLowerCase()}`}
+                            title={`Kopiuj ${label.toLowerCase()}`}
+                            onClick={() => void copy(value, label)}
+                          >
+                            <Icon name={copied === label ? 'check' : 'copy'} />
+                          </button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="profile-copy-feedback" role={copyError ? 'alert' : 'status'}>
+                    {copyError || (copied ? `Skopiowano: ${copied.toLowerCase()}.` : '')}
+                  </p>
+                </section>
+                <section
+                  className="tasks-issue-side-section"
+                  aria-labelledby="profile-account-title"
+                >
+                  <div className="profile-section-heading">
+                    <h2 className="profile-section-title" id="profile-account-title">
+                      <Icon name="shield-check" />
+                      Konto i aktywność
+                    </h2>
+                  </div>
+                  <div className="tasks-issue-field profile-status-side-field">
+                    <span>Status</span>
+                    <div className="profile-side-status-form">
+                      <PresenceSelect
+                        side
+                        value={user.presence_status}
+                        choices={presenceChoices}
+                        disabled={pending}
+                        onChange={(value) =>
+                          void action(data.urls.update_presence_status, { presence_status: value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  {accountDetails.map(([label, value, className]) => (
+                    <div className="tasks-issue-field" key={label}>
+                      <span>{label}</span>
+                      <strong className={className}>{value}</strong>
+                    </div>
+                  ))}
+                </section>
+              </aside>
+            </div>
+          </div>
         </main>
       </div>
-      {editor ? (
+      {editor === 'banner' ? (
+        <BannerEditor
+          data={data}
+          api={initial.api_url}
+          token={csrfToken}
+          onClose={() => setEditor(null)}
+        />
+      ) : editor ? (
         <ProfileEditor
           data={data}
           api={initial.api_url}
           token={csrfToken}
           avatar={editor === 'avatar'}
+          focusField={focusField}
           onClose={() => setEditor(null)}
         />
       ) : null}

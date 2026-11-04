@@ -8,13 +8,11 @@ import type { AuthData } from './types';
 function Input({
   field,
   label,
-  modern,
   focus,
   disabled,
 }: {
   field: Field;
   label: string;
-  modern: boolean;
   focus?: boolean;
   disabled: boolean;
 }) {
@@ -24,13 +22,11 @@ function Input({
   const id =
     field.name === 'username' ? 'email' : field.name === 'password' ? 'password' : field.id;
   return (
-    <div
-      className={`${modern ? 'auth-field' : 'form-group'}${field.errors.length ? ' auth-field--invalid' : ''}`}
-    >
-      <label className={modern ? 'auth-label' : 'form-label'} htmlFor={id}>
+    <div className={`auth-field${field.errors.length ? ' auth-field--invalid' : ''}`}>
+      <label className="auth-label" htmlFor={id}>
         {label}
       </label>
-      <div className={password && modern ? 'auth-password-control' : undefined}>
+      <div className={password ? 'auth-password-control' : undefined}>
         <input
           ref={input}
           id={id}
@@ -45,11 +41,7 @@ function Input({
                 : field.type
           }
           className={
-            modern
-              ? field.name === 'username' || field.name === 'password'
-                ? 'auth-input'
-                : 'form-input'
-              : 'form-input'
+            field.name === 'username' || field.name === 'password' ? 'auth-input' : 'form-input'
           }
           defaultValue={String(field.value || '')}
           autoFocus={focus}
@@ -61,12 +53,7 @@ function Input({
             (field.name === 'username' ? 'username' : password ? 'current-password' : undefined)
           }
           placeholder={
-            modern
-              ? field.name === 'username' || field.name === 'email'
-                ? 'email@firma.pl'
-                : undefined
-              : field.attrs.placeholder ||
-                (field.name === 'username' ? 'email@firma.pl' : 'Wpisz hasło')
+            field.name === 'username' || field.name === 'email' ? 'email@firma.pl' : undefined
           }
           aria-invalid={field.errors.length ? true : undefined}
           aria-describedby={
@@ -75,7 +62,7 @@ function Input({
               .join(' ') || undefined
           }
         />
-        {password && modern ? (
+        {password ? (
           <button
             type="button"
             className="auth-password-toggle"
@@ -109,8 +96,7 @@ function Input({
 export default function AuthPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as AuthData,
     register = data.mode === 'register',
-    workspace = data.mode === 'workspace',
-    add = data.mode === 'add';
+    workspace = data.mode === 'workspace';
   const [schema, setSchema] = useState(data.form),
     [hasWorkspaces, setHasWorkspaces] = useState(Boolean(data.has_workspaces)),
     [message, setMessage] = useState(''),
@@ -155,24 +141,9 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
   }
   const renderField = (name: string, label: string, focus = false) => {
     const field = schema.fields.find((item) => item.name === name)!;
-    return (
-      <Input
-        key={name}
-        field={field}
-        label={label}
-        modern={!add}
-        focus={focus}
-        disabled={pending}
-      />
-    );
+    return <Input key={name} field={field} label={label} focus={focus} disabled={pending} />;
   };
-  const title = workspace
-    ? 'Utwórz Workspace'
-    : register
-      ? 'Utwórz konto'
-      : add
-        ? 'Dodaj konto'
-        : 'Zaloguj się';
+  const title = workspace ? 'Utwórz Workspace' : register ? 'Utwórz konto' : 'Zaloguj się';
   return (
     <main className="auth-shell" data-react-screen="account-auth">
       <header className="auth-topbar">
@@ -184,14 +155,11 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
       <div className="auth-content">
         <section className="auth-form-panel" aria-labelledby="auth-form-title">
           <div className="auth-form-inner">
-            {add || workspace ? (
+            {workspace ? (
               <header className="auth-form-header">
                 <h1 id="auth-form-title" tabIndex={-1}>
                   {title}
                 </h1>
-                {add ? (
-                  <p className="auth-form-subtitle">Dodaj konto do szybkiego przełączania</p>
-                ) : null}
               </header>
             ) : (
               <>
@@ -234,9 +202,7 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
                   {message ||
                     (register || workspace
                       ? 'Sprawdź oznaczone pola.'
-                      : add
-                        ? 'Nieprawidłowy email lub hasło.'
-                        : 'Email lub hasło są nieprawidłowe. Spróbuj ponownie.')}
+                      : 'Email lub hasło są nieprawidłowe. Spróbuj ponownie.')}
                   {register || workspace
                     ? schema.errors.map((text, i) => <span key={i}>{text}</span>)
                     : null}
@@ -263,11 +229,7 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
                   {renderField('password', 'Hasło')}
                 </>
               )}
-              <button
-                type="submit"
-                className={add ? 'btn btn-primary btn-block auth-submit' : 'auth-submit'}
-                disabled={pending}
-              >
+              <button type="submit" className="auth-submit" disabled={pending}>
                 <span className="auth-submit-label">
                   {pending
                     ? workspace
@@ -282,11 +244,6 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
             {workspace ? (
               <p className="auth-footer auth-footer--workspace">
                 Masz już Workspace? <a href={data.urls.select_workspace}>Wybierz Workspace</a>
-              </p>
-            ) : null}
-            {add ? (
-              <p className="auth-footer">
-                <a href={data.urls.profile}>Wróć do profilu</a>
               </p>
             ) : null}
           </div>

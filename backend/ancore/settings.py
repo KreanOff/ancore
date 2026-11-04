@@ -120,6 +120,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.SingleAccountSessionMiddleware',
     'accounts.middleware.UserPresenceMiddleware',
     'workplaces.middleware.ActiveWorkplaceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

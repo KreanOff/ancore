@@ -4,6 +4,18 @@ from .presence import mark_user_seen, sync_stale_presence_statuses
 PRESENCE_PING_PATH = '/accounts/presence/ping/'
 
 
+class SingleAccountSessionMiddleware:
+    """Discard retired switcher credentials without changing the active login."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        request.session.pop('switch_account_user_ids', None)
+        request.session.pop('switch_account_auth_hashes', None)
+        return self.get_response(request)
+
+
 class UserPresenceMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

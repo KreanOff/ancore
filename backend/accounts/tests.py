@@ -6,13 +6,13 @@ from datetime import timedelta
 
 from django.contrib.auth import SESSION_KEY
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from .forms import UserRegistrationForm
 from .presence import sync_stale_presence_statuses
-from .views import SWITCH_ACCOUNTS_SESSION_KEY, SWITCH_ACCOUNTS_HASHES_KEY, _account_avatar
+from .views import _account_avatar
 
 
 class UserRegistrationFormTests(TestCase):
@@ -126,11 +126,13 @@ class ProfileViewTests(TestCase):
         self.assertNotIn('<span>Aktywne</span>', content)
         self.assertNotIn('<h2>Akcje</h2>', content)
         self.assertNotIn('class="tasks-issue-icon-button" aria-label="Administracja"', content)
-        self.assertNotIn('class="tasks-issue-save profile-edit-open"', content)
-        self.assertIn('class="tasks-icon-button contacts-actions-menu__toggle"', content)
-        self.assertIn('aria-controls="profile-actions-menu"', content)
-        self.assertIn('data-profile-actions-toggle', content)
-        self.assertIn('class="contacts-actions-menu__item" role="menuitem" data-profile-edit-open', content)
+        self.assertContains(response, '<button type="button" class="tasks-filter-button" data-profile-edit-open>'
+                            '<i data-icon="pencil" aria-hidden="true"></i>Edytuj profil</button>', html=True)
+        for title in ('O mnie', 'Dane kontaktowe', 'Konto i aktywność'):
+            self.assertContains(response, title)
+        self.assertNotIn('data-profile-actions-toggle', content)
+        self.assertNotIn("Konta w sesji", content)
+        self.assertNotIn("Dodaj konto", content)
         self.assertIn(f'action="{reverse("update_presence_status")}"', content)
         self.assertIn('data-profile-status-form', content)
         self.assertIn('data-profile-photo-editor', content)
@@ -365,158 +367,98 @@ class ProfileViewTests(TestCase):
         self.assertEqual(self.user.presence_status, get_user_model().PresenceStatus.INACTIVE)
 
 
-class AccountSwitcherTests(TestCase):
-    def setUp(self):
-        user_model = get_user_model()
-        self.user = user_model.objects.create_user(
-            username='@anna.kowalska',
-            email='anna@example.com',
-            first_name='Anna',
-            last_name='Kowalska',
-            password='testpass123',
+class SingleAccountSessionTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.password = 'single-account-test-83!'
+        cls.user = get_user_model().objects.create_user(
+            username='@anna.single', email='anna.single@example.test', password=cls.password,
         )
-        self.second_user = user_model.objects.create_user(
-            username='@ewa.zielinska',
-            email='ewa@example.com',
-            first_name='Ewa',
-            last_name='Zielinska',
-            password='testpass123',
+        cls.other = get_user_model().objects.create_user(
+            username='@ewa.single', email='ewa.single@example.test', password=cls.password,
         )
 
-    def _seed_switcher_session(self):
+    def seed_legacy_session(self):
         self.client.force_login(self.user)
         session = self.client.session
-        session[SWITCH_ACCOUNTS_SESSION_KEY] = [str(self.user.pk), str(self.second_user.pk)]
-        session[SWITCH_ACCOUNTS_HASHES_KEY] = {
-            str(user.pk): user.get_session_auth_hash() for user in (self.user, self.second_user)
+        session['switch_account_user_ids'] = [str(self.user.pk), str(self.other.pk)]
+        session['switch_account_auth_hashes'] = {
+            str(user.pk): user.get_session_auth_hash() for user in (self.user, self.other)
         }
+        session['unrelated_preference'] = 'preserved'
         session.save()
+        return session.session_key
 
-    def test_add_account_requires_login(self):
-        response = self.client.get(reverse('add_account'))
+    def test_old_session_credentials_are_discarded_without_logging_out_current_user(self):
+        session_key = self.seed_legacy_session()
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client.session.session_key, session_key)
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+        self.assertEqual(self.client.session['unrelated_preference'], 'preserved')
+        self.assertNotIn('switch_account_user_ids', self.client.session)
+        self.assertNotIn('switch_account_auth_hashes', self.client.session)
+        self.assertNotContains(response, self.other.email)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('login'), response.url)
+    def test_anonymous_legacy_credentials_cannot_restore_a_login(self):
+        session = self.client.session
+        session['switch_account_user_ids'] = [str(self.user.pk)]
+        session['switch_account_auth_hashes'] = {str(self.user.pk): self.user.get_session_auth_hash()}
+        session.save()
+        response = self.client.get(reverse('login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.assertNotIn('switch_account_user_ids', self.client.session)
+        self.assertNotIn('switch_account_auth_hashes', self.client.session)
 
-    def test_add_account_with_valid_credentials_switches_to_added_account(self):
+    def test_retired_routes_cannot_change_identity(self):
+        for authenticated in (False, True):
+            if authenticated:
+                self.seed_legacy_session()
+            for action in ('add-account', 'switch-account', 'remove-account'):
+                for method in ('get', 'post'):
+                    with self.subTest(authenticated=authenticated, action=action, method=method):
+                        response = getattr(self.client, method)(f'/accounts/profile/{action}/', {
+                            'user_id': self.other.pk, 'username': self.other.email, 'password': self.password,
+                        })
+                        self.assertEqual(response.status_code, 404)
+                        self.assertEqual(self.client.session.get(SESSION_KEY), str(self.user.pk) if authenticated else None)
+
+    def test_login_requires_logout_before_changing_identity(self):
         self.client.force_login(self.user)
-
-        response = self.client.post(reverse('add_account'), {
-            'username': 'ewa@example.com',
-            'password': 'testpass123',
-        })
-
-        self.assertRedirects(response, reverse('profile'))
-        session = self.client.session
-        self.assertEqual(session[SESSION_KEY], str(self.second_user.pk))
-        self.assertEqual(
-            session[SWITCH_ACCOUNTS_SESSION_KEY],
-            [str(self.second_user.pk), str(self.user.pk)],
-        )
-
-    def test_switch_account_changes_authenticated_user(self):
-        self._seed_switcher_session()
-
-        response = self.client.post(reverse('switch_account'), {
-            'user_id': self.second_user.pk,
-        })
-
-        self.assertRedirects(response, reverse('profile'))
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.second_user.pk))
-
-    def test_password_change_invalidates_inactive_account(self):
-        self._seed_switcher_session()
-        self.second_user.set_password('replacement-password')
-        self.second_user.save(update_fields=['password'])
-
-        response = self.client.post(reverse('switch_account'), {'user_id': self.second_user.pk})
-
-        self.assertRedirects(response, reverse('profile'))
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-        self.assertNotIn(str(self.second_user.pk), self.client.session[SWITCH_ACCOUNTS_SESSION_KEY])
-        self.assertNotIn(str(self.second_user.pk), self.client.session[SWITCH_ACCOUNTS_HASHES_KEY])
-
-    def test_removing_current_account_cannot_bypass_expired_login(self):
-        self._seed_switcher_session()
-        self.second_user.set_password('replacement-password')
-        self.second_user.save(update_fields=['password'])
-
-        self.client.post(reverse('remove_account'), {'user_id': self.user.pk})
-
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.user.pk)])
-
-    def test_legacy_id_only_session_requires_reauthentication(self):
-        self._seed_switcher_session()
-        session = self.client.session
-        del session[SWITCH_ACCOUNTS_HASHES_KEY]
-        session.save()
-
-        self.client.post(reverse('switch_account'), {'user_id': self.second_user.pk})
-
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.user.pk)])
-
-    def test_readding_expired_account_with_current_password_restores_switching(self):
-        self._seed_switcher_session()
-        self.second_user.set_password('replacement-password')
-        self.second_user.save(update_fields=['password'])
-
-        self.client.post(reverse('add_account'), {
-            'username': self.second_user.email, 'password': 'replacement-password',
-        })
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.second_user.pk))
-        for user in (self.user, self.second_user):
-            self.client.post(reverse('switch_account'), {'user_id': user.pk})
-            self.assertEqual(self.client.session[SESSION_KEY], str(user.pk))
-        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_HASHES_KEY], {
-            str(user.pk): user.get_session_auth_hash() for user in (self.user, self.second_user)
-        })
-
-    def test_logout_clears_all_switcher_credentials(self):
-        self._seed_switcher_session()
-
+        for method in ('get', 'post'):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(reverse('login'), {
+                    'username': self.other.email, 'password': self.password,
+                })
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
         self.client.post(reverse('logout'))
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        response = self.client.post(reverse('login'), {'username': self.other.email, 'password': self.password})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
 
-        self.assertNotIn(SWITCH_ACCOUNTS_SESSION_KEY, self.client.session)
-        self.assertNotIn(SWITCH_ACCOUNTS_HASHES_KEY, self.client.session)
-
-    def test_switch_account_rejects_account_not_in_switcher(self):
-        third_user = get_user_model().objects.create_user(
-            username='@jan.nowak',
-            email='jan@example.com',
-            first_name='Jan',
-            last_name='Nowak',
-            password='testpass123',
-        )
+    def test_authenticated_registration_does_not_create_or_log_in_another_account(self):
         self.client.force_login(self.user)
+        for method in ('get', 'post'):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(reverse('register'), {
+                    'first_name': 'Jan', 'last_name': 'Testowy', 'email': 'new.single@example.test',
+                    'password1': self.password, 'password2': self.password,
+                })
+                self.assertRedirects(response, reverse('profile'), fetch_redirect_response=False)
+                self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
+                self.assertFalse(get_user_model().objects.filter(email='new.single@example.test').exists())
 
-        response = self.client.post(reverse('switch_account'), {
-            'user_id': third_user.pk,
-        })
-
-        self.assertRedirects(response, reverse('profile'))
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-
-    def test_remove_non_current_account_removes_it_from_switcher(self):
-        self._seed_switcher_session()
-
-        response = self.client.post(reverse('remove_account'), {
-            'user_id': self.second_user.pk,
-        })
-
-        self.assertRedirects(response, reverse('profile'))
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
-        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.user.pk)])
-        self.assertTrue(get_user_model().objects.filter(pk=self.second_user.pk).exists())
-
-    def test_remove_current_account_switches_to_remaining_account(self):
-        self._seed_switcher_session()
-
-        response = self.client.post(reverse('remove_account'), {
-            'user_id': self.user.pk,
-        })
-
-        self.assertRedirects(response, reverse('profile'))
-        self.assertEqual(self.client.session[SESSION_KEY], str(self.second_user.pk))
-        self.assertEqual(self.client.session[SWITCH_ACCOUNTS_SESSION_KEY], [str(self.second_user.pk)])
+    def test_logout_does_not_restore_a_saved_account_or_affect_other_browser_sessions(self):
+        self.seed_legacy_session()
+        other_browser = Client()
+        other_browser.force_login(self.user)
+        response = self.client.post(reverse('logout'))
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.assertNotIn('switch_account_user_ids', self.client.session)
+        self.assertNotIn('switch_account_auth_hashes', self.client.session)
+        self.assertEqual(other_browser.get(reverse('profile')).status_code, 200)
+        self.assertEqual(other_browser.session[SESSION_KEY], str(self.user.pk))

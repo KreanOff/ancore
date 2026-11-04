@@ -1,8 +1,8 @@
 """Small, explicit bridge to the existing session/account operations.
 
-Only login and registration, including its session-bound Workspace step, allow
-an anonymous session. The general page API remains authenticated; this endpoint
-never proxies other application routes.
+Only login, registration and invitation confirmation allow an anonymous session.
+The general page API remains authenticated; this endpoint never proxies other
+application routes.
 """
 from copy import copy
 from urllib.parse import urlsplit
@@ -30,8 +30,8 @@ def accounts_api(request):
     if not target.startswith('/') or target.startswith('//') or parsed.netloc or parsed.scheme or '\\' in target:
         return api_error('Nieprawidłowy adres ekranu.', 400)
     routes = {reverse(name): name for name in (
-        'login', 'register', 'register_workspace', 'select_workspace', 'profile', 'add_account', 'update_presence_status',
-        'switch_account', 'remove_account', 'logout',
+        'login', 'register', 'register_workspace', 'select_workspace', 'profile',
+        'update_profile_banner', 'update_presence_status', 'logout',
     )}
     name = routes.get(parsed.path)
     if not name:
@@ -45,7 +45,7 @@ def accounts_api(request):
         return api_error('Nie znaleziono elementu.', 404)
     if name not in {'login', 'register', 'join'} and not request.user.is_authenticated:
         return api_error('Sesja wygasła. Zaloguj się ponownie.', 401)
-    if request.method == 'GET' and name not in {'login', 'register', 'register_workspace', 'select_workspace', 'profile', 'add_account', 'join'}:
+    if request.method == 'GET' and name not in {'login', 'register', 'register_workspace', 'select_workspace', 'profile', 'join'}:
         response = api_error('Ta metoda żądania nie jest obsługiwana.', 405)
         response['Allow'] = 'POST'
         return response
@@ -69,8 +69,8 @@ def accounts_api(request):
     except Http404:
         return api_error('Nie znaleziono elementu.', 404)
     except PermissionDenied:
-        return api_error('Dodaj konto ponownie, podając aktualne hasło.', 403)
-    # login() rotates CSRF and can replace the authenticated user. Propagate the
+        return api_error('Nie masz uprawnień do tej operacji.', 403)
+    # login() rotates CSRF and establishes the authenticated user. Propagate the
     # state to middleware as well as the shared session before returning JSON.
     request.user = delegated.user
     for key in ('CSRF_COOKIE', 'CSRF_COOKIE_NEEDS_UPDATE'):

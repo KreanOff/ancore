@@ -22,7 +22,6 @@ SCREENS = {
     'accounts/register_workspace.html': ('accounts.frontend', 'register_workspace_page'),
     'accounts/select_workspace.html': ('accounts.frontend', 'select_workspace_page'),
     'workplaces/join.html': ('workplaces.frontend', 'join_page'),
-    'accounts/add_account.html': ('accounts.frontend', 'add_account_page'),
     'accounts/profile.html': ('accounts.frontend', 'profile_page'),
     'workplaces/workplaces.html': ('workplaces.frontend', 'directory_page'),
     'planner/index.html': ('planner.frontend', 'calendar_page'),

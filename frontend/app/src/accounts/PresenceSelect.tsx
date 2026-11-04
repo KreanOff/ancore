@@ -16,18 +16,25 @@ export default function PresenceSelect({
   onChange,
   side = false,
   disabled = false,
+  id,
+  describedBy,
+  invalid = false,
 }: {
   value: string;
   choices: { value: string; label: string }[];
   onChange: (value: string) => void;
   side?: boolean;
   disabled?: boolean;
+  id?: string;
+  describedBy?: string;
+  invalid?: boolean;
 }) {
   return (
     <Dropdown
       label="Status użytkownika"
       searchable={false}
       disabled={disabled}
+      triggerProps={{ id, 'aria-describedby': describedBy, 'aria-invalid': invalid || undefined }}
       className={'profile-status-dropdown' + (side ? ' profile-status-dropdown--side' : '')}
       triggerClassName={'profile-status-button' + (side ? ' profile-status-button--side' : '')}
       menuClass="profile-status-menu"

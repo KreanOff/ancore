@@ -1405,6 +1405,43 @@
     }
 }
 
+/* React image editors retain the established photo editor's top panel. */
+.tasks-modal.app-modal-panel.contacts-photo-editor-overlay,
+.page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay {
+    --app-panel-enter-offset: -100%;
+    z-index: 2100;
+    align-items: flex-start;
+    padding: 0 1rem 1rem;
+}
+
+.tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog,
+.page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog {
+    width: min(1120px, 100%);
+    max-width: 100%;
+    height: auto;
+    max-height: calc(var(--app-dynamic-viewport-height) - 2rem);
+    border: 0;
+    border-radius: 0 0 calc(var(--app-modal-radius) * 2) calc(var(--app-modal-radius) * 2);
+}
+
+.tasks-modal.app-modal-panel.contacts-photo-editor-overlay .tasks-modal__form,
+.page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay .tasks-modal__form {
+    flex: 0 1 auto;
+    height: auto;
+}
+
+@media (max-width: 720px) {
+    .tasks-modal.app-modal-panel.contacts-photo-editor-overlay,
+    .page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay {
+        padding: 0 0.5rem 0.5rem;
+    }
+
+    .tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog,
+    .page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog {
+        max-height: calc(var(--app-dynamic-viewport-height) - 1rem);
+    }
+}
+
 /* The routed template editor shares the form panel shell. */
 .tasks-modal.app-modal-panel.template-page-panel .template-page-panel__body {
     display: flex;

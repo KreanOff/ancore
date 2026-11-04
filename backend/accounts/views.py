@@ -2,33 +2,29 @@ import json
 
 from django.conf import settings
 from django.contrib.auth import get_user_model, login as auth_login
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_POST, require_http_methods
 from django.views.decorators.cache import never_cache
 from core.api import api_error
 from core.frontend import render
 from workplaces.forms import RegistrationWorkspaceForm
-from workplaces.models import Workplace, create_workplace_for_user
+from workplaces.models import create_workplace_for_user
 from workplaces.services import default_workplace_for_user, workplaces_for_user, set_active_workplace, enable_workspace_url_scope, scoped_workplace_app_path
 from .avatar import account_avatar as _account_avatar
-from .forms import UserProfileForm, UserRegistrationForm
+from .forms import UserBannerForm, UserProfileForm, UserRegistrationForm
 from .presence import mark_user_inactive, mark_user_seen
-
-SWITCH_ACCOUNTS_SESSION_KEY = 'switch_account_user_ids'
-SWITCH_ACCOUNTS_HASHES_KEY = 'switch_account_auth_hashes'
 
 
 class AccountLoginView(LoginView):
     template_name = 'accounts/login.html'
+    redirect_authenticated_user = True
 
     def render_to_response(self, context, **response_kwargs):
         if getattr(self.request, '_react_api', False) and context['form'].errors:
@@ -58,80 +54,7 @@ class AccountLogoutView(LogoutView):
     def post(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             mark_user_inactive(request.user)
-        request.session.pop(SWITCH_ACCOUNTS_SESSION_KEY, None)
-        request.session.pop(SWITCH_ACCOUNTS_HASHES_KEY, None)
         return super().post(request, *args, **kwargs)
-
-
-def _normalized_account_ids(request):
-    account_ids = request.session.get(SWITCH_ACCOUNTS_SESSION_KEY, [])
-    current_id = str(request.user.pk)
-    hashes = request.session.get(SWITCH_ACCOUNTS_HASHES_KEY, {})
-    # A legacy list of IDs alone is not proof of a still-valid login.
-    users = get_user_model().objects.filter(pk__in=account_ids, is_active=True)
-    valid_ids = {
-        str(user.pk) for user in users
-        if isinstance(hashes.get(str(user.pk)), str)
-        and constant_time_compare(hashes[str(user.pk)], user.get_session_auth_hash())
-    }
-    return list(dict.fromkeys([current_id, *(
-        str(account_id) for account_id in account_ids if str(account_id) in valid_ids
-    )]))
-
-
-def _save_account_ids(request, account_ids):
-    normalized = []
-    for account_id in account_ids:
-        account_id = str(account_id)
-        if account_id not in normalized:
-            normalized.append(account_id)
-
-    request.session[SWITCH_ACCOUNTS_SESSION_KEY] = normalized
-    hashes = request.session.get(SWITCH_ACCOUNTS_HASHES_KEY, {}).copy()
-    hashes[str(request.user.pk)] = request.user.get_session_auth_hash()
-    request.session[SWITCH_ACCOUNTS_HASHES_KEY] = {
-        key: value for key, value in hashes.items() if key in normalized
-    }
-    request.session.modified = True
-    return normalized
-
-
-def _login_preserving_switcher(request, user, account_ids, *, authenticated=False):
-    backend = settings.AUTHENTICATION_BACKENDS[0]
-    hashes = request.session.get(SWITCH_ACCOUNTS_HASHES_KEY, {}).copy()
-    if not authenticated and user.pk != request.user.pk:
-        stored_hash = hashes.get(str(user.pk))
-        if not isinstance(stored_hash, str) or not constant_time_compare(stored_hash, user.get_session_auth_hash()):
-            raise PermissionDenied('Dodaj konto ponownie, podając aktualne hasło.')
-    if request.user.is_authenticated:
-        hashes[str(request.user.pk)] = request.user.get_session_auth_hash()
-    if request.user.is_authenticated and request.user.pk != user.pk:
-        mark_user_inactive(request.user)
-    auth_login(request, user, backend=backend)
-    # auth_login flushes the session when changing users.
-    request.session[SWITCH_ACCOUNTS_HASHES_KEY] = hashes
-    mark_user_seen(user, force=True)
-    _save_account_ids(request, [user.pk, *account_ids])
-
-
-def _switch_account_context(request):
-    user_model = get_user_model()
-    account_ids = _normalized_account_ids(request)
-    users = user_model.objects.filter(pk__in=account_ids)
-    users_by_id = {str(user.pk): user for user in users}
-
-    switch_accounts = []
-    for account_id in account_ids:
-        if account_id not in users_by_id:
-            continue
-
-        switch_accounts.append({
-            'user': users_by_id[account_id],
-            'is_current': account_id == str(request.user.pk),
-            'avatar': _account_avatar(users_by_id[account_id]),
-        })
-
-    return switch_accounts
 
 
 def _presence_status_options(form):
@@ -167,6 +90,8 @@ def _save_user_form(form):
 
 @never_cache
 def register(request):
+    if request.user.is_authenticated:
+        return redirect('profile')
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
@@ -174,8 +99,7 @@ def register(request):
                 if _save_user_form(form):
                     from workplaces.invitations import pending_join_url
                     invitation = pending_join_url(request)
-                    account_ids = _normalized_account_ids(request) if request.user.is_authenticated else []
-                    _login_preserving_switcher(request, form.instance, account_ids, authenticated=True)
+                    auth_login(request, form.instance, backend=settings.AUTHENTICATION_BACKENDS[0])
                     if invitation:
                         request.session['workspace_join_url'] = invitation
                     return redirect(invitation or reverse('register_workspace'))
@@ -221,6 +145,17 @@ def select_workspace(request):
     })
 
 
+def _profile_context(request, *, form=None, banner_form=None):
+    if form is None:
+        form = UserProfileForm(instance=request.user)
+    return {
+        'form': form,
+        'banner_form': banner_form if banner_form is not None else UserBannerForm(instance=request.user),
+        'current_account_avatar': _account_avatar(request.user),
+        'presence_status_options': _presence_status_options(form),
+    }
+
+
 @login_required
 @never_cache
 def profile(request):
@@ -232,13 +167,24 @@ def profile(request):
     else:
         form = UserProfileForm(instance=request.user)
 
-    _save_account_ids(request, _normalized_account_ids(request))
-    return render(request, 'accounts/profile.html', {
-        'form': form,
-        'current_account_avatar': _account_avatar(request.user),
-        'presence_status_options': _presence_status_options(form),
-        'switch_accounts': _switch_account_context(request),
-    }, status=400 if getattr(request, '_react_api', False) and form.errors else 200)
+    return render(request, 'accounts/profile.html', _profile_context(request, form=form),
+                  status=400 if getattr(request, '_react_api', False) and form.errors else 200)
+
+
+@login_required
+@never_cache
+@require_POST
+def update_profile_banner(request):
+    form = UserBannerForm(request.POST, request.FILES, instance=request.user)
+    if form.is_valid():
+        try:
+            form.save()
+        except ValidationError as error:
+            form.add_error(None, error)
+        else:
+            messages.success(request, 'Baner profilu został zaktualizowany.')
+            return redirect('profile')
+    return render(request, 'accounts/profile.html', _profile_context(request, banner_form=form), status=400)
 
 
 @login_required
@@ -258,6 +204,8 @@ def update_presence_status(request):
         return redirect('profile')
 
     if presence_status == user_model.PresenceStatus.ACTIVE:
+        # An explicit selection clears a manual status; heartbeat preserves it.
+        request.user.presence_status = user_model.PresenceStatus.ACTIVE
         mark_user_seen(request.user, force=True)
     elif presence_status == user_model.PresenceStatus.INACTIVE:
         mark_user_inactive(request.user, force=True)
@@ -266,74 +214,6 @@ def update_presence_status(request):
         request.user.save(update_fields=['presence_status'])
 
     messages.success(request, 'Status został zaktualizowany.')
-    return redirect('profile')
-
-
-@login_required
-@never_cache
-def add_account(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            account_ids = _normalized_account_ids(request)
-            _login_preserving_switcher(request, user, account_ids, authenticated=True)
-            messages.success(request, f'Konto {user.email} zostało dodane.')
-            return redirect('profile')
-    else:
-        form = AuthenticationForm(request)
-
-    return render(request, 'accounts/add_account.html', {'form': form},
-                  status=400 if getattr(request, '_react_api', False) and form.errors else 200)
-
-
-@login_required
-@require_POST
-def switch_account(request):
-    account_ids = _normalized_account_ids(request)
-    target_id = str(request.POST.get('user_id', ''))
-
-    if target_id not in account_ids:
-        _save_account_ids(request, account_ids)
-        if getattr(request, '_react_api', False):
-            return api_error('Dodaj konto ponownie, podając aktualne hasło.', 403)
-        messages.error(request, 'Dodaj konto ponownie, podając aktualne hasło.')
-        return redirect('profile')
-
-    user = get_object_or_404(get_user_model(), pk=target_id, is_active=True)
-    _login_preserving_switcher(request, user, account_ids)
-    messages.success(request, f'Przełączono na konto {user.email}.')
-    return redirect('profile')
-
-
-@login_required
-@require_POST
-def remove_account(request):
-    account_ids = _normalized_account_ids(request)
-    target_id = str(request.POST.get('user_id', ''))
-
-    if target_id not in account_ids:
-        if getattr(request, '_react_api', False):
-            return api_error('To konto nie jest dodane do przełącznika.', 400)
-        messages.error(request, 'To konto nie jest dodane do przełącznika.')
-        return redirect('profile')
-
-    remaining_ids = [account_id for account_id in account_ids if account_id != target_id]
-    if not remaining_ids:
-        if getattr(request, '_react_api', False):
-            return api_error('Nie można usunąć jedynego aktywnego konta z przełącznika.', 400)
-        messages.error(request, 'Nie można usunąć jedynego aktywnego konta z przełącznika.')
-        _save_account_ids(request, account_ids)
-        return redirect('profile')
-
-    if target_id == str(request.user.pk):
-        user = get_object_or_404(get_user_model(), pk=remaining_ids[0], is_active=True)
-        _login_preserving_switcher(request, user, remaining_ids)
-        messages.success(request, f'Usunięto konto i przełączono na {user.email}.')
-    else:
-        _save_account_ids(request, remaining_ids)
-        messages.success(request, 'Konto zostało usunięte z przełącznika.')
-
     return redirect('profile')
 
 

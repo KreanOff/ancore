@@ -28,6 +28,9 @@
 {% endif %}
 <div class="auth-footer auth-footer--workspace">
     <p>Chcesz utworzyć kolejny Workspace? <a href="{% url 'register_workspace' %}">Utwórz Workspace</a></p>
-    <p>Nie widzisz swojego Workspace? <a href="{% url 'login' %}">Zmień konto</a></p>
+    <form method="post" action="{% url 'logout' %}" class="auth-logout-form">
+        {% csrf_token %}
+        Nie widzisz swojego Workspace? <button type="submit" class="auth-link-button">Wyloguj się i zmień konto</button>
+    </form>
 </div>
 {% endblock %}

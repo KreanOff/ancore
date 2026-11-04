@@ -334,7 +334,8 @@ body.auth-page .auth-password-toggle:disabled {
 body.auth-page .auth-tab:focus-visible,
 body.auth-page .auth-brand:focus-visible,
 body.auth-page .auth-submit:focus-visible,
-body.auth-page .auth-footer a:focus-visible {
+body.auth-page .auth-footer a:focus-visible,
+body.auth-page .auth-footer .auth-link-button:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--system-interaction) 50%, transparent) !important;
 }
 
@@ -381,13 +382,27 @@ body.auth-page .auth-footer--workspace p {
     margin: 0;
 }
 
-body.auth-page .auth-footer--workspace a {
+body.auth-page .auth-footer .auth-logout-form {
+    margin: 0;
+}
+
+body.auth-page .auth-footer .auth-link-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+body.auth-page .auth-footer--workspace a,
+body.auth-page .auth-footer--workspace .auth-link-button {
     --app-text-color: var(--auth-ink);
     font: inherit;
     text-decoration: none;
 }
 
-body.auth-page .auth-footer--workspace a:hover {
+body.auth-page .auth-footer--workspace a:hover,
+body.auth-page .auth-footer--workspace .auth-link-button:hover {
     text-decoration: underline;
 }
 
