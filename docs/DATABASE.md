@@ -5,6 +5,26 @@ z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikac
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
 Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
+`accounts.0004_user_profile_banner_crop` (04.11.2026) dodaje do `User` pola
+`profile_banner_x`, `profile_banner_y` i `profile_banner_zoom`. Istniejące konta
+otrzymują wartości 50, 50 i 1, zachowujące dotychczasowy centralny kadr.
+Pozycje są walidowane w zakresie 0–100, a powiększenie w zakresie 1–3.
+Pliki i ich ścieżki nie zmieniają się: kadrowanie zapisuje tylko metadane.
+Zastosuj `manage.py migrate` po sprawdzeniu planu i wykonaniu backupu.
+Cofnięcie usuwa ustawienia kadru, zachowując obrazy i wcześniejsze pole
+`profile_banner`; kod sprzed migracji pokazuje je centralnie bez powiększenia.
+
+`accounts.0003_user_profile_banner` (04.11.2026) dodaje opcjonalne pole
+`User.profile_banner` ze ścieżką pliku w `profile_banners/`. Istniejące konta
+otrzymują pustą wartość, dla której interfejs pokazuje domyślną lokalną tapetę;
+migracja nie kopiuje obrazu ani nie zmienia awatarów, tożsamości i dostępu.
+Przed zastosowaniem na istniejącej bazie wykonaj backup i sprawdź
+`manage.py migrate --plan`, następnie `manage.py migrate`.
+Cofnięcie usuwa kolumnę i powiązania kont z banerami, ale nie kasuje plików
+ze storage. Przywrócenie tych powiązań wymaga backupu. Zastąpienie lub reset
+banera w aplikacji usuwa poprzedni, nieużywany plik dopiero po zatwierdzeniu
+transakcji; nie jest to operacja migracji.
+
 `spaces.0006_task_classification` (03.11.2026) dodaje opcjonalny klucz grupy
 `SpaceTask.task_group` z pustą wartością dla istniejących zadań. Kategoria
 `task_type` zachowuje dane i limit 20 znaków, a jej wybory są walidowane

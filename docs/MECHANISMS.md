@@ -54,9 +54,10 @@ React używa osobnego `/accounts/api/v1/page/` z jawną listą operacji.
 Anonimowy dostęp dotyczy logowania/rejestracji i ekranu zaproszenia; tworzenie Workspace wymaga zalogowania, a wszystkie zapisy
 zachowują CSRF. Adapter przekazuje zmienionego użytkownika do middleware
 i zachowuje cookie CSRF z wewnętrznej odpowiedzi `LoginView`, gdy zamienia
-przekierowanie na JSON. Dane kont nie są cache'owane; hasła i hashe sesyjne
-przełącznika pozostają wyłącznie w Django. Zmiana tożsamości wymaga pełnego
-odświeżenia powłoki, aby nie zachować danych poprzedniego konta w interfejsie.
+przekierowanie na JSON. Dane kont nie są cache'owane; hasła pozostają
+wyłącznie w Django. Zmiana tożsamości przez wylogowanie i ponowne logowanie
+wymaga pełnego odświeżenia powłoki, aby nie zachować danych poprzedniego
+konta w interfejsie.
 
 Logowanie otwiera „Dla ciebie” w dostępnym Workspace. Konto bez Workspace
 przechodzi do `/accounts/register/workspace/`; oczekujące dołączenie przez link
@@ -87,7 +88,7 @@ przez `create_another=1`; pierwszy POST bez tej flagi zachowuje ochronę
 przed utworzeniem kolejnego rekordu po ponowieniu.
 
 Rejestracja i profil sprawdzają e-mail bez względu na wielkość liter.
-Logowanie i dodanie kolejnego konta używają `accounts.backends.EmailBackend`
+Logowanie używa `accounts.backends.EmailBackend`
 z wyszukiwaniem `email__iexact`, również dla kont zapisanych wcześniej z wielkimi
 literami. Hasło i aktywność konta nadal sprawdza Django. Historyczny
 `ModelBackend` pozostaje dostępny dla istniejących sesji.
@@ -101,16 +102,21 @@ Równoczesne rejestracje osób o takich samych imionach i nazwiskach mogą
 dzięki temu utworzyć konta z kolejnymi końcówkami ID. Konflikty e-mail
 zachowują dotychczasową obsługę błędu formularza.
 
-Sesja zawiera m.in. `switch_account_user_ids`, `switch_account_auth_hashes`, `active_workplace_id`
-i `workspace_url_scope_enabled`. Przełączenie konta wykonuje `auth_login()`
-i zachowuje listę uwierzytelnionych kont. Aktywny Workspace jest ponownie
-weryfikowany względem bieżącego użytkownika.
+Sesja przeglądarki uwierzytelnia jedno konto i przechowuje m.in.
+`active_workplace_id` oraz `workspace_url_scope_enabled`. Zmiana konta wymaga
+POST `/accounts/logout/` z CSRF, a następnie logowania danymi kolejnej osoby.
+Wylogowanie kończy bieżącą sesję; nie wylogowuje innych urządzeń.
+`AccountLoginView.redirect_authenticated_user = True` przekierowuje
+zalogowaną osobę do jej strony startowej bez zmiany konta, a widok `register`
+kieruje ją do profilu, również przy POST.
 
-Każde dodane konto ma zapisany hash sesyjny Django. Przed przełączeniem
-jest on porównywany z aktualnym hashem aktywnego użytkownika docelowego.
-Zmiana hasła unieważnia możliwość przełączenia; trzeba ponownie dodać konto
-z aktualnym hasłem. Stare sesje zawierające wyłącznie identyfikatory wymagają
-ponownego uwierzytelnienia pozostałych kont. Wylogowanie czyści cały przełącznik.
+`SingleAccountSessionMiddleware`, uruchamiany po `AuthenticationMiddleware`,
+usuwa przy żądaniu wycofane klucze `switch_account_user_ids` oraz
+`switch_account_auth_hashes`. Zachowuje bieżące uwierzytelnienie i kontekst
+Workspace; nie odczytuje danych innych kont. Dawne adresy
+`/accounts/profile/add-account/`, `switch-account/` i `remove-account/`
+nie mają tras i zwracają 404, także jako cel API Accounts. Osobne sesje
+przeglądarek i urządzeń nadal działają niezależnie.
 
 Obecność składa się z:
 
@@ -450,9 +456,10 @@ wskaźnik ładowania. `office.js` inicjalizuje obsługę przy starcie i
 `ancore:content-loaded`, usuwając poprzednie listenery przez `AbortController`.
 
 Przy DEBUG routing mediów używa `core.media.public_media`: udostępnia tylko
-JPEG/PNG/WebP bezpośrednio w `profile_photos`, `company_photos` i `workplace_photos`.
-Załączniki i próby wyjścia poza te katalogi zwracają 404. Stare ścieżki plików
-pozostają zgodne z kontrolowanym pobieraniem w Tasks/Kanbanie.
+JPEG/PNG/WebP bezpośrednio w `profile_photos`, `profile_banners` i `workplace_photos`.
+Załączniki i próby wyjścia poza te katalogi zwracają 404. Baner jest obrazem
+profilu udostępnianym tak samo jak awatar; pliki zadań Przestrzeni i Dokumentów
+korzystają z kontrolowanego pobierania.
 Serwer produkcyjny musi stosować tę samą listę publicznych katalogów;
 nie wolno publicznie mapować całego `MEDIA_ROOT`. Szczegóły wdrożenia:
 [DEVELOPMENT.md](DEVELOPMENT.md#8-wdrożenie).

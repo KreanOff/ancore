@@ -34,7 +34,7 @@ Kod używa mechanizmów PostgreSQL, w tym indeksów GIN i rozszerzenia `pg_trgm`
 ```text
 backend/                katalog źródeł Pythona, dodawany do ścieżki importów
   ancore/               konfiguracja, główny routing, WSGI/ASGI i test runner
-  accounts/             użytkownik, logowanie, profil, wiele kont, obecność
+  accounts/             użytkownik, logowanie, profil, sesja i obecność
   workplaces/           Workspace, aktywny kontekst, nawigacja, ulubione
   spaces/               przestrzenie, zadania, historia, pliki, planowanie i zespoły
   tasks/                słownik tagów Przestrzeni i wspólne komponenty
@@ -162,6 +162,11 @@ flowchart TD
 `AuthenticationMiddleware` działa przed middleware obecności i Workspace.
 Widok otrzymuje `request.user` oraz `request.workplace`. Context processory
 uzupełniają szablony o avatar, listę Workspace, adresy modułów i ulubione.
+Sesja przeglądarki obsługuje jedno zalogowane konto. Umieszczony po
+`AuthenticationMiddleware` adapter `SingleAccountSessionMiddleware` usuwa
+stare klucze przełącznika kont bez zmiany bieżącego uwierzytelnienia.
+Zmiana konta wymaga wylogowania przez POST i ponownego logowania;
+nie ogranicza to osobnych sesji na innych urządzeniach.
 
 GET może mieć uboczne efekty techniczne: obecność, sesja aktywnego Workspace,
 uzupełnienie starych rekordów bez Workspace oraz inicjalizacja domyślnych

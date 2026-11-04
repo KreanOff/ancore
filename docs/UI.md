@@ -77,7 +77,7 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 
 ## Konta w React
 
-Logowanie, rejestracja, krok nazwy Workspace i dodanie konta renderują
+Logowanie, rejestracja i krok nazwy Workspace renderują
 `src/accounts/AuthPage.tsx`
 w powłoce `accounts/auth_base.html`. Pełnoekranowa, lokalna tapeta
 `static/img/auth/wallpaper-fluent-bloom-light-4k.webp` jest wspólnym tłem:
@@ -118,8 +118,7 @@ lokalny Atlassian Sans i ikony UIcons, podgląd hasła,
 stany błędu/zapisu oraz fokus klawiatury. Do 760px zajmuje szerokość
 ekranu pod logo; do 380px również imię i nazwisko układają się pionowo.
 Na niskim ekranie formularz i błędy przewijają się razem z panelem.
-Dodanie konta korzysta z tej samej powłoki, z własnym nagłówkiem i powrotem
-do profilu. Pierwszy render Django zachowuje ten sam układ i formularze POST.
+Pierwszy render Django zachowuje ten sam układ i formularze POST.
 `auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
 Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
 
@@ -131,7 +130,9 @@ Sukces otwiera nowe środowisko. Pod przyciskiem wiersz „Masz już Workspace?�
 otwiera osobną stronę `/accounts/workspaces/` w tej samej powłoce kont.
 Strona zawiera listę miejsc pracy dostępnych dla konta, bez formularza tworzenia,
 oraz dwa zwarte wiersze: „Chcesz utworzyć kolejny Workspace? Utwórz Workspace”
-i „Nie widzisz swojego Workspace? Zmień konto” (link do logowania).
+i „Nie widzisz swojego Workspace? Wyloguj się i zmień konto”. Druga akcja
+jest przyciskiem formularza POST wylogowania z CSRF; dopiero po wylogowaniu
+otwiera ekran logowania. Sesja przeglądarki obsługuje jedno konto.
 Wariant `auth-footer--workspace` ma tekst 13px, interlinię 1.4, bez dodatkowych
 odstępów między wierszami. Opisy są przygaszone; linki mają kolor głównego tekstu
 i podkreślenie dopiero przy najechaniu. Zachowują wspólny fokus klawiatury.
@@ -144,11 +145,83 @@ Publiczny ekran linku do dołączenia korzysta z tej samej powłoki: nazwa
 Workspace, rola, logowanie/rejestracja i potwierdzenie przez POST albo komunikat
 niedostępnego linku. Link nie jest przypisany do adresu e-mail. GET nie nadaje dostępu.
 
-Profil używa istniejącego układu szczegółów zadania, listy kont w sesji,
-panelu właściwości i menu „Edytuj”. React renderuje formularz edycji we
+Profil zachowuje wspólną powłokę szczegółów i przycisk „Edytuj profil”
+w nagłówku. Treść jest wyśrodkowana, ograniczona tokenem `--page-max-width`
+i przewija się jako całość w `profile-overview`. Sekcja otwierająca łączy
+baner, częściowo zachodzący na jego dolną krawędź awatar, nazwę, ID Ancore,
+status obecności i stanowisko. Kliknięcie awatara otwiera jego edytor;
+brak stanowiska udostępnia akcję „Dodaj stanowisko”.
+
+Nad awatarem znajduje się osobisty baner z przyciskiem „Zmień baner”.
+Bez własnego obrazu wykorzystuje lokalną tapetę ekranów kont. Baner
+i kadr w edytorze mają proporcje 4:1; `object-fit: cover`, pozycja i skala
+pokazują zapisany kadr bez zmieniania przesłanego pliku. Domyślnie obraz
+jest wyśrodkowany bez dodatkowego powiększenia. Zalecany rozmiar obrazu
+to 1600 × 400 px.
+Osobny `BannerEditor` otwiera wspólny `Modal` w dużej powłoce edytora zdjęcia
+awatara: panel wysuwa się z góry, a pole z szachownicą zawiera prostokątny
+kadr 4:1 z obrysem i przyciemnionym otoczeniem. Bez własnego obrazu i po
+„Usuń” pokazuje pusty podgląd „Wybierz baner użytkownika”. Stopka zawiera
+„Usuń”, „Zmień” i „Zapisz”. „Zmień” otwiera ukryty wybór pliku przyjmujący
+PNG, JPG i WebP do 5 MB. Własny lub nowo wybrany obraz można przeciągać
+w podglądzie; stale widoczne suwak „Powiększenie obrazu” oraz przyciski
+minus/plus („Pomniejsz obraz” i „Powiększ obraz”) zmieniają skalę od 100%
+do 300%. Kadrowanie i powiększenie są nieaktywne bez odczytanego obrazu,
+przy błędzie pliku i podczas zapisu. Podgląd „Kadr banera” obsługuje też strzałki klawiatury,
+a Shift zwiększa krok przesuwania. Pozycja pozostaje w granicach obrazu.
+Kontrolki powiększenia używają istniejących klas `profile-photo-zoom-controls`
+z edytora awatara. Zmiana zaczyna obowiązywać po „Zapisz”, także gdy edytowany
+jest tylko kadr istniejącego obrazu. Przycisk zapisu jest nieaktywny bez zmian.
+„Usuń” zmienia wyłącznie szkic: opróżnia podgląd, a dopiero „Zapisz”
+usuwa własny baner i przywraca na profilu domyślną tapetę, środek kadru
+i powiększenie 100%. Usunięcie nowo wybranego pliku przy braku zapisanego
+banera pozostawia profil bez zmian. Zamknięcie edytora zachowuje zapisany obraz.
+Błędy formatu, rozmiaru i odczytu obrazu blokują zapis; błąd serwera zachowuje
+wybrany plik, pozycję, powiększenie i podgląd.
+Modal zachowuje fokus, Escape, potwierdzenie odrzucenia szkicu i blokadę
+kontrolek, w tym wyboru pliku, podczas zapisu. Pierwszy render Django udostępnia pod „Zmień baner”
+rozwijany, natywny formularz z CSRF, działający bez JavaScriptu. Oprócz uploadu
+i resetu zawiera pola „Pozycja pozioma (%)”, „Pozycja pionowa (%)” oraz
+„Powiększenie”, z tą samą walidacją zakresów co API. Ten formularz i kontrakt
+API zachowują dotychczasowe działanie.
+
+Pod banerem i danymi użytkownika `profile-details-grid` ma dwie kolumny.
+Lewa zawiera „O mnie”, opcjonalną kartę „Uzupełnij swój profil” oraz informację,
+że dane są wspólne dla Workspace użytkownika. Pusty opis pokazuje „Daj się
+poznać” i przycisk „Dodaj opis”. Sugestie dotyczą wyłącznie brakującego opisu,
+stanowiska i telefonu; licznik wskazuje liczbę uzupełnionych pól z trzech.
+Po uzupełnieniu wszystkich karta znika. Akcje Reacta otwierają wspólny edytor
+z fokusem na odpowiednim polu; natywny pierwszy render otwiera formularz
+przez istniejący adapter `profile.js`.
+
+Prawa kolumna dzieli dane na „Dane kontaktowe” i „Konto i aktywność”.
+Obie sekcje zachowują obrys, zaokrąglenie, cień i odstępy panelu zadania
+ze wspólnej reguły `tasks.css`. Karta kończy się na ostatniej sekcji i przewija
+razem z pozostałą treścią. Do 800px kolumny układają się jedna pod drugą.
+E-mail i telefon są linkami `mailto:` i `tel:`. React dodaje kopiowanie
+e-maila, ID Ancore i telefonu: sukces zmienia ikonę i ogłasza potwierdzenie,
+a błąd wyświetla komunikat z możliwością ręcznego skopiowania tekstu.
+Brak telefonu udostępnia akcję dodania numeru. Sekcja konta pokazuje zmianę
+statusu, dostęp, „Rolę w aplikacji”, datę dołączenia i ostatnie logowanie.
+Profil nie zawiera sekcji „Konta w sesji” ani akcji dodawania, przełączania
+i usuwania kont z sesji. Zmiana tożsamości odbywa się przez wylogowanie
+i ponowne logowanie.
+Warianty `profile-overview`, `profile-hero`, `profile-details-grid`
+i `profile-edit-avatar` w `profile.css` korzystają ze wspólnych tokenów,
+kontrolek i awatarów. Układ mobilny zachowuje pełne dane kontaktowe
+oraz wspólne przewijanie treści profilu.
+React renderuje formularz edycji we
 wspólnym `Modal` z klasami `profile-edit-overlay`, `profile-edit-dialog`
 oraz `profile-edit-form`. Zachowuje Escape, fokus, inert, błędy i potwierdzenie
-odrzucenia zmian. Wybór statusu korzysta ze wspólnego dropdownu i menu z
+odrzucenia zmian. Imię i nazwisko są obok siebie, opcjonalne drugie imię
+poniżej. Zapis jest nieaktywny do pierwszej zmiany. Natywny sygnał `change`
+wspólnego pickera awatara także oznacza formularz jako zmieniony, umożliwiając
+zapis samego awatara i potwierdzenie odrzucenia takiego szkicu.
+`FieldLabel` udostępnia oznaczenia wymaganych pól i pomoc ID Ancore.
+Błędy pojawiają się przy polach, statusie i awatarze oraz w podsumowaniu
+otrzymującym fokus. Podczas zapisu zablokowany jest również wybór awatara;
+błąd nie resetuje szkicu ani wybranego obrazu. Pierwszy render Django
+zachowuje układ i pomoc pól. Wybór statusu korzysta ze wspólnego dropdownu i menu z
 zaznaczeniem aktualnej opcji, obsługiwanego również klawiaturą.
 
 `shared/AvatarControl.tsx` jest wspólnym adapterem istniejącego pickera i
@@ -1125,6 +1198,8 @@ zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
 Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
 głównego paska bocznego (`core/includes/settings_sidebar.html`). Zastępuje
 menu Workspace kategoriami Ogólne, Konto i dostęp i Workspace.
+Ustawienia konta prowadzą do profilu i wylogowania; nie zawierają
+„Kont w sesji” ani „Dodaj konto”.
 Sekcja Workspace zawiera „Zarządzaj Workspace”, dla personelu także „Panel
 administracyjny”, oraz listę „Ustawienia przestrzeni”. Lista obejmuje widoczne
 przestrzenie aktywnego Workspace; brak dostępnych przestrzeni pokazuje komunikat.
@@ -1975,7 +2050,7 @@ powierzchni i zaokrągleń; pozostawia aktywne menu boczne oraz mobilny przycisk
 treścią. Szybkie odpowiedzi nie pokazują szkieletu i nie czekają na animację.
 Przy `prefers-reduced-motion` placeholdery są nieruchome. Zasłonięta treść ma
 tymczasowo `inert`, a czytnik ekranu otrzymuje „Wczytywanie widoku…”.
-Zmiana konta/Workspace, edytory i adresy spoza listy ekranów
+Logowanie, wylogowanie, zmiana Workspace, edytory i adresy spoza listy ekranów
 zachowują pełną nawigację. Szczegóły zadania przestrzeni czekają na automatyczny
 zapis przed podmianą i zatrzymują nawigację przy błędzie. Pełne wyjście z
 niezapisanymi zmianami chroni `beforeunload`. Po podmianie ekran usuwa poprzednie
@@ -1993,8 +2068,9 @@ przed dzwonkiem, z etykietą dostępną i podpowiedzią „Sticker”. Używa ws
 `tasks-icon-button app-topbar__action`; `aria-expanded` oznacza otwartą notatkę.
 Menu boczne nie zawiera już tego przycisku ani pustej stopki z separatorem.
 Sticker zachowuje wygląd i kontrolki oraz zapisuje treść i geometrię osobno
-dla zalogowanego konta. Po przełączeniu konta pojawia się jego własna notatka
-(pusta przy pierwszym użyciu); powrót przywraca poprzednią. Dane starej notatki
+dla zalogowanego konta. Po wylogowaniu i zalogowaniu na inne konto pojawia się
+jego własna notatka (pusta przy pierwszym użyciu); ponowne logowanie na
+wcześniejsze konto przywraca poprzednią. Dane starej notatki
 bez właściciela nie są automatycznie przypisywane ani wyświetlane innemu kontu.
 Powtórna inicjalizacja po nawigacji nie powiela obsługi przycisku.
 
@@ -2809,7 +2885,8 @@ zakładki (na wąskich ekranach główny obszar szczegółów). Czat zachowuje w
 limit wysokości. Zapis wpisu czasu odświeża tylko tabelę i historię, zachowując wartości
 tematu i opisu. Dotyczy to zadań i podzadań.
 Prawy panel szczegółów jest wspólny dla wszystkich zakładek zadania
-i podzadania. W bieżących zadaniach Przestrzeni `.work-task-page .tasks-issue-sidebar`
+i podzadania. Wspólna reguła w `tasks.css` dla `.work-task-page .tasks-issue-sidebar`
+oraz `.profile-page .profile-issue-sidebar`
 tworzy pływającą kartę jak lista Osi czasu: obrys `--border-color`,
 zaokrąglenie `--radius`, tło `--card-bg` i cień `--shadow-md`.
 Odstęp poziomy wynosi `--app-page-padding-x` (15px), jak w treści Przestrzeni,

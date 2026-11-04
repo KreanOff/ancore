@@ -26,9 +26,9 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
 - **Zarządzanie Workspace:** katalog, tworzenie, ustawienia, awatary/kadrowanie,
   członkowie i role, ręczne dodawanie istniejących kont, linki do dołączenia
   z potwierdzeniem oraz jawne przełączanie kontekstu.
-- **Konta:** logowanie, rejestracja, dodawanie konta, profil i edycja danych,
-  30 awatarów użytkownika oraz zdjęcie z kadrowaniem, status obecności,
-  przełączanie i usuwanie kont z sesji.
+- **Konta:** logowanie, rejestracja, profil i edycja danych,
+  30 awatarów użytkownika oraz zdjęcie z kadrowaniem, osobisty baner, status obecności,
+  wylogowanie; jedna tożsamość w sesji przeglądarki.
 - **Globalne panele:** wyszukiwanie z ostatnio oglądanymi i filtrami typów,
   centrum powiadomień z licznikami, filtrami, paginacją i akcjami oraz Sticker.
 
@@ -1038,27 +1038,34 @@ przed aktywną sesją, z zachowaniem przepływu oczekującego zaproszenia.
 
 `GET/POST /accounts/api/v1/page/?url=<adres_konta>` ma osobną, zamkniętą
 listę adresów: logowanie, rejestracja i jej krok nazwy Workspace, wybór Workspace, profil,
-dodanie/przełączenie/usunięcie konta z sesji, zmiana statusu i wylogowanie.
+zmiana banera, zmiana statusu i wylogowanie. Wycofane adresy dodawania, przełączania
+i usuwania kont z sesji zwracają 404 zarówno bezpośrednio, jak i przez to API.
 Logowanie, rejestracja i publiczny ekran zaproszenia działają bez uwierzytelnienia;
 tworzenie Workspace wymaga sesji; ogólny `/api/v1/page/` nadal wymaga sesji
 i nie udostępnia tras Accounts. Operacje zapisu wymagają CSRF. Walidacja
-zwraca JSON 400, brak sesji 401, a niedozwolone przełączenie konta 403.
-Odpowiedzi mają `Cache-Control: no-store`; hasła i hashe przełącznika
-nigdy nie są serializowane do klienta.
+zwraca JSON 400, a brak sesji 401.
+Odpowiedzi mają `Cache-Control: no-store`; hasła nigdy nie są serializowane do klienta.
 
 `backend/accounts/frontend.py` dostarcza jawny schemat formularza i dane aktualnego
-użytkownika oraz wyłącznie wcześniej uwierzytelnionych kont sesji. Przy błędzie
+użytkownika; payload profilu nie zawiera listy `accounts`. Przy błędzie
 edycji podsumowanie profilu pokazuje dane z bazy, a szkic pozostaje w formularzu.
 `backend/accounts/api.py` deleguje do dotychczasowych widoków i formularzy Django.
 Zachowuje rotację sesji i cookie CSRF także wtedy, gdy `LoginView` już zapisał
 cookie do odpowiedzi przekierowania. Parametr `next` nadal nie zastępuje
 strony „Dla ciebie” po logowaniu. Konto bez Workspace przechodzi do tworzenia,
-a sesja z linkiem zaproszenia wraca do jego potwierdzenia. `account-auth`
+a sesja z linkiem zaproszenia wraca do jego potwierdzenia. Zalogowana osoba
+otwierająca logowanie pozostaje na swoim koncie i przechodzi do jego strony
+startowej; rejestracja przekierowuje ją do profilu. Zmiana konta wymaga
+POST wylogowania z CSRF i ponownego logowania. Middleware usuwa stare klucze
+przełącznika bez wylogowania bieżącej osoby; nie ogranicza sesji na innych
+urządzeniach. `account-auth`
 z `mode: workspace` zawiera wymagane pole `name`, flagę `has_workspaces` i link
 `select_workspace` do `/accounts/workspaces/`. Osobny ekran
 `account-workspace-picker` zawiera listę `workspaces` (id, nazwa, `switch_url`)
 ograniczoną przez `workplaces_for_user`; nie zawiera formularza tworzenia.
-Wybór używa istniejącego natywnego POST przełącznika z CSRF. Formularz
+Wybór używa istniejącego natywnego POST przełącznika Workspace z CSRF.
+Akcja „Wyloguj się i zmień konto” wysyła osobny POST do `urls.logout`
+z CSRF, a następnie otwiera logowanie. Formularz
 tworzenia osoby z dostępnym Workspace wysyła `create_another=1`, aby jawnie
 utworzyć kolejne środowisko; ponowiony pierwszy POST bez tej flagi zachowuje
 dotychczasowe przekierowanie do istniejącego Workspace. `account-join` obsługuje
@@ -1070,14 +1077,77 @@ Ekrany `src/accounts/` współdzielą z `auth_base.html` tapetę i prawą kartę
 formularza (520px, wysokość według treści) z widocznym nagłówkiem, etykietami
 i zakładkami logowania/rejestracji. Przycisk ma lokalny, fioletowy wariant
 (szczegóły w [standardzie UI](UI.md#konta-w-react)).
-Profil pozostaje w `core/base.html`. Formularze zachowują szkic po błędach i blokują
-równoległy zapis. Edytor profilu korzysta ze wspólnego modalu: Escape, fokus,
+Profil pozostaje w `core/base.html`. `ProfilePage.tsx` i pierwszy render Django
+zachowują wyśrodkowaną treść o szerokości ograniczonej przez `--page-max-width`
+oraz wspólne przewijanie całego podsumowania. Sekcja otwierająca łączy baner
+4:1, awatar, nazwę, ID Ancore, status i stanowisko. Pod nią dwie kolumny
+przechodzą do jednej przy szerokości do 800px. Lewa pokazuje „O mnie”
+i opcjonalne sugestie uzupełnienia opisu, stanowiska i telefonu; karta sugestii
+znika po uzupełnieniu tych pól. Przyciski edycji i sugestii przekazują
+`focusField` do wspólnego `ProfileEditor`, który ustawia fokus w odpowiedniej
+kontrolce. Prawa kolumna zachowuje kartę panelu zadania, z sekcjami „Dane
+kontaktowe” i „Konto i aktywność”, bez osobnego przewijania. Rola jest opisana
+jako „Rola w aplikacji”. Linki `mailto:` i `tel:` uruchamiają kontakt;
+przyciski Reacta kopiują e-mail, ID Ancore lub telefon przez `shared/clipboard`.
+Sukces pokazuje ikonę zaznaczenia i komunikat `role="status"`, a błąd
+jest ogłaszany lokalnie przez `role="alert"` i podpowiada ręczne skopiowanie
+tekstu. Udane ponowienie usuwa poprzedni błąd. Natywny pierwszy render
+zachowuje linki i akcje edycji przez `profile.js`, bez przycisków kopiowania.
+
+Formularze zachowują szkic po błędach i blokują równoległy zapis.
+Przycisk „Edytuj profil” jest dostępny bezpośrednio w nagłówku.
+Profil i Ustawienia nie zawierają sekcji „Konta w sesji” ani akcji „Dodaj konto”.
+Edytor stosuje `FieldLabel`, pomoc ze schematu,
+powiązania błędów z kontrolkami oraz blokadę pól i awatara podczas zapisu.
+Wybrany awatar i kadr nie są resetowane przez odpowiedź walidacji.
+Edytor profilu korzysta ze wspólnego modalu: Escape, fokus,
 inert oraz potwierdzenie odrzucenia zmian. `shared/AvatarControl.tsx` współdzieli
 z Workspace izolowany picker i canvas, z osobną pulą ilustracji użytkownika,
 polami uploadu i etykietami. `auth.js` pomija kontener Reacta. Po zapisie
 profilu lub zmianie tożsamości React wykonuje pełne przejście na otrzymany
 adres, aby odświeżyć powłokę, awatar, Workspace i token formularzy. Heartbeat
 obecności nadal jest wspólnym serwisem Django/JS.
+
+Baner ma osobny POST `/accounts/profile/banner/`, dostępny również przez API
+Accounts jako `urls.update_profile_banner`. Żądanie multipart zawiera plik
+`profile_banner`, pola `profile_banner_x`, `profile_banner_y`,
+`profile_banner_zoom` albo `remove_banner` przy przywracaniu domyślnego obrazu.
+Pozycje mają zakres 0–100, a powiększenie 1–3; wartości domyślne to 50, 50 i 1.
+Samą zmianę kadru można zapisać dla istniejącego własnego banera bez uploadu:
+aktualizuje wyłącznie podane metadane, zachowując plik, URL i pozostałe wartości.
+Nowy upload bez metadanych oraz reset przywracają domyślny kadr.
+Wymaga sesji i CSRF; serwer zawsze zapisuje aktualnego użytkownika.
+Payload profilu zawiera `banner` z `url`, `default_url`, `custom`, `max_size`
+i `crop: {x, y, zoom}` oraz osobny schemat `banner_form`. Domyślny obraz pochodzi z istniejącej tapety
+ekranów kont. Dozwolone są JPG, PNG i WebP do 5 MB, sprawdzane wspólnym
+walidatorem uploadu. Sukces zwraca przekierowanie do profilu; błąd HTTP 400
+zachowuje błędy formularza banera, pozostawiając zwykły formularz profilu
+niezwiązany z żądaniem. Zapis i reset nie modyfikują awatara ani danych
+kontaktowych. Poprzedni plik jest sprzątany po zatwierdzeniu transakcji.
+`src/accounts/BannerEditor.tsx` używa wspólnego `Modal` z klasami
+`contacts-photo-editor-overlay` i `contacts-photo-editor-dialog`: dużej powłoki
+edytora zdjęcia awatara wysuwanej z góry. `BannerCropper.tsx` umieszcza
+prostokątny kadr 4:1 na tej samej szachownicy oraz zachowuje stale widoczne
+przyciski minus/plus i suwak powiększenia. Stopka „Usuń” / „Zmień” / „Zapisz”
+korzysta ze wspólnych klas edytora zdjęcia. „Zmień” otwiera ukryty input pliku;
+lokalny URL `blob:` służy do podglądu i jest zwalniany po zmianie pliku
+oraz odmontowaniu.
+Kadrowanie obsługuje przeciąganie wskaźnikiem i strzałki. Bez własnego lub
+nowo wybranego obrazu wyświetla pusty podgląd; kadrowanie i powiększenie
+są zablokowane do poprawnego odczytu obrazu, przy błędzie pliku oraz podczas
+zapisu. Wybór pliku pozostaje dostępny w pustym stanie i jest blokowany
+podczas zapisu. Obliczenia w `banner-crop.ts` uwzględniają proporcje obrazu,
+ramkę 4:1 i skalę UI. Wspólna funkcja stylu stosuje pozycję, powiększenie
+i punkt skalowania w podglądzie oraz na profilu, bez przetwarzania oryginału.
+Wybrany `File`, kadr i podgląd pozostają dostępne po błędzie walidacji lub sieci;
+zapis blokuje równoległe wysyłki, zmianę kadru i błędny obraz.
+„Usuń” czyści wybrany plik i podgląd w szkicu; dla zapisanego własnego banera
+ustawia `remove_banner`, a dopiero „Zapisz” przywraca na profilu domyślne tło
+i kadr. Usunięcie nowego pliku przy braku własnego banera nie wymaga zapisu.
+Anulowanie zachowuje dotychczasowy obraz. Kontrakt API pozostaje bez zmian.
+Natywny formularz pierwszego renderu Django
+korzysta z tego samego endpointu, trzech pól numerycznych kadru, walidacji
+i ochrony CSRF; błędna edycja nie zmienia zapisanego podsumowania.
 
 ## Globalne wyszukiwanie, powiadomienia i Sticker
 

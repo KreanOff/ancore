@@ -38,20 +38,20 @@ Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).
 
 **Funkcje:** rejestracja, logowanie przez e-mail, wylogowanie, edycja profilu,
 30 gotowych awatarów zwierzęcych, wybór automatyczny oraz zdjęcie z kadrowaniem/usuwaniem,
-publiczny identyfikator Ancore, dane kontaktowe,
-status obecności i przełączanie między kontami dodanymi do jednej sesji.
+osobisty baner, publiczny identyfikator Ancore, dane kontaktowe,
+status obecności oraz jedno zalogowane konto w sesji przeglądarki.
 
-Logowanie, rejestracja, dodanie konta i profil są renderowane przez React
+Logowanie, rejestracja i profil są renderowane przez React
 (`frontend/app/src/accounts/`) z jawnymi danymi `backend/accounts/frontend.py`.
 Osobne API Accounts deleguje do tych samych formularzy i operacji Django;
 publiczne pozostają wyłącznie logowanie i rejestracja. Po zapisie profilu lub
-przełączeniu konta pełna nawigacja aktualizuje również awatar i kontekst
+ponownym logowaniu pełna nawigacja aktualizuje również awatar i kontekst
 wspólnej powłoki. [Kontrakt migracji](FRONTEND.md#api-i-interfejs-kont).
 
 `User` rozszerza `AbstractUser`. E-mail jest unikalny bez względu na wielkość
 liter (formularze oraz ograniczenie bazy `Lower(email)`) i służy do logowania;
 `username` pozostaje osobnym publicznym identyfikatorem. Profil zawiera imiona,
-nazwisko, telefon, stanowisko, opis, zdjęcie i dane obecności.
+nazwisko, telefon, stanowisko, opis, zdjęcie, baner i dane obecności.
 
 `User.avatar` zapisuje wybraną ilustrację z osobnej puli `backend/accounts/avatar_presets.py`;
 nie korzysta z motywów Przestrzeni i Workspace. Pusty identyfikator oznacza
@@ -60,15 +60,34 @@ rozszerzenie katalogu nie zmienia wcześniejszych przypisań. Istniejące zdjęc
 Zmiana na ilustrację lub wybór automatyczny usuwa powiązanie ze zdjęciem;
 poprzedni plik jest sprzątany dopiero po zatwierdzeniu transakcji.
 Wspólny helper `accounts.avatar.account_avatar` i include avatara udostępniają
-wybór w profilu, pasku konta, przełączniku kont, zespołach, komentarzach i powiadomieniach.
+wybór w profilu, pasku konta, zespołach, komentarzach i powiadomieniach.
 Profil zapisuje wyłącznie konto aktualnie zalogowanej osoby.
+Nagłówek udostępnia „Edytuj profil”, a formularz zachowuje wpisane dane
+po błędzie. Jawny wybór „Aktywny” przywraca aktywność także po ręcznych
+statusach „Zajęty”, „Poza biurem” i „Nie przeszkadzać”; sam heartbeat nadal
+nie zastępuje ręcznych statusów.
 
-Dodanie kolejnego konta wymaga jego uwierzytelnienia. Przełącznik przechowuje
-identyfikatory i hashe sesyjne wcześniej uwierzytelnionych kont. Po zmianie hasła
-lub dezaktywacji konto nie może zostać wybrane; zmiana hasła wymaga ponownego
-dodania z aktualnymi danymi logowania. „Usuń konto z przełącznika”
-usuwa wpis z przełącznika; nie usuwa użytkownika z bazy. Nie można w ten sposób
-usunąć jedynego pozostałego konta sesji.
+`User.profile_banner` przechowuje osobisty obraz niezależny od awatara
+i Workspace. Bez własnego pliku profil pokazuje istniejącą lokalną tapetę
+`static/img/auth/wallpaper-fluent-bloom-light-4k.webp`. Można przesłać JPG,
+PNG lub WebP do 5 MB albo przywrócić domyślny baner. Osobny formularz
+i POST zapisują wyłącznie baner zalogowanej osoby. Podgląd 4:1 pozwala
+przesuwać obraz i zmieniać powiększenie w zakresie 100–300%, również dla
+wcześniej zapisanego pliku. Kadr przechowują `profile_banner_x`,
+`profile_banner_y` (0–100) i `profile_banner_zoom` (1–3); zmiana samego kadru
+zachowuje oryginalny plik i jego URL. Domyślna pozycja to 50/50 przy skali 1,
+przywracana także przez reset. Zastąpienie lub reset sprzątają poprzedni plik po zatwierdzeniu
+transakcji. Każdy upload dostaje nazwę z UUID, aby przeglądarka nie odtworzyła
+starego obrazu z pamięci podręcznej. Zmiana banera nie zapisuje pozostałych
+pól profilu.
+
+Profil i Ustawienia nie zawierają listy kont sesji ani akcji „Dodaj konto”.
+Zmiana tożsamości wymaga wylogowania przez POST z CSRF i ponownego logowania.
+Wycofane adresy dodawania, przełączania i usuwania kont z sesji zwracają 404.
+Wejście zalogowanej osoby na logowanie zachowuje obecne konto i kieruje do
+jego strony startowej, a rejestracja kieruje do profilu. Middleware usuwa
+stare dane przełącznika bez wylogowania. Reguła dotyczy pojedynczej sesji
+przeglądarki; osobne logowania na innych urządzeniach pozostają dostępne.
 
 Rejestracja tworzy i uwierzytelnia konto, a następnie otwiera
 `/accounts/register/workspace/` z wymaganą nazwą. Dopiero potwierdzenie tworzy
@@ -541,7 +560,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   zakresu; gadżet pokazuje niedostępne źródło. Ikona z biblioteki 3145 emoji
   Fluent Emoji 3D rozpoznaje pulpit w nagłówku, katalogu i menu.
   Picker ma kategorie, polskie/angielskie wyszukiwanie i ostatnie wybory.
-- **Ustawienia:** centrum linków do profilu, kont i Workspace oraz zarządzania sesją.
+- **Ustawienia:** centrum linków do profilu i Workspace oraz wylogowania.
   Sekcja Preferencje jest usunięta; zwijanie menu i powiadomienia są dostępne
   przez kontrolki wspólnej powłoki aplikacji.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.

@@ -19,7 +19,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
 | [backend/core](../backend/core) | 38 | 0 | 25 | 249 |
-| [backend/accounts](../backend/accounts) | 25 | 2 | 11 | 81 |
+| [backend/accounts](../backend/accounts) | 26 | 4 | 10 | 100 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
@@ -36,7 +36,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 
 Źródło: [backend/accounts/models.py](../backend/accounts/models.py).
 
-Pola zadeklarowane tutaj: `email` (EmailField), `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `avatar` (CharField), `profile_photo` (FileField), `phone_number` (CharField), `job_title` (CharField), `bio` (TextField), `presence_status` (CharField), `last_seen_at` (DateTimeField), `default_workplace` (ForeignKey).
+Pola zadeklarowane tutaj: `email` (EmailField), `first_name` (CharField), `middle_name` (CharField), `last_name` (CharField), `avatar` (CharField), `profile_photo` (FileField), `profile_banner` (FileField), `profile_banner_x` (FloatField), `profile_banner_y` (FloatField), `profile_banner_zoom` (FloatField), `phone_number` (CharField), `job_title` (CharField), `bio` (TextField), `presence_status` (CharField), `last_seen_at` (DateTimeField), `default_workplace` (ForeignKey).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
@@ -560,6 +560,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 Źródło: [backend/accounts/forms.py](../backend/accounts/forms.py).
 
 - `UserRegistrationForm` — Meta.fields: `('first_name', 'middle_name', 'last_name', 'email')`
+- `UserBannerForm` — Meta.fields: `('profile_banner', 'profile_banner_x', 'profile_banner_y', 'profile_banner_zoom')`
 - `UserProfileForm` — Meta.fields: `('avatar', 'profile_photo', 'first_name', 'middle_name', 'last_name', 'email', 'username', 'phone_number', 'job_title', 'bio', 'presence_status')`
 
 ### workplaces
@@ -679,10 +680,8 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'register/workspace/'` | `views.register_workspace` | 'register_workspace' |
 | `'workspaces/'` | `views.select_workspace` | 'select_workspace' |
 | `'profile/'` | `views.profile` | 'profile' |
+| `'profile/banner/'` | `views.update_profile_banner` | 'update_profile_banner' |
 | `'profile/status/'` | `views.update_presence_status` | 'update_presence_status' |
-| `'profile/add-account/'` | `views.add_account` | 'add_account' |
-| `'profile/switch-account/'` | `views.switch_account` | 'switch_account' |
-| `'profile/remove-account/'` | `views.remove_account` | 'remove_account' |
 | `'presence/ping/'` | `views.presence_ping` | 'presence_ping' |
 
 ### backend/workplaces/urls.py
@@ -882,15 +881,15 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/accounts/avatar_presets.py](../backend/accounts/avatar_presets.py) — `preset_avatar`
 - [backend/accounts/backends.py](../backend/accounts/backends.py) — `EmailBackend`
 - [backend/accounts/context_processors.py](../backend/accounts/context_processors.py) — `current_account_avatar`
-- [backend/accounts/forms.py](../backend/accounts/forms.py) — `UserRegistrationForm`, `UserProfileForm`
-- [backend/accounts/frontend.py](../backend/accounts/frontend.py) — `login_page`, `register_page`, `register_workspace_page`, `select_workspace_page`, `add_account_page`, `profile_page`
-- [backend/accounts/middleware.py](../backend/accounts/middleware.py) — `UserPresenceMiddleware`
+- [backend/accounts/forms.py](../backend/accounts/forms.py) — `UserRegistrationForm`, `UserBannerForm`, `UserProfileForm`
+- [backend/accounts/frontend.py](../backend/accounts/frontend.py) — `login_page`, `register_page`, `register_workspace_page`, `select_workspace_page`, `profile_page`
+- [backend/accounts/middleware.py](../backend/accounts/middleware.py) — `SingleAccountSessionMiddleware`, `UserPresenceMiddleware`
 - [backend/accounts/models.py](../backend/accounts/models.py) — `User`, `normalize_public_username`, `default_public_username`, `unique_public_username`
 - [backend/accounts/presence.py](../backend/accounts/presence.py) — `idle_seconds`, `heartbeat_seconds`, `write_throttle_seconds`, `mark_user_seen`, `mark_user_inactive`, `sync_stale_presence_statuses`
 - [backend/accounts/templatetags/__init__.py](../backend/accounts/templatetags/__init__.py)
 - [backend/accounts/templatetags/account_avatar.py](../backend/accounts/templatetags/account_avatar.py) — `user_avatar`
 - [backend/accounts/urls.py](../backend/accounts/urls.py)
-- [backend/accounts/views.py](../backend/accounts/views.py) — `AccountLoginView`, `AccountLogoutView`, `register`, `register_workspace`, `select_workspace`, `profile`, `update_presence_status`, `add_account`, `switch_account`, `remove_account`, `presence_ping`
+- [backend/accounts/views.py](../backend/accounts/views.py) — `AccountLoginView`, `AccountLogoutView`, `register`, `register_workspace`, `select_workspace`, `profile`, `update_profile_banner`, `update_presence_status`, `presence_ping`
 - [backend/accounts/widgets.py](../backend/accounts/widgets.py) — `UserSelect`, `UserChoiceField`, `UserSelectMultiple`
 
 ### workplaces
@@ -1075,7 +1074,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### accounts
 
-- [backend/accounts/templates/accounts/add_account.html](../backend/accounts/templates/accounts/add_account.html)
 - [backend/accounts/templates/accounts/auth_base.html](../backend/accounts/templates/accounts/auth_base.html)
 - [backend/accounts/templates/accounts/includes/presence_status_icon.html](../backend/accounts/templates/accounts/includes/presence_status_icon.html)
 - [backend/accounts/templates/accounts/includes/user_avatar.html](../backend/accounts/templates/accounts/includes/user_avatar.html)
@@ -1408,10 +1406,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/pnpm-workspace.yaml](../frontend/app/pnpm-workspace.yaml)
 - [frontend/app/src/PageApp.tsx](../frontend/app/src/PageApp.tsx)
 - [frontend/app/src/accounts/AuthPage.tsx](../frontend/app/src/accounts/AuthPage.tsx)
+- [frontend/app/src/accounts/BannerCropper.tsx](../frontend/app/src/accounts/BannerCropper.tsx)
+- [frontend/app/src/accounts/BannerEditor.tsx](../frontend/app/src/accounts/BannerEditor.tsx)
 - [frontend/app/src/accounts/PresenceSelect.tsx](../frontend/app/src/accounts/PresenceSelect.tsx)
 - [frontend/app/src/accounts/ProfileEditor.tsx](../frontend/app/src/accounts/ProfileEditor.tsx)
 - [frontend/app/src/accounts/ProfilePage.tsx](../frontend/app/src/accounts/ProfilePage.tsx)
 - [frontend/app/src/accounts/WorkspacePickerPage.tsx](../frontend/app/src/accounts/WorkspacePickerPage.tsx)
+- [frontend/app/src/accounts/banner-crop.ts](../frontend/app/src/accounts/banner-crop.ts)
 - [frontend/app/src/accounts/types.ts](../frontend/app/src/accounts/types.ts)
 - [frontend/app/src/calendar/CalendarPage.tsx](../frontend/app/src/calendar/CalendarPage.tsx)
 - [frontend/app/src/calendar/EventEditor.tsx](../frontend/app/src/calendar/EventEditor.tsx)
@@ -1557,6 +1558,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/TeamTable.tsx](../frontend/app/src/workspaces/TeamTable.tsx)
 - [frontend/app/src/workspaces/WorkspaceForm.tsx](../frontend/app/src/workspaces/WorkspaceForm.tsx)
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
+- [frontend/app/tests/banner-crop.test.mjs](../frontend/app/tests/banner-crop.test.mjs)
 - [frontend/app/tests/board-read-only.test.mjs](../frontend/app/tests/board-read-only.test.mjs)
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/calendar-save.test.mjs](../frontend/app/tests/calendar-save.test.mjs)
@@ -1746,6 +1748,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `UserAvatarTests`: 9 metod testowych.
 
+### backend/accounts/test_banner.py
+
+Źródło: [backend/accounts/test_banner.py](../backend/accounts/test_banner.py).
+
+- `UserBannerTests`: 24 metod testowych.
+
 ### backend/accounts/test_email_identity.py
 
 Źródło: [backend/accounts/test_email_identity.py](../backend/accounts/test_email_identity.py).
@@ -1783,7 +1791,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `UserRegistrationFormTests`: 2 metod testowych.
 - `AuthPageViewTests`: 2 metod testowych.
 - `ProfileViewTests`: 13 metod testowych.
-- `AccountSwitcherTests`: 11 metod testowych.
+- `SingleAccountSessionTests`: 6 metod testowych.
 
 ### backend/workplaces/test_avatars.py
 
@@ -2391,6 +2399,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 
 - [backend/accounts/migrations/0001_initial.py](../backend/accounts/migrations/0001_initial.py)
 - [backend/accounts/migrations/0002_user_default_workplace.py](../backend/accounts/migrations/0002_user_default_workplace.py)
+- [backend/accounts/migrations/0003_user_profile_banner.py](../backend/accounts/migrations/0003_user_profile_banner.py)
+- [backend/accounts/migrations/0004_user_profile_banner_crop.py](../backend/accounts/migrations/0004_user_profile_banner_crop.py)
 
 ### workplaces
 

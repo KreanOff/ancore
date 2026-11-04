@@ -1,5 +1,206 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Edytor banera zgodny z edytorem zdjęcia (04.11.2026)
+
+Baner korzysta z dużej powłoki zdjęcia profilowego: panelu wysuwanego z góry,
+szachownicy, suwaka z przyciskami minus/plus i stopki „Usuń” / „Zmień” /
+„Zapisz”. Kadr pozostaje prostokątny 4:1. „Zmień” otwiera wybór pliku,
+a „Usuń” przygotowuje przywrócenie domyślnego tła po zapisaniu. Wariant
+React zachowuje warstwę wspólnego modala poniżej potwierdzenia odrzucenia
+szkicu. API, modele i formularz natywny nie wymagają zmian.
+[Standard UI](UI.md#konta-w-react), [frontend](FRONTEND.md#api-i-interfejs-kont).
+
+Przeszły 24 testy `accounts.test_banner` na osobnej bazie PostgreSQL,
+418 testów frontendu, build z TypeScript i formatowanie zmienionych plików React.
+Playwright z lokalnym Chrome na fikcyjnym koncie potwierdził wybór pliku przez
+„Zmień”, przeciąganie, klawiaturę, powiększenie, zapis i ponowne otwarcie kadru,
+ochronę szkicu, anulowanie usunięcia i zapis przywracający tło domyślne.
+Sprawdzono pusty stan, nieobsługiwany format, uszkodzony obraz, limit pliku,
+blokady podczas zapisu i zachowanie obrazu oraz kadru po HTTP 503 z ponowieniem.
+Obejrzano edytor przy szerokościach 1440, 1024, 390 i 320 px: bez poziomego
+przepełnienia, z widoczną stopką i kadrem 4:1. Escape przywraca fokus.
+Referencyjny edytor zdjęcia zachował geometrię i wygląd na desktopie i telefonie.
+Po przejściu profil → zadanie → profil przez wspólną powłokę nowy edytor
+otwiera się poprawnie bez przeładowania dokumentu. Kontrole diffu i indeksu
+kodu przeszły.
+Nie było błędów JavaScript; jedyny błąd konsoli to celowo wywołany HTTP 503.
+Plugin Browser był niedostępny; użyto istniejącego Playwright.
+Nie sprawdzano Safari, Firefox ani wdrożenia produkcyjnego.
+
+## Dopracowany profil użytkownika (04.11.2026)
+
+Profil ma ograniczoną szerokość i wspólne przewijanie, baner 4:1 z awatarem,
+stanowiskiem i obecnością, sekcję „O mnie”, opcjonalne sugestie uzupełnienia
+oraz panel danych kontaktowych i konta. Skróty edycji ustawiają fokus na
+odpowiednim polu. Kontakt udostępnia linki e-mail/telefon i kopiowanie z
+potwierdzeniem oraz lokalnym błędem. Zapis samego awatara rozpoznaje natywny
+sygnał wspólnego pickera i zachowuje ochronę szkicu. Pierwszy render pokazuje
+zapisane dane profilu także po błędzie formularza. Bez nowych modeli i migracji.
+[Standard UI](UI.md#konta-w-react), [kontrakt frontendu](FRONTEND.md#api-i-interfejs-kont).
+
+Przeszło 107 testów `accounts` i `core.test_file_lifecycle` na jednorazowej
+bazie PostgreSQL; po aktualizacji szablonu ponowiono 30 testów
+`accounts.tests.ProfileViewTests` i `accounts.test_frontend`. Przeszło
+418 testów frontendu, build z TypeScript, kontrola Django, formatowanie
+zmienionych plików React, kontrola diffu i aktualności indeksu kodu.
+
+Playwright z lokalnym Chrome na osobnej bazie z fikcyjnymi danymi potwierdził
+pusty i uzupełniony profil, szerokości 1440, 1024, 800, 768, 390 i 320px,
+edycję ze skrótów, walidację wymaganego pola, zachowanie szkicu przy HTTP 503,
+ponowienie zapisu, odczyt po przeładowaniu, znikanie uzupełnionych sugestii,
+kopiowanie trzech danych kontaktowych, odmowę dostępu do schowka i ponowienie,
+zmianę statusu, otwarcie banera i powrót fokusu po Escape.
+Sprawdzono także zapis samego awatara, potwierdzenie odrzucenia jego szkicu,
+zagnieżdżony picker, edytor desktop/mobile oraz powrót do profilu ze
+scoped zadania przez wspólną powłokę. Obejrzano ekran referencyjnego zadania.
+Pierwszy render Django bez JavaScriptu sprawdzono przy 1440 i 390px,
+łącznie z rozwinięciem natywnego formularza banera i błędem jego walidacji.
+Nie było przepełnienia ani błędów JavaScript; błędy HTTP 400/503 w konsoli
+pochodziły z zamierzonych prób walidacji i awarii. Plugin Browser był
+niedostępny; użyto istniejącego Playwright bez instalowania zależności.
+Nie sprawdzano Safari, Firefox ani wdrożenia produkcyjnego.
+
+## Kadrowanie banera profilu (04.11.2026)
+
+„Zmień baner” pozwala przesuwać obraz myszą, dotykiem i strzałkami oraz
+ustawiać powiększenie suwakiem i przyciskami −/+. Dotyczy nowego uploadu
+i istniejącego obrazu. Kadr 4:1 jest zapisywany jako pozycja i powiększenie;
+oryginał pozostaje dostępny do ponownej edycji. Reset przywraca domyślny
+obraz i kadr. Migrację `accounts.0004_user_profile_banner_crop` zastosowano
+lokalnie i w osobnej bazie QA; istniejące banery zachowują centralny kadr.
+[Kontrakt API](FRONTEND.md#api-i-interfejs-kont) i [schemat](DATABASE.md).
+
+Przeszło 100 testów `accounts` i 4 testy `core.test_schema_baseline`.
+Regresje obejmują zapis samego kadru bez zmiany pliku, granice i wartości
+nieskończone, zgodność starszych uploadów, reset, izolację użytkowników
+oraz zachowanie pliku przy zapisie starej instancji formularza.
+Przeszło 418 testów frontendu, w tym 6 testów geometrii kadru: dopasowanie
+obrazów pionowych/poziomych, obie osie po powiększeniu, przeliczenie ruchu
+przy CSS zoom, ograniczenia bez pustych krawędzi i odtwarzanie pól po błędzie.
+Build z TypeScript oraz formatowanie zmienionych plików React przeszły.
+
+Playwright/Chrome na osobnej bazie QA potwierdził upload, przeciąganie,
+suwak, strzałki, ochronę szkicu, zapis i ponowne otwarcie tego samego kadru.
+Zapis istniejącego kadru zachował URL i oryginalne wymiary obrazu.
+Sprawdzono skrajne pozycje i powiększenia, HTTP 503 z ponowieniem, blokadę
+kontrolek i przeciągania podczas zapisu, rzeczywiste zdarzenia dotykowe,
+powrót przez powłokę i reset. Szerokości 1440, 1024 i 390px nie wykazały
+przepełnienia; obejrzano zrzuty edytora desktop/mobile oraz zapisanego profilu.
+Ponowiono regresję uploadu: nieobsługiwany format, przekroczony limit,
+uszkodzony obraz oraz HTTP 400/503 zachowują plik i podgląd do ponowienia.
+Bez JavaScriptu sprawdzono trzy pola kadru, błędne zakresy, zapis granic
+0/100/3 bez zmiany URL ani bajtów pliku oraz reset.
+Referencyjny edytor awatara zachował przeciąganie, powiększenie, wspólne
+kontrolki i anulowanie bez zapisu; obejrzano także jego zrzut.
+Nie było błędów JavaScript; konsola odnotowała celowe HTTP 400/503.
+Kontrole Django, zgodności migracji, diffu i indeksu kodu przeszły.
+Plugin Browser był niedostępny, użyto lokalnego Playwright.
+Nie sprawdzano innych przeglądarek ani wdrożenia produkcyjnego.
+
+## Baner profilu użytkownika (04.11.2026)
+
+Profil ma szeroki baner nad awatarem i osobny edytor „Zmień baner”.
+Użytkownik może wgrać JPG, PNG lub WebP do 5 MB, zobaczyć wyśrodkowany
+podgląd 4:1 oraz przywrócić domyślne tło Ancore. Oddzielny formularz i POST
+zmieniają wyłącznie baner zalogowanej osoby; zapis pozostałych pól profilu
+nie nadpisuje banera. Nowy plik otrzymuje unikatowy adres, a poprzedni
+nieużywany plik jest usuwany po zatwierdzeniu transakcji.
+Migrację `accounts.0003_user_profile_banner` zastosowano w lokalnej bazie
+developerskiej oraz na osobnej bazie QA. [Opis danych](DATABASE.md).
+
+Przeszło 116 testów Django: 91 w `accounts` oraz 25 w
+`core.test_file_lifecycle`, `core.test_production` i `core.test_schema_baseline`.
+Regresje banera obejmują HTML/API, izolację użytkowników, CSRF, walidację
+plików, wymianę i przywracanie obrazu, sprzątanie po transakcji, niezależny
+zapis pól profilu oraz brak ponownego używania adresu pliku po resecie.
+Przeszły także 412 testów frontendu, build z TypeScript, formatowanie React,
+kontrola Django, zgodności migracji, diffu oraz indeksu kodu.
+
+Playwright z lokalnym Chrome na osobnej bazie QA potwierdził podgląd,
+upload, wymianę i przywracanie domyślnego obrazu, odczyt po przeładowaniu,
+walidację błędnych plików, zachowanie pliku po HTTP 400/503 i ponowienie.
+Sprawdzono blokadę kontrolek podczas zapisu, Escape, ochronę szkicu i powrót
+fokusu, szerokości 1440, 1024 i 390px, ponowne wejście przez powłokę oraz
+zgodność pływającego panelu z zadaniem. Formularz bez JavaScriptu przeszedł
+upload, błąd walidacji i reset. Ponowny upload tej samej nazwy po resecie
+potwierdził nowy URL i odpowiedź 404 dla usuniętego obrazu.
+Nie było błędów JavaScript ani przepełnienia;
+wpisy konsoli dotyczyły celowo wywołanych HTTP 400/503.
+Plugin Browser był niedostępny. Nie sprawdzano innych przeglądarek ani
+wdrożenia produkcyjnego z Nginx.
+
+## Jedno konto w sesji przeglądarki (04.11.2026)
+
+Profil i Ustawienia nie udostępniają już dodawania ani przełączania kont.
+Zmiana użytkownika wymaga wylogowania przez POST z CSRF, a następnie
+ponownego logowania. Usunięto trzy dawne trasy i ich cele API; stare sesje
+tracą zapisane dane dodatkowych kont, zachowując bieżącą tożsamość i Workspace.
+Logowanie i rejestracja zalogowanej osoby przekierowują bez zmiany konta.
+Picker Workspace ma akcję „Wyloguj się i zmień konto”. Nie zmieniono modeli
+ani niezależnych sesji na innych urządzeniach. [Mechanizm sesji](MECHANISMS.md#1-tożsamość-sesja-i-obecność).
+
+Zestaw 158 testów Django (`accounts`, `dashboard.tests`, `core.test_frontend`,
+`workplaces.test_defaults`, `workplaces.test_default_preference`,
+`workplaces.test_workspace_system`, `workplaces.test_team`) zakończył się
+155 sukcesami i trzema zastanymi błędami testów statusów zadań:
+`ReactPageApiTests.test_item_api_preserves_status_history_and_completion`,
+`TeamAccessTests.test_comments_and_status_keep_actor_completion_and_history`
+i `TeamAccessTests.test_scoped_status_records_actor_and_cannot_target_another_workspace`.
+Każdy z tych trzech błędów odtworzono na czystej kopii HEAD `7e68c79` poza
+repozytorium, na osobnej bazie. Testy żądają niedozwolonego przejścia
+`new → closed`, pomijając etapy konfiguracji. Nie zmieniano tego mechanizmu.
+Wszystkie regresje kont przeszły; obejmują stare adresy HTML/API, blokadę zmiany
+tożsamości przez login/register, oczyszczenie dawnej sesji oraz wylogowanie
+i ponowne logowanie. Przeszły także 412 testów frontendu, build z TypeScript,
+formatowanie zmienionych plików React, kontrola Django, diffu i indeksu.
+
+Playwright z lokalnym Chrome na osobnej bazie QA potwierdził profil bez listy
+kont, Ustawienia, walidację i zapis edytora, odczyt po przeładowaniu, powrót
+przez powłokę, 404 wycofanych adresów i ochronę zalogowanego konta.
+Wylogowanie z pickera oraz ponowne logowanie inną osobą działa w React;
+POST wylogowania sprawdzono także bez JavaScriptu. Sprawdzono szerokości
+1440, 1024 i 390px oraz zgodność pływającej karty z panelem zadania.
+Odczyt testowej sesji potwierdził usunięcie obu dawnych kluczy bez utraty
+bieżącego użytkownika i Workspace. Brak błędów JavaScript i nieoczekiwanych
+błędów konsoli; HTTP 400 pochodził z celowo niepoprawnego formularza.
+Plugin Browser był niedostępny; użyto lokalnego Playwright. Innych przeglądarek
+i wdrożenia produkcyjnego nie sprawdzano.
+
+## Profil użytkownika i edycja (04.11.2026)
+
+Panel boczny profilu współdzieli z zadaniami pływającą kartę w `tasks.css`:
+odstępy, obrys, zaokrąglenie, cień i wysokość dopasowaną do treści.
+Po tej korekcie CSS Playwright/Chrome porównał obliczone style obu paneli
+przy 1440, 1024 i 390px, przewijanie przy wysokości 500px, menu statusu,
+Escape/fokus, otwarcie edytora, powrót ze szczegółów zadania oraz pierwszy
+render Django. Wszystkie kontrole przeszły, bez błędów konsoli i przepełnienia.
+Przeszły kontrole diffu i indeksu; nie ponawiano buildu ani testów logiki,
+ponieważ korekta dotyczy wyłącznie CSS i wersji arkuszy.
+
+Profil ma bezpośrednią akcję „Edytuj profil”, sekcję „O mnie”, pogrupowane
+szczegóły. Formularz używa wspólnych etykiet i pomocy,
+zachowuje szkic po błędzie oraz blokuje awatar podczas zapisu. Jawny wybór
+„Aktywny” poprawnie zastępuje ręczny status obecności. Nie zmieniono modeli
+ani migracji. [Opis UI](UI.md#konta-w-react).
+
+Przeszło 82 testy `accounts` na jednorazowej bazie PostgreSQL, w tym nowa
+regresja zmiany statusu przez API i HTML. Po końcowej aktualizacji szablonu
+ponowiono 31 testów `accounts.tests.ProfileViewTests` i `accounts.test_frontend`.
+Przeszły 412 testów frontendu, build z TypeScript, `manage.py check`,
+formatowanie zmienionych plików React, kontrola diffu i indeksu kodu.
+
+Playwright z lokalnym Chrome na osobnej bazie QA potwierdził pusty opis,
+walidację wymaganego pola i zajętego e-maila, zachowanie szkicu, wybór awatara,
+zapis i ponowny odczyt, symulowany HTTP 503 i ponowienie, blokadę kontrolek
+podczas zapisu, zmianę statusu, anulowanie, zagnieżdżone Escape i powrót fokusu.
+Przed usunięciem obsługi wielu kont sprawdzono ich przełączanie/usuwanie
+z sesji, ochronę jedynego konta,
+powrót przez powłokę ze szczegółów zadania, szerokości 1440, 1024 i 390px
+oraz pierwszy render Django na desktopie i telefonie. Brak błędów JavaScript;
+wpisy konsoli dotyczyły wyłącznie oczekiwanych odpowiedzi 400 i testowego 503.
+Plugin Browser był niedostępny. Nie sprawdzano innych przeglądarek,
+wdrożenia produkcyjnego ani uploadu i kadrowania nowego zdjęcia w przeglądarce.
+
 ## Kategorie i grupy bez dekoracji (03.11.2026)
 
 Nazwy kategorii i grup w ustawieniach Przestrzeni oraz selektorach zadania
@@ -4269,7 +4470,7 @@ katalog i zarządzanie nadal stosują dotychczasowe szerokości i skracanie nazw
 
 | Moduł | Co sprawdzają istniejące testy |
 | --- | --- |
-| Accounts | Konto/profil, kadrowanie i walidacja obrazu, obecność, przełączanie kont |
+| Accounts | Konto/profil, kadrowanie i walidacja obrazu, obecność, wylogowanie i zmiana konta |
 | Workplaces | Wybór i izolacja Workspace, scoped URL, ulubione, zmiany i usuwanie |
 | Tasks | Numeracja, hierarchie, CRUD, zakres dostępu, formularze, katalogi, paginacja, zapytania, historia, pliki |
 | Tasks: `test_project_visibility.py` | Publiczne i prywatne projekty, rzeczywisty odbiorca, dziedziczenie dostępu, zwykłe/scoped URL, operacje zbiorcze, formularze, pliki, search, Dashboard, kalendarz, powiadomienia i szablony |
