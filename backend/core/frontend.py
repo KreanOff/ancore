@@ -222,7 +222,7 @@ def target_request(request):
         raise ValueError('Nieprawidłowy adres ekranu.')
     match = resolve(parsed.path)
     module, name = match.func.__module__, match.func.__name__
-    if name not in VIEWS.get(module, set()) and not (getattr(request, '_react_navigation', False) and module == 'resources.views' and name in {'index', 'edit'}):
+    if name not in VIEWS.get(module, set()) and not (getattr(request, '_react_navigation', False) and module == 'resources.views' and name in {'index', 'edit', 'overview'}):
         raise Http404
     segments = parsed.path.strip('/').split('/')
     if len(segments) >= 3 and segments[0] == 'workplaces' and segments[2] in SCOPED_WORKPLACE_APPS:

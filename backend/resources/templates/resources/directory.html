@@ -3,9 +3,18 @@
         <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
             <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Zasoby</h1></div>
             <div class="tasks-titlebar-actions">
+                <a href="{{ export_url }}" class="tasks-tag-topbar-button" download="zasoby.csv"><i data-icon="download" aria-hidden="true"></i><span>Eksport CSV</span></a>
                 <a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-resource-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj zasób</span></a>
             </div>
         </header>
+        <nav class="resources-summary" aria-label="Zasoby w Workspace">
+            <a class="tasks-filter-button resources-summary-item" href="{{ resources_url }}">Wszystkie <strong>{{ resource_summary.total }}</strong></a>
+            <a class="tasks-filter-button resources-summary-item" href="{{ resources_url }}?status=available">Dostępne <strong>{{ resource_summary.available }}</strong></a>
+            <a class="tasks-filter-button resources-summary-item" href="{{ resources_url }}?status=in_use">W użyciu <strong>{{ resource_summary.in_use }}</strong></a>
+            <a class="tasks-filter-button resources-summary-item" href="{{ resources_url }}?status=maintenance">W serwisie <strong>{{ resource_summary.maintenance }}</strong></a>
+            <a class="tasks-filter-button resources-summary-item" href="{{ resources_url }}?deadline=attention">Ważność do 30 dni lub po terminie <strong>{{ resource_summary.attention }}</strong></a>
+            <a class="tasks-filter-button resources-summary-item" href="{{ resources_url }}?deadline=return_overdue">Zwrot po terminie <strong>{{ resource_summary.return_overdue }}</strong></a>
+        </nav>
         <form hidden id="resource-search-form" action="{{ resources_url }}" method="get" data-project-search-form data-server-directory-filters="true">
             <input type="hidden" name="page_size" value="{{ resource_window.page_size }}" data-project-search-page-size>
             <input type="hidden" name="sort" value="{{ sort }}" data-project-sort-input>
@@ -48,6 +57,7 @@
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="assigned_to" role="columnheader">ODPOWIEDZIALNY<i data-icon="user-round" aria-hidden="true"></i></span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="location" role="columnheader">LOKALIZACJA<i data-icon="map-pin" aria-hidden="true"></i></span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="expires_on" role="columnheader">WAŻNOŚĆ / GWARANCJA<i data-icon="calendar-clock" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="return_due_on" role="columnheader">PLANOWANY ZWROT<i data-icon="calendar" aria-hidden="true"></i></span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
                     {% for resource in resources %}
@@ -65,12 +75,13 @@
                             </div>
                         </div>
                         <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="inventory_number" role="cell" title="{{ resource.inventory_number }}">{{ resource.inventory_number|default:'—' }}</span>
-                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell"><a class="resources-name" href="{{ resource.edit_url }}" data-resource-open aria-haspopup="dialog" title="{{ resource.name }}"><i data-icon="{{ resource.icon }}" aria-hidden="true"></i><span>{{ resource.name }}</span></a></span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell"><a class="resources-name" href="{{ resource.detail_url }}" title="{{ resource.name }}"><i data-icon="{{ resource.icon }}" aria-hidden="true"></i><span>{{ resource.name }}</span></a></span>
                         <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="cell">{{ resource.get_kind_display }}</span>
                         <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="status" role="cell">{{ resource.get_status_display }}</span>
                         <span class="tasks-directory-assignee tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="assigned_to" role="cell" title="{% if resource.assigned_to %}{{ resource.assigned_to.get_full_name|default:resource.assigned_to.email }}{% endif %}"><i data-icon="circle-user-round" aria-hidden="true"></i><span>{% if resource.assigned_to %}{{ resource.assigned_to.get_full_name|default:resource.assigned_to.email }}{% else %}Nieprzypisany{% endif %}</span></span>
                         <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="location" role="cell" title="{{ resource.location }}">{{ resource.location|default:'—' }}</span>
                         <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="expires_on" role="cell">{% if resource.expires_on %}<span class="tasks-project-value-badge{% if resource.expires_on < today %} tasks-project-value-badge--due-overdue{% endif %}"{% if resource.expires_on < today %} title="Termin minął"{% endif %}>{% if resource.expires_on < today %}<span class="u-sr-only">Termin minął: </span>{% endif %}{{ resource.expires_on|date:'d.m.Y' }}</span>{% else %}—{% endif %}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="return_due_on" role="cell">{% if resource.return_due_on %}<span class="tasks-project-value-badge{% if resource.return_due_on < today %} tasks-project-value-badge--due-overdue{% endif %}">{{ resource.return_due_on|date:'d.m.Y' }}</span>{% else %}—{% endif %}</span>
                     </article>
                     {% endfor %}
                 </div>

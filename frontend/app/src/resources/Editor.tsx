@@ -223,7 +223,7 @@ export function ResourceEditor({
         controller.current.signal,
         {
           method: editor.id ? 'PUT' : 'POST',
-          body: JSON.stringify(data),
+          body: JSON.stringify({ ...data, revision: editor.revision }),
         },
       );
       state.current.pending = false;

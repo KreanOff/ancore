@@ -284,7 +284,7 @@ def global_search(request):
             Q(name__icontains=query) | Q(inventory_number__icontains=query)
             | Q(serial_number__icontains=query) | Q(location__icontains=query) | Q(notes__icontains=query)
         ), 'name', query).order_by('_global_search_rank', 'name', 'pk'),
-        lambda item: _global_search_result(item.name, 'Zasób', f'{resources_url}{item.pk}/edit/', item.icon,
+        lambda item: _global_search_result(item.name, 'Zasób', f'{resources_url}{item.pk}/', item.icon,
             ' · '.join(part for part in (item.inventory_number, item.get_kind_display(), item.get_status_display()) if part)),
     ))
     office_url = _workspace_app_url(workplace, 'office')

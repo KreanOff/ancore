@@ -160,7 +160,7 @@ class ResourceTests(TestCase):
         for query in ['EQ-001', 'SERIAL-314', 'Magazyn', 'Kalibracja']:
             self.assertEqual([r.pk for r in self.client.get(self.url(), {'q': query}).context['resources']], [self.resource.pk])
 
-    def test_global_search_is_limited_scoped_and_links_to_editor(self):
+    def test_global_search_is_limited_scoped_and_links_to_detail(self):
         Resource.objects.bulk_create([Resource(owner=self.owner, workplace=self.team, name=f'Laptop {i:02}') for i in range(23)])
         response = self.client.get(reverse('global_search'), {'q': 'Laptop'})
         group = next(group for group in response.json()['groups'] if group['key'] == 'resources')
@@ -170,7 +170,7 @@ class ResourceTests(TestCase):
         self.assertNotIn(self.foreign_resource.name, str(group))
         for row in group['results']:
             self.assertTrue(row['url'].startswith(self.url()))
-            self.assertTrue(row['url'].endswith('/edit/'))
+            self.assertRegex(row['url'], r'/resources/\d+/$')
 
     def test_delete_requires_post_and_csrf(self):
         url = self.url(f'{self.resource.pk}/delete/')

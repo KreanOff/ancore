@@ -2,6 +2,7 @@
     <div class="tasks-modal__dialog">
         <form method="post" action="{{ modal.action }}" class="tasks-modal__form" data-resource-form>
             {% csrf_token %}
+            {% if modal.form.instance.pk %}<input type="hidden" name="revision" value="{{ modal.form.instance.updated_at.isoformat }}">{% endif %}
             <header class="tasks-modal__header"><h2 id="resource-modal-title">{{ modal.title }}</h2><button type="button" class="tasks-modal__close" aria-label="Zamknij" data-close-modal></button></header>
             <div class="tasks-modal__body documents-form resources-form app-form-layout">
                 <div class="tasks-modal__errors resources-form-wide" role="alert" data-resource-error hidden></div>

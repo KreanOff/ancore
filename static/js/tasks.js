@@ -7058,7 +7058,8 @@ function initTasksPage() {
             status: 140,
             assigned_to: 245,
             location: 180,
-            expires_on: 200
+            expires_on: 200,
+            return_due_on: 170
         };
         const workplaceColumnDefaultWidths = {
             name: 300,

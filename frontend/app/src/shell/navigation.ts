@@ -57,7 +57,7 @@ export function canNavigate(href: string) {
     /^\/accounts\/profile\/?$/,
     /^\/workplaces\/?$/,
     /^\/(calendar|for-you|documents|office)\/?$/,
-    /^\/resources\/(?:create\/|\d+\/edit\/)?$/,
+    /^\/resources\/(?:create\/|\d+\/(?:edit\/)?)?$/,
     /^\/spaces\/(?:create\/|manage\/(?:create\/|\d+\/edit\/)?)?$/,
     /^\/space\/[-a-zA-Z0-9_]+\/(?:configuration\/|tasks\/[^/]+\/)?$/,
     /^\/teams\/(?:\d+\/)?$/,

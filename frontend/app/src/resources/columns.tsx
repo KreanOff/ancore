@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   DirectoryColumnManager,
   useDirectoryColumns,
@@ -13,9 +14,32 @@ export const columns = [
   { key: 'assigned_to', label: 'Odpowiedzialny', icon: 'user-round', width: 245 },
   { key: 'location', label: 'Lokalizacja', icon: 'map-pin', width: 180 },
   { key: 'expires_on', label: 'Ważność / gwarancja', icon: 'calendar-clock', width: 200 },
+  { key: 'return_due_on', label: 'Planowany zwrot', icon: 'calendar', width: 170 },
 ] as const;
 export type Column = (typeof columns)[number];
 export function useColumns() {
+  useState(() => {
+    // Keep the user's existing layout when extending the table schema.
+    const previous = columns
+      .filter((column) => column.key !== 'return_due_on')
+      .map((column) => column.key)
+      .join('-');
+    const current = columns.map((column) => column.key).join('-');
+    try {
+      for (const prefix of [
+        'resources:directoryColumnLayout:v2:',
+        'resources:directoryColumnWidths:v4:',
+      ]) {
+        if (localStorage.getItem(prefix + current) === null) {
+          const saved = localStorage.getItem(prefix + previous);
+          if (saved !== null) localStorage.setItem(prefix + current, saved);
+        }
+      }
+    } catch {
+      /* Disabled storage must not block the directory. */
+    }
+    return true;
+  });
   return useDirectoryColumns(columns, 'resources');
 }
 export function ColumnManager(props: {

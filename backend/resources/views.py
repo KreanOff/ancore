@@ -7,7 +7,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 from .forms import ResourceForm
 from .models import Resource
-from .api import directory_payload, editor_payload
+from .api import directory_payload, editor_payload, overview_payload
 from workplaces.services import workspace_owner
 from .services import directory_context, directory_url, resource_base_url, resource_params, resource_scope, save_resource_form
 
@@ -31,7 +31,7 @@ def edit(request, pk=None):
     form = ResourceForm(request.POST if request.method == 'POST' else None, instance=item, workplace=request.workplace)
     ajax = request.headers.get('X-Resource-Modal') == 'true'
     list_url = directory_url(resource_base_url(request), resource_params(request))
-    if request.method == 'POST' and save_resource_form(form, request.user):
+    if request.method == 'POST' and save_resource_form(form, request.user, revision=request.POST.get('revision')):
         if ajax:
             return JsonResponse({'saved': True, 'url': list_url})
         messages.success(request, 'Zasób zapisany.')
@@ -49,6 +49,19 @@ def edit(request, pk=None):
             return navigation_response(request, {'type': 'resources', 'title': 'Zasoby', 'url': request.get_full_path(), 'data': context['react_bootstrap']}, context)
         return render(request, 'resources/react.html', context)
     return render(request, 'resources/index.html', context, status=400)
+
+
+@login_required
+@require_GET
+def overview(request, pk):
+    resource = get_object_or_404(resource_scope(request).select_related('assigned_to'), pk=pk)
+    context = directory_context(request)
+    context['resource_detail'] = overview_payload(request, resource)
+    context['react_bootstrap'] = {**directory_payload(request, context), 'detail': context['resource_detail']}
+    if getattr(request, '_react_navigation', False):
+        from core.shell import navigation_response
+        return navigation_response(request, {'type': 'resources', 'title': resource.name, 'url': request.get_full_path(), 'data': context['react_bootstrap']}, context)
+    return render(request, 'resources/react.html', context)
 
 
 @login_required

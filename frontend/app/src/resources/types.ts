@@ -13,6 +13,11 @@ export interface Resource {
   notes: string;
   purchased_on: string;
   expires_on: string;
+  return_due_on: string;
+  created_at: string;
+  updated_at: string;
+  expiring_soon: boolean;
+  return_overdue: boolean;
   overdue: boolean;
   icon: string;
 }
@@ -37,6 +42,23 @@ export interface Field {
 export interface Editor {
   id: number | null;
   fields: Field[];
+  revision: string;
+}
+export type ResourceAction = 'handover' | 'return' | 'status' | 'location' | 'note';
+export interface Overview {
+  resource: Resource;
+  history: {
+    id: number;
+    action: string;
+    label: string;
+    actor: string;
+    created_at: string;
+    note: string;
+    changes: { field: string; label: string; before: string; after: string }[];
+  }[];
+  history_page: number;
+  history_pages: number;
+  history_total: number;
 }
 export type Errors = Record<string, { message: string; code: string }[]>;
 export interface Directory {
@@ -45,6 +67,11 @@ export interface Directory {
   list_url: string;
   base_url: string;
   api_url: string;
+  export_url: string;
+  summary: Record<
+    'total' | 'available' | 'in_use' | 'maintenance' | 'attention' | 'return_overdue',
+    number
+  >;
   query: string;
   has_filters: boolean;
   sort: string;
@@ -70,4 +97,5 @@ export interface Directory {
     next_url: string;
   };
   editor?: Editor;
+  detail?: Overview;
 }
