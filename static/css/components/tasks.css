@@ -9959,6 +9959,38 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     background: #ffffff;
 }
 
+/* Task and profile properties share the same floating panel surface. */
+.work-task-page .tasks-issue-sidebar,
+.profile-page .profile-issue-sidebar {
+    align-self: start;
+    min-height: 0;
+    max-height: calc(100% - 10px);
+    margin: 5px var(--app-page-padding-x);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+}
+
+.work-task-page .tasks-issue-sidebar > .tasks-issue-side-section:last-child,
+.profile-page .profile-issue-sidebar > .tasks-issue-side-section:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+    .work-task-page .tasks-issue-sidebar,
+    .profile-page .profile-issue-sidebar {
+        max-height: none;
+    }
+}
+
+@media (max-width: 650px) {
+    .work-task-page .tasks-issue-sidebar,
+    .profile-page .profile-issue-sidebar {
+        margin-block: 4px;
+    }
+}
+
 body.is-resizing-directory-columns {
     cursor: col-resize;
     user-select: none;

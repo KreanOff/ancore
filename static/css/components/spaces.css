@@ -11,24 +11,6 @@
     .work-task-page .tasks-issue-primary-body > .tasks-issue-content { padding-inline-end: 0; }
     .work-task-page .tasks-issue-primary-body > .tasks-issue-overview { padding-inline-end: calc(var(--tasks-issue-content-padding-x) - var(--app-page-padding-x)); }
 }
-/* Task properties share the timeline's floating panel surface. */
-.work-task-page .tasks-issue-sidebar {
-    align-self: start;
-    min-height: 0;
-    max-height: calc(100% - 10px);
-    margin: 5px var(--app-page-padding-x);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    background: var(--card-bg);
-    box-shadow: var(--shadow-md);
-}
-.work-task-page .tasks-issue-sidebar > .tasks-issue-side-section:last-child { border-bottom: 0; }
-@media (max-width: 1024px) {
-    .work-task-page .tasks-issue-sidebar { max-height: none; }
-}
-@media (max-width: 650px) {
-    .work-task-page .tasks-issue-sidebar { margin-block: 4px; }
-}
 /* Keep task properties aligned, including React field wrappers and validation. */
 .work-task-page .tasks-issue-sidebar .tasks-issue-side-section {
     display: grid;
