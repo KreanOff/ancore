@@ -368,14 +368,19 @@ class TeamForm(StyledForm):
     name = forms.CharField(label='Nazwa zespołu', max_length=120)
     description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
     photo = forms.FileField(label='Zdjęcie zespołu', required=False)
+    remove_photo = forms.BooleanField(label='Usuń zdjęcie zespołu', required=False)
     spaces = forms.ModelMultipleChoiceField(label='Powiązane przestrzenie', queryset=Space.objects.none(), required=False, widget=forms.CheckboxSelectMultiple)
 
     def __init__(self, *args, request, team=None, **kwargs):
         self.request, self.team = request, team
         if team:
-            kwargs['initial'] = {'name': team.name, 'description': team.description, 'spaces': team.spaces.all()}
+            kwargs['initial'] = {'name': team.name, 'description': team.description, 'spaces': team.spaces.filter(pk__in=visible_spaces(request))}
         super().__init__(*args, **kwargs)
         self.fields['spaces'].queryset = visible_spaces(request)
+        self.fields['spaces'].help_text = 'Powiązanie przestrzeni nie zmienia uprawnień jej członków.'
+        self.fields['photo'].widget.attrs['accept'] = 'image/png,image/jpeg,image/webp'
+        if not team or not team.photo:
+            self.fields.pop('remove_photo')
 
     def clean_name(self):
         name = self.cleaned_data['name'].strip()
@@ -389,6 +394,28 @@ class TeamForm(StyledForm):
             validate_image_upload(photo)
         return photo
 
+    def clean(self):
+        data = super().clean()
+        if data.get('photo') and data.get('remove_photo'):
+            self.add_error('remove_photo', 'Wybierz nowe zdjęcie albo usuń obecne.')
+        return data
+
+
+class TeamDeleteForm(StyledForm):
+    name = forms.CharField(label='Nazwa zespołu', max_length=120)
+    compact = True
+    submit_label = 'Usuń zespół'
+
+    def __init__(self, *args, team, **kwargs):
+        self.team = team
+        super().__init__(*args, **kwargs)
+        self.fields['name'].help_text = f'Wpisz „{team.name}”, aby potwierdzić. Zadania i przestrzenie pozostaną; usunięte zostanie ich powiązanie z zespołem.'
+
+    def clean_name(self):
+        if self.cleaned_data['name'] != self.team.name:
+            raise ValidationError('Wpisz dokładną nazwę zespołu.')
+        return self.cleaned_data['name']
+
 
 class MemberForm(StyledForm):
     person = forms.ModelChoiceField(label='Osoba', queryset=None)
@@ -400,6 +427,7 @@ class MemberForm(StyledForm):
         self.fields['person'].label_from_instance = lambda user: user.get_full_name() or user.email
         if team:
             self.fields['role'].choices = self.fields['role'].choices[:2]
+            self.fields['person'].empty_label = 'Wybierz osobę'
 
 
 class ConfigurationColorField(forms.CharField):

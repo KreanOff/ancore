@@ -7,7 +7,9 @@ urlpatterns = [
     path('create/', teams.edit, name='create'),
     path('<int:pk>/', teams.detail, name='detail'),
     path('<int:pk>/edit/', teams.edit, name='edit'),
+    path('<int:pk>/delete/', teams.delete, name='delete'),
     path('<int:pk>/members/', teams.members, name='members'),
+    path('<int:pk>/members/<int:member_pk>/edit/', teams.members, name='member_edit'),
     path('<int:pk>/members/<int:member_pk>/remove/', teams.remove_member, name='remove_member'),
     path('<int:pk>/photo/', teams.photo, name='photo'),
 ]

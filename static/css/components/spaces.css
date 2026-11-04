@@ -1,4 +1,52 @@
 /* Spaces reuse Ancore's directory, tab, form, modal and status components. */
+/* Team profiles extend the existing directory and summary components. */
+.teams-page .tasks-topbar-title { overflow-wrap: anywhere; }
+.teams-page .work-panel { min-width: 0; }
+.teams-page .team-card-counts { flex-wrap: wrap; justify-content: flex-start; gap: 10px 16px; }
+.team-card-counts a { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+.team-card-counts a:hover { text-decoration: underline; }
+.team-card-counts [data-icon] { width: 15px; height: 15px; }
+.team-profile { display: flex; align-items: flex-start; gap: 16px; }
+.team-profile > div { min-width: 0; flex: 1; }
+.team-profile p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 12px; }
+.team-profile-links { display: flex; gap: 12px 24px; flex-wrap: wrap; font-size: var(--font-size-sm); }
+.team-profile-links a { text-decoration: none; }
+.team-profile-links a:hover { text-decoration: underline; }
+.team-progress-label { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; margin: 20px 0 12px; }
+.team-progress-label strong { font-size: 28px; }
+.team-progress { display: block; width: 100%; height: 8px; margin-bottom: 20px; border: 0; border-radius: var(--radius); overflow: hidden; appearance: none; background: var(--panel-bg); }
+.team-progress::-webkit-progress-bar { background: var(--panel-bg); }
+.team-progress::-webkit-progress-value { background: var(--system-accent); }
+.team-progress::-moz-progress-bar { background: var(--system-accent); }
+.team-workload { display: grid; }
+.team-workload a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); text-decoration: none; }
+.team-workload a:last-child { border-bottom: 0; }
+.team-workload a:hover { background: var(--system-interaction-soft); }
+.team-workload a > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.team-workload a > span:last-child { flex-shrink: 0; }
+.team-workload small { font-size: inherit; }
+.team-toolbar .resources-react-filter { flex: 0 1 190px; min-width: 150px; }
+.team-toolbar .resources-react-filter .ancore-custom-select { width: 100%; }
+.team-toolbar .team-toolbar-action { margin-left: auto; }
+.team-toolbar-action [data-icon] { width: 18px; height: 18px; }
+.teams-page .tasks-directory-board.team-members-sheet { --tasks-directory-grid: 40px minmax(220px, 1fr) minmax(240px, 1fr) 150px; }
+.teams-page .tasks-directory-board.team-members-sheet .tasks-directory-header,
+.teams-page .tasks-directory-board.team-members-sheet .tasks-directory-list .tasks-directory-row { min-width: 650px; }
+.team-members-sheet [data-column="email"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.teams-page .work-issue-row--unselectable { grid-template-columns: 22px max-content 24px minmax(120px, 1fr) max-content max-content max-content max-content; }
+@media (max-width: 800px) {
+    .teams-page .work-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .teams-page .work-summary-grid { grid-template-columns: minmax(0, 1fr); }
+    .teams-page .work-panel-heading { flex-wrap: wrap; }
+    .team-toolbar .team-toolbar-action { margin-left: 0; }
+}
+@media (max-width: 480px) {
+    .teams-page .work-content { padding-inline: var(--app-page-padding-x); }
+    .teams-page .work-panel { padding: 14px; }
+    .teams-page .work-metrics { gap: 10px; }
+    .team-profile { gap: 10px; }
+    .team-progress-label { flex-wrap: wrap; }
+}
 .work-task-page .tasks-issue-title-field .form-input { font-size: 20px; }
 .work-task-page .work-task-visibility { text-decoration: none; }
 .work-task-visibility > [data-icon] { flex-shrink: 0; }

@@ -215,23 +215,26 @@ def task_page(request, context):
 
 def teams_page(request, context):
     return {'type': 'teams', 'title': 'Zespoły', 'data': {
-        'url': context['teams_url'], 'query': context['query'], 'tab': context['tab'], 'create_url': context['create_url'],
+        'url': context['teams_url'], 'query': context['query'], 'tab': context['tab'],
+        'sort': context['sort'], 'tabs': context['tabs'], 'create_url': context['create_url'],
         'pagination': pagination_payload(request, context['page']),
         'teams': [{'id': team.pk, 'name': team.name, 'description': team.description, 'photo_url': team.photo_url,
-                   'url': team.url, 'member_count': team.member_count} for team in context['page']],
+                   'url': team.url, 'member_count': team.member_count, 'open_count': team.open_count,
+                   'space_count': team.space_count, 'is_member': team.is_member, 'is_admin': team.is_admin}
+                  for team in context['page']],
     }}
 
 
 def team_page(request, context):
-    from accounts.avatar import account_avatar
     team = context['team']
     return {'type': 'team', 'title': team.name, 'data': {
         'id': team.pk, 'name': team.name, 'description': team.description, 'url': context['team_url'],
-        'photo_url': context['photo_url'], 'edit_url': context['edit_url'], 'member_url': context['member_url'],
-        'can_manage': context['can_manage'], 'spaces': [space_payload(space) for space in context['spaces']],
-        'members': [{'id': member.pk, 'name': member.user.get_full_name() or member.user.email,
-                     'avatar': account_avatar(member.user), 'role': member.get_role_display(),
-                     'remove_url': context['member_url'] + f'{member.pk}/remove/'} for member in context['members']],
-        'items': [item_payload(item) for item in context['items']],
+        'directory_url': context['teams_url'], 'created_at': team.created_at,
+        **{key: context[key] for key in ('photo_url', 'edit_url', 'member_url', 'delete_url', 'can_manage',
+            'view', 'query', 'scope', 'role_filter', 'assignee_filter', 'member_count', 'space_count',
+            'counts', 'workload', 'progress', 'tabs')},
+        'spaces': [space_payload(space) for space in context['spaces']],
+        'members': context['member_rows'],
+        'items': [dict(item_payload(item), space_name=item.space.name) for item in context['items']],
         'pagination': pagination_payload(request, context['page']),
     }}

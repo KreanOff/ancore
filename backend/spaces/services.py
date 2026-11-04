@@ -6,7 +6,7 @@ from django.http import QueryDict
 
 from .access import editable_to, visible_to
 from .models import SpaceTask, SpaceTaskActivity
-from workplaces.services import can_manage_team, scoped_workplace_app_path, workspace_owner
+from workplaces.services import can_manage_team, scoped_workplace_app_path, workplace_role, workspace_owner
 from .models import Space, Sprint, Team, WorkItem
 
 
@@ -83,7 +83,8 @@ def manage_configuration(request, space):
 
 
 def manage_team(request, team):
-    return can_manage_team(request.user, request.workplace) or team.memberships.filter(user=request.user, role='admin').exists()
+    role = workplace_role(request.user, request.workplace)
+    return role in {'owner', 'admin'} or (role == 'member' and team.memberships.filter(user=request.user, role='admin').exists())
 
 
 def task_url(request, task):
