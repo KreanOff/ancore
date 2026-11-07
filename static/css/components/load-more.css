@@ -1,0 +1,11 @@
+/* Shared progressive list loading, matching the task list. */
+.app-load-more { flex: none; width: 100%; min-width: 0; box-sizing: border-box; overflow-anchor: none; }
+.tasks-filter-button.work-list-more { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: auto; min-height: 40px; margin: 0; padding: 8px 12px; border: 0; border-top: 1px solid var(--border-color); border-radius: 0; background: var(--card-bg); color: var(--text-primary); font-size: var(--font-size-sm); font-weight: 400; text-decoration: none; box-shadow: none; }
+.tasks-filter-button.work-list-more:is(:hover, :focus-visible):not([aria-disabled="true"]):not(:disabled) { background: var(--system-interaction-soft); }
+.tasks-filter-button.work-list-more:focus-visible { outline: 2px solid var(--system-interaction) !important; outline-offset: -2px !important; }
+.work-list-more__count { opacity: .7; font-variant-numeric: tabular-nums; }
+.tasks-filter-button.work-list-more[aria-disabled="true"] { cursor: default; }
+.work-list-more-error { margin: 0; padding: 8px 12px; border-radius: 0; }
+@media (pointer: coarse) { .tasks-filter-button.work-list-more { min-height: 44px; } }
+
+.tasks-directory-board > .app-load-more { position: sticky; left: 0; flex-shrink: 0; }

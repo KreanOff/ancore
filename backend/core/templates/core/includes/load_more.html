@@ -1,0 +1,5 @@
+{% if next_url %}
+<a class="tasks-filter-button work-list-more app-load-more" href="{{ next_url }}" aria-label="Pokaż więcej{% if label %}: {{ label }}{% endif %} ({{ loaded }} / {{ total }})">Pokaż więcej <span class="work-list-more__count">({{ loaded }} / {{ total }})</span></a>
+{% elif total > 20 %}
+<button class="tasks-filter-button work-list-more app-load-more" type="button" disabled>Wszystkie wyniki <span class="work-list-more__count">({{ loaded }} / {{ total }})</span></button>
+{% endif %}

@@ -195,6 +195,11 @@ def form_payload(form):
 def pagination_payload(request, page, base=None):
     if page is None:
         return None
+    from .list_window import WindowPage, window_url
+    if isinstance(page, WindowPage):
+        return {'page': page.number, 'count': page.paginator.count,
+                'start': page.start_index(), 'end': page.end_index(),
+                'previous': '', 'next': window_url(request, page, base), 'pages': []}
     def url(number):
         params = request.GET.copy()
         params['page'] = number
