@@ -44,9 +44,9 @@ async function persist() {
         const response = await fetch(config.saveUrl, { method: 'POST', signal: controller.signal, headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
             body: JSON.stringify({revision, scene: JSON.parse(sending)}) });
         if (response.status === 409) conflict = true;
-        if (response.redirected) throw new Error('Sesja wygasła. Pobierz kopię tablicy i zaloguj się ponownie.');
+        if (response.redirected) throw new Error('Sesja wygasła. Pozostaw edytor otwarty i zaloguj się ponownie w nowej karcie.');
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Zapis nie powiódł się. Pobierz kopię tablicy i spróbuj ponownie.');
+        if (!response.ok) throw new Error(result.error || 'Zapis nie powiódł się. Pozostaw edytor otwarty i spróbuj ponownie.');
         revision = result.revision;
         savedJSON = sending;
         latestJSON = sceneJSON();
@@ -66,7 +66,7 @@ function downloadCopy() {
 window.addEventListener('message', event => {
     if (event.origin === location.origin && event.source === parent && event.data?.source === 'ancore' && ['save', 'download'].includes(event.data.type)) {
         if (event.data.type === 'download') { downloadCopy(); return; }
-        if (conflict) notify('error', 'Najpierw pobierz kopię tablicy z menu. Następnie otwórz aktualną wersję w nowej karcie.', true);
+        if (conflict) notify('error', 'Zapis wstrzymany z powodu konfliktu. Pozostaw edytor otwarty i sprawdź aktualną wersję w nowej karcie.', true);
         else persist();
     }
 });
@@ -82,19 +82,8 @@ function Board() {
     return <Excalidraw initialData={initialData} onChange={onChange} langCode="pl-PL" name={config.name} viewModeEnabled={!!config.readOnly}
         autoFocus validateEmbeddable={false} UIOptions={{canvasActions: {export: {saveFileToDisk: true}}}}
         onLinkOpen={(element, event) => { if (!/^(https?:\/\/|mailto:)/i.test(element.link || '')) event.preventDefault(); }}>
-        <MainMenu>
-            <MainMenu.Item onSelect={persist}>Zapisz w Ancore</MainMenu.Item>
-            <MainMenu.Item onSelect={downloadCopy}>Pobierz kopię tablicy</MainMenu.Item>
-            <MainMenu.DefaultItems.LoadScene />
-            <MainMenu.DefaultItems.SaveAsImage />
-            <MainMenu.Separator />
-            <MainMenu.DefaultItems.SearchMenu />
-            <MainMenu.DefaultItems.CommandPalette />
-            <MainMenu.DefaultItems.ClearCanvas />
-            <MainMenu.DefaultItems.ChangeCanvasBackground />
-            <MainMenu.DefaultItems.ToggleTheme />
-            <MainMenu.DefaultItems.Help />
-        </MainMenu>
+        {/* Override the default menu; its trigger is hidden in board.css. */}
+        <MainMenu />
     </Excalidraw>;
 }
 createRoot(root).render(<Board />);
