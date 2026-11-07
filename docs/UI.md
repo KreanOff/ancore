@@ -1,9 +1,251 @@
 # Standard UI Ancore
 
+## Obowiązujący wzorzec — zacznij tutaj
+
+Ancore ma jeden interfejs. Nowy ekran składaj z aktualnych komponentów
+i poniższych układów. Nazwa modułu nie uzasadnia osobnego nagłówka, przycisku,
+formularza ani okna. Wzorcami są nagłówek **otwartej Przestrzeni** (nazwa, akcje
+i zakładki), dolny pasek narzędzi **Zasobów**, tabela **Tagów** oraz wspólne
+`Modal` i `FormDialog`. Opisy
+wycofanych Projektów, Grup i Kanbana dalej w tym pliku stanowią wyłącznie
+kontekst historyczny. Nie kopiuj ich dawnych ekranów.
+
+**W całej aplikacji nie renderujemy przycisków menu z trzema paskami
+(`menu`) ani kolumn przeznaczonych wyłącznie na te przyciski.** Usunięto całe
+menu wraz z jego wejściami do akcji, bez zastępowania innym przyciskiem.
+Pozostają istniejące kontrolki edycji, informacji, notatek, wyboru, przełączania
+Workspace, menu z wielokropkiem i zwijania nawigacji (`panel-left`).
+Historyczna nazwa klasy `tasks-directory-menu-sheet` nadal występuje
+w układach tabel; nie oznacza widocznego menu ani dodatkowej kolumny.
+Te same zasady obowiązują w React i pierwszym renderze Django.
+
+Schemat każdej strony (w obrębie wspólnej powłoki aplikacji):
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ Tytuł strony                              Główne działania    │
+│ Zakładki z ikonami, jeżeli strona ma kilka widoków              │
+├──────────────────────────────────────────────────────────────┤
+│ Filtruj · Sortuj · Działania              Wyszukiwarka        │
+├──────────────────────────────────────────────────────────────┤
+│ Przewijana tabela lub karty                                   │
+│ W tym samym obszarze: wyniki / stan pusty                      │
+├──────────────────────────────────────────────────────────────┤
+│               Pokaż więcej (20 / 65)                          │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Schemat formularza:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ Tytuł okna                                          Zamknij   │
+├──────────────────────────────────────────────────────────────┤
+│ Nazwa / tytuł                     Widoczność (jeśli jest)      │
+│ Opis                                                         │
+│ Pozostałe pola w dwóch kolumnach; na telefonie jedna           │
+│ Błędy przy polach; przewijana treść                            │
+├──────────────────────────────────────────────────────────────┤
+│ Anuluj    Zapisz                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+| Element | Aktualne źródło do użycia |
+| --- | --- |
+| Nagłówek strony | [`shared/PageHeader.tsx`](../frontend/app/src/shared/PageHeader.tsx): `heading`, `actions`, `navigation`; te same klasy w pierwszym renderze Django |
+| Zakładki strony | [`shared/PageTabs.tsx`](../frontend/app/src/shared/PageTabs.tsx) w `PageHeader.navigation`; linki/przyciski z istniejącymi ikonami i aktywnym stanem ARIA |
+| Dolny pasek narzędzi | [`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx): `Toolbar` lub formularz `DirectoryToolbar`, z `filters`, `actions`, `search`; wzorzec [`resources/App.tsx`](../frontend/app/src/resources/App.tsx) |
+| Filtruj i Sortuj | `ToolbarFilter` i `ToolbarSort` z `shared/DirectoryToolbar.tsx`; istniejące pola i opcje modułu we wspólnej powłoce |
+| Strona referencyjna | [`spaces/SpaceHeader.tsx`](../frontend/app/src/spaces/SpaceHeader.tsx), [`spaces/base.html`](../backend/spaces/templates/spaces/base.html) |
+| Tabela danych | [`components/data-table.css`](../static/css/components/data-table.css), wzorzec [`tags/TagsPage.tsx`](../frontend/app/src/tags/TagsPage.tsx); te same klasy w React i Django |
+| Kolejne wyniki | [`shared/LoadMore.tsx`](../frontend/app/src/shared/LoadMore.tsx), [`core/includes/load_more.html`](../backend/core/templates/core/includes/load_more.html), wspólny `work-list-more` |
+| Powłoka okna | [`shared/Modal.tsx`](../frontend/app/src/shared/Modal.tsx): duży panel albo jawny `size="compact"` dla krótkich operacji |
+| Formularz ze schematu | [`forms/FormDialog.tsx`](../frontend/app/src/forms/FormDialog.tsx): `FormLayout`, `FormFields`, `FormDialog`; rozmiar z `schema.compact` |
+| Wygląd | [`base/variables.css`](../static/css/base/variables.css), [`components/page-header.css`](../static/css/components/page-header.css), [`components/app-toolbar.css`](../static/css/components/app-toolbar.css), [`components/tasks.css`](../static/css/components/tasks.css), [`components/modal-system.css`](../static/css/components/modal-system.css); uwzględnij kolejność nadpisań opisaną w rozdziale 3 |
+
+`PageHeader` jest wspólny dla katalogów i szczegółów Przestrzeni, Zespołów,
+Filtrów, Pulpitów, Zasobów, Dysków/Dokumentów, Workspace, zadania, Kalendarza,
+Dla ciebie, profilu i ustawień. `SpaceHeader` układa w nim awatar Przestrzeni.
+Górny wiersz zawiera tytuł i działania. **Ikona lub zdjęcie przy tytule
+występuje wyłącznie w otwartej Przestrzeni**; katalog Przestrzeni, pozostałe
+katalogi, Pulpity, Zespoły i ich profile oraz edytory mają sam tytuł.
+Gwiazdkę ulubionych zapisanego filtra umieszczaj w działaniach po prawej.
+Ikony przycisków powrotu, działań i zakładek pozostają. Drugi wiersz,
+jeśli występuje, zawiera dotychczasowe widoki strony. Nie dodawaj fikcyjnych
+zakładek do ekranu, który ich nie potrzebuje. Nawigacja wewnętrznego panelu
+(np. „Twoja praca”) pozostaje przy tym panelu.
+
+Oba wiersze tworzą jedną białą powierzchnię `app-page-header-group`,
+z linią wyłącznie pod całym nagłówkiem. Tytuł używa tokenów 17px/700,
+interlinii 1.45, wiersz ma minimum 45px i padding 0.5rem / 15px.
+Awatar otwartej Przestrzeni ma 32px; pozostałe tytuły nie rezerwują pola ikony.
+`PageTabs` zachowuje 13.5px/400, ikony 18px i fioletowe podkreślenie
+aktywnego widoku, zgodnie z otwartą Przestrzenią. Na wąskich ekranach akcje
+mogą przejść do kolejnego wiersza, a zakładki przewijają się poziomo wewnątrz
+nagłówka. Wspólny CSS jest w `components/page-header.css`.
+
+W Kalendarzu
+widoki znajdują się w drugim wierszu nagłówka, a poprzedni/dzisiejszy/następny
+okres oraz jego nazwa są w pasku narzędzi. W Zasobach szybkie filtry z licznikami
+korzystają z tego samego paska zakładek i zachowują dotychczasowe filtrowanie.
+
+Specjalistyczne treści, np. kalendarz, tablica, karty zespołów, edytor pliku
+i kadrowanie obrazu, zachowują swój układ. Kolejne wyniki odsłania
+wspólny pasek „Pokaż więcej” pod listą. Wspólne komponenty określają wygląd
+kontrolek, stanów błędu i działania okna. Każdą zmianę porównaj z ekranem
+referencyjnym przy tej samej szerokości, również po ponownym wejściu.
+
+## Klawiatura i błędy formularzy
+
+Fokus klawiatury jest widoczny także w przewijanych listach, formularzach
+oraz na logowaniu. Wspólne `Dropdown` otwiera panel formularza strzałką
+w dół na pierwszej widocznej kontrolce. Strzałki, Home i End nie przejmują
+edycji tekstu ani obsługi natywnego selecta. Panel osadzony w formularzu
+zamyka się po przeniesieniu fokusu poza niego, zachowując wartości pól.
+Escape przywraca fokus przycisku; już obsłużone zdarzenie nie zamyka rodzica.
+
+Błędy muszą być powiązane z polami przez `aria-invalid` i `aria-describedby`.
+Dotyczy to również każdego checkboxa w grupie, pól Workspace, wydarzenia
+Kalendarza oraz obu dat nieprawidłowego zakresu na osi czasu. Wspólny
+`FieldControl` utrzymuje opis pomocy również w wariancie `bare`.
+Po nieudanym zapisie `FormDialog` przenosi fokus do pierwszego widocznego,
+aktywnego błędnego pola lub do komunikatu ogólnego (`role="alert"`,
+`tabIndex={-1}`). Nie gub szkicu ani możliwości ponowienia zapisu.
+Pierwszy render Django nadaje komunikatowi pola jeden identyfikator
+`<id_pola>_error`; nie dubluj ID generowanego przez listę błędów Django.
+
+Dokumenty zapamiętują przycisk przed rozpoczęciem odczytu okna i przekazują
+`returnFocus` do `Modal`. Zmiana podglądu na edycję zachowuje pierwotny
+przycisk strony. Powrót przez historię przeglądarki odtwarza przewinięcie
+katalogów Dysku i Dokumentów zarówno w tabeli, jak i w kafelkach.
+Kalendarz tylko do odczytu wyłącza wszystkie wejścia do tworzenia wydarzeń;
+stan pusty nie zachęca wtedy do niedostępnego dodawania.
+
+## Wspólny dolny pasek narzędzi — wzorzec Zasobów
+
+Pod nagłówkiem i zakładkami znajduje się jedna powłoka `app-toolbar`.
+Kontrolki tabeli, „Filtruj” i „Sortuj” trafiają do `filters`, istniejące
+działania do `actions`, a wyszukiwarka do `search`. Kontrolki i działania
+są po lewej; wyszukiwarka jest wyrównana do prawej. Dotyczy to także działań
+na zaznaczonych wierszach, np. przekazania i zwrotu Zasobów. Widoczność,
+wyłączenie i zakres operacji nadal wynikają z uprawnień oraz stanu modułu.
+Pasek pozostaje poza przewijaną listą. Na wąskim ekranie grupy zawijają się,
+a wyszukiwarka przechodzi do pełnego wiersza.
+
+`Toolbar` renderuje `div`; `DirectoryToolbar` renderuje `form` i przekazuje
+atrybuty formularza. Oba eksportuje
+[`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx).
+Sloty mają klasy `app-toolbar__controls`, `app-toolbar__actions`
+i `app-toolbar__search`, z zachowaniem wspólnych `tasks-filterbar-*`.
+`children` służy m.in. ukrytym polom formularza. Nie zagnieżdżaj formularzy:
+dla osobnego formularza wyszukiwania lub filtrów wybierz `Toolbar`.
+[`spaces/ViewToolbar.tsx`](../frontend/app/src/spaces/ViewToolbar.tsx) jest
+adapterem tego komponentu: jego `children` trafia do `filters`.
+Pierwszy render Django używa tych samych klas, nazw pól i istniejących
+atrybutów obsługi JS.
+
+`ToolbarFilter` pokazuje `list-filter`, „Filtruj” i `chevron-down`;
+`active` oznacza zastosowane filtry. `ToolbarSort` pokazuje `arrow-up-down`,
+„Sortuj”, bieżącą etykietę `current` za separatorem oraz `chevron-down`.
+Oba przyjmują dotychczasowe opcje/pola jako `children` i `label` dla
+dostępności. Zachowaj istniejący sposób zastosowania filtrów: zatwierdzenie
+formularza albo automatyczne przejście po wyborze. Pola formularza muszą
+pozostać skojarzone z nim również po otwarciu panelu (`layer={false}`
+w formularzowym wariancie filtrów).
+
+Styl określa [`components/app-toolbar.css`](../static/css/components/app-toolbar.css),
+a wymiary tokeny w `base/variables.css`: kontrolka 30px
+(`--app-toolbar-control-height`), wyszukiwarka 36px i maksymalnie 420px,
+odstęp 8px, pionowy padding 0.5rem i minimalna wysokość paska 45px.
+Poziomy padding pochodzi z `--app-page-padding-x` (15px).
+Przy szerokości do 767px kontrolki mają 36px, a wyszukiwarka pełną szerokość.
+`app-toolbar--embedded` zeruje wyłącznie padding poziomy, gdy zapewnia go
+rodzic; nie tworzy odrębnego stylu przycisków.
+
+Nie dodawaj brakujących funkcji tylko po to, by zapełnić pasek: Workspace
+może mieć samą wyszukiwarkę, a szczegóły Zasobu same działania. Zachowaj
+istniejące wejścia do edycji, usuwania i operacji zbiorczych oraz ich ACL.
+Ujednolicenie paska nie przywraca usuniętych przycisków trzech pasków,
+menu wierszy ani ich kolumn. Specjalistyczne narzędzia edytorów dokumentów
+pozostają przy edytorze.
+
+## Jeden mechanizm kolejnych wyników: „Pokaż więcej”
+
+W całej aplikacji listy korzystają z „Pokaż więcej”, zgodnie z listą zadań
+Przestrzeni. Nie stosuj numerów stron, strzałek poprzednia/następna ani
+wyboru liczby pozycji na stronę. Pierwsza porcja to 20 wyników; kliknięcie
+odsłania kolejne 20 bez usuwania już widocznych wierszy i zaznaczeń.
+Filtr lub nowe sortowanie rozpoczyna okno od pierwszych 20 wyników.
+
+Używaj [`shared/LoadMore.tsx`](../frontend/app/src/shared/LoadMore.tsx),
+[`shared/useLoadMorePage.ts`](../frontend/app/src/shared/useLoadMorePage.ts)
+i [`components/load-more.css`](../static/css/components/load-more.css).
+Wzorzec `work-list-more` ma pełną szerokość, wyśrodkowany tekst i licznik
+`(wczytane / wszystkie)`, cienką górną linię oraz szare najechanie.
+Stany: „Pokaż więcej”, „Wczytywanie…” oraz nieaktywny „Wszystkie wyniki”
+(po doładowaniu całości); lista z maksymalnie 20 wynikami nie wymaga paska.
+Zadania i Tagi zachowują własne nazwy końcowego stanu i ten sam wspólny styl.
+Błąd zachowuje dotychczasowe wyniki oraz pozwala ponowić ten sam odczyt.
+Powtórne kliknięcia nie mogą uruchamiać równoległych odczytów tej samej porcji;
+zmiana widoku lub filtra unieważnia spóźnioną odpowiedź.
+
+Serwerowe okna z [`core/list_window.py`](../backend/core/list_window.py)
+operują wyłącznie na wcześniej ograniczonych uprawnieniami i posortowanych
+danych. Kolejne żądanie zwraca pełny prefiks 20 → 40 → 60; React podmienia
+okno w stanie, zachowując tożsamość wierszy. Parametr `limit` utrwala wielkość
+okna w URL; dziennik pracy ma `work_log_limit`, historia Zasobu `history_limit`.
+Stare adresy `page=2` oznaczają teraz pierwsze 40 wyników.
+[`core/includes/load_more.html`](../backend/core/templates/core/includes/load_more.html)
+zapewnia ten sam wygląd i kumulatywny wynik również bez JavaScriptu.
+Workspace odsłania po 20 z już pobranej listy; powiadomienia zachowują kursor
+oraz wspólny pasek „Pokaż więcej”.
+
+## Tabele według Tagów
+
+Wszystkie tabele danych aplikacji, również w oknach, używają `app-data-table`
+i tokenów `--data-table-*` z `base/variables.css`. Wzorzec obejmuje katalogi
+Przestrzeni, Filtrów, Pulpitów i Workspace, tabelę „Dla ciebie”, członków
+Zespołów, udostępnienia, konfigurację Przestrzeni, Zasoby, Dyski/Dokumenty,
+dziennik pracy, raporty i listę plików archiwum. Zawartość importowanych
+arkuszy, grupowane listy zadań bez nagłówków kolumn oraz specjalistyczne
+osie czasu, kalendarze, tablice i karty zachowują własną strukturę.
+
+```text
+┌──────┬─────────────────────┬──────────────────┬─────────────────┐
+│  □   │ ikona NAZWA         │ ikona KOLUMNA    │ ikona KOLUMNA   │
+├──────┼─────────────────────┼──────────────────┼─────────────────┤
+│  □   │ Wartość             │ Wartość          │ Wartość         │
+├──────┼─────────────────────┼──────────────────┼─────────────────┤
+│  □   │ Wartość             │ Wartość          │ Wartość         │
+└──────┴─────────────────────┴──────────────────┴─────────────────┘
+```
+
+Nagłówek jest biały, ma wielkie litery i ikonę 14px przed nazwą kolumny.
+Nagłówek i standardowy wiersz mają 35px, tekst Atlassian Sans 13px/400
+z interlinią 1.45, separatory 1px `#e1e4e7`. Padding poziomy nagłówka
+wynosi 0.5rem, danych 0.75rem; kontrolki są wyśrodkowane bez paddingu.
+Kolumny zaznaczania oraz zachowanych skrótów edycji, informacji, notatek
+i przełączania Workspace mają szerokość 40px. Nagłówki skrótów są wizualnie
+puste, z nazwą dostępną dla czytnika ekranu.
+Nie dodawaj zaznaczania ani działań, których dany moduł nie obsługuje.
+Najechanie i zaznaczenie stosują 8% fioletowego akcentu oraz pasek 3px
+z lewej. Istniejące skróty wierszy zachowują swoje wspólne klasy przycisków.
+
+Siatki oznaczaj przez `app-table-header` i `app-table-row`; komórki zachowują
+`data-column`, role ARIA lub jawną klasę `app-table-cell`. Natywne `<table>`
+używają dodatkowo `app-data-table--native`, treść nagłówka `app-table-heading`,
+a istniejące komórki kontrolek `app-table-control`.
+Wspólny arkusz określa wygląd, a moduł nadal szerokości/ukrywanie kolumn,
+przewijanie, wyrównanie liczb oraz sortowanie, filtry, wybór i zmianę szerokości.
+Nie dodawaj `tasks-tag-sheet` do innych tabel: ta klasa ustawia kolumny Tagów.
+Wiersze plików pokazują lokalizację obok nazwy.
+Na telefonie przewijaj tabelę w jej kontenerze, bez rozszerzania całej strony.
+Pierwszy render Django stosuje te same oznaczenia.
+
 ## Katalog i profile Zespołów
 
 Zespoły zachowują wspólny nagłówek, zakładki `work-tabs`, wyszukiwarkę,
-karty `work-space-card`, formularze i paginację. Karty pokazują członkostwo
+karty `work-space-card`, formularze i pasek „Pokaż więcej”. Karty pokazują członkostwo
 oraz linki z liczbą osób, otwartych zadań i przestrzeni. Profil rozdziela
 „Podsumowanie”, „Zadania”, „Członkowie” i „Przestrzenie”. Podsumowanie rozszerza
 istniejące `work-panel`, `work-summary-metrics` i `work-summary-grid`;
@@ -11,16 +253,17 @@ procent zamkniętych zadań ma natywny, opisany pasek `progress` w kolorze akcen
 
 Wariant `.teams-page` dodaje wyłącznie lokalny układ profilu, liczniki kart,
 listę wykonawców i kontrolki filtrów. Do 800px metryki mają dwie kolumny,
-a dolne panele jedną. Lista członków używa wspólnych komórek i menu wiersza,
+a dolne panele jedną. Lista członków używa wspólnych komórek bez menu wiersza,
 z lokalnym wariantem `.team-members-sheet` bez zaznaczania zbiorczego i daty
 członkostwa, której model nie przechowuje. Na wąskim ekranie tabela przewija
 się poziomo. Lista zadań zachowuje układ bez pól zaznaczenia.
 
-Dodawanie i zmiana roli korzystają ze wspólnego kompaktowego `FormDialog`.
-Ostatni aktywny administrator nie ma menu odebrania roli. Usuwanie osoby
-potwierdza wspólny modal, a usuwanie zespołu formularz z nazwą; zapisy blokują
-kontrolki, błędy zachowują dane. Puste wyniki mają istniejące ilustracje i tekst
-zależny od kontekstu. [Funkcje Zespołów](SPACES.md#system-zespołów-04112026).
+Dodawanie osoby korzysta ze wspólnego kompaktowego `FormDialog`.
+Menu zmiany roli, usuwania osoby i zespołu z trzema paskami zostały usunięte
+z aktywnego interfejsu. Nie dodano zastępczych kontrolek. Backend nadal
+weryfikuje role oraz ochronę ostatniego administratora. Puste wyniki mają
+istniejące ilustracje i tekst zależny od kontekstu.
+[Funkcje Zespołów](SPACES.md#system-zespołów-04112026).
 
 ## Wspólna powłoka React
 
@@ -75,15 +318,12 @@ Pickery Przestrzeni, Pulpitów i Filtrów używają istniejącej powłoki popove
 stanu pustego/błędu/ponowienia, strzałek i Escape z powrotem fokusu.
 Menu mobilne wyłącza treść przez `inert` i ogranicza Tab do swoich kontrolek.
 
-Przyciski menu działań `tasks-filter-button` zawierające wyłącznie ikonę
-`menu` (trzy kreski) mają przezroczystą ramkę. Zachowują dotychczasowy rozmiar,
-obszar kliknięcia oraz obsługę menu i klawiatury.
-
 Akcje oznaczania Przestrzeni, Pulpitów i Filtrów współdzielą
 `tasks-favorite-toggle` oraz stan `aria-pressed`. Oznaczony element ma pełną
 żółtą gwiazdkę `star-filled` (`#e2b203`), także przy hover/fokusie;
 nieoznaczony ma zwykły kontur `star`. Dotyczy to menu bocznego i jego panelu
-skrótów i katalogów, w React i pierwszym renderze Django.
+skrótów oraz zachowanych kontrolek gwiazdek Filtrów, w React i pierwszym
+renderze Django.
 Dekoracyjne gwiazdki zakładek i nagłówków pozostają konturowe.
 
 Favorites zachowują bazę i klucze ustawień. Obsługują dodanie/usunięcie przez
@@ -292,8 +532,8 @@ Pierwszy render Django zachowuje ten sam wygląd i adres formularza.
 Lista zadań otwartej Przestrzeni ładuje osobno po 20 pozycji w każdym statusie.
 Wiersze nie pokazują przycisku trzech kresek ani menu działań i nie rezerwują
 na nie osobnej kolumny. Dotyczy to Reacta oraz pierwszego renderu Django.
-Tytuł nadal otwiera zadanie, a checkbox służy do zaznaczania. Menu działań
-pozostaje w wierszach Backlogu.
+Tytuł nadal otwiera zadanie, a checkbox służy do zaznaczania. Backlog
+również nie renderuje tego menu ani jego kolumny.
 Nagłówek grupy pokazuje pełną liczbę dostępnych wyników po filtrowaniu.
 Pod wierszami jest pełnej szerokości, wyśrodkowany pasek „Pokaż więcej (20 / 21)”.
 Wariant `work-list-more` rozszerza `tasks-filter-button` w `spaces.css`:
@@ -332,22 +572,19 @@ zachowują tę samą kolejność. Kolory, ikony i metadane pozostają wspólne.
 ## Wspólny pasek widoków Przestrzeni
 
 Podsumowanie, Lista zadań, Tablica, Backlog, Oś czasu, Raporty i Tagi
-korzystają z `spaces/ViewToolbar.tsx` oraz wariantu `work-view-toolbar`
-w `spaces.css`. Pierwszy render Django używa tych samych klas.
-Pasek zaczyna się 5px pod zakładkami i zachowuje boczny odstęp
-`--app-page-padding-x`. Kontrolki mają wspólną wysokość `--control-height`
-(32px), tekst `--font-size-sm` i odstępy 8px.
+korzystają z `spaces/ViewToolbar.tsx`, adaptera wspólnego `Toolbar`.
+Pierwszy render Django używa tych samych klas `app-toolbar` i slotów.
+Wymiary oraz odstępy określają `--app-toolbar-*` i `components/app-toolbar.css`,
+zgodnie z [dolnym paskiem Zasobów](#wspólny-dolny-pasek-narzędzi--wzorzec-zasobów).
 
-Po lewej znajdują się „Sortowanie” i „Filtrowanie” (jeśli dany widok
-je obsługuje), dodatkowe kontrolki oraz wyszukiwanie; akcje widoku są
-po prawej. Kolejność wizualna odpowiada kolejności klawiatury.
-Wyszukiwanie Tagów i Osi czasu ma jednakową szerokość 230px oraz przycisk
-ze strzałką. Tagi zachowują wyszukiwanie po 350ms od wpisania tekstu,
-a Oś czasu po zatwierdzeniu. Na małych ekranach grupy zawijają się,
-a wyszukiwarka zajmuje cały wiersz.
+Po lewej znajdują się „Filtruj” i „Sortuj” (jeśli dany widok je obsługuje),
+dodatkowe kontrolki i działania; wyszukiwanie znajduje się po prawej.
+Kolejność wizualna odpowiada kolejności klawiatury. Tagi zachowują wyszukiwanie
+po 350ms od wpisania tekstu, a Oś czasu po zatwierdzeniu. Na małych ekranach
+grupy zawijają się, a wyszukiwarka zajmuje cały wiersz.
 
 Raporty mają pasek nad nagłówkiem, z filtrowaniem, okresem, sprintem
-(w Scrum) i wykonawcą po lewej oraz odświeżaniem i eksportem po prawej.
+(w Scrum), wykonawcą oraz odświeżaniem i eksportem po lewej.
 Etykiety selektorów pozostają dostępne dla czytników ekranu.
 Przełączniki skali Osi czasu zachowują wspólny segment i aktywny stan.
 Zakres danych, uprawnienia oraz sposób zapisu filtrów pozostają bez zmian.
@@ -485,14 +722,14 @@ aby opis pozostał dostępny na niskim ekranie.
 ## Filtry zadań
 
 Szablony dashboard/filters rozszerzają spaces/base i core/base.
-Katalog używa wspólnych zakładek notifications-tabs/work-tabs, menu
-directory_row_menu oraz tabeli tasks-directory-sheet. Wariant
+Katalog używa wspólnych zakładek notifications-tabs/work-tabs
+oraz tabeli tasks-directory-sheet bez hamburgera i jego kolumny. Wariant
 task-filter-directory określa kolumny katalogu; ich szerokości mają
 osobny klucz ustawień w tasks.js. Wyniki w „Wyszukaj zadania” i zapisanych
 filtrach korzystają z spaces/item_list.html i spaces/row.html: kolorowych
 grup statusów, zwijania oraz wierszy z checkboxem, priorytetem, kluczem,
 statusem, tytułem, typem, licznikami tagów/załączników i oznaczeniem terminu.
-Grupy obejmują bieżącą stronę wyników, a sortowanie zachowuje kolejność
+Grupy obejmują wczytane okno wyników, a sortowanie zachowuje kolejność
 zadań wewnątrz grup. Wyniki nie używają tabeli z nagłówkami kolumn.
 
 Osobny ekran „Zarządzaj filtrami”, jego wariant menu i wejścia w Ustawieniach,
@@ -500,7 +737,7 @@ nagłówku Filtrów, wyszukiwaniu oraz zwiniętym menu są usunięte. Stare zwyk
 `filters/manage/` prowadzą do zakładki „Moje filtry” w katalogu; zachowują
 poprawną zakładkę, wyszukiwanie i numer strony. Katalog ma jeden wariant
 `task-filter-directory`, z gwiazdką w pierwszej kolumnie, nazwą otwierającą
-wyniki oraz menu edycji/dostępów i usuwania według uprawnień. Szerokości używają
+wyniki. Nie dodano zastępstwa dla usuniętych akcji menu. Szerokości używają
 klucza `task-filters-directory`. Starsze adresy formularzy korzystają z modali
 nad zwykłym katalogiem i zachowują menu Workspace. Ustawienia Workspace
 zachowują własny ekran zarządzania; dawny wspólny `management_sidebar.html`
@@ -535,10 +772,11 @@ etykieta/kontrolka; na telefonie układają się pionowo.
 
 Udostępnienia używają tych samych `shared/Members`, `shared/SharingDialog`
 i stylów `workplace-team.css` co Przestrzenie. Właściciel jest chroniony;
-pozostałe wiersze mają awatar, e-mail, rolę, datę i dozwolone menu działań.
-Picker wyszukuje aktywne osoby Workspace, a kompaktowy dialog nadaje/zmienia
-rolę. Odebranie dostępu wymaga potwierdzenia. Operacje działają od razu,
-z obsługą błędu i ponowienia, zachowując szkic ustawień i kontrolę rewizji.
+pozostałe wiersze mają awatar, e-mail, rolę i datę. Menu zmiany roli
+i odebrania dostępu jest usunięte bez zastępczego wejścia. Istniejący przycisk
+udostępnienia otwiera picker aktywnych osób Workspace i kompaktowy dialog
+nadania roli. Zapis działa od razu, z obsługą błędu i ponowienia, zachowując
+szkic ustawień i kontrolę rewizji. Backend zachowuje kontrolę pozostałych operacji.
 Przy widoczności Workspace tabela pokazuje dziedziczenie bez przycisku
 udostępnienia. Przed utworzeniem filtra zakładka wyjaśnia potrzebę pierwszego
 zapisu; po nim to samo okno przechodzi do tabeli osób. Zapis ustawień także
@@ -737,8 +975,8 @@ dotychczasowy przycisk otwierania i zamykanie po wyborze sekcji.
 Tabele „Udostępnienia”, „Typy zgłoszeń” i „Proces pracy → Stany” używają
 `LocalDirectoryTable` z klasami arkusza Tagów (`tasks-tag-sheet`,
 `tasks-spreadsheet-sheet`). Mają wiersze 35px, kolumnę zaznaczeń 40px,
-te same separatory i przewijanie. „Sortowanie”, „Filtrowanie”, „Zarządzaj tabelą”
-oraz wyszukiwarka są po lewej, a grupa działań po prawej we wspólnym pasku.
+te same separatory i przewijanie. „Filtruj”, „Sortuj”, „Zarządzaj tabelą”
+oraz grupa działań są po lewej, a wyszukiwarka po prawej we wspólnym pasku.
 Na szerokim ekranie mieszczą się w jednym wierszu; przy braku miejsca zawijają
 się według wspólnego wzorca `ViewToolbar`. Kontener działań wewnątrz
 `settings-directory-toolbar` jest przezroczysty dla układu (`display: contents`).
@@ -853,14 +1091,8 @@ błędy ukrytych formsetów statusów i pól są komunikatami ogólnymi.
 Szczegóły:
 [Strona ustawień](SPACES.md#strona-ustawień-przestrzeni).
 
-Menu wierszy Przestrzeni w nawigacji i katalogu nie zawierają „Dodaj osoby”.
+Menu wierszy Przestrzeni w nawigacji nie zawierają „Dodaj osoby”.
 Udostępnianie pozostaje w sekcji „Udostępnienia” strony ustawień przestrzeni.
-
-Przycisk z trzema kreskami w `work-item-actions` ma przezroczyste tło,
-także w podświetlonym wierszu zadania. Najechanie, fokus klawiatury i otwarte
-menu wyróżniają sam przycisk neutralnym `--system-interaction-soft`.
-Reguła obejmuje listę, backlog i karty tablicy w React oraz pierwszym renderze
-Django; rozmiar i obszar kliknięcia pozostają bez zmian.
 
 Zakładka „Udostępnienia” używa `shared/MemberDirectory` z kontrolowanym zaznaczeniem
 wszystkich wierszy, Ctrl/Cmd+A i Escape. Akcje obejmują tylko `can_change`,
@@ -987,8 +1219,8 @@ Stare adresy podzadań prowadzą po kontroli dostępu do „Podzadań” zadania
 głównego. Istniejące dalsze poziomy są widoczne w tej samej płaskiej liście.
 Dziennik pracy korzysta
 z `tasks/includes/work_log_list.html`, `work_log_modal.html` i wspólnego
-`core.work_logs.TimeLogForm`: suma minut, paginacja, awatary, edycja i usuwanie
-przez modal. Zakładka „Udostępnienia” używa `project_members_panel.html`, wspólnej tabeli
+`core.work_logs.TimeLogForm`: suma minut, „Pokaż więcej”, awatary i dodawanie
+przez modal. Wejścia do edycji i usuwania z menu wiersza zostały usunięte. Zakładka „Udostępnienia” używa `project_members_panel.html`, wspólnej tabeli
 Workspace oraz modali udostępniania i ról; publiczne zadanie pokazuje osoby
 z dostępem odziedziczonym. Endpointy tabeli i pickera należą do przestrzeni.
 Historia i komentarze współdzielą `task_activity_item.html`, z awatarami,
@@ -1008,24 +1240,18 @@ picker tagów używa „Tagi”. Nie wprowadzono osobnego systemu kontrolek.
 Katalog i zarządzanie przestrzeniami współdzielą `spaces/directory.html`
 z listą `tasks-directory-sheet`, `tasks-project-sheet`
 i `tasks-spreadsheet-sheet`, tak jak projekty i grupy. Wariant `work-space-sheet`
-określa kolumny: zaznaczenie, działania, klucz, nazwa, rodzaj, szablon, opis
-i liczba zadań. Pierwsze dwie kolumny mają po 40px, jak w Projektach.
+określa kolumny: zaznaczenie, klucz, nazwa, rodzaj, szablon, opis
+i liczba zadań. Kolumna zaznaczenia ma 40px.
 Checkboxy `tasks-row-checkbox` są stale widoczne dzięki
 `tasks-project-sheet--selectable`; zaznaczenie podświetla wiersz wspólnym stylem.
-Wspólny wariant obsługuje też checkbox wewnątrz komórki `data-column="select"`
-z rolą `cell`, zachowując centrowanie i widoczność kontrolki.
-Checkbox nagłówka zaznacza bieżącą stronę i pokazuje stan częściowego wyboru.
-Zaznaczenie jest lokalne, bez operacji zbiorczych. Przycisk trzech pasków korzysta
-z `directory_row_menu.html`, `row-actions.js` i `tasks-directory-menu-sheet`.
-Include obsługuje opcjonalny `actions_template` dla działań danego modułu.
-Menu Przestrzeni otwiera przestrzeń, zmienia osobiste ulubione, otwiera ustawienia
-i według uprawnień edycję lub dodawanie osób do prywatnej przestrzeni.
-Zachowuje wspólne wysokości wierszy, separatory, zmianę szerokości kolumn,
-poziome przewijanie oraz pasek filtrów i wyszukiwania z paginacją na dole. Nazwa otwiera
-przestrzeń, a akcja w menu wiersza zmienia osobiste ulubione, zachowując filtry.
-`tasks.js` obsługuje zaznaczenie i szerokości, a `space-navigation.js` zapis
-gwiazdki oraz przywrócenie fokusu po częściowej nawigacji. Pusty wynik ukrywa nagłówki
-i pokazuje komunikat zależny od filtrów/zakładki.
+Checkbox może być wewnątrz komórki `data-column="select"` z rolą `cell`.
+Checkbox nagłówka zaznacza wczytane wiersze i pokazuje stan częściowego wyboru.
+Zaznaczenie jest lokalne, bez operacji zbiorczych. Katalog nie zawiera menu
+wiersza ani jego kolumny. Nazwa nadal otwiera przestrzeń; menu boczne zachowuje
+istniejące wejścia do gwiazdki i ustawień.
+Wysokości wierszy, separatory, zmiana szerokości kolumn, poziome przewijanie
+oraz pasek filtrów, wyszukiwania i „Pokaż więcej” pod listą pozostają wspólne.
+Pusty wynik ukrywa nagłówki i pokazuje komunikat zależny od filtrów/zakładki.
 Pusty katalog przestrzeni używa wariantu `work-space-empty-state`
 wspólnego `tasks-empty-state`: kolorowej ilustracji 3D
 `static/img/empty-states/spaces-empty.webp`, tekstu `tasks-empty-state__copy`
@@ -1046,19 +1272,16 @@ Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Tagi, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
 przestrzenie, Filtry z wyszukiwaniem zadań i Zespoły.
 
-Wiersze Backlogu z prawem edycji używają wariantu `work-issue-row--actions`
-z dodatkową kolumną 30px i istniejącym include'em `spaces/item_actions.html`.
-Menu oferuje edycję, zmianę statusu i kolejności oraz przeniesienie na tablicę
-Kanbana. Obsługuje je wspólny `row-actions.js`, również po podmianie treści.
-Obserwatorzy oraz Lista zadań zachowują wiersze bez tego menu i jego kolumny.
+Wiersze Backlogu i jego sprintów nie mają przycisku menu ani dodatkowej
+kolumny działań. Pozostały linki do zadania oraz przeciąganie zgodne
+z prawem edycji, wybranym sortowaniem i filtrami.
 
 Backlog, Lista zadań przestrzeni i kafelki Aktywnego sprintu współdzielą
 `spaces/item_planning.html`: awatar przypisanego wykonawcy lub ikonę osoby
 oraz, w Scrum, małą etykietę punktów. Zero wyświetla się jako `0`, a brak
 estymacji jako `—`. Wariant `work-issue-row--planning` rezerwuje kolumny
-punktów i awatara na liście/backlogu. Menu z trzema paskami w Backlogu
-pochodzi z `spaces/item_actions.html` i pozostaje dostępne tylko
-przy prawie edycji. `show_work_metadata` włącza metadane dla listy otwartej przestrzeni;
+punktów i awatara na liście/backlogu. `show_work_metadata` włącza metadane
+dla listy otwartej przestrzeni;
 pozostali odbiorcy `row.html` (Filtry, Dla ciebie, Zespoły i podzadania)
 zachowują dotychczasowy wariant.
 Nie ma osobnego nagłówka „Planowanie sprintów” ani stałego paska zaznaczania.
@@ -1102,7 +1325,7 @@ Cel sprintu pojawia się tylko, gdy został podany, i zwija się razem z listą.
 Puste sekcje używają `tasks-empty-section` z `role="status"`; brak wyników
 backlogu po filtrach ma osobny komunikat. Zwijanie aktywnych grup obsługuje
 React `StatusGroup`; `tasks.js` zachowuje obsługę pierwszego renderu zgodności.
-Kolejność planowania i menu wierszy są zachowane.
+Kolejność planowania jest zachowana; hamburgerów wierszy nie ma.
 
 W aktywnym ekranie React tablicę i backlog renderują
 `spaces/DetailPage.tsx`, `spaces/Item.tsx` oraz wspólny `StatusGroup`.
@@ -1210,11 +1433,12 @@ wejściem w nagłówku Przestrzeni i wierszem w Ustawieniach. Stare zwykłe/scop
 rodzaju, zakładki i numeru strony. Katalog ma jeden wariant listy; stary filtr
 sposobu zarządzania i klucz szerokości `spaces-management` są wycofane.
 Zachowane są zakładki Wszystkie, Ulubione i Prywatne, wspólna tabela,
-wyszukiwanie, filtr rodzaju, paginacja i menu konkretnej przestrzeni.
+wyszukiwanie, filtr rodzaju i pasek „Pokaż więcej”. Menu konkretnej przestrzeni pozostaje
+wyłącznie w istniejącej nawigacji bocznej.
 Formularz tworzenia zachowuje powłokę modalną nad katalogiem oraz zwykłą
 nawigację Workspace. Edycja, dostęp i konfiguracja zadań korzystają z osobnej
 strony ustawień konkretnej przestrzeni. Uprawnienia: [SPACES.md](SPACES.md).
-Katalog Workspace zachowuje własny wariant menu; dawne osobne katalogi
+Katalog Workspace zachowuje własny wariant menu nawigacji; dawne osobne katalogi
 zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
 
 Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
@@ -1479,23 +1703,22 @@ korzystają ze wspólnego układu formularza. Pierwszy render Django zachowuje
 tę samą prezentację oraz siatkę kolumn listy co Typy zgłoszeń.
 Pierwsza kolumna wiersza zawiera stale widoczny, standardowy `tasks-row-checkbox`
 z etykietą zawierającą kod i tytuł zadania. Zaznaczenie myszą lub Spacją podświetla
-wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list nie pokazują
-menu trzech pasków; wiersze Backlogu i jego sprintów udostępniają je osobom z prawem edycji
-przez `spaces/item_actions.html`. Checkbox służy lokalnemu zaznaczeniu,
-bez operacji zbiorczych i utrwalania wyboru po zmianie widoku.
+wiersz przez wspólne style; nie zmienia statusu zadania. Wiersze list,
+Backlogu i sprintów nie pokazują menu trzech pasków. W zwykłej liście
+checkbox służy lokalnemu zaznaczeniu bez utrwalania wyboru po zmianie widoku;
+Backlog zachowuje istniejący pasek planowania zaznaczonych zadań.
 Grupowanie dotyczy dostępnej strony wyników; rozróżnia nazwy własnych statusów
 nawet wtedy, gdy mają tę samą kategorię. Backlog zachowuje kolejność planowania.
 Na telefonie lista zachowuje kolumny i przewija się poziomo we własnym obszarze.
 Tablica używa dotychczasowych `tasks-kanban-column` i `tasks-kanban-card`,
 włącznie z oznaczeniem zakończonych kart. Nie ma osobnej tabeli ani szarych
 paneli zastępujących te komponenty. Filtry korzystają z paska Zadań,
-a paginacja z dolnego paska Przestrzeni.
+a kolejne wyniki odsłania pasek „Pokaż więcej” pod listą.
 
-Karty tablicy w `item_actions.html` używają wspólnego menu `row-actions.js`: otwarcie zadania,
-edycja, dozwolone przejścia statusów i planowanie. Menu działa klawiaturą,
-zamyka się przez Escape i przywraca fokus; zastępuje stałe formularze na karcie.
-Przeciąganie tablicy nadal obsługuje `spaces.js`. Elementy nie mają klasy
-`task-row` ani danych dawnego API Kanbana. `tasks.js` pomija lokalne filtrowanie
+Karty tablicy nie mają menu działań; tytuł otwiera zadanie.
+Przeciąganie tablicy nadal obsługuje istniejący mechanizm Przestrzeni.
+Elementy nie mają klasy `task-row` ani danych dawnego API Kanbana.
+`tasks.js` pomija lokalne filtrowanie
 grup na `data-work-page`, aby nie ukrywać wyników filtrowanych przez serwer.
 
 `spaces.css` zawiera tylko adaptery kontekstu przestrzeni oraz style katalogów,
@@ -1569,32 +1792,18 @@ Warunki można łączyć, a linki wykresów zachowują pozostałe filtry. Podsum
 nie pokazuje menu sortowania zadań. Pierwszy render Django wykorzystuje
 wariant `filters_only` wspólnego formularza `spaces/item_toolbar.html`.
 
-„Edytuj pulpit” pokazuje uchwyty i menu gadżetów, a „Dodaj gadżet” otwiera
-katalog w istniejącym `Modal` z wyszukiwaniem i stanem już dodanych pozycji.
+„Edytuj pulpit” pokazuje uchwyty, a „Dodaj gadżet” otwiera katalog
+w istniejącym `Modal` z wyszukiwaniem i stanem już dodanych pozycji.
 Kafelki przesuwa się za nagłówek i skaluje prawym dolnym uchwytem; strzałki
-na uchwytach zapewniają obsługę klawiaturą. Opcje kafelka otwierają wspólny
-`Dropdown` w trybie dialogu z panelem `SummaryWidgetControls.tsx`. Sekcja
-„Pozycja” ma cztery strzałki i miniaturę układu z zaznaczonym kafelkiem.
-Na wąskim ekranie pokazuje tylko góra/dół: każdy ruch zmienia kolejność
-o jeden kafelek, a niedostępne kierunki są przygaszone.
-Sekcja „Rozmiar” udostępnia podpisane suwaki szerokości (procent pulpitu)
-i wysokości (piksele) oraz wizualne skróty szerokości: 1/4 lub 1/3 dla
-większych paneli, 1/2 i „Cały wiersz”. Poszerzenie przy prawej krawędzi
-przesuwa kafelek w lewo, by zmieścić wybraną szerokość; przeciąganie narożnika
-zachowuje lewy górny punkt. Zmiany od razu aktualizują pulpit i miniaturę,
-a panel pozostaje otwarty i zachowuje pozycję z chwili otwarcia, nawet gdy
-edytowany kafelek się przesuwa. Zmiana rozmiaru okna dopasowuje panel do
-granic widocznego ekranu. „Zamknij” i Escape wracają do edycji; cały szkic
-zatwierdza nadal „Zapisz układ”. „Usuń gadżet” jest oddzielone w stopce;
-po usunięciu fokus przechodzi na opcje sąsiedniego kafelka, a przy pustym
-pulpicie na „Dodaj gadżet”.
-Suwaki i strzałki respektują granice oraz minimalny rozmiar.
-Escape anuluje bieżący
-gest. Na wąskim ekranie edycja działa przez panel opcji, bez przeciągania i uchwytu
-rozmiaru; komunikat wyjaśnia, że szerokość i wysokość dotyczą widoku na komputerze. „Zapisz układ” utrwala cały szkic, „Anuluj” przywraca poprzedni;
-wspólny guard chroni niezapisane zmiany podczas nawigacji. Konflikt rewizji
-zachowuje szkic i udostępnia wczytanie aktualnego układu po potwierdzeniu
-odrzucenia zmian. Usunięcie ostatniego gadżetu daje wspólny stan pusty.
+na uchwytach zapewniają obsługę klawiaturą. Escape anuluje bieżący gest.
+Na wąskim ekranie kafelki układają się pionowo, a strzałki góra/dół na
+zachowanym uchwycie zmieniają ich kolejność. Przeciąganie i uchwyt rozmiaru
+są tam wyłączone. Menu kafelka, jego panel pozycji/rozmiaru i wejście
+„Usuń gadżet” zostały usunięte bez zastępowania innymi kontrolkami.
+„Zapisz układ” utrwala szkic, a „Anuluj” przywraca poprzedni; wspólny guard
+chroni niezapisane zmiany podczas nawigacji. Konflikt rewizji zachowuje szkic
+i udostępnia wczytanie aktualnego układu po potwierdzeniu odrzucenia zmian.
+Backend nadal obsługuje zapis pustego układu.
 Po lewej pozostaje filtrowanie, a po prawej „Edytuj pulpit”; pasek nie pokazuje
 osobnego tytułu z ikoną ani przycisku „Odśwież”. Edycja jest osobistą preferencją dostępną
 dla członka z widocznością Przestrzeni; gość zachowuje tryb tylko do odczytu.
@@ -1675,7 +1884,11 @@ Pierwszy opis powstał z przeglądu szablonów, CSS i JS. Nie jest pomiarem
 wszystkich końcowych stylów w przeglądarce. Przed zmianą wizualną obejrzyj
 referencyjny ekran w tej samej szerokości i stanie co ekran zmieniany.
 
-Formularze „Nowy projekt” i „Edytuj projekt” mają pole „Widoczność” po prawej
+**Kontekst historyczny:** poniższy opis formularzy Projektów i Grup dotyczy
+wycofanych ekranów. Bieżące formularze korzystają ze wspólnych komponentów,
+a ich zachowanie opisują rozdziały właściwych modułów powyżej.
+
+Formularze „Nowy projekt” i „Edytuj projekt” miały pole „Widoczność” po prawej
 stronie „Nazwa projektu”, w pierwszym wspólnym wierszu `tasks-project-heading-fields`.
 Na ekranach do 600px pola układają się pionowo: nazwa, następnie widoczność.
 W formularzu tworzenia dalej znajdują się „Opis”, „Szablon projektu” i parametry projektu.
@@ -1765,7 +1978,7 @@ od razu przez „Udostępnienia” → „Udostępnij”, bez wysłanych zaprosz
 
 Domyślny odstęp poziomy treści stron wynosi **15px z obu stron**. Wspólny
 token `--app-page-padding-x` w `base/variables.css` określa padding nagłówków,
-pasków narzędzi i paginacji oraz treści Przestrzeni, Zespołów, Filtrów,
+pasków narzędzi oraz treści Przestrzeni, Zespołów, Filtrów,
 Pulpitów, Dla ciebie, Ustawień i siatek Dysku/Dokumentów. Zmienne modułów
 `--work-space-inline-padding`, `--dashboard-inline-padding` i
 `--documents-index-padding-x` odwołują się do tego tokenu. Reguła obowiązuje
@@ -1807,11 +2020,9 @@ Workspace oraz parametry wyszukiwania i przestrzeni z istniejących adresów.
 „Polecane”, „Przypisane do mnie”, „Ulubione” i „Ostatnia praca” pokazują
 tylko 20 najnowszych pozycji łącznie we wszystkich grupach, bez dolnego licznika
 wyników i strzałek paginacji. Wybór opiera się na dacie utworzenia, a w ostatniej
-pracy — na czasie aktywności zalogowanej osoby. „Ostatnio oglądane” zachowuje
-paginację po 25 pozycji w zakresie ostatnich 7 dni. Dolny licznik zakresu i liczby
-elementów jest usunięty również z oglądanych. Ich stopka pokazuje tylko strzałki
-po prawej, gdy istnieje poprzednia lub następna strona; przy jednej stronie nie
-ma stopki ani dolnego separatora.
+pracy — na czasie aktywności zalogowanej osoby. „Ostatnio oglądane” pokazuje
+pierwsze 20 pozycji z ostatnich 7 dni i wspólny pasek „Pokaż więcej” pod listą,
+wewnątrz jej przewijanego obszaru. Licznik pokazuje wczytane i wszystkie wyniki.
 Pasek używa wspólnych `notifications-tabs work-tabs`, tak jak widoki Przestrzeni:
 tekstu 13,5px/400, ikon 18px, odstępu ikona–tekst 8px, wysokości i podkreślenia.
 Ikony zakładek to `sparkles`, `user-round-check`, `star`, `clock` i `eye`.
@@ -1854,17 +2065,16 @@ a własna nazwa statusu i termin w etykietach ikon. Liczniki są pobierane zbior
 dla zadań bieżącej strony. Przestrzenie w zakładkach „Ulubione” i „Ostatnio oglądane”
 używają wspólnego `spaces/directory.html` w wariancie `directory_compact=True`:
 trzy kolumny danych w kolejności Przestrzeń z awatarem, Klucz i Opis.
-`hide_actions=True` pomija komórki i menu działań; wariant kompaktowy
-`work-space-sheet--no-actions` usuwa ich tor z siatki, także bez JavaScriptu.
+Wariant kompaktowy, tak jak pełny katalog, nie zawiera komórek menu
+ani ich toru siatki, także bez JavaScriptu.
 `hide_selection=True` usuwa checkboxy wierszy,
 checkbox nagłówka i kolumnę wyboru z siatki. Nagłówek kolumn „PRZESTRZEŃ”,
 „KLUCZ” i „OPIS” jest ukryty w `for-you-space-sheet`; jego metadane nadal
 służą wspólnemu mechanizmowi szerokości kolumn. Katalog Przestrzeni
 korzysta z pełnego wariantu z widocznym nagłówkiem. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
 dane tabel w katalogu i „Dla ciebie”; licznik obejmuje tylko widoczne
-zadania przestrzeni. Nazwa otwiera przestrzeń. Menu z osobistą gwiazdką,
-ustawieniami i edycją/dodawaniem osób według roli pozostaje w katalogu
-Przestrzeni. W każdej grupie dat tabela znajduje się w sekcji
+zadania przestrzeni. Nazwa otwiera przestrzeń. W każdej grupie dat tabela
+znajduje się w sekcji
 `for-you-space-group`, z taką samą ramką, zaokrągleniem, odstępami i wysokością
 nagłówka jak grupy zadań. Wspólny `tasks/includes/issue_group_header.html`
 pokazuje neutralny nagłówek „Przestrzenie”, ikonę, liczbę przestrzeni na stronie
@@ -1920,7 +2130,9 @@ szablony, klasy CSS i współdzielony JavaScript stanowią kod historyczny, nie
 aktywny interfejs. Nie usuwamy wspólnych komponentów używanych przez Zadania
 ani obecne tablice w Przestrzeniach. Kalendarz ma tylko filtry wydarzeń i zadań.
 
-Menu Zadań używa nazw „Projekty”, „Grupy” i „Zadania”, w tej kolejności.
+**Historyczny układ wycofanego modułu Zadań:** dawne menu używało nazw
+„Projekty”, „Grupy” i „Zadania”, w tej kolejności. Poniższy opis zakładek
+i ulubionych nie dotyczy bieżących zadań Przestrzeni.
 „Nieprzydzielone” jest ostatnią zakładką katalogu „Zadania”, po „Ulubione”,
 bez osobnej pozycji w menu. Pokazuje dostępne zadania główne bez projektu
 i grupy, niezależnie od wykonawcy. Zachowuje filtr wykonawcy, gwiazdki ulubionych
@@ -2058,7 +2270,7 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   nie zacienia lewej krawędzi ani narożnika treści.
 - Biały obszar treści w `.main-content > .page-container`.
 - Na ekranach katalogów `full-width`, pasek tytułu, akcje, filtry, wyszukiwanie,
-  paginacja i przewijana lista.
+  przewijana lista i pasek „Pokaż więcej” pod jej wynikami.
 - Osobny host `#app-page-modals` oraz komunikaty `#app-notifications`.
 - Wspólne panele wyszukiwania i powiadomień oraz Sticker.
 
@@ -2104,7 +2316,7 @@ istniejący formularz POST i pełne przeładowanie kontekstu Workspace.
 
 Nagłówek strony profilu pokazuje tekst „Profil użytkownika” bez poprzedzającej
 go ikony. Avatar użytkownika pozostaje w treści profilu. Do 767px nagłówek
-zachowuje 3.5rem odstępu po lewej na przycisk nawigacji, jak paski katalogów.
+zachowuje wspólny odstęp 15px po bokach, jak pozostałe nagłówki stron.
 
 Otwarty dzwonek używa
 `color-mix(in srgb, var(--system-accent) 15%, #ffffff)`, także przy zwiniętym
@@ -2218,7 +2430,7 @@ Ważne wyjątki:
 | --- | --- | --- |
 | Katalog Przestrzeni | [spaces/directory.html](../backend/spaces/templates/spaces/directory.html) | `components/tasks.css`, `tasks.js`, React `spaces/DirectoryPage.tsx` |
 | Tytuł i toolbar katalogu | [toolbar Dysku](../backend/documents/templates/documents/toolbar.html) jako przykład użycia wspólnych klas | `tasks-topbar`, `tasks-filterbar`, `tasks-filter-button`, `tasks-search-field` |
-| Paginacja | [directory_pagination_toolbar.html](../backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html) | Kontekst `window`, atrybuty `data-project-*`, serwerowe URL |
+| Kolejne wyniki | [load_more.html](../backend/core/templates/core/includes/load_more.html), [LoadMore.tsx](../frontend/app/src/shared/LoadMore.tsx) | Po 20 wyników, licznik wczytane/wszystkie, zachowanie wierszy |
 | Zarządzanie kolumnami | [directory_column_manager.html](../backend/tasks/templates/tasks/includes/directory_column_manager.html) | `tasks.js`, zapis ustawień lokalnych |
 | Agregat filtrów | [directory_filter_aggregate.html](../backend/tasks/templates/tasks/includes/directory_filter_aggregate.html) | Wspólne menu i aktywny stan |
 | Wiersz zadania | [spaces/row.html](../backend/spaces/templates/spaces/row.html) | Stan, uprawnienia, `data-task-*`, ikony, JS listy |
@@ -2246,72 +2458,27 @@ tych katalogów nie dodaje dolnej linii nad nagłówkiem tabeli.
 Wspólne reguły w `components/tasks.css` obejmują React i pierwszy render Django.
 Kontener ma szerokość automatyczną uwzględniającą oba marginesy, bez dodatkowego
 paddingu; szeroka tabela przewija się wewnątrz niego również na telefonie.
-Kolumny, zaznaczanie, menu działań, zmiana szerokości i paginacja zachowują
-dotychczasowe mechanizmy. Udostępnienia i Typy zgłoszeń mają już ten sam
+Kolumny, zaznaczanie i zmiana szerokości zachowują dotychczasowe mechanizmy;
+kolejne wyniki udostępnia wspólny pasek „Pokaż więcej”. Udostępnienia i Typy zgłoszeń mają już ten sam
 układ. Tabele osadzone w modalach, dziennik pracy i skrót „Dla ciebie”
 korzystają z odstępów własnego rodzica, bez dodawania kolejnego marginesu.
 
-### Ikony notatek
+### Ikony notatek i zachowane skróty
 
-„Projekty” mają osobną kolumnę „Działania” (40px) po zaznaczeniu,
-przed zachowanymi kolumnami edycji, informacji i notatek. Przycisk z trzema
-paskami używa `row-actions.js` i wspólnego popovera Dokumentów. Menu otwiera
-dotychczasowe okna projektu, zapisuje szablon lub wywołuje istniejące potwierdzenie
-usunięcia, zgodnie z uprawnieniami. Dotyczy tylko projektu w danym wierszu
-i nie zmienia zaznaczenia do operacji zbiorczych. Kolumna uczestniczy w zarządzaniu
-widocznością i kolejnością; wcześniejsze ustawienia kolumn oraz szerokości
-są przenoszone do nowego układu. Wariant `tasks-project-directory-sheet`
-dodaje jedną kolumnę także na wąskim ekranie, zachowując przewijanie tabeli.
-Nagłówki kolumn działań, edycji, informacji i notatek są wizualnie puste,
-z zachowanymi etykietami dostępności oraz nazwami w zarządzaniu kolumnami.
-Ikony pozostają w przyciskach wierszy, a checkbox zaznaczania w nagłówku.
-Kolumny „Edytuj”, „Informacje” i „Notatki” są domyślnie ukryte; „Działania”
-pozostają widoczne. `data-directory-default-hidden` określa domyślny układ
-katalogu projektów przy braku zapisanych preferencji i po „Resetuj”. Użytkownik
-może włączyć te kolumny i zapisać wybór w zarządzaniu tabelą. Zapisany wybór
-ma pierwszeństwo przed ustawieniami domyślnymi; menu wiersza działa także
-przy ukrytych kolumnach skrótów.
-Ten sam układ obowiązuje w „Wszystkich grupach”, „Przestrzeniach roboczych”
-Kanbana oraz „Tagach” Zadań i Kanbana. Historyczne szablony wycofanych
-Kontaktów, Firm i Gości mają dwa skróty (edycja i informacja), bez osobnej
-kolumny notatek. Pozostałe wymienione katalogi mają także notatki.
-Wspólny `directory_row_menu.html` korzysta z przycisków i linków danego wiersza;
-menu grup, tagów i przestrzeni wywołuje istniejące potwierdzenie usunięcia.
-Zapis szablonu jest dostępny wyłącznie dla projektów Zadań. `tasks-directory-menu-sheet`
-oznacza tabele z tym układem. Grupy wewnątrz projektu i tablice Kanbana
-zachowują dotychczasowe kontrolki.
+Kolumny edycji, informacji i notatek w Tagach pozostają dostępne zgodnie
+z dotychczasowym wyborem kolumn i uprawnieniami. Ich nagłówki są wizualnie
+puste i zachowują etykiety dostępności. Usunięcie hamburgerów nie usuwa tych
+skrótów ani checkboxów. Tabela nadal przewija się poziomo na wąskim ekranie.
 
-Na ekranie „Projekty” od szerokości okna 1181px kolumny
-„Ostatnia aktywność” i „Data utworzenia” mają domyślnie odpowiednio 190px i 170px.
-Wartości określa `projectColumnDefaultWidths` w `tasks.js`; obowiązują przy braku
-zapisanych szerokości oraz po „Resetuj”. Ręcznie zapisane szerokości mają pierwszeństwo.
-„Grupy” w tym samym zakresie szerokości okna mają domyślną kolumnę
-„Data utworzenia” 170px (`allGroupsColumnDefaultWidths`), z tymi samymi zasadami
-zapisu i resetowania szerokości.
-Domyślna kolejność danych w „Wszystkich grupach” zaczyna się od „Kod grupy”,
-a następnie „Grupa”. Nagłówek, komórki i siatka zachowują tę kolejność również
-na wąskich ekranach. Zapisana własna kolejność, widoczność i szerokości kolumn
-są odczytywane także z wcześniejszego układu; „Resetuj” przywraca nową kolejność.
+Przycisk notatek używa wspólnego stanu
+`.tasks-project-sheet__notes-button.has-notes`. Gdy istnieje wpis, ikona ma
+żółty kolor `#d4a000`; tło i stany interakcji przycisku pozostają standardowe.
+Pusty stan zachowuje szarą ikonę kartki z plusem. Stan wynika z zapisanych
+notatek, także po ponownym wejściu.
 
-Zaznaczone wiersze zadań i podzadań w module Zadania używają tego samego
-jasnofioletowego tła (8% `--system-accent` na bieli) oraz paska 3px po lewej
-co katalogi projektów i grup. Styl działa dla `.checked` i zaznaczonego checkboxa,
-również po najechaniu kursorem; odznaczenie przywraca zwykły wiersz bez paska.
-Wspólne reguły są ograniczone przez `data-task-app="tasks"` do modułu Zadania.
-
-Na tablecie i telefonie siatka tych katalogów powstaje z widocznych kolumn w ich
-bieżącej kolejności, używając szerokości z tokenów CSS. Ukrycie skrótów
-nie przesuwa szerokości kolumn danych; tabela nadal przewija się poziomo.
-Historyczne szablony wycofanych Kontaktów, Firm i Gości zawierają karty na telefonie: menu działań
-mieści się pod checkboxem, a edycja i informacje są dostępne przez to menu.
-Osobne kolumny skrótów są dostępne w ich widoku tabeli.
-
-Przyciski notatek projektów i grup w Zadaniach oraz przestrzeni w Kanbanie
-używają wspólnego stanu `.tasks-project-sheet__notes-button.has-notes`.
-Gdy istnieje wpis, tylko ikona ma ciepły, wyrazisty żółty kolor `#d4a000`.
-Tło i stany interakcji przycisku pozostają standardowe.
-Pusty stan zachowuje szarą ikonę kartki z plusem. Stan wynika z istniejących
-notatek, także po zapisie i ponownym wejściu.
+Dawne osobne katalogi Projektów, Grup, Kontaktów i Kanbana są wycofane.
+Ich historyczne kolumny menu oraz dawne układy skrótów nie stanowią wzorca
+aktywnej aplikacji.
 
 ### Powrót i zamykanie okien
 
@@ -2341,7 +2508,7 @@ a tytuł odświeża się podczas edycji.
 Lista grup otwartego projektu używa tych samych dwóch pasków co „Grupy”: `tasks-topbar--directory` z tytułem i akcjami oraz
 `tasks-filterbar--directory` z kolumnami, „Filtruj”, „Sortuj”, wyszukiwaniem
 i wspólnym `directory_pagination_toolbar.html`. Projekt zachowuje nazwę
-i strzałkę powrotu. Paginacja występuje wyłącznie w drugim pasku.
+i strzałkę powrotu. Pasek „Pokaż więcej” znajduje się pod wynikami.
 Filtry i sortowanie używają wspólnego mechanizmu grup; wewnątrz projektu
 nie ma dodatkowego wyboru projektu w filtrach. Czyszczenie filtrów,
 wyszukiwanie i zmiana strony zachowują otwarty projekt oraz Workspace.
@@ -2350,12 +2517,10 @@ nawigacji aplikacji, aby strzałka powrotu pozostała dostępna.
 
 ### Limit zadań według stanu
 
-„Zadania” i „Zadania nieprzydzielone” używają wspólnego paska paginacji.
-Wariant `page_size_suffix='/ stan'` w `directory_pagination_toolbar.html`
-wyjaśnia, że np. 50 dotyczy osobno każdej sekcji statusu. Etykieta dostępności
-brzmi „Liczba zadań na stronie w każdym stanie”. Strzałki zmieniają stronę
-we wszystkich stanach jednocześnie; licznik sumuje pokazane zadania.
-Pozostałe katalogi zachowują etykietę „/ stronę” i dotychczasowe działanie.
+Historyczne listy „Zadania” i „Zadania nieprzydzielone” oraz ich przełącznik
+„/ stan” są wycofane. Aktualne zadania Przestrzeni mają osobne okna po 20
+w grupach statusów, doładowywane przez „Pokaż więcej”. Pozostałe listy
+korzystają z tego samego wzorca opisanego na początku tego dokumentu.
 
 ### Krótkie powiadomienia
 
@@ -2419,14 +2584,17 @@ oraz „Anuluj” w modalach. Przyciski wyłączone nie otrzymują podświetleni
 Okna potwierdzania usuwania również korzystają z tego wspólnego stylu „Anuluj”,
 bez lokalnego nadpisania tła i obramowania w `tasks.css`.
 
-W całej aplikacji, także na ekranach logowania, interakcja z kontrolką nie
-dodaje zewnętrznego obrysu ani poświaty. Globalna reguła w `style.css` wyłącza
-`outline` dla fokusu, a tokeny `--focus-ring` i `--checkbox-focus-ring` mają
-wartość `none`. Formularze, selecty, checkboxy, nawigacja i przyciski korzystają
-z tej zasady również w modalach oraz po częściowej nawigacji. Nie dodawaj
-lokalnych obrysów ani cieni imitujących ramkę w stanach hover/focus/otwarcia.
-Zwykłe obramowania kontrolek, komunikaty walidacji i cienie paneli pozostają
-częścią ich stylu. Obsługa Tab, Escape i przywracanie fokusu pozostają bez zmian.
+Interakcja myszą nie dodaje zewnętrznego obrysu ani poświaty. Klawiatura
+korzysta natomiast ze wspólnego wskaźnika `:focus-visible` w `style.css`:
+wewnętrzny obrys 2px w kolorze `--system-accent`, uwzględniający skalę UI.
+Ujemny offset utrzymuje go wewnątrz kontrolki, również przy przewijanych
+tabelach i zakładkach. Checkboxy i radio mają obrys odsunięty o 2px na zewnątrz,
+aby był widoczny także na fioletowym zaznaczeniu i stanie pośrednim.
+W trybie wymuszonych kolorów używa systemowego
+`Highlight`. Dotyczy to także uwierzytelniania, formularzy i okien.
+Nie wyłączaj globalnie fokusu klawiatury i nie dodawaj lokalnej poświaty;
+tokeny cieni `--focus-ring` i `--checkbox-focus-ring` nadal mają wartość `none`.
+Zwykłe obramowania i geometria kontrolek pozostają bez zmian.
 
 ### Tabele i formularze Dysku
 
@@ -2448,7 +2616,7 @@ a dysków 139,755×139,755px. Ikony pustych i pełnych folderów mają
 149,68×149,68px — są powiększone o kolejne 5% względem poprzednich 142,55px,
 bez zmiany wymiarów kafelków ani pozostałych ikon.
 Wariant `documents-card--library` używa wyłącznie standardowej ikony dysku.
-Nazwa, data i akcje pozostają poniżej. W ciasnych kolumnach zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
+Nazwa i data pozostają poniżej. W ciasnych kolumnach zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
 w tabeli ani panelu bocznym.
 Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kolumny
 248px (lub całą dostępną szerokością, gdy jest węższa), również na telefonie.
@@ -2456,8 +2624,7 @@ Kafelek zajmuje całą szerokość kolumny, więc odstępy między kafelkami wyn
 wyłącznie z `gap`: 16px w obu kierunkach, a na ekranach do 767px — 12px.
 Dotyczy Dysków, plików i Dokumentów. Kafelki pozostają kwadratowe;
 rozmiary tekstu, ikon oraz przycisków pozostają bez zmian.
-Akcje plików i folderów są dostępne przez jeden przycisk z trzema paskami
-po prawej stronie daty w stopce kafelka, także na wąskim ekranie.
+Stopka kafelka pokazuje datę, bez przycisku menu i jego akcji.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
 przycisku „Zarządzaj tabelą”; listy dysków i plików pokazują wszystkie kolumny,
 także przy zapisanych wcześniej preferencjach ich ukrywania. „Nowy folder” używa
@@ -2470,15 +2637,13 @@ delikatne podziały poziome i pionowe z tokenu `--tasks-directory-column-separat
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
 drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder” ani
 typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii.
-Lista plików i folderów Dysku (`documents-layout`) ma symetryczne odstępy 24px
-od obu krawędzi tabeli, także na telefonie i w nagłówku. Przed ikoną pliku
-lub folderu znajduje się przycisk trzech pasków otwierający menu działań;
-tabela nie ma osobnej kolumny akcji.
-Foldery Dysku mają akcje w kolejności zgodnej z plikami: przenoszenie, edycja,
-gwiazdka, pobranie ZIP i usunięcie pustego folderu. Wspólny include
-`documents/includes/row_actions.html` obsługuje tabelę i kafelki, z etykietami
-zawierającymi nazwę folderu i `aria-pressed` gwiazdki. W zbiorczym widoku
-gwiazdek folder pokazuje nazwę dysku jako link, tak jak lokalizacja pliku.
+Lista plików i folderów Dysku (`documents-layout`) zachowuje wspólne odstępy
+tabeli. Komórka nazwy zaczyna się od ikony pliku lub folderu, bez menu działań.
+Nie ma osobnej kolumny akcji. Usunięto także menu na kafelkach; nie dodano
+zastępczych przycisków przenoszenia, edycji metadanych, gwiazdki, pobrania
+folderu, usuwania ani przywracania z kosza. Istniejące odnośniki nazw
+oraz obsługa przeciągania pozostają. W zbiorczym widoku gwiazdek folder
+pokazuje nazwę dysku jako link, tak jak lokalizacja pliku.
 Pusty stan gwiazdek obejmuje pliki i foldery.
 Pusty stan zachowuje własne wyśrodkowanie i padding. Nazwy mają
 ellipsis; pełna nazwa pozostaje w tekście linku i jego `title`. Ikony nie mają
@@ -2531,7 +2696,8 @@ Nie udostępnia wyboru zdjęcia ani kadrowania. Wcześniej zapisane zdjęcia
 nie są wyświetlane; lista, kafelki i panel boczny zawsze używają wspólnej ikony.
 
 Lista dysków zajmuje całą szerokość treści. Pod tytułem jest pasek narzędzi
-z przełącznikiem widoku, filtrami, sortowaniem, wyszukiwaniem i paginacją.
+z przełącznikiem widoku, filtrami, sortowaniem i wyszukiwaniem.
+Pasek „Pokaż więcej” znajduje się pod wynikami wewnątrz scrolleru.
 Za sortowaniem przycisk `documents-view-selector` pokazuje nazwę bieżącego
 widoku: „Dyski” na indeksie, nazwę otwartego dysku lub nazwę zbiorczego widoku.
 Otwiera `documents-views-menu`: Dyski, Wszystkie pliki, Ostatnio zmienione,
@@ -2553,26 +2719,20 @@ Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz fioletowe
 podświetlenie z paskiem po lewej pochodzą ze wspólnego komponentu.
 
 Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
-poprzedzone kolumną wyboru 40px i kolumną menu 40px. Checkboxy korzystają
+poprzedzone kolumną wyboru 40px. Checkboxy korzystają
 z `tasks-project-sheet--selectable` i wspólnego stylu projektów, są stale
 widoczne i podświetlają zaznaczone wiersze. Checkbox w nagłówku wybiera całą
-bieżącą stronę i pokazuje stan częściowego zaznaczenia. Cała kolumna wyboru
-jest klikalna; `documents.js` obsługuje wybór również po `ancore:content-loaded`
-bez powielania listenerów. Nowe wyniki, strona lub przeładowanie resetują wybór.
-Menu ma wizualnie pusty nagłówek
-i etykietę „Działania” dla czytników ekranu. Przycisk z trzema paskami używa
-`tasks-project-sheet__edit-button` i wypełnia komórkę. Wspólny `row_menu.html`
-przyjmuje `menu_kind='library'`, aby zbudować identyfikator i etykietę dysku.
-Menu pokazuje ustawienia, usunięcie pustego dysku i otwarcie, korzystając
-z `library_actions.html` w wariancie `action_menu`. `row-actions.js` zapewnia
-popover, klawiaturę, Escape i powrót fokusu. Kafelki korzystają z tego samego
-menu w stopce, po prawej stronie daty, z przyciskiem
-`tasks-icon-button documents-icon-button`. Nazwa wypełnia wolne miejsce, data ma 176px,
+wczytaną listę i pokazuje stan częściowego zaznaczenia. Cała kolumna wyboru
+jest klikalna. React zachowuje zaznaczenie podczas doładowywania; zmiana
+filtrów lub sortowania rozpoczyna nowe okno i czyści wybór.
+Adapter `documents.js` obsługuje także `ancore:content-loaded`.
+Lista i kafelki dysków nie mają menu wiersza. Nazwa otwiera dysk
+i wypełnia wolne miejsce, data ma 176px,
 a rozmiar 120px. Wariant ma semantykę ARIA tabeli, wierszy i komórek oraz
 `data-directory-resize="false"`. Atrybuty celu przeciągania pozostają na wierszu.
 Lista folderów i plików Dysku pokazuje
-te same trzy kolumny danych, bez kolumny „Tagi”, z menu działań w nazwie.
-Minimalna szerokość tabeli plików z menu w nazwie wynosi 690px;
+te same trzy kolumny danych, bez kolumny „Tagi” i menu w nazwie.
+Minimalna szerokość tabeli plików wynosi 690px;
 węższy obszar zachowuje wszystkie kolumny dzięki przewijaniu poziomemu.
 Rozmiar dysku i folderu sumuje aktywne pliki, również w podfolderach,
 w zakresie właściciela i Workspace. Puste elementy pokazują 0 bajtów.
@@ -2584,10 +2744,10 @@ Data i rozmiar pozostają widoczne w trybie listy.
 
 `documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (13px).
 Lista dysków nie wyświetla opisu pod nazwą ani opcji „Opis” w wyborze kolumn.
-Rozmiar jest wyrównany do prawej, a akcja
-ze strzałką otwiera dysk. Długie nazwy mają wielokropek oraz pełny tekst w `title`.
+Rozmiar jest wyrównany do prawej. Długie nazwy mają wielokropek oraz pełny
+tekst w `title`.
 Na wąskich ekranach tabela przewija się poziomo, zachowując wszystkie
-kolumny i menu działań (minimalna szerokość 616px).
+kolumny (minimalna szerokość 616px).
 Pusty wynik pomija nagłówki, mieści się w szerokości ekranu i ma bezpośrednią
 akcję wyczyszczenia wyszukiwania i filtrów.
 
@@ -2630,9 +2790,8 @@ i podmiana treści sprzątają podgląd oraz wyróżnienia.
 Upuszczenie plików w katalogu otwiera i wysyła standardowy formularz uploadu;
 błąd pozostawia pliki w oknie. Upuszczenie w otwartym formularzu zastępuje
 bieżący wybór plików, a zapis odbywa się jego przyciskiem.
-Ikonowa akcja „Przenieś” z etykietą dostępną dla czytników otwiera standardowy
-modal z wyborem lokalizacji, także z klawiatury i na telefonie. Akcje wiersza
-są dostępne w menu przed ikoną. Kosz nie udostępnia przeciągania.
+Kosz nie udostępnia przeciągania. Usunięte menu nie udostępnia już
+formularza „Przenieś”; nie dodano innego wejścia w wierszu.
 
 Filtry Dysku używają panelu `tasks-project-filter-builder` i wspólnych
 szablonów warunków tekstowych oraz wyboru wartości. Lista pól i aktywne warunki
@@ -2713,28 +2872,25 @@ podświetlenie oraz pasek przy lewej krawędzi po najechaniu pochodzą ze wspól
 Pierwsza kolumna 40px zawiera stale widoczne checkboxy w wariancie
 `tasks-project-sheet--selectable`, tak jak lista Dysków. Wspólna obsługa
 `data-document-selection` w `documents.js` zaznacza pojedyncze wiersze lub
-całą bieżącą stronę, pokazuje częściowy wybór w nagłówku i podświetla wiersze.
+wszystkie wczytane wiersze, pokazuje częściowy wybór w nagłówku i podświetla wiersze.
 Cała kolumna wyboru jest klikalna. Działa również w koszu i po częściowej
-nawigacji; zmiana wyników, strony lub przeładowanie resetuje wybór.
-Druga kolumna 40px zawiera menu z trzema paskami w wierszach. Jej nagłówek
-jest wizualnie pusty, z etykietą „Działania” dla czytników ekranu. Przycisk wypełnia komórkę
-i używa `tasks-project-sheet__edit-button`; include `row_menu.html` przyjmuje
-opcjonalny `button_class`, zachowując domyślny przycisk Dysku i kafelków.
-Kolorowa ikona pliku 32×32px pozostaje obok nazwy. Dokumenty mają jeden
-płaski katalog, bez folderów, ścieżki lokalizacji i akcji „Przenieś”. Include
-`documents/office/actions.html` obsługuje gwiazdkę, edycję, pobieranie oraz kosz;
-na kafelkach te same akcje otwiera przycisk z trzema paskami w stopce.
+nawigacji. React zachowuje wybór podczas doładowania; filtr, sortowanie
+lub pełne przeładowanie zaczynają nowy wybór.
+Po kolumnie wyboru występuje nazwa z kolorową ikoną pliku 32×32px.
+Dokumenty mają jeden płaski katalog, bez folderów i ścieżki lokalizacji.
+Menu wierszy i kafelków zostały usunięte wraz z wejściami do gwiazdki,
+edycji metadanych, pobierania i kosza. Link nazwy nadal otwiera dokument.
 Pusty widok gwiazdek dotyczy dokumentów.
 Pusty stan zachowuje własne odstępy i wyśrodkowanie.
 Lista pokazuje trzy kolumny danych: „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
 Nazwa wypełnia wolne miejsce, długi tekst ma wielokropek i pełną treść w `title`.
 Data ma 176px, rozmiar 120px z wyrównaniem do prawej. Minimalna szerokość
-wynosi 656px; na telefonie wszystkie kolumny pozostają w przewijanym obszarze.
+wynosi 616px; na telefonie wszystkie kolumny pozostają w przewijanym obszarze.
 Wariant ma `data-directory-resize="false"` i semantykę ARIA tabeli, wierszy oraz
 komórek. Pusty stan nie renderuje nagłówków i mieści się w szerokości ekranu.
 Tagi nie są dostępne w kafelkach, filtrach, oknie „Dane dokumentu” ani
 starszym edytorze tekstu. Aktywne filtry pozostałych pól mają nad listą akcję
-czyszczenia i pozostają przy wyszukiwaniu, sortowaniu, paginacji, zmianie
+czyszczenia i pozostają przy wyszukiwaniu, sortowaniu, doładowaniu i zmianie
 układu oraz akcjach gwiazdki/kosza.
 
 Oba katalogi korzystają z jednego odstępu bocznego siatki
@@ -2749,12 +2905,11 @@ przyjmuje `filter_title`, `filter_heading` i `sort_title`, aby zachować nazwy
 modułu. Sortowanie używa `directory_sort_builder.html` z wyszukiwaniem pól,
 kierunkiem rosnąco/malejąco i aktualnym ustawieniem w przycisku, identycznie
 jak w Dysku. Pusty wynik filtrów ma akcję czyszczenia.
-Paginacja korzysta z `directory_pagination_toolbar.html` z wyborem 25/50/100 pozycji. `tasks.js`
-obsługuje także wyszukiwanie z opóźnieniem i Enter; układ i widok
-pozostają zachowane przy zmianie filtrów, sortowania lub liczby pozycji.
+Pod wynikami znajduje się wspólny pasek „Pokaż więcej”, po 20 pozycji.
+React zachowuje wyszukiwanie z opóźnieniem i Enter, układ oraz widok.
 Układ należy do adresu formularza wyszukiwania, a nie do zbioru
-czyszczonych filtrów. Filtry i sortowanie wracają na pierwszą stronę;
-zmiana lista/kafelki zachowuje stronę. Na telefonie
+czyszczonych filtrów. Filtry i sortowanie rozpoczynają okno od pierwszych
+20 pozycji; doładowanie zachowuje bieżące filtry i zaznaczenia. Na telefonie
 wiele akcji nagłówka zawija się do kolejnych rzędów we wspólnym wariancie
 Dysku i Dokumentów; tabela zachowuje własne przewijanie poziome.
 
@@ -2778,14 +2933,18 @@ Tworzenie pliku rezerwuje kartę podczas zatwierdzenia modalu, a po zapisie
 odświeża katalog w pierwotnej karcie. Błąd zamyka pustą kartę; blokada okien
 pokazuje odnośnik do utworzonego pliku. Ten sam mechanizm obejmuje tablice.
 ONLYOFFICE zachowuje własny polski interfejs, Excalidraw jest izolowany od
-CSS aplikacji i używa turkusowego akcentu. Katalog ma dwa wspólne paski:
-tytuł oraz narzędzia z wyszukiwaniem i paginacją.
+CSS aplikacji i używa turkusowego akcentu. Tablica nie pokazuje hamburgera
+ani jego menu: pusty `MainMenu` oraz lokalny selektor
+`#board-root .excalidraw .main-menu-trigger` usuwają tę kontrolkę bez zmian
+w kodzie vendora. Zapis automatyczny i Ctrl/⌘+S pozostają aktywne.
+Katalog ma dwa wspólne paski:
+tytuł oraz narzędzia z wyszukiwaniem; „Pokaż więcej” jest pod wynikami.
 Tworzenie dokumentów oraz upload są dostępne jako kafelki bez nagłówka;
 górny pasek nie zawiera przycisków tych akcji. Pod paskiem narzędzi, nad listą
 plików, sekcja `office-quick-create` pokazuje siedem skrótów:
 dokument, arkusz kalkulacyjny, prezentację, PDF, formularz PDF, tablicę
-i „Prześlij dokumenty”. Nie ma kafelka „Z szablonu”; kopię szablonu
-tworzy się z menu oznaczonego dokumentu w widoku „Szablony”.
+i „Prześlij dokumenty”. Nie ma kafelka „Z szablonu”; usunięte menu dokumentu
+nie udostępnia już tworzenia kopii szablonu.
 Ostatnia akcja otwiera istniejący modal uploadu w bieżącym Workspace.
 Wariant `office-create-card`
 korzysta z powierzchni `documents-card`, istniejących kolorowych ikon plików
@@ -2816,31 +2975,15 @@ formularzy tworzenia ani metadanych plików; serwer odrzuca zapis także przez A
 Obecność gościa nie wyłącza edycji pozostałym uprawnionym osobom.
 
 Statusy zapisu są potwierdzane przez serwer. Tablica przy błędzie zachowuje
-scenę i pozwala pobrać bieżącą kopię; jej iframe przyjmuje wyłącznie komunikaty
-z okna rodzica tego samego originu.
+scenę; usunięte menu nie udostępnia już pobrania jej kopii. Iframe zachowuje
+adapter zapisu/pobrania i przyjmuje wyłącznie komunikaty z okna rodzica
+tego samego originu.
 
-Na listach plików i folderów Dysku akcje wiersza otwiera
-jeden przycisk z ikoną `menu`
-(trzy poziome paski), po lewej stronie ikony pliku lub folderu. Nie ma osobnej
-kolumny działań. Lista Dokumentów ma osobną kolumnę menu zgodną z tabelą
-projektów; oba warianty ukrywają nagłówki w pustym stanie.
-`documents/includes/row_menu.html` przyjmuje szablon akcji danego modułu
-w parametrze `actions_template` i korzysta z dotychczasowych formularzy,
-z tekstowymi etykietami w wariancie `action_menu`.
-Kafelki plików i folderów Dysku oraz Dokumentów używają tego samego include'a
-w stopce, po prawej stronie daty, zamiast rzędu ikon. Menu używa wspólnych klas
-`tasks-section-menu` i `tasks-project-menu-button` oraz natywnego `popover`
-poza obszarem przycinania tabeli lub kafelka. `row-actions.js` dopasowuje położenie do
-viewportu i skali UI, obsługuje strzałki, Home/End, Escape, kliknięcie poza menu
-oraz zamknięcie przy przewijaniu. Otwarcie myszą pozostawia fokus na przycisku;
-Enter/Spacja przenoszą go na pierwszą akcję. Długie etykiety akcji zawijają się w menu,
-zachowując pełny tekst także na telefonie. Po zamknięciu modala fokus wraca na przycisk
-wiersza lub kafelka. Inicjalizacja działa także po `ancore:content-loaded` bez powielania
-listenerów. Kosz udostępnia w tym samym miejscu akcję przywrócenia.
-
-Menu plików Dysku i Dokumentów, zarówno na liście, jak i w kafelkach, nie
-udostępniają „Historii wersji”. Ekran historii został wycofany. Pozostałe
-akcje oraz wspólna obsługa menu i modali pozostają bez zmian.
+Listy i kafelki Dysków, plików, folderów oraz Dokumentów nie renderują
+hamburgerów ani powiązanych paneli menu. Tabele Dysków i Dokumentów nie
+rezerwują ich kolumn. Puste stany nadal ukrywają nagłówki. Nie przeniesiono
+usuniętych akcji w inne miejsce; istniejące endpointy i ich kontrola dostępu
+pozostają niezależne od widocznych kontrolek. Ekran historii wersji jest wycofany.
 
 ### Dashboard bieżącego Workspace
 
@@ -2851,7 +2994,8 @@ tych samych nagłówków, siatki, pustych stanów, CSS i `pulpits.js` co nowe pu
 i „Ustawienia”. Pierwsze wejście pokazuje jeden „Postęp pracy”; kolejne odczytują
 zapisany układ i gadżety. Przegląd nie pokazuje kontrolek zmiany gadżetów.
 Nazwa i opis są edytowalne, a osobista pozycja „Pulpit domyślny” pozostaje w menu.
-Nie ma akcji „Usuń pulpit” dla rekordów domyślnych; gadżety można usuwać wszystkie.
+Nie ma akcji „Usuń pulpit” dla rekordów domyślnych. Menu usuwania pojedynczych
+gadżetów jest usunięte; backend zachowuje możliwość zapisu pustego układu.
 Wspólne odstępy, tokeny, responsywność, modale i częściowa nawigacja pozostają
 takie jak w systemie Pulpitów opisanym w rozdziale 15.
 
@@ -2953,21 +3097,20 @@ oraz podzadań, pod zwykłymi i scoped adresami. Kanban zachowuje własną Aktyw
 katalogu projektów: wiersze 35px,
 nagłówki z ikonami, separatory oraz fioletowe podświetlenie z paskiem po lewej.
 Cały dziennik korzysta z `tasks-issue-content`: tabela, podsumowanie, pusty stan
-i paginacja mają tę samą pełną szerokość i boczne odstępy 50px
-co temat i opis, również na telefonie. Podsumowanie i paginacja nie dodają
+i pasek „Pokaż więcej” mają tę samą pełną szerokość i boczne odstępy 50px
+co temat i opis, również na telefonie. Podsumowanie i pasek nie dodają
 własnego poziomego wcięcia. Tabela zachowuje poziome przewijanie kolumn.
 Pierwsza kolumna 40px zawiera wspólne checkboxy katalogu projektów, zawsze
-widoczne. Checkbox w nagłówku zaznacza/odznacza bieżącą stronę i pokazuje
+widoczne. Checkbox w nagłówku zaznacza/odznacza wczytane wiersze i pokazuje
 stan częściowego zaznaczenia. Kliknięcie pustego miejsca w kolumnie wyboru
 również przełącza wpis. Zaznaczenie utrzymuje podświetlenie wiersza oraz
 pozostaje po edycji i odświeżeniu fragmentu; usunięte i niewidoczne wpisy
-wypadają z wyboru. Pełne przeładowanie lub zmiana strony zaczyna nowy wybór.
+wypadają z wyboru. Doładowanie zachowuje wybór; pełne przeładowanie zaczyna nowy wybór.
 Delegacja w `task-work-log.js` obsługuje także nowe wiersze po zapisie i
 ponowną inicjalizację, bez wpływu na checkboxy pozostałych modułów.
-Menu działań ma osobną kolumnę 40px, ukrytą przy braku prawa edycji;
-przycisk `tasks-project-sheet__edit-button` wypełnia całą komórkę, ma proste
-rogi i ten sam fioletowy hover/fokus co akcje projektów. Wrapper menu rozciąga
-się do rozmiaru komórki; obsługę menu nadal zapewnia `row-actions.js`.
+Tabela dziennika pracy nie ma menu wiersza ani jego kolumny 40px.
+W nagłówku pozostaje „Dodaj czas”. Zaznaczenie jest lokalne; nie dodano
+zastępczych wejść do edycji i usuwania pojedynczego wpisu.
 Autor korzysta ze wspólnego avatara katalogów. Wąskie ekrany zachowują wszystkie
 kolumny w przewijanym poziomo obszarze, a opis wypełnia wolną szerokość.
 Wariant ma `data-directory-resize="false"`: szerokości ustala CSS, a wspólny
@@ -3161,7 +3304,8 @@ z przewijanego obszaru lub modal zostaje zamknięty/usunięty, zamyka też menu.
 Escape zamyka najpierw listę i przywraca fokus kontrolce; kliknięcie poza listą,
 przeniesienie fokusu lub `ancore:content-loaded` również ją zamyka.
 Przy własnym zamykaniu kontrolka wywołuje `AncoreDropdownLayer.hide(menu)`.
-Panel konfigurujący przesuwany element może ustawić
+Adapter zachowuje opcjonalny wariant pozycjonowania panelu:
+można ustawić
 `data-dropdown-positioning="fixed"` (`Dropdown positioning="fixed"` w React).
 Warstwa dobiera położenie przy otwarciu, potem zachowuje te współrzędne
 i ogranicza panel do widocznego ekranu. Przesunięcie kontrolki poza przewijany
@@ -3181,7 +3325,7 @@ wyszukiwarkę również poza modalami; wyszukiwanie pomija polskie znaki.
 i ikony `data-ancore-option-icon`, a pozostałym opcjom dobiera ikonę pola.
 Pola klasyfikacji zadania `task_type` i `task_group` wyświetla wyłącznie
 tekstowo, pomijając również wcześniejsze metadane wyglądu.
-Wspólna warstwa uzupełnia ikony prostych filtrów, sortowania i paginacji.
+Wspólna warstwa uzupełnia ikony prostych filtrów i sortowania.
 `core.widgets.VisualSelect/VisualSelectMultiple` przekazują serwerowe ikony
 lub podglądy przez lokalne szablony, bez zmiany wartości opcji i walidacji.
 Filtry zadań pokazują awatary/zdjęcia widocznych przestrzeni, wykonawców
@@ -3379,12 +3523,10 @@ filtry i pozycję przewinięcia. Punkt wejścia jest zapisany w historii i
 pozostaje dostępny po przeładowaniu, otwieraniu okien i błędach/zapisie formularzy.
 Oglądanie lub edycja wybranego Workspace nie przełącza aktywnego kontekstu pracy.
 
-Menu działań wiersza udostępnia „Ustaw jako domyślny” z istniejącą ikoną `home`.
-Po zapisaniu pokazuje „Usuń ustawienie domyślne” z ikoną `check`, a obok nazwy
-pojawia się etykieta „Domyślny” z opisem „Otwierany po zalogowaniu”. Etykieta
-korzysta z istniejącego wariantu `workplace-row__current-badge`; „Bieżący”
-nadal oznacza aktualny kontekst. Ustawienie i jego usunięcie nie otwierają okna
-edycji, nie przełączają Workspace i zachowują lokalne wyszukiwanie/paginację.
+Etykieta „Domyślny” z opisem „Otwierany po zalogowaniu” wskazuje zapisaną
+osobistą preferencję Workspace; „Bieżący” nadal oznacza aktualny kontekst.
+Menu ustawienia i usunięcia tej preferencji zostało usunięte z wiersza
+katalogu bez zastępczego wejścia. Zapisane preferencje pozostają w bazie.
 
 Profil użytkownika korzysta ze wspólnego okna `core/includes/avatar_picker.html`
 i `workplace-avatars.js`, z osobną pulą 30 zwierzęcych maskotek w
@@ -3436,15 +3578,14 @@ w `title`. Tworzenie pokazuje „Generowany automatycznie”, a edycja zapisany
 kod tylko do odczytu. Zmiana nazwy nie zmienia kodu ani adresu.
 Tytuł „Workspace” ma rozmiar 17px i grubość 700. Dwa wspólne paski
 `tasks-topbar--directory` oraz `tasks-filterbar--directory` zachowują tytuł,
-akcje, wyszukiwanie i kompaktową paginację po prawej. Paginacja używa
-`tasks-project-pagination--toolbar`, a tabela zaczyna się pod paskami.
+akcje i wyszukiwanie. Tabela zaczyna się pod paskami, a pod wynikami
+znajduje się „Pokaż więcej”, odsłaniające po 20 kolejnych Workspace.
 
 Nazwa Workspace otwiera „Główną” w oknie miejsca pracy, liczba członków —
-„Członkowie”. Komórka „Działania” ma 40px i dostępny, wizualnie pusty nagłówek;
-menu udostępnia ustawienia, członków i uprawnionym osobom linki do dołączenia.
+„Członkowie”. Tabela nie zawiera hamburgera ani kolumny jego menu.
 Znacznik „Bieżący” oraz przycisk przełączenia zachowują oddzielne działanie.
 Kliknięcie reszty wiersza, Enter i Spacja otwierają „Główną”; zaznaczenie tekstu,
-checkboxy, menu i pozostałe linki zachowują własne akcje. Hover i fokus ikon
+checkboxy i pozostałe linki zachowują własne akcje. Hover i fokus ikon
 wypełniają komórkę istniejącym akcentem bez zmiany siatki tabeli.
 
 Okno `workplace-edit-modal` ma zakładki „Główna” (`main`), „Członkowie” (`members`)
@@ -3458,18 +3599,18 @@ Ustawienia i formularze akcji pozostają oddzielone. Błąd zachowuje formularz;
 zamknięcie okna usuwa żądanie otwarcia z URL i przywraca fokus.
 
 Tabela członków używa `tasks-directory-board tasks-directory-sheet
-tasks-project-sheet workplace-team-sheet` oraz sześciu kolumn: zaznaczenie
-40px, działania 40px, nazwa z awatarem, e-mail, rola i data dołączenia.
+tasks-project-sheet workplace-team-sheet` oraz pięciu kolumn: zaznaczenie
+40px, nazwa z awatarem, e-mail, rola i data dołączenia.
 Zachowuje wiersze 35px, tekst 13px/400, cienką siatkę, jasnofioletowe
 podświetlenie oraz awatary 30×30px. Checkbox nagłówka obejmuje własną tabelę
 i pokazuje stan częściowy; zaznaczenie nie wykonuje operacji. Nazwa i e-mail
 mają ellipsis i pełną treść w `title`. Na telefonie tabela przewija się poziomo
 we własnym kontenerze. Pusty stan korzysta ze wspólnego komponentu.
-Menu właściciela pozwala zmienić rolę innej osoby i odebrać dostęp;
-administrator może odebrać dostęp członkowi lub gościowi, bez operacji na
-administratorze lub właścicielu. Własność jest chroniona.
+Menu zmiany roli i odebrania dostępu zostało usunięte bez zastępczego
+wejścia w tabeli. Backend zachowuje dotychczasowe kontrole ról i ochronę
+właściciela.
 
-„Dodaj osobę” i „Zmień rolę” używają `tasks-modal app-modal-panel
+Formularze dodawania osoby i zmiany roli używają `tasks-modal app-modal-panel
 app-modal-panel--compact`, pól `tasks-form-field` i wspólnej stopki.
 Pole istniejącego konta jest obok roli w `workplace-invite__fields`;
 kolumna roli ma 180px, a do 600px pola przechodzą do jednej kolumny.
@@ -3511,8 +3652,9 @@ Powiadomienia są dostępne wyłącznie w panelu dzwonka. Panel renderuje
 `notifications-panel.js` pozostają wzorcem i trybem zgodności. Panel używa tej samej powłoki
 `tasks-modal app-modal-panel` co „Utwórz zadanie”: szerokiego okna z jednolitym
 białym tłem, wspólnymi odstępami i animacją. Nagłówek zawiera tytuł
-„Powiadomienia” i standardowy krzyżyk. Stała stopka zawiera „Zamknij” oraz
-paginację „Pokaż starsze”, gdy są dalsze wpisy. Wariant `notifications-panel__body`
+„Powiadomienia” i standardowy krzyżyk. Stała stopka zawiera „Zamknij”,
+a pasek „Pokaż więcej” jest pod wpisami wewnątrz przewijanej listy.
+Wariant `notifications-panel__body`
 układa filtry i niezależnie przewijaną listę pionowo we wspólnej białej powierzchni.
 Avatary kont, przyciski, ikony i tokeny kolorów pozostają wspólne.
 Białe karty mają delikatne ramki; nieprzeczytane dodatkowo kropkę i 5% akcentu
@@ -3534,27 +3676,21 @@ a przypomnienia zachowują własną etykietę grupy.
 Wpisy historii zmian nie pojawiają się w żadnym filtrze ani liczniku panelu.
 Puste stany „Wszystkie” i „Obserwowane” opisują komentarze i pozostałe dostępne
 typy powiadomień, bez zapowiadania historii zmian.
-Na każdej karcie jest jeden stale widoczny przycisk z trzema paskami (`menu`).
-Otwiera wspólny React `Dropdown` z akcją odczytu, archiwizacji/przywrócenia
-i usunięcia. Menu korzysta z
-`tasks-section-menu`, `tasks-project-menu-button` i wspólnej warstwy dropdownu,
-więc nie jest przycinane przez przewijaną listę. Ma szare stany interakcji,
-obsługuje strzałki, Home/End i Escape z powrotem fokusu na przycisk.
-React odnawia menu po doczytaniu starszych stron i zmianie stanu.
-Odświeżenie listy lub zamknięcie panelu zamyka
-otwarte menu; zapis blokuje przyciski i przywraca fokus na widoczny przycisk karty.
+Karty nie mają menu z trzema paskami ani jego akcji pojedynczego odczytu,
+archiwizacji/przywracania i usuwania. Zachowane linki otwierają powiązaną
+treść, a istniejące akcje zbiorcze pozostają w pasku panelu.
 „Oznacz wszystkie jako przeczytane” obejmuje bieżący filtr, również starsze strony;
 przycisk jest nieaktywny, gdy wszystkie wpisy w tym widoku są przeczytane.
 Kosz w pasku usuwa powiadomienia z bieżącego filtra, także ze starszych
 stron. Jest nieaktywny, gdy filtr nie ma
-usuwalnych wpisów. „Usuń powiadomienie” w menu karty usuwa tylko ten wpis.
-Obie akcje otwierają `showConfirmModal` z informacją o osobistym zakresie,
+usuwalnych wpisów. Usunięcie zbiorcze otwiera `showConfirmModal`
+z informacją o osobistym zakresie,
 zachowaniu komentarzy i zapisów przypomnień w danych źródłowych.
 Potwierdzenie zbiorcze pokazuje liczbę wpisów i zachowuje snapshot z chwili otwarcia.
 Tab i Escape dotyczą wtedy potwierdzenia, bez zamykania panelu pod spodem.
 Zapis blokuje ponowne wysłanie; błąd zachowuje wpis i umożliwia ponowienie.
 Po potwierdzonym odczycie/usunięciu wyświetla się wspólny komunikat sukcesu.
-„Pokaż starsze” doczytuje listę.
+„Pokaż więcej” doczytuje kolejną porcję 20 wpisów, zachowując kursor.
 Stopka nie zawiera dodatkowego opisu zakresu aktywności.
 Dzwonek w górnym pasku jest przyciskiem otwierającym panel. Osobna strona powiadomień
 i jej link w wyszukiwarce zostały usunięte; dawny adres przekierowuje do Dashboardu.
@@ -3643,22 +3779,25 @@ Adaptery ikon i custom selectów mają osobne kontenery; modal nadal używa
 `AncoreTaskModals`. Szczegóły: [Frontend React](FRONTEND.md).
 
 Zasoby rozszerzają `core/base.html`, `tasks-topbar`, `tasks-filterbar`, wspólne
-menu filtrów/sortowania oraz wygląd wspólnej paginacji. Lista używa
+menu filtrów/sortowania oraz wspólny pasek „Pokaż więcej”. Lista używa
 wspólnej tabeli Projektów (`tasks-directory-sheet tasks-project-sheet`) z wariantem
 `resources-sheet`: wiersze 35px, separatory, nagłówki z ikonami, checkboxy
-z podświetleniem zaznaczenia oraz menu działań po lewej. Dalej są numer ewidencyjny,
+z podświetleniem zaznaczenia. Dalej są numer ewidencyjny,
 nazwa z ikoną typu, typ, status, osoba, lokalizacja, ważność/gwarancja i planowany zwrot.
 Miniony termin korzysta ze wspólnego oznaczenia `tasks-project-value-badge--due-overdue`.
-Menu wiersza używa adaptera `AncoreDropdownLayer`, oferuje kartę, edycję i usunięcie z potwierdzeniem.
-Zamknięcie edycji przywraca fokus do przycisku menu.
+Nazwa otwiera kartę zasobu, która zachowuje istniejący przycisk edycji.
+Menu wiersza i jego kolumna są usunięte; nie dodano zastępczego wejścia do usuwania.
 
 Pasek zachowuje wygląd zarządzania kolumnami, agregatu „Filtruj”
 i sortowania z widoczną bieżącą opcją. Komponent `columns.tsx` obsługuje szerokości,
 kolejność i widoczność kolumn; Zasoby mają oddzielny klucz ustawień `resources`,
-wspólny dla zwykłego i scoped URL. Checkbox nagłówka zaznacza bieżącą stronę,
-a częściowy wybór pokazuje stan pośredni. Po zaznaczeniu pojawia się pasek
-przekazania, zwrotu, zmiany statusu i lokalizacji; akcje niedostępne dla wybranego
-zestawu są wyłączone. Gość nie zaznacza ani nie edytuje zasobów.
+wspólny dla zwykłego i scoped URL. Checkbox nagłówka zaznacza wczytane wiersze,
+a częściowy wybór pokazuje stan pośredni. Po zaznaczeniu wspólny pasek
+pokazuje w `actions` przekazanie, zwrot, zmianę statusu i lokalizacji;
+akcje niedostępne dla wybranego
+zestawu są wyłączone. Zaznaczenie ponad 100 pozycji pokazuje komunikat
+i blokuje operacje zbiorcze zgodnie z limitem API.
+Gość nie zaznacza ani nie edytuje zasobów.
 Kolumny przewijają się poziomo także na telefonie, a pasek narzędzi zawija.
 Pusty katalog i brak wyników mają osobne komunikaty, a działania pozostają w pasku.
 
@@ -3705,19 +3844,19 @@ oraz tabeli Przestrzeni w powłoce `work-page`:
 `tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable
 tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet`.
 Minimalny wariant `pulpit-directory-sheet` w `components/pulpits.css` określa
-kolumny zaznaczenia, menu, nazwy, twórcy, widoczności, liczby gadżetów i opisu
+kolumny zaznaczenia, nazwy, twórcy, widoczności, liczby gadżetów i opisu
 oraz ikonę pulpitu 24px. Tabela ma po bokach 15px odstępu i zachowuje
 wspólne wysokości wierszy, separatory, podświetlenia oraz przewijanie.
 Nagłówek oraz toolbar mają 15px odstępu. Katalog nie ma zakładek
 Wszystkie, Ulubione i Moje; pokazuje wszystkie dostępne pulpity.
-Filtr widoczności i przycisk „Filtruj”
-są po lewej, wyszukiwarka i paginacja po 30 pozycji po prawej.
-Checkboxy zaznaczają wyłącznie bieżącą stronę, bez operacji zbiorczych.
+Przycisk „Filtruj” po lewej otwiera pole widoczności i zatwierdzenie
+formularza; wyszukiwarka jest po prawej. Pod tabelą pasek „Pokaż więcej"
+odsłania kolejne porcje po 20 wyników. Checkboxy zaznaczają wczytane
+wiersze, bez operacji zbiorczych; doładowanie zachowuje wybór.
 React (a w szablonach zgodności `tasks.js`) obsługuje zaznaczenie, stan częściowego wyboru i szerokości kolumn
 z osobnym kluczem `pulpits-directory`, wspólnym dla zwykłego i scoped URL.
-Menu z trzema paskami używa `directory_row_menu.html` oraz
-`dashboard/pulpits/row_actions.html`; zawiera osobistą gwiazdkę i dotychczasowe
-akcje według uprawnień. Nazwa otwiera pulpit. Opis jest osobną kolumną,
+Katalog nie zawiera menu wiersza ani jego kolumny. Nazwa otwiera pulpit.
+Opis jest osobną kolumną,
 a pełne teksty są dostępne w `title`. Puste wyniki ukrywają nagłówki i pokazują
 komunikat odpowiedni do filtrów lub pustego katalogu. Przegląd pulpitu nadal używa
 `dashboard-overview` i gadżetów. Pozostałe warianty `pulpit-*` zachowują tokeny.
@@ -3739,37 +3878,30 @@ zgodne z rolą; „Edytuj pulpit” jest w nagłówku, bezpośrednio przed „Od
 z tym samym stylem przycisku.
 Opis pulpitu pozostaje w ustawieniach i katalogu; przegląd oraz edytor nie
 wyświetlają go pod nagłówkiem.
-Menu nie zawiera „Kopiuj pulpit”. Nawigacja i gwiazdki pozostają w menu bocznym
-oraz katalogu. Podgląd nie pokazuje uchwytów ani opcji układu.
+Menu z wielokropkiem nie zawiera „Kopiuj pulpit”. Nawigacja i gwiazdki
+pozostają w menu bocznym. Podgląd nie pokazuje uchwytów ani opcji układu.
 
-Aktywny edytor React współdzieli `DashboardCanvas`, `SummaryWidgetControls`
-i klasy `work-summary-*` z Podsumowaniem Przestrzeni. Siatka ma 12 kolumn,
-wiersz 48px i odstępy 12px. W edycji pokazuje kropkowane tło, nagłówek
-z uchwytem, menu pozycji/rozmiaru i uchwyt w prawym dolnym rogu.
-W trybie edycji górny pasek obok nazwy pulpitu zawiera „Dodaj gadżet”, „Anuluj”
-i „Zapisz układ”, z istniejącymi stylami przycisków nagłówka i wyróżnionym zapisem.
-Siatka zaczyna się bezpośrednio pod nagłówkiem, bez dodatkowego paska
-„Tryb edycji”/„Niezapisane zmiany” ani podpowiedzi przeciągania i zmiany rozmiaru.
-Nie ma wyboru pięciu gotowych układów ani automatycznego zapisu geometrii.
-Menu zachowuje pozycję przy zmianie rozmiaru kafelka i obsługuje strzałki,
-suwaki, miniaturę, skróty szerokości oraz usunięcie. Kafelki na wąskim ekranie
-układają się pionowo; menu góra/dół zmienia ich rzeczywistą kolejność.
+Aktywny edytor React współdzieli `DashboardCanvas` i klasy `work-summary-*`
+z Podsumowaniem Przestrzeni. Siatka ma 12 kolumn, wiersz 48px i odstępy 12px.
+W edycji pokazuje kropkowane tło, nagłówek z uchwytem oraz uchwyt rozmiaru
+w prawym dolnym rogu. Uchwyty obsługują także strzałki klawiatury.
+Górny pasek zawiera „Dodaj gadżet”, „Anuluj” i „Zapisz układ”. Siatka zaczyna
+się bezpośrednio pod nim. Nie ma wyboru gotowych układów ani automatycznego
+zapisu geometrii. Na wąskim ekranie kafelki układają się pionowo, a zachowany
+uchwyt pozwala zmieniać kolejność strzałkami góra/dół.
 
-Dodawanie, usuwanie, pozycja i rozmiar tworzą jeden szkic. „Zapisz układ”
-zapisuje go razem, „Anuluj” przywraca poprzedni stan. Błąd zachowuje szkic,
-a pobranie aktualnej wersji wymaga potwierdzenia jego odrzucenia. Nawigacja
-chroni niezapisane zmiany. „Konfiguruj” w menu gadżetu jest dostępne po zapisaniu
-układu i otwiera istniejący formularz źródła, tytułu i filtrów. Zapis konfiguracji
-odświeża dane oraz rewizję bez opuszczania edytora. Nowa karta przed zapisem
-wyświetla informację, że dane pojawią się po zapisaniu układu.
+Menu kafelka, panel suwaków/pozycji, „Konfiguruj” i „Usuń gadżet” zostały
+usunięte bez zastępczych wejść. Dodawanie, pozycja i rozmiar tworzą jeden szkic.
+„Zapisz układ” zapisuje go razem, a „Anuluj” przywraca poprzedni stan. Błąd
+zachowuje szkic; pobranie aktualnej wersji wymaga potwierdzenia odrzucenia
+zmian. Nawigacja chroni niezapisany szkic. Nowa karta przed zapisem informuje,
+że dane pojawią się po zapisaniu układu. Backend zachowuje formularze
+konfiguracji i zapisy układu, w tym pustego.
 
-Pozycje menu edytora i nagłówki gadżetów mają dekoracyjne ikony z `AncoreIcons`:
-aplikacje dla układu, osoby dla dostępu, ustawienia dla konfiguracji
-i `chart-no-axes-combined` dla „Postępu pracy”. `GadgetKindSelect` przekazuje te same ikony do
-wspólnego dropdownu przez `data-ancore-option-icon`.
-Tworzenie pulpitu nie wymaga wybrania dawnego układu kolumn. Aktywny
-edytor steruje geometrią w menu kafelka; miniatura położenia pochodzi ze
-wspólnego `SummaryWidgetControls`.
+Nagłówki gadżetów zachowują dekoracyjne ikony z `AncoreIcons`, np.
+`chart-no-axes-combined` dla „Postępu pracy”. `GadgetKindSelect` przekazuje
+ikony do wspólnego dropdownu przez `data-ancore-option-icon`.
+Tworzenie pulpitu nie wymaga wybrania dawnego układu kolumn.
 Formularz rodzaju gadżetu zawiera `pulpit-gadget-preview`: miniaturę z ikoną
 oraz krótki opis, aktualizowane po wyborze rodzaju. Niedostępne źródło ma ikonę
 kłódki i komunikat bez nazwy przestrzeni oraz liczników. Opisy oraz standardowa
@@ -3778,7 +3910,7 @@ walidacja formularza pozostają tekstowe.
 Pusty pulpit używa wariantu `pulpit-empty-state` wspólnego `tasks-empty-state`:
 kolorowa ilustracja `static/img/empty-states/dashboard-empty.webp` i opis
 są wyśrodkowane w wolnej przestrzeni pod nagłówkiem. Przegląd kieruje do edycji.
-Edytor pokazuje wspólny pusty stan po usunięciu wszystkich gadżetów.
+Edytor pokazuje wspólny pusty stan dla zapisanego układu bez gadżetów.
 Katalog otwiera przycisk „Dodaj gadżet” na pasku nad siatką.
 Ilustracja przeglądu pulpitu ma przezroczyste tło i wspólne pole 440×330px,
 tak jak puste katalogi Przestrzeni i Pulpitów. Skaluje się do dostępnej szerokości
@@ -3803,9 +3935,10 @@ Bezpośredni URL gadżetu otwiera to samo okno nad edytorem, pozostałe nad
 katalogiem albo pulpitem;
 zamknięcie przywraca adres ekranu tła. `pulpits.js` inicjalizuje się po pierwszym
 ładowaniu i `ancore:content-loaded`, odłączając poprzednie listenery.
-Utworzenie przechodzi do zapisanego pulpitu z aktualizacją adresu;
-odświeżenie, konfiguracja i akcje zachowują częściową nawigację. Dodawanie,
-konfiguracja i usuwanie gadżetu pozostają w edytorze, także z filtrami zarządzania.
+Utworzenie przechodzi do zapisanego pulpitu z aktualizacją adresu.
+Odświeżenie i zapis zachowują częściową nawigację. Dodawanie gadżetu pozostaje
+w edytorze; wejścia do konfiguracji i usuwania z menu kafelka zostały usunięte.
+Bezpośrednie formularze zachowują istniejącą kontrolę dostępu.
 
 Menu „Pulpity” wykorzystuje istniejący wariant nagłówka Przestrzeni, listy
 `sidebar-space-list` i wiersze z `row-actions.js`. Ikona nagłówka zmienia się
@@ -3825,8 +3958,8 @@ bocznego oraz zarządzania.
 
 Akcja gwiazdki w menu wiersza używa wspólnego `tasks-favorite-toggle` i `aria-pressed`:
 oznaczony pulpit ma wypełnioną żółtą ikonę `star-filled` (`#e2b203`), także przy hover/fokusie,
-a nieoznaczony zachowuje obrys `star` i zwykły kolor ikony. Ten sam wariant działa w katalogu,
-zarządzaniu i panelu zwiniętego menu, w React oraz pierwszym renderze Django.
+a nieoznaczony zachowuje obrys `star` i zwykły kolor ikony. Ten wariant działa
+w menu bocznym i jego zwiniętym panelu, w React oraz pierwszym renderze Django.
 
 `layout.js` synchronizuje zawartość sekcji po częściowej nawigacji, zachowując
 stan zwinięcia i fokus. Zwinięte menu otwiera flyout z tymi samymi sekcjami,
@@ -3852,7 +3985,7 @@ i „Udostępnienia”, bez dodatkowych nagłówków. Menu otwiera się rozwini�
 zachowując zapisaną preferencję zwinięcia zwykłego menu Workspace.
 Ukryty formularz pozostaje zamontowany i zachowuje szkic przy zmianie sekcji,
 także przez Wstecz/Dalej. Wyjście chroni dotychczasowe potwierdzenie niezapisanych zmian.
-Menu katalogu, przeglądu i nawigacji przechodzą na tę stronę. Bezpośrednie
+Menu przeglądu i nawigacji przechodzą na tę stronę. Bezpośrednie
 zwykłe/scoped URL oraz wariant zarządzania używają tej samej powłoki.
 Zapis nie zamyka strony; aktualizuje nazwę w nagłówku i dane menu.
 Powrót oraz „Anuluj”/„Zamknij” respektują kontekst wejścia.
@@ -3917,7 +4050,8 @@ Korzysta ze wspólnego `profile-edit-body` oraz
 `profile-photo-control`; na telefonie podgląd przechodzi nad pola. Dotyczy to
 ustawień i tworzenia Pulpitu. Domyślny wybór to konturowa ikona czterech
 kafelków `layout-dashboard`, wyświetlana wspólnym rendererem ikon w podglądzie,
-nagłówku, menu i katalogu. Wybrane emoji zachowują własną grafikę.
+menu i katalogu. Nagłówek strony pulpitu zawiera samą nazwę.
+Wybrane emoji zachowują własną grafikę.
 Kliknięcie podglądu lub „Zmień” otwiera wspólny `shared/EmojiPicker`:
 3145 emoji i wariantów Microsoft Fluent Emoji 3D, dziewięć kategorii,
 wyszukiwanie po polskich i angielskich nazwach oraz samym emoji. Wyszukiwanie
@@ -3962,7 +4096,8 @@ Widoczność używa wspólnego selecta z ikonami: `lock` dla „Prywatny”, `us
 dla „Wybrane osoby” i `building-2` dla „Cały Workspace”. Pole „Osoby z dostępem”
 pojawia się po wyborze „Wybrane osoby”. Gadżety i ich układ korzystają
 z `DashboardView` bezpośrednio na stronie; „Gadżety i układ” otwiera ten sam
-edytor. Konfiguracja pojedynczego gadżetu używa standardowego formularza modalnego.
+edytor. Bezpośredni adres konfiguracji pojedynczego gadżetu używa standardowego
+formularza modalnego; menu kafelka nie udostępnia już tego wejścia.
 
 Katalog aktywnego Reacta i Podsumowania korzysta ze wspólnego
 `shared/WidgetCatalog.tsx` oraz `Modal`. Każdy wiersz pokazuje miniaturę
@@ -3980,8 +4115,9 @@ przycisku, a otwarcie skupia wyszukiwarkę. Wspólna pułapka fokusu pomija
 potomków `inert`. Katalog nie zmniejsza szerokości
 siatki i nie zapisuje stanu w sessionStorage. Dawny `catalog.html` oraz
 kolumnowy kontroler pozostają tylko adapterami zgodności starszych wejść;
-React przejmuje pełną edycję siatki. Pierwszy render Django pokazuje zapisane
-pozycje i zachowuje formularze konfiguracji/usuwania.
+React przejmuje edycję siatki. Pierwszy render Django pokazuje zapisane
+pozycje bez menu konfiguracji/usuwania; bezpośrednie formularze pozostają
+w backendzie.
 
 ## Ekrany React podczas migracji
 
@@ -3991,7 +4127,7 @@ są w `static/css/components/react.css`: kontenery `display: contents`,
 wyspy selectów i jawne ukrywanie paneli z `hidden`, których dawny
 CSS był związany z atrybutami starszego JavaScriptu. Wariant
 `tasks-issue-select-wrap` zapewnia kontrolkom zadania ten sam wygląd co wcześniej.
-Modale, paginacja, tabela członków i grupy statusów mają współdzielone
+Modale, pasek „Pokaż więcej”, tabela członków i grupy statusów mają współdzielone
 komponenty React. Biblioteka ikon, tokeny i kolory pozostają istniejące.
 
 `shared/Icon` renderuje bezpośredni SVG, pobierając glif przez `AncoreIcons`
@@ -4024,7 +4160,8 @@ edytory mają odrębne wyspy DOM. Tworzenie pliku zachowuje katalog i otwiera
 nową kartę; blokada popupu pokazuje jeden link do zapisanego dokumentu.
 
 Zarządzanie Workspace renderuje `src/workspaces/`. Zachowuje katalog, lokalne
-wyszukiwanie/paginację, zaznaczenia bieżącej strony i oddzielne przełączanie
+wyszukiwanie, odsłanianie po 20 przez „Pokaż więcej”, zaznaczenia wczytanych
+wierszy i oddzielne przełączanie
 kontekstu. Okna używają istniejących klas `workplace-create-modal`,
 `workplace-edit-modal`, zakładek „Główna”, „Członkowie”, „Linki do dołączenia”,
 tabeli członków oraz kompaktowych okien dodawania osoby i zmiany roli. Zmiana zakładki zachowuje szkic ustawień; zamknięcie
@@ -4032,7 +4169,6 @@ zagnieżdżonego okna wraca do rodzica. `shared/Modal` ma opcjonalny nagłówek
 i klasy dialogu dla powłoki Projektów, z tą samą obsługą fokusu i Escape.
 Picker awatara/kadrowania jest wyspą DOM z dotychczasowym wyglądem i helperami.
 Escape w kadrze lub podpowiedziach osoby zamyka najpierw ten element.
-Menu działań Workspace wyłącza dodawanie wyszukiwania do krótkiej listy akcji.
 Pozycjonowanie dropdownu pomija kontenery za przodkiem `position: fixed`,
 które nie przycinają kontrolek pełnego modala nad boczną nawigacją.
 Powłoka modala wybiera początkowy fokus wyłącznie spośród własnych kontrolek

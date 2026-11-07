@@ -136,7 +136,9 @@ Administrator dodaje wyłącznie członków i gości oraz może odbierać im dos
 nie zmienia ról ani nie zarządza administratorem, także nieaktywnym.
 Właściciel pozostaje chroniony. GET `/workplaces/<pk>/team/` przekierowuje do
 katalogu, a POST dodaje osobę; sukces wraca do „Członkowie”, błąd zachowuje
-formularz. Zmiana roli i odebranie dostępu pozostają w menu wiersza.
+formularz. Menu wiersza oraz jego osobna kolumna zostały usunięte. Nie dodano
+zastępczych wejść do zmiany roli i odebrania dostępu; opisane uprawnienia
+i istniejące endpointy tych operacji pozostają aktywne.
 Operacje wymagają sesji i CSRF. Odebranie dostępu zachowuje treści zespołu,
 czyści osobne udostępnienia i unieważnia sesje Office w całym Workspace;
 pozostali użytkownicy ponownie otwierają pliki. Zmiana aktywnego administratora

@@ -75,6 +75,35 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   `accounts/auth_base.html`. Zachowuj wspólną nawigację i kontenery.
 - Używaj istniejących klas i include'ów przycisków, formularzy, tabel,
   toolbarów, paginacji, avatarów, ikon i modali.
+- Zacznij od schematów i aktualnych źródeł na początku `docs/UI.md`.
+  Nagłówki wszystkich stron składaj przez `shared/PageHeader`, ich zakładki
+  przez `shared/PageTabs` w `navigation`; wzorcem jest otwarta Przestrzeń.
+  Przy tytule nie dodawaj ikony ani zdjęcia — wyjątkiem jest awatar otwartej
+  Przestrzeni. Ikony działań, powrotu i zakładek pozostają.
+  Okna składaj przez `shared/Modal` i `FormDialog`.
+  Rozmiar okna wybieraj przez `size` lub `schema.compact`. Przy otwieraniu
+  po żądaniu zapamiętaj przycisk przed jego wyłączeniem i przekaż `returnFocus`.
+  Nie kopiuj tych powłok do kolejnego modułu.
+- Dolny pasek narzędzi ma wspólny wygląd Zasobów: kontrolki, „Filtruj”,
+  „Sortuj” i istniejące działania po lewej, wyszukiwarka po prawej.
+  Używaj `Toolbar` lub formularza `DirectoryToolbar` z
+  `shared/DirectoryToolbar`, przycisków `ToolbarFilter` / `ToolbarSort`
+  oraz `components/app-toolbar.css`; `ViewToolbar` jest ich adapterem.
+  Zachowaj te same klasy w pierwszym renderze Django, istniejące pola,
+  obsługę formularzy, zaznaczenia i ACL działań. Nie dodawaj nowych funkcji
+  ani nie przywracaj usuniętych menu w celu ujednolicenia wyglądu.
+  Wymiary bierz z `--app-toolbar-*`; `app-toolbar--embedded` zeruje tylko
+  padding poziomy, gdy zapewnia go rodzic.
+- Wszystkie tabele danych, również w oknach, mają wygląd tabeli Tagów.
+  Używaj `app-data-table` i `components/data-table.css`; kontrakt siatki
+  i natywnej tabeli opisuje `docs/UI.md`. Nie dodawaj przycisków z trzema
+  paskami ani osobnych kolumn menu; te kontrolki są usunięte z aplikacji.
+  Zachowuj pozostałe kolumny i działania modułu.
+- Listy wymagające kolejnych porcji używają „Pokaż więcej” po 20 wyników, jak lista zadań.
+  Korzystaj z `shared/LoadMore`, `components/load-more.css` i serwerowego
+  `core.list_window`. Nie przywracaj numerów stron, strzałek paginacji ani
+  wyboru liczby pozycji. Doładowanie zachowuje wiersze i zaznaczenia,
+  a zmiana filtrów rozpoczyna okno od nowa.
 - Przed dodaniem CSS sprawdź kolejno `base/variables.css`, plik komponentu,
   `theme/elestio.css`, `components/modal-system.css` i reguły w `style.css`.
   Końcowe reguły oraz `!important` mogą zmieniać styl komponentu.

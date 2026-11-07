@@ -5,9 +5,9 @@
 `/teams/` oraz scoped odpowiednik udostępniają katalog z wyszukiwaniem nazwy
 lub opisu, zakładkami „Wszystkie zespoły”, „Moje zespoły” i „Zarządzane przeze
 mnie”, sortowaniem po nazwie, dacie utworzenia lub liczbie aktywnych członków
-oraz paginacją po 24 rekordy. Karta pokazuje osoby, otwarte zadania i powiązane
+oraz doładowywaniem po 20 rekordów przyciskiem „Pokaż więcej”. Karta pokazuje osoby, otwarte zadania i powiązane
 przestrzenie. Liczniki pracy i przestrzeni powstają z zakresu widoczności osoby
-oglądającej; zapytania są grupowane dla całej strony katalogu.
+oglądającej; zapytania są grupowane dla wczytanego okna katalogu.
 
 Profil zespołu ma cztery zakładki (`view`):
 
@@ -17,14 +17,15 @@ Profil zespołu ma cztery zakładki (`view`):
   najbliższych zadań. Liczniki i wykonawcy prowadzą do odpowiednich wyników.
 - `work` — zadania przypisane do zespołu, wyszukiwanie tytułu/klucza, zakres
   `scope` (`all`, `open`, `closed`, `overdue`, `due`, `blocked`, `unassigned`)
-  i filtr `assignee` (`me`, `unassigned` lub ID); 30 wyników na stronę.
+  i filtr `assignee` (`me`, `unassigned` lub ID); doładowywanie po 20 wyników.
   Otwarte oznacza status zadania inny niż `closed`; liczniki terminów i blokad
   pomijają zamknięte zadania. Filtr wykonawcy nadal korzysta z pełnego ACL.
 - `members` — aktywne osoby Workspace, wyszukiwanie imienia, nazwiska, e-maila
-  lub ID konta, filtr roli i 30 wyników na stronę. Osobne formularze dodawania
-  i zmiany roli; usunięcie wymaga potwierdzenia w interfejsie React.
+  lub ID konta, filtr roli i doładowywanie po 20 osób. Dodawanie używa wspólnego
+  formularza. Menu zmiany roli i usuwania osoby wraz z osobną kolumną zostało
+  usunięte bez zastępczych wejść; backend zachowuje formularze i walidację.
 - `spaces` — wyłącznie dostępne powiązane przestrzenie, wyszukiwanie nazwy
-  lub klucza i 24 wyniki na stronę. Powiązania zmienia formularz profilu.
+  lub klucza i doładowywanie po 20 przestrzeni. Powiązania zmienia formularz profilu.
 
 Zespół tworzy właściciel, administrator lub członek Workspace. Twórca staje się
 administratorem zespołu. Profil, skład oraz usuwanie obsługują administratorzy
@@ -180,8 +181,9 @@ uprawnień. Operacje `block`/`unblock` zachowują ACL, transakcję i historię.
 Obserwator widzi dostępne informacje bez prawa zmiany. Zablokowana karta nadal
 zajmuje miejsce w limicie. Filtr blokad działa we wspólnym zakresie zadań.
 
-Zakończonej karty nie można przenieść do backlogu. Zmiany z menu i formularzy
-wysyłają oczekiwany status i położenie; nieaktualny stan odrzuca zapis.
+Zakończonej karty nie można przenieść do backlogu. Zapisy formularzy
+i operacji planowania przekazują oczekiwany status i położenie; nieaktualny
+stan odrzuca zapis.
 Starsze integracje bez tych opcjonalnych pól pozostają kompatybilne. Blokada
 korzysta dodatkowo z własnej rewizji. Przeciąganie zachowuje dotychczasową
 kontrolę położenia i sąsiadów.
@@ -256,7 +258,7 @@ konfiguracji; pusta wartość przywraca dotychczasową paletę typu/stanu.
 `/settings/` pokazuje w kategorii Workspace listę przestrzeni dostępnych przez
 `visible_spaces`, z linkiem do ustawień każdej z nich. Lista korzysta z aktywnego
 Workspace i uwzględnia włączenie modułu Przestrzeni. Wejścia z zakładki
-Przestrzeni oraz menu katalogu również prowadzą na tę stronę.
+Przestrzeni oraz zachowanego menu bocznego również prowadzą na tę stronę.
 Górny nagłówek zachowuje strzałkę powrotu oraz tytuł „Ustawienia przestrzeni
 · nazwa”. Typografia i odstępy odpowiadają nagłówkowi otwartej Przestrzeni.
 Zakładki procesu „Stany” i „Mapa” zajmują drugi wiersz tego samego nagłówka,
@@ -362,12 +364,12 @@ Częściowa nawigacja obsługuje oba prefiksy także w scoped adresach.
 „Przestrzenie” (`/spaces/` i scoped odpowiednik) jest katalogiem do codziennej
 pracy: wszystkie dostępne przestrzenie, ulubione, prywatne, rodzaj, wyszukiwanie
 i liczba widocznych zadań. Nazwa otwiera podsumowanie przestrzeni.
-Tabela ma checkboxy i menu trzech pasków w dwóch pierwszych kolumnach,
-jak katalog Projektów. Checkbox nagłówka zaznacza bieżącą stronę;
-zaznaczenie jest lokalne i resetuje się po zmianie widoku. Menu wiersza
-zawiera otwarcie, ulubione i ustawienia; edycja oraz dodawanie osób do
-prywatnej przestrzeni wymagają istniejącego prawa `manage_space`.
-Zmiana ulubionych zachowuje adres i filtry katalogu, także bez JavaScriptu.
+Tabela zaczyna się od kolumny checkboxów 40px, zgodnie ze wspólnym stylem
+Tagów. Lista wczytuje pierwsze 20 przestrzeni; „Pokaż więcej” rozszerza
+widoczny zakres o kolejne 20. Checkbox nagłówka zaznacza widoczne wiersze;
+zaznaczenie jest lokalne i zachowywane przy doładowaniu, a resetuje się po zmianie widoku. Hamburger i jego kolumna zostały usunięte
+bez zastępowania inną kontrolką. Nazwa nadal otwiera przestrzeń; istniejące
+menu boczne zachowuje gwiazdkę i ustawienia.
 Podmenu głównej nawigacji pokazuje do sześciu dostępnych przestrzeni w blokach
 „Oznaczone gwiazdką” i „Ostatnie”, bez linii drzewa. Osobiste ulubione są
 uporządkowane po nazwie; pozostałe miejsca zajmują ostatnio odwiedzone
@@ -380,9 +382,9 @@ odpowiedzi serwera, więc utworzenie przestrzeni nie wymaga ręcznego przeładow
 strony. Ten sam mechanizm aktualizuje nazwy, awatary i pozycje po zmianie
 ulubionych lub utracie dostępu, zachowując stan zwinięcia sekcji.
 
-Wiersz pokazuje menu „…” przy najechaniu, fokusie lub otwarciu, a na telefonie
+Wiersz menu bocznego pokazuje „…” przy najechaniu, fokusie lub otwarciu, a na telefonie
 stale. Menu pozwala zmienić osobistą gwiazdkę i otworzyć ustawienia przestrzeni.
-Menu boczne i menu katalogu nie zawierają pozycji „Dodaj osoby”. Osobami i rolami
+Menu boczne nie zawiera pozycji „Dodaj osoby”. Osobami i rolami
 zarządza się przez „Ustawienia przestrzeni” → „Udostępnienia”, zgodnie z uprawnieniami.
 Publiczne przestrzenie zachowują dostęp poprzez Workspace; obserwatorzy nie
 zarządzają członkami. Stopka menu pokazuje
@@ -520,7 +522,7 @@ opis konfiguracji i licznik typów nie są wyświetlane.
 
 Listy, backlog i karty tablicy pokazują ikonę i nazwę typu. Filtr „Typ zgłoszenia”
 na liście, tablicy, backlogu, osi czasu i we Wszystkich zadaniach działa na
-serwerze przed paginacją, razem z wyszukiwaniem, wykonawcą i zespołem.
+serwerze przed ograniczeniem okna, razem z wyszukiwaniem, wykonawcą i zespołem.
 Zakres danych i dostęp do edycji wyznaczają `spaces.access` oraz aktywny
 Workspace. Zmiana typu zapisuje w `SpaceTaskActivity` faktycznego autora
 i poprzednią wartość. Formularze przestrzeni
@@ -603,7 +605,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 ### Pozostałe funkcje
 
 - Katalog przestrzeni: lista w stylu projektów i grup, wyszukiwanie, rodzaj,
-  ulubione, prywatne i paginacja. Kolumny pokazują klucz, nazwę, rodzaj,
+  ulubione, prywatne i doładowywanie po 20. Kolumny pokazują klucz, nazwę, rodzaj,
   szablon, opis i liczbę dostępnych zadań.
 - Kreator: nazwa, klucz, opis, rodzaj, szablon, zarządzanie i widoczność.
   Bezpośrednie wejście pod `/spaces/create/` (również scoped) wyświetla ten sam
@@ -618,8 +620,8 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Widoki przestrzeni: podsumowanie, lista, tablica, oś czasu, raporty, tagi i ustawienia.
   Lista i wszystkie tablice współdzielą kolorowe, zwijane nagłówki statusów
   oraz styl zadań. Tak jak backlog pokazują punkty w Scrum i awatar wykonawcy.
-  Lista i karty Tablicy nie pokazują menu działań; tytuł nadal otwiera zadanie.
-  Backlog zachowuje menu z trzema paskami dla zadań z prawem edycji.
+  Lista, Backlog, sprinty i karty Tablicy nie pokazują hamburgera ani jego
+  kolumny; tytuł nadal otwiera zadanie.
   Wszystkie szablony tablic używają
   osobnych, zwartych kafelków w kolumnach, według wzorca aktywnego sprintu: priorytet, klucz,
   status i zawijany tytuł u góry oraz metadane poniżej, bez osobnej kolumny menu.
@@ -630,11 +632,11 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   karta od razu przemieszcza się do celu; odrzucony zapis przywraca poprzedni
   układ. Backlog współdzieli te animacje, także przy przenoszeniu między sprintami.
   Efekty respektują ustawienie ograniczonego ruchu.
-  Status i kolejność w Backlogu można zmienić również przez menu działań,
-  dostępne również klawiaturą. Pasek ma dwa menu: „Sortowanie” i „Filtrowanie”,
+  Usunięte menu działań nie otrzymało zastępczych kontrolek.
+  Pasek ma dwa istniejące menu: „Sortowanie” i „Filtrowanie”,
   bez osobnej wyszukiwarki. Filtry obejmują typ, wykonawcę, status, priorytet i zespół;
   można je łączyć, przeszukiwać opcje i wyczyścić warunki.
-  `spaces/item_query.py` sortuje dostępne wyniki przed paginacją po kolejności
+  `spaces/item_query.py` sortuje dostępne wyniki przed ograniczeniem okna po kolejności
   ręcznej, numerze klucza, tytule, priorytecie, terminie, dacie utworzenia,
   rozpoczęcia lub punktach, rosnąco albo malejąco. Puste wartości są na końcu,
   remisy rozstrzyga `pk`. URL zachowuje warunki i sortowanie przy zmianie
@@ -658,16 +660,16 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
   podsumowanie, raporty i ustawienia nie pokazują stron wyników.
 - Podsumowanie jest konfigurowalnym, osobistym pulpitem Przestrzeni.
-  Można dodawać i usuwać dostępne gadżety, przeciągać je na siatce 12 kolumn
-  oraz zmieniać szerokość i wysokość. Edycję kończą „Zapisz układ” lub „Anuluj”;
-  panel pozycji i rozmiaru ze strzałkami, miniaturą i suwakami zapewnia
-  także obsługę klawiaturą. Szerokość można wybrać jednym z wizualnych
-  skrótów, m.in. „Cały wiersz”; cały czas widać wynik na pulpicie. Układ `SpaceDashboardLayout`
+  Można dodawać gadżety, przeciągać je na siatce 12 kolumn oraz zmieniać
+  szerokość i wysokość za pomocą istniejących uchwytów. Uchwyty zachowują
+  obsługę strzałkami klawiatury. Edycję kończą „Zapisz układ” lub „Anuluj”.
+  Menu kafelka wraz z panelem pozycji/rozmiaru i usuwaniem zostało usunięte
+  bez zastępczych wejść. Układ `SpaceDashboardLayout`
   jest zapisywany dla pary użytkownik–Przestrzeń, nie zmienia widoku innych osób.
   Odczyt i zapis sprawdzają aktualną widoczność Przestrzeni i Workspace;
   gość nie zapisuje konfiguracji. Rewizja chroni przed nadpisaniem zmian
-  z innego okna, a usunięcie wszystkich gadżetów pozostaje zapisanym pustym
-  pulpitem. Na wąskim ekranie kafelki układają się pionowo, a strzałki góra/dół
+  z innego okna; backend nadal obsługuje zapis pustego układu. Na wąskim
+  ekranie kafelki układają się pionowo, a strzałki góra/dół na uchwycie
   zmieniają kolejność o jedną pozycję. Rozmiary dotyczą widoku na komputerze.
   Menu „Filtrowanie” jest wspólne z zadaniami: typ zgłoszenia, wykonawca,
   status, priorytet i zespół. Filtry łączą się, obejmują wszystkie liczniki,
@@ -687,9 +689,9 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   8 ostatnich wpisów z autorem i linkiem do zadania. Przestrzenie programistyczne
   pokazują też postęp epików liczony z ich dostępnych powiązanych zadań.
   Agregacje uwzględniają podzadania i pełny zbiór dostępny użytkownikowi,
-  niezależnie od paginacji listy. Liczniki, statusy, priorytety, typy i wykonawcy
+  niezależnie od wczytanego zakresu listy. Liczniki, statusy, priorytety, typy i wykonawcy
   otwierają listę z odpowiednimi filtrami; epiki i aktywność prowadzą do
-  szczegółów pod trwałym kluczem przestrzeni. Lista zachowuje filtry przy szukaniu i paginacji,
+  szczegółów pod trwałym kluczem przestrzeni. Lista zachowuje filtry przy szukaniu i doładowywaniu,
   a zakres czasu/otwartych zadań można usunąć osobnym linkiem.
   React dodaje podgląd liczby i udziału statusu oraz podświetlenie słupka
   priorytetu po najechaniu lub fokusie, synchronizację pierścienia z legendą
@@ -709,7 +711,6 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   Przeciąganie zmienia kolejność oraz przenosi zadania między backlogiem
   a planowanymi/aktywnymi sprintami; dotyk zaczyna gest na istniejącej ikonie
   priorytetu. Osobne uchwyty i ich kolumna nie są wyświetlane.
-  Te same przeniesienia są dostępne w menu zadania.
 - Kanban: kolejka backlogu oddzielona od zadań na tablicy i zmiana kolejności,
   wyświetlana w tej samej zwijanej sekcji Zadań.
 
@@ -783,7 +784,8 @@ lub poza wczytanym zakresem zachowują swoje numery. Zapis jest atomowy i wymaga
 Tablica (`backend/spaces/board.py`, akcja `position` w `item_action`) korzysta z tych
 samych numerów `WorkItem.rank` i funkcji wyznaczania wolnego miejsca.
 Obsługuje kolejność w statusie i wstawienie między sąsiadami innego statusu;
-menu „Przesuń wyżej/niżej” działa w bieżącej kolumnie. Źródło i sąsiedzi muszą
+endpointy „Przesuń wyżej/niżej” zachowują zakres bieżącej kolumny, choć ich
+menu nie jest renderowane. Źródło i sąsiedzi muszą
 należeć do aktualnej widocznej, przefiltrowanej tablicy, bez limitu 100 wyników. Scrum
 ogranicza operację do aktywnego sprintu, a pozostałe tablice do zadań poza
 backlogiem. Porównanie przestrzeni, źródłowego statusu, sprintu, numeru
@@ -861,6 +863,11 @@ z walidacją i wycofaniem całej operacji przy błędzie. „Główna”, „Pod
 „Udostępnienia” i „Historia” mają własne operacje w `backend/spaces/task_views.py`.
 Pliki są walidowane i pobierane po ponownej kontroli dostępu. Usunięcie
 zadania wymaga prawa edycji wszystkich kaskadowo usuwanych potomków.
+
+Dziennik pracy pokazuje pierwsze 20 wpisów. „Pokaż więcej” zwiększa
+`work_log_limit` o 20, zachowując wcześniejsze wpisy, zaznaczenie i szkic
+zadania. Suma czasu oraz liczba wpisów dotyczą całego dostępnego dziennika.
+Błąd odczytu pozostawia wczytane dane i pozwala ponowić doładowanie.
 
 Dane otwarcia edycji dziennika pracy zawierają zarówno `duration_minutes`,
 jak i wyliczone `hours`/`minutes`. Modal Reacta pokazuje zapisany czas od razu;

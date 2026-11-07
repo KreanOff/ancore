@@ -1,5 +1,332 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Przekrojowy przegląd UI i dostępności (05.11.2026)
+
+Przegląd z użyciem `ui-ux-pro-max` objął wspólne formularze, okna,
+menu i nawigację oraz źródła aktywnych modułów: Przestrzenie, zadania,
+Zespoły, Tagi, Kalendarz, Zasoby, Workspace, konta/profil, Dla ciebie,
+ustawienia, Pulpity, Filtry, Dysk i Dokumenty. Zachowano istniejące zmiany
+robocze, architekturę, układy, font i paletę; nie aktualizowano zależności.
+Przegląd źródeł nie oznacza wykonania wszystkich procesów biznesowych.
+
+Naprawiono potwierdzone problemy:
+
+- globalnie niewidoczny fokus klawiatury, także na zaznaczonych checkboxach;
+- otwarte panele filtrów pozostające po opuszczeniu ich Tabem oraz pomijanie
+  pól przy wejściu strzałką; natywne edytory zachowują własne klawisze;
+- brak powiązań błędów/opisów w grupach checkboxów i polach `bare`, brak
+  fokusu po ogólnym błędzie zapisu oraz podwójne ID błędu w szablonie Django;
+- nieskuteczne przyciski tworzenia w Kalendarzu tylko do odczytu i niepełne
+  komunikaty walidacji wydarzenia, Workspace oraz zakresu dat osi czasu;
+- utratę fokusu po zamknięciu okna Dokumentów, utratę przewinięcia katalogów
+  Dysku/Dokumentów przy Wstecz oraz niewłaściwy wybór przez ArrowUp w Workspace.
+
+[Kontrakt klawiatury i formularzy](UI.md#klawiatura-i-błędy-formularzy).
+Wspólny CSS ma odświeżony adres wersji w powłoce aplikacji i logowania.
+
+Wykonane sprawdzenia:
+
+- **455/455 testów frontendu**, TypeScript i build aplikacji.
+- **93/93 testy Django** na jednorazowej bazie PostgreSQL: `core.test_frontend`,
+  `core.test_filter_frontend`, `core.test_document_frontend`,
+  `core.test_navigation_frontend`, `accounts.test_frontend`, `planner.tests`,
+  `planner.test_task_calendar` oraz regresja błędnego źródła/przypisania gadżetu
+  `dashboard.test_pulpits.PulpitTests.test_gadget_config_rejects_foreign_source_and_invalid_assignment`.
+- Przegląd **42 tras React przy 1440, 1024 i 390px**, **24 pierwszych renderów
+  Django bez JavaScriptu** i logowanie przy 1440/390px. Po ponowieniu pierwszego
+  wejścia do Zespołów (timeout/zerwane odczyty zasobów przy rozruchu serwera)
+  render był prawidłowy, bez poziomego przepełnienia strony i wyjątków JS.
+- Interakcje w Chrome: Tab/strzałki/Escape, fokus checkboxów we wszystkich
+  stanach, formularze i przywracanie fokusu, Podgląd → Edycja, Wstecz z
+  przewinięciem tabeli/kafelków, walidacja, puste wyniki, ponowne wejście,
+  kontrolowane błędy HTTP 400/500/503 i ponowienie bez utraty szkicu/wyników.
+  Obejrzano zrzuty ekranów zmienianych i referencyjnych, po zakończeniu animacji.
+- Indeks kodu i `git diff --check` poprawne.
+
+W pierwszym przebiegu backendu ujawnił się nieaktualny test zakończenia
+zadania: próbował wykonać niedozwolone `new → closed`. Identyczną awarię
+odtworzono rzeczywistym testem na czystym HEAD w katalogu tymczasowym.
+Test przechodzi teraz przez `in_progress → resolved → closed`, zachowując
+asercje historii i daty zakończenia. Logika procesu i dostępu nie zmieniła się.
+Wcześniej opisany niżej błąd podwójnego `id_assignee_error` również został naprawiony.
+
+Chrome działał przez lokalny Playwright na `127.0.0.1:8053`, na izolowanej
+bazie z fikcyjnymi danymi; plugin Browser był niedostępny. Stany `read_only`
+i kontrolowane awarie w części prób ustawiano tylko w przeglądarce — nie
+są testem ACL backendu. Sprawdzono też ograniczenie ruchu. Nie wykonano
+pełnego audytu czytnikiem ekranu, Safari/Firefox ani produkcyjnego ONLYOFFICE.
+
+## Wspólny dolny pasek narzędzi według Zasobów (05.11.2026)
+
+`Toolbar` i formularzowy `DirectoryToolbar` oraz adapter `ViewToolbar`
+korzystają z `components/app-toolbar.css` i wspólnych tokenów. Kontrolki
+filtrów, sortowania i istniejące działania są po lewej, wyszukiwarka po
+prawej. Dotyczy to katalogów, widoków Przestrzeni, Kalendarza, zadania,
+powiadomień i tabel w oknach. Akcje zaznaczenia Zasobów mieszczą się w tym
+samym pasku. Usunięto osobną geometrię kontrolek Przestrzeni i podwójne
+odstępy w osadzonych tabelach. Wariant osadzony zeruje tylko boczny padding.
+[Wzorzec i kontrakt](UI.md#wspólny-dolny-pasek-narzędzi--wzorzec-zasobów).
+
+Zachowano formularze, nazwy pól, zastosowanie filtrów, zaznaczenia,
+uprawnienia i istniejące potwierdzenia. Menu „Filtruj” zachowuje pola
+w formularzu także po zamknięciu. Nie dodano działań ani zastępników
+usuniętych hamburgerów. Standard nie obejmuje kontrolek formatowania
+wewnętrznej treści edytorów dokumentów ani stopek zapisu formularzy.
+
+TypeScript, build i **433/433 testy frontendu** przeszły. Dostosowane
+harnessy renderują wspólną powłokę i jej sloty; asercje dostępu, zapisu,
+anulowania i obsługi błędów pozostają. Skompilowano **67 szablonów Django**.
+Nie zmieniano modeli, API ani reguł dostępu.
+
+Chrome przez lokalny Playwright (Browser plugin niedostępny), izolowana
+baza z fikcyjnymi danymi: **195 stanów React** przy 1440, 1024 i 390px
+oraz **52 pierwsze rendery Django** przy 1440 i 390px. Kontrola obejmuje
+wysokości, odstępy, wyrównanie z tabelami, panele filtrów, zawijanie,
+stan pusty i ponowne wejście. **20 prób interakcji** potwierdziło m.in.
+filtry i sortowanie zachowane przy Enterze, zatwierdzanie zamkniętego panelu,
+zaznaczenie i zmianę roli, Escape oraz ponowienie po kontrolowanym błędzie 500.
+Osobne cztery próby wyszukiwarki zadań potwierdziły położenie po prawej,
+zachowanie szkicu `q` i innych filtrów podczas „Pokaż więcej” oraz Enter.
+W **14 stanach gościa** przyciski zachowały ograniczenia; endpoint członków
+zadania nadal zwraca istniejącą odmowę 403 z polityki Workspace.
+Nie wystąpiły wyjątki JavaScriptu ani przepełnienie strony. Nie sprawdzano
+Safari, Firefoksa ani wdrożenia produkcyjnego.
+
+## Jeden mechanizm „Pokaż więcej” (05.11.2026)
+
+Katalogi Przestrzeni, Zespołów, Filtrów, Pulpitów, Zasobów, Dysków,
+Dokumentów i Workspace, wyniki filtrów, listy profilu Zespołu, ostatnio
+oglądane, powiadomienia, dziennik pracy i historia zasobu korzystają ze
+wspólnego paska „Pokaż więcej”. Usunięto numery stron, strzałki i wybór
+liczby pozycji na stronę. Pasek znajduje się pod wynikami w ich kontenerze
+przewijania, jak w zadaniach i Tagach.
+
+`shared/LoadMore.tsx`, `shared/useLoadMorePage.ts`, `components/load-more.css`
+oraz `core/list_window.py` i zgodny include Django udostępniają kolejne
+20 wyników. Dane pozostają ograniczone uprawnieniami. Doładowanie zachowuje
+wiersze, zaznaczenie i pozycję przewijania; błąd pozwala ponowić odczyt.
+Filtr i sortowanie rozpoczynają nowe okno, spóźnione odpowiedzi są pomijane.
+URL przechowuje limit, także dla dziennika pracy i historii. Dawne `page=2`
+otwiera pierwsze 40 pozycji. Workspace odsłania lokalne wyniki, a powiadomienia
+zachowują kursor. Limit operacji zbiorczych Zasobów pozostaje równy 100;
+większy wybór ma jawną informację i zablokowane operacje zbiorcze.
+[Kontrakt i wzorzec](UI.md#jeden-mechanizm-kolejnych-wyników-pokaż-więcej).
+
+TypeScript i build aplikacji przeszły; pełny zestaw frontendu ma
+**432/432 testy zaliczone**. Regresje obejmują doładowywanie, anulowanie
+odczytu, ponowienie, zachowanie szkicu zadania i niezastosowanych filtrów.
+Sprawdzono także lokalne linki dokumentacji, aktualność indeksu kodu
+i `git diff --check`.
+
+Backend: **489/490 testów zaliczonych** na jednorazowej bazie PostgreSQL,
+w tym wspólny kontrakt okna, dostęp, kolejność, granice folderów/plików,
+zgodność API i starych adresów oraz powrót po gwiazdce Filtra. Jedyna awaria
+to wcześniejszy `dashboard.test_pulpits.PulpitTests.test_gadget_config_rejects_foreign_source_and_invalid_assignment`:
+podwójny identyfikator `id_assignee_error` w walidacji formularza. Ten sam
+błąd odtworzono rzeczywistym testem na czystym HEAD w osobnym checkoutcie
+i bazie; kod tej walidacji nie był zmieniany. Skompilowano **58 szablonów**
+i sprawdzono składnię adapterów powiadomień, dziennika pracy oraz Workspace.
+
+Chrome przez lokalny Playwright (Browser plugin niedostępny), na osobnej
+bazie PostgreSQL z fikcyjnymi danymi: sprawdzono doładowanie do końca,
+brak duplikatów, zachowanie przewijania, zaznaczenia, reset filtrów,
+puste wyniki, kontrolowany błąd 500 i ponowienie, wielokrotne kliknięcie,
+spóźnioną odpowiedź, odświeżenie i ponowne wejście. Kontrola obejmuje desktop,
+telefon 390px oraz referencyjne Tagi: **37 konfiguracji React, 25 bez
+JavaScriptu, 26 prób interakcji, 18 prób przewijania i 6 regresji filtrów**
+przeszło. Kontrola 55 tras i okien nie wykazała widocznych klasycznych
+paginatorów ani przepełnienia strony. Bez JavaScriptu lokalna lista
+Workspace pokazuje całość. Nie wystąpiły wyjątki wykonania JavaScriptu;
+błędy HTTP 500 były celową próbą ponowienia. Nie sprawdzano Safari,
+Firefoksa ani wdrożenia produkcyjnego.
+
+## Usunięcie przycisków trzech pasków i ich kolumn (05.11.2026)
+
+Usunięto całe menu z ikoną `menu` oraz dedykowane komórki nagłówka,
+wierszy i tory CSS. Dotyczy to katalogów, członków i udostępnień w oknach,
+dziennika pracy, dokumentów, powiadomień, kart, backlogu oraz gadżetów.
+Nie wprowadzono zastępczych przycisków; zachowane osobne skróty i mechanizmy
+domenowe pozostają niezależne. React i pierwszy render Django mają zgodny
+układ. Wycofano komponenty i include’y służące wyłącznie usuniętym menu.
+Stare ustawienia kolumn przechodzą na schemat bez `menu`, zachowując
+szerokości, kolejność i ukryte pola. Opisy stanów pustych nie odsyłają już
+do usuniętych kontrolek. [Obowiązujący standard UI](UI.md#obowiązujący-wzorzec--zacznij-tutaj).
+
+Sprawdzenia kodu: TypeScript i build aplikacji, build edytora tablicy,
+**413/413 testów frontendu**, **13/13 testów Django**
+(`spaces.test_backlog_ordering`, `spaces.test_navigation`) na jednorazowej
+bazie PostgreSQL. Testy samych wycofanych menu usunięto; zachowano sprawdzenia
+WIP, uprawnień, przeciągania, rozmiarów, szkiców i ponowień.
+Sprawdzono także składnię `tasks.js`, kompilację **51 szablonów Django**,
+linki dokumentacji, aktualność indeksu kodu i `git diff --check`.
+
+Chrome przez lokalny Playwright (Browser plugin niedostępny), z fikcyjnymi
+danymi i osobną bazą: katalogi, szczegóły, okna i pozostałe zmienione ekrany
+przy 1440, 1024 i 390px, także podgląd gościa oraz pierwszy render Django.
+Kontrola obejmuje brak hamburgerów i ich kolumn, zgodność komórek z nagłówkiem,
+brak pustych torów i poziomego przepełnienia strony. Sprawdzono zaznaczanie,
+sortowanie, zmianę szerokości klawiaturą, powrót przez nawigację Reacta,
+pusty wynik, kontrolowany błąd 500 i ponowienie oraz zachowane skróty Tagów.
+Dziewięć prób starych preferencji potwierdziło migrację szerokości i układu
+w React oraz adapterze `tasks.js`. Brak nieoczekiwanych błędów JavaScriptu;
+wpis 500 wynikał z celowej próby obsługi błędu. Wejście gościa do endpointu
+członków zadania (`tasks/<key>/team/`) zwróciło istniejącą odmowę 403
+z `workplaces.policy`; sama strona zadania była dostępna (200).
+
+Edytor Excalidraw nie pokazuje hamburgera również wewnątrz iframe.
+Sześć prób obejmowało właściciela i gościa przy 1440/390px, narysowanie
+prostokąta, automatyczny zapis z nową rewizją i zachowanie elementu po
+odświeżeniu. Podgląd gościa nie wysłał zapisu ani nie zmienił sceny.
+Nie sprawdzano Safari, Firefoksa ani produkcyjnego serwera ONLYOFFICE.
+
+## Tabele danych według Tagów (05.11.2026)
+
+`components/data-table.css` i tokeny `--data-table-*` określają jeden wygląd
+tabel React oraz pierwszego renderu Django: nagłówki i wiersze 35px,
+Atlassian Sans 13px/400, białe nagłówki z ikonami 14px, cienkie separatory,
+fioletowe najechanie i zaznaczenie. Markery obejmują katalogi, członków,
+udostępnienia, konfigurację, dziennik pracy, dokumenty/archiwa i raporty.
+Na tym etapie zachowano kolumny, uprawnienia, menu i obsługę danych;
+późniejsze usunięcie hamburgerów opisuje rozdział powyżej.
+[Szkic i kontrakt](UI.md#tabele-według-tagów).
+
+Sprawdzenia kodu: TypeScript i build, **427/427 testów frontendu**,
+**32/32 testy Django** (`spaces.test_teams.TeamSystemTests`,
+`core.test_workspace_frontend`) na jednorazowej bazie PostgreSQL,
+kompilacja **18 szablonów** zawierających tabele, formatowanie TS,
+lokalne linki dokumentacji, indeks kodu i `git diff --check`.
+Audyt źródeł potwierdził, że poza kontraktem pozostają specjalistyczny
+Gantt i treść importowanych arkuszy. Grupowane listy zadań bez nagłówków
+kolumn, kalendarz, karty, kanały historii oraz zewnętrzne edytory zachowują
+własną strukturę.
+
+Chrome przez lokalny Playwright (Browser plugin niedostępny), osobna baza
+z fikcyjnymi danymi: **52 wejścia przy 1440px**, po **21 przy 1024 i 390px**,
+w tym tabele członków w oknach Workspace i udostępnieniach filtra.
+Pierwszy render Django bez JavaScriptu sprawdzono dla Zespołu, plików Dysku
+i osi czasu przy 1440/390px. Porównano typografię, nagłówki, ikony, obramowania,
+wysokości oraz najechanie/zaznaczenie; obejrzano zrzuty Tagów, Zespołu,
+Dokumentów, Raportów i okna Workspace. Brak poziomego przepełnienia strony.
+
+Interakcje objęły checkboxy, sortowanie, desktopową zmianę szerokości kolumn,
+menu, formularz roli i Escape, pusty wynik, błąd 500 z ponowieniem,
+powrót przez nawigację Reacta oraz przewijanie i menu na telefonie.
+Nie wystąpiły błędy wykonania JavaScriptu; oczekiwany wpis konsoli dotyczył
+kontrolowanego błędu 500. Po wykryciu i poprawieniu zawijania nazw w raportach
+oraz wysokości mobilnego przycisku w tabeli osi czasu powtórzono odpowiednie
+widoki: wiersze zachowują 35px bez przepełnienia strony.
+Nie sprawdzano Safari, Firefoksa ani wdrożenia produkcyjnego.
+
+## Tytuły stron bez ikon i zdjęć (05.11.2026)
+
+Dekoracyjny awatar przy tytule pozostaje tylko w otwartej Przestrzeni.
+Pozostałe strony, także Zespoły, Pulpity i edytory Dokumentów, mają tekstowe
+tytuły. Usunięto parametr `icon` z `PageHeader` oraz nieużywane style pola
+ikony. Ikony zakładek i przycisków pozostają; gwiazdka ulubionych zapisanego
+filtra znajduje się w działaniach po prawej, bez zmiany obsługi zapisu.
+Zgodny pierwszy render Django nie pozostawia dekoracji przy tytule.
+
+Sprawdzenia kodu: TypeScript, budowanie aplikacji, kompilacja zmienionych
+szablonów Django, diff, linki dokumentacji i aktualność indeksu kodu.
+
+Chrome przez lokalny Playwright (Browser plugin niedostępny), odrębna baza
+z fikcyjnymi danymi: 42 strony przy 1440px, 8 ekranów przy 390px oraz
+8 pierwszych renderów Django bez JavaScriptu. Potwierdzono brak dekoracji
+przy tytułach, zachowanie awatara Przestrzeni, ikon zakładek i akcji.
+Przycisk ulubionych filtra po prawej przełączał stan w obie strony na
+komputerze i telefonie. Nie wystąpiły wyjątki JavaScript, ostrzeżenia konsoli
+ani poziome przepełnienie. Przejrzano zrzuty filtra i referencyjnej Przestrzeni.
+Kontrola dotyczyła tej korekty UI; nie ponawiano testów logiki domenowej,
+Safari/Firefox ani zewnętrznego interfejsu ONLYOFFICE.
+
+## Nagłówki wszystkich stron według otwartej Przestrzeni (05.11.2026)
+
+Wzorcem jest cały nagłówek otwartej Przestrzeni: ikona/awatar, nazwa i akcje,
+a poniżej istniejące zakładki z ikonami. `PageHeader`, `PageTabs` oraz
+`components/page-header.css` obsługują katalogi, szczegóły, ustawienia,
+Kalendarz, profil i powłoki edytorów dokumentów. Pierwszy render Django
+ma te same klasy. Zlikwidowano osobne odstępy mobilnych nagłówków Dokumentów
+oraz wysokość nagłówka pełnego edytora. [Wzorzec i szkic](UI.md#obowiązujący-wzorzec--zacznij-tutaj).
+
+Wykonana weryfikacja:
+
+- TypeScript i budowanie pakietu aplikacji przeszły; aktualny bundle jest lokalnie.
+  Pełny zestaw frontendu: **427/427** testów.
+- **98/98** testów Django: `core.test_navigation_frontend`,
+  `core.test_filter_frontend`, `core.test_pulpit_frontend`,
+  `core.test_document_frontend`, `core.test_workspace_frontend`,
+  `accounts.test_frontend`, `planner.tests`, `planner.test_task_calendar`.
+  Dodatkowo przeszedł test strony zarządzania Workspace
+  `workplaces.tests.WorkplaceSelectionTests.test_workplace_list_remains_available_for_management`.
+  Testy korzystały z osobnych baz PostgreSQL i tymczasowego storage.
+- Skompilowano 35 aktywnych szablonów; przejrzano wszystkie aktywne ekrany
+  `SCREENS`/`PageApp` pod kątem użycia wspólnego nagłówka.
+- Chrome przez lokalny Playwright na `127.0.0.1:8052`, z fikcyjnymi danymi
+  w izolowanej bazie: **42 adresy** przy **1440, 1024 i 390px** oraz pierwszy
+  render Django bez JavaScriptu przy 1440 i 390px. Zweryfikowano tytuły,
+  ikony, odstępy, aktywne zakładki, jedną dolną linię i brak przepełnienia strony.
+  Po ponowieniu pierwszych wejść z przerwanymi żądaniami statycznymi
+  nie było błędów wykonania JavaScriptu ani nieudanych żądań zasobów.
+- Interakcje: cztery widoki Kalendarza, zmiana okresu i powrót do dzisiaj,
+  otwarcie/zamknięcie wydarzenia, przejście do Zasobów i powrót przez SPA.
+  Zasoby: szybkie filtry, pusty wynik, kontrolowany błąd 500 i ponowienie.
+  Dokumenty: anulowanie zmiany nazwy przez Escape, zapis i przywrócenie nazwy,
+  zapis tekstu oraz powrót do katalogu. Nie wystąpiły wyjątki JavaScriptu;
+  odpowiedź 500 była celowo wywołaną próbą obsługi błędu.
+- Sprawdzono format, diff, lokalne linki dokumentacji i indeks kodu.
+
+Wtyczka Browser nie była dostępna. Nie sprawdzano Safari/Firefox ani wdrożenia.
+Kontrola edytorów obejmowała powłokę Ancore; nie jest audytem interfejsów
+zewnętrznego ONLYOFFICE, Excalidraw ani Django admin. Ekrany uwierzytelniania
+zachowują osobną powłokę zgodnie z architekturą projektu.
+
+## Wspólne nagłówki, paski katalogów i okna (05.11.2026)
+
+Katalogi Przestrzeni, Zespołów, Filtrów, Pulpitów, Zasobów, Dysków,
+Dokumentów i Workspace używają wspólnego `PageHeader` oraz tokenów tytułu.
+`DirectoryToolbar` porządkuje paski Przestrzeni, Filtrów i Zespołów; pasek
+Zespołów znajduje się nad przewijaną treścią. Pierwszy render Django
+zachowuje ten sam układ. `Modal` wybiera rozmiar przez `size`, czeka
+na wspólne zakończenie animacji i przyjmuje jawny cel powrotu fokusu
+po asynchronicznym otwarciu. [Schematy UI](UI.md#obowiązujący-wzorzec--zacznij-tutaj).
+
+Wykonana weryfikacja:
+
+- TypeScript (`tsc --noEmit`) i `build.mjs` przeszły; wygenerowano aktualny bundle.
+- Pełny zestaw `node --test tests/*.test.mjs`: **427/427** testów przeszło.
+  Regresje okien obejmują animację, Escape, ochronę szkicu, blokadę zapisu,
+  nawigację oraz zachowanie celu fokusu po wyłączeniu przycisku podczas odczytu.
+- `scripts/run_tests.py core.test_frontend core.test_navigation_frontend core.test_filter_frontend core.test_pulpit_frontend core.test_document_frontend core.test_workspace_frontend spaces.test_teams`:
+  **111/112** testów Django przeszło na osobnej bazie PostgreSQL.
+  `test_item_api_preserves_status_history_and_completion` zwraca 400,
+  ponieważ próbuje niedozwolonego przejścia `new → closed`. Tę samą awarię
+  i komunikat „To przejście statusu nie jest dozwolone w tej przestrzeni.”
+  odtworzono na osobnej kopii niezmienionego HEAD
+  `b4876f407ec58424137d62e9872c93b96191e3f6`. Nie zmieniano reguł procesu.
+- Chromium przez dostępny lokalnie Playwright, `http://127.0.0.1:8051`,
+  osobna baza i fikcyjne dane QA. Browser plugin nie był dostępny.
+  Osiem katalogów w szerokościach **1440, 1024 i 390px**: właściwe adresy
+  i treść, jednakowa typografia nagłówków 17px/700, brak poziomego przepełnienia,
+  nakładek błędu i błędów konsoli. Zrzuty porównano z katalogiem Przestrzeni.
+  Sprawdzono także pierwszy render bez JavaScriptu przy 390px.
+- Zespoły: wyszukanie pustego wyniku, wyczyszczenie filtra, przejście do
+  Zasobów i powrót bez przeładowania dokumentu, pojedynczy pasek narzędzi.
+  Formularz zespołu: odrzucenie/powrót do szkicu, błąd duplikatu zachowujący
+  nazwę i poprawny zapis. Udostępnienie zadania i zmiana roli: kompaktowy
+  rozmiar na komputerze/tablecie/telefonie, Escape, ochrona szkicu, błąd
+  walidacji, wyszukanie osoby i zapis. Celowe odpowiedzi 400 były widoczne
+  jako błędy formularza; nie wystąpiły błędy wykonania JavaScriptu.
+- Powrót fokusu po zamknięciu tworzenia zespołu, dodawania osoby, tworzenia
+  Przestrzeni i udostępniania zadania. Powtórzenia szybkiego przejścia do
+  członków i otwarcia formularza oraz tworzenia Przestrzeni przeszły po
+  3 razy. Asercja czekała na odmontowanie zamkniętego okna; samo
+  `aria-hidden="true"` oznacza początek, a nie koniec animacji.
+- Sprawdzono format zmienionego Reacta, diff, nowe linki dokumentacji
+  i aktualność indeksu kodu.
+
+Nie wykonywano wdrożenia, zmian normalnej bazy użytkownika ani pełnego audytu
+wszystkich specjalistycznych ekranów. Nie sprawdzano Safari i Firefox.
+
 ## Weryfikacja przed commitami Zasobów i Zespołów (04.11.2026)
 
 Przed podziałem zmian na commity ponowiono weryfikację bieżącego drzewa:

@@ -5,12 +5,12 @@
 `TeamsPage.tsx` obsługuje typy `teams` i `team`. API katalogu przekazuje
 `tabs`, `sort`, członkostwo użytkownika i liczniki dla widocznych danych.
 Karta ma `view`, `tabs`, `counts`, `progress`, `workload`, `member_rows`
-(serializowane jako `members`), `spaces`, `items` i paginację aktywnej zakładki.
-Wyszukiwanie, filtry i strony wyników są parametrami URL; zmiana filtra usuwa
-numer strony. Dane po zapisach ponownie pobiera wspólny mechanizm nawigacji.
+(serializowane jako `members`), `spaces`, `items` i metadane okna aktywnej zakładki.
+Wyszukiwanie, filtry i limit wyników są parametrami URL; zmiana filtra usuwa
+limit. „Pokaż więcej” rozszerza widoczną listę o 20 pozycji. Dane po zapisach ponownie pobiera wspólny mechanizm nawigacji.
 
 Formularze używają `FormDialog`, listy wspólnych klas, `Avatar`, `Select`,
-`Dropdown`, `StatusGroup` i `Pagination`. Błędy zachowują szkic, Escape przywraca
+`Dropdown`, `StatusGroup` i `LoadMore`. Błędy zachowują szkic, Escape przywraca
 fokus, a potwierdzenie usuwa członka przez istniejący POST. Osobna trasa
 `members/<member_pk>/edit/` unieruchamia pole osoby i zmienia tylko jej rolę.
 `delete/` wymaga wpisania nazwy zespołu. Obie trasy mają zwykły/scoped wariant
@@ -24,7 +24,7 @@ włączenia modułu. Pierwszy render i formularze Django pozostają działające
 Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekrany:
 
 - **Zasoby:** katalog, karta i historia, przekazania/zwroty, operacje zbiorcze,
-  filtry terminów, eksport, sortowanie, paginacja, kolumny i pełne CRUD.
+  filtry terminów, eksport, sortowanie, doładowywanie po 20, kolumny i pełne CRUD.
 - **Kalendarz:** miesiąc/tydzień/dzień/rok, plan, filtry, wydarzenia i terminy zadań.
 - **Dla ciebie** oraz centrum **Ustawień**.
 - **Przestrzenie:** katalog, kreator szablonu, formularze, awatary,
@@ -50,7 +50,7 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
   30 awatarów użytkownika oraz zdjęcie z kadrowaniem, osobisty baner, status obecności,
   wylogowanie; jedna tożsamość w sesji przeglądarki.
 - **Globalne panele:** wyszukiwanie z ostatnio oglądanymi i filtrami typów,
-  centrum powiadomień z licznikami, filtrami, paginacją i akcjami oraz Sticker.
+  centrum powiadomień z licznikami, filtrami, doładowywaniem i akcjami oraz Sticker.
 
 - **Wspólna powłoka:** nagłówek, wybór Workspace, wszystkie tryby menu bocznego,
   zwijanie i szerokość, Favorites z kolejnością/przeciąganiem, pickery kolekcji,
@@ -223,6 +223,41 @@ Eksport CSV to bezpośrednie pobranie z adresu przestrzeni, z ponowną kontrolą
 ACL, bez przechwytywania pobrania przez nawigację Reacta. Znaczenie okresów,
 przypisań i ograniczenia historii opisują [Raporty przestrzeni](SPACES.md#raporty-przestrzeni).
 
+## Wspólne doładowywanie wyników
+
+Listy, które wcześniej miały numery stron, strzałki i wybór liczby pozycji,
+używają jednego `shared/LoadMore.tsx` pod wynikami. Przycisk „Pokaż więcej”
+zwiększa widoczną listę o 20; licznik pokazuje wczytane i wszystkie wyniki.
+Przycisk znajduje się bezpośrednio po wynikach wewnątrz ich kontenera
+przewijania, a nie w stałej stopce. Doładowanie zachowuje ten sam kontener.
+Po końcu większej listy pozostaje nieaktywny „Wszystkie wyniki”; przy najwyżej
+20 wynikach dodatkowy przycisk nie jest potrzebny. Obejmuje to katalogi
+Przestrzeni, Zespołów, Filtrów, Pulpitów, Dysków, Dokumentów, Zasobów i Workspace,
+wyniki Filtrów, listy w profilu Zespołu, ostatnio oglądane, powiadomienia,
+dziennik pracy zadania i historię zasobu. Nawigacja dat kalendarza i stron
+wewnątrz edytorów dokumentów pozostaje osobnym mechanizmem.
+
+`backend/core/list_window.py` oblicza kumulatywny prefiks po ACL, filtrach
+i sortowaniu. Parametr `limit` rozszerza go 20 → 40 → 60; odpowiedź zawiera
+cały nowy prefiks. React podmienia dane okna bez ponownego montowania strony,
+więc wcześniejsze wiersze pozostają widoczne i nie są dublowane. Katalogi
+z kontraktem `pagination` zachowują `count`, `start`, `end`, `next`; `previous`
+jest pusty, a `pages` puste. Dyski, Dokumenty i Zasoby przekazują analogiczne
+`count`, `start`, `end`, `has_next`, `next_url` w swoim obiekcie okna.
+Dziennik pracy używa `work_log_limit`, a historia Zasobów `history_limit`.
+Starszy `page=2` oznacza prefiks 40 wyników; rozmiar partii pozostaje 20.
+
+`shared/useLoadMorePage.ts` obsługuje katalogi korzystające z Page API.
+Blokuje powtórne kliknięcie podczas odczytu, anuluje żądanie po wyjściu
+i zachowuje listę przy błędzie, umożliwiając powtórzenie tego samego odczytu.
+Dokumenty i Zasoby zachowują własne wyszukiwanie z opóźnieniem i anulowaniem;
+nie przyjmują starego wyniku po zmianie zapytania. Dopiero sukces zapisuje
+limit w URL. Zmiana filtra lub sortowania zaczyna od pierwszych 20 pozycji.
+Workspace rozszerza prefiks lokalnie, bo API przekazuje już dostępną listę.
+Dziennik pracy podmienia tylko `work_log`, zachowując szkic zadania i aktywną
+zakładkę; kolejne odświeżenia i autosave zachowują wczytany limit.
+Pierwszy render Django udostępnia równoważny link do większego prefiksu.
+
 ## Doładowywanie listy zadań Przestrzeni
 
 Page API dla `view=list` zwraca `pagination: null` oraz w każdej pozycji
@@ -231,7 +266,7 @@ Domyślnie wczytuje 20 zadań na status. Parametry `list_limit_<klucz statusu>`
 określają liczbę pozycji danej grupy; serwer ogranicza je do liczby dostępnych
 wyników. `spaces/list_window.py` stosuje `ROW_NUMBER()` po statusie już po
 widoczności, filtrowaniu i sortowaniu. Stary parametr `page` jest ignorowany
-na tej liście. Pozostali odbiorcy paginacji zachowują swój kontrakt.
+na tej liście. Pozostałe katalogi korzystają z opisanego wyżej wspólnego okna wyników.
 
 Oś czasu (`view=timeline`) zwraca `pagination: null` i ignoruje `page`.
 Domyślnie wczytuje 20 zadań po ograniczeniu widoczności, filtrach i sortowaniu.
@@ -516,21 +551,16 @@ i uprawnień są ustalane przez ten sam backend.
 
 `spaces/SummaryDashboard.tsx` zarządza szkicem i zapisem układu, katalogiem
 `shared/WidgetCatalog.tsx`, błędami oraz ochroną wyjścia. `shared/DashboardCanvas.tsx`
-współdzieli z Pulpitami uchwyty pointer/klawiatura, zmianę rozmiaru i panel opcji.
-`Summary.tsx` zachowuje źródła danych i interakcje wykresów;
-`SummaryWidgetControls.tsx` renderuje panel pozycji i rozmiaru, miniaturę
-oraz suwaki i skróty szerokości we wspólnym `Dropdown`. Pozostaje otwarty
-podczas zmian. Wariant `positioning="fixed"` zachowuje pozycję panelu
-z chwili otwarcia, więc zmiana geometrii kafelka nie przesuwa kontrolek;
-wspólna warstwa nadal dopasowuje panel do viewportu. W trybie edycji
-kolejność węzłów DOM jest stabilna,
-a CSS `order` zachowuje kolejność wizualną na telefonie; przeniesienie kafelka
-nie przerywa pracy z panelem. Po zakończeniu edycji DOM wraca do kolejności
+współdzieli z Pulpitami uchwyty pointer/klawiatura oraz zmianę rozmiaru.
+`Summary.tsx` zachowuje źródła danych i interakcje wykresów. Przycisk trzech
+pasków oraz jego panel opcji (`SummaryWidgetControls`) zostały usunięte.
+W trybie edycji kolejność węzłów DOM jest stabilna, a CSS `order` zachowuje
+kolejność wizualną na telefonie; po zakończeniu edycji DOM wraca do kolejności
 położenia. `summaryLayout.ts` wyznacza pozycje i rozwiązuje kolizje bez zależności
 UI; helpery `moveWidget` i `resizeWidget` pilnują kierunków i krawędzi.
-`ResizeObserver` rozpoznaje pionowy układ poniżej 700px. Wtedy panel pokazuje
-góra/dół, a `moveWidgetInOrder` zamienia kafelek z sąsiadem w kolejności
-położenia i układa siatkę ponownie, zachowując rozmiary oraz brak kolizji.
+`ResizeObserver` rozpoznaje pionowy układ poniżej 700px. Wtedy
+`moveWidgetInOrder` obsługuje klawiaturowy uchwyt przesuwania góra/dół,
+układając siatkę ponownie z zachowaniem rozmiarów i bez kolizji.
 `summary.dashboard` zawiera `widgets: [{id,x,y,w,h}]`, `catalog`, `revision`,
 `save_url`, `columns`, `max_rows` i `max_h`. Wspólny page API przekazuje JSON
 `{revision, widgets}` do zwykłego/scoped `space/<slug>/dashboard/layout/`.
@@ -625,6 +655,67 @@ do trwałego wolumenu serwowanego przez Nginx. [Instalator i pięć usług](PROD
 
 ## Podział źródeł i cykl życia
 
+Nagłówki wszystkich aktywnych stron współdzielą `shared/PageHeader.tsx`;
+wzorcem jest otwarta Przestrzeń. `heading` i `actions` trafiają do
+istniejących `tasks-titlebar-left` i `tasks-titlebar-actions`. Opcjonalne
+`navigation` zawiera `shared/PageTabs.tsx`: cały nagłówek staje się jedną
+grupą z linią pod zakładkami. `className` dotyczy wiersza tytułu,
+`groupClassName` całej grupy. Strony bez zakładek mają pojedynczy wiersz.
+`PageHeader` nie dodaje ikony przy tytule. Tylko nagłówek otwartej Przestrzeni
+przekazuje własny awatar w `heading`; pozostałe strony mają tekstowy tytuł.
+Przycisk ulubionych zapisanego filtra należy do `actions`.
+`PageTabs` przekazuje ref i atrybuty ARIA, zachowując linki, obsługę klawiatury,
+stan i działania modułu. Jego użycie wewnątrz panelu nie przenosi nawigacji
+panelu do góry strony.
+
+`components/page-header.css` i tokeny `--page-title-*` / `--page-header-*`
+wiążą tytuł, odstępy oraz aktywne zakładki z jednym wzorcem, także
+w pierwszym renderze Django.
+
+Dolne paski narzędzi współdzielą `shared/DirectoryToolbar.tsx` i
+`components/app-toolbar.css`, według wzorca Zasobów. `Toolbar` renderuje `div`,
+a `DirectoryToolbar` formularz. Oba przyjmują `filters`, `actions`, `search`,
+`children` i `className`: kontrolki oraz działania są po lewej, wyszukiwarka
+po prawej, poza przewijaną listą. `children` może zawierać ukryte pola;
+osobny formularz wyszukiwania wymaga wariantu `Toolbar`, bez zagnieżdżania
+formularzy. `spaces/ViewToolbar` jest adapterem przekazującym `children`
+do `filters`. `ToolbarFilter` i `ToolbarSort` ujednolicają ikony i etykiety
+przycisków „Filtruj” / „Sortuj”; `active` określa stan filtra, a `current`
+bieżącą etykietę sortowania. Zawartość paneli i sposób zastosowania opcji
+pozostają domenowe. W formularzu panel filtrów zachowuje `layer={false}`,
+aby pola nadal należały do tego samego formularza.
+
+Pierwszy render Django używa `app-toolbar`, `app-toolbar__controls`,
+`app-toolbar__actions` i `app-toolbar__search` obok dotychczasowych klas
+i atrybutów JS. Tokeny `--app-toolbar-*` wyznaczają kontrolki 30px,
+wyszukiwarkę 36px (maksymalnie 420px), odstęp 8px i pionowy padding 0.5rem.
+Do 767px kontrolki mają 36px, a wyszukiwarka pełną szerokość.
+`app-toolbar--embedded` zeruje wyłącznie padding poziomy, gdy zapewnia go
+rodzic. Komponenty nie przejmują stanu filtrów, adresów, uprawnień ani działań
+modułu; zachowują również warunki dostępności akcji zaznaczonych wierszy.
+Nie dodają nowych funkcji ani usuniętych menu trzech pasków.
+[Schematy i bieżące punkty odniesienia](UI.md#obowiązujący-wzorzec--zacznij-tutaj).
+
+Tabele danych React i pierwszego renderu Django współdzielą
+`components/data-table.css`, `app-data-table` oraz tokeny `--data-table-*`.
+Wzorcem wizualnym jest `tags/TagsPage.tsx`. Siatki oznaczają nagłówek
+`app-table-header`, wiersz `app-table-row`, a komórki przez `data-column`,
+role ARIA albo `app-table-cell`. Natywne tabele używają dodatkowo
+`app-data-table--native` i `app-table-heading` wokół ikony oraz etykiety.
+`LocalDirectoryTable`, `Members`, katalogi i natywne tabele raportów/plików
+zachowują własne dane, kolumny, przewijanie i działania. Kontrakt nie dotyczy
+Gantta ani treści importowanych arkuszy. [Szkic i parametry](UI.md#tabele-według-tagów).
+
+Przyciski trzech pasków oraz całe powiązane menu są usunięte z katalogów,
+członków, dziennika pracy, plików/kafelków, Backlogu, powiadomień i gadżetów.
+W tabelach usunięte są także ich nagłówki, komórki i tory siatki.
+Pozostałe istniejące skróty (np. ołówek, informacje, notatki i przełączanie
+Workspace) zachowują swoje funkcje. `tasks-directory-menu-sheet` pozostaje
+historyczną nazwą wariantu sterującego siatką i zmianą szerokości; nie tworzy
+przycisku menu. `useTableWidths`, migracja Zasobów oraz `tasks.js` odczytują
+preferencje dawnych schematów kolumn i pomijają usuniętą kolumnę.
+Usunięcie kontrolek nie usuwa endpointów ani zasad uprawnień backendu.
+
 Formularze modalne współdzielą `forms/FormDialog.tsx`: `FormLayout` układa
 nazwę/tytuł i opcjonalną widoczność, pełny opis oraz pozostałe pola parami.
 `FormFields` włącza ten układ przez `layout`; domyślny wariant pozostaje
@@ -634,6 +725,19 @@ Osobne edytory Kalendarza, Zasobów, Dysku, Workspace i profilu stosują klasy
 `app-form-*` z `modal-system.css`. Zmiana kolejności jest częścią renderowania,
 bez przenoszenia kontrolek przez JS i bez zmiany zapisu lub ACL.
 Szczegóły i responsywność: [standard modali](UI.md#6-modale).
+
+`shared/Modal` przyjmuje jawny rozmiar `size="panel"` (domyślny) albo
+`size="compact"`. `FormDialog` i `tasks/SchemaDialog` odczytują go ze
+`schema.compact`; udostępnianie zadania i zmiana roli zachowują małe okno
+zgodne z pierwszym renderem Django. Escape, krzyżyk, tło i przyciski
+`data-close-modal` przechodzą przez `AncoreTaskModals`. React odmontowuje
+okno po `ancore:task-modal-closed`, po zakończeniu animacji zarówno małego,
+jak i dużego panelu. Ochrona szkicu i blokada podczas zapisu pozostają
+w zdarzeniu `ancore:task-modal-before-close`.
+Przy pobieraniu formularza `usePageActions` oraz ekrany Przestrzeni i zadań
+zapamiętują kontrolkę otwierającą przed jej wyłączeniem. `returnFocus`
+przekazuje ją do `FormDialog`/`Modal` i wspólnego managera okien; zamknięcie
+wraca do tej kontrolki, jeżeli nadal istnieje, zamiast do `body`.
 
 `shared/FieldLabel.tsx` renderuje etykietę i opcjonalny znak „!” z pomocą pola.
 `static/js/field-help.js` obsługuje wspólny kontrakt Reacta i szablonów Django
@@ -948,8 +1052,8 @@ szerokości. Menu boczne Pulpitów, picker i wyszukiwanie pozostają częścią 
 
 Ustawienia pulpitu obejmują ikonę z istniejącej biblioteki, domyślny zakres
 danych (Workspace, wybrane Przestrzenie albo zapisany filtr) i odświeżanie
-wyłączone lub co 60/300/900 sekund. Ikona jest przekazywana do nagłówka,
-katalogu, skrótów menu i wyników pickera. `PulpitFields` zachowuje szkice
+wyłączone lub co 60/300/900 sekund. Ikona jest używana w katalogu,
+skrótach menu i wynikach pickera; tytuł strony pozostaje bez ikony. `PulpitFields` zachowuje szkice
 źródeł przy przełączaniu zakresu; formularze Django ograniczają wybór do
 widocznych źródeł aktywnego Workspace.
 Widżety przekazują semantyczne ikony zakresu i odświeżania oraz avatary
@@ -996,6 +1100,10 @@ pliku, bez ponownego zapisu. Starszy edytor tekstowy zachowuje czyszczenie HTML,
 Ctrl+S, rewizje i ochronę szkicu. Pełne edytory są wyspami DOM: ONLYOFFICE
 `DocEditor` i odizolowany iframe istniejącego `frontend/board`. React obsługuje
 ich powłokę, nazwę, komunikaty, ponowienie zapisu i sprzątanie sesji.
+Edytor tablicy również nie pokazuje hamburgera: pusty `MainMenu` zastępuje
+domyślną zawartość Excalidraw, a `frontend/board/board.css` ukrywa jego
+obowiązkowy w wersji 0.18 przycisk. Rysowanie, autosave i Ctrl+S działają
+niezależnie od menu. Zmiana wymaga także `node frontend/board/build.mjs`.
 Gość widzi nazwę jako zwykły tekst bez kontrolek jej zmiany, zarówno w React,
 jak i pierwszym renderze Django. Kolejka ONLYOFFICE zachowuje nowsze zmiany
 powstałe podczas oczekiwania na zapis i wysyła je po jego potwierdzeniu.
@@ -1214,18 +1322,22 @@ aby zmiana aktywnego Workspace w innej karcie nie zmieniała celu zapisu.
 
 | Końcówka | Metoda | Wynik |
 | --- | --- | --- |
-| `/` | GET | Lista, filtry, sortowanie, scoped URL i paginacja |
+| `/` | GET | Lista, filtry, sortowanie, scoped URL i kumulatywne okno `limit` |
 | `/` | POST | Utworzenie zasobu; HTTP 201 |
 | `/new/` | GET | Puste pola formularza i dozwolone opcje |
 | `/<pk>/` | GET | Pola formularza istniejącego zasobu |
 | `/<pk>/` | PUT | Pełny zapis edytowalnych pól zasobu |
 | `/<pk>/delete/` | POST | Usunięcie zasobu |
-| `/<pk>/overview/` | GET | Dane i historia zasobu; `history_page`, po 20 wpisów |
+| `/<pk>/overview/` | GET | Dane i historia zasobu; `history_limit`, doładowywanie po 20 wpisów |
 | `/operate/` | POST | Atomowa operacja na 1–100 zasobach |
-| `/export/` | GET | CSV wszystkich wyników filtrów, z pominięciem paginacji |
+| `/export/` | GET | CSV wszystkich wyników filtrów, niezależnie od wczytanego okna |
 
-GET listy obsługuje `q`, `kind`, `status`, `assignee`, `deadline`, `sort`, `page_size` i `page`
-z tymi samymi ograniczeniami co dotychczasowy katalog. Zapis przyjmuje płaski
+GET listy obsługuje `q`, `kind`, `status`, `assignee`, `deadline`, `sort` i `limit`.
+Katalog zwraca pierwsze 20 wyników; kolejne `next_url` zwiększają okno o 20.
+`pagination.count` opisuje pełny wynik po filtrach, a `summary` nadal obejmuje
+cały Workspace. Historia zwraca `history_total`, `history_end` i `history_next`.
+Starsze `page`/`history_page` oznaczają odpowiedni prefiks po 20, a `page_size`
+nie zmienia wielkości partii. Zapis przyjmuje płaski
 obiekt `application/json` i nagłówek `X-CSRFToken`. Brak sesji zwraca JSON 401,
 brak dostępu 403 lub 404, błędna metoda 405, a walidacja JSON 400 z `message`,
 `errors` oraz aktualną definicją pól. Odpowiedzi nie zawierają HTML i mają
@@ -1255,8 +1367,11 @@ CSV jest strumieniowane, ma `no-store`, BOM UTF-8 i ochronę przed formułami.
 `src/resources/Detail.tsx` renderuje kartę i historię pod `/resources/<pk>/`
 oraz odpowiednikiem scoped. Nazwa w tabeli i globalne wyszukiwanie prowadzą do
 karty; stary `/<pk>/edit/` nadal działa. `Operation.tsx` używa wspólnego `Modal`
-w istniejącym wariancie kompaktowym. Katalog przechowuje zaznaczenie bieżącej
-strony; po zmianie wyników resetuje je. Powrót z karty zachowuje filtry listy.
+w istniejącym wariancie kompaktowym. Katalog przechowuje zaznaczenie widocznych
+wierszy i zachowuje je przy doładowywaniu. Zmiana filtra lub sortowania resetuje
+okno i zaznaczenie. Powrót z karty zachowuje filtry i limit listy. Operacja zbiorcza
+nadal obejmuje najwyżej 100 zasobów; większe zaznaczenie pokazuje komunikat
+i blokuje przyciski operacji do zmniejszenia wyboru.
 Formularz Zasobów używa wspólnego `app-page-modals`, obecnego zarówno przy
 pierwszym renderze Django, jak i po nawigacji JSON. Kontener starego formularza
 HTML pozostaje wyłącznie fallbackiem pierwszego renderu.

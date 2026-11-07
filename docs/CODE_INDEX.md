@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 38 | 0 | 25 | 249 |
+| [backend/core](../backend/core) | 41 | 0 | 26 | 257 |
 | [backend/accounts](../backend/accounts) | 26 | 4 | 10 | 100 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
-| [backend/tasks](../backend/tasks) | 8 | 1 | 26 | 12 |
+| [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
 | [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
-| [backend/documents](../backend/documents) | 41 | 3 | 31 | 217 |
+| [backend/documents](../backend/documents) | 41 | 3 | 30 | 217 |
 | [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
-| [backend/spaces](../backend/spaces) | 71 | 6 | 47 | 501 |
+| [backend/spaces](../backend/spaces) | 71 | 6 | 46 | 501 |
 
 ## 2. Modele i relacje
 
@@ -878,12 +878,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
 - [backend/core/health.py](../backend/core/health.py) — `readiness`
 - [backend/core/hosts.py](../backend/core/hosts.py) — `ServerAddressMiddleware`
+- [backend/core/list_window.py](../backend/core/list_window.py) — `WindowPage`, `window_page`, `window_url`, `window_payload`
 - [backend/core/maintenance.py](../backend/core/maintenance.py) — `BackupMaintenanceMiddleware`
 - [backend/core/media.py](../backend/core/media.py) — `public_media`
 - [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `page_styles`, `navigation_response`
 - [backend/core/task_files.py](../backend/core/task_files.py) — `delete_after_commit`
 - [backend/core/templatetags/__init__.py](../backend/core/templatetags/__init__.py)
 - [backend/core/templatetags/frontend.py](../backend/core/templatetags/frontend.py) — `global_panels_bootstrap`, `react_bundle`
+- [backend/core/templatetags/list_window.py](../backend/core/templatetags/list_window.py) — `load_more_url`
 - [backend/core/upload_validation.py](../backend/core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
 - [backend/core/widgets.py](../backend/core/widgets.py) — `EmojiPickerInput`, `VisualSelect`, `VisualSelectMultiple`
 - [backend/core/work_logs.py](../backend/core/work_logs.py) — `DateTimeLocalInput`, `TimeLogForm`
@@ -1073,6 +1075,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/content_skeleton.html](../backend/core/templates/core/includes/content_skeleton.html)
 - [backend/core/templates/core/includes/field_help.html](../backend/core/templates/core/includes/field_help.html)
 - [backend/core/templates/core/includes/icon_credit.html](../backend/core/templates/core/includes/icon_credit.html)
+- [backend/core/templates/core/includes/load_more.html](../backend/core/templates/core/includes/load_more.html)
 - [backend/core/templates/core/includes/modal_form_field.html](../backend/core/templates/core/includes/modal_form_field.html)
 - [backend/core/templates/core/includes/modal_form_fields.html](../backend/core/templates/core/includes/modal_form_fields.html)
 - [backend/core/templates/core/includes/photo_crop_dialog.html](../backend/core/templates/core/includes/photo_crop_dialog.html)
@@ -1128,9 +1131,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/tasks/templates/tasks/includes/directory_actions_menu.html](../backend/tasks/templates/tasks/includes/directory_actions_menu.html)
 - [backend/tasks/templates/tasks/includes/directory_column_manager.html](../backend/tasks/templates/tasks/includes/directory_column_manager.html)
 - [backend/tasks/templates/tasks/includes/directory_filter_aggregate.html](../backend/tasks/templates/tasks/includes/directory_filter_aggregate.html)
-- [backend/tasks/templates/tasks/includes/directory_menu_header.html](../backend/tasks/templates/tasks/includes/directory_menu_header.html)
 - [backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html](../backend/tasks/templates/tasks/includes/directory_pagination_toolbar.html)
-- [backend/tasks/templates/tasks/includes/directory_row_menu.html](../backend/tasks/templates/tasks/includes/directory_row_menu.html)
 - [backend/tasks/templates/tasks/includes/directory_sort_builder.html](../backend/tasks/templates/tasks/includes/directory_sort_builder.html)
 - [backend/tasks/templates/tasks/includes/issue_group_header.html](../backend/tasks/templates/tasks/includes/issue_group_header.html)
 - [backend/tasks/templates/tasks/includes/project_choice_filter_detail.html](../backend/tasks/templates/tasks/includes/project_choice_filter_detail.html)
@@ -1219,7 +1220,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/documents/templates/documents/includes/library_avatar.html](../backend/documents/templates/documents/includes/library_avatar.html)
 - [backend/documents/templates/documents/includes/move_action.html](../backend/documents/templates/documents/includes/move_action.html)
 - [backend/documents/templates/documents/includes/row_actions.html](../backend/documents/templates/documents/includes/row_actions.html)
-- [backend/documents/templates/documents/includes/row_menu.html](../backend/documents/templates/documents/includes/row_menu.html)
 - [backend/documents/templates/documents/libraries.html](../backend/documents/templates/documents/libraries.html)
 - [backend/documents/templates/documents/library.html](../backend/documents/templates/documents/library.html)
 - [backend/documents/templates/documents/modal_host.html](../backend/documents/templates/documents/modal_host.html)
@@ -1261,7 +1261,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/form_page.html](../backend/spaces/templates/spaces/form_page.html)
 - [backend/spaces/templates/spaces/index.html](../backend/spaces/templates/spaces/index.html)
 - [backend/spaces/templates/spaces/issue_type.html](../backend/spaces/templates/spaces/issue_type.html)
-- [backend/spaces/templates/spaces/item_actions.html](../backend/spaces/templates/spaces/item_actions.html)
 - [backend/spaces/templates/spaces/item_list.html](../backend/spaces/templates/spaces/item_list.html)
 - [backend/spaces/templates/spaces/item_planning.html](../backend/spaces/templates/spaces/item_planning.html)
 - [backend/spaces/templates/spaces/item_snapshot.html](../backend/spaces/templates/spaces/item_snapshot.html)
@@ -1302,12 +1301,14 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/base/variables.css](../static/css/base/variables.css)
 - [static/css/calendar.css](../static/css/calendar.css)
 - [static/css/components/alerts.css](../static/css/components/alerts.css)
+- [static/css/components/app-toolbar.css](../static/css/components/app-toolbar.css)
 - [static/css/components/attachments.css](../static/css/components/attachments.css)
 - [static/css/components/auth.css](../static/css/components/auth.css)
 - [static/css/components/buttons.css](../static/css/components/buttons.css)
 - [static/css/components/cards.css](../static/css/components/cards.css)
 - [static/css/components/checkboxes.css](../static/css/components/checkboxes.css)
 - [static/css/components/dashboard.css](../static/css/components/dashboard.css)
+- [static/css/components/data-table.css](../static/css/components/data-table.css)
 - [static/css/components/dialogs.css](../static/css/components/dialogs.css)
 - [static/css/components/documents.css](../static/css/components/documents.css)
 - [static/css/components/dropdown-layer.css](../static/css/components/dropdown-layer.css)
@@ -1315,11 +1316,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/file-upload.css](../static/css/components/file-upload.css)
 - [static/css/components/forms.css](../static/css/components/forms.css)
 - [static/css/components/global-search.css](../static/css/components/global-search.css)
+- [static/css/components/load-more.css](../static/css/components/load-more.css)
 - [static/css/components/modal-system.css](../static/css/components/modal-system.css)
 - [static/css/components/modals.css](../static/css/components/modals.css)
 - [static/css/components/notifications-panel.css](../static/css/components/notifications-panel.css)
 - [static/css/components/notifications.css](../static/css/components/notifications.css)
 - [static/css/components/office.css](../static/css/components/office.css)
+- [static/css/components/page-header.css](../static/css/components/page-header.css)
 - [static/css/components/profile.css](../static/css/components/profile.css)
 - [static/css/components/pulpits.css](../static/css/components/pulpits.css)
 - [static/css/components/react.css](../static/css/components/react.css)
@@ -1438,12 +1441,10 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/calendar/dates.ts](../frontend/app/src/calendar/dates.ts)
 - [frontend/app/src/dashboard/ForYouPage.tsx](../frontend/app/src/dashboard/ForYouPage.tsx)
 - [frontend/app/src/dashboard/SettingsPage.tsx](../frontend/app/src/dashboard/SettingsPage.tsx)
-- [frontend/app/src/documents/Actions.tsx](../frontend/app/src/documents/Actions.tsx)
 - [frontend/app/src/documents/DirectoryPage.tsx](../frontend/app/src/documents/DirectoryPage.tsx)
 - [frontend/app/src/documents/DocumentDialog.tsx](../frontend/app/src/documents/DocumentDialog.tsx)
 - [frontend/app/src/documents/Filters.tsx](../frontend/app/src/documents/Filters.tsx)
 - [frontend/app/src/documents/Icons.tsx](../frontend/app/src/documents/Icons.tsx)
-- [frontend/app/src/documents/Pagination.tsx](../frontend/app/src/documents/Pagination.tsx)
 - [frontend/app/src/documents/Rows.tsx](../frontend/app/src/documents/Rows.tsx)
 - [frontend/app/src/documents/Sidebar.tsx](../frontend/app/src/documents/Sidebar.tsx)
 - [frontend/app/src/documents/SuitePage.tsx](../frontend/app/src/documents/SuitePage.tsx)
@@ -1483,16 +1484,20 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
 - [frontend/app/src/shared/DashboardCanvas.tsx](../frontend/app/src/shared/DashboardCanvas.tsx)
 - [frontend/app/src/shared/DirectoryColumns.tsx](../frontend/app/src/shared/DirectoryColumns.tsx)
+- [frontend/app/src/shared/DirectoryToolbar.tsx](../frontend/app/src/shared/DirectoryToolbar.tsx)
 - [frontend/app/src/shared/Dropdown.tsx](../frontend/app/src/shared/Dropdown.tsx)
 - [frontend/app/src/shared/Emoji.tsx](../frontend/app/src/shared/Emoji.tsx)
 - [frontend/app/src/shared/EmojiPicker.tsx](../frontend/app/src/shared/EmojiPicker.tsx)
 - [frontend/app/src/shared/EmptyState.tsx](../frontend/app/src/shared/EmptyState.tsx)
 - [frontend/app/src/shared/FieldLabel.tsx](../frontend/app/src/shared/FieldLabel.tsx)
 - [frontend/app/src/shared/Icon.tsx](../frontend/app/src/shared/Icon.tsx)
+- [frontend/app/src/shared/LoadMore.tsx](../frontend/app/src/shared/LoadMore.tsx)
 - [frontend/app/src/shared/LocalDirectoryTable.tsx](../frontend/app/src/shared/LocalDirectoryTable.tsx)
 - [frontend/app/src/shared/MemberDirectory.tsx](../frontend/app/src/shared/MemberDirectory.tsx)
 - [frontend/app/src/shared/Members.tsx](../frontend/app/src/shared/Members.tsx)
 - [frontend/app/src/shared/Modal.tsx](../frontend/app/src/shared/Modal.tsx)
+- [frontend/app/src/shared/PageHeader.tsx](../frontend/app/src/shared/PageHeader.tsx)
+- [frontend/app/src/shared/PageTabs.tsx](../frontend/app/src/shared/PageTabs.tsx)
 - [frontend/app/src/shared/Pagination.tsx](../frontend/app/src/shared/Pagination.tsx)
 - [frontend/app/src/shared/Select.tsx](../frontend/app/src/shared/Select.tsx)
 - [frontend/app/src/shared/SharingDialog.tsx](../frontend/app/src/shared/SharingDialog.tsx)
@@ -1506,6 +1511,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/status-color.ts](../frontend/app/src/shared/status-color.ts)
 - [frontend/app/src/shared/table.tsx](../frontend/app/src/shared/table.tsx)
 - [frontend/app/src/shared/useDirtyGuard.ts](../frontend/app/src/shared/useDirtyGuard.ts)
+- [frontend/app/src/shared/useLoadMorePage.ts](../frontend/app/src/shared/useLoadMorePage.ts)
 - [frontend/app/src/shared/usePageActions.ts](../frontend/app/src/shared/usePageActions.ts)
 - [frontend/app/src/shell/CollectionPicker.tsx](../frontend/app/src/shell/CollectionPicker.tsx)
 - [frontend/app/src/shell/Collections.tsx](../frontend/app/src/shell/Collections.tsx)
@@ -1540,7 +1546,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/Summary.tsx](../frontend/app/src/spaces/Summary.tsx)
 - [frontend/app/src/spaces/SummaryDashboard.tsx](../frontend/app/src/spaces/SummaryDashboard.tsx)
 - [frontend/app/src/spaces/SummaryDistribution.tsx](../frontend/app/src/spaces/SummaryDistribution.tsx)
-- [frontend/app/src/spaces/SummaryWidgetControls.tsx](../frontend/app/src/spaces/SummaryWidgetControls.tsx)
 - [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
 - [frontend/app/src/spaces/TimelineView.tsx](../frontend/app/src/spaces/TimelineView.tsx)
 - [frontend/app/src/spaces/TypeFields.tsx](../frontend/app/src/spaces/TypeFields.tsx)
@@ -1585,14 +1590,22 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/calendar-save.test.mjs](../frontend/app/tests/calendar-save.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
 - [frontend/app/tests/dashboard-canvas.test.mjs](../frontend/app/tests/dashboard-canvas.test.mjs)
+- [frontend/app/tests/directory-load-more.test.mjs](../frontend/app/tests/directory-load-more.test.mjs)
+- [frontend/app/tests/document-dialog-focus.test.mjs](../frontend/app/tests/document-dialog-focus.test.mjs)
+- [frontend/app/tests/dropdown-keyboard.test.mjs](../frontend/app/tests/dropdown-keyboard.test.mjs)
 - [frontend/app/tests/dropdown-layer.test.mjs](../frontend/app/tests/dropdown-layer.test.mjs)
 - [frontend/app/tests/field-control.test.mjs](../frontend/app/tests/field-control.test.mjs)
+- [frontend/app/tests/filter-load-more-draft.test.mjs](../frontend/app/tests/filter-load-more-draft.test.mjs)
+- [frontend/app/tests/form-error-focus.test.mjs](../frontend/app/tests/form-error-focus.test.mjs)
 - [frontend/app/tests/form-layout.test.mjs](../frontend/app/tests/form-layout.test.mjs)
 - [frontend/app/tests/full-page-lifecycle.test.mjs](../frontend/app/tests/full-page-lifecycle.test.mjs)
 - [frontend/app/tests/global-search.test.mjs](../frontend/app/tests/global-search.test.mjs)
 - [frontend/app/tests/item-filtering.test.mjs](../frontend/app/tests/item-filtering.test.mjs)
 - [frontend/app/tests/kanban-flow.test.mjs](../frontend/app/tests/kanban-flow.test.mjs)
+- [frontend/app/tests/load-more-page.test.mjs](../frontend/app/tests/load-more-page.test.mjs)
 - [frontend/app/tests/member-toolbar.test.mjs](../frontend/app/tests/member-toolbar.test.mjs)
+- [frontend/app/tests/modal-lifecycle.test.mjs](../frontend/app/tests/modal-lifecycle.test.mjs)
+- [frontend/app/tests/module-accessibility.test.mjs](../frontend/app/tests/module-accessibility.test.mjs)
 - [frontend/app/tests/navigation.test.mjs](../frontend/app/tests/navigation.test.mjs)
 - [frontend/app/tests/office-save.test.mjs](../frontend/app/tests/office-save.test.mjs)
 - [frontend/app/tests/pulpit-access-draft.test.mjs](../frontend/app/tests/pulpit-access-draft.test.mjs)
@@ -1606,7 +1619,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/summary-distribution.test.mjs](../frontend/app/tests/summary-distribution.test.mjs)
 - [frontend/app/tests/summary-interactions.test.mjs](../frontend/app/tests/summary-interactions.test.mjs)
 - [frontend/app/tests/summary-layout.test.mjs](../frontend/app/tests/summary-layout.test.mjs)
-- [frontend/app/tests/summary-widget-controls.test.mjs](../frontend/app/tests/summary-widget-controls.test.mjs)
 - [frontend/app/tests/task-actions.test.mjs](../frontend/app/tests/task-actions.test.mjs)
 - [frontend/app/tests/task-members.test.mjs](../frontend/app/tests/task-members.test.mjs)
 - [frontend/app/tests/task-refresh.test.mjs](../frontend/app/tests/task-refresh.test.mjs)
@@ -1617,6 +1629,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/workflow-camera.test.mjs](../frontend/app/tests/workflow-camera.test.mjs)
 - [frontend/app/tests/workflow-minimap.test.mjs](../frontend/app/tests/workflow-minimap.test.mjs)
 - [frontend/app/tests/workflow-viewport.test.mjs](../frontend/app/tests/workflow-viewport.test.mjs)
+- [frontend/app/tests/workspace-menu-keyboard.test.mjs](../frontend/app/tests/workspace-menu-keyboard.test.mjs)
 - [frontend/app/tsconfig.json](../frontend/app/tsconfig.json)
 
 ### React — frontend/board
@@ -1669,7 +1682,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_filter_frontend.py](../backend/core/test_filter_frontend.py).
 
-- `ReactFilterAndTagTests`: 14 metod testowych.
+- `ReactFilterAndTagTests`: 15 metod testowych.
 
 ### backend/core/test_form_payload.py
 
@@ -1683,6 +1696,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/core/test_frontend.py](../backend/core/test_frontend.py).
 
 - `ReactPageApiTests`: 20 metod testowych.
+
+### backend/core/test_list_window.py
+
+Źródło: [backend/core/test_list_window.py](../backend/core/test_list_window.py).
+
+- `ListWindowTests`: 7 metod testowych.
 
 ### backend/core/test_navigation_frontend.py
 

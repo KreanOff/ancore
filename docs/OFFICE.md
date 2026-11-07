@@ -16,6 +16,13 @@ podglądu przekierowuje do edytora. DOC/XLS/PPT/RTF/TXT/CSV można otworzyć jak
 kopię OOXML w tym samym dysku i folderze. Nie powstaje rekord w katalogu Dokumentów.
 Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku.
 
+Katalogi Dysków i Dokumentów wczytują pierwsze 20 pozycji. Wspólny przycisk
+„Pokaż więcej” pod listą lub kafelkami rozszerza widoczny zakres o kolejne 20,
+zachowując zaznaczenie. Zmiana filtrów albo sortowania zaczyna listę od początku.
+Limit jest zapisany w URL; błąd odczytu zachowuje wyniki i pozwala ponowić próbę.
+Ta kontrolka dotyczy katalogów aplikacji, nie nawigacji stron dokumentu
+wewnątrz ONLYOFFICE, PDF ani sceny tablicy.
+
 ## Funkcje
 
 - **Dokument:** plik DOCX, formatowanie, tabele, obrazy, układ stron, komentarze
@@ -26,7 +33,9 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
 - **Formularz PDF:** tworzenie na bazie pustego wzorca ONLYOFFICE; `isForm`
   otwiera projektowanie pól. Zapis zachowuje PDF i dane formularza.
 - **Tablica:** tekst, kształty, strzałki, rysowanie, obrazy PNG/JPG/WebP,
-  cofanie, powiększenie, import `.excalidraw`, eksport sceny oraz PNG/SVG.
+  cofanie, powiększenie oraz zapis automatyczny i Ctrl/⌘+S. Przycisk hamburgera
+  Excalidraw i całe jego menu są usunięte, wraz z wejściami do importu/eksportu,
+  pobrania kopii i „Zapisz w Ancore”. Nie dodano zastępczych przycisków.
 - Wysłane DOCX/XLSX/PPTX/PDF otwierają się bezpośrednio w odpowiednim edytorze.
   Upload TXT i CSV w Dysku oraz Dokumentach przyjmuje UTF-8 i UTF-16 z BOM
   (little-endian lub big-endian); zapisuje oryginalne bajty pliku.
@@ -39,8 +48,9 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
   opuszczenie pola zapisuje nazwę; Escape anuluje edycję i przywraca fokus.
   Nie ma osobnego ołówka ani potwierdzenia. Aktywne pole ma cienkie podkreślenie.
   Statusy pozostają dostępne dla czytników ekranu, a błędy pojawiają się pod
-  paskiem. Zapis automatyczny jest niezależny od powłoki; funkcje pobierania
-  i ręcznego zapisu pozostają w edytorze. Dane dokumentu są dostępne w katalogu.
+  paskiem. Zapis automatyczny jest niezależny od powłoki. ONLYOFFICE zachowuje
+  własne funkcje pobierania i ręcznego zapisu; tablica zachowuje Ctrl/⌘+S.
+  Dane dokumentu są dostępne w katalogu.
   Osobny POST `/<uuid>/rename/` w Dokumentach i Dysku, także pod adresem
   Workspace, wymaga właściciela, aktywnego Workspace, pliku poza koszem
   i CSRF. Zmienia tylko `title` oraz `updated_at`; zachowuje oryginalne
@@ -58,15 +68,17 @@ Powłoka i JavaScript są wspólne, a przycisk powrotu prowadzi do folderu Dysku
 
 ## Szablony i wycofana historia wersji
 
-Dokument DOCX/XLSX/PPTX/PDF można oznaczyć jako szablon w danych dokumentu
-lub jego menu. Widok „Szablony” obejmuje tylko aktywne pliki właściciela
-w bieżącym Workspace. „Utwórz kopię szablonu” w menu tworzy niezależny plik
-z ostatnio zapisaną treścią, nowym UUID i kluczem edytora. Nie ma
-osobnego kafelka „Z szablonu”. Zmiany niezapisane w edytorze nie trafiają do kopii.
-Odznaczenie szablonu zachowuje dokument. Szablony dotyczą katalogu Dokumentów.
+Widok „Szablony” zachowuje zapisane oznaczenia aktywnych plików właściciela
+w bieżącym Workspace. Menu oznaczania dokumentu jako szablonu i tworzenia
+jego kopii zostało usunięte bez zastępczych wejść; nie ma też kafelka
+„Z szablonu”. Endpointy `/<uuid>/template/` i `templates/create/` nadal
+działają z dotychczasową kontrolą dostępu. Kopia utworzona przez istniejący
+formularz ma ostatnio zapisaną treść, nowy UUID i klucz edytora; niezapisane
+zmiany nie trafiają do kopii. Odznaczenie szablonu zachowuje dokument.
+Szablony dotyczą katalogu Dokumentów.
 
-Historia wersji została wycofana z Dysku i Dokumentów. Menu plików nie zawiera
-tej akcji; zwykłe i scoped adresy `history/` oraz `versions/.../download/`
+Historia wersji została wycofana z Dysku i Dokumentów. Zwykłe i scoped
+adresy `history/` oraz `versions/.../download/`
 i `versions/.../restore/` nie mają aktywnego routingu (404, po ewentualnym
 przekierowaniu do Workspace). Zapis ONLYOFFICE i podmiana pliku nie tworzą
 nowych rekordów `DocumentVersion`.
@@ -163,6 +175,12 @@ Prywatna scena nie jest wysyłana do excalidraw.com i nie jest utrwalana w
 localStorage przeglądarki. Biblioteka kształtów w panelu Excalidraw nie jest
 osobnym trwałym katalogiem Ancore — elementy dodane do sceny są zapisywane.
 
+`board.jsx` przekazuje pusty `MainMenu`, a lokalny `board.css` ukrywa
+`.main-menu-trigger` wyłącznie wewnątrz `#board-root .excalidraw`.
+Przypięta wersja Excalidraw renderuje przycisk także dla pustego menu;
+przy aktualizacji zależności sprawdź ten adapter. Zmiana nie modyfikuje
+kodu vendora ani mechanizmu zapisu sceny.
+
 ## Konfiguracja na innym serwerze
 
 Gotowy wariant produkcyjny z osobnym kontenerem ONLYOFFICE, proxy pod
@@ -243,11 +261,13 @@ nie wdrażano płatnych funkcji mobilnych ani integracji Microsoft 365.
   jedno żądanie zapisu. Błąd zapisu lub unieważnienie sesji zatrzymuje automatyczne
   ponowienia, a odmontowanie usuwa timery. Reguła obejmuje React i adapter
   `office-suite.js`.
-- Tablica zapisuje scenę po krótkiej przerwie w edycji oraz na żądanie/Ctrl+S.
+- Tablica zapisuje scenę po krótkiej przerwie w edycji oraz na żądanie,
+  także skrótem Ctrl+S / ⌘S.
   Rewizja zapobiega nadpisaniu przez starsze okno (409). Przy błędzie scena
-  pozostaje w przeglądarce; „Pobierz kopię tablicy” w jej menu pobiera lokalną
-  kopię. „Zapisz w Ancore” i Ctrl+S pozostają dostępne wewnątrz tablicy. Ochrona
-  przed wyjściem działa, gdy istnieją niezapisane zmiany.
+  pozostaje w przeglądarce. Akcje menu „Pobierz kopię tablicy” i „Zapisz w Ancore”
+  nie są dostępne; istniejący adapter komunikatów rodzica zachowuje obsługę
+  `save` i `download`, a endpoint zapisu i jego walidacja pozostają bez zmian.
+  Ochrona przed wyjściem działa, gdy istnieją niezapisane zmiany.
   Podgląd gościa także potwierdza załadowanie tablicy komunikatem
   „Tablica otwarta”, bez oznaczania sceny jako zmienionej ani wywoływania
   zapisu. Dzięki temu powłoka nie zgłasza błędu po upływie limitu ładowania.

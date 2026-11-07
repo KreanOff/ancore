@@ -115,11 +115,13 @@ nadawany automatycznie i tylko do odczytu. Jest także segmentem adresu Workspac
 zmiana nazwy nie zmienia kodu ani adresu. Dawne adresy pozostają aliasami
 z tymi samymi kontrolami dostępu.
 
-Menu działań w katalogu zawiera „Ustaw jako domyślny”, a dla wybranego miejsca
-„Usuń ustawienie domyślne”. Etykieta „Domyślny” wskazuje jeden osobisty wybór,
-niezależny od etykiety „Bieżący”. Każda osoba może wskazać własny lub udostępniony
-Workspace, do którego nadal ma dostęp. Po zalogowaniu otwiera się jego „Dla ciebie”.
-Zmiana preferencji nie przełącza bieżącego kontekstu ani ustawień innych osób.
+Katalog Workspace pokazuje pierwsze 20 wyników; „Pokaż więcej” rozszerza
+widoczną listę lokalnie o kolejne 20. Wyszukiwanie resetuje okno. Zaznaczenie
+pozostaje przy doładowaniu. Katalog nie zawiera hamburgera ani jego kolumny.
+Usunięte menu było wejściem do ustawiania domyślnego Workspace; nie dodano zastępczej kontrolki. Zapisana
+preferencja nadal działa: etykieta „Domyślny” wskazuje osobisty wybór, niezależny
+od „Bieżącego”, a po zalogowaniu otwiera się jego „Dla ciebie”, jeśli osoba nadal
+ma dostęp. Endpoint preferencji zachowuje dotychczasowe uprawnienia.
 `Workplace.avatar` zapisuje identyfikator jednej z 30 ilustracji współdzielonych
 z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID z pierwotnej
 puli 24 motywów, zachowujący wcześniejsze przypisania.
@@ -265,7 +267,7 @@ wyłącznie oznaczenia zalogowanego konta w dostępnym Workspace.
   Kafelki pokazują typ, rozmiar, datę i lokalizację pliku oraz te same
   akcje co lista; dyski pokazują ikonę, nazwę i datę, bez opisu i liczników.
   Układ jest zapamiętywany w sesji oddzielnie dla konta, Workspace oraz katalogu
-  dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i stronę.
+  dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i wczytany zakres.
   „Nowy folder” jest bezpośrednią akcją w pasku dysku.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
 - Listy dysków, folderów i plików pokazują „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
@@ -285,7 +287,7 @@ wyłącznie oznaczenia zalogowanego konta w dostępnym Workspace.
   Panel przełączania dysków jest dostępny
   wewnątrz dysków i w widokach plików; zawiera listę dysków i ich dodawanie,
   nie powtarza listy na indeksie.
-- Wyszukiwanie, sortowanie, filtry i paginacja. Listy dysków i plików
+- Wyszukiwanie, sortowanie, filtry i doładowywanie po 20 pozycji. Listy dysków i plików
   pokazują wszystkie kolumny; pasek nie zawiera przycisku „Zarządzaj tabelą”.
 - Panele filtrów i sortowania zgodne z Wszystkimi projektami. Dyski można
   filtrować po nazwie, opisie, obecności plików/folderów i ostatniej zmianie;
@@ -335,13 +337,13 @@ W widoku Workspace pliki mogą pochodzić z wielu dysków i zagnieżdżonych
 folderów. Liczniki nawigacji są niezależne od aktualnego wyszukiwania.
 Filtry łączą się ze sobą i wyszukiwaniem. Na dysku obejmują także foldery
 zagnieżdżone. Filtry właściwe tylko plikom (np. rozszerzenie, rozmiar)
-pokazują wyłącznie pliki. Zmiana filtra lub sortowania wraca na pierwszą
-stronę; paginacja i operacje gwiazdki/kosza zachowują warunki.
+pokazują wyłącznie pliki. Zmiana filtra lub sortowania wraca do pierwszych
+20 pozycji; „Pokaż więcej” i operacje gwiazdki/kosza zachowują warunki.
 Formularze tworzenia/edycji działają jako dialog na tle listy także po otwarciu
 bezpośredniego linku; specjalny nagłówek pobiera sam fragment formularza.
 Wyniki wyszukiwania wskazują, że obejmują podfoldery; pusty wynik pozwala
-wyczyścić wyszukiwanie i filtry. Oba układy korzystają z tej samej paginacji
-i zasad dostępu. Kafelki plików pokazują ikony formatów, nie podgląd zawartości.
+wyczyścić wyszukiwanie i filtry. Oba układy korzystają z tego samego
+kumulatywnego okna wyników i zasad dostępu. Kafelki plików pokazują ikony formatów, nie podgląd zawartości.
 
 Upload wymaga dysku, waliduje całą partię przed zapisem i dopuszcza do
 20 plików. Dostępne formaty i limity wynikają ze wspólnego walidatora.
@@ -381,8 +383,9 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
   z zachowanymi licznikami.
   Kafelki pozostają widoczne bez nagłówka i przycisku zwijania;
   wcześniej zapisany stan zwinięcia nie jest odczytywany.
-  Plik powstaje w bieżącym Workspace; typ można jeszcze zmienić w formularzu. Wspólna paginacja
-  pozwala wyświetlić 25, 50 lub 100 pozycji.
+  Plik powstaje w bieżącym Workspace; typ można jeszcze zmienić w formularzu.
+  Wspólny przycisk „Pokaż więcej” rozszerza listę o 20 pozycji i zachowuje
+  wcześniej widoczne dokumenty oraz zaznaczenie.
 - Filtry i sortowanie korzystają z tych samych paneli co Dysk. Filtry obejmują
   nazwę dokumentu, oryginalną nazwę pliku, typ pliku (także Dokument Ancore
   i tablicę Board), rozmiar, gwiazdkę oraz datę zmiany, a w koszu datę usunięcia.
@@ -390,7 +393,7 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
   Łączą się ze sobą i wyszukiwaniem, obejmując dokumenty bieżącego Workspace.
   Sortowanie pozwala wybrać oba kierunki dla nazwy, oryginalnej nazwy pliku,
   rozmiaru, daty zmiany/usunięcia i daty dodania.
-  Zmiana warunków wraca na pierwszą stronę. Paginacja, zmiana lista/kafelki
+  Zmiana warunków wraca do pierwszych 20 wyników. Doładowywanie, zmiana lista/kafelki
   oraz akcje gwiazdki/kosza zachowują filtry i sortowanie.
   Czyszczenie filtrów w panelu zachowuje układ i widok.
 - Lista pokazuje kolumny „Nazwa”, „Zmodyfikowano” i „Rozmiar”. Dysk i Dokumenty
@@ -404,7 +407,9 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
   Edytory zapisują pliki w prywatnym storage. DOC/XLS/PPT/RTF/TXT/CSV mogą utworzyć osobną
   kopię OOXML do edycji. PDF obsługuje pełną edycję oraz tworzenie formularzy.
 - Tablica Excalidraw obsługuje rysowanie, tekst, kształty, strzałki, obrazy,
-  automatyczny zapis, import i eksport sceny oraz eksport PNG/SVG. Otwiera się
+  automatyczny zapis i Ctrl/⌘+S. Hamburger i całe menu tablicy są usunięte
+  bez zastępczych przycisków importu/eksportu lub pobrania kopii. Endpoint
+  zapisu zachowuje kontrolę dostępu, CSRF i rewizję. Tablica otwiera się
   w osobnej karcie bez menu bocznego, tak samo jak pliki Office: z listy,
   kafelków, wyszukiwarki, metadanych oraz po utworzeniu w modalu.
 - Upload: do 20 plików, domyślnie 10 MiB na plik. Nazwę można zmieniać,
@@ -414,9 +419,12 @@ formatów i limitów Dokumentów. Przenoszenie między folderami dotyczy tylko D
 
 Pełne edytory biurowe wymagają działającego, skonfigurowanego ONLYOFFICE.
 Tablica działa bez niego. Interfejs i dane są dostępne właścicielowi i członkom Workspace
-zgodnie z [zasadami zespołu](TEAMWORK.md); nie dodano publicznych linków, OCR ani VBA. Dokumenty i Dysk mają
-historię poprzednich plików z pobieraniem i przywracaniem. Katalog Dokumentów
-obsługuje oznaczanie szablonów i tworzenie niezależnych kopii z ich menu.
+zgodnie z [zasadami zespołu](TEAMWORK.md); nie dodano publicznych linków, OCR ani VBA.
+Ekran historii wersji Dokumentów i Dysku jest usunięty. Katalog Dokumentów zachowuje widok zapisanych
+szablonów, ale menu oznaczania i tworzenia kopii zostało usunięte. Menu wierszy
+i kafelków Dysków/Dokumentów oraz ich kolumny nie są renderowane; nie dodano
+zastępczych wejść do dawnych akcji. Backend nadal obsługuje istniejące operacje
+z ich kontrolą dostępu.
 Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
 [Pełne edytory Dokumentów](OFFICE.md).
 
@@ -433,8 +441,8 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   (osobiste gwiazdki przestrzeni, grup i zadań), „Ostatnia praca”
   (ostatnia aktywność zalogowanej osoby), „Ostatnio oglądane” (elementy otwarte
   w sesji w ciągu ostatnich 7 dni, liczonych od bieżącej chwili). Limit czasu
-  obejmuje zadania, przestrzenie i grupy przed liczeniem wyników i paginacją
-  (po 25 pozycji wyłącznie w „Ostatnio oglądane”);
+  obejmuje zadania, przestrzenie i grupy przed liczeniem wyników i ograniczeniem
+  okna. „Ostatnio oglądane” wczytuje 20 pozycji i udostępnia „Pokaż więcej”;
   ponowne otwarcie odświeża czas wpisu. Lista zaczyna się bezpośrednio pod zakładkami; pasek filtrów,
   wyszukiwarka i pasek opisu zakładki są usunięte. Istniejące adresy nadal
   obsługują wyszukiwanie `q` po nazwie/kluczu `WorkItem` i filtr `space`.
@@ -442,7 +450,7 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   „Ostatnia praca” — po ostatniej aktywności zalogowanej osoby. Limit 20 jest
   wspólny dla wszystkich statusów i rodzajów pozycji w zakładce. Dawny parametr
   `page` jest ignorowany w tych czterech zakładkach. Filtry działają przed limitem
-  i paginacją oglądanych; pozostają w adresach zakładek i kolejnych stron oglądanych.
+  i doładowywaniem oglądanych; pozostają w adresach zakładek i rozszerzanego okna.
   Pusty wynik udostępnia „Wyczyść filtry”, zachowujące zakładkę.
   Niedostępna lub błędna przestrzeń daje pusty wynik, bez rozszerzania zakresu.
   Historia ma grupy Dzisiaj, Wczoraj, Ostatnie 7 dni i Wcześniej według lokalnej
@@ -465,7 +473,8 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   pozostaje właściciel Workspace, twórcą zalogowana osoba. Przy pierwszym wejściu
   pulpit jest prywatny i zawiera jeden „Postęp pracy”. Używa tych samych gadżetów,
   siatki 12 kolumn, konfiguracji źródła/przypisania, nazwy/opisu i dostępów co nowe
-  pulpity. Zmiany oraz usunięcie wszystkich gadżetów pozostają po kolejnym wejściu.
+  pulpity. Zapisane zmiany pozostają po kolejnym wejściu; backend nadal
+  obsługuje pusty układ, mimo usunięcia wejścia do usuwania gadżetów.
   Nie można usunąć rekordu domyślnego pulpitu. Stałe liczniki, listy terminów,
   projektów i kalendarza starego Dashboardu nie są już renderowane na stronie głównej.
 - **Pulpity:** osobny katalog `/dashboards/` oraz scoped odpowiednik, dostępny
@@ -474,9 +483,9 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   a dane i zapisy obsługują istniejące widoki Django przez JSON API v1.
   Katalog pokazuje wszystkie dostępne pulpity, bez zakładek Wszystkie,
   Ulubione i Moje. Wyszukiwanie po nazwie/opisie i filtr widoczności mają
-  paginację po 30 pozycji. Dawny parametr `tab` jest ignorowany.
+  doładowywanie po 20 pozycji. Dawny parametr `tab` jest ignorowany.
   Katalog używa tej samej
-  tabeli co Przestrzenie, z lokalnym zaznaczeniem i menu akcji po lewej.
+  tabeli co Przestrzenie, z lokalnym zaznaczeniem, bez hamburgera i jego kolumny.
   Każdy członek Workspace może utworzyć pulpit,
   edytować własny i oznaczać dostępny osobistą gwiazdką.
   Przegląd i edytor używają nazwy w URL, np. `/dashboards/plan-zespolu/`
@@ -501,10 +510,10 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Osobny ekran „Zarządzaj pulpitami” jest usunięty z menu i Ustawień Ancore.
   Stare `/dashboards/manage/` i scoped adresy kierują do zwykłego katalogu
   z zachowaniem wyszukiwania, widoczności i numeru strony. Katalog obejmuje
-  wszystkie dostępne pulpity; właściciel lub administrator otwiera „Ustawienia” z menu
-  konkretnego pulpitu w dużym oknie z zakładkami „Ustawienia” i „Udostępnienia”.
-  Menu nie zawiera osobnej pozycji „Dostępy”.
-  Bieżący ekran i jego menu boczne pozostają w tle.
+  wszystkie dostępne pulpity; właściciel lub administrator otwiera „Ustawienia”
+  z zachowanego menu z wielokropkiem w przeglądzie lub nawigacji. Ustawienia
+  są osobną stroną z sekcjami „Ustawienia” i „Udostępnienia”. Menu nie zawiera
+  osobnej pozycji „Dostępy”.
   „Udostępnienia” pokazuje wspólną tabelę osób jak w Przestrzeniach, z przyciskiem
   „Udostępnij”, wyszukiwaniem osób Workspace i potwierdzanym odebraniem dostępu.
   Role to Administrator, Członek i Obserwator. Administrator zarządza ustawieniami
@@ -514,30 +523,32 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   odświeżanie i widoczność. Przy wyborze całego Workspace tabela pokazuje
   dostęp odziedziczony, a indywidualne udostępnienia są usuwane.
   Udostępnienie i odebranie zapisują się od razu, bez utraty szkicu ustawień.
-  Ustawienia nie zmieniają układu. Menu katalogu, pulpitu i nawigacji otwiera to samo okno.
-  Przełączanie zakładek zachowuje szkice; zapis formularza pozostawia okno otwarte.
+  Ustawienia nie zmieniają układu. Menu przeglądu i nawigacji otwiera tę samą
+  stronę. Przełączanie sekcji zachowuje szkice; zapis pozostawia stronę otwartą.
   Błędy walidacji zachowują szkic; wyjście z niezapisanymi zmianami wymaga
-  potwierdzenia. Menu wiersza udostępnia także otwarcie i usunięcie.
-  Tworzenie i usunięcie wracają do katalogu z filtrami; zamknięcie okna
-  po edycji odświeża katalog z zachowaniem jego filtrów.
+  potwierdzenia. Menu katalogu zostało usunięte; nazwa nadal otwiera pulpit,
+  a istniejące menu z wielokropkiem w przeglądzie zachowuje usuwanie.
+  Tworzenie i usunięcie wracają do katalogu z filtrami.
   Dostępne pulpity innych twórców pozostają w zwykłym katalogu, z akcjami zgodnymi z rolą.
   Widoczność: prywatny, wybrane aktywne osoby albo cały Workspace.
   Uprawnienia wynikają z roli konkretnego Pulpitu, niezależnie od roli Workspace.
   Nowy pulpit jest pusty i otrzymuje gwiazdkę twórcy; gadżety dodaje się ręcznie
   przyciskiem „Dodaj gadżet”.
   Edytor współdzieli z Podsumowaniem siatkę 12 kolumn, przeciąganie,
-  zmianę szerokości/wysokości, uchwyty klawiatury i menu pozycji/rozmiaru.
+  zmianę szerokości/wysokości i uchwyty klawiatury. Menu pozycji/rozmiaru
+  oraz wejścia do konfiguracji i usuwania gadżetu zostały usunięte bez zastępstwa.
   Przegląd pozostaje widokiem do oglądania; „Edytuj pulpit” włącza szkic
   na tej samej stronie, a „Dodaj gadżet” otwiera katalog w modalu.
-  „Zapisz układ” zatwierdza razem pozycje, rozmiary, dodane i usunięte karty;
+  „Zapisz układ” zatwierdza razem pozycje, rozmiary i dodane karty;
   „Anuluj” odrzuca zmiany. Pusty układ pozostaje zapisany po ponownym wejściu.
   Błąd lub konflikt rewizji zachowuje szkic i umożliwia wczytanie aktualnej
   wersji po potwierdzeniu. Dostęp do edycji mają właściciel, administrator
   i członek Pulpitu; każda operacja ponownie weryfikuje rolę.
   Katalog oferuje „Postęp pracy” i wyszukiwanie. Nowa karta trafia w pierwsze
-  wolne miejsce i otrzymuje dane po zapisie. Menu „Konfiguruj” jest dostępne
-  po zapisaniu układu; dopasowuje źródło, tytuł i filtry we wspólnym modalu.
-  Na telefonie kafelki są ułożone pionowo, a menu pozwala zmieniać ich kolejność.
+  wolne miejsce i otrzymuje dane po zapisie. Backend zachowuje formularze
+  konfiguracji źródła, tytułu i filtrów, mimo usunięcia wejścia z menu gadżetu.
+  Na telefonie kafelki są ułożone pionowo; istniejący uchwyt obsługuje kolejność
+  strzałkami góra/dół.
   Migracja `dashboard.0008_dashboard_gadget_grid` przenosi istniejące kolumny
   bez usuwania gadżetów ani ich konfiguracji.
   Filtry obejmują przestrzeń i wykonawcę (wszyscy, oglądający, bez wykonawcy).
@@ -561,14 +572,16 @@ Szczegółowe możliwości, zasady zapisu i uruchomienie opisuje
   Odbiorca widzi wyłącznie dane dostępne dla niego. Cofnięty dostęp,
   usunięty filtr lub pusta po usunięciach lista Przestrzeni nie rozszerza
   zakresu; gadżet pokazuje niedostępne źródło. Ikona z biblioteki 3145 emoji
-  Fluent Emoji 3D rozpoznaje pulpit w nagłówku, katalogu i menu.
+  Fluent Emoji 3D rozpoznaje pulpit w katalogu i menu; nagłówek strony ma sam tytuł.
   Picker ma kategorie, polskie/angielskie wyszukiwanie i ostatnie wybory.
 - **Ustawienia:** centrum linków do profilu i Workspace oraz wylogowania.
   Sekcja Preferencje jest usunięta; zwijanie menu i powiadomienia są dostępne
   przez kontrolki wspólnej powłoki aplikacji.
 - **Globalne szukanie:** panel przeszukuje dane modułów i miejsca nawigacji.
 - **Powiadomienia:** centrum przypomnień oraz komentarzy Zadań,
-  z odczytem, archiwum, usuwaniem, filtrami Workspace i doczytywaniem starszych wpisów.
+  z odczytem, widokiem archiwum, zbiorczym usuwaniem, filtrami Workspace
+  i doczytywaniem starszych wpisów. Menu każdej karty zostało usunięte bez
+  zastępczych kontrolek odczytu, archiwizacji/przywracania i usuwania.
   Historia utworzenia i zmian obiektów nie trafia do powiadomień, także obserwujących.
 
 Historyczny serwis `dashboard.overview` i testy jego nieużywanych agregacji usunięto.
@@ -584,11 +597,11 @@ zwykłe wejście na `/notifications/` przekierowuje do Dashboardu, a żądania
 danych panelu i licznika nadal obsługuje ten sam endpoint. `NotificationState` zapisuje
 odczyt, archiwum i usunięcie osobno dla konta. Własna aktywność jest domyślnie przeczytana.
 „Oznacz wszystkie jako przeczytane” i zbiorcze usuwanie obejmują bieżący filtr
-oraz starsze strony listy. Usunięcie wymaga potwierdzenia i nie ma akcji przywracania;
+oraz starsze, jeszcze niewczytane wyniki listy. Usunięcie wymaga potwierdzenia i nie ma akcji przywracania;
 historia obiektów oraz powiadomienia innych osób pozostają bez zmian.
 Centrum obejmuje dostępne
 Workspace; link określa przestrzeń konkretnego zadania/karty. Licznik odświeża
-się co 30 sekund w widocznej karcie. Szczegóły uprawnień, paginacji i zbiorczego
+się co 30 sekund w widocznej karcie. Szczegóły uprawnień, doładowywania i zbiorczego
 odczytu: [Mechanizmy](MECHANISMS.md#11-historia-a-powiadomienia).
 Zakładki „Wzmianki” i „Obserwowane” pokazują nowe komentarze kierowane do
 użytkownika przez `@Imię Nazwisko` lub osobistą subskrypcję. Ten sam wpis zachowuje
@@ -653,17 +666,19 @@ Lista udostępnia wyszukiwanie nazwy, numerów, lokalizacji i notatek,
 ważność po terminie, najbliższe 30 dni, oba zakresy, zwrot po terminie,
 zwrot w najbliższych 7 dniach oraz brak daty ważności. Sortowanie obejmuje nazwę,
 datę utworzenia, ostatnią zmianę, ważność i zwrot; brakujące daty są na końcu.
-Paginacja ma 25/50/100 pozycji. Liczniki nad katalogiem dotyczą całego Workspace;
+Lista wczytuje 20 pozycji; „Pokaż więcej” dodaje kolejne 20, zachowując
+widoczne wiersze i zaznaczenie. Liczniki nad katalogiem dotyczą całego Workspace;
 kliknięcie otwiera wskazany zakres i resetuje pozostałe filtry.
-Układ listy odpowiada katalogowi Projektów: zarządzanie kolumnami, zbiorcze
-menu filtrów, checkboxy z podświetleniem zaznaczenia i menu działań wiersza
-z kartą, edycją i usunięciem. Ustawienia kolumn są zapisywane lokalnie dla Zasobów;
+Układ listy korzysta ze wspólnej tabeli: zarządzanie kolumnami, zbiorcze
+menu filtrów i checkboxy z podświetleniem zaznaczenia. Hamburger i jego kolumna
+zostały usunięte bez zastępczych kontrolek. Nazwa nadal otwiera kartę zasobu,
+która zachowuje przycisk edycji. Ustawienia kolumn są zapisywane lokalnie dla Zasobów;
 nowa kolumna zwrotu zachowuje wcześniejsze preferencje.
 Globalne wyszukiwanie ma osobną kategorię Zasoby z limitem 20 wyników i linkami
 do karty. Moduł można dodać do osobistych ulubionych menu.
 
 Karta pod `/<pk>/` ma dane, notatki ewidencyjne i historię `ResourceActivity`
-stronicowaną po 20 wpisów. Zapisuje faktycznego autora, czas, rodzaj operacji,
+doładowywaną po 20 wpisów wspólnym przyciskiem „Pokaż więcej”. Zapisuje faktycznego autora, czas, rodzaj operacji,
 zmienione pola przed/po oraz opcjonalną notatkę do operacji (do 2000 znaków).
 Nazwa autora pozostaje po usunięciu konta. Historia zaczyna się od wdrożenia
 mechanizmu; migracja nie odtwarza wcześniejszych zdarzeń. Notatka do historii
@@ -674,21 +689,24 @@ zwrotu (dzisiaj lub później). Dotyczy zasobów dostępnych lub w użyciu; pozw
 również przekazać zasób kolejnej osobie. „Przyjmij zwrot” wymaga „W użyciu”,
 ustawia „Dostępny” i usuwa przypisanie oraz termin. Zmiana samego statusu
 zachowuje osobę odpowiedzialną. Karta udostępnia też notatkę do historii.
-Zaznaczenie obejmuje bieżącą stronę (maksymalnie 100 zasobów) i pozwala zbiorczo
-przekazać, przyjąć zwrot, zmienić status lub lokalizację. Walidacja całego zestawu,
+Zaznaczenie obejmuje widoczne wiersze i pozwala zbiorczo przekazać, przyjąć
+zwrot, zmienić status lub lokalizację. Operacja nadal obejmuje najwyżej 100
+zasobów; większe zaznaczenie pokazuje komunikat i blokuje przyciski operacji. Walidacja całego zestawu,
 zapis i historia są atomowe, z blokadą rekordów. Niedostępny zasób, błędny stan
 lub nieaktualna wersja zatrzymuje całą operację. Dialog konfliktu pozwala odrzucić
-szkic i pobrać bieżące dane. Zmiana wyników czyści zaznaczenie.
+szkic i pobrać bieżące dane. Zmiana filtra lub sortowania czyści zaznaczenie
+i resetuje okno; doładowanie zachowuje zaznaczone dostępne wiersze.
 
 „Eksport CSV” pobiera wszystkie wyniki bieżących filtrów i sortowania, niezależnie
-od strony. Plik ma UTF-8 z BOM, separator średnik i neutralizację komórek mogących
+od wczytanego zakresu. Plik ma UTF-8 z BOM, separator średnik i neutralizację komórek mogących
 uruchomić formułę w arkuszu. Zachowuje ten sam zakres Workspace co katalog.
 
 Dodawanie i edycja używają standardowego modala nad katalogiem; błędy walidacji
 zachowują pola, błędy sieci pozwalają ponowić zapis. Zamknięcie niezapisanego
-formularza wymaga potwierdzenia. Usuwanie jest trwałe, przez POST po potwierdzeniu.
-Po zapisie/usunięciu lista zachowuje filtry, sortowanie i bieżącą stronę
-(z ograniczeniem do ostatniej istniejącej strony).
+formularza wymaga potwierdzenia. Backend zachowuje trwałe usuwanie przez POST;
+wejście do tej operacji z menu wiersza zostało usunięte.
+Po zapisie/usunięciu lista zachowuje filtry, sortowanie i wczytany limit
+(z ograniczeniem do liczby dostępnych wyników).
 
 Dane należą do właściciela i aktywnego Workspace; rzeczywisty autor utworzenia
 oraz ostatniej zmiany jest zapisany osobno. Formularz przypisania ogranicza

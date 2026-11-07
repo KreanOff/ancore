@@ -29,15 +29,17 @@ globalne kieruje „Wyszukaj zadania” i „Moje zadania” do Filtrów.
 Wyniki używają tej samej listy co zadania Przestrzeni: kolorowych,
 zwijanych grup statusów i wierszy z checkboxem, priorytetem, statusem,
 kluczem, tytułem, typem oraz licznikami tagów i załączników. Dotyczy to
-także zapisanych filtrów. Grupy i ich liczniki obejmują bieżącą stronę;
-sortowanie ustala kolejność zadań wewnątrz grup. Paginacja nadal obejmuje
-całe wyszukiwanie. Checkboxy zaznaczają wiersze lokalnie.
+także zapisanych filtrów. Grupy i ich liczniki obejmują wczytane okno;
+sortowanie ustala kolejność zadań wewnątrz grup. „Pokaż więcej” rozszerza
+całe wyszukiwanie o 20 zadań, zachowując wcześniejsze wiersze. Checkboxy
+zaznaczają wiersze lokalnie, także po doładowaniu.
 
 Tryb zaawansowany pozwala zapisać warunki tekstowo. Przełączenie na podstawowy
 jest dostępne wyłącznie dla zapytań, które można przedstawić bez utraty warunków.
 Kilka warunków `text` lub jego aliasu `summary` pozostaje w trybie zaawansowanym,
 ponieważ podstawowe wyszukiwanie ma jedno pole tekstowe.
-Wyszukiwanie i paginacja zachowują zapytanie w URL. Błędne warunki pokazują
+Wyszukiwanie i doładowywanie zachowują zapytanie w URL. Zmiana warunków
+lub sortowania resetuje limit do pierwszych 20 wyników. Błędne warunki pokazują
 komunikat oraz pusty wynik; nie można ich zapisać jako filtr.
 
 „Zapisz filtr” tworzy definicję z nazwą, opisem i widocznością; nowy filtr
@@ -51,10 +53,11 @@ Tworzenie i ustawienia filtra używają wspólnego dużego okna Przestrzeni,
 bez dodatkowej ramki wokół pól. Zakładka „Ustawienia” zawiera nazwę, opis,
 warunki i widoczność „Prywatny — wybrane osoby” lub „Cały Workspace”.
 „Udostępnienia” pokazuje wspólną tabelę `Members`: awatar, nazwę, e-mail,
-rolę, datę oraz menu zmiany roli i odebrania dostępu. Właściciel ma chroniony
+rolę i datę, bez menu wiersza ani jego kolumny. Właściciel ma chroniony
 wiersz. „Udostępnij” otwiera wspólny picker aktywnych osób Workspace
-z wyborem Administrator/Członek/Obserwator. Zapis działa od razu; odebranie
-wymaga potwierdzenia. Widoczność Workspace pokazuje dostęp odziedziczony.
+z wyborem Administrator/Członek/Obserwator. Zapis działa od razu. Usunięte
+wejścia do zmiany roli i odebrania dostępu nie otrzymały zastępczych kontrolek.
+Backend nadal weryfikuje te operacje. Widoczność Workspace pokazuje dostęp odziedziczony.
 
 Nowy filtr najpierw zapisuje się w „Ustawieniach”. Okno pozostaje otwarte
 i przechodzi do „Udostępnień”, gdzie można wybrać osoby. Kolejne zapisy
@@ -67,7 +70,7 @@ starsze adresy zarządzania otwierają tę samą powłokę. Zamknięcie po zapis
 odświeża właściwy ekran z zachowaniem kontekstu katalogu.
 
 Katalog „Filtry” zawiera zakładki Ulubione, Moje filtry, Udostępnione
-i Wszystkie, wyszukiwanie nazw/opisów i paginację. Gwiazdka jest osobista.
+i Wszystkie, wyszukiwanie nazw/opisów i doładowywanie po 20 definicji. Gwiazdka jest osobista.
 Osobny ekran „Zarządzaj filtrami” jest usunięty wraz z własnym menu bocznym
 oraz odnośnikami w Ustawieniach, nagłówku Filtrów, wyszukiwaniu i zwiniętym menu.
 Stare zwykłe/scoped `/filters/manage/` przekierowują do zakładki „Moje filtry”
@@ -79,8 +82,10 @@ z kontrolą roli i Workspace. W tle jest zwykły katalog,
 a zapis/anulowanie zachowują jego zakładkę i wyszukiwanie. Adres `return_to`
 prowadzący do wycofanego katalogu jest normalizowany również przy gwiazdce
 oraz usuwaniu. Pozostałe zabezpieczenia lokalnego przekierowania są zachowane.
-Ustawienia, dostępy, osobiste gwiazdki i usuwanie pozostają w menu konkretnego
-filtra. Modele, zapisane definicje i wyniki zadań pozostają bez zmian.
+Katalog nie zawiera hamburgera ani jego kolumny; nie dodano zastępczego
+wejścia do usuwania filtra. Nazwa nadal otwiera wyniki, gwiazdka ma własną
+kontrolkę, a istniejący przycisk edycji w wynikach otwiera ustawienia. Modele,
+zapisane definicje i wyniki zadań pozostają bez zmian.
 Menu boczne ma nagłówek z plusem, sekcje „Oznaczone gwiazdką” i „Ostatnie”
 oraz panel „Więcej filtrów”.
 „+” otwiera duże okno tworzenia filtra nad bieżącą stroną, również w menu
@@ -166,8 +171,8 @@ według znaczenia, klucz według Przestrzeni i numeru, a puste wartości
 trafiają na koniec; klucz bazy rozstrzyga remisy.
 
 Parser ogranicza długość do 4000 znaków, liczbę tokenów do 600, zagnieżdżenie
-do 20, listę IN do 100 wartości i sortowanie do 6 pól. Wyniki mają
-paginację po 50 zadań. Nie ma pełnej zgodności JQL, wtyczek funkcji,
+do 20, listę IN do 100 wartości i sortowanie do 6 pól. Wyniki używają
+wspólnego przycisku „Pokaż więcej” i parametru `limit`, po 20 zadań na odczyt. Nie ma pełnej zgodności JQL, wtyczek funkcji,
 subskrypcji e-mail, harmonogramu wykonywania ani filtrowania historycznych modeli.
 
 ## Routing i implementacja
