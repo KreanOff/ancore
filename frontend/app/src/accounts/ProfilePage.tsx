@@ -1,3 +1,4 @@
+import { PageHeader } from '../shared/PageHeader';
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
@@ -129,13 +130,13 @@ export default function ProfilePage({ initial, csrfToken }: PageProps) {
       aria-busy={pending}
     >
       <div className="tasks-issue-shell profile-issue-shell">
-        <header className="tasks-issue-header">
-          <div className="tasks-issue-breadcrumb">
-            <h1 className="tasks-issue-crumb tasks-issue-crumb--current" id="profile-title">
+        <PageHeader
+          heading={
+            <h1 className="tasks-topbar-title" id="profile-title">
               Profil użytkownika
             </h1>
-          </div>
-          <div className="tasks-issue-actions">
+          }
+          actions={
             <button
               type="button"
               className="tasks-filter-button"
@@ -145,8 +146,8 @@ export default function ProfilePage({ initial, csrfToken }: PageProps) {
               <Icon name="pencil" />
               Edytuj profil
             </button>
-          </div>
-        </header>
+          }
+        />
         {error ? (
           <div ref={alert} className="tasks-error-banner" role="alert" tabIndex={-1}>
             {error}

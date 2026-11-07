@@ -78,13 +78,19 @@ function deferred() {
 }
 
 function childHarness() {
+  class HTMLElement {}
+  const trigger = new HTMLElement();
   const requests = [],
     navigations = [],
     context = {
       initial: { api_url: '/api/v1/page/', url: '/space/test/tasks/TS-1/?tab=subtasks' },
       csrfToken: 'token',
+      workLogURL: { current: '/space/test/tasks/TS-1/?tab=subtasks' },
       life: { current: new AbortController() },
       actionPending: { current: false },
+      dialogReturnFocus: { current: null },
+      HTMLElement,
+      document: { activeElement: trigger, body: new HTMLElement() },
       childEditor: null,
       saves: 0,
       failAutosave: false,
@@ -117,13 +123,17 @@ function childHarness() {
       navigate: (url) => navigations.push(url),
     };
   setters(context, ['Busy', 'Error', 'RefreshFailed', 'Data', 'ChildEditor']);
+  context.setBusy = (value) => {
+    context.busy = value;
+    if (value) context.document.activeElement = context.document.body;
+  };
   const item = {
     key: 'TS-2',
     title: 'Podzadanie',
     editable: true,
     edit_url: '/space/test/items/2/edit/',
   };
-  return { context, requests, navigations, item, ...execute(childCallbacks, context) };
+  return { context, requests, navigations, item, trigger, ...execute(childCallbacks, context) };
 }
 
 test('opening a subtask waits for parent autosave and blocks a second editor request', async () => {
@@ -135,6 +145,8 @@ test('opening a subtask waits for parent autosave and blocks a second editor req
   assert.equal(app.context.saves, 1);
   assert.equal(app.requests.length, 0);
   assert.equal(app.context.busy, true);
+  assert.equal(app.context.document.activeElement, app.context.document.body);
+  assert.equal(app.context.dialogReturnFocus.current, app.trigger);
   saving.resolve();
   await first;
   assert.equal(app.requests.length, 1);
@@ -147,6 +159,11 @@ test('opening a subtask waits for parent autosave and blocks a second editor req
   assert.equal(app.context.childEditor.title, 'Edytuj podzadanie TS-2');
   assert.equal(app.context.childEditor.form.fields[0].value, 'Podzadanie');
   assert.equal(app.context.busy, false);
+  assert.equal(
+    app.context.dialogReturnFocus.current,
+    app.trigger,
+    'autosave, loading and rejected overlapping opens retain the original return target',
+  );
   assert.deepEqual(app.navigations, []);
 });
 

@@ -115,16 +115,38 @@ class ResourceApiTests(TestCase):
         self.assertEqual(Resource.objects.count(), 3)
 
     def test_filters_sort_and_pagination_share_html_behavior(self):
-        Resource.objects.bulk_create([Resource(owner=self.owner, workplace=self.team, name=f'Licencja {index:02}', kind='license', assigned_to=self.member, status='in_use') for index in range(31)])
+        Resource.objects.bulk_create([Resource(owner=self.owner, workplace=self.team, name=f'Licencja {index:02}', kind='license', assigned_to=self.member, status='in_use') for index in range(45)])
+        for resource in (self.hidden, self.corrupt):
+            resource.name = 'Licencja ukryta'
+            resource.kind = 'license'
+            resource.status = 'in_use'
+            resource.assigned_to = self.member
+            resource.save()
         params = {'q': 'Licencja', 'kind': 'license', 'status': 'in_use', 'assignee': 'me', 'sort': '-name', 'page_size': '25', 'next': 'https://example.test'}
         data = self.client.get(self.url(), params).json()
-        self.assertEqual(len(data['results']), 25)
-        self.assertEqual(data['results'][0]['name'], 'Licencja 30')
-        self.assertEqual(data['pagination']['summary'], '1–25 z 31')
+        self.assertEqual(len(data['results']), 20)
+        self.assertEqual(data['results'][0]['name'], 'Licencja 44')
+        self.assertEqual(data['pagination']['summary'], '20 z 45')
+        self.assertEqual(data['pagination']['count'], 45)
         self.assertNotIn('next=', data['list_url'])
         self.assertIn('kind=license', data['pagination']['next_url'])
+        self.assertNotIn('next=', data['pagination']['next_url'])
         params['page'] = '2'
-        self.assertEqual(len(self.client.get(self.url(), params).json()['results']), 6)
+        second = self.client.get(self.url(), params).json()
+        self.assertEqual(len(second['results']), 40)
+        self.assertEqual(second['results'][:20], data['results'])
+        self.assertEqual(second['pagination']['end'], 40)
+        final = self.client.get(self.url(), {**params, 'limit': 60}).json()
+        self.assertEqual(len(final['results']), 45)
+        self.assertEqual(final['results'][:40], second['results'])
+        self.assertEqual(final['pagination']['next_url'], '')
+        for prefix in (self.url(), reverse('resources:api-list')):
+            for limit, expected in [('bad', 20), ('-1', 20), ('9' * 5000, 45)]:
+                with self.subTest(prefix=prefix, limit=limit[:10]):
+                    result = self.client.get(prefix, {**params, 'limit': limit}, follow=True).json()
+                    self.assertEqual(len(result['results']), expected)
+                    self.assertEqual(result['pagination']['count'], 45)
+                    self.assertTrue(all(row['name'] != 'Licencja ukryta' for row in result['results']))
 
     def test_cross_workspace_and_wrong_owner_cannot_be_read_updated_or_deleted(self):
         for resource in [self.hidden, self.corrupt]:

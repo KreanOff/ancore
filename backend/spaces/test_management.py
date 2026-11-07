@@ -118,7 +118,7 @@ class SpaceManagementTests(TestCase):
             make_space(user=self.owner, workplace=self.workspace, name=f'Filtrowany {number:02}')
         response = self.client.get(self.url(), {'q': 'Filtrowany', 'page': '2', 'kind': 'business'}, follow=True)
         self.assertEqual(response.context['page'].paginator.count, 31)
-        self.assertEqual(len(response.context['page']), 1)
+        self.assertEqual(len(response.context['page']), 31)
         self.assertContains(response, 'q=Filtrowany')
         self.assertContains(response, 'kind=business')
 

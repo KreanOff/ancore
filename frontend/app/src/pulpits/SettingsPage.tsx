@@ -1,3 +1,4 @@
+import { PageHeader } from '../shared/PageHeader';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EmbeddedForm } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
@@ -168,19 +169,21 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
         className="tasks-page work-page space-settings-page pulpit-settings-page"
         data-react-screen="pulpit-settings"
       >
-        <header className="tasks-topbar tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            <a
-              href={initialData.return_url}
-              className="tasks-issue-close"
-              aria-label={returnLabel}
-              title={returnLabel}
-            >
-              <Icon name="arrow-left" />
-            </a>
-            <h1 className="tasks-topbar-title">Ustawienia pulpitu · {team.name}</h1>
-          </div>
-        </header>
+        <PageHeader
+          heading={
+            <>
+              <a
+                href={initialData.return_url}
+                className="tasks-issue-close"
+                aria-label={returnLabel}
+                title={returnLabel}
+              >
+                <Icon name="arrow-left" />
+              </a>
+              <h1 className="tasks-topbar-title">Ustawienia pulpitu · {team.name}</h1>
+            </>
+          }
+        />
         {error ? (
           <div className="tasks-modal__errors space-settings-message" role="alert">
             {error}

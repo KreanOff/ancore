@@ -11,7 +11,6 @@ const external = [
   'react/jsx-runtime',
   '../shared/Modal',
   '../shared/Select',
-  '../shared/Dropdown',
   '../shared/Icon',
   '../shared/page',
   '../shared/api',
@@ -27,9 +26,7 @@ async function compile(file) {
   });
   return result.outputFiles[0].text;
 }
-const [rulesCode, itemCode, dialogCode] = await Promise.all(
-  ['kanban.ts', 'Item.tsx', 'BlockDialog.tsx'].map(compile),
-);
+const [rulesCode, dialogCode] = await Promise.all(['kanban.ts', 'BlockDialog.tsx'].map(compile));
 function load(code, mocks = {}) {
   const module = { exports: {} };
   vm.runInNewContext(code, {
@@ -97,51 +94,6 @@ test('stage age tolerates missing/invalid/future observations and uses full elap
   assert.equal(rules.flowAge('2026-11-02T12:00:00Z', now), 'krócej niż godzinę');
   assert.equal(rules.flowAge('2026-11-01T09:00:00Z', now), '3 godz.');
   assert.equal(rules.flowAge('2026-10-31T12:00:00Z', now), '1 dzień');
-});
-
-const { ItemActions } = load(itemCode, {
-  '../shared/Dropdown': { Dropdown: 'Dropdown' },
-  '../shared/Icon': { Icon: 'Icon' },
-});
-function actions(task = item(), columns = []) {
-  const requests = [],
-    dialogs = [];
-  const component = ItemActions({
-    item: task,
-    data: { space: { id: 7, template: 'kanban' }, view: 'board', sort: { manual: true }, columns },
-    busy: false,
-    openForm() {},
-    openBlock: (row) => dialogs.push(row),
-    act: (url, values) => requests.push({ url, values }),
-  });
-  return { tree: component?.props.children(() => {}), requests, dialogs };
-}
-
-test('menu status and backlog actions submit the displayed placement snapshot', () => {
-  const app = actions();
-  button(app.tree, 'Zmień na: Weryfikacja').props.onClick();
-  button(app.tree, 'Przenieś do backlogu').props.onClick();
-  assert.equal(app.requests.length, 2);
-  for (const request of app.requests) {
-    assert.equal(request.values.source_status, 'doing');
-    assert.equal(request.values.source_in_backlog, 'false');
-  }
-  assert.equal(app.requests[0].values.status, 'review');
-  assert.equal(app.requests[1].values.action, 'backlog');
-  button(app.tree, 'Zablokuj zadanie').props.onClick();
-  assert.equal(app.dialogs[0].key, 'KAN-12');
-});
-
-test('completed work cannot be hidden in backlog and read-only items have no write menu', () => {
-  assert.equal(actions(item({ editable: false })).tree, undefined);
-  assert.equal(
-    nodes(actions(item({ category: 'closed' })).tree).some(
-      (node) => text(node) === 'Przenieś do backlogu',
-    ),
-    false,
-  );
-  const full = actions(item(), [{ key: 'review', wip_limit: 2, wip_count: 2 }]);
-  assert.equal(button(full.tree, 'Zmień na: Weryfikacja').props.disabled, true);
 });
 
 function dialog(task = item()) {

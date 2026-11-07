@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Modal } from '../shared/Modal';
 import { Icon } from '../shared/Icon';
@@ -8,7 +9,7 @@ import { errorMessage } from '../shared/api';
 import { CrumbHeader, SettingsFields, ErrorList, fieldValue } from './WorkspaceForm';
 import TeamTable from './TeamTable';
 import Picker from './Picker';
-import type { DirectoryData, Team, Tab, Person } from './types';
+import type { DirectoryData, Team, Tab } from './types';
 export default function TeamDialog({
   team,
   initialTab,
@@ -37,7 +38,7 @@ export default function TeamDialog({
     [dirty, setDirty] = useState(!!team.form?.bound),
     [pending, setPending] = useState(false),
     [error, setError] = useState(''),
-    [child, setChild] = useState<'add' | Person | null>(addOpen ? 'add' : null);
+    [child, setChild] = useState<'add' | null>(addOpen ? 'add' : null);
   const life = useRef(new AbortController()),
     sending = useRef(false),
     tabs = useRef<HTMLDivElement>(null);
@@ -65,16 +66,7 @@ export default function TeamDialog({
       setPending(false);
     }
   }
-  function remove(person: Person) {
-    window.showConfirmModal({
-      title: 'Odebrać dostęp do Workspace?',
-      message:
-        'Dane zespołu pozostaną bez zmian. Otwarte edytory Office zostaną zamknięte — pozostali członkowie muszą ponownie otworzyć pliki.',
-      confirmText: 'Odbierz dostęp',
-      cancelText: 'Anuluj',
-      onConfirm: () => void act(person.change_url!, { action: 'remove' }),
-    });
-  }
+
   const available: Tab[] = team.can_manage ? ['main', 'members', 'links'] : ['main', 'members'];
   return (
     <>
@@ -206,23 +198,28 @@ export default function TeamDialog({
               aria-labelledby="workspace-tab-members"
               hidden={tab !== 'members'}
             >
-              <div className="workplace-edit-modal__team-toolbar">
-                <span className="workplaces-management__count">
-                  {team.name} · Członkowie: {team.members.length}
-                </span>
-                {team.can_manage ? (
-                  <button
-                    type="button"
-                    className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                    disabled={pending}
-                    onClick={() => setChild('add')}
-                  >
-                    <Icon name="plus" />
-                    <span>Dodaj osobę</span>
-                  </button>
-                ) : null}
-              </div>
-              <TeamTable rows={team.members} busy={pending} onRole={setChild} onAction={remove} />
+              <Toolbar
+                className="workplace-edit-modal__team-toolbar app-toolbar--embedded"
+                filters={
+                  <span className="workplaces-management__count">
+                    {team.name} · Członkowie: {team.members.length}
+                  </span>
+                }
+                actions={
+                  team.can_manage ? (
+                    <button
+                      type="button"
+                      className="tasks-filter-button"
+                      disabled={pending}
+                      onClick={() => setChild('add')}
+                    >
+                      <Icon name="plus" />
+                      <span>Dodaj osobę</span>
+                    </button>
+                  ) : null
+                }
+              />
+              <TeamTable rows={team.members} />
             </section>
             {team.can_manage ? (
               <section
@@ -340,9 +337,7 @@ export default function TeamDialog({
       </Modal>
       {child ? (
         <TeamAction
-          key={typeof child === 'string' ? 'add' : child.id}
           team={team}
-          person={typeof child === 'string' ? undefined : child}
           api={api}
           token={token}
           onClose={() => setChild(null)}
@@ -358,14 +353,12 @@ export default function TeamDialog({
 }
 function TeamAction({
   team,
-  person,
   api,
   token,
   onClose,
   onSaved,
 }: {
   team: Team;
-  person?: Person;
   api: string;
   token: string;
   onClose: () => void;
@@ -381,14 +374,11 @@ function TeamAction({
     sending = useRef(false);
   useEffect(() => () => life.current.abort(), []);
   const role = schema.fields.find((field) => field.name === 'role')!;
-  const roleField = useMemo(
-    () => ({ ...role, id: 'workspace-person-role', value: person?.role || 'member' }),
-    [role, person?.role],
-  );
+
   return (
     <Modal
-      title={person ? 'Zmień rolę' : 'Dodaj osobę · ' + team.name}
-      className="app-modal-panel--compact"
+      title={'Dodaj osobę · ' + team.name}
+      size="compact"
       dirty={dirty}
       pending={pending}
       onClose={onClose}
@@ -398,16 +388,15 @@ function TeamAction({
         onChange={() => setDirty(true)}
         onSubmit={async (e) => {
           e.preventDefault();
-          if (sending.current || (!person && !userId)) return;
+          if (sending.current || !userId) return;
           sending.current = true;
           const body = new FormData(e.currentTarget);
-          if (person) body.set('action', 'role');
           setPending(true);
           setError('');
           try {
             const result = await pageRequest<{ redirect: string }>(
               api,
-              person?.change_url || team.add_url,
+              team.add_url,
               token,
               life.current.signal,
               body,
@@ -444,50 +433,42 @@ function TeamAction({
               {text}
             </p>
           ))}
-          {person ? (
-            <>
-              <p className="workplace-team__hint">{person.name}</p>
-              <fieldset className="resources-react-fieldset" disabled={pending}>
-                <FieldControl field={roleField} />
-              </fieldset>
-            </>
-          ) : (
-            <>
-              <p className="workplace-team__hint">
-                Wybierz istniejące konto Ancore. Osoba od razu uzyska dostęp do Workspace. Gość ma
-                dostęp tylko do odczytu.
-              </p>
-              <fieldset className="resources-react-fieldset" disabled={pending}>
-                <div className="workplace-invite__fields">
-                  <div className="tasks-form-field">
-                    <label>Istniejące konto Ancore</label>
-                    <input type="hidden" name="user_id" value={userId} />
-                    <Picker
-                      api={api}
-                      url={team.candidates_url}
-                      token={token}
-                      value={query}
-                      existingOnly
-                      onSelect={(person) => setUserId(String(person.id || ''))}
-                      onChange={(value) => {
-                        setQuery(value);
-                        setUserId('');
-                        setDirty(true);
-                      }}
-                    />
-                    {schema.fields
-                      .find((f) => f.name === 'user_id')
-                      ?.errors.map((message, index) => (
-                        <p className="tasks-modal__errors" role="alert" key={index}>
-                          {message}
-                        </p>
-                      ))}
-                  </div>
-                  <FieldControl field={role} />
+
+          <>
+            <p className="workplace-team__hint">
+              Wybierz istniejące konto Ancore. Osoba od razu uzyska dostęp do Workspace. Gość ma
+              dostęp tylko do odczytu.
+            </p>
+            <fieldset className="resources-react-fieldset" disabled={pending}>
+              <div className="workplace-invite__fields">
+                <div className="tasks-form-field">
+                  <label>Istniejące konto Ancore</label>
+                  <input type="hidden" name="user_id" value={userId} />
+                  <Picker
+                    api={api}
+                    url={team.candidates_url}
+                    token={token}
+                    value={query}
+                    existingOnly
+                    onSelect={(person) => setUserId(String(person.id || ''))}
+                    onChange={(value) => {
+                      setQuery(value);
+                      setUserId('');
+                      setDirty(true);
+                    }}
+                  />
+                  {schema.fields
+                    .find((f) => f.name === 'user_id')
+                    ?.errors.map((message, index) => (
+                      <p className="tasks-modal__errors" role="alert" key={index}>
+                        {message}
+                      </p>
+                    ))}
                 </div>
-              </fieldset>
-            </>
-          )}
+                <FieldControl field={role} />
+              </div>
+            </fieldset>
+          </>
         </div>
         <footer className="tasks-modal__footer">
           <button
@@ -500,12 +481,8 @@ function TeamAction({
           >
             Anuluj
           </button>
-          <button
-            type="submit"
-            className="tasks-modal__submit"
-            disabled={pending || (!person && !userId)}
-          >
-            {pending ? 'Zapisywanie…' : person ? 'Zapisz rolę' : 'Dodaj do Workspace'}
+          <button type="submit" className="tasks-modal__submit" disabled={pending || !userId}>
+            {pending ? 'Zapisywanie…' : 'Dodaj do Workspace'}
           </button>
         </footer>
       </form>

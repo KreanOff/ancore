@@ -1,28 +1,5 @@
-{% load space_ui %}
+{% load list_window %}
 {% if page.paginator %}
-{% pagination_pages page as page_numbers %}
-<div class="tasks-project-pagination work-pagination">
-    <span class="tasks-project-pagination__summary" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
-    <nav class="tasks-project-pagination__pages" aria-label="Strony wyników">
-        {% if page.has_previous %}
-        <a class="tasks-project-pagination__button" href="{% querystring page=page.previous_page_number %}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>
-        {% else %}
-        <button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>
-        {% endif %}
-        {% for number in page_numbers %}
-            {% if number == page.paginator.ELLIPSIS %}
-            <span class="tasks-project-pagination__ellipsis" aria-hidden="true">…</span>
-            {% elif number == page.number %}
-            <span class="tasks-project-pagination__button is-active" aria-label="Strona {{ number }}" aria-current="page">{{ number }}</span>
-            {% else %}
-            <a class="tasks-project-pagination__button" href="{% querystring page=number %}" aria-label="Strona {{ number }}">{{ number }}</a>
-            {% endif %}
-        {% endfor %}
-        {% if page.has_next %}
-        <a class="tasks-project-pagination__button" href="{% querystring page=page.next_page_number %}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>
-        {% else %}
-        <button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>
-        {% endif %}
-    </nav>
-</div>
+{% load_more_url page as more_url %}
+{% include 'core/includes/load_more.html' with next_url=more_url loaded=page.end_index total=page.paginator.count only %}
 {% endif %}

@@ -45,7 +45,7 @@
     .filter-settings-panel .tasks-form-field > :not(label) { grid-column: 2; }
 }
 .tasks-directory-board.work-space-sheet.task-filter-directory {
-    --tasks-directory-grid: 40px 40px 320px 220px 190px 320px;
+    --tasks-directory-grid: 40px 320px 220px 190px 320px;
 }
 .task-filter-directory a { text-decoration: none; }
 .task-filter-directory a:hover { text-decoration: underline; }

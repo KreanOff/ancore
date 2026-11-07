@@ -143,7 +143,7 @@ class DocumentQueryTests(TestCase):
         self.assertEqual(set(self.rows()), {self.a.pk, self.z.pk})
 
     def test_filtered_pagination_and_actions_preserve_query_state(self):
-        for i in range(12):
+        for i in range(22):
             Document.objects.create(owner=self.user, workplace=self.workspace, library=self.alpha,
                                     title=f'Oferta {i:02}', filename=f'oferta{i}.PDF')
         params = {'view': 'all', 'name': 'Oferta', 'name_op': 'contains', 'file_type': '.pdf', 'sort': 'name_desc', 'page_size': '10'}
@@ -155,7 +155,7 @@ class DocumentQueryTests(TestCase):
         self.assertEqual(query['name'], ['Oferta'])
         self.assertEqual(query['sort'], ['name_desc'])
         second = [row['item'].pk for row in self.client.get(next_url).context['rows']]
-        self.assertEqual((len(first), len(second), len(set(first + second))), (10, 2, 12))
+        self.assertEqual((len(first), len(second), len(set(first + second))), (20, 22, 22))
         for action in ['star', 'trash', 'restore']:
             response = self.client.post(f'{self.base}{first[0]}/{action}/', {**params, 'scope': 'workspace', 'page': '2'})
             returned = parse_qs(urlsplit(response.url).query)

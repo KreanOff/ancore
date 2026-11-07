@@ -33,8 +33,8 @@
                     </section>
                     {% empty %}<p class="documents-preview-notice">Brak danych do wyświetlenia.</p>{% endfor %}
                 {% elif modal.preview.kind == 'archive' %}
-                    {% if modal.preview.entries %}<div class="documents-preview-table-scroll" tabindex="0" role="region" aria-label="Zawartość archiwum"><table class="documents-preview-table">
-                        <thead><tr><th scope="col">Nazwa</th><th scope="col">Rozmiar</th></tr></thead>
+                    {% if modal.preview.entries %}<div class="documents-preview-table-scroll" tabindex="0" role="region" aria-label="Zawartość archiwum"><table class="documents-preview-table app-data-table app-data-table--native">
+                        <thead><tr><th scope="col"><span class="app-table-heading"><i data-icon="file-text" aria-hidden="true"></i>Nazwa</span></th><th scope="col"><span class="app-table-heading"><i data-icon="hard-drive" aria-hidden="true"></i>Rozmiar</span></th></tr></thead>
                         <tbody>{% for entry in modal.preview.entries %}<tr><td>{{ entry.name }}{% if entry.folder %} (folder){% endif %}</td><td>{{ entry.size|filesizeformat }}</td></tr>{% endfor %}</tbody>
                     </table></div>{% else %}<p class="documents-preview-notice">Archiwum jest puste.</p>{% endif %}
                 {% else %}

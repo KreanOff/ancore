@@ -3,7 +3,7 @@
 .pulpits-page .dashboard-main { gap: 18px; }
 /* The dashboard catalog uses the shared sheet and selection styles. */
 .tasks-directory-board.work-space-sheet.pulpit-directory-sheet {
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) 320px 220px 190px 130px 320px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) 320px 220px 190px 130px 320px;
 }
 .pulpit-directory-sheet .pulpit-directory-icon { width: 24px; height: 24px; flex-shrink: 0; }
 .pulpit-directory-empty-state .tasks-filter-button { text-decoration: none; }

@@ -1,10 +1,9 @@
 {% load static %}
-<div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet">
+<div class="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet">
     {% if dashboards %}
     <section class="tasks-directory-group" role="table" aria-label="Lista pulpitów">
-        <div class="tasks-directory-header" role="row">
+        <div class="app-table-header tasks-directory-header" role="row">
             <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"><input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie pulpity na tej stronie" title="Zaznacz wszystkie pulpity na tej stronie" data-select-all-checkbox data-select-all-target="pulpits"></span>
-            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="columnheader" aria-label="Działania pulpitów" title="Działania pulpitów" data-column-label="Działania"><span class="u-sr-only">Działania</span></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">PULPIT<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="leader" role="columnheader">TWÓRCA<i data-icon="user-round" aria-hidden="true"></i></span>
             <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="visibility" role="columnheader">WIDOCZNOŚĆ<i data-icon="lock" aria-hidden="true"></i></span>
@@ -13,9 +12,9 @@
         </div>
         <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
             {% for item in dashboards %}
-            <article class="tasks-issue-row tasks-directory-row pulpit-directory-row" role="row" data-pulpit-directory-row="{{ item.pk }}">
+            <article class="tasks-issue-row app-table-row tasks-directory-row pulpit-directory-row" role="row" data-pulpit-directory-row="{{ item.pk }}">
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ item.pk }}" data-pulpit-id="{{ item.pk }}" aria-label="Zaznacz pulpit {{ item.name }}"></span>
-                {% include 'tasks/includes/directory_row_menu.html' with kind='pulpit' item_id=item.pk item_name=item.name actions_template='dashboard/pulpits/row_actions.html' cell_role='cell' directory=True %}
+
                 <span class="tasks-directory-sheet__cell tasks-directory-name" data-column="name" role="cell">{% include 'core/emoji.html' with emoji=item.icon_emoji art=item.icon_emoji_art class_name="pulpit-directory-icon" only %}<a href="{{ item.url }}" title="{{ item.name }}">{{ item.name }}</a></span>
                 <span class="tasks-directory-sheet__cell" data-column="leader" role="cell" title="{{ item.created_by.get_full_name|default:item.created_by.email }}">{{ item.created_by.get_full_name|default:item.created_by.email }}</span>
                 <span class="tasks-directory-sheet__cell" data-column="visibility" role="cell" title="{{ item.get_visibility_display }}">{{ item.get_visibility_display }}</span>
@@ -25,6 +24,7 @@
             {% endfor %}
         </div>
     </section>
+    {% include 'spaces/pagination.html' %}
     {% else %}
     <div class="tasks-empty-state tasks-empty-state--illustrated pulpit-directory-empty-state" role="status">
         <img class="tasks-empty-state__illustration pulpit-directory-empty-state__illustration" src="{% static 'img/empty-states/dashboard-empty.webp' %}" alt="" width="1448" height="1086" draggable="false">

@@ -3,7 +3,7 @@ from urllib.parse import urlencode, urlsplit
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
+from core.list_window import window_page
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse, QueryDict
@@ -36,7 +36,7 @@ def directory_url(request, query=None):
     query = request.GET if query is None else query
     tab = query.get('tab', 'mine')
     params = {'tab': tab if tab in {'favorites', 'mine', 'shared', 'all'} else 'mine'}
-    params.update({key: query[key] for key in ['q', 'page'] if query.get(key)})
+    params.update({key: query[key] for key in ['q', 'page', 'limit'] if query.get(key)})
     return filter_url(request) + '?' + urlencode(params)
 
 
@@ -54,7 +54,7 @@ def catalog_context(request, default_tab='favorites'):
         filters = filters.exclude(created_by=request.user)
     if query:
         filters = filters.filter(Q(name__icontains=query) | Q(description__icontains=query))
-    page = Paginator(filters.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
+    page = window_page(filters.order_by('name', 'pk'), request)
     rows = list(page.object_list)
     favorites = set(visible_filters(request).filter(favorited_by=request.user, pk__in=[row.pk for row in rows]).values_list('pk', flat=True))
     rows = [decorate_filter(request, row, favorites) for row in rows]
@@ -94,14 +94,14 @@ def search_context(request, item=None):
     mode = mode if mode in {'basic', 'advanced'} else 'basic' if basic_available else 'advanced'
     if mode == 'basic' and not basic_available and request.GET.get('basic') != '1':
         mode = 'advanced'
-    page = Paginator(items, 50).get_page(request.GET.get('page'))
+    page = window_page(items, request)
     base = item.url if item else filter_url(request, 'search/')
     encoded = urlencode({'jql': source})
     return {'saved_filter': item, 'items': decorate_items(request, page.object_list), 'page': page,
             'search_form': form, 'jql': source, 'search_error': error, 'mode': mode,
             'basic_available': basic_available, 'changed': bool(item and source != item.query),
             'search_url': base, 'filters_url': filter_url(request),
-            'list_url': base + '?' + encoded + '&mode=' + mode,
+            'list_url': base + '?' + encoded + '&mode=' + mode + (f'&limit={page.limit}' if page.limit > 20 else ''),
             'clear_url': base + '?jql=&mode=basic',
             'save_as_url': filter_url(request, 'new/') + '?' + encoded,
             'basic_url': base + '?' + encoded + '&mode=basic',

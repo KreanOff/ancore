@@ -14,12 +14,15 @@
     <input type="hidden" name="priority" value="{{ tag_priority_filter }}" data-project-filter-input="priority">
     <input type="hidden" name="sort" value="{{ tag_sort_param }}" data-project-sort-input>
 </form>
-<div class="tasks-filterbar tasks-filterbar--directory work-view-toolbar">
-    <div class="tasks-filterbar-left work-view-toolbar-controls">
-        {% include 'tasks/includes/tag_sort.html' with toolbar_label='Sortowanie' compact_sort=True %}
-        {% include 'tasks/includes/directory_filter_aggregate.html' with toolbar_label='Filtrowanie' has_active_filters=tag_status_filter|default:tag_priority_filter|default:tag_category_filter|default:tag_scope_filter|default:tag_owner_filter only %}
+<div class="tasks-filterbar tasks-filterbar--directory app-toolbar work-view-toolbar">
+    <div class="app-toolbar__controls tasks-filterbar-left work-view-toolbar-controls">
+        {% include 'tasks/includes/directory_filter_aggregate.html' with toolbar_label='Filtruj' has_active_filters=tag_status_filter|default:tag_priority_filter|default:tag_category_filter|default:tag_scope_filter|default:tag_owner_filter only %}
+        {% include 'tasks/includes/tag_sort.html' with toolbar_label='Sortuj' %}
         {% include 'tasks/includes/tag_filters.html' %}
         {% include 'tasks/includes/directory_column_manager.html' %}
+
+    </div>
+    <div class="tasks-filterbar-right app-toolbar__search">
         <div class="tasks-search-field work-view-toolbar-search" role="search">
             <i data-icon="search" aria-hidden="true"></i>
             <input id="filter-search" type="search" name="q" form="projects-search-form" value="{{ tag_query }}" placeholder="Szukaj tagów" aria-label="Szukaj tagów" autocomplete="off">

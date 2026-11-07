@@ -3678,15 +3678,14 @@
     --tasks-directory-select-width: 40px;
     --tasks-project-row-height: 35px;
     --tasks-project-action-width: 40px;
-    --tasks-project-menu-width: 40px;
     --workplaces-name-width: 300px;
     --workplaces-code-width: 250px;
     --workplaces-description-width: 360px;
     --workplaces-members-width: 180px;
     --workplaces-context-width: 220px;
     --workplaces-status-width: 140px;
-    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--tasks-project-menu-width) + var(--workplaces-name-width) + var(--workplaces-code-width) + var(--workplaces-description-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
-    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) var(--tasks-project-menu-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-code-width), 0.65fr) minmax(var(--workplaces-description-width), 1.25fr) minmax(var(--workplaces-members-width), 0.65fr) minmax(var(--workplaces-context-width), 0.8fr) minmax(var(--workplaces-status-width), 0.5fr);
+    --workplaces-table-min-width: calc(var(--tasks-directory-select-width) + var(--tasks-project-action-width) + var(--workplaces-name-width) + var(--workplaces-code-width) + var(--workplaces-description-width) + var(--workplaces-members-width) + var(--workplaces-context-width) + var(--workplaces-status-width));
+    --workplaces-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(var(--workplaces-name-width), 1.1fr) minmax(var(--workplaces-code-width), 0.65fr) minmax(var(--workplaces-description-width), 1.25fr) minmax(var(--workplaces-members-width), 0.65fr) minmax(var(--workplaces-context-width), 0.8fr) minmax(var(--workplaces-status-width), 0.5fr);
     --tasks-directory-grid: var(--workplaces-directory-grid);
 
     width: 100%;

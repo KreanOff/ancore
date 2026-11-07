@@ -70,7 +70,7 @@ function harness(name, initialProps) {
   function renderToolbar(element) {
     if (!element || typeof element !== 'object') return element;
     if (Array.isArray(element)) return element.map(renderToolbar);
-    if (element.type === module.exports.ViewToolbar)
+    if (element.type === module.exports.ViewToolbar || ['Toolbar', 'ToolbarContents'].includes(element.type?.name))
       return renderToolbar(element.type(element.props));
     return {
       ...element,

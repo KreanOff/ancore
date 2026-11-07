@@ -3,19 +3,19 @@
 {% block title %}{% if is_new %}Nowy dokument{% else %}{{ document.title }}{% endif %} | Dokumenty | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20260921-shared-view-selector">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/office.css' %}?v=20261105-no-hamburger">
 <script src="{% static 'js/office.js' %}?v=20261016-react-migration" defer></script>
 {% endblock %}
 {% block content %}
 {% if office_read_only %}<div class="documents-page office-editor" data-office-read-only data-app-full-navigation>{% else %}<form method="post" class="documents-page office-editor" data-office-editor data-app-full-navigation data-new="{{ is_new|yesno:'true,false' }}">{% endif %}
     {% if not office_read_only %}{% csrf_token %}{{ form.revision }}{% endif %}
-    <header class="tasks-topbar tasks-topbar--directory documents-topbar">
-        <div class="tasks-titlebar-left"><a class="tasks-icon-button" href="{{ folder_url }}" aria-label="Wróć do dokumentów" title="Wróć do dokumentów"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">{% if office_read_only %}Podgląd dokumentu{% elif is_new %}Nowy dokument{% else %}Edytuj dokument{% endif %}</h1></div>
+    <header class="tasks-topbar tasks-topbar--project-directory app-page-header tasks-topbar--directory documents-topbar">
+        <div class="tasks-titlebar-left"><a class="tasks-issue-close" href="{{ folder_url }}" aria-label="Wróć do dokumentów" title="Wróć do dokumentów"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">{% if office_read_only %}Podgląd dokumentu{% elif is_new %}Nowy dokument{% else %}Edytuj dokument{% endif %}</h1></div>
         <div class="tasks-titlebar-actions">
             <span class="documents-muted office-save-status" role="status" data-office-status>{% if office_read_only %}Dostęp tylko do odczytu{% elif is_new %}Niezapisany dokument{% else %}Zapisano {{ document.updated_at|date:'d.m.Y, H:i' }}{% endif %}</span>
-            <a class="btn btn-secondary" href="{% if not is_new %}{{ documents_url }}{{ document.pk }}/download/{% endif %}" download data-office-download{% if is_new %} hidden{% endif %}>Pobierz DOCX</a>
-            {% if not office_read_only %}<button type="submit" class="btn btn-primary" data-office-save>Zapisz</button>{% endif %}
+            <a class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" href="{% if not is_new %}{{ documents_url }}{{ document.pk }}/download/{% endif %}" download data-office-download{% if is_new %} hidden{% endif %}>Pobierz DOCX</a>
+            {% if not office_read_only %}<button type="submit" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-office-save>Zapisz</button>{% endif %}
         </div>
     </header>
     {% if not is_new and not office_read_only %}<div class="documents-results-hint">Ten dokument korzysta z edytora tekstu Ancore. <button type="submit" form="office-upgrade" class="btn btn-secondary btn-sm">Utwórz kopię w pełnym edytorze DOCX</button></div>{% endif %}

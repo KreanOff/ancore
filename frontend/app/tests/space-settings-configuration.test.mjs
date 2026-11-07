@@ -1377,7 +1377,8 @@ function tableHarness(group = fixture().sets[1]) {
     if (!element?.props) return element;
     if (
       (element.props.rows && element.props.onSelect) ||
-      (typeof element.type === 'function' && element.type.name === 'ViewToolbar')
+      (typeof element.type === 'function' &&
+        ['ViewToolbar', 'Toolbar', 'ToolbarContents'].includes(element.type.name))
     )
       return expand(element.type(element.props));
     return { ...element, props: { ...element.props, children: expand(element.props.children) } };

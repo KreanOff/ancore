@@ -15,10 +15,11 @@
             {% endif %}
             <div class="documents-card-footer">
                 <span class="documents-card-date" title="{% if row.kind == 'folder' %}Utworzono{% elif library_view == 'trash' %}Usunięto{% else %}Zmodyfikowano{% endif %}">{% if row.kind == 'folder' %}{{ item.created_at|date:'d.m.Y' }}{% elif library_view == 'trash' %}{{ item.deleted_at|date:'d.m.Y' }}{% else %}{{ item.updated_at|date:'d.m.Y' }}{% endif %}</span>
-                {% include 'documents/includes/row_menu.html' with actions_template='documents/includes/row_actions.html' %}
+
             </div>
         </li>
         {% endwith %}{% endfor %}
     </ul>
     {% else %}<div class="documents-empty documents-grid-empty">{% include 'documents/includes/files_empty.html' %}</div>{% endif %}
+    {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window only %}
 </div>

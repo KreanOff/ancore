@@ -228,11 +228,11 @@ class OfficeTests(TestCase):
         parent = self.folder(name='Katalog')
         WorkspaceDocument.objects.bulk_create([WorkspaceDocument(owner=self.user, workplace=self.workspace, folder=parent, title=f'Materiał {n:02}') for n in range(30)])
         response = self.client.get(self.base + '?q=Materiał&display=grid')
-        self.assertEqual(len(response.context['rows']), 25)
+        self.assertEqual(len(response.context['rows']), 20)
         self.assertContains(response, 'documents-grid')
         self.assertIn('q=Mater', response.context['document_window']['next_url'])
         response = self.client.get(response.context['document_window']['next_url'])
-        self.assertEqual(len(response.context['rows']), 5)
+        self.assertEqual(len(response.context['rows']), 30)
         self.assertContains(self.client.get(self.base + '?q=nigdzieniema'), 'Brak pasujących dokumentów')
 
     def test_upload_validation_is_atomic_and_document_only(self):

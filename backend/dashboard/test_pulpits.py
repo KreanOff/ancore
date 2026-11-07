@@ -556,11 +556,14 @@ class PulpitTests(TestCase):
         for prefix in ['/dashboards/', scoped_workplace_app_path(self.workplace, 'dashboards')]:
             filters = {'q': 'Lista', 'visibility': 'workspace', 'page': 2}
             response = self.client.get(prefix, filters)
-            self.assertEqual(len(response.context['dashboards']), 1)
-            self.assertEqual(response.context['page'].paginator.per_page, 30)
+            self.assertEqual(len(response.context['dashboards']), 31)
+            self.assertEqual(response.context['page'].paginator.per_page, 20)
             self.assertEqual(response.context['page'].paginator.count, 31)
-            self.assertEqual(parse_qs(urlparse(response.context['previous_url']).query), {
-                'q': ['Lista'], 'visibility': ['workspace'], 'page': ['1'],
+            self.assertEqual(response.context['previous_url'], '')
+            first = self.client.get(prefix, {'q': 'Lista', 'visibility': 'workspace'})
+            self.assertEqual(len(first.context['dashboards']), 20)
+            self.assertEqual(parse_qs(urlparse(first.context['next_url']).query), {
+                'q': ['Lista'], 'visibility': ['workspace'], 'limit': ['31'],
             })
             dashboard = response.context['dashboards'][0]
             next_url = response.wsgi_request.get_full_path()

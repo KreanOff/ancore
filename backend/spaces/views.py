@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.core.paginator import Paginator
+from core.list_window import window_page
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q, Sum
 from django.forms import formset_factory
@@ -123,13 +123,13 @@ def index_context(request):
     kind = request.GET.get('kind')
     if kind in {'software', 'business', 'service'}:
         spaces = spaces.filter(kind=kind)
-    page = Paginator(spaces.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
+    page = window_page(spaces.order_by('name', 'pk'), request)
     page.object_list = decorate_directory_spaces(request, page.object_list)
     return {**base_context(request), 'page': page, 'query': query, 'tab': tab, 'kind': kind, 'create_url': app_url(request, 'create/'), 'templates': TEMPLATES}
 
 
 def directory_url(request):
-    filters = {key: request.GET[key] for key in ['q', 'kind', 'tab', 'page'] if request.GET.get(key)}
+    filters = {key: request.GET[key] for key in ['q', 'kind', 'tab', 'page', 'limit'] if request.GET.get(key)}
     return app_url(request) + ('?' + urlencode(filters) if filters else '')
 
 
@@ -303,7 +303,7 @@ def detail_context(request, space, view):
         page = None
         rows = decorate_items(request, backlog_window(request, items))
     else:
-        page = Paginator(items, 100).get_page(request.GET.get('page'))
+        page = window_page(items, request)
         rows = decorate_items(request, page.object_list)
     timeline = None
     if view == 'timeline':

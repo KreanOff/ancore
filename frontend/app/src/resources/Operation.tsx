@@ -91,7 +91,8 @@ export function ResourceOperation({
   return (
     <Modal
       title={action === 'handover' && resources.length === 1 ? 'Przekaż zasób' : labels[action]}
-      className="resources-operation app-modal-panel--compact"
+      size="compact"
+      className="resources-operation"
       onClose={onClose}
       pending={pending}
       dirty={!!(assignedTo || status || location || due || note)}

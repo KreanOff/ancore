@@ -52,9 +52,11 @@
                     </form>
                 </section>
                 <section id="workplace-panel-members" role="tabpanel" aria-labelledby="workplace-tab-members" data-workplace-tab-panel="members"{% if workplace_edit_tab != 'members' %} hidden{% endif %}>
-                    <div class="workplace-edit-modal__team-toolbar">
+                    <div class="tasks-filterbar tasks-filterbar--directory app-toolbar app-toolbar--embedded workplace-edit-modal__team-toolbar">
+                        <div class="tasks-filterbar-left app-toolbar__controls">
                         <span class="workplaces-management__count">{{ workplace.name }} · Członkowie: {{ members|length }}</span>
-                        {% if can_manage_team %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-team-modal-open="team-add-modal" aria-haspopup="dialog" aria-controls="team-add-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj osobę</span></button>{% endif %}
+                        </div>
+                        {% if can_manage_team %}<div class="app-toolbar__actions"><button type="button" class="tasks-filter-button" data-team-modal-open="team-add-modal" aria-haspopup="dialog" aria-controls="team-add-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj osobę</span></button></div>{% endif %}
                     </div>
                     {% include 'workplaces/includes/team_panel.html' %}
                     {% if can_manage_team %}<noscript>

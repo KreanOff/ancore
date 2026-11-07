@@ -1,17 +1,19 @@
 <div class="tasks-modal__body space-settings-table-body access-editor">
-    <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory member-access-toolbar">
-        <button type="button" class="tasks-filter-button" disabled><i data-icon="{% if settings_team.visibility == 'workspace' %}users{% else %}lock{% endif %}" aria-hidden="true"></i>Widoczność: {% if settings_team.visibility == 'workspace' %}Publiczna{% else %}Prywatna{% endif %}<i data-icon="chevron-down" aria-hidden="true"></i></button>
-        <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Zmień rolę</button>
-        <button type="button" class="tasks-filter-button" disabled><i data-icon="log-out" aria-hidden="true"></i>Odbierz dostęp</button>
-        {% if settings_team.can_manage or settings_team.is_owner %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled><i data-icon="plus" aria-hidden="true"></i>Udostępnij</button>{% endif %}
-        <div class="member-access-save-actions">
-            <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled><i data-icon="check" aria-hidden="true"></i>Zapisz</button>
-            <button type="button" class="tasks-filter-button" disabled>Anuluj</button>
+    <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory app-toolbar member-access-toolbar">
+        <div class="app-toolbar__actions">
+            <button type="button" class="tasks-filter-button" disabled><i data-icon="{% if settings_team.visibility == 'workspace' %}users{% else %}lock{% endif %}" aria-hidden="true"></i>Widoczność: {% if settings_team.visibility == 'workspace' %}Publiczna{% else %}Prywatna{% endif %}<i data-icon="chevron-down" aria-hidden="true"></i></button>
+            <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Zmień rolę</button>
+            <button type="button" class="tasks-filter-button" disabled><i data-icon="log-out" aria-hidden="true"></i>Odbierz dostęp</button>
+            {% if settings_team.can_manage or settings_team.is_owner %}<button type="button" class="tasks-filter-button" disabled><i data-icon="plus" aria-hidden="true"></i>Udostępnij</button>{% endif %}
+            <div class="member-access-save-actions app-toolbar__selection">
+                <button type="button" class="tasks-filter-button" disabled><i data-icon="check" aria-hidden="true"></i>Zapisz</button>
+                <button type="button" class="tasks-filter-button" disabled>Anuluj</button>
+            </div>
         </div>
     </div>
-    <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet workplace-members-sheet--toolbar" role="region" aria-label="Udostępnienia — tabela" tabindex="0">
+    <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet workplace-members-sheet--toolbar app-data-table" role="region" aria-label="Udostępnienia — tabela" tabindex="0">
         <section class="tasks-directory-group" role="table" aria-label="Osoby z dostępem do pulpitu">
-            <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+            <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header" role="row">
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"><input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz wszystkich członków"></span>
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="columnheader"><i data-icon="users" aria-hidden="true"></i>Nazwa</span>
                 <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="columnheader"><i data-icon="mail" aria-hidden="true"></i>E-mail</span>
@@ -20,7 +22,7 @@
             </div>
             <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
                 {% for member in settings_team.members %}
-                <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
+                <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row" role="row">
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz członka {{ member.name }}"></span>
                     <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="cell">
                         {% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-avatar' only %}

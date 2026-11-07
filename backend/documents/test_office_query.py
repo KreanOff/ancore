@@ -129,12 +129,12 @@ class OfficeQueryTests(TestCase):
             Document.objects.create(owner=self.user, workplace=self.workspace, kind='file',
                                     title=f'Oferta {number:02}', filename=f'oferta{number}.pdf')
         params = {'view': 'all', 'name': 'Oferta', 'filename': 'secret', 'filename_op': 'not_contains',
-                  'file_type': '.pdf', 'sort': 'name_desc', 'page_size': '25', 'display': 'list'}
+                  'file_type': '.pdf', 'sort': 'name_desc', 'display': 'list'}
         response = self.client.get(self.base, {**params, 'tag': self.tag.pk})
         first = [row['item'].pk for row in response.context['rows']]
         second = self.client.get(response.context['document_window']['next_url'])
         last = [row['item'].pk for row in second.context['rows']]
-        self.assertEqual((len(first), len(last), len(set(first + last))), (25, 2, 27))
+        self.assertEqual((len(first), len(last), len(set(first + last))), (20, 27, 27))
         for url in [response.context['document_window']['next_url']]:
             returned = parse_qs(urlsplit(url).query)
             self.assertNotIn('tag', returned)

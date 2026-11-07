@@ -16,6 +16,7 @@ export default function DocumentDialog({
   onClose,
   onOpen,
   onSaved,
+  returnFocus,
 }: {
   data: DocumentModal;
   api: string;
@@ -24,6 +25,7 @@ export default function DocumentDialog({
   onClose: () => void;
   onOpen: (url: string) => void;
   onSaved: (url: string) => unknown;
+  returnFocus?: HTMLElement | null;
 }) {
   const [schema, setSchema] = useState(data.form),
     [pending, setPending] = useState(false),
@@ -205,6 +207,7 @@ export default function DocumentDialog({
       <Modal
         title={data.title}
         className="documents-modal documents-preview-modal"
+        returnFocus={returnFocus}
         pending={pending}
         onClose={() => {
           if (created) void onSaved(created.redirect);
@@ -337,11 +340,21 @@ export default function DocumentDialog({
                   role="region"
                   aria-label="Zawartość archiwum"
                 >
-                  <table className="documents-preview-table">
+                  <table className="documents-preview-table app-data-table app-data-table--native">
                     <thead>
                       <tr>
-                        <th scope="col">Nazwa</th>
-                        <th scope="col">Rozmiar</th>
+                        <th scope="col">
+                          <span className="app-table-heading">
+                            <Icon name="file-text" />
+                            Nazwa
+                          </span>
+                        </th>
+                        <th scope="col">
+                          <span className="app-table-heading">
+                            <Icon name="hard-drive" />
+                            Rozmiar
+                          </span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -393,6 +406,7 @@ export default function DocumentDialog({
     <Modal
       title={created ? 'Dokument utworzony' : data.title}
       className="documents-modal"
+      returnFocus={returnFocus}
       dirty={dirty}
       pending={pending}
       onClose={() => {
@@ -440,7 +454,7 @@ export default function DocumentDialog({
                 <p className="documents-muted app-form-wide">
                   {data.has_templates
                     ? 'Powstanie niezależna kopia ostatnio zapisanej treści szablonu. Najpierw zapisz zmiany w jego edytorze.'
-                    : 'Nie masz jeszcze szablonów. W menu dokumentu DOCX, XLSX, PPTX lub PDF wybierz „Używaj jako szablonu”.'}
+                    : 'Nie masz jeszcze szablonów dokumentów.'}
                 </p>
               ) : null}
               {data.location ? (

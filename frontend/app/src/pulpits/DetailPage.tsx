@@ -1,9 +1,9 @@
+import { PageHeader } from '../shared/PageHeader';
 import { useEffect, useRef, useState } from 'react';
 import { FormDialog } from '../forms/FormDialog';
 import { DashboardCanvas } from '../shared/DashboardCanvas';
 import { EmptyState } from '../shared/EmptyState';
 import { Icon } from '../shared/Icon';
-import { Emoji } from '../shared/Emoji';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, pageRequest, setPageLocation } from '../shared/page';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
@@ -178,15 +178,17 @@ export function DashboardView(props: PageProps) {
       className={`dashboard-page dashboard-overview pulpits-page pulpit-grid-page ${editing ? 'pulpit-editor-page' : ''}`}
       data-react-screen="pulpit-detail"
     >
-      <header className="tasks-topbar tasks-topbar--project-directory pulpit-topbar">
-        <div className="tasks-titlebar-left">
-          <Emoji value={dashboard.emoji} art={dashboard.emoji_art} className="nav-icon" />
-          <h1 className="tasks-topbar-title" title={dashboard.name}>
-            {dashboard.name}
-          </h1>
-        </div>
-        <div className="tasks-titlebar-actions">
-          {editing ? (
+      <PageHeader
+        className="pulpit-topbar"
+        heading={
+          <>
+            <h1 className="tasks-topbar-title" title={dashboard.name}>
+              {dashboard.name}
+            </h1>
+          </>
+        }
+        actions={
+          editing ? (
             <>
               <button
                 ref={addButton}
@@ -248,7 +250,6 @@ export function DashboardView(props: PageProps) {
                 <DashboardActions
                   item={dashboard}
                   busy={locked}
-                  favorite={() => void actions.act(dashboard.favorite_url, { next: dashboard.url })}
                   remove={() =>
                     confirmDelete(
                       'Usuń pulpit',
@@ -259,9 +260,9 @@ export function DashboardView(props: PageProps) {
                 />
               ) : null}
             </>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
       <div className="dashboard-main work-content">
         <div className={`work-summary-dashboard ${editing ? 'is-editing' : ''}`} aria-busy={busy}>
           {error || actions.error ? (
@@ -288,35 +289,7 @@ export function DashboardView(props: PageProps) {
               busy={locked}
               onChange={setDraft}
               onNotice={setNotice}
-              emptyFocusRef={addButton}
               ariaLabel="Gadżety pulpitu"
-              onRemove={(id: string) => {
-                setDraft((current) => current.filter((widget) => widget.id !== id));
-                setNotice('Usunięto gadżet. Zapisz układ, aby zachować zmiany.');
-              }}
-              renderActions={(id: string, close: () => void) => {
-                const gadget = gadgets.get(id);
-                return (
-                  <button
-                    type="button"
-                    className="tasks-project-menu-button"
-                    disabled={locked || dirty || !gadget?.edit_url}
-                    title={dirty || !gadget ? 'Zapisz układ, aby skonfigurować gadżet.' : undefined}
-                    onClick={() => {
-                      if (gadget) {
-                        close();
-                        void actions.open(gadget.edit_url);
-                      }
-                    }}
-                  >
-                    <Icon name="settings-2" />
-                    <span>Konfiguruj</span>
-                    {dirty || !gadget ? (
-                      <span className="u-sr-only"> — zapisz najpierw układ</span>
-                    ) : null}
-                  </button>
-                );
-              }}
               renderWidget={(id: string) => {
                 const gadget = gadgets.get(id);
                 return (
@@ -365,6 +338,7 @@ export function DashboardView(props: PageProps) {
       {actions.modal ? (
         <FormDialog
           data={actions.modal}
+          returnFocus={actions.returnFocus}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={actions.close}

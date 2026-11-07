@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}Dyski | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px"><script src="{% static 'js/documents.js' %}?v=20261016-react-migration" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger"><script src="{% static 'js/documents.js' %}?v=20261016-react-migration" defer></script>{% endblock %}
 {% block content %}
 <div class="documents-page documents-library-index" data-document-display="{{ document_display }}" data-document-dnd="drive" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ library_view }}">
     {% include 'documents/toolbar.html' %}
@@ -11,22 +11,20 @@
             {% include 'documents/includes/libraries_grid.html' %}
         {% else %}
         {% if libraries %}
-        <div class="documents-table-scroll tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable documents-library-sheet" data-document-selection data-directory-resize="false" role="table" aria-label="Lista dysków">
+        <div class="documents-table-scroll tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable documents-library-sheet app-data-table" data-document-selection data-directory-resize="false" role="table" aria-label="Lista dysków">
             <div class="tasks-directory-group" role="rowgroup">
-                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
                         <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" data-document-select-all aria-label="Zaznacz wszystkie dyski na stronie" title="Zaznacz wszystkie dyski na stronie">
                     </span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="columnheader"><span class="u-sr-only">Działania</span></span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">Nazwa<i data-icon="hard-drive" aria-hidden="true"></i></span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="modified" role="columnheader">Zmodyfikowano<i data-icon="calendar-clock" aria-hidden="true"></i></span>
                     <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="size" role="columnheader">Rozmiar<i data-icon="hard-drive" aria-hidden="true"></i></span>
                 </div>
                 <div class="tasks-issue-list tasks-directory-list" role="presentation">
                     {% for item in libraries %}
-                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row" data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}">
+                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row" role="row" data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}">
                         <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" data-document-select value="{{ item.pk }}" aria-label="Zaznacz dysk {{ item.name }}">
-                        <div class="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">{% include 'documents/includes/row_menu.html' with actions_template='documents/includes/library_actions.html' menu_kind='library' button_class='tasks-project-sheet__edit-button' %}</div>
                         <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell"><a class="documents-library-entry" href="{{ documents_url }}?library={{ item.pk }}" title="Otwórz dysk: {{ item.name }}">
                             {% include 'documents/includes/library_avatar.html' with library=item %}
                             <span class="documents-library-copy"><span class="documents-library-title">{{ item.name }}</span></span>
@@ -37,6 +35,7 @@
                     {% endfor %}
                 </div>
             </div>
+            {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window only %}
         </div>
         {% else %}
         <div class="documents-table-scroll"><div class="documents-empty documents-grid-empty">{% include 'documents/includes/libraries_empty.html' %}</div></div>

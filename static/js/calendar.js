@@ -694,7 +694,7 @@ function initCalendarPage() {
             btn.classList.toggle('is-active', active);
             btn.setAttribute('aria-selected', active ? 'true' : 'false');
         });
-        document.querySelectorAll('.calendar-mini-nav__button').forEach((btn) => {
+        document.querySelectorAll('.calendar-mini-nav__button, [data-calendar-view-tab]').forEach((btn) => {
             const active = btn.dataset.view === view;
             btn.classList.toggle('is-active', active);
             btn.setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -1052,7 +1052,7 @@ function initCalendarPage() {
     document.querySelectorAll('.calendar-view-btn').forEach((btn) => {
         btn.addEventListener('click', () => setView(btn.dataset.view), pageListenerOptions);
     });
-    document.querySelectorAll('.calendar-mini-nav__button').forEach((btn) => {
+    document.querySelectorAll('.calendar-mini-nav__button, [data-calendar-view-tab]').forEach((btn) => {
         btn.addEventListener('click', () => setView(btn.dataset.view), pageListenerOptions);
     });
 

@@ -110,7 +110,8 @@
     text-transform: capitalize;
 }
 
-.calendar-topbar .calendar-today-button {
+.calendar-topbar .calendar-today-button,
+.calendar-filterbar .calendar-today-button {
     width: auto;
     padding: 0 .7rem;
     font-size: var(--font-size-sm);

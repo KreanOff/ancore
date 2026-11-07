@@ -34,11 +34,7 @@ function byLabel(tree, label) {
   assert.ok(match, `Missing ${label}`);
   return match;
 }
-function controls(tree, id) {
-  const match = nodes(tree).find((node) => node.props?.widget?.id === id);
-  assert.ok(match, `Missing controls for ${id}`);
-  return match;
-}
+
 function ids(tree) {
   return nodes(tree)
     .filter((node) => node.type === 'section')
@@ -51,8 +47,7 @@ function harness({ width = 1188, scale = 1, ...values } = {}) {
     listeners = new Map(),
     observers = [],
     changes = [],
-    notices = [],
-    focus = [];
+    notices = [];
   let cursor = 0,
     pendingEffects = [];
   const scroll = { scrollTop: 0 };
@@ -63,7 +58,6 @@ function harness({ width = 1188, scale = 1, ...values } = {}) {
     setPointerCapture: (pointerId) => {
       grid.captured = pointerId;
     },
-    querySelector: (selector) => ({ focus: () => focus.push(selector) }),
   };
   let props = {
     widgets: [widget('41'), widget('new-card', 6)],
@@ -73,12 +67,8 @@ function harness({ width = 1188, scale = 1, ...values } = {}) {
       props.widgets = next;
       changes.push(next);
     },
-    onRemove(id) {
-      props.widgets = props.widgets.filter((item) => item.id !== id);
-    },
     onNotice: (notice) => notices.push(notice),
     renderWidget: (id) => id,
-    emptyFocusRef: { current: { focus: () => focus.push('add') } },
     ...values,
   };
   const react = {
@@ -138,7 +128,6 @@ function harness({ width = 1188, scale = 1, ...values } = {}) {
   return {
     changes,
     notices,
-    focus,
     grid,
     scroll,
     listeners,
@@ -225,7 +214,7 @@ test('keyboard resizing stays anchored at right and bottom edges without changin
   assert.deepEqual(plain(app.widgets), [widget('41', 6, 195)]);
 });
 
-test('stacked layout reorders cards through keyboard and menu without starting pointer drag', () => {
+test('stacked layout reorders cards through keyboard without starting pointer drag', () => {
   const app = harness({ width: 390 });
   app.render();
   let tree = app.render();
@@ -236,36 +225,8 @@ test('stacked layout reorders cards through keyboard and menu without starting p
   byLabel(tree, 'Przesuń: 41').props.onKeyDown(event({ key: 'ArrowDown' }));
   tree = app.render();
   assert.equal(byLabel(tree, '41').props.style.order, 1);
-  assert.equal(controls(tree, '41').props.stacked, true);
-  controls(tree, '41').props.onMove('up');
+  byLabel(tree, 'Przesuń: 41').props.onKeyDown(event({ key: 'ArrowUp' }));
   assert.equal(byLabel(app.render(), '41').props.style.order, 0);
-});
-
-test('configuration action receives its gadget ID and removal focuses the next menu or add button', () => {
-  const configured = [];
-  const app = harness({
-    renderActions: (id, close) => {
-      configured.push(id);
-      close();
-      return 'configure';
-    },
-  });
-  let tree = app.render();
-  let closed = false;
-  assert.equal(
-    controls(tree, '41').props.renderActions(() => {
-      closed = true;
-    }),
-    'configure',
-  );
-  assert.deepEqual(configured, ['41']);
-  assert.equal(closed, true);
-  controls(tree, '41').props.onRemove();
-  assert.deepEqual(app.focus, ['[data-summary-widget="new-card"] .work-summary-widget-menu']);
-  tree = app.render();
-  controls(tree, 'new-card').props.onRemove();
-  assert.equal(app.widgets.length, 0);
-  assert.equal(app.focus.at(-1), 'add');
 });
 
 test('busy and read-only canvases cannot start layout changes', () => {
@@ -275,7 +236,7 @@ test('busy and read-only canvases cannot start layout changes', () => {
   assert.equal(handle.props.disabled, true);
   handle.props.onPointerDown(event());
   handle.props.onKeyDown(event({ key: 'ArrowRight' }));
-  controls(tree, '41').props.onResize({ w: 12 });
+  byLabel(tree, 'Zmień rozmiar: 41').props.onKeyDown(event({ key: 'ArrowRight' }));
   assert.equal(app.changes.length, 0);
   assert.equal(app.grid.captured, undefined);
   tree = app.render({ editing: false, busy: false });

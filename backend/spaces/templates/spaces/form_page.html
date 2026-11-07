@@ -1,7 +1,6 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}{% if modal.space_settings %}Ustawienia przestrzeni · {{ space.name }}{% else %}{{ modal.title }}{% endif %}{% endblock %}
 {% block work_page_class %}{% if modal.space_settings %} space-settings-page{% endif %}{% endblock %}
-{% block work_header %}{% if modal.space_settings %}<div class="work-space-header">{{ block.super }}</div>{% else %}{{ block.super }}{% endif %}{% endblock %}
 {% block work_heading %}{% if modal.space_settings %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a>{% endif %}<h1 class="tasks-topbar-title{% if modal.space_settings %} work-space-title{% endif %}">{% if modal.space_settings %}Ustawienia przestrzeni · {{ space.name }}{% else %}{{ modal.title }}{% endif %}</h1>{% endblock %}
 {% block work_content_class %}{% if modal.space_settings %} space-settings-panel{% endif %}{% endblock %}
 {% block work_content %}{% if modal.space_settings %}{% include 'spaces/settings_form.html' %}{% else %}<a href="{{ modal.return_url }}" class="btn btn-secondary">Wróć</a><noscript><p>Włącz JavaScript, aby korzystać z okna formularza.</p></noscript>{% endif %}{% endblock %}

@@ -1,4 +1,3 @@
 <div class="notifications-pagination" data-notification-pagination{% if not next_cursor %} hidden{% endif %}>
-    <button type="button" class="btn btn-secondary btn-sm" data-notification-more>Pokaż starsze</button>
-    <span data-notification-progress>{{ dashboard_notifications|length }} z {{ dashboard_notification_count }}</span>
+    <button type="button" class="tasks-filter-button work-list-more app-load-more" data-notification-more><span data-notification-more-label>Pokaż więcej</span> <span class="work-list-more__count" data-notification-progress>({{ dashboard_notifications|length }} / {{ dashboard_notification_count|default:0 }})</span></button>
 </div>

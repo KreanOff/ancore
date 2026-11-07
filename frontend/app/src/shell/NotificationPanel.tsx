@@ -1,7 +1,8 @@
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { LoadMore } from '../shared/LoadMore';
 import { Fragment, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { Avatar } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { navigate, pageRequest } from '../shared/page';
@@ -35,10 +36,7 @@ const empty: Record<string, [string, string]> = {
     'Brak nowych komentarzy w obserwowanych',
     'Nowe komentarze w obserwowanych elementach pojawią się tutaj.',
   ],
-  archived: [
-    'Archiwum jest puste',
-    'Zarchiwizowane powiadomienia możesz w każdej chwili przywrócić.',
-  ],
+  archived: ['Archiwum jest puste', 'Zarchiwizowane powiadomienia pojawią się tutaj.'],
 };
 export default function NotificationPanel({
   config,
@@ -216,24 +214,9 @@ export default function NotificationPanel({
       onClose={onClose}
       footer={
         <footer className="tasks-modal__footer">
-          <button type="button" className="btn btn-secondary" disabled={mutating} onClick={onClose}>
+          <button type="button" className="btn btn-secondary" disabled={mutating} data-close-modal>
             Zamknij
           </button>
-          {payload?.next_cursor ? (
-            <div className="notifications-pagination">
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={loading || mutating}
-                onClick={() => void load({ append: true })}
-              >
-                Pokaż starsze
-              </button>
-              <span>
-                {payload.items.length} z {payload.total}
-              </span>
-            </div>
-          ) : null}
         </footer>
       }
     >
@@ -256,44 +239,51 @@ export default function NotificationPanel({
               </button>
             ))}
           </div>
-          <div className="notifications-toolbar">
-            <WorkspaceSelect
-              choices={workplaces}
-              value={workspace}
-              disabled={mutating}
-              onChange={(value) => setPreferences({ view, workspace: value })}
-            />
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              disabled={loading || mutating || !payload?.filtered_unread_count}
-              title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze"
-              onClick={() => void action('read_all')}
-            >
-              <Icon name="check" />
-              <span>Oznacz wszystkie jako przeczytane</span>
-            </button>
-            <button
-              type="button"
-              className="tasks-icon-button"
-              disabled={loading || mutating || !payload?.deletable_count}
-              title="Usuń wszystkie powiadomienia z wybranego filtra"
-              aria-label="Usuń wszystkie powiadomienia z wybranego filtra"
-              onClick={() => confirm('delete_all')}
-            >
-              <Icon name="trash-2" />
-            </button>
-            <button
-              type="button"
-              className="tasks-icon-button"
-              disabled={mutating}
-              title="Odśwież powiadomienia"
-              aria-label="Odśwież powiadomienia"
-              onClick={() => void load()}
-            >
-              <Icon name="refresh-cw" />
-            </button>
-          </div>
+          <Toolbar
+            className="notifications-toolbar app-toolbar--embedded"
+            filters={
+              <WorkspaceSelect
+                choices={workplaces}
+                value={workspace}
+                disabled={mutating}
+                onChange={(value) => setPreferences({ view, workspace: value })}
+              />
+            }
+            actions={
+              <>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm tasks-filter-button"
+                  disabled={loading || mutating || !payload?.filtered_unread_count}
+                  title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze"
+                  onClick={() => void action('read_all')}
+                >
+                  <Icon name="check" />
+                  <span>Oznacz wszystkie jako przeczytane</span>
+                </button>
+                <button
+                  type="button"
+                  className="tasks-icon-button"
+                  disabled={loading || mutating || !payload?.deletable_count}
+                  title="Usuń wszystkie powiadomienia z wybranego filtra"
+                  aria-label="Usuń wszystkie powiadomienia z wybranego filtra"
+                  onClick={() => confirm('delete_all')}
+                >
+                  <Icon name="trash-2" />
+                </button>
+                <button
+                  type="button"
+                  className="tasks-icon-button"
+                  disabled={mutating}
+                  title="Odśwież powiadomienia"
+                  aria-label="Odśwież powiadomienia"
+                  onClick={() => void load()}
+                >
+                  <Icon name="refresh-cw" />
+                </button>
+              </>
+            }
+          />
         </div>
         {fresh ? (
           <button
@@ -395,62 +385,6 @@ export default function NotificationPanel({
                             {item.workplace_label}
                             {` · ${item.source_label} · #${item.object_id}`}
                           </span>
-                          <Dropdown
-                            label={'Działania powiadomienia: ' + item.title}
-                            trigger={<Icon name="menu" />}
-                            className="notification-card__actions"
-                            triggerClassName="tasks-icon-button"
-                            menuClass="tasks-section-menu notification-card__menu"
-                            searchable={false}
-                            disabled={mutating}
-                          >
-                            {(close) => (
-                              <>
-                                <button
-                                  type="button"
-                                  className="tasks-project-menu-button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    close();
-                                    void action(item.is_read ? 'unread' : 'read', item.key);
-                                  }}
-                                >
-                                  <Icon name={item.is_read ? 'mail' : 'check'} />
-                                  <span>
-                                    {item.is_read
-                                      ? 'Oznacz jako nieprzeczytane'
-                                      : 'Oznacz jako przeczytane'}
-                                  </span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="tasks-project-menu-button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    close();
-                                    void action(item.is_archived ? 'restore' : 'archive', item.key);
-                                  }}
-                                >
-                                  <Icon name={item.is_archived ? 'rotate-ccw' : 'archive'} />
-                                  <span>
-                                    {item.is_archived ? 'Przywróć z archiwum' : 'Archiwizuj'}
-                                  </span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className="tasks-project-menu-button"
-                                  role="menuitem"
-                                  onClick={() => {
-                                    close();
-                                    confirm('delete', item.key);
-                                  }}
-                                >
-                                  <Icon name="trash-2" />
-                                  <span>Usuń powiadomienie</span>
-                                </button>
-                              </>
-                            )}
-                          </Dropdown>
                         </div>
                         {item.action_label ? (
                           <a
@@ -469,6 +403,17 @@ export default function NotificationPanel({
               })}
             </div>
           )}
+          {payload ? (
+            <LoadMore
+              loaded={payload.items.length}
+              total={payload.total}
+              hasMore={!!payload.next_cursor}
+              loading={loading}
+              disabled={mutating}
+              onLoad={() => void load({ append: true })}
+              label="Powiadomienia"
+            />
+          ) : null}
         </div>
       </div>
       <span className="u-sr-only" role="status" aria-live="polite" aria-atomic="true">

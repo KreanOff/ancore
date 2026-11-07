@@ -172,8 +172,11 @@ class ReactPageApiTests(TestCase):
         path = self.path('space', f'{self.space.slug}/?view=list')
         row = self.client.get(self.api(), {'url': path}).json()['data']['items'][0]
         target = row['action_url']
-        response = self.client.post(self.api(), {'action': 'status', 'status': 'closed', 'return_view': 'list'}, QUERY_STRING='url=' + target)
-        self.assertEqual(response.status_code, 200)
+        # Follow the configured workflow; the default space does not allow new -> closed.
+        for status in ['in_progress', 'resolved', 'closed']:
+            with self.subTest(status=status):
+                response = self.client.post(self.api(), {'action': 'status', 'status': status, 'return_view': 'list'}, QUERY_STRING='url=' + target)
+                self.assertEqual(response.status_code, 200)
         self.task.refresh_from_db()
         self.assertEqual(self.task.status, 'closed')
         self.assertIsNotNone(self.task.completion_date)

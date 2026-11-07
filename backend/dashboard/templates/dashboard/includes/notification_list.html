@@ -21,14 +21,6 @@
             {% endfor %}
             <div class="notification-card__footer">
                 <span class="notification-card__location" title="{{ notification.location_label }}">{{ notification.workplace_label }} · {{ notification.source_label }} · #{{ notification.object_id }}</span>
-                <div class="notification-card__actions" data-row-actions>
-                    <button type="button" class="tasks-icon-button" data-row-actions-toggle popovertarget="notification-actions-{{ notification.key }}" aria-controls="notification-actions-{{ notification.key }}" aria-haspopup="menu" aria-expanded="false" aria-label="Działania powiadomienia: {{ notification.title }}" title="Działania powiadomienia"><i data-icon="menu" aria-hidden="true"></i></button>
-                    <div id="notification-actions-{{ notification.key }}" class="tasks-section-menu notification-card__menu" popover="auto" role="menu" aria-label="Działania powiadomienia: {{ notification.title }}" data-row-actions-panel>
-                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="{% if notification.is_read %}unread{% else %}read{% endif %}"><i data-icon="{% if notification.is_read %}mail{% else %}check{% endif %}" aria-hidden="true"></i><span>{% if notification.is_read %}Oznacz jako nieprzeczytane{% else %}Oznacz jako przeczytane{% endif %}</span></button>
-                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="{% if notification.is_archived %}restore{% else %}archive{% endif %}"><i data-icon="{% if notification.is_archived %}rotate-ccw{% else %}archive{% endif %}" aria-hidden="true"></i><span>{% if notification.is_archived %}Przywróć z archiwum{% else %}Archiwizuj{% endif %}</span></button>
-                        <button type="button" class="tasks-project-menu-button" role="menuitem" data-notification-action="delete"><i data-icon="trash-2" aria-hidden="true"></i><span>Usuń powiadomienie</span></button>
-                    </div>
-                </div>
             </div>
             {% if notification.action_label %}<a href="{{ notification.url }}" class="btn btn-primary btn-sm notification-card__decision" data-notification-open>{{ notification.action_label }}<i data-icon="arrow-right" aria-hidden="true"></i></a>{% endif %}
         </div>
@@ -40,7 +32,7 @@
         {% elif notification_filters.view == 'reminders' %}<h3>Brak przypomnień</h3><p>Ustaw datę przypomnienia w zadaniu. Pojawi się tutaj o wybranej porze — dla wykonawcy, a bez wykonawcy dla właściciela Workspace.</p>
         {% elif notification_filters.view == 'mentions' %}<h3>Brak wzmianek</h3><p>Tutaj zobaczysz komentarze, w których ktoś wspomniał o Tobie przez @.</p>
         {% elif notification_filters.view == 'following' %}<h3>Brak nowych komentarzy w obserwowanych</h3><p>Wybierz „Obserwuj” w zadaniu lub projekcie. Nowe komentarze innych osób pojawią się tutaj.</p>
-        {% elif notification_filters.view == 'archived' %}<h3>Archiwum jest puste</h3><p>Zarchiwizowane powiadomienia możesz w każdej chwili przywrócić.</p>
+        {% elif notification_filters.view == 'archived' %}<h3>Archiwum jest puste</h3><p>Zarchiwizowane powiadomienia pojawią się tutaj.</p>
         {% else %}<h3>Brak nowych powiadomień.</h3><p>Komentarze, wzmianki i przypomnienia pojawią się w tym miejscu.</p>{% endif %}
     </div>
     {% endfor %}

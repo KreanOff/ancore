@@ -2,7 +2,7 @@
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from django.core.paginator import Paginator
+from core.list_window import window_page
 from django.db.models import Count, Exists, F, OuterRef, Q
 from django.utils import timezone
 
@@ -45,7 +45,7 @@ def directory_context(request):
         elif not can_manage_team(request.user, request.workplace):
             teams = teams.filter(is_admin=True)
     ordering = {'name': ('name', 'pk'), 'newest': ('-created_at', '-pk'), 'members': ('-member_count', 'name', 'pk')}
-    page = Paginator(teams.order_by(*ordering[sort]), 24).get_page(request.GET.get('page'))
+    page = window_page(teams.order_by(*ordering[sort]), request)
     ids = [team.pk for team in page]
     work = materialized_summary_items(visible_items(request).filter(team_id__in=ids))
     counts = {row['team_id']: row['count'] for row in work.exclude(task__status='closed').order_by().values('team_id').annotate(count=Count('pk'))}
@@ -125,7 +125,7 @@ def detail_context(request, team):
             items = items.filter(task__assignee__isnull=True)
         elif assignee:
             items = items.filter(task__assignee_id=int(assignee))
-        page = Paginator(items.order_by(F('task__due_at').asc(nulls_last=True), 'pk'), 30).get_page(request.GET.get('page'))
+        page = window_page(items.order_by(F('task__due_at').asc(nulls_last=True), 'pk'), request)
         items = page.object_list
     elif view == 'members':
         for term in query.split():
@@ -134,12 +134,12 @@ def detail_context(request, team):
                                      | Q(user__username__icontains=term.lstrip('@')))
         if role:
             members = members.filter(role=role)
-        page = Paginator(members, 30).get_page(request.GET.get('page'))
+        page = window_page(members, request)
         members = page.object_list
     elif view == 'spaces':
         if query:
             spaces = spaces.filter(Q(name__icontains=query) | Q(key__icontains=query))
-        page = Paginator(spaces.order_by('name', 'pk'), 24).get_page(request.GET.get('page'))
+        page = window_page(spaces.order_by('name', 'pk'), request)
         spaces = page.object_list
     member_rows = []
     if view == 'members':

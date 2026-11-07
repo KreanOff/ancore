@@ -1,14 +1,16 @@
 {% load account_avatar %}
 <div class="tasks-modal__body space-settings-table-body access-editor">
-    <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory member-access-toolbar">
-        <button type="button" class="tasks-filter-button" disabled><i data-icon="{% if space.visibility == 'public' %}users{% else %}lock{% endif %}" aria-hidden="true"></i>Widoczność: {% if space.visibility == 'public' %}Publiczna{% else %}Prywatna{% endif %}<i data-icon="chevron-down" aria-hidden="true"></i></button>
-        <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Zmień rolę</button>
-        <button type="button" class="tasks-filter-button" disabled><i data-icon="log-out" aria-hidden="true"></i>Odbierz dostęp</button>
-        {% if can_manage %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled><i data-icon="plus" aria-hidden="true"></i>Udostępnij</button>{% endif %}
+    <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory app-toolbar member-access-toolbar">
+        <div class="app-toolbar__actions">
+            <button type="button" class="tasks-filter-button" disabled><i data-icon="{% if space.visibility == 'public' %}users{% else %}lock{% endif %}" aria-hidden="true"></i>Widoczność: {% if space.visibility == 'public' %}Publiczna{% else %}Prywatna{% endif %}<i data-icon="chevron-down" aria-hidden="true"></i></button>
+            <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Zmień rolę</button>
+            <button type="button" class="tasks-filter-button" disabled><i data-icon="log-out" aria-hidden="true"></i>Odbierz dostęp</button>
+            {% if can_manage %}<button type="button" class="tasks-filter-button" disabled><i data-icon="plus" aria-hidden="true"></i>Udostępnij</button>{% endif %}
+        </div>
     </div>
-    <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet settings-directory-sheet settings-directory-sheet--members" role="region" aria-label="Członkowie — tabela" tabindex="0">
+    <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet settings-directory-sheet settings-directory-sheet--members app-data-table" role="region" aria-label="Członkowie — tabela" tabindex="0">
         <section class="tasks-directory-group" role="table" aria-label="Członkowie przestrzeni">
-            <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
+            <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header app-table-header" role="row">
                 <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" role="columnheader"><input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz wszystkich członków"></span>
                 <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="person" role="columnheader"><i data-icon="users" aria-hidden="true"></i>Nazwa</span>
                 <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="email" role="columnheader"><i data-icon="mail" aria-hidden="true"></i>E-mail</span>
@@ -17,7 +19,7 @@
             </div>
             <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
                 {% for member in settings_team.members %}
-                <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" role="row">
+                <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row app-table-row" role="row">
                     <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz członka {{ member.user.get_full_name|default:member.user.username }}"></span>
                     <div class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="person" role="cell">
                         {% user_avatar member.user as member_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=member_avatar avatar_class='tasks-directory-avatar' only %}

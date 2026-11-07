@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import vm from 'node:vm';
 import { build } from 'esbuild';
 
-// Render TaskPage and its real Members/Dropdown children from the page API contract.
+// Render TaskPage and its real Members children from the page API contract.
 const bundle = await build({
   stdin: {
     contents: `import React from 'react';
@@ -98,18 +98,11 @@ function page(viewer) {
   };
 }
 
-for (const [viewer, editableRows] of [
-  ['owner', ['admin', 'member', 'observer']],
-  ['admin', ['member', 'observer']],
-  ['member', []],
-  ['observer', []],
-]) {
-  test(`${viewer} sees role and removal actions only for permitted task members`, () => {
+for (const viewer of ['owner', 'admin', 'member', 'observer']) {
+  test(`${viewer} sees the member directory and sharing only with management permission`, () => {
     const html = module.exports.render(page(viewer));
-    assert.equal((html.match(/>Zmień rolę<\/span>/g) || []).length, editableRows.length);
-    assert.equal((html.match(/>Odbierz dostęp<\/span>/g) || []).length, editableRows.length);
     for (const role of ['owner', 'admin', 'member', 'observer']) {
-      assert.equal(html.includes(`aria-label="Działania: ${role}"`), editableRows.includes(role));
+      assert.ok(html.includes(`${role}@example.test`));
     }
     assert.equal(html.includes('>Udostępnij</span>'), ['owner', 'admin'].includes(viewer));
   });

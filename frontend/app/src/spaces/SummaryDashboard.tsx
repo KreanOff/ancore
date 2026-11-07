@@ -136,7 +136,7 @@ export default function SummaryDashboard({
   return (
     <div className={`work-summary-dashboard ${editing ? 'is-editing' : ''}`} aria-busy={busy}>
       <ViewToolbar
-        className="work-summary-toolbar"
+        className="work-summary-toolbar app-toolbar--embedded"
         actions={
           <>
             {editing ? (
@@ -201,10 +201,10 @@ export default function SummaryDashboard({
         <p className="work-caption work-summary-edit-hint">
           <span className="work-summary-edit-hint-desktop">
             Przeciągnij kafelek za uchwyt, a jego rozmiar zmień w prawym dolnym rogu. Możesz też
-            użyć strzałek na uchwycie lub menu kafelka.
+            użyć strzałek na uchwytach.
           </span>
           <span className="work-summary-edit-hint-mobile">
-            Dodawaj gadżety, a ich kolejność i rozmiar zmieniaj przez menu kafelka.
+            Dodawaj gadżety i zapisuj zmiany układu.
           </span>
         </p>
       ) : null}
@@ -245,9 +245,7 @@ export default function SummaryDashboard({
           busy={busy}
           onChange={setDraft}
           renderWidget={renderWidget}
-          onRemove={(id) => setDraft((current) => current.filter((row) => row.id !== id))}
           onNotice={setNotice}
-          emptyFocusRef={addButton}
           ariaLabel="Gadżety pulpitu przestrzeni"
         />
       ) : (

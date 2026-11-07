@@ -17,7 +17,7 @@ from .reminders import space_reminders_for_user
 from spaces.models import SpaceTaskActivity
 from spaces.access import visible_to as space_visible_to
 
-DASHBOARD_NOTIFICATION_LIMIT = 12
+DASHBOARD_NOTIFICATION_LIMIT = 20
 SOURCES = {'spaces': 'space_activity', 'space-reminders': 'space_reminder'}
 VIEWS = {'all', 'unread', 'reminders', 'mentions', 'following', 'archived'}
 SIGNING_SALT = 'dashboard.notifications.v1'

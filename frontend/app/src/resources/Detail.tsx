@@ -1,3 +1,6 @@
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { LoadMore } from '../shared/LoadMore';
+import { PageHeader } from '../shared/PageHeader';
 import { Icon } from '../shared/Icon';
 import type { Overview, Resource, ResourceAction } from './types';
 
@@ -27,7 +30,8 @@ export function ResourceDetail({
   back,
   edit,
   operate,
-  historyPage,
+  loadHistory,
+  historyError,
   refresh,
 }: {
   data: Overview;
@@ -36,7 +40,8 @@ export function ResourceDetail({
   back: () => void;
   edit: () => void;
   operate: (action: ResourceAction) => void;
-  historyPage: (page: number) => void;
+  loadHistory: () => void;
+  historyError: string;
   refresh: () => void;
 }) {
   const resource = data.resource;
@@ -54,86 +59,101 @@ export function ResourceDetail({
   ] as const;
   return (
     <>
-      <header className="tasks-topbar tasks-topbar--directory resources-detail-header">
-        <div className="tasks-titlebar-left">
-          <button
-            type="button"
-            className="tasks-filter-button"
-            onClick={back}
-            aria-label="Wróć do zasobów"
-          >
-            <Icon name="arrow-left" />
-          </button>
-          <Icon name={resource.icon} />
-          <h1 className="tasks-topbar-title" title={resource.name} tabIndex={-1}>
-            {resource.name}
-          </h1>
-        </div>
-        {!readOnly ? (
-          <div className="tasks-titlebar-actions">
+      <PageHeader
+        className="resources-detail-header"
+        heading={
+          <>
             <button
               type="button"
-              className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={busy}
-              onClick={edit}
+              className="tasks-issue-close"
+              onClick={back}
+              aria-label="Wróć do zasobów"
             >
-              <Icon name="pencil" />
-              Edytuj zasób
+              <Icon name="arrow-left" />
             </button>
-          </div>
-        ) : null}
-      </header>
-      <div className="tasks-filterbar resources-detail-actions">
-        <span className="resources-detail-caption">
-          Karta zasobu{resource.inventory_number ? ` · ${resource.inventory_number}` : ''}
-        </span>
-        <button
-          type="button"
-          className="tasks-filter-button"
-          disabled={busy}
-          onClick={refresh}
-          aria-label="Odśwież zasób"
-          title="Odśwież zasób"
-        >
-          <Icon name="rotate-ccw" />
-        </button>
-        {!readOnly ? (
-          <div className="tasks-filterbar-right">
-            {['available', 'in_use'].includes(resource.status) ? (
+            <h1 className="tasks-topbar-title" title={resource.name} tabIndex={-1}>
+              {resource.name}
+            </h1>
+          </>
+        }
+        actions={
+          !readOnly ? (
+            <>
               <button
-                className="tasks-filter-button"
+                type="button"
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
                 disabled={busy}
-                onClick={() => operate('handover')}
+                onClick={edit}
               >
-                <Icon name="user-round" />
-                Przekaż
+                <Icon name="pencil" />
+                Edytuj zasób
               </button>
-            ) : null}
-            {resource.status === 'in_use' ? (
-              <button
-                className="tasks-filter-button"
-                disabled={busy}
-                onClick={() => operate('return')}
-              >
-                <Icon name="rotate-ccw" />
-                Przyjmij zwrot
-              </button>
-            ) : null}
+            </>
+          ) : undefined
+        }
+      />
+      <Toolbar
+        className="resources-detail-actions"
+        filters={
+          <>
+            <span className="resources-detail-caption">
+              Karta zasobu{resource.inventory_number ? ` · ${resource.inventory_number}` : ''}
+            </span>
             <button
+              type="button"
               className="tasks-filter-button"
               disabled={busy}
-              onClick={() => operate('status')}
+              onClick={refresh}
+              aria-label="Odśwież zasób"
+              title="Odśwież zasób"
             >
-              <Icon name="circle-check" />
-              Zmień status
+              <Icon name="rotate-ccw" />
             </button>
-            <button className="tasks-filter-button" disabled={busy} onClick={() => operate('note')}>
-              <Icon name="plus" />
-              Dodaj notatkę
-            </button>
-          </div>
-        ) : null}
-      </div>
+          </>
+        }
+        actions={
+          !readOnly ? (
+            <>
+              {['available', 'in_use'].includes(resource.status) ? (
+                <button
+                  className="tasks-filter-button"
+                  disabled={busy}
+                  onClick={() => operate('handover')}
+                >
+                  <Icon name="user-round" />
+                  Przekaż
+                </button>
+              ) : null}
+              {resource.status === 'in_use' ? (
+                <button
+                  className="tasks-filter-button"
+                  disabled={busy}
+                  onClick={() => operate('return')}
+                >
+                  <Icon name="rotate-ccw" />
+                  Przyjmij zwrot
+                </button>
+              ) : null}
+              <button
+                className="tasks-filter-button"
+                disabled={busy}
+                onClick={() => operate('status')}
+              >
+                <Icon name="circle-check" />
+                Zmień status
+              </button>
+              <button
+                className="tasks-filter-button"
+                disabled={busy}
+                onClick={() => operate('note')}
+              >
+                <Icon name="plus" />
+                Dodaj notatkę
+              </button>
+            </>
+          ) : null
+        }
+      />
       <div className="resources-detail-content">
         {resource.overdue || resource.expiring_soon || resource.return_overdue ? (
           <div className="resources-deadline-notice" role="status">
@@ -207,29 +227,15 @@ export function ResourceDetail({
                 Brak zarejestrowanych zmian. Historia będzie zapisywana od kolejnej operacji.
               </p>
             )}
-            {data.history_pages > 1 ? (
-              <nav className="resources-history-pagination" aria-label="Strony historii">
-                <button
-                  className="tasks-filter-button"
-                  disabled={busy || data.history_page <= 1}
-                  onClick={() => historyPage(data.history_page - 1)}
-                  aria-label="Nowsza historia"
-                >
-                  <Icon name="chevron-left" />
-                </button>
-                <span>
-                  {data.history_page} / {data.history_pages}
-                </span>
-                <button
-                  className="tasks-filter-button"
-                  disabled={busy || data.history_page >= data.history_pages}
-                  onClick={() => historyPage(data.history_page + 1)}
-                  aria-label="Starsza historia"
-                >
-                  <Icon name="chevron-right" />
-                </button>
-              </nav>
-            ) : null}
+            <LoadMore
+              loaded={data.history.length}
+              total={data.history_total}
+              hasMore={!!data.history_next}
+              loading={busy}
+              error={historyError}
+              onLoad={loadHistory}
+              label="wpisy"
+            />
           </section>
         </div>
       </div>

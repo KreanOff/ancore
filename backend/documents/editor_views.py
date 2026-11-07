@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_payload
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404, JsonResponse, QueryDict
@@ -119,16 +119,10 @@ def _list(request, modal=None):
     elif values['size'] == 'large':
         items = items.filter(file_size__gt=5 * 1024 * 1024)
     items = order_results(items, query_state)
-    try:
-        size = int(request.GET.get('page_size', 25))
-    except (TypeError, ValueError):
-        size = 25
-    if size not in {25, 50, 100}:
-        size = 25
-    page = Paginator(items, size).get_page(request.GET.get('page'))
+    page = window_page(items, request)
     total = page.paginator.count
     rows = [{'kind': 'document', 'item': item, 'url': _url(request, f'{item.pk}/editor/' if item.has_full_editor else (f'{item.pk}/' if item.kind == Document.Kind.TEXT else f'{item.pk}/preview/'))} for item in page]
-    params = {**values, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'page_size': size}
+    params = {**values, 'view': view, 'q': query, 'sort': query_state['sort_param'], 'display': display, 'limit': page.limit}
     counts = _documents(request).aggregate(all=Count('pk', filter=Q(deleted_at__isnull=True)), starred=Count('pk', filter=Q(deleted_at__isnull=True, is_starred=True)), trash=Count('pk', filter=Q(deleted_at__isnull=False)))
     context = _context(request)
     context.update(query_state)
@@ -143,11 +137,7 @@ def _list(request, modal=None):
                              ('starred', 'Oznaczone gwiazdką', 'star'), ('templates', 'Szablony', 'files'), ('trash', 'Kosz', 'trash-2')]],
         'display_options': [{'label': label, 'icon': icon, 'active': display == key, 'url': _url(request, **{**params, 'display': key, 'page': page.number})}
                             for key, label, icon in [('list', 'Lista', 'list'), ('grid', 'Kafelki', 'layout-grid')]],
-        'document_window': {'page': page.number, 'total_pages': page.paginator.num_pages, 'page_size': size, 'page_size_options': [25, 50, 100],
-                            'has_previous': page.has_previous(), 'has_next': page.has_next(),
-                            'previous_url': _url(request, **{**params, 'page': page.previous_page_number()}) if page.has_previous() else '',
-                            'next_url': _url(request, **{**params, 'page': page.next_page_number()}) if page.has_next() else '',
-                            'compact_summary': f'{page.start_index()}–{page.end_index()} z {total}', 'summary': f'{total} elementów'},
+        'document_window': window_payload(request, page, parameters=params),
     })
     return render(request, 'documents/office/index.html', context)
 
@@ -355,5 +345,5 @@ def action(request, pk, operation):
 def _action_redirect(request):
     # Rebuild the return path locally; never redirect to a posted external URL.
     params = QueryDict(request.POST.get('return_query', ''))
-    allowed = {key: params[key] for key in ('view', 'q', 'sort', 'display', 'page', 'page_size', *FILTER_PARAMETERS) if key in params}
+    allowed = {key: params[key] for key in ('view', 'q', 'sort', 'display', 'page', 'page_size', 'limit', *FILTER_PARAMETERS) if key in params}
     return redirect(_url(request, **allowed))

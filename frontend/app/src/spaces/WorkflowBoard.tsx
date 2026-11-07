@@ -224,8 +224,12 @@ export default function WorkflowBoard({
         }
       }}
     >
-      <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
-        <div className="work-flow-history" role="group" aria-label="Historia zmian procesu">
+      <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar app-toolbar app-toolbar--embedded">
+        <div
+          className="work-flow-history app-toolbar__controls"
+          role="group"
+          aria-label="Historia zmian procesu"
+        >
           <button
             type="button"
             className="tasks-filter-button work-flow-icon-button"
@@ -252,7 +256,7 @@ export default function WorkflowBoard({
         <span className={`work-flow-save-state${actions.dirty ? ' is-dirty' : ''}`} role="status">
           {actions.statusText}
         </span>
-        <div className="member-access-save-actions">
+        <div className="member-access-save-actions app-toolbar__actions">
           <button
             type="button"
             className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"

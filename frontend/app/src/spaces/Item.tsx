@@ -2,10 +2,9 @@ import { issueTypeBadgeStyle } from '../shared/issue-type-color';
 import { statusColorStyle } from '../shared/status-color';
 import { type DragEvent } from 'react';
 import { Avatar } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { dateLabel, type DetailData, type Item } from './types';
-import { flowAge, wipReached } from './kanban';
+import { flowAge } from './kanban';
 export function Priority({ value, label = value }: { value: string; label?: string }) {
   const icons: Record<string, string> = {
     urgent: 'circle-alert',
@@ -96,171 +95,8 @@ export interface ActionsProps {
   item: Item;
   data: DetailData;
   busy: boolean;
-  openForm: (url: string) => void;
-  openBlock: (item: Item) => void;
-  act: (url: string, values: Record<string, string>) => void;
 }
-export function ItemActions({ item, data, busy, openForm, openBlock, act }: ActionsProps) {
-  if (!item.editable) return null;
-  const snapshot = {
-    space: String(data.space.id),
-    source_status: item.status,
-    source_in_backlog: String(item.in_backlog),
-    status: item.status,
-    source_sprint: String(item.sprint_id ?? ''),
-    source_rank: String(item.rank),
-    return_view: data.view,
-  };
-  return (
-    <Dropdown
-      label={`Działania ${item.key}`}
-      className="work-item-actions"
-      menuClass="documents-item-menu"
-      role="group"
-      trigger={<Icon name="menu" />}
-    >
-      {(close) => (
-        <div className="documents-menu-actions">
-          <a className="tasks-project-menu-button" href={item.url}>
-            <Icon name="external-link" />
-            <span>Otwórz zadanie</span>
-          </a>
-          <button
-            type="button"
-            className="tasks-project-menu-button"
-            disabled={busy}
-            onClick={() => {
-              close();
-              openForm(item.edit_url);
-            }}
-          >
-            <Icon name="pencil" />
-            <span>Edytuj {item.key}</span>
-          </button>
-          {item.transitions.map((status) => {
-            const column = data.columns.find((column) => column.key === status.key);
-            const full = !item.in_backlog && column && wipReached(column);
-            return (
-              <button
-                key={status.key}
-                type="button"
-                className="tasks-project-menu-button"
-                disabled={busy || full}
-                title={full ? 'Limit pracy w toku dla tego etapu został osiągnięty.' : undefined}
-                onClick={() => {
-                  close();
-                  act(item.action_url, {
-                    ...snapshot,
-                    action: 'status',
-                    status: status.key,
-                    return_view: data.view,
-                  });
-                }}
-              >
-                <span
-                  className={`status-indicator status-${status.category}`}
-                  style={statusColorStyle(status.color)}
-                />
-                <span>Zmień na: {status.label}</span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            className="tasks-project-menu-button"
-            aria-disabled={busy}
-            aria-haspopup="dialog"
-            onClick={() => {
-              if (busy) return;
-              close();
-              openBlock(item);
-            }}
-          >
-            <Icon name={item.blocked ? 'circle-check' : 'circle-alert'} />
-            <span>{item.blocked ? 'Zmień lub usuń blokadę' : 'Zablokuj zadanie'}</span>
-          </button>
-          {data.sort.manual && ['board', 'backlog'].includes(data.view)
-            ? ['up', 'down'].map((direction, index) => (
-                <button
-                  key={direction}
-                  type="button"
-                  className="tasks-project-menu-button"
-                  disabled={busy}
-                  onClick={() => {
-                    close();
-                    act(item.action_url, {
-                      ...snapshot,
-                      action: data.view === 'board' ? 'position' : direction,
-                      direction,
-                    });
-                  }}
-                >
-                  <Icon name={`arrow-${direction}`} />
-                  <span>{index ? 'Przesuń niżej' : 'Przesuń wyżej'}</span>
-                </button>
-              ))
-            : null}
-          {data.view === 'backlog' && data.space.template === 'scrum'
-            ? [{ id: null, name: 'backlogu' }, ...data.sprints.filter((s) => s.state !== 'closed')]
-                .filter((s) => s.id !== item.sprint_id)
-                .map((sprint) => (
-                  <button
-                    key={String(sprint.id)}
-                    type="button"
-                    className="tasks-project-menu-button"
-                    disabled={busy}
-                    onClick={() => {
-                      close();
-                      if (!data.sort.manual) {
-                        act(data.bulk_plan_url, {
-                          item_ids: String(item.id),
-                          destination: String(sprint.id ?? ''),
-                          positions: JSON.stringify({ [item.id]: [item.sprint_id, item.rank] }),
-                        });
-                        return;
-                      }
-                      const target = data.items.filter(
-                        (row) => row.sprint_id === sprint.id && row.id !== item.id,
-                      );
-                      act(item.action_url, {
-                        ...snapshot,
-                        action: 'plan',
-                        sprint: String(sprint.id ?? ''),
-                        before: '',
-                        after: String(target.at(-1)?.id ?? ''),
-                      });
-                    }}
-                  >
-                    <Icon name="arrow-right" />
-                    <span>
-                      {sprint.id ? `Przenieś do sprintu: ${sprint.name}` : 'Przenieś do backlogu'}
-                    </span>
-                  </button>
-                ))
-            : null}
-          {data.space.template === 'kanban' && item.category !== 'closed' ? (
-            <button
-              type="button"
-              className="tasks-project-menu-button"
-              disabled={busy}
-              onClick={() => {
-                close();
-                act(item.action_url, {
-                  ...snapshot,
-                  action: item.in_backlog ? 'board' : 'backlog',
-                  return_view: data.view,
-                });
-              }}
-            >
-              <Icon name="arrow-right" />
-              <span>{item.in_backlog ? 'Przenieś na tablicę' : 'Przenieś do backlogu'}</span>
-            </button>
-          ) : null}
-        </div>
-      )}
-    </Dropdown>
-  );
-}
+
 function ItemIdentity({ item }: { item: Item }) {
   return (
     <>
@@ -321,7 +157,7 @@ export function ItemRow(props: RowProps) {
   return (
     <article
       data-work-motion-item={item.id}
-      className={`tasks-issue-row work-issue-row work-issue-row--planning ${planning && item.editable ? 'work-issue-row--actions' : ''} ${planning && item.editable && data.sort.manual ? 'work-issue-row--draggable' : ''} ${item.category === 'closed' ? 'completed' : ''} ${selected ? 'checked' : ''}`}
+      className={`tasks-issue-row work-issue-row work-issue-row--planning ${planning && item.editable && data.sort.manual ? 'work-issue-row--draggable' : ''} ${item.category === 'closed' ? 'completed' : ''} ${selected ? 'checked' : ''}`}
       draggable={planning && item.editable && data.sort.manual && !props.busy}
       onDragStart={props.onDragStart}
       onDragEnd={props.onDragEnd}
@@ -347,7 +183,6 @@ export function ItemRow(props: RowProps) {
       <ItemType item={item} />
       <Planning item={item} scrum={data.space.template === 'scrum'} />
       <Counts item={item} />
-      {planning ? <ItemActions {...props} /> : null}
     </article>
   );
 }

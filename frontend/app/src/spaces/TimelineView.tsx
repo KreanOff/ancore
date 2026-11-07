@@ -350,6 +350,34 @@ export default function Timeline({ data, url, csrfToken, busy, moreControl, onUp
       <ItemToolbar
         data={data}
         url={url}
+        search={
+          <form
+            className="tasks-search-field work-view-toolbar-search"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const next = new URL(url, location.origin);
+              query.trim()
+                ? next.searchParams.set('q', query.trim())
+                : next.searchParams.delete('q');
+              next.searchParams.delete('page');
+              next.searchParams.delete('timeline_limit');
+              navigate(next.pathname + next.search);
+            }}
+          >
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Szukaj na osi czasu"
+              aria-label="Szukaj na osi czasu"
+            />
+            <button type="submit" className="tasks-filter-button" aria-label="Szukaj zadań">
+              <Icon name="arrow-right" />
+            </button>
+          </form>
+        }
         actions={
           <div
             className="tasks-segments work-timeline-navigation work-timeline-scales"
@@ -378,32 +406,7 @@ export default function Timeline({ data, url, csrfToken, busy, moreControl, onUp
             ))}
           </div>
         }
-      >
-        <form
-          className="tasks-search-field work-view-toolbar-search"
-          role="search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const next = new URL(url, location.origin);
-            query.trim() ? next.searchParams.set('q', query.trim()) : next.searchParams.delete('q');
-            next.searchParams.delete('page');
-            next.searchParams.delete('timeline_limit');
-            navigate(next.pathname + next.search);
-          }}
-        >
-          <Icon name="search" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Szukaj na osi czasu"
-            aria-label="Szukaj na osi czasu"
-          />
-          <button type="submit" className="tasks-filter-button" aria-label="Szukaj zadań">
-            <Icon name="arrow-right" />
-          </button>
-        </form>
-      </ItemToolbar>
+      ></ItemToolbar>
       {error && !editing ? (
         <div className="tasks-modal__errors work-timeline-error" role="alert">
           {error}
@@ -663,7 +666,8 @@ function DatesDialog({
   return (
     <Modal
       title={`Daty zadania ${item.key}`}
-      className="work-modal work-timeline-dates-modal app-modal-panel--compact"
+      size="compact"
+      className="work-modal work-timeline-dates-modal"
       pending={pending}
       dirty={dirty}
       onClose={onClose}
@@ -691,6 +695,8 @@ function DatesDialog({
                 value={start}
                 max={end || undefined}
                 disabled={pending}
+                aria-invalid={invalid}
+                aria-describedby={invalid ? 'work-timeline-dates-error' : undefined}
                 onChange={(event) => setStart(event.target.value)}
               />
             </label>
@@ -702,12 +708,16 @@ function DatesDialog({
                 value={end}
                 min={start || undefined}
                 disabled={pending}
+                aria-invalid={invalid}
+                aria-describedby={invalid ? 'work-timeline-dates-error' : undefined}
                 onChange={(event) => setEnd(event.target.value)}
               />
             </label>
           </div>
           {invalid ? (
-            <p role="alert">Termin zakończenia nie może być wcześniejszy niż początek.</p>
+            <p id="work-timeline-dates-error" role="alert">
+              Termin zakończenia nie może być wcześniejszy niż początek.
+            </p>
           ) : (
             <p className="work-caption">
               {startDay !== null && endDay !== null

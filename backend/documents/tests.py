@@ -248,9 +248,13 @@ class DocumentLibraryTests(TestCase):
         first = self.client.get(f'{self.library_url}&page_size=25').context['rows']
         second_page = self.client.get(f'{self.library_url}&page=2&page_size=25')
         second = second_page.context['rows']
-        self.assertIn('page_size=25', second_page.context['document_window']['previous_url'])
-        self.assertEqual(len(first), 25)
-        self.assertEqual(len(second), 6)
+        self.assertEqual(second_page.context['document_window']['previous_url'], '')
+        self.assertEqual(len(first), 20)
+        self.assertEqual(len(second), 31)
+        self.assertEqual([(row['kind'], row['item'].pk) for row in first],
+                         [(row['kind'], row['item'].pk) for row in second[:20]])
+        self.assertEqual([row['kind'] for row in second], ['folder'] * 28 + ['document'] * 3)
+        self.assertEqual(second_page.context['document_window']['next_url'], '')
         self.assertEqual(len({str(row['item'].pk) for row in first + second}), 31)
 
     def test_search_ignores_trash_and_other_workspaces(self):
@@ -451,7 +455,7 @@ class DocumentLibraryTests(TestCase):
         document.tags.add(tag)
         response = self.client.get(f'{self.base}?view=all&q=Instrukcja&tag={tag.pk}&page_size=10')
         self.assertEqual([row['item'].pk for row in response.context['rows']], [document.pk])
-        self.assertContains(response, 'name="scope" value="workspace"')
+        self.assertNotContains(response, f'id="document-actions-document-{document.pk}"')
         grid = self.client.get(f'{self.base}?view=all&q=Instrukcja&tag={tag.pk}&page_size=10&display=grid')
         self.assertNotContains(grid, tag.name)
         self.assertNotContains(grid, 'data-project-filter-field="tag"')
@@ -489,7 +493,7 @@ class DocumentLibraryTests(TestCase):
         self.assertEqual(self.client.get(f'{foreign_base}?view=all').context['document_display'], 'list')
 
     def test_display_switch_preserves_results_filters_sort_and_page(self):
-        for number in range(12):
+        for number in range(42):
             self.document(title=f'Raport {number:02}')
         url = f'{self.library_url}&q=Raport&sort=name_asc&page_size=10&page=2'
         listing = self.client.get(url)
@@ -501,7 +505,10 @@ class DocumentLibraryTests(TestCase):
         grid = self.client.get(grid_url)
         self.assertEqual([row['item'].pk for row in listing.context['rows']], [row['item'].pk for row in grid.context['rows']])
         self.assertContains(grid, 'Raport 10')
-        self.assertNotContains(grid, 'Raport 00')
+        self.assertContains(grid, 'Raport 00')
+        self.assertContains(grid, 'Raport 39')
+        self.assertNotContains(grid, 'Raport 40')
+        self.assertEqual(len(grid.context['rows']), 40)
         self.assertContains(grid, 'name="display" value="grid"')
         self.assertEqual(grid.context['document_window']['page'], 2)
 

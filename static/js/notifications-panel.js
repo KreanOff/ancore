@@ -66,6 +66,7 @@
 
     function makeController(root) {
         const content = root.querySelector('[data-notifications-content]');
+        const results = content.querySelector('[data-notifications-list-content]');
         const status = root.querySelector('[data-notifications-status]');
         const error = root.querySelector('[data-notification-error]');
         const more = root.querySelector('[data-notification-more]');
@@ -100,7 +101,7 @@
             more.disabled = true;
             const scrollTop = content.scrollTop;
             if (!append && !quiet) {
-                content.innerHTML = '<div class="global-search-loading" aria-hidden="true">' + '<span class="global-search-loading__row"><span></span><span></span></span>'.repeat(5) + '</div>';
+                results.innerHTML = '<div class="global-search-loading" aria-hidden="true">' + '<span class="global-search-loading__row"><span></span><span></span></span>'.repeat(5) + '</div>';
                 pagination.hidden = true;
             }
             status.textContent = 'Pobieranie powiadomień…';
@@ -129,7 +130,7 @@
                     list.append(...incoming.childNodes);
                     firstNew?.focus({ preventScroll: true });
                 } else {
-                    content.innerHTML = payload.html;
+                    results.innerHTML = payload.html;
                     content.scrollTop = quiet ? scrollTop : 0;
                 }
                 cursor = payload.next_cursor;
@@ -141,8 +142,9 @@
                     ? 'Wszystkie powiadomienia w tym widoku są przeczytane'
                     : 'Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze';
                 deleteAll.disabled = deletable === 0;
-                pagination.hidden = !cursor;
-                root.querySelector('[data-notification-progress]').textContent = `${content.querySelectorAll('[data-notification-item]').length} z ${payload.total}`;
+                pagination.hidden = !cursor && payload.total <= 20;
+                root.querySelector('[data-notification-more-label]').textContent = cursor ? 'Pokaż więcej' : 'Wszystkie wyniki';
+                root.querySelector('[data-notification-progress]').textContent = `(${content.querySelectorAll('[data-notification-item]').length} / ${payload.total})`;
                 root.querySelector('[data-notification-new-items]').hidden = true;
                 status.textContent = `Powiadomienia: ${payload.total}. Nieprzeczytane: ${payload.filtered_unread_count}.`;
                 icons(content);
@@ -154,7 +156,7 @@
                 return true;
             } catch (failure) {
                 if ((failure.name === 'AbortError' && !timedOut) || request !== activeRequest) return;
-                if (!quiet && !append) content.innerHTML = '<div class="global-search-state notifications-panel__state"><span class="global-search-state__icon"><i data-icon="wifi-off" aria-hidden="true"></i></span><h3>Nie udało się pobrać powiadomień</h3><p>Sprawdź połączenie i spróbuj ponownie.</p><button type="button" class="global-search-state__retry" data-notification-refresh>Spróbuj ponownie</button></div>';
+                if (!quiet && !append) results.innerHTML = '<div class="global-search-state notifications-panel__state"><span class="global-search-state__icon"><i data-icon="wifi-off" aria-hidden="true"></i></span><h3>Nie udało się pobrać powiadomień</h3><p>Sprawdź połączenie i spróbuj ponownie.</p><button type="button" class="global-search-state__retry" data-notification-refresh>Spróbuj ponownie</button></div>';
                 else reportError('Nie udało się odświeżyć listy. Użyj przycisku odświeżania, aby spróbować ponownie.');
                 status.textContent = 'Nie udało się pobrać powiadomień.';
                 icons(content);
@@ -162,7 +164,7 @@
                 clearTimeout(timeout);
                 if (request === activeRequest) {
                     content.setAttribute('aria-busy', 'false');
-                    more.disabled = false;
+                    more.disabled = !cursor;
                 }
             }
         }

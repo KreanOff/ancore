@@ -67,6 +67,8 @@ function board(path = '/space/produkt/') {
 }
 
 function harness(data = board()) {
+  class HTMLElement {}
+  const trigger = new HTMLElement();
   const states = [],
     refs = [],
     effects = [],
@@ -85,6 +87,8 @@ function harness(data = board()) {
     },
     controls = { response, failure: null, wait: null, modalOpen: false };
   const surface = {
+    activeElement: trigger,
+    body: new HTMLElement(),
     visibilityState: 'visible',
     addEventListener: (name, callback) => listeners.set(name, callback),
     removeEventListener: (name) => listeners.delete(name),
@@ -101,6 +105,7 @@ function harness(data = board()) {
     AbortController,
     Error,
     FormData,
+    HTMLElement,
     Set,
     URL,
     location: { origin: 'http://localhost' },
@@ -133,7 +138,6 @@ function harness(data = board()) {
     ItemCard: 'ItemCard',
     StatusGroup: 'StatusGroup',
     FormDialog: 'FormDialog',
-    BlockDialog: 'BlockDialog',
     errorMessage: (error) => error.message,
     setPageLocation: (url) => locations.push(url),
     navigate: (url) => navigations.push(url),
@@ -156,6 +160,8 @@ function harness(data = board()) {
   return {
     initial,
     controls,
+    trigger,
+    document: surface,
     requests,
     locations,
     navigations,
@@ -210,6 +216,7 @@ for (const path of ['/space/produkt/', '/workplaces/w_0123456789abcdefghijklmnop
       assert.equal(modal.props.data, app.controls.response.data);
       assert.equal(modal.props.api, app.initial.api_url);
       assert.equal(modal.props.csrfToken, 'csrf-token');
+      assert.equal(modal.props.returnFocus, app.trigger);
       modal.props.onClose();
       assert.equal(
         app.render().some((node) => node.type === 'FormDialog'),
@@ -293,6 +300,7 @@ test('an in-flight form request blocks activation while keeping its trigger focu
   const buttons = app.buttons();
   buttons[0].props.onClick();
   assert.equal(app.requests.length, 1);
+  app.document.activeElement = app.document.body;
   assert.ok(app.buttons().every((button) => button.props['aria-disabled'] === true));
   assert.ok(
     app.buttons().every((button) => button.props.disabled !== true),
@@ -305,50 +313,11 @@ test('an in-flight form request blocks activation while keeping its trigger focu
   await flush();
   assert.ok(app.buttons().every((button) => button.props['aria-disabled'] === false));
   assert.equal(app.render().filter((node) => node.type === 'FormDialog').length, 1);
-});
-
-test('blocking a subtask loads the exact-key action data instead of its parent navigation URL', async () => {
-  const data = board();
-  data.items[0].url = '/space/produkt/tasks/PRO-1/?tab=subtasks';
-  data.items[0].block_url = '/space/produkt/tasks/PRO-41/?block=1';
-  const app = harness(data);
-  app.controls.response = {
-    type: 'space-block',
-    data: { item: data.items[0], can_edit: true, block_responsible_options: [] },
-  };
-  const card = app.render().find((node) => node.type === 'ItemCard');
-  card.props.openBlock(card.props.item);
-  await flush();
-  assert.equal(app.requests[0].url, data.items[0].block_url);
-  const dialog = app.render().find((node) => node.type === 'BlockDialog');
-  assert.equal(dialog.props.data.item.id, 41);
-  assert.equal(dialog.props.view, 'board');
-  dialog.props.onClose();
   assert.equal(
-    app.render().some((node) => node.type === 'BlockDialog'),
-    false,
+    app.render().find((node) => node.type === 'FormDialog').props.returnFocus,
+    app.trigger,
+    'loading and ignored duplicate activations must preserve the original modal opener',
   );
-});
-
-test('blocking data with another task or revoked edit permission cannot open a write dialog', async () => {
-  for (const returned of [
-    { id: 88, can_edit: true },
-    { id: 41, can_edit: false },
-  ]) {
-    const app = harness();
-    app.controls.response = {
-      type: 'space-block',
-      data: { item: { id: returned.id }, can_edit: returned.can_edit },
-    };
-    const card = app.render().find((node) => node.type === 'ItemCard');
-    card.props.openBlock(card.props.item);
-    await flush();
-    assert.equal(
-      app.render().some((node) => node.type === 'BlockDialog'),
-      false,
-    );
-    assert.ok(app.render().some((node) => node.props?.role === 'alert'));
-  }
 });
 
 test('a visibly full WIP column prevents creating more work even when filters show no cards', async () => {

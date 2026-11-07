@@ -1,30 +1,8 @@
-<div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory workplaces-management__toolbar">
-    <div class="tasks-filterbar-right">
+<div class="app-toolbar tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory workplaces-management__toolbar">
+    <div class="tasks-filterbar-right app-toolbar__search">
         <label class="tasks-search-field tasks-project-search" for="workplaces-search-input">
             <i data-icon="search" aria-hidden="true"></i>
             <input id="workplaces-search-input" type="search" placeholder="Szukaj Workspace" aria-label="Szukaj Workspace" autocomplete="off" data-workplaces-search data-team-member-return>
         </label>
-        <div class="tasks-project-pagination tasks-project-pagination--toolbar" data-workplaces-pagination{% if not workplaces %} hidden{% endif %}>
-            <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony miejsc pracy">
-                <button type="button" class="tasks-project-pagination__button" aria-label="Poprzednie miejsca pracy" data-workplaces-page-prev disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>
-                <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite" data-workplaces-pagination-summary></span>
-                <button type="button" class="tasks-project-pagination__button" aria-label="Następne miejsca pracy" data-workplaces-page-next disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>
-            </nav>
-            <div class="tasks-filter-dropdown tasks-project-pagination__size-control tasks-project-pagination__size-control--compact tasks-project-pagination__size-control--toolbar" data-workplaces-page-size-dropdown>
-                <button type="button" class="tasks-project-pagination__size-button tasks-project-pagination__size-button--compact tasks-project-pagination__size-button--toolbar" aria-label="Liczba miejsc pracy na stronie" aria-haspopup="menu" aria-expanded="false" data-workplaces-page-size-toggle>
-                    <i data-icon="rows-3" aria-hidden="true"></i>
-                    <span class="tasks-project-pagination__size-value"><strong data-workplaces-page-size-label>50</strong><span>/ stronę</span></span>
-                    <i data-icon="chevron-down" aria-hidden="true"></i>
-                </button>
-                <div class="tasks-filter-menu tasks-project-pagination__size-menu" role="menu" aria-label="Liczba miejsc pracy na stronie">
-                    <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="10">10</button>
-                    <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="25">25</button>
-                    <button type="button" role="menuitemradio" aria-checked="true" class="is-active" data-workplaces-page-size-value="50">50</button>
-                    <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="100">100</button>
-                    <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="150">150</button>
-                    <button type="button" role="menuitemradio" aria-checked="false" data-workplaces-page-size-value="200">200</button>
-                </div>
-            </div>
-        </div>
     </div>
 </div>

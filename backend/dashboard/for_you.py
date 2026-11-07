@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_url
 from django.db.models import Case, Count, DateTimeField, Exists, F, Max, OuterRef, Q, Value, When
 from django.db.models.functions import Greatest
 from django.utils import timezone
@@ -17,7 +17,6 @@ from workplaces.services import scoped_workplace_app_path, workspace_owner
 from .recent import recent_views
 
 RESULT_LIMIT = 20
-VIEWED_PAGE_SIZE = 25
 TABS = (
     ('recommended', 'Polecane', 'sparkles'),
     ('assigned', 'Przypisane do mnie', 'user-round-check'),
@@ -202,7 +201,7 @@ def for_you_context(request):
 
         if tab == 'viewed':
             total = sum(query.count() for query in sources)
-            page = Paginator(range(total), VIEWED_PAGE_SIZE).get_page(request.GET.get('page'))
+            page = window_page(range(total), request)
         candidates = []
         for query in sources:
             batch = query if tab == 'viewed' else query[:RESULT_LIMIT]
@@ -217,7 +216,7 @@ def for_you_context(request):
             candidates.sort(key=lambda row: (row['object'].created_at, row['identity']), reverse=True)
         else:
             candidates.sort(key=lambda row: (row['recent_at'], row['identity']), reverse=True)
-        rows = (candidates[(page.number - 1) * VIEWED_PAGE_SIZE:page.end_index()]
+        rows = (candidates[:page.end_index()]
                 if tab == 'viewed' else candidates[:RESULT_LIMIT])
 
     _decorate_task_rows(rows)
@@ -230,8 +229,8 @@ def for_you_context(request):
         'for_you_tab': tab,
         'for_you_tabs': [{'key': key, 'label': label, 'icon': icon, 'url': page_url(tab=key)} for key, label, icon in TABS],
         'for_you_rows': rows, 'for_you_groups': _group_rows(rows), 'for_you_page': page,
-        'for_you_previous': page_url(page=page.number - 1) if page and page.has_previous() else '',
-        'for_you_next': page_url(page=page.number + 1) if page and page.has_next() else '',
+        'for_you_previous': '',
+        'for_you_next': window_url(request, page) if page else '',
         'for_you_empty': EMPTY_STATES[tab], 'for_you_assigned_count': assigned_count,
         'for_you_empty_illustration': EMPTY_ILLUSTRATIONS[tab],
         'for_you_projects': projects,

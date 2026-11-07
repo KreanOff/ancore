@@ -110,6 +110,7 @@ export interface DirectoryData {
   sort_label: string;
   active_filters: number;
   window: {
+    count: number;
     page: number;
     total_pages: number;
     page_size: number;

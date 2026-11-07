@@ -1,9 +1,13 @@
+import { LoadMore } from '../shared/LoadMore';
+import { useLoadMorePage } from '../shared/useLoadMorePage';
+import { PageTabs } from '../shared/PageTabs';
+import { PageHeader } from '../shared/PageHeader';
+import { DirectoryToolbar, ToolbarFilter } from '../shared/DirectoryToolbar';
 import { setPageLocation } from '../shared/page';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
-import { Pagination, type PaginationData } from '../shared/Pagination';
+import type { PaginationData } from '../shared/Pagination';
 import { Resize, useTableWidths } from '../shared/table';
 import { Select } from '../shared/Select';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
@@ -44,14 +48,17 @@ interface Data {
   illustration: string;
   modal: FormDialogData | null;
 }
-export default function DirectoryPage({ initial, csrfToken }: PageProps) {
-  const data = initial.data as Data;
+export default function DirectoryPage(props: PageProps) {
+  const { initial, csrfToken } = props;
+  const more = useLoadMorePage<Data>(props, (value) => value.pagination.next);
+  const { data } = more;
   const [kind, setKind] = useState(data.kind),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [modal, setModal] = useState<FormDialogData | null>(data.modal),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const all = useRef<HTMLInputElement>(null),
+    modalReturnFocus = useRef<HTMLElement | null>(null),
     life = useRef(new AbortController()),
     pending = useRef(false);
   useLayoutEffect(() => {
@@ -61,6 +68,8 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
   useLayoutEffect(() => () => life.current.abort(), []);
   async function openForm(url: string) {
     if (pending.current) return;
+    modalReturnFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -75,29 +84,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
       setBusy(false);
     }
   }
-  async function favorite(space: Space) {
-    if (pending.current) return;
-    pending.current = true;
-    setBusy(true);
-    setError('');
-    const values = new FormData();
-    values.set('next', initial.url);
-    try {
-      await pageRequest(
-        initial.api_url,
-        space.favorite_url,
-        csrfToken,
-        life.current.signal,
-        values,
-      );
-      if (!life.current.signal.aborted) navigate(initial.url);
-    } catch (exception) {
-      if (!life.current.signal.aborted) setError(errorMessage(exception));
-    } finally {
-      pending.current = false;
-      setBusy(false);
-    }
-  }
+
   function close() {
     setModal(null);
     if (data.modal) setPageLocation(data.modal.return_url);
@@ -105,7 +92,6 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
   const filtered = !!(data.query || data.kind);
   const headings = [
     ['select', 'Zaznaczenie', ''],
-    ['menu', 'Działania', ''],
     ['key', 'KLUCZ', 'hash'],
     ['name', 'PRZESTRZEŃ', 'layers'],
     ['kind', 'RODZAJ', 'shapes'],
@@ -113,7 +99,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
     ['description', 'OPIS', 'align-left'],
     ['tasks_count', 'ZADANIA', 'list-checks'],
   ];
-  const widths = [40, 40, 150, 320, 190, 220, 320, 130];
+  const widths = [40, 150, 320, 190, 220, 320, 130];
   const columns = headings.map(([key, label], index) => ({ key, label, width: widths[index] }));
   const sizing = useTableWidths(
     columns,
@@ -122,11 +108,9 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
   return (
     <div className="tasks-page tasks-list-page work-page" data-react-screen="space-directory">
       <section className="tasks-workspace" aria-busy={busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            <h1 className="tasks-topbar-title">{initial.title}</h1>
-          </div>
-          <div className="tasks-titlebar-actions">
+        <PageHeader
+          heading={<h1 className="tasks-topbar-title">{initial.title}</h1>}
+          actions={
             <button
               type="button"
               className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
@@ -137,45 +121,53 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
               <Icon name="plus" />
               Utwórz przestrzeń
             </button>
-          </div>
-        </header>
-        <nav className="notifications-tabs work-tabs" aria-label="Katalog przestrzeni">
-          {[
-            ['all', 'Wszystkie', 'layers'],
-            ['favorites', 'Ulubione', 'star'],
-            ['private', 'Prywatne', 'lock'],
-          ].map(([key, label, icon]) => (
-            <a
-              key={key}
-              href={data.spaces_url + (key === 'all' ? '' : `?tab=${key}`)}
-              aria-current={data.tab === key ? 'page' : undefined}
-            >
-              <Icon name={icon} />
-              {label}
-            </a>
-          ))}
-        </nav>
-        <form
-          className="tasks-filterbar tasks-filterbar--directory work-item-toolbar"
+          }
+          navigation={
+            <PageTabs label="Katalog przestrzeni">
+              {[
+                ['all', 'Wszystkie', 'layers'],
+                ['favorites', 'Ulubione', 'star'],
+                ['private', 'Prywatne', 'lock'],
+              ].map(([key, label, icon]) => (
+                <a
+                  key={key}
+                  href={data.spaces_url + (key === 'all' ? '' : `?tab=${key}`)}
+                  aria-current={data.tab === key ? 'page' : undefined}
+                >
+                  <Icon name={icon} />
+                  {label}
+                </a>
+              ))}
+            </PageTabs>
+          }
+        />
+        <DirectoryToolbar
           method="get"
           action={data.base_url}
-        >
-          <input type="hidden" name="tab" value={data.tab} />
-          <input type="hidden" name="kind" value={kind} />
-          <div className="tasks-filterbar-left">
-            <Select
-              label="Rodzaj przestrzeni"
-              hideLabel
-              value={kind}
-              options={KINDS}
-              onChange={setKind}
-            />
-            <button type="submit" className="tasks-filter-button">
-              <Icon name="filter" />
-              <span>Filtruj</span>
-            </button>
-          </div>
-          <div className="tasks-filterbar-right">
+          filters={
+            <ToolbarFilter label="Filtrowanie przestrzeni" active={!!data.kind}>
+              {(close) => (
+                <>
+                  <header className="tasks-project-query-panel__header">
+                    <strong>Filtry przestrzeni</strong>
+                  </header>
+                  <div className="tasks-project-filter-detail__body">
+                    <Select
+                      label="Rodzaj przestrzeni"
+                      value={kind}
+                      options={KINDS}
+                      onChange={setKind}
+                    />
+                    <button type="submit" className="tasks-filter-button" onClick={close}>
+                      <Icon name="list-filter" />
+                      <span>Zastosuj filtry</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </ToolbarFilter>
+          }
+          search={
             <label className="tasks-search-field tasks-project-search">
               <Icon name="search" />
               <input
@@ -187,8 +179,11 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                 maxLength={120}
               />
             </label>
-          </div>
-        </form>
+          }
+        >
+          <input type="hidden" name="tab" value={data.tab} />
+          <input type="hidden" name="kind" value={kind} />
+        </DirectoryToolbar>
         {error ? (
           <p className="tasks-modal__errors" role="alert">
             {error}
@@ -196,7 +191,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
         ) : null}
         <div className="work-content work-content--directory">
           <div
-            className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet"
+            className="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet"
             data-directory-resize="false"
             style={sizing.style}
           >
@@ -206,7 +201,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                 role="table"
                 aria-label="Lista przestrzeni"
               >
-                <div className="tasks-directory-header" role="row">
+                <div className="app-table-header tasks-directory-header" role="row">
                   {headings.map(([key, label, icon], index) => (
                     <span
                       key={key}
@@ -219,7 +214,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                           ref={all}
                           type="checkbox"
                           className="tasks-row-checkbox"
-                          aria-label="Zaznacz wszystkie przestrzenie na tej stronie"
+                          aria-label="Zaznacz wszystkie wczytane przestrzenie"
                           checked={selected.size === data.results.length}
                           onChange={(event) =>
                             setSelected(
@@ -229,8 +224,6 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                             )
                           }
                         />
-                      ) : key === 'menu' ? (
-                        <span className="u-sr-only">Działania</span>
                       ) : (
                         <>
                           {label}
@@ -250,7 +243,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                     <article
                       key={space.id}
                       role="row"
-                      className={`tasks-issue-row tasks-directory-row work-space-row ${selected.has(space.id) ? 'checked' : ''}`}
+                      className={`tasks-issue-row app-table-row tasks-directory-row work-space-row ${selected.has(space.id) ? 'checked' : ''}`}
                     >
                       <span
                         className="tasks-directory-sheet__cell tasks-project-sheet__cell"
@@ -272,65 +265,7 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                           }
                         />
                       </span>
-                      <div
-                        className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                        data-column="menu"
-                        role="cell"
-                      >
-                        <Dropdown
-                          label={`Działania: ${space.name}`}
-                          className="resources-react-row-actions"
-                          menuClass="documents-item-menu"
-                          role="group"
-                          trigger={<Icon name="menu" />}
-                        >
-                          {(closeMenu) => (
-                            <div className="documents-menu-actions">
-                              <a href={space.url} className="tasks-project-menu-button">
-                                <Icon name="layers" />
-                                <span>Otwórz przestrzeń</span>
-                              </a>
-                              <button
-                                type="button"
-                                className="tasks-project-menu-button tasks-favorite-toggle"
-                                aria-pressed={space.favorite}
-                                disabled={busy}
-                                onClick={() => {
-                                  closeMenu();
-                                  void favorite(space);
-                                }}
-                              >
-                                <Icon name={space.favorite ? 'star-filled' : 'star'} />
-                                <span>
-                                  {space.favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
-                                </span>
-                              </button>
-                              {space.can_manage ? (
-                                <button
-                                  type="button"
-                                  className="tasks-project-menu-button"
-                                  disabled={busy}
-                                  onClick={() => {
-                                    closeMenu();
-                                    void navigate(space.edit_url);
-                                  }}
-                                >
-                                  <Icon name="pencil" />
-                                  <span>Edytuj przestrzeń</span>
-                                </button>
-                              ) : null}
-                              <a
-                                href={space.settings_url}
-                                className="tasks-project-menu-button"
-                                onClick={closeMenu}
-                              >
-                                <Icon name="settings" />
-                                <span>Ustawienia przestrzeni</span>
-                              </a>
-                            </div>
-                          )}
-                        </Dropdown>
-                      </div>
+
                       <span
                         className="tasks-directory-sheet__cell"
                         data-column="key"
@@ -411,13 +346,24 @@ export default function DirectoryPage({ initial, csrfToken }: PageProps) {
                 </div>
               </div>
             )}
+            {data.pagination ? (
+              <LoadMore
+                loaded={data.pagination.end}
+                total={data.pagination.count}
+                hasMore={!!data.pagination.next}
+                loading={more.loading}
+                error={more.error}
+                disabled={busy}
+                onLoad={() => void more.loadMore()}
+              />
+            ) : null}
           </div>
         </div>
-        <Pagination data={data.pagination} />
       </section>
       {modal ? (
         <FormDialog
           data={modal}
+          returnFocus={modalReturnFocus.current}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={close}

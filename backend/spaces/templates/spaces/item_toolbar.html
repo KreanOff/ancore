@@ -1,25 +1,13 @@
 {% load space_ui %}
 {% load account_avatar %}
-{% if not toolbar_controls_only %}<form class="tasks-filterbar tasks-filterbar--directory work-view-toolbar work-item-toolbar{% if extra_class %} {{ extra_class }}{% endif %}" method="get">
+{% if not toolbar_controls_only %}<form class="tasks-filterbar tasks-filterbar--directory app-toolbar work-view-toolbar work-item-toolbar{% if extra_class %} {{ extra_class }}{% endif %}" method="get">
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
     {% if not filters_only %}<input type="hidden" name="sort" value="{{ item_sort.value }}">{% endif %}
     {% if query and view != 'timeline' %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
     {% if summary_filter %}<input type="hidden" name="summary" value="{{ summary_filter }}">{% endif %}
-    <div class="tasks-filterbar-left work-view-toolbar-controls">{% endif %}
-        {% if not filters_only %}<details class="tasks-directory-filter-aggregate tasks-project-sort-builder" data-directory-filter-aggregate>
-            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="{% if item_sort.direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-narrow-wide{% endif %}" aria-hidden="true"></i><span>Sortowanie</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
-            <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">
-                <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="arrow-up-down" aria-hidden="true"></i><strong>Sortowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{% querystring item_query_params sort=None page=None %}">Domyślnie</a></header>
-                <div class="tasks-project-filter-choice-list">
-                    {% for field in item_sort.fields %}
-                    <a class="tasks-project-filter-choice{% if item_sort.field == field.value and item_sort.direction == 'asc' %} is-active{% endif %}" href="{% querystring item_query_params sort=field.value|add:'_asc' page=None %}">{{ field.label }} · rosnąco</a>
-                    <a class="tasks-project-filter-choice{% if item_sort.field == field.value and item_sort.direction == 'desc' %} is-active{% endif %}" href="{% querystring item_query_params sort=field.value|add:'_desc' page=None %}">{{ field.label }} · malejąco</a>
-                    {% endfor %}
-                </div>
-            </div>
-        </details>{% endif %}
+    <div class="app-toolbar__controls tasks-filterbar-left work-view-toolbar-controls">{% endif %}
         <details class="tasks-directory-filter-aggregate tasks-project-filter-builder" data-directory-filter-aggregate>
-            <summary class="tasks-filter-button tasks-project-query-trigger{% if item_filter_count %} is-active{% endif %}"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtrowanie</span>{% if item_filter_count %}<span class="tasks-project-query-count">{{ item_filter_count }}</span>{% endif %}<i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
+            <summary class="tasks-filter-button tasks-project-query-trigger{% if item_filter_count %} is-active{% endif %}"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtruj</span>{% if item_filter_count %}<span class="tasks-project-query-count">{{ item_filter_count }}</span>{% endif %}<i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
             <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="list-filter" aria-hidden="true"></i><strong>Filtrowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{% querystring item_query_params work_type=None assignee=None status=None priority=None team=None summary=None blocked=None page=None %}">Wyczyść</a></header>
                 <div class="tasks-project-filter-detail__body">
@@ -40,9 +28,21 @@
                 </div>
             </div>
         </details>
+        {% if not filters_only %}<details class="tasks-directory-filter-aggregate tasks-project-sort-builder" data-directory-filter-aggregate>
+            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortuj</span><span class="tasks-project-sort-current">{{ item_sort.label }}</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
+            <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">
+                <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="arrow-up-down" aria-hidden="true"></i><strong>Sortowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{% querystring item_query_params sort=None page=None %}">Domyślnie</a></header>
+                <div class="tasks-project-filter-choice-list">
+                    {% for field in item_sort.fields %}
+                    <a class="tasks-project-filter-choice{% if item_sort.field == field.value and item_sort.direction == 'asc' %} is-active{% endif %}" href="{% querystring item_query_params sort=field.value|add:'_asc' page=None %}">{{ field.label }} · rosnąco</a>
+                    <a class="tasks-project-filter-choice{% if item_sort.field == field.value and item_sort.direction == 'desc' %} is-active{% endif %}" href="{% querystring item_query_params sort=field.value|add:'_desc' page=None %}">{{ field.label }} · malejąco</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>{% endif %}
     {% if not toolbar_controls_only %}
-        {% if view == 'timeline' %}<label class="tasks-search-field work-view-toolbar-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj na osi czasu" aria-label="Szukaj na osi czasu"><button type="submit" class="tasks-filter-button" aria-label="Szukaj zadań"><i data-icon="arrow-right" aria-hidden="true"></i></button></label>{% endif %}
     </div>
+        {% if view == 'timeline' %}<div class="tasks-filterbar-right app-toolbar__search"><label class="tasks-search-field work-view-toolbar-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj na osi czasu" aria-label="Szukaj na osi czasu"><button type="submit" class="tasks-filter-button" aria-label="Szukaj zadań"><i data-icon="arrow-right" aria-hidden="true"></i></button></label></div>{% endif %}
 </form>
 {% if summary_filter %}<div class="work-summary-filter" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring item_query_params summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}
 {% endif %}

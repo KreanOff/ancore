@@ -1,9 +1,11 @@
 <form method="post" action="{{ modal.action }}" enctype="multipart/form-data" class="tasks-modal__form" data-space-settings-form>
     {% csrf_token %}
-    <div class="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
-        <div class="member-access-save-actions">
-            <button type="submit" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="check" aria-hidden="true"></i>{{ modal.form.submit_label|default:'Zapisz' }}</button>
-            <a href="{{ space_url }}" class="tasks-filter-button">Anuluj</a>
+    <div class="tasks-filterbar tasks-filterbar--directory app-toolbar app-toolbar--embedded workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
+        <div class="app-toolbar__actions">
+            <div class="member-access-save-actions app-toolbar__selection">
+                <button type="submit" class="tasks-filter-button"><i data-icon="check" aria-hidden="true"></i>{{ modal.form.submit_label|default:'Zapisz' }}</button>
+                <a href="{{ space_url }}" class="tasks-filter-button">Anuluj</a>
+            </div>
         </div>
     </div>
     <div class="tasks-modal__body{% if modal.form.inline_avatar %} profile-edit-body space-settings-main app-form-avatar-layout{% else %} documents-form resources-form app-form-layout{% endif %}">

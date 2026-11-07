@@ -27,7 +27,7 @@ const pageUrl = base + '?view=timeline&assignee=me&page=2';
 function nodes(element) {
   if (!element || typeof element !== 'object') return [];
   if (Array.isArray(element)) return element.flatMap(nodes);
-  return [element, ...nodes(element.props?.children)];
+  return [element, ...nodes(element.props?.children), ...(element.type?.name === 'ItemToolbar' ? nodes(element.props?.search) : [])];
 }
 function text(element) {
   if (element == null || typeof element === 'boolean') return '';
@@ -413,6 +413,13 @@ test('date editor validates the interval, clears dates, and exposes pending stat
   tree = app.renderDialog(props);
   assert.equal(button(tree, 'Zapisz daty').props.disabled, true);
   assert.match(text(tree), /nie może być wcześniejszy/);
+  for (const input of dateInputs(tree)) {
+    assert.equal(input.props['aria-invalid'], true);
+    const description = nodes(tree).find(
+      (node) => node.props?.id === input.props['aria-describedby'],
+    );
+    assert.match(text(description), /nie może być wcześniejszy/);
+  }
   nodes(tree)
     .find((node) => node.type === 'form')
     .props.onSubmit({ preventDefault() {} });
@@ -420,6 +427,7 @@ test('date editor validates the interval, clears dates, and exposes pending stat
   dateInputs(tree)[0].props.onChange({ target: { value: '2026-10-23T09:15' } });
   tree = app.renderDialog(props);
   assert.equal(button(tree, 'Zapisz daty').props.disabled, false);
+  assert.ok(dateInputs(tree).every((input) => !input.props['aria-invalid']));
   nodes(tree)
     .find((node) => node.type === 'form')
     .props.onSubmit({ preventDefault() {} });

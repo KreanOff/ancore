@@ -1,3 +1,4 @@
+import { Toolbar } from './DirectoryToolbar';
 import { useEffect, useRef, useState } from 'react';
 import { Members, type MemberRow } from './Members';
 import { MemberDirectory } from './MemberDirectory';
@@ -284,8 +285,8 @@ export default function AccessEditor<T extends AccessTeam>({
     setConfirmation(null);
   }
 
-  const toolbar = (
-    <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar">
+  const toolbarControls = (
+    <>
       <Dropdown
         label={`Widoczność: ${publicAccess ? 'Publiczna' : 'Prywatna'}`}
         searchable={false}
@@ -361,7 +362,7 @@ export default function AccessEditor<T extends AccessTeam>({
       {canManage ? (
         <button
           type="button"
-          className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+          className="tasks-filter-button"
           disabled={busy || publicAccess}
           onClick={() => setSharing(true)}
           aria-haspopup="dialog"
@@ -371,10 +372,10 @@ export default function AccessEditor<T extends AccessTeam>({
         </button>
       ) : null}
       {!saveOnAction ? (
-        <div className="member-access-save-actions">
+        <div className="member-access-save-actions app-toolbar__selection">
           <button
             type="button"
-            className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+            className="tasks-filter-button"
             disabled={busy || !dirty || conflict || (settingsDirty && visibilityChanged)}
             onClick={() => void save()}
           >
@@ -391,13 +392,18 @@ export default function AccessEditor<T extends AccessTeam>({
           </button>
         </div>
       ) : null}
-    </div>
+    </>
   );
 
   return (
     <>
       <div className="tasks-modal__body space-settings-table-body access-editor">
-        {directory ? null : toolbar}
+        {directory ? null : (
+          <Toolbar
+            className="workplace-edit-modal__team-toolbar member-access-toolbar"
+            actions={toolbarControls}
+          />
+        )}
         {error && !saveOnAction ? (
           <p className="tasks-modal__errors" role="alert">
             {error}
@@ -418,14 +424,12 @@ export default function AccessEditor<T extends AccessTeam>({
             selected={selected}
             onSelect={setSelected}
           >
-            {toolbar}
+            {toolbarControls}
           </MemberDirectory>
         ) : (
           <Members
             members={displayedMembers}
-            isOwner={baseline.is_owner}
             busy={busy}
-            rowActions={false}
             selection={{ selected, onChange: setSelected }}
           />
         )}
@@ -449,7 +453,7 @@ export default function AccessEditor<T extends AccessTeam>({
       {confirmation ? (
         <Modal
           title={confirmation.title}
-          className="app-modal-panel--compact"
+          size="compact"
           hostId={hostId}
           pending={pending}
           onClose={() => void closeAction()}

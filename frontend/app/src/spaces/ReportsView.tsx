@@ -214,14 +214,34 @@ function TrendChart({ report }: { report: ReportsData }) {
           role="region"
           aria-label="Dzienna aktywność — tabela"
         >
-          <table className="work-reports-table">
+          <table className="work-reports-table app-data-table app-data-table--native">
             <caption className="u-sr-only">Dzienna aktywność: {report.period.label}</caption>
             <thead>
               <tr>
-                <th scope="col">Data</th>
-                <th scope="col">Utworzone</th>
-                <th scope="col">Zakończone</th>
-                <th scope="col">Czas (min)</th>
+                <th scope="col">
+                  <span className="app-table-heading">
+                    <Icon name="calendar-days" />
+                    Data
+                  </span>
+                </th>
+                <th scope="col">
+                  <span className="app-table-heading">
+                    <Icon name="plus" />
+                    Utworzone
+                  </span>
+                </th>
+                <th scope="col">
+                  <span className="app-table-heading">
+                    <Icon name="check" />
+                    Zakończone
+                  </span>
+                </th>
+                <th scope="col">
+                  <span className="app-table-heading">
+                    <Icon name="clock" />
+                    Czas (min)
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -368,6 +388,7 @@ export default function ReportsView({
   return (
     <div className="work-reports" aria-busy={busy}>
       <ViewToolbar
+        className="app-toolbar--embedded"
         actions={
           <>
             <button
@@ -614,15 +635,45 @@ export default function ReportsView({
               role="region"
               aria-label="Obciążenie zespołu — tabela"
             >
-              <table className="work-reports-table">
+              <table className="work-reports-table app-data-table app-data-table--native">
                 <thead>
                   <tr>
-                    <th scope="col">Wykonawca</th>
-                    <th scope="col">Otwarte</th>
-                    <th scope="col">Zakończone</th>
-                    <th scope="col">Po terminie</th>
-                    <th scope="col">Punkty</th>
-                    <th scope="col">Czas w okresie</th>
+                    <th scope="col">
+                      <span className="app-table-heading">
+                        <Icon name="user-round" />
+                        Wykonawca
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span className="app-table-heading">
+                        <Icon name="circle-dot" />
+                        Otwarte
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span className="app-table-heading">
+                        <Icon name="check" />
+                        Zakończone
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span className="app-table-heading">
+                        <Icon name="triangle-alert" />
+                        Po terminie
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span className="app-table-heading">
+                        <Icon name="hash" />
+                        Punkty
+                      </span>
+                    </th>
+                    <th scope="col">
+                      <span className="app-table-heading">
+                        <Icon name="clock" />
+                        Czas w okresie
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

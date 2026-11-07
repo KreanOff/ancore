@@ -144,7 +144,7 @@ test('filter-only component exposes all five fields without sorting controls or 
   assert.equal(dropdown.props.label, 'Filtrowanie zadań');
   assert.equal(dropdown.props.role, 'dialog');
   assert.equal(dropdown.props.triggerClassName.includes('is-active'), false);
-  assert.equal(text(dropdown.props.trigger), 'Filtrowanie');
+  assert.equal(text(dropdown.props.trigger), 'Filtruj');
   assert.deepEqual(
     nodes(menu)
       .filter((node) => node.type === 'button')

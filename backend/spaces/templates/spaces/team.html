@@ -2,16 +2,41 @@
 {% block work_title %}{{ team.name }}{% endblock %}
 {% block work_page_class %} teams-page{% endblock %}
 {% block work_heading %}<a href="{{ teams_url }}" class="tasks-issue-close" aria-label="Wróć do zespołów"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title">{{ team.name }}</h1>{% endblock %}
-{% block work_actions %}{% if can_manage %}<a href="{{ edit_url }}" class="tasks-tag-topbar-button" data-work-open><i data-icon="pencil" aria-hidden="true"></i>Edytuj zespół</a><a href="{{ delete_url }}" class="tasks-tag-topbar-button" data-work-open>Usuń zespół</a>{% endif %}{% endblock %}
-{% block work_navigation %}<nav class="notifications-tabs work-tabs" aria-label="Zespół">{% for entry in tabs %}<a href="{{ entry.url }}"{% if view == entry.key %} aria-current="page"{% endif %}>{{ entry.label }}{% if entry.count != None %} <span class="work-caption">{{ entry.count }}</span>{% endif %}</a>{% endfor %}</nav>{% endblock %}
-{% block work_content %}
+{% block work_actions %}{% if can_manage %}<a href="{{ edit_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-work-open><i data-icon="pencil" aria-hidden="true"></i>Edytuj zespół</a><a href="{{ delete_url }}" class="tasks-tag-topbar-button" data-work-open>Usuń zespół</a>{% endif %}{% endblock %}
+{% block work_navigation %}<nav class="notifications-tabs work-tabs app-page-tabs" aria-label="Zespół">{% for entry in tabs %}<a href="{{ entry.url }}"{% if view == entry.key %} aria-current="page"{% endif %}><i data-icon="{% if entry.key == 'overview' %}layout-dashboard{% elif entry.key == 'work' %}list-checks{% elif entry.key == 'spaces' %}layers{% else %}users{% endif %}" aria-hidden="true"></i>{{ entry.label }}{% if entry.count != None %} <span class="app-page-tab-count">{{ entry.count }}</span>{% endif %}</a>{% endfor %}</nav>{% endblock %}
+{% block work_toolbar %}
 {% if view != 'overview' %}
-<form class="work-toolbar" method="get"><input type="hidden" name="view" value="{{ view }}"><label class="tasks-search-field"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" aria-label="Szukaj" placeholder="Szukaj"></label>
-{% if view == 'work' %}<select name="scope" class="form-select" aria-label="Zakres zadań"><option value="all"{% if scope == 'all' %} selected{% endif %}>Wszystkie zadania</option><option value="open"{% if scope == 'open' %} selected{% endif %}>Otwarte</option><option value="closed"{% if scope == 'closed' %} selected{% endif %}>Zamknięte</option><option value="overdue"{% if scope == 'overdue' %} selected{% endif %}>Po terminie</option><option value="due"{% if scope == 'due' %} selected{% endif %}>Termin do 7 dni</option><option value="blocked"{% if scope == 'blocked' %} selected{% endif %}>Zablokowane</option><option value="unassigned"{% if scope == 'unassigned' %} selected{% endif %}>Otwarte bez wykonawcy</option></select><select name="assignee" class="form-select" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option><option value="unassigned"{% if assignee_filter == 'unassigned' %} selected{% endif %}>Bez wykonawcy</option>{% if assignee_filter and assignee_filter != 'me' and assignee_filter != 'unassigned' %}<option value="{{ assignee_filter }}" selected>Wybrana osoba</option>{% endif %}</select>{% endif %}
-{% if view == 'members' %}<select name="role" class="form-select" aria-label="Rola w zespole"><option value="">Wszystkie role</option><option value="admin"{% if role_filter == 'admin' %} selected{% endif %}>Administratorzy</option><option value="member"{% if role_filter == 'member' %} selected{% endif %}>Członkowie</option></select>{% endif %}
-<button class="btn btn-secondary">Szukaj</button>{% if query or scope != 'all' or role_filter or assignee_filter %}<a class="btn btn-secondary" href="{{ team_url }}?view={{ view }}">Wyczyść filtry</a>{% endif %}
-{% if can_manage %}{% if view == 'members' %}<a href="{{ member_url }}" class="btn btn-primary" data-work-open>Dodaj osobę</a>{% elif view == 'spaces' %}<a href="{{ edit_url }}" class="btn btn-primary" data-work-open>Powiąż przestrzenie</a>{% endif %}{% endif %}</form>
+<form class="tasks-filterbar tasks-filterbar--directory app-toolbar work-item-toolbar team-toolbar" method="get" action="{{ team_url }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    <div class="app-toolbar__controls tasks-filterbar-left">
+        {% if view == 'work' or view == 'members' %}
+        <details class="tasks-directory-filter-aggregate tasks-project-filter-builder" data-directory-filter-aggregate>
+            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtruj</span><i data-icon="chevron-down" aria-hidden="true"></i></summary>
+            <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel"><div class="tasks-project-filter-detail__body">
+        {% if view == 'work' %}
+        <select name="scope" class="tasks-inline-select" aria-label="Zakres zadań"><option value="all"{% if scope == 'all' %} selected{% endif %}>Wszystkie zadania</option><option value="open"{% if scope == 'open' %} selected{% endif %}>Otwarte</option><option value="closed"{% if scope == 'closed' %} selected{% endif %}>Zamknięte</option><option value="overdue"{% if scope == 'overdue' %} selected{% endif %}>Po terminie</option><option value="due"{% if scope == 'due' %} selected{% endif %}>Termin do 7 dni</option><option value="blocked"{% if scope == 'blocked' %} selected{% endif %}>Zablokowane</option><option value="unassigned"{% if scope == 'unassigned' %} selected{% endif %}>Otwarte bez wykonawcy</option></select>
+        <select name="assignee" class="tasks-inline-select" aria-label="Wykonawca"><option value="">Wszyscy wykonawcy</option><option value="me"{% if assignee_filter == 'me' %} selected{% endif %}>Przypisane do mnie</option><option value="unassigned"{% if assignee_filter == 'unassigned' %} selected{% endif %}>Bez wykonawcy</option>{% if assignee_filter and assignee_filter != 'me' and assignee_filter != 'unassigned' %}<option value="{{ assignee_filter }}" selected>Wybrana osoba</option>{% endif %}</select>
+        {% endif %}
+        {% if view == 'members' %}<select name="role" class="tasks-inline-select" aria-label="Rola w zespole"><option value="">Wszystkie role</option><option value="admin"{% if role_filter == 'admin' %} selected{% endif %}>Administratorzy</option><option value="member"{% if role_filter == 'member' %} selected{% endif %}>Członkowie</option></select>{% endif %}
+
+                <button class="tasks-filter-button" type="submit">Zastosuj filtry</button>
+            </div></div>
+        </details>
+        {% endif %}
+        {% if query or scope != 'all' or role_filter or assignee_filter %}<a class="tasks-filter-button" href="{{ team_url }}?view={{ view }}">Wyczyść filtry</a>{% endif %}
+    </div>
+    <div class="app-toolbar__actions">
+        {% if can_manage %}{% if view == 'members' %}<a href="{{ member_url }}" class="tasks-filter-button team-toolbar-action" data-work-open><i data-icon="plus" aria-hidden="true"></i>Dodaj osobę</a>{% elif view == 'spaces' %}<a href="{{ edit_url }}" class="tasks-filter-button team-toolbar-action" data-work-open><i data-icon="plus" aria-hidden="true"></i>Powiąż przestrzenie</a>{% endif %}{% endif %}
+    </div>
+    <div class="app-toolbar__search tasks-filterbar-right">
+        <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" aria-label="{% if view == 'members' %}Szukaj osoby{% elif view == 'spaces' %}Szukaj przestrzeni{% else %}Szukaj zadania lub klucza{% endif %}" placeholder="{% if view == 'members' %}Szukaj osoby{% elif view == 'spaces' %}Szukaj przestrzeni{% else %}Szukaj zadania lub klucza{% endif %}"></label>
+        <button class="tasks-filter-button" type="submit">Szukaj</button>
+
+    </div>
+</form>
 {% endif %}
+{% endblock %}
+{% block work_content %}
 {% if view == 'overview' %}
 <div class="work-overview">
     <section class="work-panel team-profile"><span class="work-symbol">{% if photo_url %}<img src="{{ photo_url }}" alt="">{% else %}<i data-icon="users" aria-hidden="true"></i>{% endif %}</span><div><h2>{{ team.name }}</h2><p>{{ team.description|default:'Dodaj opis, aby przedstawić cel i zakres pracy zespołu.' }}</p><div class="team-profile-links"><a href="{{ team_url }}?view=members">Członkowie: {{ member_count }}</a><a href="{{ team_url }}?view=spaces">Powiązane przestrzenie: {{ space_count }}</a></div></div></section>
@@ -22,8 +47,31 @@
 {% elif view == 'work' %}{% include 'spaces/item_list.html' %}
 {% elif view == 'members' %}
 <p class="workplace-team__hint">Członkostwo w zespole organizuje współpracę. Dostęp do przestrzeni i zadań jest nadawany osobno.</p>
-<div class="work-panel">{% for member in member_rows %}<div class="work-member"><span>{{ member.name }}<small class="work-caption">{{ member.email }}</small></span><span>{{ member.role_label }}</span>{% if member.can_change %}<a class="btn btn-secondary" href="{{ member.edit_url }}" data-work-open>Zmień rolę</a><form method="post" action="{{ member.remove_url }}">{% csrf_token %}<button class="btn btn-secondary">Usuń z zespołu</button></form>{% endif %}</div>{% empty %}<p>Brak osób w tym widoku.</p>{% endfor %}</div>
+{% if member_rows %}
+<div class="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet workplace-team-sheet team-members-sheet" role="region" aria-label="Członkowie zespołu" tabindex="0">
+    <section class="tasks-directory-group" role="table" aria-label="Lista członków">
+        <div class="app-table-header tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="person" role="columnheader"><i data-icon="users" aria-hidden="true"></i>Osoba</span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="email" role="columnheader"><i data-icon="mail" aria-hidden="true"></i>E-mail</span>
+            <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="role" role="columnheader"><i data-icon="user-round" aria-hidden="true"></i>Rola</span>
+        </div>
+        <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
+            {% for member in member_rows %}
+            <div class="tasks-issue-row app-table-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row" role="row">
+                <span class="tasks-directory-sheet__cell" data-column="person" role="cell">{% include 'accounts/includes/user_avatar.html' with avatar=member.avatar avatar_class='tasks-directory-avatar' only %}<span class="workplace-team__name">{{ member.name }}</span></span>
+                <span class="tasks-directory-sheet__cell" data-column="email" role="cell"><a href="mailto:{{ member.email }}">{{ member.email }}</a></span>
+                <span class="tasks-directory-sheet__cell" data-column="role" role="cell">{{ member.role_label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% include 'spaces/pagination.html' %}
+</div>
+{% else %}
+<div class="tasks-empty-state tasks-empty-state--illustrated" role="status"><span class="tasks-empty-state__illustration tasks-empty-state__illustration--people" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>Brak osób w tym widoku</h2><p>Zmień filtry lub dodaj osobę z tego Workspace do zespołu.</p></div></div>
+{% endif %}
 {% elif view == 'spaces' %}
 <p class="workplace-team__hint">Widzisz tylko przestrzenie, do których masz dostęp.</p><div class="work-directory">{% for space in spaces %}<article class="work-space-card"><a class="work-card-title" href="{{ space.url }}">{{ space.name }}</a><span class="work-caption">{{ space.key }} · {{ space.get_kind_display }}</span><p>{{ space.description|striptags|default:'Brak opisu przestrzeni.' }}</p></article>{% empty %}<p>Brak powiązanych przestrzeni w tym widoku.</p>{% endfor %}</div>
 {% endif %}
 {% endblock %}
+{% block work_pagination %}{% if view != 'members' %}{% include 'spaces/pagination.html' %}{% endif %}{% endblock %}

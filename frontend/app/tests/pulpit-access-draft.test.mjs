@@ -61,6 +61,12 @@ const candidate = { id: 5, name: 'Anna', email: 'anna@example.test', avatar: {} 
 function nodes(element) {
   if (!element || typeof element !== 'object') return [];
   if (Array.isArray(element)) return element.flatMap(nodes);
+  // Render the actual stateless wrappers so controls remain exercised through their real slots.
+  if (
+    typeof element.type === 'function' &&
+    ['Toolbar', 'ToolbarContents'].includes(element.type.name)
+  )
+    return [element, ...nodes(element.type(element.props))];
   return [element, ...nodes(element.props?.children)];
 }
 function text(element) {

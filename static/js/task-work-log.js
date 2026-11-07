@@ -211,7 +211,7 @@
             submit.disabled = true;
             submit.textContent = 'Zapisywanie…';
             const deleting = data.get('action') === 'delete_work_log';
-            data.set('work_log_page', data.get('action') === 'add_work_log' ? '1' : panel.querySelector('[data-work-log-page]').dataset.workLogPage);
+            data.set('work_log_limit', panel.querySelector('[data-work-log-limit]').dataset.workLogLimit);
             panel.setAttribute('aria-busy', 'true');
             const requestController = new AbortController();
             const abortRequest = () => requestController.abort();
@@ -243,7 +243,8 @@
                 (returnTarget || page.querySelector('[data-open-work-log]'))?.focus({ preventScroll: true });
                 window.showNotification?.(payload.message, 'success');
                 const url = new URL(window.location.href);
-                url.searchParams.set('work_log_page', panel.querySelector('[data-work-log-page]').dataset.workLogPage);
+                url.searchParams.delete('work_log_page');
+                url.searchParams.set('work_log_limit', panel.querySelector('[data-work-log-limit]').dataset.workLogLimit);
                 window.history.replaceState(window.history.state, '', url);
             } catch (error) {
                 if (signal.aborted) return;

@@ -9,10 +9,11 @@
             </a>
             <div class="documents-card-footer">
                 <span class="documents-card-date" title="Zmodyfikowano">{{ item.updated_at|date:'d.m.Y' }}</span>
-                {% include 'documents/includes/row_menu.html' with actions_template='documents/includes/library_actions.html' menu_kind='library' %}
+
             </div>
         </li>
         {% endfor %}
     </ul>
     {% else %}<div class="documents-empty documents-grid-empty">{% include 'documents/includes/libraries_empty.html' %}</div>{% endif %}
+    {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window only %}
 </div>

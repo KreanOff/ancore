@@ -65,7 +65,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261104-banner-photo-editor">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261105-ui-review">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
     {% block extra_head %}{% endblock %}
     {% if frontend_bootstrap or request.user.is_authenticated %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261101-task-workflow-actions">{% react_bundle %}{% endif %}
@@ -315,11 +315,13 @@
             </header>
             <div class="tasks-modal__body notifications-panel__body">
                 {% include 'dashboard/includes/notification_controls.html' with notification_filters=None unread_count=0 filtered_unread_count=0 %}
-                <div class="notifications-panel__content" data-notifications-content tabindex="-1"></div>
+                <div class="notifications-panel__content" data-notifications-content tabindex="-1">
+                    <div data-notifications-list-content></div>
+                    {% include 'dashboard/includes/notification_pagination.html' with next_cursor='' %}
+                </div>
             </div>
             <footer class="tasks-modal__footer">
                 <button type="button" class="btn btn-secondary" data-close-modal>Zamknij</button>
-                {% include 'dashboard/includes/notification_pagination.html' with next_cursor='' %}
             </footer>
             <span class="u-sr-only" role="status" aria-live="polite" aria-atomic="true" data-notifications-status></span>
             <div hidden>{% csrf_token %}</div>
@@ -392,15 +394,15 @@
     {% if not global_panels %}<script src="{% static 'js/global-search.js' %}?v=20261030-search-avatars"></script>{% endif %}
     <script src="{% static 'js/collaboration.js' %}?v=20261010-space-composer"></script>
     <script src="{% static 'js/comment-images.js' %}?v=20260925-comment-files"></script>
-    {% if not global_panels %}<script src="{% static 'js/notifications-panel.js' %}?v=20261025-comments-reminders"></script>{% endif %}
+    {% if not global_panels %}<script src="{% static 'js/notifications-panel.js' %}?v=20261105-load-more"></script>{% endif %}
     <script src="{% static 'js/presence.js' %}?v=20260607-auto-presence"></script>
     <script src="{% static 'js/attachment-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/row-actions.js' %}?v=20260923-notification-action-menu"></script>
     <script src="{% static 'js/modal.js' %}?v=20261025-confirmation-text"></script>
     <script src="{% static 'js/dropdown-layer.js' %}?v=20261030-help-placement"></script>
     <script src="{% static 'js/field-help.js' %}?v=20261030-field-help"></script>
-    <script src="{% static 'js/task-modals.js' %}?v=20261016-react-shell"></script>
-    <script src="{% static 'js/tasks.js' %}?v=20261016-react-boundary"></script>
+    <script src="{% static 'js/task-modals.js' %}?v=20261105-shared-modal-lifecycle"></script>
+    <script src="{% static 'js/tasks.js' %}?v=20261105-no-hamburger"></script>
     <script src="{% static 'js/profile.js' %}?v=20261016-avatar-islands"></script>
     <script src="{% static 'js/workplace-avatars.js' %}?v=20261016-avatar-islands"></script>
     <script src="{% static 'js/custom-select.js' %}?v=20261103-plain-classification"></script>

@@ -253,11 +253,7 @@ export default function Filters({
         triggerClassName="tasks-filter-button tasks-project-query-trigger"
         trigger={
           <>
-            <Icon
-              name={
-                data.sort_direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'
-              }
-            />
+            <Icon name="arrow-up-down" />
             <span>Sortuj</span>
             <span className="tasks-project-sort-current">{data.sort_label}</span>
             <Icon name="chevron-down" />

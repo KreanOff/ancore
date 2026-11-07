@@ -135,8 +135,12 @@ class DetailParityTests(TestCase):
         SpaceTaskWorkLog.objects.bulk_create([SpaceTaskWorkLog(task=self.task, author=self.owner, started_at=now, ended_at=now+timedelta(minutes=10), description=str(index)) for index in range(26)])
         response = self.client.get(self.task_url('?view=backlog&tab=work-log&work_log_page=2'))
         self.assertEqual(response.context['work_log_total_minutes'], 260)
-        self.assertEqual(len(response.context['work_log_page']), 1)
-        self.assertIn('view=backlog', response.context['work_log_previous_url'])
+        self.assertEqual(len(response.context['work_log_page']), 26)
+        self.assertEqual(response.context['work_log_previous_url'], '')
+        first = self.client.get(self.task_url('?view=backlog&tab=work-log'))
+        self.assertEqual(len(first.context['work_log_page']), 20)
+        self.assertIn('view=backlog', first.context['work_log_next_url'])
+        self.assertIn('work_log_limit=26', first.context['work_log_next_url'])
 
     def test_member_table_inherited_and_private_roles_share_remove(self):
         response = self.client.get(self.task_url('team/'))

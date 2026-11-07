@@ -1,7 +1,7 @@
 <div class="tasks-filter-dropdown tasks-sort-dropdown" data-project-sort-menu data-project-default-sort="{{ tag_default_sort }}">
                     <button type="button" class="tasks-filter-button tasks-project-query-trigger tasks-sort-button{% if tag_sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ tag_sort_label }}" title="Sortowanie: {{ tag_sort_label }}" aria-haspopup="menu" aria-expanded="false" aria-pressed="{% if tag_sort_direction == 'asc' %}true{% else %}false{% endif %}" data-task-sort data-project-sort-toggle data-sort-direction="{{ tag_sort_direction }}">
-                        <i data-icon="{% if tag_sort_direction == 'desc' %}arrow-down-wide-narrow{% elif compact_sort %}arrow-up-narrow-wide{% else %}arrow-up-wide-narrow{% endif %}" aria-hidden="true" data-task-sort-icon></i>
-                        <span>{{ toolbar_label|default:'Sortuj' }}</span>{% if not compact_sort %}<span class="tasks-project-sort-current">{{ tag_sort_label }}</span>{% endif %}
+                        <i data-icon="arrow-up-down" aria-hidden="true" data-task-sort-icon></i>
+                        <span>{{ toolbar_label|default:'Sortuj' }}</span><span class="tasks-project-sort-current">{{ tag_sort_label }}</span>
                         <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>
                     </button>
                     <div class="tasks-filter-menu tasks-sort-menu" role="menu" aria-label="Sortowanie tagów">

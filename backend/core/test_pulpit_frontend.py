@@ -254,8 +254,14 @@ class ReactPulpitTests(TestCase):
     def test_pagination_filters_and_numeric_links_preserve_query(self):
         Dashboard.objects.bulk_create([Dashboard(owner=self.owner, workplace=self.workspace, created_by=self.member, name=f'Raport {i:02}', slug=f'raport-{i}', visibility='workspace') for i in range(32)])
         data = self.get(self.path() + '?q=Raport&visibility=workspace&page=2').json()['data']
-        self.assertEqual((len(data['results']), data['pagination']['count']), (2, 32))
-        self.assertIn('visibility=workspace', data['pagination']['previous'])
+        self.assertEqual((len(data['results']), data['pagination']['count']), (32, 32))
+        self.assertEqual(data['pagination']['previous'], '')
+        self.assertEqual(data['pagination']['next'], '')
+        first = self.get(self.path() + '?q=Raport&visibility=workspace').json()['data']
+        self.assertEqual(len(first['results']), 20)
+        self.assertIn('visibility=workspace', first['pagination']['next'])
+        self.assertIn('limit=32', first['pagination']['next'])
+        self.assertEqual(data['results'][:20], first['results'])
         self.assertTrue(data['results'][0]['gadgets_url'].startswith(self.path()))
         self.assertEqual(self.get(self.path(f'{self.dashboard.pk}/') + '?q=Plan').json()['redirect'], self.path(self.dashboard.slug + '/') + '?q=Plan')
 

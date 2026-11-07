@@ -92,9 +92,9 @@ class ReactDocumentTests(TestCase):
         self.assertNotIn(self.document.file.name, encoded)
 
     def test_search_filters_sort_pagination_and_display_session(self):
-        DocumentLibrary.objects.bulk_create([DocumentLibrary(owner=self.owner, workplace=self.workspace, name=f'Raport {i:02}') for i in range(31)])
+        DocumentLibrary.objects.bulk_create([DocumentLibrary(owner=self.owner, workplace=self.workspace, name=f'Raport {i:02}') for i in range(51)])
         data = self.get(self.path()+'?q=Raport&page_size=10&page=2&sort=name_desc&display=grid').json()['data']
-        self.assertEqual((len(data['rows']), data['window']['page'], data['display']), (10, 2, 'grid'))
+        self.assertEqual((len(data['rows']), data['window']['page'], data['display']), (40, 2, 'grid'))
         self.assertIn('q=Raport', data['window']['next_url'])
         self.assertEqual(self.get(self.path()).json()['data']['display'], 'grid')
         target = self.path()+f'?library={self.library.pk}&name_op=is_not_empty&file_type=.txt&sort=size_desc'

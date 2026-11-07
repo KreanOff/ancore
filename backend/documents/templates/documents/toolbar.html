@@ -1,4 +1,4 @@
-<header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory documents-topbar">
+<header class="tasks-topbar app-page-header tasks-topbar--directory tasks-topbar--project-directory documents-topbar">
     <div class="tasks-titlebar-left">
         {% if current_library %}
         <nav class="documents-breadcrumbs" aria-label="Ścieżka dysku">
@@ -15,7 +15,6 @@
         <input type="hidden" name="folder" value="{{ current_folder.pk|default:'' }}">
         {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}" data-project-filter-input="{{ param }}">{% endfor %}
         <input type="hidden" name="sort" value="{{ sort_param }}" data-project-sort-input>
-        <input type="hidden" name="page_size" value="{{ document_window.page_size }}" data-project-search-page-size>
         <input type="hidden" name="display" value="{{ document_display }}">
     </form>
     <div class="tasks-titlebar-actions">
@@ -33,8 +32,8 @@
         {% endif %}
     </div>
 </header>
-<div class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
-    <div class="tasks-filterbar-left">
+<div class="app-toolbar tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
+    <div class="tasks-filterbar-left app-toolbar__controls">
         <nav class="documents-display-switch" aria-label="Sposób wyświetlania Dysku">
             {% for option in display_options %}<a class="tasks-icon-button{% if option.active %} is-active{% endif %}" href="{{ option.url }}" aria-label="{{ option.label }}" title="{{ option.label }}" {% if option.active %}aria-current="true"{% endif %} data-document-display="{{ option.value }}"><i data-icon="{{ option.icon }}" aria-hidden="true"></i></a>{% endfor %}
         </nav>
@@ -57,9 +56,8 @@
         </div>
         {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
     </div>
-    <div class="tasks-filterbar-right">
+    <div class="tasks-filterbar-right app-toolbar__search">
         <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="documents-search-form" value="{{ query }}" placeholder="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" aria-label="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" autocomplete="off"></label>
-        {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window pages_label='Strony Dysku' previous_label='Poprzednia strona' next_label='Następna strona' page_size_label='Liczba pozycji na stronie' only %}
         {% if not is_library_index %}<button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel dysków" aria-label="Pokaż lub ukryj panel dysków" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-icon="panel-right" aria-hidden="true"></i></button>{% endif %}
     </div>
 </div>

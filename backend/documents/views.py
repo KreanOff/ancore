@@ -6,7 +6,7 @@ from urllib.parse import urlencode, urlsplit
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_payload
 from django.db import IntegrityError, transaction
 from django.db.models import BigIntegerField, Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import Coalesce
@@ -36,7 +36,6 @@ from .query import (
 )
 
 
-DOCUMENT_PAGE_SIZES = (10, 25, 50, 100, 150, 200)
 DOCUMENT_VIEW_OPTIONS = (
     {'value': 'all', 'label': 'Wszystkie pliki', 'icon': 'files'},
     {'value': 'recent', 'label': 'Ostatnio zmienione', 'icon': 'clock-3'},
@@ -130,7 +129,7 @@ def _display_context(request, scope):
     if request.session.get(key) != display:
         request.session[key] = display
     params = {name: request.GET[name] for name in (
-        'library', 'folder', 'view', 'q', 'sort', 'page', 'page_size', *FILTER_PARAMETERS,
+        'library', 'folder', 'view', 'q', 'sort', 'page', 'page_size', 'limit', *FILTER_PARAMETERS,
     ) if name in request.GET}
     return {
         'document_display': display,
@@ -143,25 +142,10 @@ def _display_context(request, scope):
 
 
 def _pagination(request, total):
-    try:
-        page_size = int(request.GET.get('page_size', 50))
-    except (ValueError, TypeError):
-        page_size = 50
-    if page_size not in DOCUMENT_PAGE_SIZES:
-        page_size = 50
-    page = Paginator(range(total), page_size).get_page(request.GET.get('page'))
+    page = window_page(range(total), request)
     params = request.GET.copy()
-    params.pop('page', None)
-    params['page_size'] = page_size
-    return page, {
-        'page': page.number, 'total_pages': page.paginator.num_pages,
-        'page_size': page_size, 'page_size_options': DOCUMENT_PAGE_SIZES,
-        'has_previous': page.has_previous(), 'has_next': page.has_next(),
-        'previous_url': _url(request, **{**params.dict(), 'page': page.previous_page_number()}) if page.has_previous() else '',
-        'next_url': _url(request, **{**params.dict(), 'page': page.next_page_number()}) if page.has_next() else '',
-        'compact_summary': f'{page.start_index()}–{page.end_index()} z {total}',
-        'summary': f'Pokazano {page.start_index()}–{page.end_index()} z {total} elementów',
-    }
+    params.pop('tag', None)
+    return page, window_payload(request, page, parameters=params)
 
 
 def _library_index(request, form_context=None):
@@ -588,7 +572,7 @@ def download(request, pk):
 
 
 def _return_to_library(request, document):
-    params = {key: request.POST.get(key, '') for key in dict.fromkeys(('view', 'folder', 'q', 'sort', 'page', 'page_size', *FILTER_PARAMETERS))}
+    params = {key: request.POST.get(key, '') for key in dict.fromkeys(('view', 'folder', 'q', 'sort', 'page', 'page_size', 'limit', *FILTER_PARAMETERS))}
     if request.POST.get('display') in {'list', 'grid'}:
         params['display'] = request.POST['display']
     library_id = None if request.POST.get('scope') == 'workspace' else document.library_id

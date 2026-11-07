@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_url
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -53,15 +53,14 @@ def index_context(request):
         queryset = queryset.filter(visibility=visibility)
     else:
         visibility = ''
-    page = Paginator(queryset.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
+    page = window_page(queryset.order_by('name', 'pk'), request)
     rows = [decorate_dashboard(request, row) for row in page]
     base = app_url(request)
     filters = {'q': query, 'visibility': visibility}
     return {'dashboards': rows, 'page': page, 'pulpits_directory_mode': True, 'query': query, 'dashboards_url': base,
             'visibility_filter': visibility, 'visibility_choices': Dashboard.Visibility.choices,
             'create_url': app_url(request, 'create/'),
-            'previous_url': base + '?' + urlencode({**filters, 'page': page.number - 1}),
-            'next_url': base + '?' + urlencode({**filters, 'page': page.number + 1})}
+            'previous_url': '', 'next_url': window_url(request, page, base)}
 
 
 @login_required

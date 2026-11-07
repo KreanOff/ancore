@@ -1,13 +1,6 @@
 <article class="work-summary-widget pulpit-summary-widget" data-pulpit-gadget="{{ data.gadget.pk }}" style="grid-column: {{ data.gadget.grid.x|add:1 }} / span {{ data.gadget.grid.w }}; grid-row: {{ data.gadget.grid.y|add:1 }} / span {{ data.gadget.grid.h }}">
     {% if editing_gadgets %}<header class="work-summary-widget-tools">
         <span>{{ data.gadget.label }}</span>
-        <div class="documents-item-actions" data-row-actions>
-            <button type="button" class="tasks-filter-button work-summary-widget-menu" data-row-actions-toggle popovertarget="gadget-actions-{{ data.gadget.pk }}" aria-controls="gadget-actions-{{ data.gadget.pk }}" aria-expanded="false" aria-label="Działania gadżetu: {{ data.gadget.label }}"><i data-icon="menu" aria-hidden="true"></i></button>
-            <div id="gadget-actions-{{ data.gadget.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania gadżetu" data-row-actions-panel><div class="documents-menu-actions">
-                <a href="{{ data.gadget.edit_url }}" class="tasks-project-menu-button" data-pulpit-open><i data-icon="settings-2" aria-hidden="true"></i><span>Konfiguruj</span></a>
-                <form method="post" action="{{ data.gadget.delete_url }}" data-pulpit-action data-confirm-title="Usuń gadżet" data-confirm-name="{{ data.gadget.label }}">{% csrf_token %}<button type="submit" class="tasks-project-menu-button">{% include 'core/includes/trash_icon.html' %}<span>Usuń gadżet</span></button></form>
-            </div></div>
-        </div>
     </header>{% endif %}
     <div class="work-summary-widget-body"><section class="work-panel pulpit-summary-panel">
     <div class="work-panel-heading"><h2>{{ data.gadget.label }}</h2><i data-icon="{{ data.gadget.icon }}" aria-hidden="true"></i></div>

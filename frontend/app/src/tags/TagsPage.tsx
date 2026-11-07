@@ -309,43 +309,42 @@ export default function TagsPage(props: PageProps) {
             ) : null
           }
         />
-        <ViewToolbar>
-          <Dropdown
-            label={`Sortowanie: ${sort.label}`}
-            className="tasks-sort-dropdown"
-            menuClass="tasks-sort-menu"
-            triggerClassName="tasks-filter-button tasks-project-query-trigger"
-            trigger={
-              <>
-                <Icon
-                  name={
-                    sort.direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'
-                  }
-                />
-                <span>Sortowanie</span>
-                <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-              </>
-            }
-          >
-            {(close) =>
-              data.sort_options.map((option) => (
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  key={option.value}
-                  aria-checked={data.sort === option.value}
-                  className={data.sort === option.value ? 'is-active' : ''}
-                  onClick={() => {
-                    close();
-                    change({ sort: option.value });
-                  }}
-                >
-                  <Icon name={option.icon} />
-                  <span>{option.label}</span>
-                </button>
-              ))
-            }
-          </Dropdown>
+        <ViewToolbar
+          search={
+            <form
+              className="tasks-search-field work-view-toolbar-search"
+              role="search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                change({});
+              }}
+            >
+              <Icon name="search" />
+              <input
+                type="search"
+                value={query}
+                placeholder="Szukaj tagów"
+                aria-label="Szukaj tagów"
+                autoComplete="off"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setQuery(value);
+                  clearTimeout(timer.current);
+                  timer.current = setTimeout(() => change({ q: value }), 350);
+                }}
+              />
+              <button type="submit" className="tasks-filter-button" aria-label="Szukaj tagów">
+                <Icon name="arrow-right" />
+              </button>
+            </form>
+          }
+        >
+          <DirectoryColumnManager
+            columns={columns}
+            layout={sizing.layout}
+            save={sizing.saveLayout}
+            reset={sizing.reset}
+          />
           <details
             ref={aggregate}
             className={`tasks-project-filter-builder tasks-directory-filter-aggregate ${activeFilters ? 'is-active' : ''}`}
@@ -355,7 +354,7 @@ export default function TagsPage(props: PageProps) {
               aria-label="Filtrowanie tagów"
             >
               <Icon name="list-filter" />
-              <span>Filtrowanie</span>
+              <span>Filtruj</span>
               <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
             </summary>
             <div
@@ -388,38 +387,39 @@ export default function TagsPage(props: PageProps) {
               </div>
             </div>
           </details>
-          <DirectoryColumnManager
-            columns={columns}
-            layout={sizing.layout}
-            save={sizing.saveLayout}
-            reset={sizing.reset}
-          />
-          <form
-            className="tasks-search-field work-view-toolbar-search"
-            role="search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              change({});
-            }}
+          <Dropdown
+            label={`Sortowanie: ${sort.label}`}
+            className="tasks-sort-dropdown"
+            menuClass="tasks-sort-menu"
+            triggerClassName="tasks-filter-button tasks-project-query-trigger"
+            trigger={
+              <>
+                <Icon name="arrow-up-down" />
+                <span>Sortuj</span>
+                <span className="tasks-project-sort-current">{sort.label}</span>
+                <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+              </>
+            }
           >
-            <Icon name="search" />
-            <input
-              type="search"
-              value={query}
-              placeholder="Szukaj tagów"
-              aria-label="Szukaj tagów"
-              autoComplete="off"
-              onChange={(event) => {
-                const value = event.target.value;
-                setQuery(value);
-                clearTimeout(timer.current);
-                timer.current = setTimeout(() => change({ q: value }), 350);
-              }}
-            />
-            <button type="submit" className="tasks-filter-button" aria-label="Szukaj tagów">
-              <Icon name="arrow-right" />
-            </button>
-          </form>
+            {(close) =>
+              data.sort_options.map((option) => (
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  key={option.value}
+                  aria-checked={data.sort === option.value}
+                  className={data.sort === option.value ? 'is-active' : ''}
+                  onClick={() => {
+                    close();
+                    change({ sort: option.value });
+                  }}
+                >
+                  <Icon name={option.icon} />
+                  <span>{option.label}</span>
+                </button>
+              ))
+            }
+          </Dropdown>
         </ViewToolbar>
         <div className="u-sr-only" role="status" aria-live="polite">
           {notice}
@@ -427,7 +427,7 @@ export default function TagsPage(props: PageProps) {
         <div className="work-content work-content--tasks">
           <div
             ref={table}
-            className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet ${data.tags.length ? '' : 'tasks-tag-board--empty'}`}
+            className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet app-data-table ${data.tags.length ? '' : 'tasks-tag-board--empty'}`}
             style={sizing.style}
           >
             <section
@@ -437,7 +437,7 @@ export default function TagsPage(props: PageProps) {
             >
               {data.tags.length ? (
                 <div
-                  className="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header"
+                  className="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header app-table-header"
                   role="row"
                 >
                   {sizing.visible.map((column) => (
@@ -486,7 +486,7 @@ export default function TagsPage(props: PageProps) {
                 {data.tags.map((tag) => (
                   <article
                     key={tag.id}
-                    className={`tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row ${selected.has(tag.id) ? 'checked' : ''}`}
+                    className={`tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row app-table-row ${selected.has(tag.id) ? 'checked' : ''}`}
                     role="row"
                   >
                     {sizing.visible.map((column) =>
@@ -672,7 +672,7 @@ function InfoDialog({ tag, close }: { tag: Tag; close: () => void }) {
         </dl>
       </div>
       <footer className="tasks-modal__footer">
-        <button className="btn btn-secondary" onClick={close}>
+        <button type="button" className="btn btn-secondary" data-close-modal>
           Zamknij
         </button>
       </footer>

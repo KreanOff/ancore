@@ -7608,6 +7608,15 @@ function initTasksPage() {
             return `${getDirectoryStorageSegment()}:directoryColumnWidths:v4:${schema}`;
         }
 
+        function getFormerMenuStorageKey(board, columns, kind) {
+            if (!board?.matches('.work-space-sheet, .resources-sheet, .workplaces-project-sheet')
+                || board.classList.contains('for-you-space-sheet') || columns.includes('menu')) return '';
+            const previous = [...columns];
+            const preceding = board.classList.contains('workplaces-project-sheet') ? 'action' : 'select';
+            previous.splice(previous.indexOf(preceding) + 1, 0, 'menu');
+            return `${getDirectoryStorageSegment()}:${kind}:${previous.join('-')}`;
+        }
+
         function isFixedDirectoryColumn(column) {
             return fixedColumns.has(column);
         }
@@ -7645,7 +7654,9 @@ function initTasksPage() {
         function readStoredDirectoryWidths(cells) {
             const storageKey = getDirectoryStorageKey(cells);
             const legacyStorageKey = getLegacyProjectDirectoryWidthStorageKey(cells);
-            const keys = [storageKey, getDirectoryStorageKey(cells, true), legacyStorageKey,
+            const previousMenuKey = getFormerMenuStorageKey(cells[0]?.closest('.tasks-directory-board'),
+                cells.map(cell => cell.dataset.column), 'directoryColumnWidths:v4');
+            const keys = [storageKey, previousMenuKey, getDirectoryStorageKey(cells, true), legacyStorageKey,
                 getDirectoryStorageKey(cells, false, true), getDirectoryStorageKey(cells, true, true)].filter(Boolean);
 
             for (const key of keys) {
@@ -7712,6 +7723,8 @@ function initTasksPage() {
             const segment = getDirectoryStorageSegment();
             const keys = new Set([
                 getDirectoryStorageKey(cells),
+                getFormerMenuStorageKey(cells[0]?.closest('.tasks-directory-board'),
+                    cells.map(cell => cell.dataset.column), 'directoryColumnWidths:v4'),
                 getDirectoryStorageKey(cells, true),
                 getLegacyProjectDirectoryWidthStorageKey(cells),
                 getDirectoryStorageKey(cells, false, true),
@@ -8433,7 +8446,9 @@ function initTasksPage() {
         function readStoredDirectoryColumnLayout(board) {
             const defaultHidden = (board.dataset.directoryDefaultHidden || '').split(/\s+/).filter(Boolean);
             const storageKey = getDirectoryColumnLayoutStorageKey(board);
-            const keys = [storageKey, getDirectoryColumnLayoutStorageKey(board, true), getLegacyProjectDirectoryColumnLayoutStorageKey(board),
+            const previousMenuKey = getFormerMenuStorageKey(board, getDirectoryDefaultColumnOrder(board),
+                'directoryColumnLayout:v2');
+            const keys = [storageKey, previousMenuKey, getDirectoryColumnLayoutStorageKey(board, true), getLegacyProjectDirectoryColumnLayoutStorageKey(board),
                 getDirectoryColumnLayoutStorageKey(board, false, true), getDirectoryColumnLayoutStorageKey(board, true, true)].filter(Boolean);
 
             for (const key of keys) {
@@ -8472,6 +8487,7 @@ function initTasksPage() {
             try {
                 const keys = new Set([
                     getDirectoryColumnLayoutStorageKey(board),
+                    getFormerMenuStorageKey(board, getDirectoryDefaultColumnOrder(board), 'directoryColumnLayout:v2'),
                     getDirectoryColumnLayoutStorageKey(board, true),
                     getLegacyProjectDirectoryColumnLayoutStorageKey(board),
                     getDirectoryColumnLayoutStorageKey(board, false, true),

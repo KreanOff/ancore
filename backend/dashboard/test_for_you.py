@@ -194,9 +194,9 @@ class ForYouTests(TestCase):
         with patch('dashboard.for_you.timezone.now', return_value=now):
             first, second = self.page('viewed'), self.page('viewed', page=2)
             self.assertEqual(first.context['for_you_page'].paginator.count, 27)
-            self.assertEqual(self.objects(first), tasks[:25])
-            self.assertEqual(self.objects(second), tasks[25:27])
-            self.assertEqual(self.objects(self.page('viewed', page=99999)), tasks[25:27])
+            self.assertEqual(self.objects(first), tasks[:20])
+            self.assertEqual(self.objects(second), tasks[:27])
+            self.assertEqual(self.objects(self.page('viewed', page=99999)), tasks[:27])
 
     def test_viewed_expired_entry_returns_after_opening_again(self):
         task = self.task()

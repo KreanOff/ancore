@@ -119,13 +119,13 @@ class DriveFolderTests(TestCase):
         self.assertEqual(self.rows(document_library=self.second_library.pk), [])
 
     def test_starred_folder_pagination(self):
-        for number in range(12):
+        for number in range(22):
             self.folder(name=f'Folder {number:02}', is_starred=True)
         response = self.client.get(self.base, {'view': 'starred', 'page_size': 10, 'display': 'grid', 'sort': 'name_asc'})
         first = [row['item'].pk for row in response.context['rows']]
         response = self.client.get(response.context['document_window']['next_url'])
         last = [row['item'].pk for row in response.context['rows']]
-        self.assertEqual((len(first), len(last), len(set(first + last))), (10, 2, 12))
+        self.assertEqual((len(first), len(last), len(set(first + last))), (20, 22, 22))
 
     def test_actions_require_owner_workspace_library_login_method_and_csrf(self):
         folder = self.folder()

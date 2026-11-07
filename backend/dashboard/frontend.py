@@ -1,3 +1,4 @@
+from core.frontend import pagination_payload
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import strip_tags
@@ -43,6 +44,7 @@ def for_you_page(request, context):
         'spaces_illustration': static('img/empty-states/spaces-empty.webp'),
         'filtered': context['for_you_filtered'], 'clear_url': context['for_you_clear_url'],
         'previous': context['for_you_previous'], 'next': context['for_you_next'],
+        'pagination': pagination_payload(request, context['for_you_page']),
     }}
 
 

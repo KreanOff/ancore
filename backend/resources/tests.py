@@ -143,12 +143,12 @@ class ResourceTests(TestCase):
         Resource.objects.bulk_create([Resource(owner=self.owner, workplace=self.team, name=f'Licencja {i:02}', kind='license', status='in_use', assigned_to=self.member) for i in range(31)])
         params = {'q': 'Licencja', 'kind': 'license', 'status': 'in_use', 'assignee': 'me', 'sort': '-name', 'page_size': '25'}
         response = self.client.get(self.url(), params)
-        self.assertEqual(len(response.context['resources']), 25)
+        self.assertEqual(len(response.context['resources']), 20)
         self.assertEqual(response.context['resources'][0].name, 'Licencja 30')
         next_url = response.context['resource_window']['next_url']
-        for token in ['q=Licencja', 'kind=license', 'status=in_use', 'assignee=me', 'sort=-name', 'page=2']:
+        for token in ['q=Licencja', 'kind=license', 'status=in_use', 'assignee=me', 'sort=-name', 'limit=31']:
             self.assertIn(token, next_url)
-        self.assertEqual(len(self.client.get(next_url).context['resources']), 6)
+        self.assertEqual(len(self.client.get(next_url).context['resources']), 31)
         self.assertEqual(len(self.client.get(self.url(), {'assignee': 'unassigned'}).context['resources']), 0)
         self.assertEqual(self.client.get(self.url(), {'page': 'invalid', 'page_size': 'bad', 'sort': 'bad'}).status_code, 200)
 

@@ -3,6 +3,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils.html import escape
 
 from .models import SpaceTask, Space, SpaceMembership, Team
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
@@ -75,7 +76,7 @@ class BacklogOrderingTests(TestCase):
         self.first.refresh_from_db()
         self.assertEqual(self.first.rank, 10)
 
-    def test_rendered_action_preserves_the_displayed_filter_scope(self):
+    def test_rendered_drag_action_preserves_the_displayed_filter_scope_without_menu(self):
         url = scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/')
         response = self.client.get(url, {'view': 'backlog', 'q': 'Visible', 'priority': 'medium'})
         self.assertEqual(response.status_code, 200)
@@ -83,8 +84,12 @@ class BacklogOrderingTests(TestCase):
         self.assertEqual(len(rows), 2)
         params = parse_qs(urlsplit(rows[0].action_url).query)
         self.assertEqual(params, {'view': ['backlog'], 'q': ['Visible'], 'priority': ['medium']})
-        self.assertContains(response, 'Przesuń niżej', count=2)
-        self.assertContains(response, 'work-issue-row--actions', count=2)
+        for item in rows:
+            self.assertContains(response, f'data-action-url="{escape(item.action_url)}"', count=1)
+        self.assertContains(response, 'work-issue-row--draggable', count=2)
+        self.assertNotContains(response, 'Przesuń niżej')
+        self.assertNotContains(response, 'work-issue-row--actions')
+        self.assertNotContains(response, 'data-icon="menu"')
 
     def test_observer_backlog_does_not_expose_write_controls(self):
         observer = get_user_model().objects.create_user(username='order-observer', email='order-observer@example.test')
@@ -98,3 +103,4 @@ class BacklogOrderingTests(TestCase):
         self.assertContains(response, 'Visible first')
         self.assertNotContains(response, 'Przesuń niżej')
         self.assertNotContains(response, 'work-issue-row--actions')
+        self.assertNotContains(response, 'work-issue-row--draggable')

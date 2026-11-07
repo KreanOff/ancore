@@ -1,7 +1,7 @@
 .documents-page { --documents-index-padding-x: var(--app-page-padding-x); display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; background: var(--bg-main); color: var(--text-main); font-size: var(--font-size-sm); }
 .documents-topbar { flex: 0 0 auto; justify-content: space-between; gap: 16px; }
 .documents-topbar h1 { margin-block: 0; }
-.documents-topbar .documents-breadcrumbs { padding-left: 0.35rem; }
+.documents-topbar .documents-breadcrumbs { padding-left: 0; }
 .documents-topbar .documents-breadcrumbs h1 { margin: 0; }
 .documents-filterbar { flex: 0 0 auto; position: relative; z-index: 30; }
 .documents-library-index .documents-filterbar { padding-inline: var(--documents-index-padding-x); }
@@ -27,19 +27,17 @@
 .documents-table-scroll { width: 100%; min-height: 0; overflow: auto; flex: 1; }
 /* The drive index uses the project directory's compact rows and action cells. */
 .tasks-directory-board.documents-library-sheet {
-    --tasks-project-action-width: 40px;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(280px, 1fr) 176px 120px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) minmax(280px, 1fr) 176px 120px;
 }
 .tasks-directory-board.documents-library-sheet .tasks-directory-header,
 .tasks-directory-board.documents-library-sheet .tasks-directory-list .tasks-directory-row {
     --tasks-directory-grid: inherit;
     width: 100%;
-    min-width: 656px;
+    min-width: 616px;
     padding-inline: 0;
 }
 .documents-library-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
 .documents-library-sheet .tasks-directory-list .tasks-directory-row { cursor: default; }
-.documents-library-sheet [data-document-actions] { width: 100%; height: 100%; }
 .documents-library-sheet .documents-library-entry { width: 100%; min-height: 0; padding: 0 0.75rem 0 0; gap: 8px; }
 .documents-library-sheet .documents-library-title { white-space: nowrap; overflow-wrap: normal; }
 .documents-library-sheet .documents-library-icon,
@@ -281,10 +279,8 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-views-menu [aria-current="page"] { background: var(--system-interaction-soft); }
 .documents-views-menu small { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (max-width: 767px) {
-    .documents-page .tasks-topbar.documents-topbar { min-height: 45px; height: auto; padding: 8px 16px 8px 56px !important; }
     .documents-page .documents-filterbar .tasks-filterbar-left { flex-wrap: wrap; max-width: 100%; }
     .documents-page .documents-filterbar .tasks-project-pagination--toolbar { flex: 0 1 auto; max-width: 100%; }
-    .documents-page .tasks-topbar .tasks-titlebar-actions:has(> :nth-child(2)) { flex: 1 1 100%; width: 100%; max-width: 100%; min-width: 0; flex-wrap: wrap; justify-content: flex-start; }
     .documents-page .documents-topbar .documents-actions { flex-wrap: wrap; }
     .documents-page .documents-table { min-width: 620px; }
     :is(.documents-layout, .office-page) .documents-table { min-width: 800px; }
@@ -297,7 +293,7 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
     .documents-name { gap: 8px; }
     .documents-name a { font-weight: 400; }
 }
-@media (max-width: 767px) { .documents-topbar { flex-wrap: wrap; padding-right: var(--app-page-padding-x) !important; min-height: 64px; } .documents-topbar h1 { margin-right: auto; } .documents-actions { flex-wrap: wrap; } .documents-actions .btn { font-size: 13px; padding-inline: 10px; } .documents-upload-hint { padding: 16px; } .documents-table td.documents-empty { padding: 55px 16px; } .documents-table:has(.documents-empty) { min-width: 0; } }
+@media (max-width: 767px) { .documents-topbar h1 { margin-right: auto; } .documents-actions { flex-wrap: wrap; } .documents-actions .btn { font-size: 13px; padding-inline: 10px; } .documents-upload-hint { padding: 16px; } .documents-table td.documents-empty { padding: 55px 16px; } .documents-table:has(.documents-empty) { min-width: 0; } }
 
 /* Adapt to the available list width, including an expanded app sidebar on tablets. */
 @container library-list (max-width: 740px) {

@@ -59,6 +59,8 @@ export interface Overview {
   history_page: number;
   history_pages: number;
   history_total: number;
+  history_next: string;
+  history_end: number;
 }
 export type Errors = Record<string, { message: string; code: string }[]>;
 export interface Directory {
@@ -86,6 +88,7 @@ export interface Directory {
   }[];
   sort_options: [string, string][];
   pagination: {
+    count: number;
     page: number;
     total_pages: number;
     page_size: number;

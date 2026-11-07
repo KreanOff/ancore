@@ -1,3 +1,7 @@
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { LoadMore } from '../shared/LoadMore';
+import { PageTabs } from '../shared/PageTabs';
+import { PageHeader } from '../shared/PageHeader';
 import { setPageLocation } from '../shared/page';
 import { useEffect, useRef, useState } from 'react';
 import { errorMessage, request } from '../shared/api';
@@ -33,6 +37,8 @@ export default function ResourcesApp({
   }>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [moreError, setMoreError] = useState('');
+  const [historyError, setHistoryError] = useState('');
   const retry = useRef<() => void>(() => void load(initial.list_url));
   const life = useRef(new AbortController());
   const listing = useRef<AbortController>();
@@ -67,28 +73,49 @@ export default function ResourcesApp({
     [],
   );
 
-  async function load(url: string) {
-    if (operation.current || editor || actionDialog) return;
+  async function load(url: string, more = false) {
+    if (
+      operation.current ||
+      editor ||
+      actionDialog ||
+      (more && (listing.current || busy || queryRef.current !== data.query))
+    )
+      return;
     listing.current?.abort();
     const controller = new AbortController();
     listing.current = controller;
     const draftAtStart = queryRef.current;
     setBusy(true);
     setError('');
-    retry.current = () => void load(url);
+    setMoreError('');
+    if (!more) retry.current = () => void load(url);
     try {
       const params = new URL(url, window.location.origin).search;
       const next = await request<Directory>(data.api_url + params, csrfToken, controller.signal);
-      if (controller.signal.aborted || life.current.signal.aborted) return;
+      if (
+        controller.signal.aborted ||
+        life.current.signal.aborted ||
+        (more && queryRef.current !== draftAtStart)
+      )
+        return;
       setData(next);
-      setSelected(new Set());
+      setSelected((current) =>
+        more
+          ? new Set(
+              [...current].filter((id) => next.results.some((resource) => resource.id === id)),
+            )
+          : new Set(),
+      );
       if (queryRef.current === draftAtStart) setQuery(next.query);
       setPageLocation(next.list_url);
     } catch (exception) {
       if (!controller.signal.aborted && !life.current.signal.aborted)
-        setError(errorMessage(exception));
+        (more ? setMoreError : setError)(errorMessage(exception));
     } finally {
-      if (!controller.signal.aborted) setBusy(false);
+      if (listing.current === controller) {
+        listing.current = undefined;
+        if (!controller.signal.aborted) setBusy(false);
+      }
     }
   }
 
@@ -96,7 +123,7 @@ export default function ResourcesApp({
     const url = new URL(data.list_url, window.location.origin);
     if (value) url.searchParams.set(name, value);
     else url.searchParams.delete(name);
-    if (name !== 'page') url.searchParams.delete('page');
+    for (const key of ['page', 'page_size', 'limit']) url.searchParams.delete(key);
     void load(url.href);
   }
 
@@ -106,15 +133,16 @@ export default function ResourcesApp({
     return () => window.clearTimeout(timeout);
   }, [query, data.query, editor, detail, actionDialog]);
 
-  async function view(id: number, page = 1) {
+  async function view(id: number) {
     if (operation.current || busy || editor || actionDialog) return;
     operation.current = true;
     setBusy(true);
     setError('');
-    retry.current = () => void view(id, page);
+    setHistoryError('');
+    retry.current = () => void view(id);
     try {
       const result = await request<Overview>(
-        `${data.api_url}${id}/overview/?history_page=${page}`,
+        `${data.api_url}${id}/overview/`,
         csrfToken,
         life.current.signal,
       );
@@ -130,8 +158,45 @@ export default function ResourcesApp({
     }
   }
 
+  async function loadHistory() {
+    if (!detail?.history_next || operation.current || busy || editor || actionDialog) return;
+    operation.current = true;
+    setBusy(true);
+    setHistoryError('');
+    const previous = detail;
+    try {
+      const limit =
+        new URL(previous.history_next, window.location.origin).searchParams.get('history_limit') ||
+        '20';
+      const result = await request<Overview>(
+        `${data.api_url}${previous.resource.id}/overview/?history_limit=${encodeURIComponent(limit)}`,
+        csrfToken,
+        life.current.signal,
+      );
+      if (life.current.signal.aborted) return;
+      setDetail((current) => (current === previous ? result : current));
+      const url = new URL(window.location.href);
+      url.searchParams.delete('history_page');
+      url.searchParams.set('history_limit', String(result.history_end));
+      setPageLocation(url);
+    } catch (exception) {
+      if (!life.current.signal.aborted) setHistoryError(errorMessage(exception));
+    } finally {
+      operation.current = false;
+      setBusy(false);
+    }
+  }
+
   async function operate(action: ResourceAction, resources: Resource[]) {
-    if (operation.current || busy || editor || actionDialog || data.read_only || !resources.length)
+    if (
+      operation.current ||
+      busy ||
+      editor ||
+      actionDialog ||
+      data.read_only ||
+      !resources.length ||
+      resources.length > 100
+    )
       return;
     modalTrigger.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -154,6 +219,7 @@ export default function ResourcesApp({
     if (busy) return;
     setDetail(undefined);
     setError('');
+    setHistoryError('');
     setPageLocation(data.list_url);
   }
 
@@ -220,7 +286,7 @@ export default function ResourcesApp({
         request<Directory>(data.api_url + search, csrfToken, life.current.signal),
         detail
           ? request<Overview>(
-              `${data.api_url}${detail.resource.id}/overview/`,
+              `${data.api_url}${detail.resource.id}/overview/?history_limit=${Math.max(20, detail.history_end)}`,
               csrfToken,
               life.current.signal,
             )
@@ -239,40 +305,6 @@ export default function ResourcesApp({
       operation.current = false;
       setBusy(false);
     }
-  }
-
-  function remove(resource: Resource) {
-    if (operation.current || busy || editor || actionDialog || data.read_only) return;
-    window.showConfirmModal({
-      title: 'Usuń zasób',
-      message: window.escapeHtmlForModal(
-        `Usunąć zasób „${resource.name}”? Tej operacji nie można cofnąć.`,
-      ),
-      confirmText: 'Usuń zasób',
-      cancelText: 'Anuluj',
-      confirmClass: 'btn-danger',
-      onConfirm: async () => {
-        if (life.current.signal.aborted || operation.current) return;
-        operation.current = true;
-        setBusy(true);
-        setError('');
-        try {
-          await request(data.api_url + `${resource.id}/delete/`, csrfToken, life.current.signal, {
-            method: 'POST',
-            body: '{}',
-          });
-          if (!life.current.signal.aborted) {
-            window.showNotification?.('Zasób usunięty.', 'success');
-            await refreshAfterMutation();
-          }
-        } catch (exception) {
-          if (!life.current.signal.aborted) setError(errorMessage(exception));
-        } finally {
-          operation.current = false;
-          setBusy(false);
-        }
-      },
-    });
   }
 
   const selectedResources = data.results.filter((resource) => selected.has(resource.id));
@@ -310,175 +342,234 @@ export default function ResourcesApp({
             back={back}
             edit={() => void open(detail.resource.id)}
             operate={(action) => void operate(action, [detail.resource])}
-            historyPage={(page) => void view(detail.resource.id, page)}
+            loadHistory={() => void loadHistory()}
+            historyError={historyError}
             refresh={() => void refreshAfterMutation()}
           />
         ) : (
           <>
-            <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-              <div className="tasks-titlebar-left">
-                <h1 className="tasks-topbar-title" tabIndex={-1}>
-                  Zasoby
-                </h1>
-              </div>
-              <div className="tasks-titlebar-actions">
-                <a
-                  className="tasks-tag-topbar-button"
-                  href={data.export_url}
-                  download="zasoby.csv"
-                  data-no-spa
-                  title="Eksport wszystkich wyników bieżącego filtrowania"
-                >
-                  <Icon name="download" />
-                  <span>Eksport CSV</span>
-                </a>
-                <button
-                  type="button"
-                  className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                  disabled={busy || data.read_only}
-                  aria-haspopup="dialog"
-                  onClick={() => void open(null)}
-                >
-                  <Icon name="plus" />
-                  <span>Dodaj zasób</span>
-                </button>
-              </div>
-            </header>
-            <nav className="resources-summary" aria-label="Zasoby w Workspace">
-              {(
-                [
-                  ['total', 'Wszystkie', '', '', 'package'],
-                  ['available', 'Dostępne', 'status', 'available', 'circle-check'],
-                  ['in_use', 'W użyciu', 'status', 'in_use', 'user-round'],
-                  ['maintenance', 'W serwisie', 'status', 'maintenance', 'wrench'],
-                  [
-                    'attention',
-                    'Ważność do 30 dni lub po terminie',
-                    'deadline',
-                    'attention',
-                    'calendar-clock',
-                  ],
-                  [
-                    'return_overdue',
-                    'Zwrot po terminie',
-                    'deadline',
-                    'return_overdue',
-                    'rotate-ccw',
-                  ],
-                ] as const
-              ).map(([key, label, name, value, icon]) => (
-                <button
-                  key={key}
-                  type="button"
-                  className="tasks-filter-button resources-summary-item"
-                  disabled={busy}
-                  aria-pressed={
-                    name
-                      ? data.filters.some(
-                          (filter) => filter.name === name && filter.value === value,
-                        )
-                      : !data.has_filters
-                  }
-                  onClick={() => quickFilter(name, value)}
-                >
-                  <Icon name={icon} />
-                  <span>{label}</span>
-                  <strong>{data.summary[key]}</strong>
-                </button>
-              ))}
-            </nav>
-            <div className="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory resources-filterbar">
-              <div className="tasks-filterbar-left">
-                <button
-                  type="button"
-                  className="tasks-filter-button"
-                  disabled={busy}
-                  onClick={() => void load(data.list_url)}
-                  aria-label="Odśwież zasoby"
-                  title="Odśwież zasoby"
-                >
-                  <Icon name="rotate-ccw" />
-                </button>
-                <ColumnManager
-                  layout={columns.layout}
-                  save={columns.saveLayout}
-                  reset={columns.reset}
-                />
-                <Dropdown
-                  label="Filtruj listę"
-                  layer={false}
-                  className={data.has_filters ? 'is-active' : ''}
-                  trigger={
-                    <>
-                      <Icon name="list-filter" />
-                      <span>Filtruj</span>
-                      <Icon name="chevron-down" />
-                    </>
-                  }
-                  menuClass="tasks-project-query-panel"
-                  role="dialog"
-                >
-                  {(closeMenu) => (
-                    <>
-                      <header className="tasks-project-query-panel__header">
-                        <strong>Filtry</strong>
-                      </header>
-                      {data.filters.map((filter) => (
-                        <Select
-                          key={filter.name}
-                          label={filter.label}
-                          value={filter.value}
-                          options={[['', 'Wszystkie'], ...filter.options]}
-                          onChange={(value) => {
-                            change(filter.name, value);
+            <PageHeader
+              heading={
+                <>
+                  <h1 className="tasks-topbar-title" tabIndex={-1}>
+                    Zasoby
+                  </h1>
+                </>
+              }
+              actions={
+                <>
+                  <a
+                    className="tasks-tag-topbar-button"
+                    href={data.export_url}
+                    download="zasoby.csv"
+                    data-no-spa
+                    title="Eksport wszystkich wyników bieżącego filtrowania"
+                  >
+                    <Icon name="download" />
+                    <span>Eksport CSV</span>
+                  </a>
+                  <button
+                    type="button"
+                    className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                    disabled={busy || data.read_only}
+                    aria-haspopup="dialog"
+                    onClick={() => void open(null)}
+                  >
+                    <Icon name="plus" />
+                    <span>Dodaj zasób</span>
+                  </button>
+                </>
+              }
+              navigation={
+                <PageTabs className="resources-summary-tabs" label="Zasoby w Workspace">
+                  {(
+                    [
+                      ['total', 'Wszystkie', '', '', 'package'],
+                      ['available', 'Dostępne', 'status', 'available', 'circle-check'],
+                      ['in_use', 'W użyciu', 'status', 'in_use', 'user-round'],
+                      ['maintenance', 'W serwisie', 'status', 'maintenance', 'wrench'],
+                      [
+                        'attention',
+                        'Ważność do 30 dni lub po terminie',
+                        'deadline',
+                        'attention',
+                        'calendar-clock',
+                      ],
+                      [
+                        'return_overdue',
+                        'Zwrot po terminie',
+                        'deadline',
+                        'return_overdue',
+                        'rotate-ccw',
+                      ],
+                    ] as const
+                  ).map(([key, label, name, value, icon]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className="resources-summary-item"
+                      disabled={busy}
+                      aria-pressed={
+                        name
+                          ? data.filters.some(
+                              (filter) => filter.name === name && filter.value === value,
+                            )
+                          : !data.has_filters
+                      }
+                      onClick={() => quickFilter(name, value)}
+                    >
+                      <Icon name={icon} />
+                      <span>{label}</span>
+                      <span className="app-page-tab-count">{data.summary[key]}</span>
+                    </button>
+                  ))}
+                </PageTabs>
+              }
+            />
+
+            <Toolbar
+              className="tasks-filterbar--project-directory resources-filterbar"
+              filters={
+                <>
+                  <button
+                    type="button"
+                    className="tasks-filter-button"
+                    disabled={busy}
+                    onClick={() => void load(data.list_url)}
+                    aria-label="Odśwież zasoby"
+                    title="Odśwież zasoby"
+                  >
+                    <Icon name="rotate-ccw" />
+                  </button>
+                  <ColumnManager
+                    layout={columns.layout}
+                    save={columns.saveLayout}
+                    reset={columns.reset}
+                  />
+                  <Dropdown
+                    label="Filtruj listę"
+                    layer={false}
+                    className={data.has_filters ? 'is-active' : ''}
+                    trigger={
+                      <>
+                        <Icon name="list-filter" />
+                        <span>Filtruj</span>
+                        <Icon name="chevron-down" />
+                      </>
+                    }
+                    menuClass="tasks-project-query-panel"
+                    role="dialog"
+                  >
+                    {(closeMenu) => (
+                      <>
+                        <header className="tasks-project-query-panel__header">
+                          <strong>Filtry</strong>
+                        </header>
+                        {data.filters.map((filter) => (
+                          <Select
+                            key={filter.name}
+                            label={filter.label}
+                            value={filter.value}
+                            options={[['', 'Wszystkie'], ...filter.options]}
+                            onChange={(value) => {
+                              change(filter.name, value);
+                              closeMenu();
+                            }}
+                          />
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void load(data.base_url);
                             closeMenu();
                           }}
-                        />
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void load(data.base_url);
-                          closeMenu();
-                        }}
-                      >
-                        <Icon name="rotate-ccw" />
-                        <span>Wyczyść filtry</span>
-                      </button>
-                    </>
-                  )}
-                </Dropdown>
-                <Dropdown
-                  label={`Sortowanie: ${data.sort_label}`}
-                  trigger={
-                    <>
-                      <Icon name="arrow-up-down" />
-                      <span>Sortuj</span>
-                      <span className="tasks-project-sort-current">{data.sort_label}</span>
-                      <Icon name="chevron-down" />
-                    </>
-                  }
-                >
-                  {(closeMenu) =>
-                    data.sort_options.map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={data.sort === value}
-                        onClick={() => {
-                          change('sort', value);
-                          closeMenu();
-                        }}
-                      >
+                        >
+                          <Icon name="rotate-ccw" />
+                          <span>Wyczyść filtry</span>
+                        </button>
+                      </>
+                    )}
+                  </Dropdown>
+                  <Dropdown
+                    label={`Sortowanie: ${data.sort_label}`}
+                    trigger={
+                      <>
                         <Icon name="arrow-up-down" />
-                        <span>{label}</span>
+                        <span>Sortuj</span>
+                        <span className="tasks-project-sort-current">{data.sort_label}</span>
+                        <Icon name="chevron-down" />
+                      </>
+                    }
+                  >
+                    {(closeMenu) =>
+                      data.sort_options.map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={data.sort === value}
+                          onClick={() => {
+                            change('sort', value);
+                            closeMenu();
+                          }}
+                        >
+                          <Icon name="arrow-up-down" />
+                          <span>{label}</span>
+                        </button>
+                      ))
+                    }
+                  </Dropdown>
+                </>
+              }
+              actions={
+                selectedResources.length ? (
+                  <div
+                    className="app-toolbar__selection"
+                    role="region"
+                    aria-label="Operacje na zaznaczonych zasobach"
+                  >
+                    <span aria-live="polite">Zaznaczono: {selectedResources.length}</span>
+                    {selectedResources.length > 100 ? (
+                      <span role="status">Wybierz maksymalnie 100 zasobów do jednej operacji.</span>
+                    ) : null}
+                    {(
+                      [
+                        ['handover', 'Przekaż'],
+                        ['return', 'Przyjmij zwrot'],
+                        ['status', 'Zmień status'],
+                        ['location', 'Zmień lokalizację'],
+                      ] as const
+                    ).map(([action, label]) => (
+                      <button
+                        key={action}
+                        className="tasks-filter-button"
+                        disabled={
+                          busy ||
+                          selectedResources.length > 100 ||
+                          (action === 'handover' &&
+                            selectedResources.some(
+                              (resource) => !['available', 'in_use'].includes(resource.status),
+                            )) ||
+                          (action === 'return' &&
+                            selectedResources.some((resource) => resource.status !== 'in_use'))
+                        }
+                        onClick={() => void operate(action, selectedResources)}
+                      >
+                        {label}
                       </button>
-                    ))
-                  }
-                </Dropdown>
-              </div>
-              <div className="tasks-filterbar-right">
+                    ))}
+                    <button
+                      className="tasks-filter-button"
+                      disabled={busy}
+                      onClick={() => setSelected(new Set())}
+                      aria-label="Wyczyść zaznaczenie"
+                    >
+                      <Icon name="x" />
+                    </button>
+                  </div>
+                ) : null
+              }
+              search={
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -498,71 +589,8 @@ export default function ResourcesApp({
                     />
                   </label>
                 </form>
-                <div className="tasks-project-pagination tasks-project-pagination--toolbar">
-                  <nav
-                    className="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar"
-                    aria-label="Strony zasobów"
-                  >
-                    <button
-                      type="button"
-                      className="tasks-project-pagination__button"
-                      aria-label="Poprzednie zasoby"
-                      disabled={!data.pagination.has_previous || busy}
-                      onClick={() => void load(data.pagination.previous_url)}
-                    >
-                      <Icon name="chevron-left" />
-                    </button>
-                    <span
-                      className="tasks-project-pagination__summary tasks-project-pagination__summary--compact"
-                      aria-live="polite"
-                    >
-                      {data.pagination.summary}
-                    </span>
-                    <button
-                      type="button"
-                      className="tasks-project-pagination__button"
-                      aria-label="Następne zasoby"
-                      disabled={!data.pagination.has_next || busy}
-                      onClick={() => void load(data.pagination.next_url)}
-                    >
-                      <Icon name="chevron-right" />
-                    </button>
-                  </nav>
-                  <Dropdown
-                    label="Liczba zasobów na stronie"
-                    className="tasks-project-pagination__size-control tasks-project-pagination__size-control--toolbar"
-                    trigger={
-                      <>
-                        <Icon name="rows-3" />
-                        <span className="tasks-project-pagination__size-value">
-                          <strong>{data.pagination.page_size}</strong>
-                          <span>/ stronę</span>
-                        </span>
-                        <Icon name="chevron-down" />
-                      </>
-                    }
-                  >
-                    {(closeMenu) =>
-                      data.pagination.page_size_options.map((value) => (
-                        <button
-                          type="button"
-                          key={value}
-                          role="menuitemradio"
-                          aria-checked={data.pagination.page_size === value}
-                          onClick={() => {
-                            change('page_size', String(value));
-                            closeMenu();
-                          }}
-                        >
-                          <Icon name="rows-3" />
-                          <span>{value}</span>
-                        </button>
-                      ))
-                    }
-                  </Dropdown>
-                </div>
-              </div>
-            </div>
+              }
+            />
             {data.has_filters ? (
               <div className="resources-active-filters" aria-label="Aktywne filtry">
                 {data.query ? <span>Wyszukiwanie: {data.query}</span> : null}
@@ -589,48 +617,7 @@ export default function ResourcesApp({
                 </button>
               </div>
             ) : null}
-            {selectedResources.length ? (
-              <div
-                className="resources-bulkbar"
-                role="region"
-                aria-label="Operacje na zaznaczonych zasobach"
-              >
-                <span aria-live="polite">Zaznaczono: {selectedResources.length}</span>
-                {(
-                  [
-                    ['handover', 'Przekaż'],
-                    ['return', 'Przyjmij zwrot'],
-                    ['status', 'Zmień status'],
-                    ['location', 'Zmień lokalizację'],
-                  ] as const
-                ).map(([action, label]) => (
-                  <button
-                    key={action}
-                    className="tasks-filter-button"
-                    disabled={
-                      busy ||
-                      (action === 'handover' &&
-                        selectedResources.some(
-                          (resource) => !['available', 'in_use'].includes(resource.status),
-                        )) ||
-                      (action === 'return' &&
-                        selectedResources.some((resource) => resource.status !== 'in_use'))
-                    }
-                    onClick={() => void operate(action, selectedResources)}
-                  >
-                    {label}
-                  </button>
-                ))}
-                <button
-                  className="tasks-filter-button"
-                  disabled={busy}
-                  onClick={() => setSelected(new Set())}
-                  aria-label="Wyczyść zaznaczenie"
-                >
-                  <Icon name="x" />
-                </button>
-              </div>
-            ) : null}
+
             {busy ? (
               <span className="u-sr-only" role="status">
                 Wczytywanie zasobów…
@@ -638,18 +625,26 @@ export default function ResourcesApp({
             ) : null}
             {data.results.length ? (
               <ResourceTable
-                key={data.list_url}
                 results={data.results}
                 columns={columns}
                 baseUrl={data.base_url}
                 search={search}
-                open={(id) => void open(id)}
-                remove={remove}
                 busy={busy}
                 readOnly={!!data.read_only}
                 selected={selected}
                 setSelected={setSelected}
                 view={(id) => void view(id)}
+                footer={
+                  <LoadMore
+                    loaded={data.results.length}
+                    total={data.pagination.count}
+                    hasMore={data.pagination.has_next}
+                    loading={busy}
+                    disabled={query !== data.query}
+                    error={moreError}
+                    onLoad={() => void load(data.pagination.next_url, true)}
+                  />
+                }
               />
             ) : (
               <EmptyState

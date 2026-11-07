@@ -1,7 +1,7 @@
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_payload
 from django.db import IntegrityError, transaction
 from django.db.models import Count, F, Q
 from django.http import Http404
@@ -25,7 +25,7 @@ def resource_base_url(request):
 
 
 def resource_params(request):
-    params = {key: request.GET.get(key, '').strip() for key in ('q', 'kind', 'status', 'assignee', 'deadline', 'sort', 'page_size', 'page')}
+    params = {key: request.GET.get(key, '').strip() for key in ('q', 'kind', 'status', 'assignee', 'deadline', 'sort', 'page_size', 'page', 'limit')}
     params['q'] = params['q'][:120]
     for key, allowed in [('kind', Resource.Kind.values), ('status', Resource.Status.values), ('assignee', ['me', 'unassigned']), ('deadline', dict(DEADLINE_OPTIONS))]:
         if params[key] not in allowed:
@@ -95,9 +95,8 @@ def directory_context(request):
     sort = params.get('sort', 'name')
     if sort not in dict(SORT_OPTIONS):
         sort = 'name'
-    size = int(params.get('page_size', '25')) if params.get('page_size') in {'25', '50', '100'} else 25
-    page = Paginator(queryset, size).get_page(params.get('page', 1))
-    for key, value in [('page', page.number), ('page_size', size), ('sort', sort)]:
+    page = window_page(queryset, request)
+    for key, value in [('page', page.number), ('limit', page.limit), ('sort', sort)]:
         if key in params:
             params[key] = str(value)
     base = resource_base_url(request)
@@ -107,7 +106,6 @@ def directory_context(request):
         item.edit_url = f'{base}{item.pk}/edit/{suffix}'
         item.delete_url = f'{base}{item.pk}/delete/{suffix}'
         item.detail_url = f'{base}{item.pk}/{suffix}'
-    summary = f'{page.start_index()}–{page.end_index()} z {page.paginator.count}' if page.paginator.count else '0 z 0'
     filters = [
         {'name': 'kind', 'label': 'Typ', 'icon': 'package', 'value': kind, 'options': Resource.Kind.choices},
         {'name': 'status', 'label': 'Status', 'icon': 'circle-check', 'value': status, 'options': Resource.Status.choices},
@@ -122,13 +120,7 @@ def directory_context(request):
         'resource_summary': resource_summary(request), 'export_url': f'{base}api/v1/export/{suffix}',
         'sort': sort, 'sort_label': dict(SORT_OPTIONS)[sort], 'sort_options': SORT_OPTIONS,
         'today': timezone.localdate(),
-        'resource_window': {
-            'page': page.number, 'total_pages': page.paginator.num_pages, 'page_size': size,
-            'page_size_options': [25, 50, 100], 'summary': summary, 'compact_summary': summary,
-            'has_previous': page.has_previous(), 'has_next': page.has_next(),
-            'previous_url': directory_url(base, {**params, 'page': page.number - 1}) if page.has_previous() else '',
-            'next_url': directory_url(base, {**params, 'page': page.number + 1}) if page.has_next() else '',
-        },
+        'resource_window': window_payload(request, page, base, parameters=params),
     }
 
 

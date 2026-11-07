@@ -1,9 +1,13 @@
+import { LoadMore } from '../shared/LoadMore';
+import { useLoadMorePage } from '../shared/useLoadMorePage';
+import { PageTabs } from '../shared/PageTabs';
+import { PageHeader } from '../shared/PageHeader';
+import { DirectoryToolbar, ToolbarFilter, ToolbarSort } from '../shared/DirectoryToolbar';
 import { FormDialog } from '../forms/FormDialog';
 import { Avatar, type AvatarData } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
-import { Pagination, type PaginationData } from '../shared/Pagination';
+import type { PaginationData } from '../shared/Pagination';
 import { Select } from '../shared/Select';
 import { StatusGroup } from '../shared/StatusGroup';
 import { usePageActions } from '../shared/usePageActions';
@@ -72,6 +76,15 @@ interface Detail extends Team {
   progress: number;
   pagination: PaginationData | null;
 }
+const teamTabIcons: Record<string, string> = {
+  all: 'users',
+  mine: 'user-round',
+  managed: 'shield-check',
+  overview: 'layout-dashboard',
+  work: 'list-checks',
+  members: 'users',
+  spaces: 'layers',
+};
 const sortOptions: [string, string][] = [
   ['name', 'Nazwa A–Z'],
   ['newest', 'Najnowsze'],
@@ -164,17 +177,7 @@ function Tasks({ items }: { items: Detail['items'] }) {
     </div>
   );
 }
-function TeamMembers({
-  members,
-  busy,
-  open,
-  remove,
-}: {
-  members: Member[];
-  busy: boolean;
-  open: (url: string) => Promise<void>;
-  remove: (member: Member) => void;
-}) {
+function TeamMembers({ members }: { members: Member[] }) {
   if (!members.length)
     return (
       <EmptyState
@@ -185,91 +188,39 @@ function TeamMembers({
     );
   return (
     <div
-      className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet workplace-team-sheet team-members-sheet"
+      className="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet workplace-team-sheet team-members-sheet"
       role="region"
       aria-label="Członkowie zespołu"
       tabIndex={0}
     >
       <section className="tasks-directory-group" role="table" aria-label="Lista członków">
         <div
-          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
+          className="app-table-header tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
           role="row"
         >
           {[
-            ['action', 'Działania'],
-            ['person', 'Osoba'],
-            ['email', 'E-mail'],
-            ['role', 'Rola'],
-          ].map(([key, label]) => (
+            ['person', 'Osoba', 'users'],
+            ['email', 'E-mail', 'mail'],
+            ['role', 'Rola', 'user-round'],
+          ].map(([key, label, icon]) => (
             <span
               key={key}
               className="tasks-directory-sheet__cell tasks-project-sheet__cell"
               data-column={key}
               role="columnheader"
-              aria-label={key === 'action' ? label : undefined}
             >
-              {key === 'action' ? null : label}
+              <Icon name={icon} />
+              {label}
             </span>
           ))}
         </div>
         <div className="tasks-issue-list tasks-directory-list" role="rowgroup">
           {members.map((member) => (
             <div
-              className="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row"
+              className="tasks-issue-row app-table-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row"
               role="row"
               key={member.id}
             >
-              <div className="tasks-directory-sheet__cell" data-column="action" role="cell">
-                {member.can_change ? (
-                  <Dropdown
-                    searchable={false}
-                    label={`Działania: ${member.name}`}
-                    menuClass="documents-item-menu"
-                    trigger={<Icon name="menu" />}
-                  >
-                    {(close) => (
-                      <div className="documents-menu-actions">
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="tasks-project-menu-button"
-                          disabled={busy}
-                          onClick={() => {
-                            close();
-                            void open(member.edit_url);
-                          }}
-                        >
-                          <Icon name="pencil" />
-                          Zmień rolę
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="tasks-project-menu-button"
-                          disabled={busy}
-                          onClick={() => {
-                            close();
-                            remove(member);
-                          }}
-                        >
-                          <Icon name="user-minus" />
-                          Usuń z zespołu
-                        </button>
-                      </div>
-                    )}
-                  </Dropdown>
-                ) : (
-                  <span
-                    title={
-                      member.role === 'admin'
-                        ? 'Zarządzanie wymaga uprawnień i co najmniej jednego aktywnego administratora.'
-                        : undefined
-                    }
-                  >
-                    —
-                  </span>
-                )}
-              </div>
               <span className="tasks-directory-sheet__cell" data-column="person" role="cell">
                 <Avatar data={member.avatar} className="tasks-directory-avatar" />
                 <span className="workplace-team__name">{member.name}</span>
@@ -291,26 +242,20 @@ function TeamMembers({
 export default function TeamsPage(props: PageProps) {
   const { initial, csrfToken } = props,
     a = usePageActions(props),
-    directory = initial.type === 'teams',
-    d = initial.data as Directory,
-    t = initial.data as Detail;
+    directory = initial.type === 'teams';
+  const more = useLoadMorePage<Directory | Detail>(props, (value) => value.pagination?.next || '');
+  const d = more.data as Directory,
+    t = more.data as Detail;
   const data = directory ? d : t;
   function filter(key: string, value: string) {
     const url = new URL(initial.url, location.origin);
     url.searchParams.delete('page');
+    url.searchParams.delete('limit');
     if (value) url.searchParams.set(key, value);
     else url.searchParams.delete(key);
     void navigate(url.pathname + url.search);
   }
-  function remove(member: Member) {
-    window.showConfirmModal({
-      title: 'Usunąć osobę z zespołu?',
-      message: `${member.name} przestanie należeć do tego zespołu. Dostęp do Workspace i przestrzeni oraz przypisane zadania pozostaną bez zmian.`,
-      confirmText: 'Usuń z zespołu',
-      cancelText: 'Anuluj',
-      onConfirm: () => void a.act(member.remove_url, {}),
-    });
-  }
+
   const workUrl = (scope: string) => t.url + '?view=work&scope=' + scope;
   const filtered = directory
     ? !!d.query
@@ -321,178 +266,209 @@ export default function TeamsPage(props: PageProps) {
       data-react-screen={initial.type}
     >
       <section className="tasks-workspace" aria-busy={a.busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            {!directory ? (
-              <a className="tasks-issue-close" href={t.directory_url} aria-label="Wróć do zespołów">
-                <Icon name="arrow-left" />
-              </a>
-            ) : null}
-            <h1 className="tasks-topbar-title">{initial.title}</h1>
-          </div>
-          <div className="tasks-titlebar-actions">
-            {(directory ? !!d.create_url : t.can_manage) ? (
-              <button
-                type="button"
-                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                disabled={a.busy}
-                aria-haspopup="dialog"
-                onClick={() => void a.open(directory ? d.create_url : t.edit_url)}
-              >
-                <Icon name={directory ? 'plus' : 'pencil'} />
-                {directory ? 'Utwórz zespół' : 'Edytuj zespół'}
-              </button>
-            ) : null}
-            {!directory && t.can_manage ? (
-              <Dropdown
-                searchable={false}
-                label="Działania zespołu"
-                trigger={<Icon name="menu" />}
-                menuClass="documents-item-menu"
-              >
-                {(close) => (
-                  <div className="documents-menu-actions">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="tasks-project-menu-button"
-                      disabled={a.busy}
-                      onClick={() => {
-                        close();
-                        void a.open(t.delete_url);
-                      }}
-                    >
-                      <Icon name="trash-2" />
-                      Usuń zespół
-                    </button>
-                  </div>
-                )}
-              </Dropdown>
-            ) : null}
-          </div>
-        </header>
-        <nav
-          className="notifications-tabs work-tabs"
-          aria-label={directory ? 'Katalog zespołów' : 'Zespół'}
-        >
-          {data.tabs.map((tab) => (
-            <a
-              key={tab.key}
-              href={tab.url}
-              aria-current={tab.key === (directory ? d.tab : t.view) ? 'page' : undefined}
-            >
-              {tab.label}
-              {tab.count != null ? <span className="work-caption">{tab.count}</span> : null}
-            </a>
-          ))}
-        </nav>
+        <PageHeader
+          heading={
+            <>
+              {!directory ? (
+                <a
+                  className="tasks-issue-close"
+                  href={t.directory_url}
+                  aria-label="Wróć do zespołów"
+                >
+                  <Icon name="arrow-left" />
+                </a>
+              ) : null}
+              <h1 className="tasks-topbar-title">{initial.title}</h1>
+            </>
+          }
+          actions={
+            <>
+              {(directory ? !!d.create_url : t.can_manage) ? (
+                <button
+                  type="button"
+                  className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                  disabled={a.busy}
+                  aria-haspopup="dialog"
+                  onClick={() => void a.open(directory ? d.create_url : t.edit_url)}
+                >
+                  <Icon name={directory ? 'plus' : 'pencil'} />
+                  {directory ? 'Utwórz zespół' : 'Edytuj zespół'}
+                </button>
+              ) : null}
+            </>
+          }
+          navigation={
+            <PageTabs label={directory ? 'Katalog zespołów' : 'Zespół'}>
+              {data.tabs.map((tab) => (
+                <a
+                  key={tab.key}
+                  href={tab.url}
+                  aria-current={tab.key === (directory ? d.tab : t.view) ? 'page' : undefined}
+                >
+                  <Icon name={teamTabIcons[tab.key] || 'users'} />
+                  {tab.label}
+                  {tab.count != null ? (
+                    <span className="app-page-tab-count">{tab.count}</span>
+                  ) : null}
+                </a>
+              ))}
+            </PageTabs>
+          }
+        />
         {a.error ? (
           <p className="tasks-modal__errors" role="alert">
             {a.error}
           </p>
         ) : null}
-        <div className="work-content">
-          {directory || t.view !== 'overview' ? (
-            <form className="work-toolbar team-toolbar" method="get" action={data.url}>
-              <input
-                type="hidden"
-                name={directory ? 'tab' : 'view'}
-                value={directory ? d.tab : t.view}
-              />
-              <label className="tasks-search-field">
-                <Icon name="search" />
-                <input
-                  type="search"
-                  name="q"
-                  defaultValue={data.query}
-                  placeholder={
-                    directory
-                      ? 'Szukaj zespołu'
-                      : t.view === 'members'
-                        ? 'Szukaj osoby'
-                        : t.view === 'spaces'
-                          ? 'Szukaj przestrzeni'
-                          : 'Szukaj zadania lub klucza'
-                  }
-                  aria-label={
-                    directory
-                      ? 'Szukaj zespołu'
-                      : t.view === 'members'
-                        ? 'Szukaj osoby'
-                        : t.view === 'spaces'
-                          ? 'Szukaj przestrzeni'
-                          : 'Szukaj zadania lub klucza'
-                  }
-                />
-              </label>
-              {directory ? (
-                <Select
-                  hideLabel
-                  label="Sortowanie zespołów"
-                  name="sort"
-                  value={d.sort}
-                  options={sortOptions}
-                  onChange={(value) => filter('sort', value)}
-                />
-              ) : null}
-              {!directory && t.view === 'work' ? (
-                <>
-                  <Select
-                    hideLabel
-                    label="Zakres zadań"
-                    name="scope"
-                    value={t.scope}
-                    options={scopeOptions}
-                    onChange={(value) => filter('scope', value)}
-                  />
-                  <Select
-                    hideLabel
-                    label="Wykonawca"
-                    name="assignee"
-                    value={t.assignee_filter}
-                    options={
-                      /^\d+$/.test(t.assignee_filter)
-                        ? [...assigneeOptions, [t.assignee_filter, 'Wybrana osoba']]
-                        : assigneeOptions
+        {directory || t.view !== 'overview' ? (
+          <DirectoryToolbar
+            className="team-toolbar"
+            method="get"
+            action={data.url}
+            filters={
+              <>
+                {directory ? (
+                  <ToolbarSort
+                    label="Sortowanie zespołów"
+                    current={
+                      sortOptions.find(([value]) => value === d.sort)?.[1] || sortOptions[0][1]
                     }
-                    onChange={(value) => filter('assignee', value)}
-                  />
-                </>
-              ) : null}
-              {!directory && t.view === 'members' ? (
-                <Select
-                  hideLabel
-                  label="Rola w zespole"
-                  name="role"
-                  value={t.role_filter}
-                  options={roleOptions}
-                  onChange={(value) => filter('role', value)}
-                />
-              ) : null}
-              <button className="btn btn-secondary" type="submit">
-                Szukaj
-              </button>
-              {filtered ? (
-                <a
-                  className="btn btn-secondary"
-                  href={directory ? d.url + '?tab=' + d.tab : t.url + '?view=' + t.view}
-                >
-                  Wyczyść filtry
-                </a>
-              ) : null}
-              {!directory && t.can_manage && ['members', 'spaces'].includes(t.view) ? (
+                  >
+                    {(close) =>
+                      sortOptions.map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={d.sort === value}
+                          onClick={() => {
+                            filter('sort', value);
+                            close();
+                          }}
+                        >
+                          <Icon name="arrow-up-down" />
+                          <span>{label}</span>
+                        </button>
+                      ))
+                    }
+                  </ToolbarSort>
+                ) : null}
+                {!directory && ['work', 'members'].includes(t.view) ? (
+                  <ToolbarFilter
+                    label={
+                      t.view === 'work'
+                        ? 'Filtrowanie zadań zespołu'
+                        : 'Filtrowanie członków zespołu'
+                    }
+                    active={
+                      t.view === 'work'
+                        ? !!(t.scope !== 'all' || t.assignee_filter)
+                        : !!t.role_filter
+                    }
+                  >
+                    <header className="tasks-project-query-panel__header">
+                      <strong>{t.view === 'work' ? 'Filtry zadań' : 'Filtry członków'}</strong>
+                    </header>
+                    <div className="tasks-project-filter-detail__body">
+                      {t.view === 'work' ? (
+                        <>
+                          <Select
+                            label="Zakres zadań"
+                            name="scope"
+                            value={t.scope}
+                            options={scopeOptions}
+                            onChange={(value) => filter('scope', value)}
+                          />
+                          <Select
+                            label="Wykonawca"
+                            name="assignee"
+                            value={t.assignee_filter}
+                            options={
+                              /^\d+$/.test(t.assignee_filter)
+                                ? [...assigneeOptions, [t.assignee_filter, 'Wybrana osoba']]
+                                : assigneeOptions
+                            }
+                            onChange={(value) => filter('assignee', value)}
+                          />
+                        </>
+                      ) : (
+                        <Select
+                          label="Rola w zespole"
+                          name="role"
+                          value={t.role_filter}
+                          options={roleOptions}
+                          onChange={(value) => filter('role', value)}
+                        />
+                      )}
+                    </div>
+                  </ToolbarFilter>
+                ) : null}
+                {filtered ? (
+                  <a
+                    className="tasks-filter-button"
+                    href={directory ? d.url + '?tab=' + d.tab : t.url + '?view=' + t.view}
+                  >
+                    Wyczyść filtry
+                  </a>
+                ) : null}
+              </>
+            }
+            actions={
+              !directory && t.can_manage && ['members', 'spaces'].includes(t.view) ? (
                 <button
                   type="button"
-                  className="btn btn-primary team-toolbar-action"
+                  className="tasks-filter-button team-toolbar-action"
                   disabled={a.busy}
                   onClick={() => void a.open(t.view === 'members' ? t.member_url : t.edit_url)}
                 >
                   <Icon name="plus" />
                   {t.view === 'members' ? 'Dodaj osobę' : 'Powiąż przestrzenie'}
                 </button>
-              ) : null}
-            </form>
-          ) : null}
+              ) : null
+            }
+            search={
+              <>
+                <label className="tasks-search-field tasks-project-search">
+                  <Icon name="search" />
+                  <input
+                    type="search"
+                    name="q"
+                    defaultValue={data.query}
+                    placeholder={
+                      directory
+                        ? 'Szukaj zespołu'
+                        : t.view === 'members'
+                          ? 'Szukaj osoby'
+                          : t.view === 'spaces'
+                            ? 'Szukaj przestrzeni'
+                            : 'Szukaj zadania lub klucza'
+                    }
+                    aria-label={
+                      directory
+                        ? 'Szukaj zespołu'
+                        : t.view === 'members'
+                          ? 'Szukaj osoby'
+                          : t.view === 'spaces'
+                            ? 'Szukaj przestrzeni'
+                            : 'Szukaj zadania lub klucza'
+                    }
+                  />
+                </label>
+                <button className="tasks-filter-button" type="submit">
+                  Szukaj
+                </button>
+              </>
+            }
+          >
+            {directory ? <input type="hidden" name="sort" value={d.sort} /> : null}
+            <input
+              type="hidden"
+              name={directory ? 'tab' : 'view'}
+              value={directory ? d.tab : t.view}
+            />
+          </DirectoryToolbar>
+        ) : null}
+        <div className="work-content">
           {directory ? (
             <div className="work-directory">
               {d.teams.length ? (
@@ -652,7 +628,7 @@ export default function TeamsPage(props: PageProps) {
                     Członkostwo w zespole organizuje współpracę. Dostęp do przestrzeni i zadań jest
                     nadawany osobno.
                   </p>
-                  <TeamMembers members={t.members} busy={a.busy} open={a.open} remove={remove} />
+                  <TeamMembers members={t.members} />
                 </>
               ) : null}
               {t.view === 'spaces' ? (
@@ -686,13 +662,24 @@ export default function TeamsPage(props: PageProps) {
               ) : null}
             </>
           )}
+          {data.pagination ? (
+            <LoadMore
+              loaded={data.pagination.end}
+              total={data.pagination.count}
+              hasMore={!!data.pagination.next}
+              loading={more.loading}
+              error={more.error}
+              disabled={a.busy}
+              onLoad={() => void more.loadMore()}
+            />
+          ) : null}
         </div>
-        <Pagination data={directory ? d.pagination : t.pagination} />
       </section>
       {a.modal ? (
         <FormDialog
           key={a.modal.action}
           data={a.modal}
+          returnFocus={a.returnFocus}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={a.close}

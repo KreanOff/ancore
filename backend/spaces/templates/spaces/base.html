@@ -3,25 +3,27 @@
 {% block title %}{% block work_title %}Przestrzenie{% endblock %} | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261017-layout-parity">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261104-teams">
-<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261031-shared-access-editor">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261105-common-toolbar">
+<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261105-no-hamburger">
 <script src="{% static 'js/spaces.js' %}?v=20261101-task-header" defer></script>
 {% endblock %}
 {% block content %}
 <div class="tasks-page tasks-list-page work-page{% block work_page_class %}{% endblock %}" data-work-page>
     <section class="tasks-workspace">
         {% block work_header %}
-        <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-            <div class="tasks-titlebar-left">{% block work_heading %}<h1 class="tasks-topbar-title">Przestrzenie</h1>{% endblock %}</div>
-            <div class="tasks-titlebar-actions">{% block work_actions %}{% endblock %}</div>
+        <header class="app-page-header-group work-space-header">
+            <div class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory app-page-header">
+                <div class="tasks-titlebar-left">{% block work_heading %}<h1 class="tasks-topbar-title">Przestrzenie</h1>{% endblock %}</div>
+                <div class="tasks-titlebar-actions">{% block work_actions %}{% endblock %}</div>
+            </div>
+            {% block work_navigation %}{% endblock %}
         </header>
-        {% block work_navigation %}{% endblock %}
         {% endblock %}
         {% block work_toolbar %}{% endblock %}
-        <div class="work-content{% block work_content_class %}{% endblock %}">{% block work_content %}{% endblock %}</div>
-        {% block work_pagination %}{% include 'spaces/pagination.html' %}{% endblock %}
+        <div class="work-content{% block work_content_class %}{% endblock %}">{% block work_content %}{% endblock %}
+        {% block work_pagination %}{% include 'spaces/pagination.html' %}{% endblock %}</div>
     </section>
 </div>
 {% endblock %}

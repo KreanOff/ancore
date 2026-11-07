@@ -1,3 +1,8 @@
+import { Dropdown } from '../shared/Dropdown';
+import { DirectoryToolbar } from '../shared/DirectoryToolbar';
+import { LoadMore } from '../shared/LoadMore';
+import { useLoadMorePage } from '../shared/useLoadMorePage';
+import { PageHeader } from '../shared/PageHeader';
 import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { FormDialog } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
@@ -6,11 +11,9 @@ import { Select } from '../shared/Select';
 import { Resize, useTableWidths } from '../shared/table';
 import { type PageProps, navigate } from '../shared/page';
 import { usePageActions } from '../shared/usePageActions';
-import { DashboardActions, confirmDelete } from './Actions';
 import type { DirectoryData } from './types';
 const columns = [
   { key: 'select', label: 'Zaznaczenie', width: 40, icon: '' },
-  { key: 'menu', label: 'Działania', width: 40, icon: '' },
   { key: 'name', label: 'Pulpit', width: 320, icon: 'layout-dashboard' },
   { key: 'leader', label: 'Twórca', width: 220, icon: 'user-round' },
   { key: 'visibility', label: 'Widoczność', width: 190, icon: 'lock' },
@@ -18,8 +21,11 @@ const columns = [
   { key: 'description', label: 'Opis', width: 320, icon: 'align-left' },
 ];
 export default function DirectoryPage(props: PageProps) {
-  const { initial, csrfToken } = props,
-    data = initial.data as DirectoryData;
+  const { initial, csrfToken } = props;
+  const { data, loading, error, loadMore } = useLoadMorePage<DirectoryData>(
+    props,
+    (current) => current.pagination.next,
+  );
   const actions = usePageActions(props, data.modal);
   const [selected, setSelected] = useState<Set<number>>(new Set()),
     [visibility, setVisibility] = useState(data.visibility);
@@ -49,42 +55,68 @@ export default function DirectoryPage(props: PageProps) {
       className="tasks-page tasks-list-page work-page pulpits-directory-page"
       data-react-screen="pulpit-directory"
     >
-      <section className="tasks-workspace" aria-busy={actions.busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            <h1 className="tasks-topbar-title">{initial.title}</h1>
-          </div>
-          <div className="tasks-titlebar-actions">
-            <button
-              className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={actions.busy || !data.create_url}
-              onClick={() => void actions.open(data.create_url)}
-            >
-              <Icon name="plus" />
-              <span>Utwórz pulpit</span>
-            </button>
-          </div>
-        </header>
-        <form
-          className="tasks-filterbar tasks-filterbar--directory work-item-toolbar"
+      <section className="tasks-workspace" aria-busy={actions.busy || loading}>
+        <PageHeader
+          heading={
+            <>
+              <h1 className="tasks-topbar-title">{initial.title}</h1>
+            </>
+          }
+          actions={
+            <>
+              <button
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                disabled={actions.busy || !data.create_url}
+                onClick={() => void actions.open(data.create_url)}
+              >
+                <Icon name="plus" />
+                <span>Utwórz pulpit</span>
+              </button>
+            </>
+          }
+        />
+        <DirectoryToolbar
           action={data.base_url}
           onSubmit={search}
-        >
-          <div className="tasks-filterbar-left">
-            <Select
-              name="visibility"
-              hideLabel
-              label="Widoczność pulpitu"
-              options={[['', 'Każda widoczność'], ...data.visibility_choices]}
-              value={visibility}
-              onChange={setVisibility}
-            />
-            <button className="tasks-filter-button" type="submit">
-              <Icon name="filter" />
-              <span>Filtruj</span>
-            </button>
-          </div>
-          <div className="tasks-filterbar-right">
+          filters={
+            <Dropdown
+              label="Filtrowanie pulpitów"
+              layer={false}
+              role="dialog"
+              className="tasks-project-filter-builder"
+              menuClass="tasks-project-query-panel"
+              triggerClassName={`tasks-filter-button tasks-project-query-trigger${data.visibility ? ' is-active' : ''}`}
+              trigger={
+                <>
+                  <Icon name="list-filter" />
+                  <span>Filtruj</span>
+                  <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+                </>
+              }
+            >
+              {(close) => (
+                <>
+                  <header className="tasks-project-query-panel__header">
+                    <strong>Filtry pulpitów</strong>
+                  </header>
+                  <div className="tasks-project-filter-detail__body">
+                    <Select
+                      name="visibility"
+                      label="Widoczność pulpitu"
+                      options={[['', 'Każda widoczność'], ...data.visibility_choices]}
+                      value={visibility}
+                      onChange={setVisibility}
+                    />
+                    <button className="tasks-filter-button" type="submit" onClick={close}>
+                      <Icon name="list-filter" />
+                      <span>Filtruj</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </Dropdown>
+          }
+          search={
             <label className="tasks-search-field tasks-project-search">
               <Icon name="search" />
               <input
@@ -95,55 +127,8 @@ export default function DirectoryPage(props: PageProps) {
                 aria-label="Szukaj pulpitu"
               />
             </label>
-            <nav
-              className="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar"
-              aria-label="Strony pulpitów"
-            >
-              {page.previous ? (
-                <a
-                  className="tasks-project-pagination__button"
-                  href={page.previous}
-                  aria-label="Poprzednia strona"
-                >
-                  <Icon name="chevron-left" />
-                </a>
-              ) : (
-                <button
-                  className="tasks-project-pagination__button"
-                  type="button"
-                  disabled
-                  aria-label="Poprzednia strona"
-                >
-                  <Icon name="chevron-left" />
-                </button>
-              )}
-              <span
-                className="tasks-project-pagination__summary tasks-project-pagination__summary--compact"
-                aria-live="polite"
-              >
-                {page.start}–{page.end} z {page.count}
-              </span>
-              {page.next ? (
-                <a
-                  className="tasks-project-pagination__button"
-                  href={page.next}
-                  aria-label="Następna strona"
-                >
-                  <Icon name="chevron-right" />
-                </a>
-              ) : (
-                <button
-                  className="tasks-project-pagination__button"
-                  type="button"
-                  disabled
-                  aria-label="Następna strona"
-                >
-                  <Icon name="chevron-right" />
-                </button>
-              )}
-            </nav>
-          </div>
-        </form>
+          }
+        />
         {actions.error ? (
           <div className="tasks-modal__errors pulpit-page-error" role="alert">
             {actions.error}
@@ -151,12 +136,12 @@ export default function DirectoryPage(props: PageProps) {
         ) : null}
         <div className="work-content work-content--directory">
           <div
-            className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet"
+            className="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet pulpit-directory-sheet"
             style={sizing.style}
           >
             {data.results.length ? (
               <section className="tasks-directory-group" role="table" aria-label="Lista pulpitów">
-                <div className="tasks-directory-header" role="row">
+                <div className="app-table-header tasks-directory-header" role="row">
                   {columns.map((column, index) => (
                     <span
                       key={column.key}
@@ -169,7 +154,7 @@ export default function DirectoryPage(props: PageProps) {
                           ref={all}
                           className="tasks-row-checkbox"
                           type="checkbox"
-                          aria-label="Zaznacz wszystkie pulpity na tej stronie"
+                          aria-label="Zaznacz wszystkie pulpity w widocznej liście"
                           checked={selected.size === data.results.length}
                           onChange={(event) =>
                             setSelected(
@@ -179,8 +164,6 @@ export default function DirectoryPage(props: PageProps) {
                             )
                           }
                         />
-                      ) : index === 1 ? (
-                        <span className="u-sr-only">Działania</span>
                       ) : (
                         <>
                           {column.label.toLocaleUpperCase('pl')}
@@ -198,7 +181,7 @@ export default function DirectoryPage(props: PageProps) {
                 <div className="tasks-issue-list tasks-directory-list" role="rowgroup">
                   {data.results.map((item) => (
                     <article
-                      className={`tasks-issue-row tasks-directory-row pulpit-directory-row ${selected.has(item.id) ? 'checked' : ''}`}
+                      className={`tasks-issue-row app-table-row tasks-directory-row pulpit-directory-row ${selected.has(item.id) ? 'checked' : ''}`}
                       role="row"
                       key={item.id}
                     >
@@ -222,23 +205,7 @@ export default function DirectoryPage(props: PageProps) {
                           }
                         />
                       </span>
-                      <span className="tasks-directory-sheet__cell" data-column="menu" role="cell">
-                        <DashboardActions
-                          item={item}
-                          directory
-                          busy={actions.busy}
-                          favorite={() =>
-                            void actions.act(item.favorite_url, { next: data.list_url })
-                          }
-                          remove={() =>
-                            confirmDelete(
-                              'Usuń pulpit',
-                              item.name,
-                              () => void actions.act(item.delete_url, {}),
-                            )
-                          }
-                        />
-                      </span>
+
                       <span
                         className="tasks-directory-sheet__cell tasks-directory-name"
                         data-column="name"
@@ -311,12 +278,22 @@ export default function DirectoryPage(props: PageProps) {
                 </div>
               </div>
             )}
+            <LoadMore
+              loaded={data.results.length}
+              total={page.count}
+              hasMore={!!page.next}
+              loading={loading}
+              error={error}
+              disabled={actions.busy}
+              onLoad={loadMore}
+            />
           </div>
         </div>
       </section>
       {actions.modal ? (
         <FormDialog
           data={actions.modal}
+          returnFocus={actions.returnFocus}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={actions.close}

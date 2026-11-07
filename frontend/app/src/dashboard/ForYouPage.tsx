@@ -1,3 +1,8 @@
+import { LoadMore } from '../shared/LoadMore';
+import { useLoadMorePage } from '../shared/useLoadMorePage';
+import type { PaginationData } from '../shared/Pagination';
+import { PageTabs } from '../shared/PageTabs';
+import { PageHeader } from '../shared/PageHeader';
 import { issueTypeBadgeStyle } from '../shared/issue-type-color';
 import { EmptyState } from '../shared/EmptyState';
 import { useLayoutEffect, useRef, useState } from 'react';
@@ -59,6 +64,7 @@ interface Data {
   clear_url: string;
   previous: string;
   next: string;
+  pagination: PaginationData | null;
 }
 export function ForYouTaskRow({ row, selectable = false }: { row: Row; selectable?: boolean }) {
   const task = row.task!;
@@ -137,11 +143,11 @@ export function ForYouTaskRow({ row, selectable = false }: { row: Row; selectabl
 function SpaceRows({ spaces }: { spaces: Space[] }) {
   return (
     <div
-      className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet work-space-sheet--compact work-space-sheet--unselectable work-space-sheet--no-actions for-you-space-sheet"
+      className="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet work-space-sheet--compact work-space-sheet--unselectable work-space-sheet--no-actions for-you-space-sheet"
       data-directory-resize="false"
     >
       <section className="tasks-directory-group" role="table" aria-label="Lista przestrzeni">
-        <div className="tasks-directory-header" role="row">
+        <div className="app-table-header tasks-directory-header" role="row">
           {[
             ['name', 'PRZESTRZEŃ', 'layers'],
             ['key', 'KLUCZ', 'hash'],
@@ -161,7 +167,7 @@ function SpaceRows({ spaces }: { spaces: Space[] }) {
         <div className="tasks-issue-list tasks-directory-list" role="rowgroup">
           {spaces.map((space) => (
             <article
-              className="tasks-issue-row tasks-directory-row work-space-row"
+              className="tasks-issue-row app-table-row tasks-directory-row work-space-row"
               role="row"
               key={space.id}
             >
@@ -193,8 +199,9 @@ function SpaceRows({ spaces }: { spaces: Space[] }) {
     </div>
   );
 }
-export default function ForYouPage({ initial }: PageProps) {
-  const data = initial.data as Data;
+export default function ForYouPage(props: PageProps) {
+  const more = useLoadMorePage<Data>(props, (value) => value.pagination?.next || '');
+  const { data } = more;
   const tabs = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const nav = tabs.current!,
@@ -216,11 +223,7 @@ export default function ForYouPage({ initial }: PageProps) {
       className={`dashboard-page dashboard-overview for-you-page ${!data.projects.length && !data.groups.length ? 'for-you-page--empty' : ''}`}
       data-react-screen="for-you"
     >
-      <header className="tasks-topbar tasks-topbar--project-directory">
-        <div className="tasks-titlebar-left">
-          <h1 className="tasks-topbar-title">Dla ciebie</h1>
-        </div>
-      </header>
+      <PageHeader heading={<h1 className="tasks-topbar-title">Dla ciebie</h1>} />
       <div className="dashboard-main">
         <section aria-labelledby="for-you-projects-title">
           <div className="for-you-section-heading">
@@ -258,11 +261,7 @@ export default function ForYouPage({ initial }: PageProps) {
           )}
         </section>
         <section className="dashboard-panel for-you-work-panel" aria-label="Twoja praca">
-          <nav
-            ref={tabs}
-            className="notifications-tabs work-tabs for-you-tabs"
-            aria-label="Widok dla ciebie"
-          >
+          <PageTabs ref={tabs} className="for-you-tabs" label="Widok dla ciebie">
             {data.tabs.map((tab) => (
               <a
                 key={tab.key}
@@ -276,7 +275,7 @@ export default function ForYouPage({ initial }: PageProps) {
                 ) : null}
               </a>
             ))}
-          </nav>
+          </PageTabs>
           <div className="for-you-task-list">
             {data.groups.length ? (
               data.groups.map((block, index) => (
@@ -288,9 +287,9 @@ export default function ForYouPage({ initial }: PageProps) {
                   ) : null}
                   {block.task_groups.length ? (
                     <div className="tasks-table-wrap tasks-board for-you-status-groups">
-                      {block.task_groups.map((group, index) => (
+                      {block.task_groups.map((group) => (
                         <StatusGroup
-                          key={index}
+                          key={`${group.category}:${group.label}`}
                           category={group.category}
                           label={group.label}
                           count={group.items.length}
@@ -347,30 +346,17 @@ export default function ForYouPage({ initial }: PageProps) {
                 }
               />
             )}
+            {data.pagination ? (
+              <LoadMore
+                loaded={data.pagination.end}
+                total={data.pagination.count}
+                hasMore={!!data.pagination.next}
+                loading={more.loading}
+                error={more.error}
+                onLoad={() => void more.loadMore()}
+              />
+            ) : null}
           </div>
-          {data.previous || data.next ? (
-            <nav
-              className="dashboard-overview-list-footer for-you-pagination"
-              aria-label="Paginacja twojej pracy"
-            >
-              <div>
-                {data.previous ? (
-                  <a
-                    className="tasks-filter-button"
-                    href={data.previous}
-                    aria-label="Poprzednia strona"
-                  >
-                    <Icon name="chevron-left" />
-                  </a>
-                ) : null}
-                {data.next ? (
-                  <a className="tasks-filter-button" href={data.next} aria-label="Następna strona">
-                    <Icon name="chevron-right" />
-                  </a>
-                ) : null}
-              </div>
-            </nav>
-          ) : null}
         </section>
       </div>
     </div>

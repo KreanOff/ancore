@@ -302,14 +302,16 @@ class TagWindowTests(TestCase):
 
     def test_completed_small_and_empty_results_have_correct_footer(self):
         response = self.client.get(self.url(tags_limit=999))
-        self.assertContains(response, 'Wszystkie tagi <span class="work-list-more__count">(65 / 65)</span>', html=False)
+        self.assertContains(response, 'Wszystkie wyniki <span class="work-list-more__count">(65 / 65)</span>', html=False)
         self.assertNotContains(response, 'Pokaż więcej: Tagi')
         for query, expected_count in (('Wydanie 00', 1), ('Brak wyników', 0)):
             with self.subTest(query=query):
                 data = self.page(q=query, tags_limit=999)
                 self.assertEqual(data['window'], {'total_tags': expected_count, 'loaded_count': expected_count, 'more_url': ''})
                 response = self.client.get(self.url(q=query, tags_limit=999))
-                self.assertNotContains(response, 'work-list-more')
+                # The global notification dialog has its own hidden load-more button.
+                self.assertNotRegex(response.content.decode(),
+                                    r'<(?:a|button)\b(?=[^>]*class="[^"]*\bwork-list-more\b)(?![^>]*data-notification-more)[^>]*>')
         self.assertContains(response, 'Nie znaleziono tagów.')
 
     def test_more_rechecks_space_access_and_workspace_scope(self):

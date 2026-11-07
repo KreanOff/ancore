@@ -1,6 +1,5 @@
 import { useRef, useState, useLayoutEffect } from 'react';
 import { Avatar, type AvatarData } from './Avatar';
-import { Dropdown } from './Dropdown';
 import { Icon } from './Icon';
 import { dateLabel } from '../spaces/types';
 export interface MemberRow {
@@ -16,25 +15,15 @@ export interface MemberRow {
 }
 export function Members({
   members,
-  isOwner,
-  canEditRoles = isOwner,
   busy,
-  onRole,
-  onRemove,
   selection,
-  rowActions = true,
 }: {
   members: MemberRow[];
-  isOwner: boolean;
-  canEditRoles?: boolean;
   busy: boolean;
-  onRole?: (member: MemberRow) => void;
-  onRemove?: (member: MemberRow) => void;
   selection?: {
     selected: Set<number | string>;
     onChange: (next: Set<number | string>) => void;
   };
-  rowActions?: boolean;
 }) {
   const [localSelected, setLocalSelected] = useState<Set<number | string>>(() => new Set()),
     all = useRef<HTMLInputElement>(null);
@@ -57,7 +46,7 @@ export function Members({
   }, [selectedCount, members.length]);
   return (
     <div
-      className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet${rowActions ? '' : ' workplace-members-sheet--toolbar'}`}
+      className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet workplace-members-sheet app-data-table workplace-members-sheet--toolbar"
       tabIndex={0}
       role="region"
       aria-label="Członkowie — tabela"
@@ -71,7 +60,7 @@ export function Members({
     >
       <section className="tasks-directory-group" role="table" aria-label="Członkowie zespołu">
         <div
-          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
+          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header"
           role="row"
         >
           <span
@@ -93,14 +82,7 @@ export function Members({
               }
             />
           </span>
-          {rowActions ? (
-            <span
-              className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-              data-column="action"
-              role="columnheader"
-              aria-label="Działania"
-            />
-          ) : null}
+
           {[
             ['person', 'Nazwa', 'users'],
             ['email', 'E-mail', 'mail'],
@@ -121,7 +103,7 @@ export function Members({
         <div className="tasks-issue-list tasks-directory-list" role="rowgroup">
           {members.map((member) => (
             <div
-              className={`tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ${selected.has(member.id) ? 'checked' : ''}`}
+              className={`tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row ${selected.has(member.id) ? 'checked' : ''}`}
               role="row"
               key={member.id}
             >
@@ -139,57 +121,7 @@ export function Members({
                   setSelected(next);
                 }}
               />
-              {rowActions ? (
-                <div
-                  className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                  data-column="action"
-                  role="cell"
-                >
-                  {member.can_change && (onRole || onRemove) ? (
-                    <Dropdown
-                      searchable={false}
-                      label={`Działania: ${member.name}`}
-                      menuClass="documents-item-menu"
-                      trigger={<Icon name="menu" />}
-                    >
-                      {(close) => (
-                        <div className="documents-menu-actions">
-                          {canEditRoles && onRole ? (
-                            <button
-                              type="button"
-                              role="menuitem"
-                              className="tasks-project-menu-button"
-                              disabled={busy}
-                              onClick={() => {
-                                close();
-                                onRole(member);
-                              }}
-                            >
-                              <Icon name="pencil" />
-                              <span>Zmień rolę</span>
-                            </button>
-                          ) : null}
-                          {onRemove ? (
-                            <button
-                              type="button"
-                              role="menuitem"
-                              className="tasks-project-menu-button"
-                              disabled={busy}
-                              onClick={() => {
-                                close();
-                                onRemove(member);
-                              }}
-                            >
-                              <Icon name="log-out" />
-                              <span>Odbierz dostęp</span>
-                            </button>
-                          ) : null}
-                        </div>
-                      )}
-                    </Dropdown>
-                  ) : null}
-                </div>
-              ) : null}
+
               <div
                 className="tasks-directory-sheet__cell tasks-project-sheet__cell"
                 data-column="person"

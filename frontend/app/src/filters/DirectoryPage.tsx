@@ -1,8 +1,11 @@
+import { LoadMore } from '../shared/LoadMore';
+import { useLoadMorePage } from '../shared/useLoadMorePage';
+import { PageTabs } from '../shared/PageTabs';
+import { PageHeader } from '../shared/PageHeader';
+import { DirectoryToolbar } from '../shared/DirectoryToolbar';
 import type { FormEvent } from 'react';
 import { FormDialog } from '../forms/FormDialog';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
-import { Pagination } from '../shared/Pagination';
 import { type PageProps, navigate } from '../shared/page';
 import { Resize, useTableWidths } from '../shared/table';
 import { usePageActions } from '../shared/usePageActions';
@@ -10,16 +13,16 @@ import type { DirectoryData, SavedFilter } from './types';
 
 const columns = [
   { key: 'select', label: 'Ulubione', width: 40 },
-  { key: 'menu', label: 'Działania', width: 40 },
   { key: 'name', label: 'Filtr', width: 320 },
   { key: 'leader', label: 'Twórca', width: 220 },
   { key: 'visibility', label: 'Widoczność', width: 190 },
   { key: 'description', label: 'Opis', width: 320 },
 ];
-const icons = ['', '', 'filter', 'user-round', 'lock', 'align-left'];
+const icons = ['', 'filter', 'user-round', 'lock', 'align-left'];
 export default function DirectoryPage(props: PageProps) {
-  const { initial, csrfToken } = props,
-    data = initial.data as DirectoryData;
+  const { initial, csrfToken } = props;
+  const more = useLoadMorePage<DirectoryData>(props, (value) => value.pagination.next);
+  const { data } = more;
   const actions = usePageActions(props, data.modal);
   const sizing = useTableWidths(columns, 'task-filters-directory');
   function search(event: FormEvent<HTMLFormElement>) {
@@ -38,16 +41,7 @@ export default function DirectoryPage(props: PageProps) {
   function star(item: SavedFilter) {
     void actions.act(item.favorite_url, { return_to: data.list_url });
   }
-  function remove(item: SavedFilter) {
-    window.showConfirmModal({
-      title: 'Usuń filtr',
-      message: window.escapeHtmlForModal(`Usunąć „${item.name}”?`),
-      confirmText: 'Usuń',
-      cancelText: 'Anuluj',
-      confirmClass: 'btn-danger',
-      onConfirm: () => void actions.act(item.delete_url, { return_to: data.list_url }),
-    });
-  }
+
   const filtered = !!data.query;
   return (
     <div
@@ -55,60 +49,59 @@ export default function DirectoryPage(props: PageProps) {
       data-react-screen="filter-directory"
     >
       <section className="tasks-workspace" aria-busy={actions.busy}>
-        <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-          <div className="tasks-titlebar-left">
-            <h1 className="tasks-topbar-title">{initial.title}</h1>
-          </div>
-          <div className="tasks-titlebar-actions">
+        <PageHeader
+          heading={<h1 className="tasks-topbar-title">{initial.title}</h1>}
+          actions={
             <a className="tasks-filter-button" href={data.search_url}>
               <Icon name="plus" />
               Nowe wyszukiwanie
             </a>
-          </div>
-        </header>
-        <nav className="notifications-tabs work-tabs" aria-label="Katalog filtrów">
-          {[
-            ['favorites', 'Ulubione'],
-            ['mine', 'Moje filtry'],
-            ['shared', 'Udostępnione mi'],
-            ['all', 'Wszystkie filtry'],
-          ].map(([key, label]) => (
-            <a
-              key={key}
-              href={`${data.filters_url}?tab=${key}`}
-              className={data.tab === key ? 'is-active' : ''}
-              aria-current={data.tab === key ? 'page' : undefined}
-            >
-              {key === 'favorites' ? <Icon name="star" /> : null}
-              {label}
-            </a>
-          ))}
-        </nav>
-        <form
-          className="tasks-filterbar tasks-filterbar--directory work-item-toolbar"
+          }
+          navigation={
+            <PageTabs label="Katalog filtrów">
+              {[
+                ['favorites', 'Ulubione', 'star'],
+                ['mine', 'Moje filtry', 'filter'],
+                ['shared', 'Udostępnione mi', 'users'],
+                ['all', 'Wszystkie filtry', 'list-filter'],
+              ].map(([key, label, icon]) => (
+                <a
+                  key={key}
+                  href={`${data.filters_url}?tab=${key}`}
+                  className={data.tab === key ? 'is-active' : ''}
+                  aria-current={data.tab === key ? 'page' : undefined}
+                >
+                  <Icon name={icon} />
+                  {label}
+                </a>
+              ))}
+            </PageTabs>
+          }
+        />
+        <DirectoryToolbar
           action={data.filters_url}
           onSubmit={search}
+          filters={<span>Wyszukaj zapisany filtr</span>}
+          search={
+            <>
+              <label className="tasks-search-field tasks-project-search">
+                <Icon name="search" />
+                <input
+                  type="search"
+                  name="q"
+                  defaultValue={data.query}
+                  placeholder="Szukaj filtrów"
+                  aria-label="Szukaj filtrów"
+                />
+              </label>
+              <button className="tasks-filter-button" type="submit">
+                Szukaj
+              </button>
+            </>
+          }
         >
-          <div className="tasks-filterbar-left">
-            <input type="hidden" name="tab" value={data.tab} />
-            <span>Wyszukaj zapisany filtr</span>
-          </div>
-          <div className="tasks-filterbar-right">
-            <label className="tasks-search-field tasks-project-search">
-              <Icon name="search" />
-              <input
-                type="search"
-                name="q"
-                defaultValue={data.query}
-                placeholder="Szukaj filtrów"
-                aria-label="Szukaj filtrów"
-              />
-            </label>
-            <button className="tasks-filter-button" type="submit">
-              Szukaj
-            </button>
-          </div>
-        </form>
+          <input type="hidden" name="tab" value={data.tab} />
+        </DirectoryToolbar>
         {actions.error ? (
           <div className="tasks-modal__errors task-filter-query-error" role="alert">
             {actions.error}
@@ -116,12 +109,12 @@ export default function DirectoryPage(props: PageProps) {
         ) : null}
         <div className="work-content work-content--directory">
           <div
-            className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet task-filter-directory"
+            className="tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-directory-menu-sheet tasks-spreadsheet-sheet work-space-sheet task-filter-directory"
             style={sizing.style}
           >
             {data.results.length ? (
               <section className="tasks-directory-group" role="table" aria-label="Lista filtrów">
-                <div className="tasks-directory-header" role="row">
+                <div className="app-table-header tasks-directory-header" role="row">
                   {columns.map((column, index) => (
                     <span
                       key={column.key}
@@ -134,8 +127,6 @@ export default function DirectoryPage(props: PageProps) {
                           <Icon name="star" />
                           <span className="u-sr-only">Ulubione</span>
                         </>
-                      ) : index === 1 ? (
-                        <span className="u-sr-only">Działania</span>
                       ) : (
                         <>
                           {column.label.toLocaleUpperCase('pl')}
@@ -154,7 +145,7 @@ export default function DirectoryPage(props: PageProps) {
                   {data.results.map((item) => (
                     <article
                       key={item.id}
-                      className="tasks-issue-row tasks-directory-row"
+                      className="tasks-issue-row app-table-row tasks-directory-row"
                       role="row"
                     >
                       <span
@@ -172,58 +163,7 @@ export default function DirectoryPage(props: PageProps) {
                           <Icon name={item.favorite ? 'star-filled' : 'star'} />
                         </button>
                       </span>
-                      <div className="tasks-directory-sheet__cell" role="cell" data-column="menu">
-                        <Dropdown
-                          label={`Działania filtra ${item.name}`}
-                          className="tasks-row-actions"
-                          triggerClassName="tasks-project-sheet__edit-button"
-                          menuClass="tasks-project-menu"
-                          trigger={<Icon name="menu" />}
-                        >
-                          {(close) => (
-                            <div>
-                              <a className="tasks-project-menu-button" href={item.url}>
-                                <Icon name="search" />
-                                Otwórz filtr
-                              </a>
 
-                              {item.editable ? (
-                                <button
-                                  className="tasks-project-menu-button"
-                                  disabled={actions.busy}
-                                  onClick={() => {
-                                    close();
-                                    void actions.open(item.edit_url);
-                                  }}
-                                >
-                                  <Icon name="pencil" />
-                                  Edytuj filtr i dostępy
-                                </button>
-                              ) : null}
-                              <a
-                                className="tasks-project-menu-button"
-                                href={`${data.search_url}?jql=${encodeURIComponent(item.query)}&mode=advanced`}
-                              >
-                                <Icon name="copy" />
-                                Użyj w nowym wyszukiwaniu
-                              </a>
-                              {item.deletable ? (
-                                <button
-                                  className="tasks-project-menu-button tasks-project-menu-button--danger"
-                                  disabled={actions.busy}
-                                  onClick={() => {
-                                    close();
-                                    remove(item);
-                                  }}
-                                >
-                                  <Icon name="trash-2" />
-                                  Usuń filtr
-                                </button>
-                              ) : null}
-                            </div>
-                          )}
-                        </Dropdown>
-                      </div>
                       <span
                         className="tasks-directory-sheet__cell tasks-directory-name"
                         role="cell"
@@ -286,18 +226,29 @@ export default function DirectoryPage(props: PageProps) {
                 </div>
               </div>
             )}
+            {data.pagination ? (
+              <LoadMore
+                loaded={data.pagination.end}
+                total={data.pagination.count}
+                hasMore={!!data.pagination.next}
+                loading={more.loading}
+                error={more.error}
+                disabled={actions.busy}
+                onLoad={() => void more.loadMore()}
+              />
+            ) : null}
           </div>
         </div>
-        <Pagination data={data.pagination} />
       </section>
       {actions.modal ? (
         <FormDialog
           data={actions.modal}
+          returnFocus={actions.returnFocus}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={actions.close}
           onSaved={(url) =>
-            navigate(actions.modal?.filter_settings === 'edit' && !data.modal ? initial.url : url)
+            navigate(actions.modal?.filter_settings === 'edit' && !data.modal ? data.list_url : url)
           }
         />
       ) : null}

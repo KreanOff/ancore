@@ -19,12 +19,14 @@ export default function SchemaDialog({
   csrfToken,
   onClose,
   onSaved,
+  returnFocus,
 }: {
   dialog: DialogData;
   api: string;
   csrfToken: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
+  returnFocus?: HTMLElement | null;
 }) {
   const [schema, setSchema] = useState(() => ({
       ...dialog.schema,
@@ -152,7 +154,14 @@ export default function SchemaDialog({
     }
   }
   return (
-    <Modal title={dialog.title} dirty={dirty} pending={pending} onClose={onClose}>
+    <Modal
+      title={dialog.title}
+      size={schema.compact ? 'compact' : 'panel'}
+      returnFocus={returnFocus}
+      dirty={dirty}
+      pending={pending}
+      onClose={onClose}
+    >
       <form
         ref={form}
         className="tasks-modal__form"

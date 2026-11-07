@@ -8,15 +8,19 @@
         <button type="button" data-notification-filter="following" aria-pressed="{% if notification_filters.view == 'following' %}true{% else %}false{% endif %}">Obserwowane</button>
         <button type="button" data-notification-filter="archived" aria-pressed="{% if notification_filters.view == 'archived' %}true{% else %}false{% endif %}">Archiwum</button>
     </div>
-    <div class="notifications-toolbar">
+    <div class="notifications-toolbar tasks-filterbar tasks-filterbar--directory app-toolbar app-toolbar--embedded">
+        <div class="tasks-filterbar-left app-toolbar__controls">
         <select class="form-select" aria-label="Workspace powiadomień" data-notification-workspace>
             <option value="">Wszystkie Workspace</option>
             {% for workplace in available_workplaces %}<option value="{{ workplace.pk }}" data-ancore-option-preview="notification-workspace-{{ workplace.pk }}"{% if notification_filters.workspace == workplace.pk|stringformat:'s' %} selected{% endif %}>{{ workplace.name }}</option>{% endfor %}
         </select>
         {% for workplace in available_workplaces %}{% workplace_avatar workplace as workplace_logo %}<template id="notification-workspace-{{ workplace.pk }}"><span class="profile-avatar space-avatar{% if workplace_logo.photo_url %} has-photo{% else %} space-avatar-art {{ workplace_logo.preset_class }}{% endif %}" aria-hidden="true">{% if workplace_logo.photo_url %}<img src="{{ workplace_logo.photo_url }}" alt="">{% endif %}</span></template>{% endfor %}
-        <button type="button" class="btn btn-secondary btn-sm" data-notification-read-all{% if not filtered_unread_count %} disabled{% endif %} title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze"><i data-icon="check" aria-hidden="true"></i><span>Oznacz wszystkie jako przeczytane</span></button>
+        </div>
+        <div class="app-toolbar__actions">
+        <button type="button" class="btn btn-secondary btn-sm tasks-filter-button" data-notification-read-all{% if not filtered_unread_count %} disabled{% endif %} title="Oznacz wszystkie powiadomienia z wybranego filtra jako przeczytane, również starsze"><i data-icon="check" aria-hidden="true"></i><span>Oznacz wszystkie jako przeczytane</span></button>
         <button type="button" class="tasks-icon-button" data-notification-delete-all disabled title="Usuń wszystkie powiadomienia z wybranego filtra" aria-label="Usuń wszystkie powiadomienia z wybranego filtra"><i data-icon="trash-2" aria-hidden="true"></i></button>
         <button type="button" class="tasks-icon-button" data-notification-refresh title="Odśwież powiadomienia" aria-label="Odśwież powiadomienia"><i data-icon="refresh-cw" aria-hidden="true"></i></button>
+        </div>
     </div>
 </div>
 <button type="button" class="notifications-new-items" data-notification-new-items hidden>Są nowe powiadomienia — pokaż</button>

@@ -78,7 +78,8 @@ export function BlockDialog({
   return (
     <Modal
       title={`Blokada zadania ${item.key}`}
-      className="work-modal work-block-dialog app-modal-panel--compact"
+      size="compact"
+      className="work-modal work-block-dialog"
       pending={busy || committed}
       dirty={!committed && (reason !== initialReason || responsible !== initialResponsible)}
       onClose={onClose}

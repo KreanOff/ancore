@@ -2,8 +2,8 @@
 {% block title %}Gadżety i układ — {{ dashboard.name }} | ancore{% endblock %}
 {% block content %}
 <div class="dashboard-page dashboard-overview pulpits-page pulpit-editor-page" data-pulpits-page data-pulpit-list-url="{{ editor_url }}" data-pulpit-arrange-url="{{ arrange_url }}" data-pulpit-revision="{{ dashboard.revision }}" data-pulpit-quick-add-url="{{ quick_add_url }}" data-pulpit-count="{{ gadget_count }}" data-pulpit-max="{{ max_gadgets }}">
-    <header class="tasks-topbar tasks-topbar--project-directory pulpit-topbar">
-        <div class="tasks-titlebar-left">{% include 'core/emoji.html' with emoji=dashboard.icon_emoji art=dashboard.icon_emoji_art class_name="nav-icon" only %}<h1 class="tasks-topbar-title" title="{{ dashboard.name }}">{{ dashboard.name }}</h1></div>
+    <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory app-page-header pulpit-topbar">
+        <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title" title="{{ dashboard.name }}">{{ dashboard.name }}</h1></div>
         <div class="tasks-titlebar-actions">
             <a href="{{ add_gadget_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" data-pulpit-open><i data-icon="plus" aria-hidden="true"></i><span>Dodaj gadżet</span></a>
             <a href="{{ dashboard.url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--secondary" aria-label="Anuluj — wróć do pulpitu">Anuluj</a>

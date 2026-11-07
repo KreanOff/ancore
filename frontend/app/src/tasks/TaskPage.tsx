@@ -1,9 +1,12 @@
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { LoadMore } from '../shared/LoadMore';
+import { PageHeader } from '../shared/PageHeader';
+import { PageTabs } from '../shared/PageTabs';
 import { statusColorStyle } from '../shared/status-color';
 import { setPageLocation } from '../shared/page';
 import { useEffect, useRef, useState } from 'react';
 import { FieldControl, FormDialog, type Field, type FormDialogData } from '../forms/FormDialog';
 import { Avatar } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { Members } from '../shared/Members';
 import { StatusGroup } from '../shared/StatusGroup';
@@ -18,7 +21,7 @@ import { Description } from './Description';
 import SchemaDialog, { type DialogData } from './SchemaDialog';
 import { useTaskSave } from './useTaskSave';
 import { TaskWorkflowActions, TaskWorkflowStatus } from './TaskWorkflow';
-import type { Log, TaskData } from './types';
+import type { TaskData } from './types';
 const SIDE = [
   'visibility',
   'priority',
@@ -41,6 +44,8 @@ export default function TaskPage(props: PageProps) {
     [tab, setTab] = useState((initial.data as TaskData).tab),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
+    [logLoading, setLogLoading] = useState(false),
+    [logError, setLogError] = useState(''),
     [refreshFailed, setRefreshFailed] = useState(false),
     [dialog, setDialog] = useState<DialogData | null>(null),
     [childEditor, setChildEditor] = useState<FormDialogData | null>(null),
@@ -49,10 +54,16 @@ export default function TaskPage(props: PageProps) {
     [logSelected, setLogSelected] = useState<Set<number>>(new Set()),
     [uploads, setUploads] = useState<File[]>([]);
   const form = useRef<HTMLFormElement>(null),
+    dialogReturnFocus = useRef<HTMLElement | null>(null),
     files = useRef<HTMLInputElement>(null),
     life = useRef(new AbortController()),
+    workLogURL = useRef(initial.url),
+    logRequest = useRef<AbortController>(),
+    latest = useRef(data),
     actionPending = useRef(false);
-  const auto = useTaskSave(form, props, setData, (validation) => {
+  latest.current = data;
+  const saveProps = { ...props, initial: { ...initial, url: workLogURL.current } };
+  const auto = useTaskSave(form, saveProps, setData, (validation) => {
     // New configuration fields may appear while this editor has an unsaved draft.
     // Keep existing control objects stable so their values and focus survive errors.
     setSchema((current) => {
@@ -69,14 +80,20 @@ export default function TaskPage(props: PageProps) {
   useEffect(() => {
     if (!auto.dirty && !auto.pending) setUploads([]);
   }, [auto.dirty, auto.pending]);
-  useEffect(() => () => life.current.abort(), []);
+  useEffect(
+    () => () => {
+      life.current.abort();
+      logRequest.current?.abort();
+    },
+    [],
+  );
   useEffect(() => {
     document.title = `${data.item.key} · ${data.item.title} | ancore`;
   }, [data.item.key, data.item.title]);
   async function refresh() {
     const page = await pageRequest<Page>(
       initial.api_url,
-      initial.url,
+      workLogURL.current,
       csrfToken,
       life.current.signal,
     );
@@ -85,6 +102,46 @@ export default function TaskPage(props: PageProps) {
     setData(next);
     setRefreshFailed(false);
     setError('');
+  }
+  async function loadWorkLog() {
+    if (!data.work_log.next || logRequest.current || actionPending.current || auto.pending) return;
+    const controller = new AbortController();
+    logRequest.current = controller;
+    const previous = data.work_log;
+    setLogLoading(true);
+    setLogError('');
+    try {
+      const page = await pageRequest<Page>(
+        initial.api_url,
+        previous.next,
+        csrfToken,
+        controller.signal,
+      );
+      if (controller.signal.aborted || life.current.signal.aborted) return;
+      if (page.type !== initial.type) throw new Error('Nie udało się odczytać dziennika pracy.');
+      if (latest.current.work_log !== previous) return;
+      const next = (page.data as TaskData).work_log;
+      workLogURL.current = previous.next;
+      setData((current) =>
+        current.work_log === previous ? { ...current, work_log: next } : current,
+      );
+      setLogSelected(
+        (current) =>
+          new Set([...current].filter((id) => next.results.some((log) => log.id === id))),
+      );
+      const url = new URL(location.href);
+      url.searchParams.delete('work_log_page');
+      url.searchParams.set('work_log_limit', String(next.results.length));
+      setPageLocation(url);
+    } catch (exception) {
+      if (!controller.signal.aborted && !life.current.signal.aborted)
+        setLogError(errorMessage(exception));
+    } finally {
+      if (logRequest.current === controller) {
+        logRequest.current = undefined;
+        setLogLoading(false);
+      }
+    }
   }
   function refreshError(exception: unknown) {
     if (life.current.signal.aborted) return;
@@ -152,10 +209,15 @@ export default function TaskPage(props: PageProps) {
     });
   }
   async function openDialog(value: DialogData) {
-    if (!busy && (await auto.save())) setDialog(value);
+    if (busy) return;
+    dialogReturnFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (await auto.save()) setDialog(value);
   }
   async function editChild(item: Item) {
     if (!item.editable || actionPending.current) return;
+    dialogReturnFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     actionPending.current = true;
     setBusy(true);
     setError('');
@@ -184,14 +246,13 @@ export default function TaskPage(props: PageProps) {
     setChildEditor(null);
     await retryRefresh();
   }
-  function openLog(log?: Log) {
+  function openLog() {
     void openDialog({
       kind: 'log',
-      title: log ? 'Edytuj wpis czasu' : 'Dodaj czas',
+      title: 'Dodaj czas',
       schema: data.log_form,
-      action: log ? 'edit_work_log' : 'add_work_log',
+      action: 'add_work_log',
       url: initial.url,
-      values: log?.form_values,
     });
   }
   function switchTab(key: string) {
@@ -249,9 +310,10 @@ export default function TaskPage(props: PageProps) {
       data-react-screen="space-task"
     >
       <div className="tasks-issue-shell">
-        <header className="work-space-header">
-          <div className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-            <div className="tasks-titlebar-left">
+        <PageHeader
+          groupClassName="work-space-header"
+          heading={
+            <>
               <a
                 className="tasks-issue-close"
                 href={data.back_url}
@@ -261,8 +323,10 @@ export default function TaskPage(props: PageProps) {
                 <Icon name="arrow-left" />
               </a>
               <h1 className="tasks-topbar-title work-space-title">{data.item.title}</h1>
-            </div>
-            <div className="tasks-titlebar-actions">
+            </>
+          }
+          actions={
+            <>
               {tab === 'work-log' && data.can_edit ? (
                 <button
                   type="button"
@@ -274,44 +338,42 @@ export default function TaskPage(props: PageProps) {
                   <span>Dodaj czas</span>
                 </button>
               ) : null}
-            </div>
-          </div>
-          <nav
-            className="notifications-tabs work-tabs work-tabs--views"
-            role="tablist"
-            aria-label="Widok zadania"
-          >
-            {data.tabs.map((nav, index) => (
-              <button
-                key={nav.key}
-                type="button"
-                role="tab"
-                id={`task-tab-${nav.key}`}
-                aria-controls={`task-${nav.key}`}
-                aria-selected={tab === nav.key}
-                tabIndex={tab === nav.key ? 0 : -1}
-                onClick={() => switchTab(nav.key)}
-                onKeyDown={(event) => {
-                  if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
-                    event.preventDefault();
-                    const target =
-                      event.key === 'Home'
-                        ? 0
-                        : event.key === 'End'
-                          ? data.tabs.length - 1
-                          : (index + (event.key === 'ArrowRight' ? 1 : -1) + data.tabs.length) %
-                            data.tabs.length;
-                    switchTab(data.tabs[target].key);
-                    document.getElementById(`task-tab-${data.tabs[target].key}`)?.focus();
-                  }
-                }}
-              >
-                <Icon name={nav.icon} />
-                {nav.label}
-              </button>
-            ))}
-          </nav>
-        </header>
+            </>
+          }
+          navigation={
+            <PageTabs className="work-tabs--views" role="tablist" label="Widok zadania">
+              {data.tabs.map((nav, index) => (
+                <button
+                  key={nav.key}
+                  type="button"
+                  role="tab"
+                  id={`task-tab-${nav.key}`}
+                  aria-controls={`task-${nav.key}`}
+                  aria-selected={tab === nav.key}
+                  tabIndex={tab === nav.key ? 0 : -1}
+                  onClick={() => switchTab(nav.key)}
+                  onKeyDown={(event) => {
+                    if (['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
+                      event.preventDefault();
+                      const target =
+                        event.key === 'Home'
+                          ? 0
+                          : event.key === 'End'
+                            ? data.tabs.length - 1
+                            : (index + (event.key === 'ArrowRight' ? 1 : -1) + data.tabs.length) %
+                              data.tabs.length;
+                      switchTab(data.tabs[target].key);
+                      document.getElementById(`task-tab-${data.tabs[target].key}`)?.focus();
+                    }
+                  }}
+                >
+                  <Icon name={nav.icon} />
+                  {nav.label}
+                </button>
+              ))}
+            </PageTabs>
+          }
+        />
         <span className="u-sr-only" role="status" aria-live="polite">
           {auto.notice}
         </span>
@@ -473,51 +535,57 @@ export default function TaskPage(props: PageProps) {
                   tabIndex={0}
                   hidden={tab !== 'subtasks'}
                 >
-                  <div className="tasks-subtasks-toolbar" aria-label="Narzędzia podzadań">
-                    <h2 className="tasks-subtasks-title">
-                      <span>Podzadania ({data.children.length})</span>
-                    </h2>
-                    <div className="tasks-subtasks-actions">
-                      <button
-                        type="button"
-                        className="tasks-issue-tool"
-                        aria-label="Sortuj podzadania"
-                        onClick={() => setSort(!sort)}
-                      >
-                        <Icon name="arrow-down-wide-narrow" />
-                      </button>
-                      {data.can_edit ? (
-                        <>
-                          <button
-                            type="button"
-                            className="tasks-issue-tool"
-                            aria-label="Usuń zaznaczone podzadania"
-                            disabled={busy}
-                            onClick={removeChildren}
-                          >
-                            <Icon name="trash-2" />
-                          </button>
-                          <button
-                            type="button"
-                            className="tasks-issue-tool"
-                            aria-label="Dodaj podzadanie"
-                            disabled={busy}
-                            onClick={() =>
-                              void openDialog({
-                                kind: 'subtask',
-                                title: 'Dodaj podzadanie',
-                                schema: data.subtask_form,
-                                action: 'create_subtask_modal',
-                                url: initial.url,
-                              })
-                            }
-                          >
-                            <Icon name="plus" />
-                          </button>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
+                  <Toolbar
+                    className="tasks-subtasks-toolbar app-toolbar--embedded"
+                    aria-label="Narzędzia podzadań"
+                    filters={
+                      <h2 className="tasks-subtasks-title">
+                        <span>Podzadania ({data.children.length})</span>
+                      </h2>
+                    }
+                    actions={
+                      <div className="tasks-subtasks-actions">
+                        <button
+                          type="button"
+                          className="tasks-filter-button tasks-issue-tool"
+                          aria-label="Sortuj podzadania"
+                          onClick={() => setSort(!sort)}
+                        >
+                          <Icon name="arrow-down-wide-narrow" />
+                        </button>
+                        {data.can_edit ? (
+                          <>
+                            <button
+                              type="button"
+                              className="tasks-filter-button tasks-issue-tool"
+                              aria-label="Usuń zaznaczone podzadania"
+                              disabled={busy}
+                              onClick={removeChildren}
+                            >
+                              <Icon name="trash-2" />
+                            </button>
+                            <button
+                              type="button"
+                              className="tasks-filter-button tasks-issue-tool"
+                              aria-label="Dodaj podzadanie"
+                              disabled={busy}
+                              onClick={() =>
+                                void openDialog({
+                                  kind: 'subtask',
+                                  title: 'Dodaj podzadanie',
+                                  schema: data.subtask_form,
+                                  action: 'create_subtask_modal',
+                                  url: initial.url,
+                                })
+                              }
+                            >
+                              <Icon name="plus" />
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    }
+                  />
                   {data.children.length ? (
                     <div className="tasks-table-wrap tasks-board tasks-subtasks-board">
                       {data.statuses.map((status) => {
@@ -637,14 +705,14 @@ export default function TaskPage(props: PageProps) {
                   </div>
                   {data.work_log.results.length ? (
                     <div
-                      className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-work-log-sheet ${data.can_edit ? '' : 'tasks-work-log-sheet--readonly'}`}
+                      className={`tasks-table-wrap tasks-board app-data-table tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-work-log-sheet ${data.can_edit ? '' : 'tasks-work-log-sheet--readonly'}`}
                     >
                       <section
                         className="tasks-directory-group"
                         role="table"
                         aria-label="Wpisy dziennika pracy"
                       >
-                        <div className="tasks-directory-header" role="row">
+                        <div className="app-table-header tasks-directory-header" role="row">
                           <span
                             className="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell"
                             data-column="select"
@@ -653,7 +721,7 @@ export default function TaskPage(props: PageProps) {
                             <input
                               type="checkbox"
                               className="tasks-row-checkbox"
-                              aria-label="Zaznacz wszystkie wpisy na tej stronie"
+                              aria-label="Zaznacz wszystkie wpisy w widocznej liście"
                               checked={data.work_log.results.every((log) =>
                                 logSelected.has(log.id),
                               )}
@@ -666,16 +734,7 @@ export default function TaskPage(props: PageProps) {
                               }
                             />
                           </span>
-                          {data.can_edit ? (
-                            <span
-                              data-column="action"
-                              className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                              role="columnheader"
-                              aria-label="Działania"
-                            >
-                              <Icon name="menu" />
-                            </span>
-                          ) : null}
+
                           {[
                             ['author', 'Kto dodał czas', 'user-round'],
                             ['duration', 'Czas (min)', 'clock'],
@@ -697,7 +756,7 @@ export default function TaskPage(props: PageProps) {
                         <div className="tasks-issue-list tasks-directory-list" role="rowgroup">
                           {data.work_log.results.map((log) => (
                             <article
-                              className={`tasks-issue-row tasks-directory-row ${logSelected.has(log.id) ? 'checked' : ''}`}
+                              className={`tasks-issue-row app-table-row tasks-directory-row ${logSelected.has(log.id) ? 'checked' : ''}`}
                               role="row"
                               key={log.id}
                             >
@@ -721,57 +780,7 @@ export default function TaskPage(props: PageProps) {
                                   }
                                 />
                               </span>
-                              {data.can_edit ? (
-                                <div
-                                  data-column="action"
-                                  className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                                  role="cell"
-                                >
-                                  <Dropdown
-                                    label={`Działania wpisu z ${dateLabel(log.started_at, true)}`}
-                                    menuClass="documents-item-menu"
-                                    role="group"
-                                    trigger={<Icon name="menu" />}
-                                  >
-                                    {(close) => (
-                                      <div className="documents-menu-actions">
-                                        <button
-                                          type="button"
-                                          className="tasks-project-menu-button"
-                                          disabled={busy}
-                                          onClick={() => {
-                                            close();
-                                            openLog(log);
-                                          }}
-                                        >
-                                          <Icon name="pencil" />
-                                          <span>Edytuj wpis</span>
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="tasks-project-menu-button"
-                                          disabled={busy}
-                                          onClick={() => {
-                                            close();
-                                            confirm(
-                                              'Usuń wpis czasu',
-                                              'Usunąć wpis dziennika pracy?',
-                                              () =>
-                                                void act({
-                                                  action: 'delete_work_log',
-                                                  work_log_id: String(log.id),
-                                                }),
-                                            );
-                                          }}
-                                        >
-                                          <Icon name="trash-2" />
-                                          <span>Usuń wpis</span>
-                                        </button>
-                                      </div>
-                                    )}
-                                  </Dropdown>
-                                </div>
-                              ) : null}
+
                               <div
                                 data-column="author"
                                 role="cell"
@@ -823,33 +832,16 @@ export default function TaskPage(props: PageProps) {
                       <p>Dodaj czas, aby zapisać pracę wykonaną nad tym zadaniem.</p>
                     </div>
                   )}
-                  {data.work_log.pages > 1 ? (
-                    <nav className="tasks-work-log-pagination" aria-label="Strony dziennika pracy">
-                      <div className="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar">
-                        {data.work_log.previous ? (
-                          <a
-                            className="tasks-project-pagination__button"
-                            href={data.work_log.previous}
-                            aria-label="Poprzednia strona dziennika"
-                          >
-                            <Icon name="chevron-left" />
-                          </a>
-                        ) : null}
-                        <span className="tasks-project-pagination__summary tasks-project-pagination__summary--compact">
-                          Strona {data.work_log.page} z {data.work_log.pages}
-                        </span>
-                        {data.work_log.next ? (
-                          <a
-                            className="tasks-project-pagination__button"
-                            href={data.work_log.next}
-                            aria-label="Następna strona dziennika"
-                          >
-                            <Icon name="chevron-right" />
-                          </a>
-                        ) : null}
-                      </div>
-                    </nav>
-                  ) : null}
+                  <LoadMore
+                    loaded={data.work_log.results.length}
+                    total={data.work_log.count}
+                    hasMore={!!data.work_log.next}
+                    loading={logLoading}
+                    disabled={busy || auto.pending}
+                    error={logError}
+                    onLoad={() => void loadWorkLog()}
+                    label="wpisy"
+                  />
                 </section>
                 <section
                   id="task-members"
@@ -858,74 +850,42 @@ export default function TaskPage(props: PageProps) {
                   aria-labelledby="task-tab-members"
                   hidden={tab !== 'members'}
                 >
-                  <div className="workplace-edit-modal__team-toolbar">
-                    <span className="workplaces-management__count">
-                      {data.item.title} · Członkowie: {data.team.members.length}
-                    </span>
-                    {data.team.can_manage ? (
-                      <button
-                        type="button"
-                        className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                        disabled={busy || data.visibility === 'public'}
-                        onClick={() =>
-                          void openDialog({
-                            kind: 'share',
-                            title: 'Udostępnij zadanie',
-                            schema: data.team.share_form,
-                            action: 'share',
-                            url: data.team_url,
-                          })
-                        }
-                      >
-                        <Icon name="plus" />
-                        <span>Udostępnij</span>
-                      </button>
-                    ) : null}
-                  </div>
+                  <Toolbar
+                    className="workplace-edit-modal__team-toolbar app-toolbar--embedded"
+                    filters={
+                      <span className="workplaces-management__count">
+                        {data.item.title} · Członkowie: {data.team.members.length}
+                      </span>
+                    }
+                    actions={
+                      data.team.can_manage ? (
+                        <button
+                          type="button"
+                          className="tasks-filter-button"
+                          disabled={busy || data.visibility === 'public'}
+                          onClick={() =>
+                            void openDialog({
+                              kind: 'share',
+                              title: 'Udostępnij zadanie',
+                              schema: data.team.share_form,
+                              action: 'share',
+                              url: data.team_url,
+                            })
+                          }
+                        >
+                          <Icon name="plus" />
+                          <span>Udostępnij</span>
+                        </button>
+                      ) : null
+                    }
+                  />
                   {data.visibility === 'public' ? (
                     <p className="workplace-team__hint">
                       Zadanie publiczne dziedziczy dostęp z przestrzeni i zadania nadrzędnego. Aby
                       udostępniać wybranym osobom, zapisz widoczność „Prywatne” w zakładce „Główna”.
                     </p>
                   ) : null}
-                  <Members
-                    members={data.team.members}
-                    isOwner={data.team.is_owner}
-                    canEditRoles={data.team.can_manage}
-                    busy={busy}
-                    onRole={(member) =>
-                      void openDialog({
-                        kind: 'role',
-                        title: 'Zmień rolę',
-                        schema: {
-                          ...data.team.share_form,
-                          fields: [
-                            ...data.team.share_form.fields.filter((field) => field.name === 'role'),
-                            {
-                              ...data.team.share_form.fields[0],
-                              name: 'member_id',
-                              hidden: true,
-                              value: String(member.id),
-                            },
-                          ],
-                        },
-                        action: 'role',
-                        url: data.team_url,
-                        values: { role: member.role },
-                      })
-                    }
-                    onRemove={(member) =>
-                      confirm(
-                        'Odbierz dostęp',
-                        `Odebrać dostęp osobie ${member.name}?`,
-                        () =>
-                          void act(
-                            { action: 'remove', member_id: String(member.id) },
-                            data.team_url,
-                          ),
-                      )
-                    }
-                  />
+                  <Members members={data.team.members} busy={busy} />
                 </section>
                 <section
                   id="task-history"
@@ -1039,6 +999,7 @@ export default function TaskPage(props: PageProps) {
         <SchemaDialog
           key={dialog.kind + String(dialog.values?.id || '')}
           dialog={dialog}
+          returnFocus={dialogReturnFocus.current}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={() => setDialog(null)}
@@ -1049,6 +1010,7 @@ export default function TaskPage(props: PageProps) {
         <FormDialog
           key={childEditor.action}
           data={childEditor}
+          returnFocus={dialogReturnFocus.current}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={() => setChildEditor(null)}

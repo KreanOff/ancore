@@ -35,11 +35,13 @@ export function ItemToolbar({
   url,
   children,
   actions,
+  search,
 }: {
   data: DetailData;
   url: string;
   children?: ReactNode;
   actions?: ReactNode;
+  search?: ReactNode;
 }) {
   const [sortQuery, setSortQuery] = useState('');
   const sortFields = data.sort.fields.filter(({ label }) => matches(label, sortQuery));
@@ -47,7 +49,12 @@ export function ItemToolbar({
   const change = (values: Record<string, string>) => changeQuery(url, values);
 
   return (
-    <ViewToolbar className="work-item-toolbar" actions={actions}>
+    <ViewToolbar
+      className="work-item-toolbar app-toolbar--embedded"
+      actions={actions}
+      search={search}
+    >
+      <ItemFiltering data={data} url={url} />
       <Dropdown
         label={`Sortowanie: ${data.sort.label}, ${data.sort.direction === 'asc' ? 'rosnąco' : 'malejąco'}`}
         role="dialog"
@@ -57,12 +64,9 @@ export function ItemToolbar({
         onOpen={() => setSortQuery('')}
         trigger={
           <>
-            <Icon
-              name={
-                data.sort.direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'
-              }
-            />
-            <span>Sortowanie</span>
+            <Icon name="arrow-up-down" />
+            <span>Sortuj</span>
+            <span className="tasks-project-sort-current">{data.sort.label}</span>
             <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
           </>
         }
@@ -152,7 +156,6 @@ export function ItemToolbar({
           </>
         )}
       </Dropdown>
-      <ItemFiltering data={data} url={url} />
       {children}
     </ViewToolbar>
   );
@@ -194,7 +197,7 @@ export function ItemFiltering({
       trigger={
         <>
           <Icon name="list-filter" />
-          <span>Filtrowanie</span>
+          <span>Filtruj</span>
           {active ? (
             <span className="tasks-project-query-count" aria-label={`Aktywne filtry: ${active}`}>
               {active}

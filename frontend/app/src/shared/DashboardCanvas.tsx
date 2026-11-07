@@ -2,13 +2,11 @@ import {
   type CSSProperties,
   type PointerEvent,
   type ReactNode,
-  type RefObject,
   useEffect,
   useRef,
   useState,
 } from 'react';
 import { Icon } from './Icon';
-import { SummaryWidgetControls } from '../spaces/SummaryWidgetControls';
 import {
   updateWidget,
   moveWidget,
@@ -37,10 +35,7 @@ export interface DashboardCanvasProps {
   busy?: boolean;
   onChange: (widgets: SummaryWidget[]) => void;
   renderWidget: (id: string) => ReactNode;
-  onRemove: (id: string) => void;
-  renderActions?: (id: string, close: () => void) => ReactNode;
   onNotice?: (message: string) => void;
-  emptyFocusRef?: RefObject<HTMLButtonElement>;
   ariaLabel?: string;
 }
 
@@ -51,10 +46,7 @@ export function DashboardCanvas({
   busy = false,
   onChange,
   renderWidget,
-  onRemove,
-  renderActions,
   onNotice,
-  emptyFocusRef,
   ariaLabel = 'Gadżety pulpitu',
 }: DashboardCanvasProps) {
   const [active, setActive] = useState<string | null>(null);
@@ -163,11 +155,7 @@ export function DashboardCanvas({
       cancelled ? 'Anulowano przeciąganie.' : 'Zmieniono układ. Zapisz zmiany, aby je zachować.',
     );
   }
-  function change(widget: SummaryWidget, values: Partial<SummaryWidget>) {
-    if (!editing || busy) return;
-    onChange(updateWidget(widgets, widget.id, values));
-    onNotice?.('Zmieniono układ. Zapisz zmiany, aby je zachować.');
-  }
+
   const ordered = [...widgets].sort((a, b) => a.y - b.y || a.x - b.x);
   return (
     <div
@@ -234,41 +222,6 @@ export function DashboardCanvas({
                   <Icon name="grip-vertical" />
                   <span>{item.label}</span>
                 </button>
-                <SummaryWidgetControls
-                  widget={widget}
-                  layout={widgets}
-                  label={item.label}
-                  minWidth={item.min_w}
-                  minHeight={item.min_h}
-                  disabled={busy}
-                  stacked={stacked}
-                  onMove={(direction) => move(widget.id, direction)}
-                  onResize={(size) => {
-                    change(widget, {
-                      ...size,
-                      ...(size.w !== undefined
-                        ? { x: Math.min(widget.x, GRID_COLUMNS - size.w) }
-                        : {}),
-                    });
-                  }}
-                  renderActions={
-                    renderActions ? (close) => renderActions(widget.id, close) : undefined
-                  }
-                  onRemove={() => {
-                    const position = ordered.findIndex((row) => row.id === widget.id);
-                    const next = ordered[position + 1] ?? ordered[position - 1];
-                    onRemove(widget.id);
-                    onNotice?.('Usunięto gadżet z układu.');
-                    requestAnimationFrame(() => {
-                      const trigger = next
-                        ? grid.current?.querySelector<HTMLButtonElement>(
-                            `[data-summary-widget="${CSS.escape(next.id)}"] .work-summary-widget-menu`,
-                          )
-                        : null;
-                      (trigger ?? emptyFocusRef?.current)?.focus();
-                    });
-                  }}
-                />
               </header>
             ) : null}
             <div className="work-summary-widget-body">{renderWidget(widget.id)}</div>

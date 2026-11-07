@@ -283,12 +283,14 @@ class SpaceTaskWorkLogTests(TestCase):
         SpaceTaskWorkLog.objects.bulk_create(entries)
         response = self.client.get(self.url(), {'tab': 'work-log', 'work_log_page': 2})
         self.assertEqual(response.context['work_log_page'].paginator.count, 26)
-        self.assertEqual(len(response.context['work_log_page']), 1)
+        self.assertEqual(len(response.context['work_log_page']), 26)
         self.assertEqual(response.context['work_log_total_minutes'], 1560)
         self.assertNotContains(response, '<script>alert("x")</script>')
         self.assertContains(response, '&lt;script&gt;')
         self.assertContains(response, f'/tasks/{self.task.work_item.key}/')
-        self.assertContains(response, 'Strona 2 z 2')
+        self.assertContains(response, 'Wszystkie wyniki')
+        self.assertContains(response, '(26 / 26)')
+        self.assertNotContains(response, 'Strona 2 z 2')
 
     def test_history_failure_rolls_back_create_edit_and_delete(self):
         with patch('spaces.task_views.record', side_effect=RuntimeError('Unavailable')):

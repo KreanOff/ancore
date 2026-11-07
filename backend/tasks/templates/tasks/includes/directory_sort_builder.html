@@ -1,6 +1,6 @@
 <div class="tasks-filter-dropdown tasks-project-sort-builder" data-project-sort-menu data-project-default-sort="{{ default_sort }}" data-current-sort-field="{{ sort_field }}" data-current-sort-direction="{{ sort_direction }}">
     <button type="button" class="tasks-filter-button tasks-project-query-trigger{% if sort_param %} is-active{% endif %}" aria-label="Sortowanie: {{ sort_label }}" aria-haspopup="dialog" aria-expanded="false" data-task-sort data-sort-direction="{{ sort_direction }}" data-project-sort-toggle>
-        <i data-icon="{% if sort_direction == 'desc' %}arrow-down-wide-narrow{% else %}arrow-up-narrow-wide{% endif %}" aria-hidden="true" data-task-sort-icon></i>
+        <i data-icon="arrow-up-down" aria-hidden="true" data-task-sort-icon></i>
         <span>Sortuj</span>
         <span class="tasks-project-sort-current">{{ sort_label }}</span>
         <i data-icon="chevron-down" aria-hidden="true" class="tasks-project-query-trigger__chevron"></i>

@@ -82,7 +82,16 @@ function harness(readOnly) {
   };
   vm.runInNewContext(bundle.outputFiles[0].text, context);
   const board = context.boardProps;
-  const save = board.children.props.children[0].props.onSelect;
+  const save = async () => {
+    listeners.keydown({
+      ctrlKey: true,
+      metaKey: false,
+      key: 's',
+      preventDefault() {},
+      stopPropagation() {},
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+  };
   return { board, save, notifications, posts, timers, listeners, parent };
 }
 

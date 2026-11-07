@@ -1,24 +1,28 @@
-<form class="task-filter-search tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ search_url }}" data-filter-search>
+<form class="task-filter-search tasks-filterbar tasks-filterbar--directory app-toolbar app-toolbar--embedded work-item-toolbar" method="get" action="{{ search_url }}" data-filter-search>
     <input type="hidden" name="mode" value="basic">
     <input type="hidden" name="basic" value="1">
-    <div class="tasks-filterbar-left">
+    <div class="app-toolbar__controls tasks-filterbar-left">
+        <details class="tasks-directory-filter-aggregate tasks-project-filter-builder" data-directory-filter-aggregate>
+            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtruj</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
+            <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel task-filter-search-panel">
+                <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="list-filter" aria-hidden="true"></i><strong>Filtrowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{{ clear_url }}">Wyczyść</a></header>
+                <div class="tasks-project-filter-detail__body task-filter-search-fields">
+                    {% for field in search_form %}{% if field.name != 'sort' and field.name != 'q' %}<div class="task-filter-search-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="tasks-modal__errors" role="alert">{{ field.errors }}</span>{% endif %}</div>{% endif %}{% endfor %}
+                </div>
+                <footer class="task-filter-search-footer"><button class="tasks-filter-button" type="submit"><i data-icon="search" aria-hidden="true"></i>Szukaj</button></footer>
+            </div>
+        </details>
         <details class="tasks-directory-filter-aggregate tasks-project-sort-builder" data-directory-filter-aggregate>
-            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortowanie</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
+            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="arrow-up-down" aria-hidden="true"></i><span>Sortuj</span><span class="tasks-project-sort-current">{% for value, label in search_form.sort.field.choices %}{% if value == search_form.sort.value %}{{ label }}{% endif %}{% endfor %}</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
             <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel">
                 <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="arrow-up-down" aria-hidden="true"></i><strong>Sortowanie zadań</strong></header>
                 <div class="tasks-project-filter-detail__body">{{ search_form.sort }}<button class="tasks-filter-button" type="submit">Zastosuj sortowanie</button></div>
             </div>
         </details>
-        <details class="tasks-directory-filter-aggregate tasks-project-filter-builder" data-directory-filter-aggregate>
-            <summary class="tasks-filter-button tasks-project-query-trigger"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtrowanie</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
-            <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel task-filter-search-panel">
-                <header class="tasks-project-query-panel__header tasks-project-query-panel__header--main"><i data-icon="list-filter" aria-hidden="true"></i><strong>Filtrowanie zadań</strong><a class="tasks-project-query-panel__clear" href="{{ clear_url }}">Wyczyść</a></header>
-                <div class="tasks-project-filter-detail__body task-filter-search-fields">
-                    {% for field in search_form %}{% if field.name != 'sort' %}<div class="task-filter-search-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<span class="tasks-modal__errors" role="alert">{{ field.errors }}</span>{% endif %}</div>{% endif %}{% endfor %}
-                </div>
-                <footer class="task-filter-search-footer"><button class="tasks-filter-button" type="submit"><i data-icon="search" aria-hidden="true"></i>Szukaj</button></footer>
-            </div>
-        </details>
     </div>
-    <span role="status" class="work-caption">Zadania: {{ page.paginator.count }}{% if saved_filter %} · {{ saved_filter.get_visibility_display }}{% endif %}</span>
+    <div class="app-toolbar__actions"><span role="status" class="work-caption">Zadania: {{ page.paginator.count }}{% if saved_filter %} · {{ saved_filter.get_visibility_display }}{% endif %}</span></div>
+    <div class="tasks-filterbar-right app-toolbar__search">
+        <label class="tasks-search-field tasks-project-search" for="{{ search_form.q.id_for_label }}"><i data-icon="search" aria-hidden="true"></i><span class="u-sr-only">{{ search_form.q.label }}</span>{{ search_form.q }}</label>
+        {% if search_form.q.errors %}<span class="tasks-modal__errors" role="alert">{{ search_form.q.errors }}</span>{% endif %}
+    </div>
 </form>

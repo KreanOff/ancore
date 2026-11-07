@@ -9,8 +9,19 @@ import AvatarControl from './AvatarControl';
 import type { Field } from '../forms/FormDialog';
 import type { DirectoryData, WorkspaceForm as Schema } from './types';
 
+function FieldErrors({ id, errors }: { id: string; errors?: string[] }) {
+  return errors?.length ? (
+    <div id={id} className="tasks-modal__errors" role="alert">
+      {errors.map((message, index) => (
+        <p key={index}>{message}</p>
+      ))}
+    </div>
+  ) : null;
+}
+
 function ModuleFields({ field, id }: { field: Field; id: string }) {
   const selected = new Set(Array.isArray(field.value) ? field.value : []);
+  const errorId = id + '-modules-error';
   return (
     <div className="tasks-form-field workplace-module-fields app-form-field app-form-wide">
       <FieldLabel
@@ -52,7 +63,9 @@ function ModuleFields({ field, id }: { field: Field; id: string }) {
                   defaultChecked={selected.has(choice.value)}
                   disabled={field.disabled}
                   aria-labelledby={controlId + '-label'}
-                  aria-describedby={controlId + '-description'}
+                  aria-describedby={
+                    controlId + '-description' + (field.errors.length ? ` ${errorId}` : '')
+                  }
                   aria-invalid={field.errors.length > 0}
                 />
                 <span aria-hidden="true" />
@@ -61,15 +74,17 @@ function ModuleFields({ field, id }: { field: Field; id: string }) {
           );
         })}
       </div>
+      <FieldErrors id={errorId} errors={field.errors} />
     </div>
   );
 }
 export function ErrorList({ schema, message = '' }: { schema?: Schema | null; message?: string }) {
+  const labels: Record<string, string> = { name: 'Nazwa miejsca pracy', description: 'Opis' };
   const errors = [
     ...(message ? [message] : []),
     ...(schema?.errors || []),
     ...(schema?.fields.flatMap((field) =>
-      field.errors.map((error) => field.label + ': ' + error),
+      field.errors.map((error) => (labels[field.name] || field.label) + ': ' + error),
     ) || []),
   ];
   return errors.length ? (
@@ -136,6 +151,8 @@ export function SettingsFields({
   create?: boolean;
 }) {
   const modules = schema?.fields.find((field) => field.name === 'enabled_modules');
+  const nameErrors = schema?.fields.find((field) => field.name === 'name')?.errors;
+  const descriptionErrors = schema?.fields.find((field) => field.name === 'description')?.errors;
   return (
     <div className="workplace-modal__content app-form-avatar-layout" data-profile-photo-layout>
       {schema && !readonly ? <AvatarControl schema={schema} formId={id} create={create} /> : null}
@@ -145,7 +162,8 @@ export function SettingsFields({
             <label htmlFor={id + '-name'}>Nazwa miejsca pracy</label>
             <input
               id={id + '-name'}
-              aria-invalid={!!schema?.fields.find((field) => field.name === 'name')?.errors.length}
+              aria-invalid={!!nameErrors?.length}
+              aria-describedby={nameErrors?.length ? id + '-name-error' : undefined}
               name="name"
               className="tasks-inline-input workplace-create-modal__name-input workplace-create-modal__text-input"
               placeholder="Nazwa miejsca pracy"
@@ -156,6 +174,7 @@ export function SettingsFields({
               readOnly={readonly}
               required
             />
+            <FieldErrors id={id + '-name-error'} errors={nameErrors} />
           </div>
         </div>
         {create ? (
@@ -168,6 +187,8 @@ export function SettingsFields({
           <textarea
             id={id + '-description'}
             name="description"
+            aria-invalid={!!descriptionErrors?.length}
+            aria-describedby={descriptionErrors?.length ? id + '-description-error' : undefined}
             className="tasks-inline-input tasks-modal-textarea workplace-create-modal__text-input workplace-create-modal__textarea"
             rows={3}
             value={description}
@@ -175,6 +196,7 @@ export function SettingsFields({
             placeholder="Dodaj krótki opis miejsca pracy…"
             readOnly={readonly}
           />
+          <FieldErrors id={id + '-description-error'} errors={descriptionErrors} />
         </div>
         <div className="tasks-form-field workplace-edit-modal__code-field app-form-field">
           <FieldLabel

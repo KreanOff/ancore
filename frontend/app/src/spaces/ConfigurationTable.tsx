@@ -167,7 +167,7 @@ export default function ConfigurationTable({
           };
         })}
       >
-        <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar">
+        <div className="app-toolbar__selection">
           <button
             type="button"
             className="tasks-filter-button"

@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 
 from django import forms
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_url
 from django.db import transaction
 from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
@@ -132,14 +132,15 @@ def delete(request, pk):
 
 
 def overview_payload(request, resource):
-    page = Paginator(resource.activities.all(), 20).get_page(request.GET.get('history_page'))
+    page = window_page(resource.activities.all(), request, limit_parameter='history_limit', page_parameter='history_page')
     return {
         'resource': resource_payload(resource),
         'history': [{'id': entry.pk, 'action': entry.action, 'label': entry.get_action_display(),
                      'actor': entry.actor_name, 'created_at': entry.created_at.isoformat(),
                      'changes': entry.changes, 'note': entry.note} for entry in page],
         'history_page': page.number, 'history_pages': page.paginator.num_pages,
-        'history_total': page.paginator.count,
+        'history_total': page.paginator.count, 'history_end': page.end_index(),
+        'history_next': window_url(request, page),
     }
 
 

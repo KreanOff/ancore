@@ -48,7 +48,7 @@ class OfficeFlatCatalogTests(TestCase):
             for display in ['list', 'grid']:
                 response = self.client.get(base, {'display': display}, follow=True)
                 self.assertEqual({row['item'].pk for row in response.context['rows']}, {self.root.pk, self.item.pk})
-                self.assertEqual(response.context['document_window']['compact_summary'], '1–2 z 2')
+                self.assertEqual(response.context['document_window']['compact_summary'], '2 z 2')
                 counts = {view['value']: view['count'] for view in response.context['office_views']}
                 self.assertEqual((counts['all'], counts['starred'], counts['trash']), (2, 0, 1))
                 for old_ui in ['Nowy folder', 'Dawny folder', 'Dawny podfolder', '/move/', '/folders/', 'data-document-drag', 'name="folder"']:
@@ -120,7 +120,7 @@ class OfficeFlatCatalogTests(TestCase):
         first = [row['item'].pk for row in response.context['rows']]
         second = self.client.get(response.context['document_window']['next_url'])
         last = [row['item'].pk for row in second.context['rows']]
-        self.assertEqual((len(first), len(last), len(set(first + last))), (25, 5, 30))
+        self.assertEqual((len(first), len(last), len(set(first + last))), (20, 30, 30))
         response = self.client.get(reverse('global_search'), {'q': self.item.title})
         result = next(group for group in response.json()['groups'] if group['key'] == 'office-documents')['results'][0]
         self.assertNotIn('Dawny', str(result))

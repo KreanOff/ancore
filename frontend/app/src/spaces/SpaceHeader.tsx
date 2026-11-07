@@ -1,5 +1,7 @@
 import { type ReactNode } from 'react';
 import { Icon } from '../shared/Icon';
+import { PageHeader } from '../shared/PageHeader';
+import { PageTabs } from '../shared/PageTabs';
 
 export function SpaceHeader({
   heading,
@@ -17,17 +19,14 @@ export function SpaceHeader({
   onSettings?: () => void;
 }) {
   return (
-    <header className="work-space-header">
-      <div className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-        <div className="tasks-titlebar-left">{heading}</div>
-        <div className="tasks-titlebar-actions">{actions}</div>
-      </div>
-      {navigationContent ??
+    <PageHeader
+      groupClassName="work-space-header"
+      heading={heading}
+      actions={actions}
+      navigation={
+        navigationContent ??
         (navigation ? (
-          <nav
-            className="notifications-tabs work-tabs work-tabs--views"
-            aria-label="Widoki przestrzeni"
-          >
+          <PageTabs className="work-tabs--views" label="Widoki przestrzeni">
             {navigation.map((nav) => (
               <a
                 key={nav.key}
@@ -54,8 +53,9 @@ export function SpaceHeader({
                 {nav.label}
               </a>
             ))}
-          </nav>
-        ) : null)}
-    </header>
+          </PageTabs>
+        ) : null)
+      }
+    />
   );
 }

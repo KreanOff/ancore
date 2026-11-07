@@ -1,9 +1,0 @@
-{% firstof menu_kind row.kind as action_kind %}
-<div class="documents-item-actions" data-document-actions>
-    <button type="button" class="{{ button_class|default:'tasks-icon-button documents-icon-button' }}" data-document-actions-toggle popovertarget="document-actions-{{ action_kind }}-{{ item.pk }}" aria-controls="document-actions-{{ action_kind }}-{{ item.pk }}" aria-expanded="false" aria-label="Działania: {% if action_kind == 'folder' or action_kind == 'library' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}" title="Działania">
-        <i data-icon="menu" aria-hidden="true"></i>
-    </button>
-    <div id="document-actions-{{ action_kind }}-{{ item.pk }}" class="tasks-section-menu documents-item-menu" popover="auto" role="group" aria-label="Działania: {% if action_kind == 'folder' or action_kind == 'library' %}{{ item.name }}{% else %}{{ item.title }}{% endif %}" data-document-actions-panel>
-        {% include actions_template with action_menu=True %}
-    </div>
-</div>

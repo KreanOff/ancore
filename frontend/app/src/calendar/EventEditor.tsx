@@ -35,6 +35,7 @@ export function EventEditor({
   readOnly?: boolean;
 }) {
   const form = useRef<HTMLFormElement>(null);
+  const errorSummary = useRef<HTMLParagraphElement>(null);
   const [dirty, setDirty] = useState(false),
     [pending, setPending] = useState(false),
     [error, setError] = useState('');
@@ -43,6 +44,11 @@ export function EventEditor({
   const controller = useRef(new AbortController());
   const sending = useRef(false);
   useEffect(() => () => controller.current.abort(), []);
+  useEffect(() => {
+    if (!error || pending) return;
+    const invalid = form.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+    (invalid || errorSummary.current)?.focus();
+  }, [error, errors, pending]);
   const start = new Date(date);
   const end = new Date(start);
   end.setHours(end.getHours() + 1);
@@ -133,7 +139,7 @@ export function EventEditor({
   }
   const fieldErrors = (name: string) =>
     errors[name]?.length ? (
-      <p className="calendar-form-error" role="alert">
+      <p id={`react-event-${name}-error`} className="calendar-form-error" role="alert">
         {errors[name].join(' ')}
       </p>
     ) : null;
@@ -166,7 +172,12 @@ export function EventEditor({
       >
         <div className="tasks-modal__body calendar-dialog-body app-form-layout">
           {error ? (
-            <p role="alert" className="calendar-form-error app-form-wide">
+            <p
+              ref={errorSummary}
+              tabIndex={-1}
+              role="alert"
+              className="calendar-form-error app-form-wide"
+            >
               {error}
               {errors.__all__?.join(' ')}
             </p>
@@ -185,7 +196,8 @@ export function EventEditor({
                 maxLength={255}
                 placeholder="Tytuł wydarzenia"
                 disabled={pending}
-                aria-invalid={!!errors.title}
+                aria-invalid={!!errors.title?.length}
+                aria-describedby={errors.title?.length ? 'react-event-title-error' : undefined}
               />
               {fieldErrors('title')}
             </div>
@@ -201,7 +213,12 @@ export function EventEditor({
               defaultValue={event?.description || ''}
               disabled={pending}
               placeholder="Opis (opcjonalnie)"
+              aria-invalid={!!errors.description?.length}
+              aria-describedby={
+                errors.description?.length ? 'react-event-description-error' : undefined
+              }
             />
+            {fieldErrors('description')}
           </div>
           {(
             [
@@ -221,7 +238,8 @@ export function EventEditor({
                 defaultValue={event ? eventInput(event, name) : localInput(new Date(value))}
                 required
                 disabled={pending}
-                aria-invalid={!!errors[name]}
+                aria-invalid={!!errors[name]?.length}
+                aria-describedby={errors[name]?.length ? `react-event-${name}-error` : undefined}
               />
               {fieldErrors(name)}
             </div>
@@ -234,15 +252,23 @@ export function EventEditor({
                 className="form-checkbox"
                 defaultChecked={event?.all_day || initialAllDay}
                 disabled={pending}
+                aria-invalid={!!errors.all_day?.length}
+                aria-describedby={errors.all_day?.length ? 'react-event-all_day-error' : undefined}
                 onChange={(e) => allDay(e.target.checked)}
               />
               Cały dzień
             </label>
+            {fieldErrors('all_day')}
           </div>
           <div className="calendar-dialog-field app-form-field">
             <span className="form-label">Kolor</span>
             <Dropdown
               label="Kolor wydarzenia"
+              disabled={pending}
+              triggerProps={{
+                'aria-invalid': !!errors.color?.length,
+                'aria-describedby': errors.color?.length ? 'react-event-color-error' : undefined,
+              }}
               trigger={
                 <>
                   <span className={`calendar-color-dot calendar-color-dot--${color}`} />
@@ -271,6 +297,7 @@ export function EventEditor({
                 ))
               }
             </Dropdown>
+            {fieldErrors('color')}
           </div>
         </div>
         <footer className="tasks-modal__footer calendar-dialog-footer">

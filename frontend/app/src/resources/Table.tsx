@@ -1,5 +1,4 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { type Column, type useColumns } from './columns';
 import { Resize } from '../shared/table';
@@ -41,25 +40,23 @@ export function ResourceTable({
   columns,
   baseUrl,
   search,
-  open,
-  remove,
   busy,
   readOnly,
   selected,
   setSelected,
   view,
+  footer,
 }: {
   results: Resource[];
   columns: ReturnType<typeof useColumns>;
   baseUrl: string;
   search: string;
-  open: (id: number | null) => void;
-  remove: (resource: Resource) => void;
   busy: boolean;
   readOnly: boolean;
   selected: Set<number>;
   setSelected: (value: Set<number>) => void;
   view: (id: number) => void;
+  footer?: ReactNode;
 }) {
   const selectionCount = results.filter((item) => selected.has(item.id)).length;
   function cell(item: Resource, column: Column): ReactNode {
@@ -77,57 +74,6 @@ export function ResourceTable({
               setSelected(next);
             }}
           />
-        );
-      case 'menu':
-        return (
-          <Dropdown
-            label={`Działania: ${item.name}`}
-            className="resources-react-row-actions"
-            menuClass="documents-item-menu"
-            role="group"
-            trigger={<Icon name="menu" />}
-          >
-            {(close) => (
-              <div className="documents-menu-actions">
-                <button
-                  type="button"
-                  className="tasks-project-menu-button"
-                  disabled={busy}
-                  onClick={() => {
-                    close();
-                    view(item.id);
-                  }}
-                >
-                  <Icon name="package" />
-                  <span>Karta zasobu</span>
-                </button>
-                <button
-                  type="button"
-                  className="tasks-project-menu-button"
-                  disabled={busy || readOnly}
-                  onClick={() => {
-                    close();
-                    open(item.id);
-                  }}
-                >
-                  <Icon name="pencil" />
-                  <span>Edytuj zasób</span>
-                </button>
-                <button
-                  type="button"
-                  className="tasks-project-menu-button"
-                  disabled={busy || readOnly}
-                  onClick={() => {
-                    close();
-                    remove(item);
-                  }}
-                >
-                  <Icon name="trash-2" />
-                  <span>Usuń zasób</span>
-                </button>
-              </div>
-            )}
-          </Dropdown>
         );
       case 'name':
         return (
@@ -194,13 +140,13 @@ export function ResourceTable({
   }
   return (
     <div
-      className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-spreadsheet-sheet tasks-directory-menu-sheet resources-sheet"
+      className="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable tasks-spreadsheet-sheet tasks-directory-menu-sheet resources-sheet app-data-table"
       data-directory-resize="false"
       style={columns.style}
     >
       <section className="tasks-directory-group" role="table" aria-label="Lista zasobów">
         <div
-          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
+          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header"
           role="row"
         >
           {columns.visible.map((column) => (
@@ -220,8 +166,6 @@ export function ResourceTable({
                     setSelected(checked ? new Set(results.map((item) => item.id)) : new Set())
                   }
                 />
-              ) : column.key === 'menu' ? (
-                <span className="u-sr-only">Działania</span>
               ) : (
                 <>
                   {column.label.toLocaleUpperCase('pl')}
@@ -240,7 +184,7 @@ export function ResourceTable({
           {results.map((item) => (
             <article
               key={item.id}
-              className={`tasks-issue-row tasks-directory-row resources-row ${selected.has(item.id) ? 'checked' : ''}`}
+              className={`tasks-issue-row tasks-directory-row resources-row app-table-row ${selected.has(item.id) ? 'checked' : ''}`}
               role="row"
             >
               {columns.visible.map((column) => (
@@ -264,6 +208,7 @@ export function ResourceTable({
           ))}
         </div>
       </section>
+      {footer}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 from django.contrib.auth.decorators import login_required
 import json
 from datetime import datetime, timedelta
-from django.core.paginator import Paginator
+from core.list_window import window_page, window_url
 from django.db.models import F, Sum
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -105,20 +105,20 @@ def work_log_context(request, task):
     entries = task.work_logs.select_related('author')
     duration = entries.aggregate(total=Sum(F('ended_at') - F('started_at')))['total'] or timedelta()
     total = int(duration.total_seconds() // 60)
-    page = Paginator(entries, 25).get_page(request.POST.get('work_log_page') or request.GET.get('work_log_page'))
+    params = request.GET.copy()
+    for name in ('work_log_page', 'work_log_limit'):
+        if request.POST.get(name):
+            params[name] = request.POST[name]
+    page = window_page(entries, request, limit_parameter='work_log_limit', page_parameter='work_log_page', parameters=params)
     for entry in page:
         hours, minutes = divmod(entry.duration_minutes, 60)
         entry.form_values = json.dumps({'id': entry.pk, 'duration_minutes': entry.duration_minutes,
             'hours': hours, 'minutes': minutes,
             'started_at': timezone.localtime(entry.started_at).strftime('%Y-%m-%dT%H:%M'),
             'ended_at': timezone.localtime(entry.ended_at).strftime('%Y-%m-%dT%H:%M'), 'description': entry.description})
-    def url(number):
-        params = request.GET.copy()
-        params['tab'], params['work_log_page'] = 'work-log', number
-        return request.path + '?' + params.urlencode()
     return {'work_log_page': page, 'work_log_total_minutes': total, 'work_log_total_label': f'{total // 60} godz. {total % 60:02d} min',
-            'work_log_previous_url': url(page.previous_page_number()) if page.has_previous() else '',
-            'work_log_next_url': url(page.next_page_number()) if page.has_next() else ''}
+            'work_log_previous_url': '',
+            'work_log_next_url': window_url(request, page, extra={'tab': 'work-log'})}
 
 
 

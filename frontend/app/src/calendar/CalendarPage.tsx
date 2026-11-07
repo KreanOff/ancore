@@ -1,3 +1,6 @@
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { PageTabs } from '../shared/PageTabs';
+import { PageHeader } from '../shared/PageHeader';
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../shared/Icon';
 import { Select } from '../shared/Select';
@@ -23,6 +26,12 @@ import {
   type CalendarEvent,
   type View,
 } from './dates';
+const VIEW_ICONS: Record<View, string> = {
+  day: 'calendar-day',
+  week: 'calendar-range',
+  month: 'calendar-days',
+  year: 'calendar-fold',
+};
 interface CalendarData {
   config: {
     initialYear: number;
@@ -212,6 +221,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                         type="button"
                         className="calendar-day-add"
                         aria-label={`Dodaj wydarzenie: ${formatDate(date)}`}
+                        disabled={initial.read_only}
                         onClick={(event) => {
                           event.stopPropagation();
                           newEvent(date);
@@ -290,6 +300,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                   type="button"
                   className="calendar-allday-add"
                   aria-label={`Dodaj całodzienne wydarzenie: ${formatDate(date)}`}
+                  disabled={initial.read_only}
                   onClick={() => newEvent(date, true)}
                 >
                   +
@@ -320,6 +331,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                       key={hour}
                       className="calendar-time-slot"
                       aria-label={`Dodaj wydarzenie: ${formatDate(date)}, ${hour}:00`}
+                      disabled={initial.read_only}
                       onClick={() => {
                         const preset = new Date(date);
                         preset.setHours(hour);
@@ -359,40 +371,10 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
         aria-label="Kalendarz"
         aria-busy={loading}
       >
-        <header className="tasks-topbar calendar-topbar">
-          <div className="tasks-titlebar-left">
-            <button
-              type="button"
-              className="tasks-icon-button"
-              aria-label="Poprzedni okres"
-              onClick={() => step(-1)}
-            >
-              <Icon name="chevron-left" />
-            </button>
-            <button
-              type="button"
-              className="tasks-icon-button calendar-today-button"
-              onClick={() => {
-                const now = day(new Date());
-                setAnchor(now);
-                setSelected(now);
-              }}
-            >
-              Dzisiaj
-            </button>
-            <button
-              type="button"
-              className="tasks-icon-button"
-              aria-label="Następny okres"
-              onClick={() => step(1)}
-            >
-              <Icon name="chevron-right" />
-            </button>
-            <span className="tasks-topbar-title calendar-period-label" aria-live="polite">
-              {period}
-            </span>
-          </div>
-          <div className="tasks-section-actions">
+        <PageHeader
+          className="calendar-topbar"
+          heading={<h1 className="tasks-topbar-title">Kalendarz</h1>}
+          actions={
             <button
               type="button"
               className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
@@ -403,42 +385,113 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
               <Icon name="plus" />
               <span>Nowe wydarzenie</span>
             </button>
-          </div>
-        </header>
-        <div className="tasks-filterbar calendar-filterbar">
-          <div className="tasks-filterbar-left">
-            <div className="calendar-mini-nav" aria-label="Szybka nawigacja">
+          }
+          navigation={
+            <PageTabs label="Widok kalendarza">
               {views.map(([key, label]) => (
                 <button
                   type="button"
                   key={key}
-                  className={`calendar-mini-nav__button ${view === key ? 'is-active' : ''}`}
+                  className={view === key ? 'is-active' : undefined}
                   aria-pressed={view === key}
                   onClick={() => {
                     setAnchor(selected);
                     setView(key);
                   }}
                 >
-                  {label}
+                  <Icon name={VIEW_ICONS[key]} />
+                  <span>{label}</span>
                 </button>
               ))}
-            </div>
-          </div>
-          <div className="tasks-filterbar-center">
-            <span className="calendar-filter-summary">
-              {loading
-                ? 'Wczytywanie…'
-                : `${views.find((item) => item[0] === view)?.[1]} · ${visible.length} pozycji`}
-            </span>
-          </div>
-          <div className="tasks-filterbar-right">
-            <Select
-              label="Rodzaj pozycji w kalendarzu"
-              hideLabel
-              value={source}
-              options={SOURCE_OPTIONS}
-              onChange={setSource}
-            />
+            </PageTabs>
+          }
+        />
+        <Toolbar
+          className="calendar-filterbar"
+          filters={
+            <>
+              <button
+                type="button"
+                className="tasks-icon-button"
+                aria-label="Poprzedni okres"
+                onClick={() => step(-1)}
+              >
+                <Icon name="chevron-left" />
+              </button>
+              <button
+                type="button"
+                className="tasks-filter-button calendar-today-button"
+                onClick={() => {
+                  const now = day(new Date());
+                  setAnchor(now);
+                  setSelected(now);
+                }}
+              >
+                Dzisiaj
+              </button>
+              <button
+                type="button"
+                className="tasks-icon-button"
+                aria-label="Następny okres"
+                onClick={() => step(1)}
+              >
+                <Icon name="chevron-right" />
+              </button>
+              <span className="calendar-period-label" aria-live="polite">
+                {period}
+              </span>
+              <Select
+                label="Rodzaj pozycji w kalendarzu"
+                hideLabel
+                value={source}
+                options={SOURCE_OPTIONS}
+                onChange={setSource}
+              />
+              <details className="calendar-color-filter">
+                <summary className="tasks-filter-button">
+                  <Icon name="list-filter" />
+                  Kolory
+                </summary>
+                <div className="calendar-color-filters">
+                  {colors.map(([key, label]) => (
+                    <label key={key}>
+                      <input
+                        type="checkbox"
+                        checked={activeColors.has(key)}
+                        onChange={(event) =>
+                          setColors((current) => {
+                            const next = new Set(current);
+                            if (event.target.checked) next.add(key);
+                            else next.delete(key);
+                            return next;
+                          })
+                        }
+                      />
+                      <span className={`calendar-color-dot calendar-color-dot--${key}`} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </details>
+              <span className="calendar-filter-summary">
+                {loading
+                  ? 'Wczytywanie…'
+                  : `${views.find((item) => item[0] === view)?.[1]} · ${visible.length} pozycji`}
+              </span>
+            </>
+          }
+          actions={
+            <button
+              type="button"
+              className="tasks-icon-button"
+              aria-label="Pokaż lub ukryj plan"
+              aria-expanded={agenda}
+              onClick={() => setAgenda(!agenda)}
+            >
+              <Icon name="panel-right" />
+            </button>
+          }
+          search={
             <label className="tasks-search-field calendar-search">
               <Icon name="search" />
               <input
@@ -449,43 +502,8 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                 aria-label="Szukaj wydarzeń i zadań w wybranym okresie"
               />
             </label>
-            <details className="calendar-color-filter">
-              <summary>
-                <Icon name="list-filter" />
-                Kolory
-              </summary>
-              <div className="calendar-color-filters">
-                {colors.map(([key, label]) => (
-                  <label key={key}>
-                    <input
-                      type="checkbox"
-                      checked={activeColors.has(key)}
-                      onChange={(event) =>
-                        setColors((current) => {
-                          const next = new Set(current);
-                          if (event.target.checked) next.add(key);
-                          else next.delete(key);
-                          return next;
-                        })
-                      }
-                    />
-                    <span className={`calendar-color-dot calendar-color-dot--${key}`} />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </details>
-            <button
-              type="button"
-              className="tasks-icon-button"
-              aria-label="Pokaż lub ukryj plan"
-              aria-expanded={agenda}
-              onClick={() => setAgenda(!agenda)}
-            >
-              <Icon name="panel-right" />
-            </button>
-          </div>
-        </div>
+          }
+        />
         {error ? (
           <div className="calendar-status" role="alert">
             {error}
@@ -608,13 +626,22 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                               : 'Czas na Twoje plany'}
                       </strong>
                       <span>
-                        {error ? 'Spróbuj ponownie.' : 'Dodaj wydarzenie i zaplanuj ten dzień.'}
+                        {error
+                          ? 'Spróbuj ponownie.'
+                          : initial.read_only
+                            ? 'W tym widoku nie ma wydarzeń ani zadań.'
+                            : 'Dodaj wydarzenie i zaplanuj ten dzień.'}
                       </span>
                     </li>
                   )}
                 </ul>
                 <div className="calendar-sidebar-footer">
-                  <button type="button" className="tasks-filter-button" onClick={() => newEvent()}>
+                  <button
+                    type="button"
+                    className="tasks-filter-button"
+                    disabled={initial.read_only}
+                    onClick={() => newEvent()}
+                  >
                     <Icon name="plus" />
                     Dodaj w tym dniu
                   </button>

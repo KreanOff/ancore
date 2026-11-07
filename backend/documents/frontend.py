@@ -112,7 +112,7 @@ def directory_page(request, context):
         **params, 'scope': '' if context.get('current_library') else 'workspace',
         'view': context.get('library_view', ''), 'folder': str(getattr(context.get('current_folder'), 'pk', '') or ''),
         'q': context['query'], 'sort': context['sort'], 'page': str(context['document_window']['page']),
-        'page_size': str(context['document_window']['page_size']), 'display': context['document_display'],
+        'limit': str(context['document_window']['limit']), 'display': context['document_display'],
     }
     title = 'Dokumenty' if office else context['view_title']
     current_library = context.get('current_library')

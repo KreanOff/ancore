@@ -134,9 +134,7 @@ test('toolbar selection includes owner and inherited rows without enabling their
   const render = () =>
     Members({
       members,
-      isOwner: false,
       busy: false,
-      rowActions: false,
       selection: { selected, onChange: (next) => (selected = next) },
     });
   let tree = render();
@@ -175,9 +173,7 @@ test('busy toolbar cannot change selection and an owner-only table remains selec
   let changes = 0;
   const tree = Members({
     members,
-    isOwner: false,
     busy: true,
-    rowActions: false,
     selection: { selected: new Set([3]), onChange: () => changes++ },
   });
   for (const checkbox of nodes(tree).filter((node) => node.type === 'input')) {
@@ -196,25 +192,15 @@ test('busy toolbar cannot change selection and an owner-only table remains selec
   let selected = new Set();
   const ownerOnly = Members({
     members: members.slice(0, 1),
-    isOwner: false,
     busy: false,
-    rowActions: false,
     selection: { selected, onChange: (next) => (selected = next) },
   });
   const selectAll = input(ownerOnly, 'Zaznacz wszystkich członków');
   assert.equal(selectAll.props.disabled, false);
   selectAll.props.onChange({ target: { checked: true } });
   assert.deepEqual([...selected], [1]);
-  const empty = Members({ members: [], isOwner: true, busy: false, rowActions: false });
+  const empty = Members({ members: [], busy: false, rowActions: false });
   assert.equal(input(empty, 'Zaznacz wszystkich członków').props.disabled, true);
-});
-
-test('existing member tables retain the action column and selectable owner row by default', () => {
-  const { Members } = harness();
-  const tree = Members({ members, isOwner: true, busy: false, onRole() {}, onRemove() {} });
-  assert.doesNotMatch(tree.props.className, /workplace-members-sheet--toolbar/);
-  assert.equal(nodes(tree).filter((node) => node.props?.['data-column'] === 'action').length, 6);
-  assert.equal(input(tree, 'Zaznacz członka owner').props.disabled, false);
 });
 
 const schema = {

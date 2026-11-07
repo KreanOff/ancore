@@ -4,15 +4,15 @@
 {% block title %}Dla ciebie | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261103-task-key-order">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261105-common-toolbar">
 <link rel="stylesheet" href="{% static 'css/components/dashboard.css' %}?v=20261103-task-key-order">
 <script src="{% static 'js/for-you.js' %}?v=20261016-react-migration" defer></script>
 {% endblock %}
 
 {% block content %}
 <div class="dashboard-page dashboard-overview for-you-page{% if not for_you_projects and not for_you_groups %} for-you-page--empty{% endif %}">
-    <header class="tasks-topbar tasks-topbar--project-directory">
+    <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory app-page-header">
         <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Dla ciebie</h1></div>
     </header>
     <div class="dashboard-main">
@@ -41,7 +41,7 @@
         </section>
 
         <section class="dashboard-panel for-you-work-panel" aria-label="Twoja praca">
-            <nav class="notifications-tabs work-tabs for-you-tabs" aria-label="Widok dla ciebie">
+            <nav class="notifications-tabs work-tabs app-page-tabs for-you-tabs" aria-label="Widok dla ciebie">
                 {% for tab in for_you_tabs %}
                 <a href="{{ tab.url }}"{% if for_you_tab == tab.key %} aria-current="page"{% endif %}><i data-icon="{{ tab.icon }}" aria-hidden="true"></i>{{ tab.label }}{% if tab.key == 'assigned' %}<span class="for-you-count">{{ for_you_assigned_count }}</span>{% endif %}</a>
                 {% endfor %}
@@ -94,12 +94,8 @@
                     </div>
                 </div>
                 {% endfor %}
+                {% include 'core/includes/load_more.html' with next_url=for_you_next loaded=for_you_page.end_index total=for_you_page.paginator.count only %}
             </div>
-            {% if for_you_previous or for_you_next %}
-            <nav class="dashboard-overview-list-footer for-you-pagination" aria-label="Paginacja twojej pracy">
-                <div>{% if for_you_previous %}<a class="tasks-filter-button" href="{{ for_you_previous }}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% endif %}{% if for_you_next %}<a class="tasks-filter-button" href="{{ for_you_next }}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% endif %}</div>
-            </nav>
-            {% endif %}
         </section>
     </div>
 </div>

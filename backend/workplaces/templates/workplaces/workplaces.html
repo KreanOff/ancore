@@ -1,8 +1,8 @@
 {% extends 'core/base.html' %}
 {% load workplace_avatar static %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261017-page-padding-15px">
-<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261025-module-cards-muted">
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/workplace-team.css' %}?v=20261105-no-hamburger">
 <script src="{% static 'js/workplace-team.js' %}?v=20261025-existing-members-copy" defer></script>
 {% endblock %}
 
@@ -17,7 +17,7 @@
     <main class="workplaces-settings-main">
         <section class="workplaces-workspace workplaces-console" aria-labelledby="workplaces-page-title">
             <h1 id="workplaces-page-title" class="u-sr-only">Workspace</h1>
-            <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory workplaces-task-topbar">
+            <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory workplaces-task-topbar app-page-header">
                 <div class="tasks-titlebar-left">
                     <span class="tasks-topbar-title">
                         <span>Workspace</span>
@@ -31,18 +31,14 @@
 
             <div class="workplaces-console__body">
                 <section class="workplaces-directory" aria-label="Lista miejsc pracy">
-                    <div class="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplaces-project-sheet">
+                    <div class="workplaces-directory__table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplaces-project-sheet app-data-table">
                         <section class="tasks-issue-group tasks-directory-group" data-section-status="">
-                            <div class="workplaces-directory__head tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header" role="row">
+                            <div class="workplaces-directory__head tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header" role="row">
                                 <span class="workplaces-directory__cell tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select">
                                     <input type="checkbox" id="workplaces-select-all-checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie miejsca pracy" title="Zaznacz wszystkie miejsca pracy" data-workplaces-select-all>
                                 </span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" aria-label="Przełącz miejsce pracy" title="Przełącz miejsce pracy" data-column-label="Przełącz">
-                                    <i data-icon="arrow-up-right" aria-hidden="true"></i>
                                     <span class="u-sr-only">Przełącz</span>
-                                </span>
-                                <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" aria-label="Działania" title="Działania" data-column-label="Działania">
-                                    <span class="u-sr-only">Działania</span>
                                 </span>
                                 <span class="workplaces-directory__cell tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name">Nazwa<i data-icon="briefcase-business" aria-hidden="true"></i></span>
                                 <span class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="code">Kod miejsca pracy<i data-icon="hash" aria-hidden="true"></i></span>
@@ -55,7 +51,7 @@
                             <div class="workplaces-directory__body tasks-issue-list tasks-project-list tasks-directory-list" aria-label="Lista miejsc pracy">
                                 {% for workplace in workplaces %}
                                 {% with member_count=workplace.team_member_count %}
-                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %}" role="row" tabindex="0" aria-label="Zarządzaj {{ workplace.name }}"{% if active_workplace and workplace.id == active_workplace.id %} aria-current="true"{% endif %} data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{{ workplace.viewer_role_label }}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-row-modal="workplace-edit-modal-{{ workplace.id }}">
+                                <article class="workplace-row tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row{% if active_workplace and workplace.id == active_workplace.id %} is-active{% endif %} app-table-row" role="row" tabindex="0" aria-label="Zarządzaj {{ workplace.name }}"{% if active_workplace and workplace.id == active_workplace.id %} aria-current="true"{% endif %} data-workplace-row data-workplace-name="{{ workplace.name }}" data-workplace-code="{{ workplace.code }}" data-workplace-description="{{ workplace.description }}" data-workplace-members="{{ member_count }}" data-workplace-context="{{ workplace.viewer_role_label }}" data-workplace-status="{% if active_workplace and workplace.id == active_workplace.id %}Aktywny{% else %}Dostępny{% endif %}" data-workplace-is-active="{% if active_workplace and workplace.id == active_workplace.id %}true{% else %}false{% endif %}" data-workplace-switch-url="{% url 'workplaces:switch' workplace.id %}" data-workplace-delete-url="{% url 'workplaces:delete' workplace.id %}" data-workplace-row-modal="workplace-edit-modal-{{ workplace.id }}">
                                     <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" aria-label="Zaznacz miejsce pracy {{ workplace.name }}" data-workplace-id="{{ workplace.id }}" data-workplace-checkbox>
                                     <div class="workplaces-directory__cell workplace-row__open tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="action" role="cell">
                                         {% if active_workplace and workplace.id == active_workplace.id %}
@@ -70,23 +66,6 @@
                                             </button>
                                         </form>
                                         {% endif %}
-                                    </div>
-                                    <div class="workplaces-directory__cell tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="menu" role="cell" data-row-actions>
-                                        <button type="button" class="tasks-project-sheet__edit-button" data-row-actions-toggle popovertarget="workplace-{{ workplace.pk }}-actions" aria-controls="workplace-{{ workplace.pk }}-actions" aria-expanded="false" aria-label="Działania: {{ workplace.name }}" title="Działania"><i data-icon="menu" aria-hidden="true"></i></button>
-                                        <div id="workplace-{{ workplace.pk }}-actions" class="tasks-section-menu documents-item-menu" popover="auto" role="group" tabindex="-1" aria-label="Działania: {{ workplace.name }}" data-row-actions-panel>
-                                            <div class="documents-menu-actions">
-                                                <form method="post" action="{% url 'workplaces:set-default' workplace.pk %}">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="action" value="{% if request.user.default_workplace_id == workplace.pk %}remove{% else %}set{% endif %}">
-                                                    <button type="submit" class="tasks-project-menu-button"><i data-icon="{% if request.user.default_workplace_id == workplace.pk %}check{% else %}home{% endif %}" aria-hidden="true"></i><span>{% if request.user.default_workplace_id == workplace.pk %}Usuń ustawienie domyślne{% else %}Ustaw jako domyślny{% endif %}</span></button>
-                                                </form>
-                                                <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;tab=main" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="main"><i data-icon="{% if workplace.can_manage_team %}pencil{% else %}info{% endif %}" aria-hidden="true"></i><span>{% if workplace.can_manage_team %}Edytuj miejsce pracy{% else %}Informacje{% endif %}</span></a>
-                                                <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="members"><i data-icon="users" aria-hidden="true"></i><span>Członkowie</span></a>
-                                                {% if workplace.can_manage_team %}
-                                                <a class="tasks-project-menu-button" href="{% url 'workplaces:workplaces' %}?workspace={{ workplace.pk }}&amp;view=links" aria-haspopup="dialog" data-workplace-edit-open="workplace-edit-modal-{{ workplace.pk }}" data-workplace-edit-tab="links"><i data-icon="link" aria-hidden="true"></i><span>Linki do dołączenia</span></a>
-                                                {% endif %}
-                                            </div>
-                                        </div>
                                     </div>
                                     {% workplace_avatar workplace as workplace_logo %}
                                     <span class="workplaces-directory__cell workplace-row__name tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
@@ -126,6 +105,7 @@
                                 {% endfor %}
                             </div>
                         </section>
+                        <button type="button" class="tasks-filter-button work-list-more app-load-more" data-workplaces-load-more hidden>Pokaż więcej</button>
                     </div>
                 </section>
                 <div class="tasks-empty-state tasks-empty-state--illustrated" role="status" data-workplaces-no-results hidden><span class="tasks-empty-state__illustration tasks-empty-state__illustration--spaces" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>Nie znaleziono Workspace.</h2><p>Zmień wyszukiwaną nazwę lub wyczyść wyszukiwanie.</p></div></div>
@@ -210,16 +190,8 @@
             const searchInput = document.querySelector('[data-workplaces-search]');
             const checkboxes = Array.from(document.querySelectorAll('[data-workplace-checkbox]'));
             const rows = Array.from(document.querySelectorAll('.workplace-row'));
-            const pagination = document.querySelector('[data-workplaces-pagination]');
-            const pageSizeDropdown = document.querySelector('[data-workplaces-page-size-dropdown]');
-            const pageSizeToggle = document.querySelector('[data-workplaces-page-size-toggle]');
-            const pageSizeLabel = document.querySelector('[data-workplaces-page-size-label]');
-            const pageSizeOptions = Array.from(document.querySelectorAll('[data-workplaces-page-size-value]'));
-            const paginationSummary = document.querySelector('[data-workplaces-pagination-summary]');
-            const previousPageButton = document.querySelector('[data-workplaces-page-prev]');
-            const nextPageButton = document.querySelector('[data-workplaces-page-next]');
-            let pageSize = 50;
-            let currentPage = 1;
+            const moreButton = document.querySelector('[data-workplaces-load-more]');
+            let visibleLimit = 20;
 
             if (!selectAll) return;
 
@@ -260,20 +232,11 @@
                 return rows.filter(row => !query || rowSearchText(row).includes(query));
             }
 
-            function closePageSizeDropdown() {
-                window.AncoreDropdownLayer?.hide(pageSizeDropdown?.querySelector('.tasks-project-pagination__size-menu'));
-                pageSizeDropdown?.classList.remove('is-open');
-                pageSizeToggle?.setAttribute('aria-expanded', 'false');
-            }
-
             function renderPagination() {
                 const filteredRows = getFilteredRows();
                 const totalRows = filteredRows.length;
-                const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
-                currentPage = Math.min(currentPage, totalPages);
-                const firstIndex = (currentPage - 1) * pageSize;
-                const lastIndex = Math.min(firstIndex + pageSize, totalRows);
-                const currentRows = new Set(filteredRows.slice(firstIndex, lastIndex));
+                const lastIndex = Math.min(visibleLimit, totalRows);
+                const currentRows = new Set(filteredRows.slice(0, lastIndex));
 
                 rows.forEach(row => {
                     const isVisible = currentRows.has(row);
@@ -284,18 +247,11 @@
                 const noResults = document.querySelector('[data-workplaces-no-results]');
                 if (noResults) noResults.hidden = totalRows > 0 || rows.length === 0;
 
-                if (paginationSummary) {
-                    paginationSummary.textContent = totalRows
-                        ? `${firstIndex + 1}–${lastIndex} z ${totalRows}`
-                        : '0 z 0';
-                    paginationSummary.setAttribute('aria-label', totalRows
-                        ? `Pokazano ${firstIndex + 1}–${lastIndex} z ${totalRows} miejsc pracy, strona ${currentPage} z ${totalPages}`
-                        : 'Pokazano 0 z 0 miejsc pracy');
+                if (moreButton) {
+                    moreButton.hidden = totalRows <= 20;
+                    moreButton.disabled = lastIndex >= totalRows;
+                    moreButton.textContent = `${lastIndex < totalRows ? 'Pokaż więcej' : 'Wszystkie wyniki'} (${lastIndex} / ${totalRows})`;
                 }
-
-                if (previousPageButton) previousPageButton.disabled = currentPage <= 1;
-                if (nextPageButton) nextPageButton.disabled = currentPage >= totalPages;
-                if (pagination) pagination.hidden = rows.length === 0;
                 syncSelectionState();
             }
 
@@ -314,64 +270,20 @@
             });
 
             searchInput?.addEventListener('input', () => {
-                currentPage = 1;
+                visibleLimit = 20;
                 renderPagination();
             });
 
             document.querySelector('[data-workplaces-clear-search]')?.addEventListener('click', () => {
                 searchInput.value = '';
-                currentPage = 1;
+                visibleLimit = 20;
                 renderPagination();
                 searchInput.focus();
             });
 
-            pageSizeToggle?.addEventListener('click', event => {
-                event.stopPropagation();
-                const isOpen = !pageSizeDropdown?.classList.contains('is-open');
-                closePageSizeDropdown();
-                if (isOpen) {
-                    pageSizeDropdown?.classList.add('is-open');
-                    pageSizeToggle.setAttribute('aria-expanded', 'true');
-                    window.AncoreDropdownLayer?.open(pageSizeDropdown.querySelector('.tasks-project-pagination__size-menu'), pageSizeToggle, closePageSizeDropdown);
-                }
-            });
-
-            pageSizeOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    pageSize = Number.parseInt(option.dataset.workplacesPageSizeValue || '50', 10);
-                    currentPage = 1;
-                    if (pageSizeLabel) pageSizeLabel.textContent = String(pageSize);
-                    pageSizeOptions.forEach(item => {
-                        const isActive = item === option;
-                        item.classList.toggle('is-active', isActive);
-                        item.setAttribute('aria-checked', String(isActive));
-                    });
-                    closePageSizeDropdown();
-                    renderPagination();
-                });
-            });
-
-            previousPageButton?.addEventListener('click', () => {
-                if (currentPage <= 1) return;
-                currentPage -= 1;
+            moreButton?.addEventListener('click', () => {
+                visibleLimit += 20;
                 renderPagination();
-            });
-
-            nextPageButton?.addEventListener('click', () => {
-                const totalPages = Math.max(1, Math.ceil(getFilteredRows().length / pageSize));
-                if (currentPage >= totalPages) return;
-                currentPage += 1;
-                renderPagination();
-            });
-
-            document.addEventListener('click', event => {
-                if (!event.target.closest('[data-workplaces-page-size-dropdown]')) {
-                    closePageSizeDropdown();
-                }
-            });
-
-            document.addEventListener('keydown', event => {
-                if (event.key === 'Escape') closePageSizeDropdown();
             });
 
             renderPagination();

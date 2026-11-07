@@ -490,7 +490,8 @@ export function ConfigurationForm({
       {editor ? (
         <Modal
           title={title}
-          className={editor.remove ? 'work-modal app-modal-panel--compact' : 'work-modal'}
+          size={editor.remove ? 'compact' : 'panel'}
+          className="work-modal"
           hostId={hostId}
           dirty={editor.dirty}
           pending={pending}
@@ -607,7 +608,7 @@ export function ConfigurationForm({
       {removal ? (
         <Modal
           title={`Usuń ${pluralNouns[section]}`}
-          className="app-modal-panel--compact"
+          size="compact"
           hostId={hostId}
           pending={pending}
           onClose={() => {

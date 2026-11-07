@@ -1,3 +1,4 @@
+import { PageTabs } from '../shared/PageTabs';
 import { useCallback, useEffect, useState } from 'react';
 import { EmbeddedForm, type FormDialogData } from '../forms/FormDialog';
 import AccessEditor, { type AccessTeam } from '../shared/AccessEditor';
@@ -291,11 +292,7 @@ export default function SettingsPage({
           actions={null}
           navigationContent={
             tab === 'statuses' && data?.can_configure && configuration ? (
-              <nav
-                className="notifications-tabs work-tabs work-tabs--views"
-                role="tablist"
-                aria-label="Widoki procesu pracy"
-              >
+              <PageTabs className="work-tabs--views" role="tablist" label="Widoki procesu pracy">
                 {workflowViews.map((view, index) => (
                   <button
                     key={view.key}
@@ -319,7 +316,7 @@ export default function SettingsPage({
                     {view.label}
                   </button>
                 ))}
-              </nav>
+              </PageTabs>
             ) : null
           }
         />

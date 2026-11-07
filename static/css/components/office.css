@@ -1,19 +1,17 @@
 /* Dokumenty extends the drive catalog and common Ancore controls. */
 /* Reuse the project directory's compact rows, header, separators and actions. */
 .tasks-directory-board.office-document-sheet {
-    --tasks-project-action-width: 40px;
-    --tasks-directory-grid: var(--tasks-directory-select-width) var(--tasks-project-action-width) minmax(280px, 1fr) 176px 120px;
+    --tasks-directory-grid: var(--tasks-directory-select-width) minmax(280px, 1fr) 176px 120px;
 }
 .tasks-directory-board.office-document-sheet .tasks-directory-header,
 .tasks-directory-board.office-document-sheet .tasks-directory-list .tasks-directory-row {
     --tasks-directory-grid: inherit;
     width: 100%;
-    min-width: 656px;
+    min-width: 616px;
     padding-inline: 0;
 }
 .office-document-sheet .tasks-directory-header > [data-column] { grid-area: auto; }
 .office-document-sheet .tasks-directory-list .tasks-directory-row { cursor: default; }
-.office-document-sheet [data-document-actions] { width: 100%; height: 100%; }
 .office-document-sheet .documents-name { width: 100%; padding-right: 0.75rem; }
 .office-document-sheet .documents-file-icon,
 .office-document-sheet .documents-file-icon svg { width: 32px; height: 32px; flex-basis: 32px; }
@@ -70,9 +68,6 @@
 .office-paper-footer { display: flex; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border-color); font-size: var(--font-size-sm); }
 .office-import-form { margin: 0 0 16px; }
 @media (max-width: 767px) {
-    .office-editor .documents-topbar { flex-wrap: wrap; height: auto; padding-block: 12px; }
-    .office-editor .tasks-titlebar-actions { flex-wrap: wrap; }
-    .office-editor .tasks-topbar .tasks-titlebar-actions { flex: 1 1 100%; width: 100%; max-width: 100%; min-width: 0; justify-content: flex-start; }
     .office-editor-scroll { padding: 12px; }
     .office-editor-metadata { grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .office-formatbar { padding: 8px; top: -12px; }
@@ -85,11 +80,8 @@
 html.office-editor-window { --app-ui-scale: 1; }
 .office-editor-window .main-content { margin: 0; width: 100%; }
 .office-editor-window .page-container.full-width { margin: 0; border: 0; border-radius: 0; }
-/* A single row contains only navigation, the file icon and the editable name. */
-.office-editor-window .office-suite .office-suite-topbar { min-height: calc(var(--control-height) + 8px); padding: 3px 16px !important; flex-wrap: nowrap; }
 .office-suite { min-height: 0; }
 .office-suite .tasks-titlebar-left { min-width: 0; flex: 1 1 0; gap: 12px; }
-.office-suite-file-icon, .office-suite-file-icon > svg { width: 32px; height: 32px; flex: 0 0 32px; }
 .office-suite .office-suite-title { display: flex; min-width: 0; margin: 0; font-size: var(--font-size-base); }
 .office-suite-title-button, .office-suite-title-text, .office-suite-title-input.form-input { min-width: 0; max-width: 100%; height: var(--control-height); padding: 0 6px; color: inherit; font: inherit; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; box-shadow: none; }
 .office-suite-title-button, .office-suite-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
@@ -105,6 +97,5 @@ html.office-editor-window { --app-ui-scale: 1; }
 .office-suite-error [data-suite-retry] { margin-left: 8px; }
 .office-suite-unavailable { flex: 1; display: grid; place-items: center; }
 @media (max-width: 767px) {
-    .office-editor-window .office-suite .office-suite-topbar { padding-inline: 12px !important; }
     .office-suite .tasks-titlebar-left { gap: 8px; }
 }

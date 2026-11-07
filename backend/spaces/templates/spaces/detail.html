@@ -1,12 +1,11 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}{% if view == 'settings' %}Ustawienia przestrzeni · {% endif %}{{ space.name }}{% endblock %}
 {% block work_page_class %}{% if view == 'settings' %} space-settings-page{% endif %}{% endblock %}
-{% block work_header %}<div class="work-space-header">{{ block.super }}</div>{% endblock %}
 {% block work_heading %}{% if view == 'settings' %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a>{% elif can_manage %}<a class="space-avatar-trigger" href="{{ space_url }}avatar/" data-work-open aria-haspopup="dialog" aria-label="Zmień awatar przestrzeni {{ space.name }}" title="Zmień awatar">{% include 'spaces/avatar.html' with avatar_class='space-avatar--heading' %}</a>{% else %}{% include 'spaces/avatar.html' with avatar_class='space-avatar--heading' %}{% endif %}<h1 class="tasks-topbar-title work-space-title">{% if view == 'settings' %}Ustawienia przestrzeni · {% endif %}{{ space.name }}</h1>{% endblock %}
 {% block work_actions %}{% if can_edit and view != 'settings' %}<a href="{{ create_item_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie</a>{% endif %}{% endblock %}
 {% block work_navigation %}
 {% if view != 'settings' %}
-<nav class="notifications-tabs work-tabs work-tabs--views" aria-label="Widoki przestrzeni">
+<nav class="notifications-tabs work-tabs app-page-tabs work-tabs--views" aria-label="Widoki przestrzeni">
     {% for nav in navigation %}
     <a href="{{ nav.url }}"{% if view == nav.key %} aria-current="page"{% endif %}><i data-icon="{{ nav.icon }}" aria-hidden="true"></i>{{ nav.label }}</a>
     {% endfor %}

@@ -1,9 +1,12 @@
+import { LoadMore } from '../shared/LoadMore';
+import { useLoadMorePage } from '../shared/useLoadMorePage';
+import { PageHeader } from '../shared/PageHeader';
+import { PageTabs } from '../shared/PageTabs';
 import type { FormEvent } from 'react';
 import { FormDialog } from '../forms/FormDialog';
 import { ForYouTaskRow } from '../dashboard/ForYouPage';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
-import { Pagination } from '../shared/Pagination';
 import { type PageProps, navigate } from '../shared/page';
 import { StatusGroup } from '../shared/StatusGroup';
 import { usePageActions } from '../shared/usePageActions';
@@ -12,8 +15,11 @@ import type { Item } from '../spaces/types';
 import { SearchToolbar } from './SearchToolbar';
 
 export default function SearchPage(props: PageProps) {
-  const { initial, csrfToken } = props,
-    data = initial.data as SearchData;
+  const { initial, csrfToken } = props;
+  const more = useLoadMorePage<SearchData>(props, (value) => value.pagination.next);
+  const { data } = more;
+  // Page navigation mounts a fresh form; extending this result window must keep its draft DOM.
+  const toolbarData = { ...data, form: (initial.data as SearchData).form };
   const actions = usePageActions(props, data.modal),
     saved = data.saved_filter;
   const groups = new Map<string, Item[]>();
@@ -42,9 +48,16 @@ export default function SearchPage(props: PageProps) {
       data-react-screen="filter-search"
     >
       <section className="tasks-workspace" aria-busy={actions.busy}>
-        <header className="work-space-header">
-          <div className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
-            <div className="tasks-titlebar-left">
+        <PageHeader
+          groupClassName="work-space-header"
+          heading={
+            <>
+              <h1 className="tasks-topbar-title work-space-title">{initial.title}</h1>
+              {data.changed ? <span className="work-caption">Zmienione warunki</span> : null}
+            </>
+          }
+          actions={
+            <>
               {saved ? (
                 <button
                   type="button"
@@ -57,10 +70,6 @@ export default function SearchPage(props: PageProps) {
                   <Icon name="star" />
                 </button>
               ) : null}
-              <h1 className="tasks-topbar-title work-space-title">{initial.title}</h1>
-              {data.changed ? <span className="work-caption">Zmienione warunki</span> : null}
-            </div>
-            <div className="tasks-titlebar-actions">
               {data.changed && saved?.query_editable && data.can_save ? (
                 <button
                   className="tasks-filter-button"
@@ -95,46 +104,52 @@ export default function SearchPage(props: PageProps) {
                   Edytuj filtr
                 </button>
               ) : null}
-            </div>
-          </div>
-          <nav
-            className="notifications-tabs work-tabs work-tabs--views"
-            aria-label="Tryb wyszukiwania"
-          >
-            {data.basic_available ? (
+            </>
+          }
+          navigation={
+            <PageTabs className="work-tabs--views" label="Tryb wyszukiwania">
+              {data.basic_available ? (
+                <a
+                  href={data.basic_url}
+                  className={data.mode === 'basic' ? 'is-active' : ''}
+                  aria-current={data.mode === 'basic' ? 'page' : undefined}
+                >
+                  <Icon name="list-filter" />
+                  Podstawowy
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className="task-filter-disabled"
+                  title="Tych warunków nie można przedstawić w trybie podstawowym."
+                  disabled
+                >
+                  <Icon name="list-filter" />
+                  Podstawowy
+                </button>
+              )}
               <a
-                href={data.basic_url}
-                className={data.mode === 'basic' ? 'is-active' : ''}
-                aria-current={data.mode === 'basic' ? 'page' : undefined}
+                href={data.advanced_url}
+                className={data.mode === 'advanced' ? 'is-active' : ''}
+                aria-current={data.mode === 'advanced' ? 'page' : undefined}
               >
-                <Icon name="list-filter" />
-                Podstawowy
+                <Icon name="sliders-horizontal" />
+                Zaawansowany
               </a>
-            ) : (
-              <span
-                className="task-filter-disabled"
-                title="Tych warunków nie można przedstawić w trybie podstawowym."
-              >
-                Podstawowy
-              </span>
-            )}
-            <a
-              href={data.advanced_url}
-              className={data.mode === 'advanced' ? 'is-active' : ''}
-              aria-current={data.mode === 'advanced' ? 'page' : undefined}
-            >
-              <Icon name="sliders-horizontal" />
-              Zaawansowany
-            </a>
-          </nav>
-        </header>
+            </PageTabs>
+          }
+        />
         <div className="work-content work-content--items work-content--tasks">
           {data.mode === 'basic' ? (
-            <SearchToolbar data={data} />
+            <SearchToolbar data={toolbarData} />
           ) : (
-            <form className="task-filter-search" action={data.search_url} onSubmit={search}>
+            <form
+              className="task-filter-search tasks-filterbar app-toolbar app-toolbar--embedded app-toolbar--query"
+              action={data.search_url}
+              onSubmit={search}
+            >
               <input type="hidden" name="mode" value="advanced" />
-              <div className="task-filter-advanced">
+              <div className="task-filter-advanced app-toolbar__controls">
                 <label htmlFor="filter-jql" className="u-sr-only">
                   Zapytanie zaawansowane
                 </label>
@@ -233,13 +248,24 @@ export default function SearchPage(props: PageProps) {
                 }
               />
             )}
+            {data.pagination ? (
+              <LoadMore
+                loaded={data.pagination.end}
+                total={data.pagination.count}
+                hasMore={!!data.pagination.next}
+                loading={more.loading}
+                error={more.error}
+                disabled={actions.busy}
+                onLoad={() => void more.loadMore()}
+              />
+            ) : null}
           </div>
         </div>
-        <Pagination data={data.pagination} />
       </section>
       {actions.modal ? (
         <FormDialog
           data={actions.modal}
+          returnFocus={actions.returnFocus}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={actions.close}

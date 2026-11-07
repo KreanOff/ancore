@@ -263,7 +263,7 @@ class ListWindowTests(TestCase):
         response = self.client.get(target)
         self.assertEqual(len(response.context['items']), 21)
         self.assertEqual(response.context['timeline']['more_url'], '')
-        self.assertContains(response, 'Wszystkie zadania')
+        self.assertContains(response, 'Wszystkie wyniki')
         self.assertContains(response, '(21 / 21)')
         for query, count in [('Praca resolved', 20), ('Brak takiego zadania', 0)]:
             with self.subTest(query=query):
@@ -272,7 +272,9 @@ class ListWindowTests(TestCase):
                 self.assertEqual(data['timeline']['more_url'], '')
                 self.assertEqual(len(data['items']), count)
                 response = self.client.get(self.url(view='timeline', q=query, timeline_limit=100))
-                self.assertNotContains(response, 'work-list-more')
+                # The global notification dialog has its own hidden load-more button.
+                self.assertNotRegex(response.content.decode(),
+                                    r'<(?:a|button)\b(?=[^>]*class="[^"]*\bwork-list-more\b)(?![^>]*data-notification-more)[^>]*>')
                 self.assertNotContains(response, 'work-pagination')
 
     def test_timeline_limits_are_bounded_and_next_load_rechecks_access(self):

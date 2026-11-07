@@ -4,49 +4,23 @@ import type { Dashboard } from './types';
 export function DashboardActions({
   item,
   busy,
-  directory = false,
-  favorite,
   remove,
 }: {
   item: Dashboard;
   busy: boolean;
-  directory?: boolean;
-  favorite: () => void;
   remove: () => void;
 }) {
   return (
     <Dropdown
       label={`Działania: ${item.name}`}
       className="documents-item-actions"
-      triggerClassName={
-        directory ? 'tasks-project-sheet__edit-button' : 'tasks-icon-button documents-icon-button'
-      }
+      triggerClassName="tasks-icon-button documents-icon-button"
       menuClass="tasks-section-menu documents-item-menu"
       role="group"
-      trigger={<Icon name={directory ? 'menu' : 'ellipsis'} />}
+      trigger={<Icon name="ellipsis" />}
     >
       {(close) => (
         <div className="documents-menu-actions">
-          {directory ? (
-            <>
-              <a className="tasks-project-menu-button" href={item.url}>
-                <Icon name="layout-dashboard" />
-                <span>Otwórz pulpit</span>
-              </a>
-              <button
-                className="tasks-project-menu-button tasks-favorite-toggle"
-                aria-pressed={item.favorite}
-                disabled={busy}
-                onClick={() => {
-                  close();
-                  favorite();
-                }}
-              >
-                <Icon name={item.favorite ? 'star-filled' : 'star'} />
-                <span>{item.favorite ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}</span>
-              </button>
-            </>
-          ) : null}
           {item.editable ? (
             <>
               <a className="tasks-project-menu-button" href={item.gadgets_url}>

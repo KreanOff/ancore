@@ -1,8 +1,8 @@
+import { PageHeader } from '../shared/PageHeader';
 import { useEffect, useRef, useState } from 'react';
 import type { PageProps } from '../shared/page';
 import { Icon } from '../shared/Icon';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
-import { FileIcon } from './Icons';
 import { documentRequest } from './requests';
 import { useOffice } from './useOffice';
 import type { SuiteData } from './types';
@@ -91,71 +91,69 @@ export default function SuitePage({ initial, csrfToken }: PageProps) {
       data-react-screen="office-suite"
       data-app-full-navigation
     >
-      <header
-        className="tasks-topbar tasks-topbar--directory documents-topbar office-suite-topbar"
-        aria-label="Pasek dokumentu"
-      >
-        <div className="tasks-titlebar-left tasks-project-breadcrumb">
-          <a
-            className="tasks-issue-close"
-            href={data.back_url}
-            aria-label={data.drive ? 'Wróć do dysku' : 'Wróć do dokumentów'}
-            title={data.drive ? 'Wróć do dysku' : 'Wróć do dokumentów'}
-          >
-            <Icon name="arrow-left" />
-          </a>
-          <span className="office-suite-file-icon" aria-hidden="true">
-            <FileIcon variant={item.variant} />
-          </span>
-          <h1 className="tasks-topbar-title office-suite-title" aria-busy={pending}>
-            {canRename ? (
-              <>
-                <button
-                  ref={button}
-                  type="button"
-                  className="office-suite-title-button"
-                  hidden={editing}
-                  aria-label={`Zmień nazwę: ${saved}`}
-                  title={`Zmień nazwę: ${saved}`}
-                  onClick={begin}
-                >
+      <PageHeader
+        label="Pasek dokumentu"
+        className="documents-topbar office-suite-topbar"
+        heading={
+          <>
+            <a
+              className="tasks-issue-close"
+              href={data.back_url}
+              aria-label={data.drive ? 'Wróć do dysku' : 'Wróć do dokumentów'}
+              title={data.drive ? 'Wróć do dysku' : 'Wróć do dokumentów'}
+            >
+              <Icon name="arrow-left" />
+            </a>
+            <h1 className="tasks-topbar-title office-suite-title" aria-busy={pending}>
+              {canRename ? (
+                <>
+                  <button
+                    ref={button}
+                    type="button"
+                    className="office-suite-title-button"
+                    hidden={editing}
+                    aria-label={`Zmień nazwę: ${saved}`}
+                    title={`Zmień nazwę: ${saved}`}
+                    onClick={begin}
+                  >
+                    {saved}
+                  </button>
+                  <input
+                    ref={input}
+                    className="form-input office-suite-title-input"
+                    type="text"
+                    hidden={!editing}
+                    value={title}
+                    maxLength={255}
+                    size={Math.max(12, Math.min(60, Array.from(title).length + 1))}
+                    aria-label="Nazwa pliku"
+                    aria-describedby="suite-title-hint suite-title-error"
+                    aria-invalid={!!error}
+                    autoComplete="off"
+                    readOnly={pending}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      setError('');
+                    }}
+                    onBlur={() => void persist()}
+                    onKeyDown={(e) => {
+                      if (e.nativeEvent.isComposing || !['Enter', 'Escape'].includes(e.key)) return;
+                      e.preventDefault();
+                      if (pending) return;
+                      if (e.key === 'Escape') finish(true);
+                      else void persist(true);
+                    }}
+                  />
+                </>
+              ) : (
+                <span className="office-suite-title-text" title={saved}>
                   {saved}
-                </button>
-                <input
-                  ref={input}
-                  className="form-input office-suite-title-input"
-                  type="text"
-                  hidden={!editing}
-                  value={title}
-                  maxLength={255}
-                  size={Math.max(12, Math.min(60, Array.from(title).length + 1))}
-                  aria-label="Nazwa pliku"
-                  aria-describedby="suite-title-hint suite-title-error"
-                  aria-invalid={!!error}
-                  autoComplete="off"
-                  readOnly={pending}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    setError('');
-                  }}
-                  onBlur={() => void persist()}
-                  onKeyDown={(e) => {
-                    if (e.nativeEvent.isComposing || !['Enter', 'Escape'].includes(e.key)) return;
-                    e.preventDefault();
-                    if (pending) return;
-                    if (e.key === 'Escape') finish(true);
-                    else void persist(true);
-                  }}
-                />
-              </>
-            ) : (
-              <span className="office-suite-title-text" title={saved}>
-                {saved}
-              </span>
-            )}
-          </h1>
-        </div>
-      </header>
+                </span>
+              )}
+            </h1>
+          </>
+        }
+      />
       {canRename ? (
         <>
           <span id="suite-title-hint" className="u-sr-only">

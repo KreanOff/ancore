@@ -231,10 +231,13 @@ class TeamSystemTests(TestCase):
         Team.objects.bulk_create([Team(owner=self.owner, workplace=self.workspace, name=f'Zespół {number:02}', description='szukany') for number in range(28)])
         self.assertLessEqual(query_count(), initial + 1)
         data = self.api(self.path('?q=szukany&sort=members')).json()['data']
-        self.assertEqual((len(data['teams']), data['pagination']['count']), (24, 28))
+        self.assertEqual((len(data['teams']), data['pagination']['count']), (20, 28))
         self.assertIn('q=szukany', data['pagination']['next'])
         self.assertIn('sort=members', data['pagination']['next'])
-        self.assertEqual(len(self.api(data['pagination']['next']).json()['data']['teams']), 4)
+        final = self.api(data['pagination']['next']).json()['data']
+        self.assertEqual(len(final['teams']), 28)
+        self.assertEqual(final['teams'][:20], data['teams'])
+        self.assertEqual(final['pagination']['next'], '')
 
     def test_html_templates_render_all_views_with_native_forms(self):
         for suffix in ('', f'{self.team.pk}/', f'{self.team.pk}/?view=work', f'{self.team.pk}/?view=members', f'{self.team.pk}/?view=spaces'):

@@ -17,7 +17,6 @@ import { dateLabel, type DetailData, type Item, type Sprint, type Status } from 
 import { useItemMotion } from './useItemMotion';
 import Timeline from './TimelineView';
 import ReportsView from './ReportsView';
-import { BlockDialog, type BlockDialogData } from './BlockDialog';
 import { boardMoveError, wipReached } from './kanban';
 export default function DetailPage({ initial, csrfToken }: PageProps) {
   const [data, setData] = useState(initial.data as DetailData),
@@ -29,18 +28,18 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     [listError, setListError] = useState<{ key: string; message: string } | null>(null),
     [selected, setSelected] = useState<Set<number>>(new Set()),
     [destination, setDestination] = useState(''),
-    [dragged, setDragged] = useState<Item | null>(null),
-    [blockDialog, setBlockDialog] = useState<BlockDialogData | null>(null);
+    [dragged, setDragged] = useState<Item | null>(null);
   const motion = useItemMotion(data, () => {
     setDragged(null);
     setNotice('Anulowano przeciąganie zadania.');
   });
   const life = useRef(new AbortController()),
+    modalReturnFocus = useRef<HTMLElement | null>(null),
     pending = useRef(false),
     currentUrl = useRef(initial.url),
     listScroll = useRef<number | null>(null);
-  const refreshState = useRef({ data, modal, blockDialog, dragged, busy });
-  refreshState.current = { data, modal, blockDialog, dragged, busy };
+  const refreshState = useRef({ data, modal, dragged, busy });
+  refreshState.current = { data, modal, dragged, busy };
   useEffect(() => () => life.current.abort(), []);
   async function refreshBoard() {
     const page = await pageRequest<Page>(
@@ -67,7 +66,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
         pending.current ||
         current.busy ||
         current.modal ||
-        current.blockDialog ||
         current.dragged ||
         document.querySelector('.tasks-modal.is-open')
       )
@@ -164,6 +162,8 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
   }
   async function openForm(url: string) {
     if (pending.current) return;
+    modalReturnFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -178,29 +178,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
       setBusy(false);
     }
   }
-  async function openBlock(item: Item) {
-    if (pending.current) return;
-    pending.current = true;
-    setBusy(true);
-    setError('');
-    try {
-      const page = await pageRequest<Page>(
-        initial.api_url,
-        item.block_url || item.url,
-        csrfToken,
-        life.current.signal,
-      );
-      const detail = page.data as BlockDialogData & { can_edit: boolean };
-      if (page.type !== 'space-block' || detail.item.id !== item.id || !detail.can_edit)
-        throw new Error('Nie można teraz zmienić blokady tego zadania. Odśwież widok.');
-      if (!life.current.signal.aborted) setBlockDialog(detail);
-    } catch (exception) {
-      if (!life.current.signal.aborted) setError(errorMessage(exception));
-    } finally {
-      pending.current = false;
-      if (!life.current.signal.aborted) setBusy(false);
-    }
-  }
+
   async function act(
     url: string,
     values: Record<string, string> | FormData,
@@ -385,9 +363,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
   const actionProps = {
     data,
     busy,
-    openForm: (url: string) => void openForm(url),
-    openBlock: (item: Item) => void openBlock(item),
-    act: (url: string, values: Record<string, string>) => void act(url, values),
   };
   const tableView = ['list', 'board', 'backlog', 'timeline'].includes(data.view),
     filtered = Object.values(data.filters).some(Boolean);
@@ -930,6 +905,7 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
         <FormDialog
           key={modal.action}
           data={modal}
+          returnFocus={modalReturnFocus.current}
           api={initial.api_url}
           csrfToken={csrfToken}
           onClose={() => {
@@ -937,16 +913,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
             if ((initial.data as DetailData).modal) setPageLocation(modal.return_url);
           }}
           onSaved={navigate}
-        />
-      ) : null}
-      {blockDialog ? (
-        <BlockDialog
-          data={blockDialog}
-          api={initial.api_url}
-          csrfToken={csrfToken}
-          view={data.view}
-          onClose={() => setBlockDialog(null)}
-          onRefresh={refreshBoard}
         />
       ) : null}
     </div>

@@ -1,3 +1,4 @@
+import { PageHeader } from '../shared/PageHeader';
 import { useEffect, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
@@ -44,13 +45,13 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
   }, []);
   return (
     <div className="dashboard-page settings-center" data-react-screen="settings">
-      <header className="tasks-topbar tasks-topbar--project-directory">
-        <div className="tasks-titlebar-left">
+      <PageHeader
+        heading={
           <h1 className="tasks-topbar-title" id="settings-title">
             Ustawienia
           </h1>
-        </div>
-      </header>
+        }
+      />
       <div className="settings-scroll-area">
         <div className="settings-layout">
           <div className="settings-content" aria-labelledby="settings-title">

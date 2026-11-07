@@ -1,11 +1,10 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}Ustawienia przestrzeni · {{ space.name }}{% endblock %}
 {% block work_page_class %} space-settings-page{% endblock %}
-{% block work_header %}<div class="work-space-header">{{ block.super }}</div>{% endblock %}
 {% block work_heading %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title work-space-title">Ustawienia przestrzeni · {{ space.name }}</h1>{% endblock %}
 {% block work_navigation %}
 {% if configuration_section == 'statuses' %}
-<nav class="notifications-tabs work-tabs work-tabs--views" aria-label="Widoki procesu pracy">
+<nav class="notifications-tabs work-tabs app-page-tabs work-tabs--views" aria-label="Widoki procesu pracy">
     {% for tab in workflow_tabs %}<a href="{{ tab.url }}"{% if workflow_view == tab.key %} aria-current="page"{% endif %}><i data-icon="{{ tab.icon }}" aria-hidden="true"></i>{{ tab.label }}</a>{% endfor %}
 </nav>
 {% endif %}
@@ -16,15 +15,17 @@
     {% for group in sets %}
     {% if group.key == configuration_section %}
     <section class="work-configuration-section" data-configuration-section="{{ group.key }}">
-        <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory member-access-toolbar">
+        <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory app-toolbar member-access-toolbar">
+        <div class="app-toolbar__actions">
             <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Edytuj</button>
             <button type="button" class="tasks-filter-button" disabled><i data-icon="trash-2" aria-hidden="true"></i>Usuń</button>
-            {% if group.add_url %}{% if group.key != 'statuses' or workflow_view == 'states' %}<a href="{{ group.add_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"><i data-icon="plus" aria-hidden="true"></i>{{ group.add_label }}</a>{% endif %}{% endif %}
-            {% if group.key == 'statuses' and workflow_view != 'states' %}<div class="member-access-save-actions">
-                <button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled><i data-icon="check" aria-hidden="true"></i>Zapisz</button>
+            {% if group.add_url %}{% if group.key != 'statuses' or workflow_view == 'states' %}<a href="{{ group.add_url }}" class="tasks-filter-button"><i data-icon="plus" aria-hidden="true"></i>{{ group.add_label }}</a>{% endif %}{% endif %}
+            {% if group.key == 'statuses' and workflow_view != 'states' %}<div class="member-access-save-actions app-toolbar__selection">
+                <button type="button" class="tasks-filter-button" disabled><i data-icon="check" aria-hidden="true"></i>Zapisz</button>
                 <button type="button" class="tasks-filter-button" disabled>Anuluj</button>
             </div>{% endif %}
         </div>
+    </div>
         {% if group.key == 'statuses' and workflow_view != 'states' %}
         <div class="work-flow-editor work-flow-native" role="region" aria-label="Proces pracy — etapy">
             <p class="workplace-team__hint">Etapy i dozwolone przejścia procesu pracy. Otwórz etap, aby zmienić jego ustawienia.</p>
@@ -38,15 +39,15 @@
             </div>
         </div>
         {% else %}
-        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet settings-directory-sheet settings-directory-sheet--{{ group.key }}" role="region" aria-label="{{ group.title }} — tabela" tabindex="0">
+        <div class="tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-project-sheet--selectable tasks-directory-menu-sheet settings-directory-sheet settings-directory-sheet--{{ group.key }} app-data-table" role="region" aria-label="{{ group.title }} — tabela" tabindex="0">
             <section class="tasks-directory-group" role="table" aria-label="{{ group.title }}">
-                <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header" role="row">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header app-table-header" role="row">
                     <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" role="columnheader"><input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz wszystkie pozycje"></span>
                     {% for header in group.headers %}<span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="{{ header.key }}" role="columnheader"><i data-icon="{{ header.icon }}" aria-hidden="true"></i>{{ header.label }}</span>{% endfor %}
                 </div>
                 <div class="tasks-issue-list tasks-directory-list" role="rowgroup">
                     {% for row in group.rows %}
-                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row" role="row">
+                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row app-table-row" role="row">
                         <span class="tasks-directory-sheet__cell tasks-tag-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" aria-label="Zaznacz: {{ row.label }}"></span>
                         {% for cell in row.cells %}<span class="tasks-directory-sheet__cell tasks-tag-sheet__cell{% if cell.key == 'label' %} tasks-directory-name{% endif %}" data-column="{{ cell.key }}" role="cell" title="{{ cell.value }}">{% if cell.key == 'label' %}<a href="{{ row.edit_url }}" class="work-configuration-name" aria-label="Edytuj: {{ row.label }}">{% if group.key == 'categories' or group.key == 'groups' %}{{ cell.value }}{% else %}<span class="tasks-project-value-badge tasks-project-value-badge--with-icon tasks-project-value-badge--tag-visual" style="--tag-color: {{ row.color }}">{% if cell.icon %}<i data-icon="{{ cell.icon }}" aria-hidden="true"></i>{% endif %}<span class="work-configuration-badge-label">{{ cell.value }}</span></span>{% endif %}</a>{% else %}{{ cell.value }}{% endif %}</span>{% endfor %}
                     </div>

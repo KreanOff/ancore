@@ -2,19 +2,20 @@
 {% block work_heading %}<h1 class="tasks-topbar-title">Filtry</h1>{% endblock %}
 {% block work_actions %}<a class="tasks-filter-button" href="{{ search_url }}"><i data-icon="plus" aria-hidden="true"></i>Nowe wyszukiwanie</a>{% endblock %}
 {% block work_navigation %}
-<nav class="notifications-tabs work-tabs" aria-label="Katalog filtrów">
+<nav class="notifications-tabs work-tabs app-page-tabs" aria-label="Katalog filtrów">
     <a href="{{ filters_url }}?tab=favorites"{% if tab == 'favorites' %} class="is-active" aria-current="page"{% endif %}><i data-icon="star" aria-hidden="true"></i>Ulubione</a>
-    <a href="{{ filters_url }}?tab=mine"{% if tab == 'mine' %} class="is-active" aria-current="page"{% endif %}>Moje filtry</a>
-    <a href="{{ filters_url }}?tab=shared"{% if tab == 'shared' %} class="is-active" aria-current="page"{% endif %}>Udostępnione mi</a>
-    <a href="{{ filters_url }}?tab=all"{% if tab == 'all' %} class="is-active" aria-current="page"{% endif %}>Wszystkie filtry</a>
+    <a href="{{ filters_url }}?tab=mine"{% if tab == 'mine' %} class="is-active" aria-current="page"{% endif %}><i data-icon="filter" aria-hidden="true"></i>Moje filtry</a>
+    <a href="{{ filters_url }}?tab=shared"{% if tab == 'shared' %} class="is-active" aria-current="page"{% endif %}><i data-icon="users" aria-hidden="true"></i>Udostępnione mi</a>
+    <a href="{{ filters_url }}?tab=all"{% if tab == 'all' %} class="is-active" aria-current="page"{% endif %}><i data-icon="list-filter" aria-hidden="true"></i>Wszystkie filtry</a>
 </nav>
 {% endblock %}
 {% block work_toolbar %}
-<form method="get" action="{{ filters_url }}" class="tasks-filterbar tasks-filterbar--directory" data-filter-search>
+<form method="get" action="{{ filters_url }}" class="tasks-filterbar tasks-filterbar--directory app-toolbar" data-filter-search>
     <input type="hidden" name="tab" value="{{ tab }}">
-    <div class="tasks-filterbar-left"><span>Wyszukaj zapisany filtr</span></div>
-    <div class="tasks-filterbar-right"><label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj filtrów" aria-label="Szukaj filtrów"></label><button type="submit" class="tasks-filter-button">Szukaj</button></div>
+    <div class="app-toolbar__controls tasks-filterbar-left"><span>Wyszukaj zapisany filtr</span></div>
+    <div class="app-toolbar__search tasks-filterbar-right"><label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj filtrów" aria-label="Szukaj filtrów"></label><button type="submit" class="tasks-filter-button">Szukaj</button></div>
 </form>
 {% endblock %}
 {% block work_content_class %} work-content--directory{% endblock %}
 {% block work_content %}{% include 'dashboard/filters/directory.html' %}{% endblock %}
+{% block work_pagination %}{% endblock %}

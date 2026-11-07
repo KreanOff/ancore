@@ -95,8 +95,14 @@ class ReactFilterAndTagTests(TestCase):
             SpaceTask.objects.create(space=self.space, title=f'Wynik {index}', priority='high', created_by=self.owner)
         result = self.get(path + '?' + urlencode({'jql': 'priority = high', 'mode': 'advanced', 'page': 2})).json()['data']
         self.assertEqual(result['pagination']['count'], 53)
-        self.assertEqual(len(result['items']), 3)
-        self.assertIn('jql=', result['pagination']['pages'][0]['url'])
+        self.assertEqual(len(result['items']), 40)
+        self.assertEqual(result['pagination']['pages'], [])
+        self.assertIn('jql=', result['pagination']['next'])
+        self.assertIn('limit=53', result['pagination']['next'])
+        final = self.get(result['pagination']['next']).json()['data']
+        self.assertEqual(len(final['items']), 53)
+        self.assertEqual([row['task_id'] for row in final['items'][:40]], [row['task_id'] for row in result['items']])
+        self.assertEqual(final['pagination']['next'], '')
 
     def test_retired_management_redirects_in_page_and_navigation_api(self):
         for prefix in ['/filters/', self.path('filters')]:
@@ -151,6 +157,22 @@ class ReactFilterAndTagTests(TestCase):
             self.assertEqual(self.post(target + operation, {'jql': '', 'revision': self.saved.revision}).status_code, 403)
         self.assertEqual(self.get(self.path('filters', f'{self.private_filter.pk}/')).status_code, 404)
         self.assertEqual(self.get(self.path('filters', 'manage/')).json(), {'redirect': self.path('filters') + '?tab=mine'})
+
+    def test_favorite_returns_to_the_expanded_filter_results(self):
+        for index in range(44):
+            SpaceTask.objects.create(space=self.space, created_by=self.owner, assignee=self.member, title=f'Wynik {index}')
+        target = self.path('filters', f'{self.saved.pk}/')
+        for limit in (40, 60):
+            with self.subTest(limit=limit):
+                data = self.get(target + f'?mode=advanced&limit={limit}').json()['data']
+                self.assertEqual(len(data['items']), min(limit, 45))
+                self.assertIn(f'limit={min(limit, 45)}', data['list_url'])
+                response = self.post(target + 'favorite/', {'return_to': data['list_url']})
+                self.assertEqual(response.status_code, 200)
+                returned = self.get(response.json()['redirect']).json()['data']
+                self.assertEqual([row['task_id'] for row in returned['items']], [row['task_id'] for row in data['items']])
+                self.saved.refresh_from_db()
+                self.assertEqual(self.saved.query, 'assignee = currentUser()')
 
     def test_filter_settings_window_metadata_validation_and_repeated_saves(self):
         item = SavedTaskFilter.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.member,

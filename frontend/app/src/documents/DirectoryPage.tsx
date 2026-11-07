@@ -1,3 +1,5 @@
+import { Toolbar } from '../shared/DirectoryToolbar';
+import { PageHeader } from '../shared/PageHeader';
 import { setPageLocation } from '../shared/page';
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { Dropdown } from '../shared/Dropdown';
@@ -6,7 +8,7 @@ import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
 import { FileIcon } from './Icons';
 import Filters from './Filters';
-import Pagination from './Pagination';
+import { LoadMore } from '../shared/LoadMore';
 import Rows from './Rows';
 import DocumentDialog from './DocumentDialog';
 import Sidebar, { useSidebar } from './Sidebar';
@@ -18,6 +20,7 @@ export default function DirectoryPage(props: PageProps) {
     [search, setSearch] = useState(data.query),
     [reading, setReading] = useState(false),
     [error, setError] = useState(''),
+    [moreError, setMoreError] = useState(''),
     [selected, setSelected] = useState<Set<string>>(new Set());
   const actions = useActions(props, data.modal),
     sidebar = useSidebar(),
@@ -38,7 +41,6 @@ export default function DirectoryPage(props: PageProps) {
       q: search,
       sort: data.sort,
       display: data.display,
-      page_size: String(data.window.page_size),
       ...(!data.libraries ? { view: data.view } : {}),
       ...(data.library ? { library: data.library.id } : {}),
       ...(data.folder ? { folder: data.folder.id } : {}),
@@ -47,31 +49,43 @@ export default function DirectoryPage(props: PageProps) {
     for (const [key, value] of [...params]) if (!value) params.delete(key);
     return data.base_url + '?' + params;
   }
-  async function load(target: string) {
+  async function load(target: string, more = false) {
+    if (more && (read.current || actions.busy || search.trim().slice(0, 120) !== data.query))
+      return;
     read.current?.abort();
-    read.current = new AbortController();
+    const controller = new AbortController();
+    read.current = controller;
     const id = ++serial.current;
     setReading(true);
     setError('');
-    retry.current = target;
+    setMoreError('');
+    if (!more) retry.current = target;
     try {
       const result = await pageRequest<Page>(
         props.initial.api_url,
         target,
         props.csrfToken,
-        read.current.signal,
+        controller.signal,
       );
       if (result.type !== 'document-directory') throw new Error('Nie udało się odczytać katalogu.');
-      if (serial.current !== id) return;
+      if (controller.signal.aborted || serial.current !== id) return;
       const next = result.data as DirectoryData;
       if (next.query !== desired.current) return;
       setData(next);
-      setSelected(new Set());
-      setPageLocation(target, true);
+      setSelected((current) =>
+        more
+          ? new Set([...current].filter((key) => next.rows.some((row) => row.id === key)))
+          : new Set(),
+      );
+      setPageLocation(target, !more);
     } catch (e) {
-      if (!read.current.signal.aborted && serial.current === id) setError(errorMessage(e));
+      if (!controller.signal.aborted && serial.current === id)
+        (more ? setMoreError : setError)(errorMessage(e));
     } finally {
-      if (serial.current === id) setReading(false);
+      if (serial.current === id) {
+        read.current = undefined;
+        setReading(false);
+      }
     }
   }
   useEffect(() => {
@@ -86,6 +100,7 @@ export default function DirectoryPage(props: PageProps) {
     desired.current = value.trim().slice(0, 120);
     serial.current++;
     read.current?.abort();
+    read.current = undefined;
     setReading(false);
     setSearch(value);
   }
@@ -115,15 +130,24 @@ export default function DirectoryPage(props: PageProps) {
   const rows = (
     <Rows
       data={data}
-      busy={actions.busy}
       selected={selected}
       toggle={toggle}
       selectAll={(value) => setSelected(new Set(value ? data.rows.map((row) => row.id) : []))}
       allRef={all}
       open={open}
-      act={(target, values) => void actions.act(target, values)}
       dragged={drag.dragged}
       drop={drag.drop}
+      footer={
+        <LoadMore
+          loaded={data.rows.length}
+          total={data.window.count}
+          hasMore={data.window.has_next}
+          loading={reading}
+          disabled={actions.busy || search.trim().slice(0, 120) !== data.query}
+          error={moreError}
+          onLoad={() => void load(data.window.next_url, true)}
+        />
+      }
     />
   );
   const mainTarget = data.office
@@ -140,218 +164,233 @@ export default function DirectoryPage(props: PageProps) {
       aria-busy={reading || actions.busy}
       {...drag.handlers}
     >
-      <header className="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory documents-topbar">
-        <div className="tasks-titlebar-left">
-          {data.library ? (
-            <nav className="documents-breadcrumbs" aria-label="Ścieżka dysku">
-              <a href={data.base_url} aria-label="Wszystkie dyski">
-                Dyski
-              </a>
-              {data.breadcrumbs.map((crumb, index) => (
-                <span key={crumb.target} className="react-icon">
-                  <Icon name="chevron-right" />
-                  {index === data.breadcrumbs.length - 1 ? (
-                    <h1 className="tasks-topbar-title">{crumb.name}</h1>
-                  ) : (
-                    <a href={crumb.url} data-doc-target={crumb.target} data-doc-label={crumb.name}>
-                      {crumb.name}
-                    </a>
-                  )}
-                </span>
+      <PageHeader
+        className="documents-topbar"
+        heading={
+          <>
+            {data.library ? (
+              <nav className="documents-breadcrumbs" aria-label="Ścieżka dysku">
+                <a href={data.base_url} aria-label="Wszystkie dyski">
+                  Dyski
+                </a>
+                {data.breadcrumbs.map((crumb, index) => (
+                  <span key={crumb.target} className="react-icon">
+                    <Icon name="chevron-right" />
+                    {index === data.breadcrumbs.length - 1 ? (
+                      <h1 className="tasks-topbar-title">{crumb.name}</h1>
+                    ) : (
+                      <a
+                        href={crumb.url}
+                        data-doc-target={crumb.target}
+                        data-doc-label={crumb.name}
+                      >
+                        {crumb.name}
+                      </a>
+                    )}
+                  </span>
+                ))}
+              </nav>
+            ) : (
+              <h1 className="tasks-topbar-title">{props.initial.title}</h1>
+            )}
+          </>
+        }
+        actions={
+          !data.office && !props.initial.read_only ? (
+            <>
+              {!data.library ? (
+                <button
+                  type="button"
+                  className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                  onClick={() => open(data.create_url)}
+                  disabled={actions.busy}
+                >
+                  <Icon name="plus" />
+                  <span>Nowy dysk</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="tasks-tag-topbar-button"
+                    onClick={() => open(data.upload_url)}
+                    disabled={actions.busy}
+                  >
+                    <Icon name="upload" />
+                    <span>Prześlij pliki</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                    onClick={() => open(data.folder_create_url)}
+                    disabled={actions.busy}
+                  >
+                    <Icon name="folder-plus" />
+                    <span>Nowy folder</span>
+                  </button>
+                  <Dropdown
+                    label="Więcej opcji"
+                    className="tasks-section-actions"
+                    triggerClassName="tasks-icon-button"
+                    menuClass="tasks-section-menu"
+                    trigger={<Icon name="ellipsis" />}
+                  >
+                    {(close) => (
+                      <button
+                        type="button"
+                        className="tasks-project-menu-button"
+                        onClick={() => {
+                          close();
+                          open(data.library!.edit_url);
+                        }}
+                      >
+                        <Icon name="settings-2" />
+                        <span>Ustawienia dysku</span>
+                      </button>
+                    )}
+                  </Dropdown>
+                </>
+              )}
+            </>
+          ) : undefined
+        }
+      />
+      <Toolbar
+        className="tasks-filterbar--project-directory documents-filterbar"
+        filters={
+          <>
+            <nav
+              className="documents-display-switch"
+              aria-label={
+                data.office ? 'Sposób wyświetlania dokumentów' : 'Sposób wyświetlania Dysku'
+              }
+            >
+              {data.display_options.map((option) => (
+                <a
+                  key={option.label}
+                  className={`tasks-icon-button ${option.active ? 'is-active' : ''}`}
+                  href={option.url}
+                  aria-label={option.label}
+                  title={option.label}
+                  aria-current={option.active ? 'true' : undefined}
+                >
+                  <Icon name={option.icon} />
+                </a>
               ))}
             </nav>
-          ) : (
-            <h1 className="tasks-topbar-title">{props.initial.title}</h1>
-          )}
-        </div>
-        {!data.office && !props.initial.read_only ? (
-          <div className="tasks-titlebar-actions">
-            {!data.library ? (
-              <button
-                type="button"
-                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                onClick={() => open(data.create_url)}
-                disabled={actions.busy}
-              >
-                <Icon name="plus" />
-                <span>Nowy dysk</span>
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="tasks-tag-topbar-button"
-                  onClick={() => open(data.upload_url)}
-                  disabled={actions.busy}
-                >
-                  <Icon name="upload" />
-                  <span>Prześlij pliki</span>
-                </button>
-                <button
-                  type="button"
-                  className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
-                  onClick={() => open(data.folder_create_url)}
-                  disabled={actions.busy}
-                >
-                  <Icon name="folder-plus" />
-                  <span>Nowy folder</span>
-                </button>
-                <Dropdown
-                  label="Więcej opcji"
-                  className="tasks-section-actions"
-                  triggerClassName="tasks-icon-button"
-                  menuClass="tasks-section-menu"
-                  trigger={<Icon name="ellipsis" />}
-                >
-                  {(close) => (
-                    <button
-                      type="button"
-                      className="tasks-project-menu-button"
-                      onClick={() => {
-                        close();
-                        open(data.library!.edit_url);
-                      }}
-                    >
-                      <Icon name="settings-2" />
-                      <span>Ustawienia dysku</span>
-                    </button>
-                  )}
-                </Dropdown>
-              </>
-            )}
-          </div>
-        ) : null}
-      </header>
-      <div className="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
-        <div className="tasks-filterbar-left">
-          <nav
-            className="documents-display-switch"
-            aria-label={
-              data.office ? 'Sposób wyświetlania dokumentów' : 'Sposób wyświetlania Dysku'
-            }
-          >
-            {data.display_options.map((option) => (
+            <Filters data={data} change={change} />
+            <Dropdown
+              label={data.office ? 'Wybierz widok dokumentów' : 'Wybierz widok Dysku'}
+              className="documents-item-actions documents-view-selector"
+              menuClass="tasks-section-menu documents-item-menu documents-views-menu"
+              triggerClassName="tasks-filter-button tasks-project-query-trigger"
+              trigger={
+                <>
+                  <Icon
+                    name={
+                      data.library || data.libraries ? 'hard-drive' : currentView?.icon || 'files'
+                    }
+                  />
+                  <span>
+                    {data.library?.name || (data.libraries ? 'Dyski' : currentView?.label)}
+                  </span>
+                  <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+                </>
+              }
+            >
+              <div className="documents-menu-actions">
+                {!data.office && !props.initial.read_only ? (
+                  <a
+                    className="tasks-project-menu-button"
+                    role="menuitem"
+                    href={data.base_url}
+                    aria-current={data.libraries ? 'page' : undefined}
+                  >
+                    <Icon name="hard-drive" />
+                    <span>Dyski</span>
+                  </a>
+                ) : null}
+                {data.views.map((view) => (
+                  <a
+                    key={view.value}
+                    className="tasks-project-menu-button"
+                    role="menuitem"
+                    href={view.url}
+                    aria-current={view.active ? 'page' : undefined}
+                  >
+                    <Icon name={view.icon} />
+                    <span>{view.label}</span>
+                    {view.count !== null && view.count !== undefined ? (
+                      <small>{view.count}</small>
+                    ) : null}
+                  </a>
+                ))}
+              </div>
+            </Dropdown>
+            {data.query ? (
               <a
-                key={option.label}
-                className={`tasks-icon-button ${option.active ? 'is-active' : ''}`}
-                href={option.url}
-                aria-label={option.label}
-                title={option.label}
-                aria-current={option.active ? 'true' : undefined}
+                className="tasks-icon-button"
+                href={data.clear_url}
+                aria-label="Wyczyść wyszukiwanie i filtry"
               >
-                <Icon name={option.icon} />
+                <Icon name="x" />
               </a>
-            ))}
-          </nav>
-          <Filters data={data} change={change} />
-          <Dropdown
-            label={data.office ? 'Wybierz widok dokumentów' : 'Wybierz widok Dysku'}
-            className="documents-item-actions documents-view-selector"
-            menuClass="tasks-section-menu documents-item-menu documents-views-menu"
-            triggerClassName="tasks-filter-button tasks-project-query-trigger"
-            trigger={
-              <>
-                <Icon
-                  name={
-                    data.library || data.libraries ? 'hard-drive' : currentView?.icon || 'files'
+            ) : null}
+          </>
+        }
+        search={
+          <>
+            <form
+              onSubmit={(event: FormEvent) => {
+                event.preventDefault();
+                void load(url());
+              }}
+            >
+              <label className="tasks-search-field tasks-project-search">
+                <Icon name="search" />
+                <input
+                  type="search"
+                  aria-label={
+                    data.office
+                      ? 'Szukaj dokumentów'
+                      : data.libraries
+                        ? 'Szukaj dysków'
+                        : data.library
+                          ? 'Szukaj na dysku'
+                          : 'Szukaj plików'
                   }
+                  placeholder={
+                    data.office
+                      ? 'Szukaj dokumentów'
+                      : data.libraries
+                        ? 'Szukaj dysków'
+                        : data.library
+                          ? 'Szukaj na dysku'
+                          : 'Szukaj plików'
+                  }
+                  value={search}
+                  maxLength={120}
+                  onChange={(event) => query(event.target.value)}
+                  autoComplete="off"
                 />
-                <span>{data.library?.name || (data.libraries ? 'Dyski' : currentView?.label)}</span>
-                <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-              </>
-            }
-          >
-            <div className="documents-menu-actions">
-              {!data.office && !props.initial.read_only ? (
-                <a
-                  className="tasks-project-menu-button"
-                  role="menuitem"
-                  href={data.base_url}
-                  aria-current={data.libraries ? 'page' : undefined}
-                >
-                  <Icon name="hard-drive" />
-                  <span>Dyski</span>
-                </a>
-              ) : null}
-              {data.views.map((view) => (
-                <a
-                  key={view.value}
-                  className="tasks-project-menu-button"
-                  role="menuitem"
-                  href={view.url}
-                  aria-current={view.active ? 'page' : undefined}
-                >
-                  <Icon name={view.icon} />
-                  <span>{view.label}</span>
-                  {view.count !== null && view.count !== undefined ? (
-                    <small>{view.count}</small>
-                  ) : null}
-                </a>
-              ))}
-            </div>
-          </Dropdown>
-          {data.query ? (
-            <a
-              className="tasks-icon-button"
-              href={data.clear_url}
-              aria-label="Wyczyść wyszukiwanie i filtry"
-            >
-              <Icon name="x" />
-            </a>
-          ) : null}
-        </div>
-        <div className="tasks-filterbar-right">
-          <form
-            onSubmit={(event: FormEvent) => {
-              event.preventDefault();
-              void load(url());
-            }}
-          >
-            <label className="tasks-search-field tasks-project-search">
-              <Icon name="search" />
-              <input
-                type="search"
-                aria-label={
-                  data.office
-                    ? 'Szukaj dokumentów'
-                    : data.libraries
-                      ? 'Szukaj dysków'
-                      : data.library
-                        ? 'Szukaj na dysku'
-                        : 'Szukaj plików'
-                }
-                placeholder={
-                  data.office
-                    ? 'Szukaj dokumentów'
-                    : data.libraries
-                      ? 'Szukaj dysków'
-                      : data.library
-                        ? 'Szukaj na dysku'
-                        : 'Szukaj plików'
-                }
-                value={search}
-                maxLength={120}
-                onChange={(event) => query(event.target.value)}
-                autoComplete="off"
-              />
-            </label>
-          </form>
-          <Pagination data={data} change={change} />
-          {!data.office && !data.libraries ? (
-            <button
-              ref={sidebar.toggleRef}
-              type="button"
-              className="tasks-icon-button documents-sidebar-toggle"
-              aria-label={sidebar.expanded ? 'Ukryj panel dysków' : 'Pokaż panel dysków'}
-              aria-expanded={sidebar.expanded}
-              aria-controls="documents-sidebar"
-              onClick={sidebar.toggle}
-            >
-              <Icon name="panel-right" />
-            </button>
-          ) : null}
-        </div>
-      </div>
+              </label>
+            </form>
+            {!data.office && !data.libraries ? (
+              <button
+                ref={sidebar.toggleRef}
+                type="button"
+                className="tasks-icon-button documents-sidebar-toggle"
+                aria-label={sidebar.expanded ? 'Ukryj panel dysków' : 'Pokaż panel dysków'}
+                aria-expanded={sidebar.expanded}
+                aria-controls="documents-sidebar"
+                onClick={sidebar.toggle}
+              >
+                <Icon name="panel-right" />
+              </button>
+            ) : null}
+          </>
+        }
+      />
       {error || actions.error ? (
         <div className="tasks-modal__errors" role="alert">
           {error || actions.error}
@@ -441,6 +480,7 @@ export default function DirectoryPage(props: PageProps) {
         <DocumentDialog
           key={actions.modal.action}
           data={actions.modal}
+          returnFocus={actions.returnFocus}
           api={props.initial.api_url}
           token={props.csrfToken}
           files={actions.files}

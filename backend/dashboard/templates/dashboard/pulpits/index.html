@@ -2,22 +2,26 @@
 {% block content %}
 <div class="tasks-page tasks-list-page work-page pulpits-directory-page" data-pulpits-page data-pulpit-list-url="{{ return_url|default:dashboards_url }}">
     <section class="tasks-workspace">
-        <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory">
+        <header class="tasks-topbar app-page-header tasks-topbar--directory tasks-topbar--project-directory">
             <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">Pulpity</h1></div>
             <div class="tasks-titlebar-actions"><a href="{{ create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-pulpit-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Utwórz pulpit</span></a></div>
         </header>
-        <form class="tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ dashboards_url }}" data-pulpit-search>
-            <div class="tasks-filterbar-left">
-                <select name="visibility" class="tasks-inline-select" aria-label="Widoczność pulpitu"><option value="">Każda widoczność</option>{% for value, label in visibility_choices %}<option value="{{ value }}"{% if visibility_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
-                <button class="tasks-filter-button" type="submit"><i data-icon="filter" aria-hidden="true"></i><span>Filtruj</span></button>
+        <form class="app-toolbar tasks-filterbar tasks-filterbar--directory work-item-toolbar" method="get" action="{{ dashboards_url }}" data-pulpit-search>
+            <div class="tasks-filterbar-left app-toolbar__controls">
+                <details class="tasks-project-filter-builder tasks-directory-filter-aggregate">
+                    <summary class="tasks-filter-button tasks-project-query-trigger{% if visibility_filter %} is-active{% endif %}" aria-label="Filtrowanie pulpitów"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtruj</span><i data-icon="chevron-down" class="tasks-project-query-trigger__chevron" aria-hidden="true"></i></summary>
+                    <div class="tasks-project-query-panel tasks-directory-filter-aggregate__panel" role="group" aria-label="Filtry pulpitów">
+                        <header class="tasks-project-query-panel__header"><strong>Filtry pulpitów</strong></header>
+                        <div class="tasks-project-filter-detail__body">
+                            <label for="pulpit-visibility-filter">Widoczność pulpitu</label>
+                            <select id="pulpit-visibility-filter" name="visibility" class="form-select" aria-label="Widoczność pulpitu"><option value="">Każda widoczność</option>{% for value, label in visibility_choices %}<option value="{{ value }}"{% if visibility_filter == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                            <button class="tasks-filter-button" type="submit"><i data-icon="list-filter" aria-hidden="true"></i><span>Filtruj</span></button>
+                        </div>
+                    </div>
+                </details>
             </div>
-            <div class="tasks-filterbar-right">
+            <div class="tasks-filterbar-right app-toolbar__search">
                 <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj pulpitu" aria-label="Szukaj pulpitu"></label>
-                <nav class="tasks-project-pagination__pages tasks-project-pagination__pages--toolbar" aria-label="Strony pulpitów">
-                    {% if page.has_previous %}<a class="tasks-project-pagination__button" href="{{ previous_url }}" aria-label="Poprzednia strona"><i data-icon="chevron-left" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Poprzednia strona" disabled><i data-icon="chevron-left" aria-hidden="true"></i></button>{% endif %}
-                    <span class="tasks-project-pagination__summary tasks-project-pagination__summary--compact" aria-live="polite">{{ page.start_index }}–{{ page.end_index }} z {{ page.paginator.count }}</span>
-                    {% if page.has_next %}<a class="tasks-project-pagination__button" href="{{ next_url }}" aria-label="Następna strona"><i data-icon="chevron-right" aria-hidden="true"></i></a>{% else %}<button class="tasks-project-pagination__button" type="button" aria-label="Następna strona" disabled><i data-icon="chevron-right" aria-hidden="true"></i></button>{% endif %}
-                </nav>
             </div>
         </form>
         <div class="work-content work-content--directory">

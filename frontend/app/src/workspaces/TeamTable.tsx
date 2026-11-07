@@ -1,20 +1,9 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
-import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
 import type { Person } from './types';
-export default function TeamTable({
-  rows,
-  busy,
-  onRole,
-  onAction,
-}: {
-  rows: Person[];
-  busy: boolean;
-  onRole: (person: Person) => void;
-  onAction: (person: Person) => void;
-}) {
+export default function TeamTable({ rows }: { rows: Person[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set()),
     all = useRef<HTMLInputElement>(null);
   const ids = rows.map((p) => p.id),
@@ -35,7 +24,7 @@ export default function TeamTable({
     <div
       className={
         'tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable workplace-team-sheet ' +
-        'workplace-members-sheet'
+        'workplace-members-sheet app-data-table'
       }
       tabIndex={0}
       role="region"
@@ -43,7 +32,7 @@ export default function TeamTable({
     >
       <section className="tasks-directory-group" role="table" aria-label="Członkowie zespołu">
         <div
-          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
+          className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header"
           role="row"
         >
           <span
@@ -63,12 +52,7 @@ export default function TeamTable({
               onChange={(e) => setSelected(e.target.checked ? new Set(ids) : new Set())}
             />
           </span>
-          <span
-            className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-            data-column="action"
-            role="columnheader"
-            aria-label="Działania"
-          />
+
           {[
             ['person', 'Nazwa', 'users'],
             ['email', 'E-mail', 'mail'],
@@ -91,7 +75,7 @@ export default function TeamTable({
             <div
               key={person.id}
               className={
-                'tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ' +
+                'tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row ' +
                 (selected.has(person.id) ? 'checked' : '')
               }
               role="row"
@@ -112,55 +96,7 @@ export default function TeamTable({
                   onChange={() => toggle(person.id)}
                 />
               </span>
-              <div
-                className="tasks-directory-sheet__cell tasks-project-sheet__cell"
-                data-column="action"
-                role="cell"
-              >
-                {person.change_url ? (
-                  <Dropdown
-                    searchable={false}
-                    className="documents-item-actions"
-                    triggerClassName="tasks-project-sheet__edit-button"
-                    menuClass="tasks-section-menu documents-item-menu"
-                    label={'Działania: ' + person.name}
-                    trigger={<Icon name="menu" />}
-                  >
-                    {(close) => (
-                      <div className="documents-menu-actions">
-                        {person.can_role ? (
-                          <button
-                            type="button"
-                            role="menuitem"
-                            className="tasks-project-menu-button"
-                            disabled={busy}
-                            onClick={() => {
-                              close();
-                              onRole(person);
-                            }}
-                          >
-                            <Icon name="pencil" />
-                            Zmień rolę
-                          </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="tasks-project-menu-button"
-                          disabled={busy}
-                          onClick={() => {
-                            close();
-                            onAction(person);
-                          }}
-                        >
-                          <Icon name="log-out" />
-                          Odbierz dostęp
-                        </button>
-                      </div>
-                    )}
-                  </Dropdown>
-                ) : null}
-              </div>
+
               <div
                 className="tasks-directory-sheet__cell tasks-project-sheet__cell"
                 data-column="person"

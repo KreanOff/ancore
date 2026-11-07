@@ -6,7 +6,6 @@ import {
 } from '../shared/DirectoryColumns';
 export const columns = [
   { key: 'select', label: 'Zaznaczenie', icon: '', width: 40 },
-  { key: 'menu', label: 'Działania', icon: 'menu', width: 40 },
   { key: 'inventory_number', label: 'Nr ewidencyjny', icon: 'hash', width: 190 },
   { key: 'name', label: 'Nazwa', icon: 'package', width: 250 },
   { key: 'kind', label: 'Typ', icon: 'shapes', width: 130 },
@@ -19,20 +18,27 @@ export const columns = [
 export type Column = (typeof columns)[number];
 export function useColumns() {
   useState(() => {
-    // Keep the user's existing layout when extending the table schema.
+    // Preserve preferences from before removal of the menu column and from
+    // before the return-date column was introduced.
+    const keys: string[] = columns.map((column) => column.key);
+    const withMenu = (items: string[]) => [items[0], 'menu', ...items.slice(1)].join('-');
     const previous = columns
       .filter((column) => column.key !== 'return_due_on')
-      .map((column) => column.key)
-      .join('-');
-    const current = columns.map((column) => column.key).join('-');
+      .map((column) => column.key);
+    const previousSchemas = [withMenu(keys), previous.join('-'), withMenu(previous)];
+    const current = keys.join('-');
     try {
       for (const prefix of [
         'resources:directoryColumnLayout:v2:',
         'resources:directoryColumnWidths:v4:',
       ]) {
         if (localStorage.getItem(prefix + current) === null) {
-          const saved = localStorage.getItem(prefix + previous);
-          if (saved !== null) localStorage.setItem(prefix + current, saved);
+          for (const schema of previousSchemas) {
+            const saved = localStorage.getItem(prefix + schema);
+            if (saved === null) continue;
+            localStorage.setItem(prefix + current, saved);
+            break;
+          }
         }
       }
     } catch {

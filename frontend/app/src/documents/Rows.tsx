@@ -1,7 +1,6 @@
 import { EmptyState } from '../shared/EmptyState';
 import type { MouseEvent, ReactNode } from 'react';
 import { Icon } from '../shared/Icon';
-import { RowActions } from './Actions';
 import { DriveIcon, FileIcon, FolderIcon } from './Icons';
 import type { DirectoryData, Row } from './types';
 export function RowIcon({ row }: { row: Row }) {
@@ -15,26 +14,24 @@ export function RowIcon({ row }: { row: Row }) {
 }
 export default function Rows({
   data,
-  busy,
   selected,
   toggle,
   selectAll,
   allRef,
   open,
-  act,
   dragged,
   drop,
+  footer,
 }: {
   data: DirectoryData;
-  busy: boolean;
   selected: Set<string>;
   toggle: (id: string) => void;
   selectAll: (value: boolean) => void;
   allRef: React.RefObject<HTMLInputElement>;
   open: (url: string) => void;
-  act: (url: string, values: Record<string, string>) => void;
   dragged: string | null;
   drop: string | null;
+  footer?: ReactNode;
 }) {
   const sheet = data.libraries || data.office,
     grid = data.display === 'grid';
@@ -92,9 +89,6 @@ export default function Rows({
       className: `${dragged === row.id ? 'is-document-dragging' : ''} ${drop === row.target ? 'is-document-drop-target' : ''}`,
     };
   }
-  const actions = (row: Row, isSheet = false) => (
-    <RowActions row={row} data={data} sheet={isSheet} busy={busy} open={open} act={act} />
-  );
   const empty = (
     <EmptyState
       illustration="spaces"
@@ -129,11 +123,11 @@ export default function Rows({
           : data.libraries
             ? 'Dysk to osobne miejsce na foldery i pliki, np. dla projektu lub działu.'
             : data.view === 'trash'
-              ? 'Tutaj znajdziesz usunięte pliki, które możesz przywrócić.'
+              ? 'Tutaj znajdziesz usunięte pliki.'
               : data.view === 'starred'
                 ? 'Oznacz plik lub folder gwiazdką, aby mieć go pod ręką.'
                 : data.view === 'templates'
-                  ? 'W menu dokumentu wybierz „Używaj jako szablonu”. Potem wybierz „Utwórz kopię szablonu”.'
+                  ? 'W tym widoku znajdziesz zapisane szablony dokumentów.'
                   : data.office
                     ? 'Twórz dokumenty, arkusze, prezentacje i tablice lub prześlij swoje pliki z komputera.'
                     : 'Prześlij pliki lub utwórz folder, aby uporządkować pracę.'
@@ -194,23 +188,25 @@ export default function Rows({
                 <span className="documents-card-date">
                   {!data.office && data.view === 'trash' ? row.deleted : row.date}
                 </span>
-                {actions(row)}
               </div>
             </li>
           ))}
         </ul>
+        {footer}
       </div>
     );
   if (sheet)
     return (
       <div
-        className={`documents-table-scroll tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable ${data.libraries ? 'documents-library-sheet' : 'office-document-sheet'}`}
-        role="table"
-        aria-label={data.libraries ? 'Lista dysków' : 'Lista dokumentów'}
+        className={`documents-table-scroll tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable ${data.libraries ? 'documents-library-sheet' : 'office-document-sheet'} app-data-table`}
       >
-        <div className="tasks-directory-group" role="rowgroup">
+        <div
+          className="tasks-directory-group"
+          role="table"
+          aria-label={data.libraries ? 'Lista dysków' : 'Lista dokumentów'}
+        >
           <div
-            className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header"
+            className="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header"
             role="row"
           >
             <span
@@ -225,13 +221,12 @@ export default function Rows({
                 ref={allRef}
                 type="checkbox"
                 className="tasks-row-checkbox"
-                aria-label={`Zaznacz wszystkie ${data.libraries ? 'dyski' : 'dokumenty'} na stronie`}
+                aria-label={`Zaznacz wszystkie ${data.libraries ? 'dyski' : 'dokumenty'} w widocznej liście`}
                 checked={selected.size === data.rows.length}
                 onChange={(e) => selectAll(e.target.checked)}
               />
             </span>
             {[
-              ['action', 'Działania', ''],
               ['name', 'Nazwa', data.libraries ? 'hard-drive' : 'file-text'],
               ['modified', 'Zmodyfikowano', 'calendar-clock'],
               ['size', 'Rozmiar', 'hard-drive'],
@@ -242,14 +237,8 @@ export default function Rows({
                 data-column={key}
                 role="columnheader"
               >
-                {key === 'action' ? (
-                  <span className="u-sr-only">{label}</span>
-                ) : (
-                  <>
-                    {label}
-                    <Icon name={icon} />
-                  </>
-                )}
+                {label}
+                <Icon name={icon} />
               </span>
             ))}
           </div>
@@ -258,7 +247,7 @@ export default function Rows({
               <div
                 key={row.id}
                 {...attrs(row)}
-                className={`tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row ${selected.has(row.id) ? 'checked' : ''} ${attrs(row).className}`}
+                className={`tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row ${selected.has(row.id) ? 'checked' : ''} ${attrs(row).className}`}
                 role="row"
               >
                 <span
@@ -277,13 +266,7 @@ export default function Rows({
                     onChange={() => toggle(row.id)}
                   />
                 </span>
-                <div
-                  className="tasks-project-sheet__action tasks-directory-sheet__cell tasks-project-sheet__cell"
-                  data-column="action"
-                  role="cell"
-                >
-                  {actions(row, true)}
-                </div>
+
                 <div
                   className="tasks-directory-sheet__cell tasks-project-sheet__cell"
                   data-column="name"
@@ -330,21 +313,31 @@ export default function Rows({
             ))}
           </div>
         </div>
+        {footer}
       </div>
     );
   return (
     <div className="documents-table-scroll">
-      <table className="documents-table documents-table--inline-actions">
+      <table className="documents-table documents-table--inline-actions app-data-table app-data-table--native">
         <thead>
           <tr>
             <th scope="col">
-              <span className="documents-column-heading">Nazwa</span>
+              <span className="documents-column-heading app-table-heading">
+                <Icon name="file-text" />
+                Nazwa
+              </span>
             </th>
             <th scope="col" data-document-column="date">
-              <span className="documents-column-heading">Zmodyfikowano</span>
+              <span className="documents-column-heading app-table-heading">
+                <Icon name="calendar-clock" />
+                Zmodyfikowano
+              </span>
             </th>
             <th scope="col" data-document-column="size">
-              <span className="documents-column-heading">Rozmiar</span>
+              <span className="documents-column-heading app-table-heading">
+                <Icon name="hard-drive" />
+                Rozmiar
+              </span>
             </th>
           </tr>
         </thead>
@@ -353,7 +346,6 @@ export default function Rows({
             <tr key={row.id} {...attrs(row)}>
               <td>
                 <div className="documents-name">
-                  {actions(row)}
                   <span
                     className={`documents-file-icon ${row.row_kind === 'folder' ? 'documents-file-icon--folder' : ''}`}
                   >
@@ -379,6 +371,7 @@ export default function Rows({
           ))}
         </tbody>
       </table>
+      {footer}
     </div>
   );
 }

@@ -4,6 +4,5 @@
 <input type="hidden" name="q" value="{{ query }}">
 {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}">{% endfor %}
 <input type="hidden" name="sort" value="{{ sort }}">
-<input type="hidden" name="page" value="{{ page.number }}">
-<input type="hidden" name="page_size" value="{{ document_window.page_size }}">
+<input type="hidden" name="limit" value="{{ document_window.limit }}">
 <input type="hidden" name="display" value="{{ document_display }}">

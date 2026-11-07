@@ -11,11 +11,17 @@ export function useActions(props: PageProps, initial: DocumentModal | null) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const life = useRef(new AbortController()),
-    pending = useRef(false);
+    pending = useRef(false),
+    returnFocus = useRef<HTMLElement | null>(null);
   useDirtyGuard(false, busy);
   useEffect(() => () => life.current.abort(), []);
   async function open(url: string, upload: File[] = []) {
     if (pending.current) return;
+    // Keep the page trigger before busy disables it. Switching from preview to
+    // edit must not replace it with a control in the dialog being unmounted.
+    if (!modal)
+      returnFocus.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -78,5 +84,5 @@ export function useActions(props: PageProps, initial: DocumentModal | null) {
     setFiles([]);
     if (initial) setPageLocation(modal?.return_url || initial.return_url);
   }
-  return { modal, files, busy, error, open, act, close };
+  return { modal, files, busy, error, open, act, close, returnFocus: returnFocus.current };
 }

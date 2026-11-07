@@ -1,3 +1,4 @@
+import { PageHeader } from '../shared/PageHeader';
 import { setPageLocation } from '../shared/page';
 import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { FormSchema } from '../forms/FormDialog';
@@ -178,42 +179,51 @@ export default function TextPage({ initial, csrfToken }: PageProps) {
       onSubmit={save}
       aria-busy={pending}
     >
-      <header className="tasks-topbar tasks-topbar--directory documents-topbar">
-        <div className="tasks-titlebar-left">
-          <a className="tasks-icon-button" href={data.back_url} aria-label="Wróć do dokumentów">
-            <Icon name="arrow-left" />
-          </a>
-          <h1 className="tasks-topbar-title">
-            {readOnly ? 'Podgląd dokumentu' : isNew ? 'Nowy dokument' : 'Edytuj dokument'}
-          </h1>
-        </div>
-        <div className="tasks-titlebar-actions">
-          <span className="documents-muted office-save-status" role="status">
-            {status}
-          </span>
-          {!isNew ? (
-            <a
-              className="btn btn-secondary"
-              href={download}
-              download
-              aria-disabled={dirty || pending}
-              onClick={(event) => {
-                if (dirty || pending) {
-                  event.preventDefault();
-                  setError('Zapisz zmiany przed pobraniem dokumentu.');
-                }
-              }}
-            >
-              Pobierz DOCX
+      <PageHeader
+        className="documents-topbar"
+        heading={
+          <>
+            <a className="tasks-issue-close" href={data.back_url} aria-label="Wróć do dokumentów">
+              <Icon name="arrow-left" />
             </a>
-          ) : null}
-          {!readOnly ? (
-            <button type="submit" className="btn btn-primary" disabled={pending}>
-              Zapisz
-            </button>
-          ) : null}
-        </div>
-      </header>
+            <h1 className="tasks-topbar-title">
+              {readOnly ? 'Podgląd dokumentu' : isNew ? 'Nowy dokument' : 'Edytuj dokument'}
+            </h1>
+          </>
+        }
+        actions={
+          <>
+            <span className="documents-muted office-save-status" role="status">
+              {status}
+            </span>
+            {!isNew ? (
+              <a
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--secondary"
+                href={download}
+                download
+                aria-disabled={dirty || pending}
+                onClick={(event) => {
+                  if (dirty || pending) {
+                    event.preventDefault();
+                    setError('Zapisz zmiany przed pobraniem dokumentu.');
+                  }
+                }}
+              >
+                Pobierz DOCX
+              </a>
+            ) : null}
+            {!readOnly ? (
+              <button
+                type="submit"
+                className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                disabled={pending}
+              >
+                Zapisz
+              </button>
+            ) : null}
+          </>
+        }
+      />
       {!isNew && !readOnly ? (
         <div className="documents-results-hint">
           Ten dokument korzysta z edytora tekstu Ancore.{' '}

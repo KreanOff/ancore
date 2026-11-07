@@ -1,14 +1,14 @@
 <section class="work-panel work-timeline-results" aria-label="Oś czasu">
     {% if items %}
     <div class="table-container">
-        <table class="data-table">
-            <thead><tr><th scope="col"><span class="u-sr-only">Zadania</span></th><th scope="col">Wykonawca</th><th scope="col">Rozpoczęcie</th><th scope="col">Termin</th><th scope="col"><span class="u-sr-only">Działania</span></th></tr></thead>
+        <table class="data-table app-data-table app-data-table--native">
+            <thead><tr><th scope="col"><span class="app-table-heading"><i data-icon="list-checks" aria-hidden="true"></i>Zadania</span></th><th scope="col"><span class="app-table-heading"><i data-icon="user-round" aria-hidden="true"></i>Wykonawca</span></th><th scope="col"><span class="app-table-heading"><i data-icon="calendar-days" aria-hidden="true"></i>Rozpoczęcie</span></th><th scope="col"><span class="app-table-heading"><i data-icon="calendar-clock" aria-hidden="true"></i>Termin</span></th><th scope="col" class="app-table-control"><span class="u-sr-only">Działania</span></th></tr></thead>
             <tbody>{% for item in items %}<tr>
                 <td><a href="{{ item.url }}">{{ item.key }} · {{ item.task.title }}</a></td>
                 <td>{% if item.task.assignee %}{{ item.task.assignee.get_full_name|default:item.task.assignee.email }}{% else %}Nieprzypisane{% endif %}</td>
                 <td>{{ item.start_at|date:'d.m.Y H:i'|default:'Nie ustawiono' }}</td>
                 <td>{{ item.task.due_at|date:'d.m.Y H:i'|default:'Nie ustawiono' }}</td>
-                <td>{% if item.editable %}<a class="tasks-filter-button" href="{{ item.edit_url }}" data-work-open aria-label="Zmień daty {{ item.key }}"><i data-icon="pencil" aria-hidden="true"></i></a>{% endif %}</td>
+                <td class="app-table-control">{% if item.editable %}<a class="tasks-project-sheet__edit-button" href="{{ item.edit_url }}" data-work-open aria-label="Zmień daty {{ item.key }}"><i data-icon="pencil" aria-hidden="true"></i></a>{% endif %}</td>
             </tr>{% endfor %}</tbody>
         </table>
     </div>

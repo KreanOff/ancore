@@ -203,6 +203,7 @@ def task_page(request, context):
         'work_log': {'total_minutes': context['work_log_total_minutes'], 'total_label': context['work_log_total_label'],
             'count': context['work_log_page'].paginator.count, 'page': context['work_log_page'].number,
             'pages': context['work_log_page'].paginator.num_pages, 'previous': context['work_log_previous_url'], 'next': context['work_log_next_url'],
+            'end': context['work_log_page'].end_index(),
             'results': [{'id': entry.pk, 'author': (entry.author.get_full_name() or entry.author.username) if entry.author else 'Usunięte konto',
                 'avatar': account_avatar(entry.author), 'duration_minutes': entry.duration_minutes,
                 'started_at': entry.started_at, 'ended_at': entry.ended_at, 'description': entry.description,

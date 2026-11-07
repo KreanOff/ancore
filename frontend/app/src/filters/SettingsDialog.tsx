@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { EmbeddedForm, type FormDialogData, type FormSection } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
-import { Members, type MemberRow } from '../shared/Members';
+import { Members } from '../shared/Members';
 import SharingDialog from '../shared/SharingDialog';
 import { pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
@@ -27,6 +27,7 @@ export default function SettingsDialog({
   onClose,
   onSaved,
   hostId,
+  returnFocus,
 }: {
   data: FormDialogData;
   api: string;
@@ -34,6 +35,7 @@ export default function SettingsDialog({
   onClose: () => void;
   onSaved: (url: string) => void;
   hostId?: string;
+  returnFocus?: HTMLElement | null;
 }) {
   const [current, setCurrent] = useState(data);
   const [open, setOpen] = useState(true);
@@ -43,11 +45,9 @@ export default function SettingsDialog({
   const [revisionChange, setRevisionChange] = useState<{ previous: number; current: number }>();
   const [notice, setNotice] = useState(''),
     [error, setError] = useState('');
-  const [sharing, setSharing] = useState(false),
-    [roleMember, setRoleMember] = useState<MemberRow>();
+  const [sharing, setSharing] = useState(false);
   const [acting, setActing] = useState(false);
-  const action = useRef(false),
-    savedUrl = useRef('');
+  const savedUrl = useRef('');
   const retry = useRef<(() => void) | undefined>();
   const [life] = useState(() => new AbortController());
   const pending = state.pending || acting;
@@ -67,7 +67,6 @@ export default function SettingsDialog({
       setRevisionChange({ previous: result.previous_revision, current: result.revision });
     savedUrl.current ||= current.return_url;
     setSharing(false);
-    setRoleMember(undefined);
     setNotice('Dostęp został zapisany.');
   }
   async function refreshTeam() {
@@ -92,34 +91,7 @@ export default function SettingsDialog({
       if (!life.signal.aborted) setActing(false);
     }
   }
-  async function remove(member: MemberRow) {
-    if (!current.filter_team || pending || action.current) return;
-    action.current = true;
-    setActing(true);
-    setError('');
-    retry.current = undefined;
-    const body = new FormData();
-    body.set('action', 'remove');
-    body.set('member_id', String(member.id));
-    try {
-      const result = await pageRequest<FilterTeam>(
-        api,
-        current.filter_team.url,
-        csrfToken,
-        life.signal,
-        body,
-      );
-      if (!life.signal.aborted) shared(result);
-    } catch (exception) {
-      if (!life.signal.aborted) {
-        setError(errorMessage(exception));
-        retry.current = () => void remove(member);
-      }
-    } finally {
-      action.current = false;
-      if (!life.signal.aborted) setActing(false);
-    }
-  }
+
   if (!open) return null;
   return (
     <>
@@ -127,6 +99,7 @@ export default function SettingsDialog({
         title={current.title}
         className="work-modal filter-settings-modal"
         hostId={hostId}
+        returnFocus={returnFocus}
         dirty={state.dirty}
         pending={pending}
         onClose={close}
@@ -223,7 +196,7 @@ export default function SettingsDialog({
           <div className="tasks-modal__body">
             {team ? (
               <>
-                <div className="workplace-edit-modal__team-toolbar">
+                <div className="workplace-edit-modal__team-toolbar tasks-filterbar app-toolbar app-toolbar--embedded">
                   <span className="workplaces-management__count">
                     {team.name} · Osoby: {team.members.length}
                   </span>
@@ -246,22 +219,7 @@ export default function SettingsDialog({
                     zapisz widoczność „Prywatny — wybrane osoby” w zakładce „Ustawienia”.
                   </p>
                 ) : null}
-                <Members
-                  members={team.members}
-                  isOwner={team.is_owner}
-                  canEditRoles={team.can_manage}
-                  busy={pending}
-                  onRole={setRoleMember}
-                  onRemove={(member) =>
-                    window.showConfirmModal({
-                      title: 'Odbierz dostęp',
-                      messageText: `Odebrać dostęp do filtra osobie ${member.name}?`,
-                      confirmText: 'Odbierz dostęp',
-                      cancelText: 'Anuluj',
-                      onConfirm: () => void remove(member),
-                    })
-                  }
-                />
+                <Members members={team.members} busy={pending} />
               </>
             ) : (
               <p className="workplace-team__hint">
@@ -285,18 +243,16 @@ export default function SettingsDialog({
           </footer>
         </section>
       </Modal>
-      {(sharing || roleMember) && team && current.filter_team ? (
+      {sharing && team && current.filter_team ? (
         <SharingDialog<FilterTeam>
           name={team.name}
           schema={team.share_form}
-          person={roleMember}
           api={api}
           url={current.filter_team.url}
           csrfToken={csrfToken}
           hostId={hostId}
           onClose={() => {
             setSharing(false);
-            setRoleMember(undefined);
           }}
           onSaved={shared}
         />
