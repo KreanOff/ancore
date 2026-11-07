@@ -1,6 +1,6 @@
 /* Main Style Entry Point */
 @import 'base/fonts.css?v=20261003-atlassian-sans';
-@import 'base/variables.css?v=20261025-soft-sidebar-highlights';
+@import 'base/variables.css?v=20261105-common-toolbar';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261017-border-visibility-3pct';
 @import 'layout/main.css?v=20261025-sidebar-highlights';
@@ -13,14 +13,14 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20261104-floating-profile-panel';
+@import 'components/tasks.css?v=20261105-no-hamburger';
 @import 'components/shared-controls.css?v=20261018-shared-controls';
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20261104-single-account';
-@import 'components/workplaces.css?v=20261017-border-visibility-3pct';
-@import 'calendar.css?v=20261017-page-padding-15px';
+@import 'components/workplaces.css?v=20261105-no-hamburger';
+@import 'calendar.css?v=20261105-text-page-titles';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20261007-directory-controls';
 @import 'theme/elestio.css?v=20261025-shared-status-backgrounds';
@@ -30,6 +30,10 @@
 @import 'components/emoji-picker.css?v=20261023-stable-emoji-picker';
 @import 'components/global-search.css?v=20261030-search-avatars';
 @import 'components/notifications-panel.css?v=20261003-notifications-modal';
+@import 'components/page-header.css?v=20261105-text-page-titles';
+@import 'components/data-table.css?v=20261105-common-data-tables';
+@import 'components/load-more.css?v=20261105-load-more';
+@import 'components/app-toolbar.css?v=20261105-common-toolbar';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(
@@ -350,11 +354,28 @@ body :is(
     }
 }
 
-/* Focus uses component colors, never an extra border around the control.
-   Override legacy selectors and page styles loaded after this shared sheet. */
-body :is(:focus, :focus-visible) {
+/* Pointer focus keeps the compact component appearance. Keyboard focus has
+   an inset indicator so it remains visible inside clipped tables and tabs. */
+body :focus:not(:focus-visible) {
     outline: none !important;
     outline-offset: 0 !important;
+}
+
+body :focus-visible {
+    outline: 2px solid var(--system-accent) !important;
+    /* Keep two rendered pixels even with the shared 98% UI scale. */
+    outline-width: calc(2px / var(--app-ui-scale, 1)) !important;
+    outline-offset: calc(-2px / var(--app-ui-scale, 1)) !important;
+}
+
+/* A checked checkbox shares the accent background. Separate its indicator
+   from the control so it remains visible in every selection state. */
+body input:is([type="checkbox"], [type="radio"]):focus-visible {
+    outline-offset: calc(2px / var(--app-ui-scale, 1)) !important;
+}
+
+@media (forced-colors: active) {
+    body :focus-visible { outline-color: Highlight !important; }
 }
 
 body.auth-page .auth-submit .auth-submit-icon,

@@ -119,41 +119,33 @@ export function LocalDirectoryTable<K extends string | number>({
   ];
   return (
     <>
-      <ViewToolbar className="settings-directory-toolbar" actions={children}>
-        <Dropdown
-          label={`Sortowanie: ${sortOptions.find((option) => option.value === sort)?.label}`}
-          className="tasks-sort-dropdown"
-          menuClass="tasks-sort-menu"
-          triggerClassName="tasks-filter-button tasks-project-query-trigger"
-          trigger={
-            <>
-              <Icon
-                name={direction === 'desc' ? 'arrow-down-wide-narrow' : 'arrow-up-narrow-wide'}
-              />
-              <span>Sortowanie</span>
-              <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-            </>
-          }
-        >
-          {(close) =>
-            sortOptions.map((option) => (
-              <button
-                type="button"
-                role="menuitemradio"
-                key={option.value}
-                aria-checked={sort === option.value}
-                className={sort === option.value ? 'is-active' : ''}
-                onClick={() => {
-                  setSort(option.value);
-                  close();
-                }}
-              >
-                <Icon name={option.icon} />
-                <span>{option.label}</span>
-              </button>
-            ))
-          }
-        </Dropdown>
+      <ViewToolbar
+        className="settings-directory-toolbar app-toolbar--embedded"
+        actions={children}
+        search={
+          <form
+            className="tasks-search-field work-view-toolbar-search"
+            role="search"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <Icon name="search" />
+            <input
+              type="search"
+              value={query}
+              placeholder={searchLabel}
+              aria-label={searchLabel}
+              autoComplete="off"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                onSelect(new Set());
+              }}
+            />
+            <button type="submit" className="tasks-filter-button" aria-label={searchLabel}>
+              <Icon name="arrow-right" />
+            </button>
+          </form>
+        }
+      >
         <details
           ref={aggregate}
           className={`tasks-project-filter-builder tasks-directory-filter-aggregate ${Object.values(filters).some(Boolean) ? 'is-active' : ''}`}
@@ -163,7 +155,7 @@ export function LocalDirectoryTable<K extends string | number>({
             aria-label={`Filtrowanie: ${label}`}
           >
             <Icon name="list-filter" />
-            <span>Filtrowanie</span>
+            <span>Filtruj</span>
             <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
           </summary>
           <div
@@ -230,36 +222,50 @@ export function LocalDirectoryTable<K extends string | number>({
             </div>
           </div>
         </details>
+        <Dropdown
+          label={`Sortowanie: ${sortOptions.find((option) => option.value === sort)?.label}`}
+          className="tasks-sort-dropdown"
+          menuClass="tasks-sort-menu"
+          triggerClassName="tasks-filter-button tasks-project-query-trigger"
+          trigger={
+            <>
+              <Icon name="arrow-up-down" />
+              <span>Sortuj</span>
+              <span className="tasks-project-sort-current">
+                {sortOptions.find((option) => option.value === sort)?.label}
+              </span>
+              <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
+            </>
+          }
+        >
+          {(close) =>
+            sortOptions.map((option) => (
+              <button
+                type="button"
+                role="menuitemradio"
+                key={option.value}
+                aria-checked={sort === option.value}
+                className={sort === option.value ? 'is-active' : ''}
+                onClick={() => {
+                  setSort(option.value);
+                  close();
+                }}
+              >
+                <Icon name={option.icon} />
+                <span>{option.label}</span>
+              </button>
+            ))
+          }
+        </Dropdown>
         <DirectoryColumnManager
           columns={[selectionColumn, ...columns]}
           layout={sizing.layout}
           save={sizing.saveLayout}
           reset={sizing.reset}
         />
-        <form
-          className="tasks-search-field work-view-toolbar-search"
-          role="search"
-          onSubmit={(event) => event.preventDefault()}
-        >
-          <Icon name="search" />
-          <input
-            type="search"
-            value={query}
-            placeholder={searchLabel}
-            aria-label={searchLabel}
-            autoComplete="off"
-            onChange={(event) => {
-              setQuery(event.target.value);
-              onSelect(new Set());
-            }}
-          />
-          <button type="submit" className="tasks-filter-button" aria-label={searchLabel}>
-            <Icon name="arrow-right" />
-          </button>
-        </form>
       </ViewToolbar>
       <div
-        className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet settings-directory-sheet${visible.length ? '' : ' tasks-tag-board--empty'}`}
+        className={`tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-tag-sheet tasks-spreadsheet-sheet tasks-directory-menu-sheet settings-directory-sheet app-data-table${visible.length ? '' : ' tasks-tag-board--empty'}`}
         style={sizing.style}
         role="region"
         aria-label={`${label} — tabela`}
@@ -278,7 +284,7 @@ export function LocalDirectoryTable<K extends string | number>({
           aria-label={label}
         >
           <div
-            className="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header"
+            className="tasks-directory-header tasks-directory-sheet__header tasks-tag-sheet__header app-table-header"
             role="row"
           >
             {sizing.visible.map((column) => (
@@ -330,7 +336,7 @@ export function LocalDirectoryTable<K extends string | number>({
             {visible.map((row) => (
               <div
                 key={row.id}
-                className={`tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row${selected.has(row.id) ? ' checked' : ''}`}
+                className={`tasks-issue-row tasks-section-row tasks-all-groups-row tasks-directory-row tasks-directory-sheet__row tasks-tag-sheet__row app-table-row${selected.has(row.id) ? ' checked' : ''}`}
                 role="row"
               >
                 {sizing.visible.map((column) =>

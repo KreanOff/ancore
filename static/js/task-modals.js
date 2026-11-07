@@ -1,16 +1,16 @@
 (function () {
-    const version = '20261016-global-panels';
+    const version = '20261105-shared-modal-lifecycle';
     if (window.AncoreTaskModals?.version === version) return;
     window.AncoreTaskModals?.dispose?.();
     const controller = new AbortController();
     const modalReturnFocus = new WeakMap();
     const modalCloseTokens = new WeakMap();
 
-    function openModal(modal, focusTarget, onOpen) {
+    function openModal(modal, focusTarget, onOpen, returnFocus) {
         if (!modal) return;
         modalCloseTokens.delete(modal);
         if (!modal.classList.contains('is-open') && !modalReturnFocus.has(modal)) {
-            const activeElement = document.activeElement;
+            const activeElement = returnFocus?.isConnected ? returnFocus : document.activeElement;
             const rowActionToggle = activeElement?.closest('[data-row-actions]')?.querySelector('[data-row-actions-toggle]');
             modalReturnFocus.set(modal, rowActionToggle || activeElement);
         }
@@ -48,7 +48,7 @@
             modalReturnFocus.delete(modal);
         };
         const dialog = modal.querySelector(':scope > .tasks-modal__dialog');
-        const animations = modal.classList.contains('app-modal-panel--compact') ? dialog?.getAnimations() || [] : [];
+        const animations = modal.classList.contains('app-modal-panel') ? dialog?.getAnimations() || [] : [];
         if (animations.length) Promise.all(animations.map(animation => animation.finished.catch(() => {}))).then(finish);
         else finish();
     }

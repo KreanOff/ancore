@@ -1,0 +1,217 @@
+/* Application data tables use the Tags directory as their visual reference.
+   Module styles retain column geometry and scrolling. The scoped !important
+   declarations keep this contract above legacy/page CSS loaded after style.css. */
+.app-data-table {
+    --tasks-directory-column-separator: var(--data-table-separator) !important;
+    --tasks-directory-row-separator: var(--data-table-separator) !important;
+    --tasks-project-row-height: var(--data-table-row-height) !important;
+    --tasks-directory-select-width: var(--data-table-control-width) !important;
+    font-family: var(--font-family-ui);
+    font-size: var(--data-table-font-size);
+    line-height: 1.45;
+    color: var(--text-primary);
+}
+
+.app-data-table .app-table-header,
+.app-data-table .app-table-row {
+    box-sizing: border-box;
+    height: var(--data-table-row-height) !important;
+    min-height: var(--data-table-row-height) !important;
+    max-height: var(--data-table-row-height) !important;
+    padding-block: 0 !important;
+    border-bottom: 1px solid var(--data-table-separator) !important;
+    font-size: var(--data-table-font-size) !important;
+    font-weight: 400;
+    line-height: 1.45 !important;
+}
+
+.app-data-table .app-table-header {
+    background: var(--card-bg) !important;
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.app-data-table .app-table-header > :is([data-column], [role="columnheader"], .app-table-cell) {
+    min-height: 0 !important;
+    height: 100%;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: flex-start !important;
+    gap: 0.4rem;
+    padding-inline: var(--data-table-heading-padding) !important;
+    text-align: left !important;
+    font-size: inherit !important;
+    line-height: inherit;
+}
+
+.app-data-table .app-table-header > :is([data-column], [role="columnheader"], .app-table-cell) > svg,
+.app-data-table .app-table-heading > svg {
+    order: -1;
+    width: var(--data-table-heading-icon-size) !important;
+    height: var(--data-table-heading-icon-size) !important;
+    flex: 0 0 var(--data-table-heading-icon-size) !important;
+}
+
+.app-data-table .app-table-row {
+    position: relative;
+    transition: background-color 0.12s ease;
+}
+
+.app-data-table .app-table-row > :is([data-column], [role="cell"], .app-table-cell):not(input) {
+    box-sizing: border-box;
+    min-height: 0 !important;
+    height: 100%;
+    align-self: stretch;
+    align-items: center;
+    padding-block: 0 !important;
+    padding-inline: var(--data-table-cell-padding) !important;
+    font-size: var(--data-table-font-size) !important;
+    line-height: 1.45;
+}
+
+.app-data-table :is(.app-table-header, .app-table-row) > :is([data-column], [role="cell"], [role="columnheader"], .app-table-cell) + :is([data-column], [role="cell"], [role="columnheader"], .app-table-cell) {
+    border-left: 1px solid var(--data-table-separator) !important;
+}
+
+.app-data-table :is(.app-table-header, .app-table-row) > :is([data-column="select"], [data-column="menu"], [data-column="action"], [data-column="info"], [data-column="notes"], [data-column="spacer"]) {
+    padding-inline: 0 !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.app-data-table .app-table-row > [data-column="select"].tasks-row-checkbox {
+    align-self: center;
+    justify-self: center;
+    margin: 0;
+}
+
+.app-data-table .app-table-row > :is([data-column="menu"], [data-column="action"]) > :is(.documents-item-actions, [data-row-actions], [data-document-actions]) {
+    width: 100%;
+    height: 100%;
+}
+
+.app-data-table .tasks-project-sheet__edit-button {
+    min-height: 0;
+    height: 100%;
+}
+
+.app-data-table .app-table-row::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 2;
+    width: 3px;
+    background: var(--system-accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+}
+
+.app-data-table .app-table-row:is(:hover, :focus-visible, .checked, :has(.tasks-row-checkbox:checked)),
+.app-data-table .app-table-row:is(:hover, :focus-visible, .checked, :has(.tasks-row-checkbox:checked))::before,
+.app-data-table .app-table-row:is(:hover, :focus-visible, .checked, :has(.tasks-row-checkbox:checked)) > [data-column]:not([data-column="select"]) {
+    background: var(--data-table-highlight) !important;
+    background-clip: padding-box;
+}
+
+.app-data-table .app-table-row:is(:hover, :focus-visible, .checked, :has(.tasks-row-checkbox:checked))::after {
+    opacity: 1;
+}
+
+/* Semantic HTML tables share the same cells; column widths and numeric
+   alignment remain the responsibility of their existing module. */
+table.app-data-table--native {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--data-table-font-size) !important;
+    text-align: left;
+}
+
+table.app-data-table--native > :is(thead, tbody, tfoot) > tr > :is(th, td):not(.documents-empty) {
+    box-sizing: border-box;
+    height: var(--data-table-row-height) !important;
+    padding: 0 var(--data-table-cell-padding) !important;
+    border-bottom: 1px solid var(--data-table-separator) !important;
+    font-size: var(--data-table-font-size) !important;
+    line-height: 1.45 !important;
+    vertical-align: middle;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+table.app-data-table--native > thead > tr > th:not(.documents-empty) {
+    background: var(--card-bg) !important;
+    padding-inline: var(--data-table-heading-padding) !important;
+    text-transform: uppercase;
+    font-weight: 400;
+}
+
+table.app-data-table--native > :is(thead, tbody, tfoot) > tr > :is(th, td) + :is(th, td) {
+    border-left: 1px solid var(--data-table-separator) !important;
+}
+
+.app-data-table .app-table-heading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+table.app-data-table--native > tbody > tr:has(td:not(.documents-empty)) {
+    transition: background-color 0.12s ease;
+}
+
+table.app-data-table--native > tbody > tr:has(td:not(.documents-empty)):is(:hover, :focus-within, .checked) {
+    background: var(--data-table-highlight) !important;
+}
+
+table.app-data-table--native > tbody > tr:has(td:not(.documents-empty)):is(:hover, :focus-within, .checked) > :first-child {
+    box-shadow: inset 3px 0 var(--system-accent);
+}
+
+.work-reports-table-wrap:has(> .app-data-table),
+.table-container:has(> .app-data-table) {
+    border: 0;
+    border-radius: 0;
+}
+
+table.data-table.app-data-table--native > :is(thead, tbody) > tr > :first-child {
+    width: auto;
+    text-align: left;
+}
+
+table.app-data-table--native > :is(thead, tbody) > tr > :is(th, td).app-table-control {
+    width: var(--data-table-control-width);
+    padding: 0 !important;
+    text-align: center;
+}
+
+.app-data-table--native .app-table-control > .tasks-project-sheet__edit-button {
+    height: calc(var(--data-table-row-height) - 1px);
+}
+
+/* Keep file location available on the compact row, alongside its name. */
+.app-data-table--native .documents-name > div:not(.documents-item-actions) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.app-data-table--native .documents-name small {
+    margin-top: 0;
+}
+
+.app-data-table--native .work-reports-person > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-data-table .app-table-row,
+    .app-data-table .app-table-row::after,
+    table.app-data-table--native > tbody > tr {
+        transition: none;
+    }
+}

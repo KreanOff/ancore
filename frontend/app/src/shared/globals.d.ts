@@ -28,7 +28,12 @@ declare global {
       dismiss(restoreFocus?: boolean): void;
     };
     AncoreTaskModals?: {
-      open(modal: HTMLElement, focus?: HTMLElement | null): void;
+      open(
+        modal: HTMLElement,
+        focus?: HTMLElement | null,
+        onOpen?: () => void,
+        returnFocus?: HTMLElement | null,
+      ): void;
       close(modal: HTMLElement): void;
     };
     showNotification?: (

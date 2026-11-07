@@ -17,6 +17,8 @@ from .services import space_url, record
 
 
 class ShareForm(forms.Form):
+    compact = True
+
     email = forms.EmailField(label='Konto Ancore', widget=forms.TextInput(attrs={
         'class': 'form-input', 'autocomplete': 'off', 'spellcheck': 'false',
         'placeholder': 'Wpisz imię, nazwisko, ID Ancore lub e-mail',

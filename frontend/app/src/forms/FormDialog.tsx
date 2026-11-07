@@ -135,13 +135,21 @@ export function FieldControl({
   emojiVariant?: 'field' | 'avatar';
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const describedBy = [
+    field.help_text ? `${field.id}_help` : '',
+    field.errors.length ? `${field.id}_error` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   useLayoutEffect(() => {
     const root = host.current!;
     if (field.type === 'emoji') return;
     if (!field.hidden && field.type === 'checkboxes') {
       const group = document.createElement('div');
+      group.id = field.id;
       group.setAttribute('role', 'group');
       group.setAttribute('aria-label', field.label);
+      if (describedBy) group.setAttribute('aria-describedby', describedBy);
       const selected = new Set(Array.isArray(field.value) ? field.value : []);
       (field.choices || []).forEach((choice, index) => {
         const row = document.createElement('div'),
@@ -154,6 +162,8 @@ export function FieldControl({
         input.checked = selected.has(choice.value);
         input.disabled = field.disabled;
         input.className = 'tasks-row-checkbox';
+        input.setAttribute('aria-invalid', String(!!field.errors.length));
+        if (describedBy) input.setAttribute('aria-describedby', describedBy);
         label.htmlFor = input.id;
         label.append(input, document.createTextNode(' ' + choice.label));
         row.append(label);
@@ -297,17 +307,12 @@ export function FieldControl({
     Object.entries(field.attrs).forEach(([key, value]) => element.setAttribute(key, value));
     element.setAttribute('aria-invalid', String(!!field.errors.length));
     element.setAttribute('aria-label', field.label);
-    element.setAttribute(
-      'aria-describedby',
-      [field.help_text ? `${field.id}_help` : '', field.errors.length ? `${field.id}_error` : '']
-        .filter(Boolean)
-        .join(' '),
-    );
+    element.setAttribute('aria-describedby', describedBy);
     root.append(element);
     window.AncoreCustomSelect?.refresh(root);
     window.AncoreIcons?.render(root);
     return () => root.replaceChildren();
-  }, [field]);
+  }, [field, describedBy]);
   return (
     <div
       className={
@@ -328,6 +333,11 @@ export function FieldControl({
           helpId={`${field.id}_help`}
         />
       ) : null}
+      {bare && field.help_text ? (
+        <span id={`${field.id}_help`} className="u-sr-only">
+          {field.help_text}
+        </span>
+      ) : null}
       {field.type === 'emoji' && field.emoji_picker ? (
         <div className="react-field-control">
           <EmojiPicker
@@ -340,12 +350,7 @@ export function FieldControl({
             variant={emojiVariant}
             disabled={field.disabled}
             invalid={!!field.errors.length}
-            describedBy={[
-              field.help_text ? `${field.id}_help` : '',
-              field.errors.length ? `${field.id}_error` : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
+            describedBy={describedBy}
           />
         </div>
       ) : (
@@ -524,6 +529,7 @@ export function EmbeddedForm({
     schema.layout === 'pulpit' &&
     schema.fields.some((field) => field.name === 'icon' && field.type === 'emoji');
   const form = useRef<HTMLFormElement>(null),
+    errorTarget = useRef<HTMLDivElement>(null),
     controller = useRef(new AbortController()),
     sending = useRef(false);
   const [template, setTemplate] = useState(() =>
@@ -633,10 +639,16 @@ export function EmbeddedForm({
       }
       setError(errorMessage(exception));
       requestAnimationFrame(() => {
-        const input = form.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
-        (
-          input?.closest('.ancore-custom-select')?.querySelector<HTMLElement>('button') || input
-        )?.focus();
+        const inputs = form.current?.querySelectorAll<HTMLElement>('[aria-invalid="true"]') || [];
+        for (const input of inputs) {
+          if (input.closest('[hidden], [inert]') || input.matches(':disabled')) continue;
+          const target =
+            input.closest('.ancore-custom-select')?.querySelector<HTMLElement>('button') || input;
+          if (!target.getClientRects().length) continue;
+          target.focus();
+          if (document.activeElement === target) return;
+        }
+        errorTarget.current?.focus();
       });
     } finally {
       sending.current = false;
@@ -673,13 +685,9 @@ export function EmbeddedForm({
         <input type="hidden" key={name} name={name} value={value} />
       ))}
       {actionsPosition === 'toolbar' ? (
-        <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
-          <div className="member-access-save-actions">
-            <button
-              type="submit"
-              className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-              disabled={pending || !dirty}
-            >
+        <div className="tasks-filterbar tasks-filterbar--directory app-toolbar app-toolbar--embedded workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar">
+          <div className="member-access-save-actions app-toolbar__actions">
+            <button type="submit" className="tasks-filter-button" disabled={pending || !dirty}>
               <Icon name="check" />
               {pending ? 'Zapisywanie…' : schema.submit_label}
             </button>
@@ -698,7 +706,12 @@ export function EmbeddedForm({
         className={`tasks-modal__body ${schema.inline_avatar || pulpitAvatar ? 'profile-edit-body space-settings-main app-form-avatar-layout' : schema.layout === 'tag' ? 'tasks-project-modal__body tasks-project-edit-modal__body tasks-issue-modal__body' : schema.layout === 'filter' ? 'documents-form task-filter-form' : schema.layout === 'pulpit' ? 'documents-form pulpit-form' : 'documents-form resources-form'}${pulpitAvatar ? ' pulpit-profile-form' : ''}`}
       >
         {error ? (
-          <div className="tasks-modal__errors resources-form-wide" role="alert">
+          <div
+            ref={errorTarget}
+            className="tasks-modal__errors resources-form-wide"
+            role="alert"
+            tabIndex={-1}
+          >
             {error}
           </div>
         ) : null}
@@ -1015,6 +1028,7 @@ export function FormDialog(props: {
   onClose: () => void;
   onSaved: (url: string) => void;
   hostId?: string;
+  returnFocus?: HTMLElement | null;
 }) {
   const [state, setState] = useState({ dirty: false, pending: false });
   const report = useCallback(
@@ -1043,7 +1057,9 @@ export function FormDialog(props: {
     <Modal
       title={props.data.title}
       hostId={props.hostId}
-      className={`work-modal ${schema.compact ? 'app-modal-panel--compact' : ''} ${schema.layout === 'tag' ? 'tasks-project-modal tasks-project-edit-modal' : ''}`}
+      returnFocus={props.returnFocus}
+      size={schema.compact ? 'compact' : 'panel'}
+      className={`work-modal ${schema.layout === 'tag' ? 'tasks-project-modal tasks-project-edit-modal' : ''}`}
       dirty={state.dirty}
       pending={state.pending}
       onClose={props.onClose}

@@ -51,15 +51,21 @@ export function Dropdown({
         if (!element.parentElement?.contains(event.target as Node)) setOpen(false);
       };
       const escape = (event: KeyboardEvent) => {
-        if (event.key === 'Escape' && !element.querySelector('.ancore-custom-select.is-open')) {
+        if (
+          !event.defaultPrevented &&
+          event.key === 'Escape' &&
+          !element.querySelector('.ancore-custom-select.is-open')
+        ) {
           setOpen(false);
           anchor.current?.focus();
         }
       };
       document.addEventListener('pointerdown', outside, true);
+      document.addEventListener('focusin', outside);
       document.addEventListener('keydown', escape);
       return () => {
         document.removeEventListener('pointerdown', outside, true);
+        document.removeEventListener('focusin', outside);
         document.removeEventListener('keydown', escape);
       };
     }
@@ -89,9 +95,15 @@ export function Dropdown({
             event.preventDefault();
             if (!open) onOpen?.();
             setOpen(true);
-            requestAnimationFrame(() =>
-              menu.current?.querySelector<HTMLElement>('button:not(:disabled), a[href]')?.focus(),
-            );
+            requestAnimationFrame(() => {
+              const selector =
+                role === 'menu'
+                  ? 'button:not(:disabled), a[href]'
+                  : 'button:not(:disabled), a[href], input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]';
+              [...(menu.current?.querySelectorAll<HTMLElement>(selector) || [])]
+                .find((item) => item.getClientRects().length && !item.closest('[hidden], [inert]'))
+                ?.focus();
+            });
           }
         }}
       >
@@ -111,7 +123,9 @@ export function Dropdown({
           if ((event.target as HTMLElement).closest('.ancore-custom-select')) return;
           if (
             !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) ||
-            (event.target as HTMLElement).matches('input')
+            (event.target as HTMLElement).closest(
+              'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+            )
           )
             return;
           const items = [

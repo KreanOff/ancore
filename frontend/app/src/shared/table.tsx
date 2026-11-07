@@ -10,12 +10,20 @@ export function useTableWidths(columns: TableColumn[], segment: string) {
   const key = `${segment}:directoryColumnWidths:v4:${columns.map((column) => column.key).join('-')}`;
   const [widths, setWidths] = useState<Record<string, number>>(() => {
     try {
-      const value = JSON.parse(localStorage.getItem(key) || '{}');
+      const previousColumns = columns.map((column) => column.key);
+      previousColumns.splice(previousColumns.indexOf('select') + 1, 0, 'menu');
+      const previousKey = `${segment}:directoryColumnWidths:v4:${previousColumns.join('-')}`;
+      const saved = localStorage.getItem(key) ?? localStorage.getItem(previousKey);
+      const value = JSON.parse(saved || '{}');
       if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
       return Object.fromEntries(
         Object.entries(value).filter(
-          ([, width]) =>
-            typeof width === 'number' && Number.isFinite(width) && width >= 50 && width <= 1200,
+          ([column, width]) =>
+            columns.some((item) => item.key === column) &&
+            typeof width === 'number' &&
+            Number.isFinite(width) &&
+            width >= 50 &&
+            width <= 1200,
         ),
       ) as Record<string, number>;
     } catch {

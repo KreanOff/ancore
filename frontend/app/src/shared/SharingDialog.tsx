@@ -68,7 +68,7 @@ export default function SharingDialog<T>({
   return (
     <Modal
       title={changingRole ? 'Zmień rolę' : 'Udostępnij · ' + name}
-      className="app-modal-panel--compact"
+      size="compact"
       hostId={hostId}
       dirty={dirty}
       pending={pending}

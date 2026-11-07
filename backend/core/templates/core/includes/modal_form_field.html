@@ -5,5 +5,5 @@
     </div>
     {{ field }}
     {% if field_scope == 'pulpit' and field.name == 'kind' %}{% include 'dashboard/pulpits/gadget_preview.html' with selected_kind=field.value catalog=form.catalog only %}{% endif %}
-    {% if field.errors %}<div class="tasks-modal__errors" id="{{ field.auto_id }}_error" role="alert">{{ field.errors }}</div>{% endif %}
+    {% if field.errors %}<div class="tasks-modal__errors" id="{{ field.auto_id }}_error" role="alert">{% for error in field.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
 </div>

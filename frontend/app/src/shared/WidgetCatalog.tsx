@@ -73,7 +73,8 @@ export default function WidgetCatalog({
   return (
     <Modal
       title="Dodaj gadżet"
-      className="app-modal-panel--compact widget-catalog-modal"
+      size="compact"
+      className="widget-catalog-modal"
       dialogClassName="widget-catalog-dialog"
       onClose={onClose}
     >

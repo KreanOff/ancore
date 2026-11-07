@@ -1,0 +1,136 @@
+/* The open Space is the shared page-header reference, including its view tabs. */
+.app-page-header-group {
+    flex: 0 0 auto;
+    min-width: 0;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tasks-topbar.tasks-topbar--directory.app-page-header {
+    flex: 0 0 auto;
+    min-width: 0;
+    min-height: var(--page-header-row-height);
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem var(--app-page-padding-x);
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.app-page-header-group > .tasks-topbar.app-page-header,
+.app-page-header-group > .notifications-tabs.app-page-tabs {
+    border-bottom: 0;
+}
+
+.tasks-topbar.app-page-header > .tasks-titlebar-left {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    gap: 10px;
+}
+
+.tasks-topbar.app-page-header > .tasks-titlebar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tasks-topbar.app-page-header :is(.tasks-topbar-title, .work-space-title) {
+    margin: 0;
+    font-size: var(--page-title-font-size);
+    /* The shared typography reset uses important weights too. */
+    font-weight: var(--page-title-font-weight) !important;
+    line-height: 1.45;
+    color: var(--text-primary);
+}
+
+.tasks-topbar.app-page-header .tasks-topbar-title :is(span, button) {
+    font-size: inherit;
+    font-weight: inherit !important;
+}
+
+.notifications-tabs.work-tabs.app-page-tabs {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 1rem;
+    padding: 0 var(--app-page-padding-x);
+    margin: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    background: var(--card-bg);
+}
+
+.notifications-tabs.work-tabs.app-page-tabs > :is(a, button) {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 8px;
+    min-height: var(--page-header-row-height);
+    height: auto;
+    margin: 0;
+    padding: 0.7rem 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
+    font-size: var(--page-header-tab-font-size);
+    font-weight: 400 !important;
+    line-height: 1.45;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.notifications-tabs.work-tabs.app-page-tabs > :is(a, button):not(:disabled):hover {
+    border-bottom-color: var(--system-interaction);
+}
+
+.notifications-tabs.work-tabs.app-page-tabs > :is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"]) {
+    border-bottom-color: var(--system-accent);
+}
+
+.notifications-tabs.work-tabs.app-page-tabs > :is(a, button) > :is(svg, [data-icon]) {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.notifications-tabs.work-tabs.app-page-tabs > :is(a, button) > span:not(.app-page-tab-count) {
+    min-width: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: inherit;
+}
+
+.app-page-tabs .app-page-tab-count {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--primary-button-bg);
+    font-size: 10px;
+}
+
+@media (max-width: 767px) {
+    .tasks-topbar.tasks-topbar--directory.app-page-header {
+        padding-inline: var(--app-page-padding-x);
+    }
+
+    .tasks-topbar.app-page-header > .tasks-titlebar-actions {
+        justify-content: flex-end;
+    }
+
+    .tasks-topbar.app-page-header .tasks-topbar-title {
+        overflow-wrap: anywhere;
+    }
+}

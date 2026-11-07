@@ -10,10 +10,14 @@ export function usePageActions(
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const life = useRef(new AbortController()),
-    pending = useRef(false);
+    pending = useRef(false),
+    returnFocus = useRef<HTMLElement | null>(null);
   useEffect(() => () => life.current.abort(), []);
   async function open(url: string) {
     if (pending.current) return;
+    // Loading disables the trigger before the dialog mounts, which can blur it.
+    returnFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -64,6 +68,7 @@ export function usePageActions(
   }
   return {
     modal,
+    returnFocus: returnFocus.current,
     busy,
     error,
     open,

@@ -68,8 +68,12 @@ export function useDirectoryColumns<C extends DirectoryColumn>(
     return value && typeof value === 'object' && !Array.isArray(value)
       ? Object.fromEntries(
           Object.entries(value).filter(
-            ([, width]) =>
-              typeof width === 'number' && Number.isFinite(width) && width >= 50 && width <= 1200,
+            ([key, width]) =>
+              columns.some((column) => column.key === key) &&
+              typeof width === 'number' &&
+              Number.isFinite(width) &&
+              width >= 50 &&
+              width <= 1200,
           ),
         )
       : {};

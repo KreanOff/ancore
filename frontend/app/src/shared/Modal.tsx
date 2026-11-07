@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 
 export function Modal({
   title,
+  size = 'panel',
   className = '',
   children,
   footer,
@@ -12,9 +13,11 @@ export function Modal({
   header,
   dialogClassName = '',
   hostId = 'app-page-modals',
+  returnFocus,
   id,
 }: {
   title: string;
+  size?: 'panel' | 'compact';
   className?: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -24,6 +27,7 @@ export function Modal({
   header?: (close: () => void) => ReactNode;
   dialogClassName?: string;
   hostId?: string;
+  returnFocus?: HTMLElement | null;
   id?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -32,11 +36,17 @@ export function Modal({
   const discard = useRef(false);
   useEffect(() => {
     const element = ref.current!;
-    const previous = document.activeElement;
+    const previous = returnFocus?.isConnected ? returnFocus : document.activeElement;
     const background: HTMLElement[] = [];
-    const close = () => {
-      if (latest.current.pending) return;
+    const close = () => window.AncoreTaskModals?.close(element);
+    const beforeClose = (event: Event) => {
+      if (event.target !== element) return;
+      if (latest.current.pending) {
+        event.preventDefault();
+        return;
+      }
       if (latest.current.dirty && !discard.current) {
+        event.preventDefault();
         window.showConfirmModal({
           title: 'Niezapisane zmiany',
           message: 'Zamknąć formularz bez zapisania zmian?',
@@ -45,17 +55,17 @@ export function Modal({
           onConfirm: () => {
             if (element.isConnected) {
               discard.current = true;
-              latest.current.onClose();
+              close();
             }
           },
         });
-      } else latest.current.onClose();
+      }
     };
-    const beforeClose = (event: Event) => {
-      event.preventDefault();
-      close();
+    const closed = (event: Event) => {
+      if (event.target === element) latest.current.onClose();
     };
     element.addEventListener('ancore:task-modal-before-close', beforeClose);
+    element.addEventListener('ancore:task-modal-closed', closed);
     const ownControls = (selector: string) =>
       [...element.querySelectorAll<HTMLElement>(selector)].find(
         (control) =>
@@ -68,6 +78,8 @@ export function Modal({
       ownControls('[role="tab"][aria-selected="true"]') ||
         ownControls('input:not([type="hidden"]), textarea') ||
         ownControls('button'),
+      undefined,
+      previous instanceof HTMLElement ? previous : undefined,
     );
     for (
       let node: HTMLElement | null = element.parentElement;
@@ -99,6 +111,7 @@ export function Modal({
       window.AncoreCustomSelect?.closeAll();
       window.AncoreDropdownLayer?.dismiss();
       element.removeEventListener('ancore:task-modal-before-close', beforeClose);
+      element.removeEventListener('ancore:task-modal-closed', closed);
       document.removeEventListener('ancore:before-navigate', beforeNavigate);
       window.removeEventListener('beforeunload', beforeUnload);
       background.forEach((sibling) => {
@@ -116,7 +129,7 @@ export function Modal({
     <div
       ref={ref}
       id={id}
-      className={`tasks-modal app-modal-panel tasks-form-modal ${className}`}
+      className={`tasks-modal app-modal-panel tasks-form-modal ${size === 'compact' ? 'app-modal-panel--compact ' : ''}${className}`}
       role="dialog"
       aria-modal="true"
       aria-label={title}

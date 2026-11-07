@@ -15,6 +15,8 @@ const scrollSelectors = [
   '.work-content',
   '.tasks-table-wrap',
   '.tasks-board',
+  '.documents-table-scroll',
+  '.documents-grid-scroll',
 ];
 export function capturePosition(): Position {
   return {

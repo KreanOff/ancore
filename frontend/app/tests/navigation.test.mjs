@@ -87,7 +87,9 @@ function controller(reply) {
     setTimeout,
     clearTimeout,
     performance: { getEntriesByType: () => [] },
-    requestAnimationFrame() {},
+    requestAnimationFrame(callback) {
+      callback();
+    },
     http: async (url) => {
       requests.push(url);
       return reply ? reply(url) : { shell: data, page: { title: 'Spaces' }, csrf_token: 'token' };
@@ -95,8 +97,54 @@ function controller(reply) {
   };
   vm.runInNewContext(bundle.outputFiles[0].text, context);
   const dispose = module.exports.startNavigation(data, 'token', () => {});
-  return { window, document, assigned, requests, rendered, dispose };
+  return {
+    window,
+    document,
+    assigned,
+    requests,
+    rendered,
+    dispose,
+    capturePosition: module.exports.capturePosition,
+  };
 }
+
+test('returning to document lists and grids restores their own scroll containers', async () => {
+  const app = controller();
+  const table = {
+    scrollTop: 520,
+    scrollLeft: 75,
+    scrollTo({ top, left }) {
+      this.scrollTop = top;
+      this.scrollLeft = left;
+    },
+  };
+  const grid = {
+    scrollTop: 340,
+    scrollLeft: 0,
+    scrollTo({ top, left }) {
+      this.scrollTop = top;
+      this.scrollLeft = left;
+    },
+  };
+  app.document.querySelectorAll = (selector) =>
+    selector === '.documents-table-scroll'
+      ? [table]
+      : selector === '.documents-grid-scroll'
+        ? [grid]
+        : [];
+  const position = app.capturePosition();
+  table.scrollTop = table.scrollLeft = grid.scrollTop = 0;
+  try {
+    await app.window.AncoreApp.navigate('/workplaces/workspace-a/office/', {
+      restorePosition: position,
+    });
+    assert.equal(table.scrollTop, 520);
+    assert.equal(table.scrollLeft, 75);
+    assert.equal(grid.scrollTop, 340);
+  } finally {
+    app.dispose();
+  }
+});
 
 test('same Workspace stays in the current document', async () => {
   const app = controller();
