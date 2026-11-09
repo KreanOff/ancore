@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261105-space-reference">
-<script src="{% static 'js/calendar.js' %}?v=20261105-shared-page-tabs" defer></script>
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261108-aligned-calendar-panel">
+<script src="{% static 'js/calendar.js' %}?v=20261108-search-only-toolbar" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -51,11 +51,6 @@
                 </button>
             </div>
         </nav>
-
-        <div class="tasks-rail-section calendar-legend">
-            <div class="tasks-rail-section-title">Kolory</div>
-            {% include 'planner/includes/color_filters.html' %}
-        </div>
     </aside>
 {% endblock %}
 
@@ -72,12 +67,6 @@
                 </button>
                 </div>
             </div>
-            <nav class="notifications-tabs work-tabs app-page-tabs" aria-label="Widok kalendarza">
-                <button type="button" data-calendar-view-tab data-view="day" aria-pressed="false"><i data-icon="calendar-day" aria-hidden="true"></i><span>Dzień</span></button>
-                <button type="button" data-calendar-view-tab data-view="week" aria-pressed="false"><i data-icon="calendar-range" aria-hidden="true"></i><span>Tydzień</span></button>
-                <button type="button" data-calendar-view-tab data-view="month" class="is-active" aria-pressed="true"><i data-icon="calendar-days" aria-hidden="true"></i><span>Miesiąc</span></button>
-                <button type="button" data-calendar-view-tab data-view="year" aria-pressed="false"><i data-icon="calendar-fold" aria-hidden="true"></i><span>Rok</span></button>
-            </nav>
         </header>
         <div class="tasks-filterbar tasks-filterbar--directory calendar-filterbar app-toolbar">
             <div class="tasks-filterbar-left app-toolbar__controls">
@@ -91,18 +80,7 @@
                     <i data-icon="chevron-right" aria-hidden="true"></i>
                 </button>
                 <span class="calendar-period-label" id="cal-period-label" aria-live="polite"></span>
-                <select id="cal-source-filter" class="form-select" aria-label="Rodzaj pozycji w kalendarzu">
-                    <option value="" data-ancore-option-icon="calendar-days">Wszystkie pozycje</option>
-                    <option value="events" data-ancore-option-icon="calendar">Wydarzenia</option>
-                    <option value="tasks" data-ancore-option-icon="square-check">Zadania</option>
-                </select>
-                <details class="calendar-color-filter">
-                    <summary class="tasks-filter-button" aria-label="Filtruj kolory"><i data-icon="list-filter" aria-hidden="true"></i>Kolory</summary>
-                    {% include 'planner/includes/color_filters.html' %}
-                </details>
                 <span class="calendar-filter-summary" id="cal-events-subtitle"></span>
-            </div>
-            <div class="app-toolbar__actions">
                 <button type="button" class="tasks-icon-button" id="cal-toggle-agenda" title="Pokaż lub ukryj plan" aria-label="Pokaż lub ukryj plan" aria-expanded="true" aria-controls="calendar-agenda">
                     <i data-icon="panel-right" aria-hidden="true"></i>
                 </button>
@@ -112,6 +90,14 @@
                     <i data-icon="search" aria-hidden="true"></i>
                     <input type="search" id="cal-search" placeholder="Szukaj w tym widoku" aria-label="Szukaj wydarzeń, zadań i kart w wybranym okresie" autocomplete="off">
                 </label>
+            </div>
+            <div class="app-toolbar__actions">
+                <div class="tasks-segments app-toolbar__segments" role="group" aria-label="Widok kalendarza">
+                    <button type="button" class="tasks-filter-button" data-calendar-view-tab data-view="day" aria-pressed="false">Dzień</button>
+                    <button type="button" class="tasks-filter-button" data-calendar-view-tab data-view="week" aria-pressed="false">Tydzień</button>
+                    <button type="button" class="tasks-filter-button is-active" data-calendar-view-tab data-view="month" aria-pressed="true">Miesiąc</button>
+                    <button type="button" class="tasks-filter-button" data-calendar-view-tab data-view="year" aria-pressed="false">Rok</button>
+                </div>
             </div>
         </div>
 

@@ -1,16 +1,13 @@
 import { Toolbar } from '../shared/DirectoryToolbar';
-import { PageTabs } from '../shared/PageTabs';
 import { PageHeader } from '../shared/PageHeader';
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../shared/Icon';
-import { Select } from '../shared/Select';
 import { type PageProps, navigate, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
 import { EventEditor } from './EventEditor';
 import {
   addDays,
   bounds,
-  colors,
   dateKey,
   day,
   eventDate,
@@ -26,12 +23,6 @@ import {
   type CalendarEvent,
   type View,
 } from './dates';
-const VIEW_ICONS: Record<View, string> = {
-  day: 'calendar-day',
-  week: 'calendar-range',
-  month: 'calendar-days',
-  year: 'calendar-fold',
-};
 interface CalendarData {
   config: {
     initialYear: number;
@@ -57,9 +48,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]),
     [loading, setLoading] = useState(false),
     [error, setError] = useState('');
-  const [query, setQuery] = useState(''),
-    [source, setSource] = useState(''),
-    [activeColors, setColors] = useState(() => new Set(colors.map((item) => item[0])));
+  const [query, setQuery] = useState('');
   const [agenda, setAgenda] = useState(true),
     [wholePeriod, setWholePeriod] = useState(false),
     [revision, setRevision] = useState(0);
@@ -97,14 +86,12 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
     () =>
       events.filter(
         (event) =>
-          activeColors.has(event.color) &&
-          (!source || event.source === source) &&
-          (!query ||
-            `${event.title} ${event.description}`
-              .toLocaleLowerCase('pl')
-              .includes(query.toLocaleLowerCase('pl'))),
+          !query ||
+          `${event.title} ${event.description}`
+            .toLocaleLowerCase('pl')
+            .includes(query.toLocaleLowerCase('pl')),
       ),
-    [events, activeColors, source, query],
+    [events, query],
   );
   const onDay = (date: Date) => visible.filter((event) => occurs(event, date));
   function open(event: CalendarEvent) {
@@ -386,25 +373,6 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
               <span>Nowe wydarzenie</span>
             </button>
           }
-          navigation={
-            <PageTabs label="Widok kalendarza">
-              {views.map(([key, label]) => (
-                <button
-                  type="button"
-                  key={key}
-                  className={view === key ? 'is-active' : undefined}
-                  aria-pressed={view === key}
-                  onClick={() => {
-                    setAnchor(selected);
-                    setView(key);
-                  }}
-                >
-                  <Icon name={VIEW_ICONS[key]} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </PageTabs>
-          }
         />
         <Toolbar
           className="calendar-filterbar"
@@ -440,56 +408,21 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
               <span className="calendar-period-label" aria-live="polite">
                 {period}
               </span>
-              <Select
-                label="Rodzaj pozycji w kalendarzu"
-                hideLabel
-                value={source}
-                options={SOURCE_OPTIONS}
-                onChange={setSource}
-              />
-              <details className="calendar-color-filter">
-                <summary className="tasks-filter-button">
-                  <Icon name="list-filter" />
-                  Kolory
-                </summary>
-                <div className="calendar-color-filters">
-                  {colors.map(([key, label]) => (
-                    <label key={key}>
-                      <input
-                        type="checkbox"
-                        checked={activeColors.has(key)}
-                        onChange={(event) =>
-                          setColors((current) => {
-                            const next = new Set(current);
-                            if (event.target.checked) next.add(key);
-                            else next.delete(key);
-                            return next;
-                          })
-                        }
-                      />
-                      <span className={`calendar-color-dot calendar-color-dot--${key}`} />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </details>
               <span className="calendar-filter-summary">
                 {loading
                   ? 'Wczytywanie…'
                   : `${views.find((item) => item[0] === view)?.[1]} · ${visible.length} pozycji`}
               </span>
+              <button
+                type="button"
+                className="tasks-icon-button"
+                aria-label="Pokaż lub ukryj plan"
+                aria-expanded={agenda}
+                onClick={() => setAgenda(!agenda)}
+              >
+                <Icon name="panel-right" />
+              </button>
             </>
-          }
-          actions={
-            <button
-              type="button"
-              className="tasks-icon-button"
-              aria-label="Pokaż lub ukryj plan"
-              aria-expanded={agenda}
-              onClick={() => setAgenda(!agenda)}
-            >
-              <Icon name="panel-right" />
-            </button>
           }
           search={
             <label className="tasks-search-field calendar-search">
@@ -502,6 +435,28 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                 aria-label="Szukaj wydarzeń i zadań w wybranym okresie"
               />
             </label>
+          }
+          actions={
+            <div
+              className="tasks-segments app-toolbar__segments"
+              role="group"
+              aria-label="Widok kalendarza"
+            >
+              {views.map(([key, label]) => (
+                <button
+                  type="button"
+                  key={key}
+                  className={`tasks-filter-button${view === key ? ' is-active' : ''}`}
+                  aria-pressed={view === key}
+                  onClick={() => {
+                    setAnchor(selected);
+                    setView(key);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           }
         />
         {error ? (
@@ -621,7 +576,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                           ? 'Wczytywanie pozycji…'
                           : error
                             ? 'Nie udało się wczytać pozycji'
-                            : query || source || activeColors.size < colors.length
+                            : query
                               ? 'Brak pasujących pozycji'
                               : 'Czas na Twoje plany'}
                       </strong>
@@ -671,8 +626,3 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
     </div>
   );
 }
-const SOURCE_OPTIONS: [string, string][] = [
-  ['', 'Wszystkie pozycje'],
-  ['events', 'Wydarzenia'],
-  ['tasks', 'Zadania'],
-];

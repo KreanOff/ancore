@@ -45,8 +45,6 @@ function initCalendarPage() {
     let selectedDate = cloneDate(anchorDate);
     let agendaMode = 'day';
     let searchQuery = '';
-    let sourceFilter = '';
-    const activeColors = new Set(COLORS);
     let saving = false;
     let editedEvent = null;
     let dialogTrigger = null;
@@ -214,8 +212,8 @@ function initCalendarPage() {
     }
 
     function visibleEvents() {
-        return events.filter((event) => (!sourceFilter || event.source === sourceFilter) && activeColors.has(event.color)
-            && (!searchQuery || `${event.title} ${event.description || ''}`.toLocaleLowerCase('pl').includes(searchQuery)));
+        return events.filter((event) => !searchQuery
+            || `${event.title} ${event.description || ''}`.toLocaleLowerCase('pl').includes(searchQuery));
     }
 
     function eventsOnDay(day) {
@@ -613,9 +611,9 @@ function initCalendarPage() {
             const empty = document.createElement('li');
             empty.className = 'calendar-events-empty';
             const title = document.createElement('strong');
-            title.textContent = loading ? 'Wczytywanie pozycji…' : loadFailed ? 'Nie udało się wczytać pozycji' : searchQuery || sourceFilter || activeColors.size < COLORS.length ? 'Brak pasujących pozycji' : 'Czas na Twoje plany';
+            title.textContent = loading ? 'Wczytywanie pozycji…' : loadFailed ? 'Nie udało się wczytać pozycji' : searchQuery ? 'Brak pasujących pozycji' : 'Czas na Twoje plany';
             const description = document.createElement('span');
-            description.textContent = loading ? 'Za chwilę pojawi się Twój plan.' : loadFailed ? 'Spróbuj ponownie za pomocą przycisku nad kalendarzem.' : searchQuery || sourceFilter || activeColors.size < COLORS.length ? 'Zmień wyszukiwanie, rodzaj pozycji lub kolory.' : 'Dodaj wydarzenie i zaplanuj ten dzień.';
+            description.textContent = loading ? 'Za chwilę pojawi się Twój plan.' : loadFailed ? 'Spróbuj ponownie za pomocą przycisku nad kalendarzem.' : searchQuery ? 'Zmień wyszukiwanie.' : 'Dodaj wydarzenie i zaplanuj ten dzień.';
             empty.append(title, description);
             eventsList.appendChild(empty);
             return;
@@ -1084,15 +1082,6 @@ function initCalendarPage() {
 
     document.addEventListener('keydown', (e) => {
         if (handleEventColorKeydown(e)) return;
-        if (e.key === 'Escape') {
-            const colorMenu = document.querySelector('.calendar-color-filter[open]');
-            if (colorMenu) {
-                colorMenu.open = false;
-                colorMenu.querySelector('summary').focus();
-                return;
-            }
-        }
-
         if (dialogOverlay?.classList.contains('active')) {
             if (document.querySelector('.confirm-modal-overlay.is-visible')) return;
             if (e.key === 'Escape') { e.preventDefault(); closeDialog(); }
@@ -1111,18 +1100,6 @@ function initCalendarPage() {
         if (searchQuery) agendaMode = 'period';
         renderCurrentView();
     }, pageListenerOptions);
-    document.getElementById('cal-source-filter').addEventListener('change', (event) => {
-        sourceFilter = event.target.value;
-        renderCurrentView();
-    }, pageListenerOptions);
-    document.querySelectorAll('[data-color-filter]').forEach((button) => {
-        button.addEventListener('click', () => {
-            const color = button.dataset.colorFilter;
-            if (activeColors.has(color)) activeColors.delete(color); else activeColors.add(color);
-            document.querySelectorAll(`[data-color-filter="${color}"]`).forEach((filter) => filter.setAttribute('aria-pressed', String(activeColors.has(color))));
-            renderCurrentView();
-        }, pageListenerOptions);
-    });
     agendaToggle.addEventListener('click', () => {
         const hidden = agenda.classList.toggle('u-hidden');
         agendaToggle.setAttribute('aria-expanded', String(!hidden));
@@ -1132,11 +1109,6 @@ function initCalendarPage() {
         renderEventsList();
     }, pageListenerOptions);
     retryButton.addEventListener('click', fetchEvents, pageListenerOptions);
-    document.addEventListener('click', (event) => {
-        document.querySelectorAll('.calendar-color-filter[open]').forEach((menu) => {
-            if (!menu.contains(event.target)) menu.open = false;
-        });
-    }, pageListenerOptions);
     const resizeObserver = new ResizeObserver(() => { if (currentView === 'month') renderMonthView(); });
     resizeObserver.observe(monthDaysEl);
     pageListenersController?.signal.addEventListener('abort', () => resizeObserver.disconnect());
