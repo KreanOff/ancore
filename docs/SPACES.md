@@ -5,9 +5,11 @@
 `/teams/` oraz scoped odpowiednik udostępniają katalog z wyszukiwaniem nazwy
 lub opisu, zakładkami „Wszystkie zespoły”, „Moje zespoły” i „Zarządzane przeze
 mnie”, sortowaniem po nazwie, dacie utworzenia lub liczbie aktywnych członków
-oraz doładowywaniem po 20 rekordów przyciskiem „Pokaż więcej”. Karta pokazuje osoby, otwarte zadania i powiązane
-przestrzenie. Liczniki pracy i przestrzeni powstają z zakresu widoczności osoby
-oglądającej; zapytania są grupowane dla wczytanego okna katalogu.
+oraz doładowywaniem po 20 rekordów przyciskiem „Pokaż więcej”. Karta pokazuje
+baner z istniejącego zdjęcia zespołu (lub wspólną tapetę), nazwę i opis.
+Kliknięcie karty otwiera profil. Informacje o osobach, pracy i przestrzeniach
+są dostępne w jego zakładkach. API zachowuje liczniki z zakresu widoczności
+osoby oglądającej; zapytania są grupowane dla wczytanego okna katalogu.
 
 Profil zespołu ma cztery zakładki (`view`):
 

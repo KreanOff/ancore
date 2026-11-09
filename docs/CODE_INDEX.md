@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
-| [backend/planner](../backend/planner) | 10 | 1 | 2 | 10 |
+| [backend/planner](../backend/planner) | 10 | 1 | 1 | 10 |
 | [backend/documents](../backend/documents) | 41 | 3 | 30 | 217 |
 | [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
 | [backend/spaces](../backend/spaces) | 71 | 6 | 46 | 501 |
@@ -1199,7 +1199,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### planner
 
-- [backend/planner/templates/planner/includes/color_filters.html](../backend/planner/templates/planner/includes/color_filters.html)
 - [backend/planner/templates/planner/index.html](../backend/planner/templates/planner/index.html)
 
 ### documents

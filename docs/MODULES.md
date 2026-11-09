@@ -213,11 +213,11 @@ Formularz sprawdza kolejność dat. Dla wydarzenia całodniowego normalizuje
 godziny do początku i końca dnia. Parametry `date`/`event` pozwalają wejść
 na wybraną datę lub wydarzenie, np. z wyszukiwarki.
 
-Kalendarz dołącza terminy otwartych zadań/podzadań `Task` z aktywnego
+Kalendarz dołącza terminy otwartych zadań/podzadań `SpaceTask` z aktywnego
 Workspace. Pomija dawne karty Kanbana. Pozycje pobiera bez tworzenia
 `CalendarEvent`; zamknięte rekordy i rekordy bez terminu są pomijane.
-Filtr rodzaju rozdziela wydarzenia i zadania; wyszukiwanie i kolory
-działają łącznie. Kliknięcie terminu otwiera szczegóły z trwałym `task_pk`.
+Wydarzenia i zadania są wyświetlane razem, bez filtrów rodzaju i koloru.
+Wyszukiwanie zawęża pozycje w wybranym okresie. Kliknięcie terminu otwiera szczegóły zadania.
 Własne wydarzenia nadal otwierają modal edycji. Termin jest punktem w czasie,
 nie blokiem zaplanowanej pracy. API ogranicza zakres do 370 dni. Brak
 synchronizacji z Google Calendar/Outlook.

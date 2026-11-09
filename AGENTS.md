@@ -84,8 +84,12 @@ Redesign wykonuj wyłącznie wtedy, gdy użytkownik wyraźnie go zleci.
   Rozmiar okna wybieraj przez `size` lub `schema.compact`. Przy otwieraniu
   po żądaniu zapamiętaj przycisk przed jego wyłączeniem i przekaż `returnFocus`.
   Nie kopiuj tych powłok do kolejnego modułu.
-- Dolny pasek narzędzi ma wspólny wygląd Zasobów: kontrolki, „Filtruj”,
-  „Sortuj” i istniejące działania po lewej, wyszukiwarka po prawej.
+- Dolny pasek narzędzi ma wspólny wygląd Zasobów: kontrolki widoku,
+  „Filtruj”, „Sortuj” i wyszukiwarka po lewej; istniejące działania
+  („Zapisz”, „Edytuj”, „Usuń”, „Dodaj”, eksport, odświeżanie i operacje
+  zbiorcze) po prawej. Zachowuj kolejność DOM: kontrolki, wyszukiwarka,
+  działania. Na wąskim ekranie wyszukiwarka zajmuje pełny wiersz,
+  a działania pozostają wyrównane do prawej.
   Używaj `Toolbar` lub formularza `DirectoryToolbar` z
   `shared/DirectoryToolbar`, przycisków `ToolbarFilter` / `ToolbarSort`
   oraz `components/app-toolbar.css`; `ViewToolbar` jest ich adapterem.

@@ -25,7 +25,7 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
 
 - **Zasoby:** katalog, karta i historia, przekazania/zwroty, operacje zbiorcze,
   filtry terminów, eksport, sortowanie, doładowywanie po 20, kolumny i pełne CRUD.
-- **Kalendarz:** miesiąc/tydzień/dzień/rok, plan, filtry, wydarzenia i terminy zadań.
+- **Kalendarz:** miesiąc/tydzień/dzień/rok, plan, wyszukiwanie, wydarzenia i terminy zadań.
 - **Dla ciebie** oraz centrum **Ustawień**.
 - **Przestrzenie:** katalog, kreator szablonu, formularze, awatary,
   podsumowanie, lista zadań, tablica, backlog, sprinty, oś czasu, raporty,
@@ -675,23 +675,47 @@ w pierwszym renderze Django.
 Dolne paski narzędzi współdzielą `shared/DirectoryToolbar.tsx` i
 `components/app-toolbar.css`, według wzorca Zasobów. `Toolbar` renderuje `div`,
 a `DirectoryToolbar` formularz. Oba przyjmują `filters`, `actions`, `search`,
-`children` i `className`: kontrolki oraz działania są po lewej, wyszukiwarka
-po prawej, poza przewijaną listą. `children` może zawierać ukryte pola;
+`children` i `className`: kontrolki widoku, filtry, sortowanie i wyszukiwarka
+są po lewej, a działania po prawej, poza przewijaną listą. „Zapisz”, „Edytuj”,
+„Usuń”, „Dodaj”, eksport, odświeżanie i operacje zbiorcze należą do `actions`;
+liczniki wyników pozostają przy kontrolkach. `children` może zawierać ukryte pola;
 osobny formularz wyszukiwania wymaga wariantu `Toolbar`, bez zagnieżdżania
 formularzy. `spaces/ViewToolbar` jest adapterem przekazującym `children`
-do `filters`. `ToolbarFilter` i `ToolbarSort` ujednolicają ikony i etykiety
+do `filters`. Aktywne filtry i informacja o zakresie wyników używają
+`app-toolbar__summary` wewnątrz `filters`, a zaznaczenie Backlogu
+`app-toolbar__selection` w `actions`; nie tworzą osobnego paska.
+`ItemSummaryFilter` współdzieli opis i usuwanie filtra podsumowania między
+widokami Przestrzeni, z resetem limitów przez istniejący `changeQuery`.
+Django Backlog umieszcza formularze GET filtrów i POST operacji jako sąsiadów
+we wspólnej powłoce, zachowując obsługę `data-backlog-bulk`.
+`ToolbarFilter` i `ToolbarSort` ujednolicają ikony i etykiety
 przycisków „Filtruj” / „Sortuj”; `active` określa stan filtra, a `current`
 bieżącą etykietę sortowania. Zawartość paneli i sposób zastosowania opcji
 pozostają domenowe. W formularzu panel filtrów zachowuje `layer={false}`,
 aby pola nadal należały do tego samego formularza.
 
-Pierwszy render Django używa `app-toolbar`, `app-toolbar__controls`,
-`app-toolbar__actions` i `app-toolbar__search` obok dotychczasowych klas
-i atrybutów JS. Tokeny `--app-toolbar-*` wyznaczają kontrolki 30px,
-wyszukiwarkę 36px (maksymalnie 420px), odstęp 8px i pionowy padding 0.5rem.
-Do 767px kontrolki mają 36px, a wyszukiwarka pełną szerokość.
+Pierwszy render Django używa `app-toolbar` oraz slotów w kolejności DOM
+`app-toolbar__controls`, `app-toolbar__search`, `app-toolbar__actions`,
+obok dotychczasowych klas i atrybutów JS. Ta sama kolejność w React odpowiada
+kolejności klawiatury, bez dodatkowej powłoki grup. Wyszukiwarka zaczyna się
+za kontrolkami, a działania są odsuwane do prawej przez `margin-left: auto`.
+Token `--app-toolbar-control-height` wyznacza wspólną
+wysokość 36px samodzielnych przycisków, selectów i wyszukiwarki na wszystkich
+szerokościach ekranu; wysokość wyszukiwarki i wiersza odwołuje się do niego.
+Pozostałe tokeny `--app-toolbar-*` określają maksymalną szerokość wyszukiwarki
+420px, odstęp między kontrolkami 8px i pionowy padding 4px.
+Sloty mają minimalną wysokość wiersza 36px (`--app-toolbar-row-height`),
+więc jednowierszowy pasek ma wspólne 44px również bez wyszukiwarki.
+Minimalna wysokość wynika z wysokości wiersza i obu pionowych paddingów.
+Do 767px wyszukiwarka przechodzi do pełnego wiersza, działania zachowują
+wyrównanie do prawej, a wysokość kontrolek pozostaje 36px.
+Przy zawijaniu kontrolek oraz w formularzu zaawansowanego zapytania pasek
+rośnie do naturalnej wysokości treści, zachowując po 4px u góry i dołu.
 `app-toolbar--embedded` zeruje wyłącznie padding poziomy, gdy zapewnia go
-rodzic. Komponenty nie przejmują stanu filtrów, adresów, uprawnień ani działań
+rodzic. Kontenery treści nie dokładają górnego paddingu ani odstępu `gap`
+na granicy z paskiem; odstępy między dalszymi panelami pozostają domenowe.
+Pasek ustawień Przestrzeni również nie ma dodatkowych pionowych marginesów.
+Komponenty nie przejmują stanu filtrów, adresów, uprawnień ani działań
 modułu; zachowują również warunki dostępności akcji zaznaczonych wierszy.
 Nie dodają nowych funkcji ani usuniętych menu trzech pasków.
 [Schematy i bieżące punkty odniesienia](UI.md#obowiązujący-wzorzec--zacznij-tutaj).
@@ -978,8 +1002,8 @@ Pulpity i Przestrzenie używają wariantu `Members` z `rowActions={false}` i kon
 Ctrl/Cmd+A oraz Escape. Dopiero akcje filtrują osoby przez `can_change`,
 więc zaznaczenie właściciela nie pozwala zmieniać jego roli ani dostępu.
 Domyślny wariant pozostałych modułów zachowuje menu.
-Toolbar zawiera po lewej widoczność, zmianę roli, odebranie dostępu
-i udostępnienie, a po prawej „Zapisz” oraz „Anuluj”.
+Toolbar zawiera po lewej widoczność, a po prawej zmianę roli, odebranie
+dostępu, udostępnienie, „Zapisz” oraz „Anuluj”.
 `SharingDialog.people` rozszerza istniejący modal o zbiorczą zmianę roli.
 Opcjonalne `onStage` przekazuje lokalną zmianę zamiast POST, a `candidatesUrl`
 pozwala użyć `team/candidates/?draft=1`: kandydat ma ID, a wyszukiwanie

@@ -26,7 +26,7 @@ Schemat każdej strony (w obrębie wspólnej powłoki aplikacji):
 │ Tytuł strony                              Główne działania    │
 │ Zakładki z ikonami, jeżeli strona ma kilka widoków              │
 ├──────────────────────────────────────────────────────────────┤
-│ Filtruj · Sortuj · Działania              Wyszukiwarka        │
+│ Filtruj · Sortuj · Wyszukiwarka              Działania         │
 ├──────────────────────────────────────────────────────────────┤
 │ Przewijana tabela lub karty                                   │
 │ W tym samym obszarze: wyniki / stan pusty                      │
@@ -54,7 +54,7 @@ Schemat formularza:
 | --- | --- |
 | Nagłówek strony | [`shared/PageHeader.tsx`](../frontend/app/src/shared/PageHeader.tsx): `heading`, `actions`, `navigation`; te same klasy w pierwszym renderze Django |
 | Zakładki strony | [`shared/PageTabs.tsx`](../frontend/app/src/shared/PageTabs.tsx) w `PageHeader.navigation`; linki/przyciski z istniejącymi ikonami i aktywnym stanem ARIA |
-| Dolny pasek narzędzi | [`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx): `Toolbar` lub formularz `DirectoryToolbar`, z `filters`, `actions`, `search`; wzorzec [`resources/App.tsx`](../frontend/app/src/resources/App.tsx) |
+| Dolny pasek narzędzi | [`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx): `Toolbar` lub formularz `DirectoryToolbar`, z `filters` i `search` po lewej oraz `actions` po prawej; wzorzec [`resources/App.tsx`](../frontend/app/src/resources/App.tsx) |
 | Filtruj i Sortuj | `ToolbarFilter` i `ToolbarSort` z `shared/DirectoryToolbar.tsx`; istniejące pola i opcje modułu we wspólnej powłoce |
 | Strona referencyjna | [`spaces/SpaceHeader.tsx`](../frontend/app/src/spaces/SpaceHeader.tsx), [`spaces/base.html`](../backend/spaces/templates/spaces/base.html) |
 | Tabela danych | [`components/data-table.css`](../static/css/components/data-table.css), wzorzec [`tags/TagsPage.tsx`](../frontend/app/src/tags/TagsPage.tsx); te same klasy w React i Django |
@@ -84,10 +84,33 @@ aktywnego widoku, zgodnie z otwartą Przestrzenią. Na wąskich ekranach akcje
 mogą przejść do kolejnego wiersza, a zakładki przewijają się poziomo wewnątrz
 nagłówka. Wspólny CSS jest w `components/page-header.css`.
 
-W Kalendarzu
-widoki znajdują się w drugim wierszu nagłówka, a poprzedni/dzisiejszy/następny
-okres oraz jego nazwa są w pasku narzędzi. W Zasobach szybkie filtry z licznikami
+W Kalendarzu przełącznik „Dzień / Tydzień / Miesiąc / Rok” znajduje się po
+prawej stronie paska narzędzi (`Toolbar.actions`), jako tekstowa grupa
+`tasks-segments app-toolbar__segments`, zgodna z przełącznikiem skali Osi czasu.
+Aktywny przycisk ma `aria-pressed` i szare podświetlenie. Nagłówek zawiera
+tytuł i „Nowe wydarzenie”, bez osobnego wiersza zakładek. Nawigacja po datach,
+nazwa okresu, licznik, przełącznik planu i wyszukiwarka pozostają po lewej.
+Grupa widoków i panel „Plan dnia” mają wspólną szerokość
+`--calendar-sidebar-width`: 280px, a do szerokości kontenera 1050px — 244px.
+Przyciski dzielą tę szerokość równo. Pasek i treść mają ten sam boczny
+padding `--app-page-padding-x`, więc krawędzie grupy i panelu są wyrównane.
+Do szerokości kontenera 720px grupa zajmuje cały kolejny wiersz paska,
+tak jak panel zajmuje pełną szerokość pod siatką.
+W Zasobach szybkie filtry z licznikami
 korzystają z tego samego paska zakładek i zachowują dotychczasowe filtrowanie.
+Pasek Kalendarza nie zawiera wyboru „Wszystkie pozycje” ani filtra „Kolory”.
+Pokazuje wszystkie dostępne wydarzenia i zadania w wybranym okresie;
+pozostają wyszukiwarka, licznik pozycji oraz przełącznik panelu planu.
+Kolory wydarzeń i wybór koloru w formularzu pozostają dostępne.
+
+Panel „Plan dnia” w Kalendarzu jest oddzielną pływającą kartą według panelu
+właściwości zadania: obrys `--border-color`, promień `--radius`, tło `--card-bg`
+i cień `--shadow-md`. Siatka kalendarza ma własną ramkę, a odstęp między nią
+i planem wynosi `--app-page-padding-x` (15px). Plan ma pionowy margines 5px
+(4px do szerokości ekranu 650px). Przy szerokości kontenera do 720px karta
+pozostaje pod siatką, zachowując pełny obrys i osobne przewijanie listy.
+Zwijanie planu oddaje miejsce siatce. Wspólne reguły w
+[`calendar.css`](../static/css/calendar.css) obejmują React i pierwszy render Django.
 
 Specjalistyczne treści, np. kalendarz, tablica, karty zespołów, edytor pliku
 i kadrowanie obrazu, zachowują swój układ. Kolejne wyniki odsłania
@@ -124,19 +147,36 @@ stan pusty nie zachęca wtedy do niedostępnego dodawania.
 ## Wspólny dolny pasek narzędzi — wzorzec Zasobów
 
 Pod nagłówkiem i zakładkami znajduje się jedna powłoka `app-toolbar`.
-Kontrolki tabeli, „Filtruj” i „Sortuj” trafiają do `filters`, istniejące
-działania do `actions`, a wyszukiwarka do `search`. Kontrolki i działania
-są po lewej; wyszukiwarka jest wyrównana do prawej. Dotyczy to także działań
-na zaznaczonych wierszach, np. przekazania i zwrotu Zasobów. Widoczność,
-wyłączenie i zakres operacji nadal wynikają z uprawnień oraz stanu modułu.
+Kontrolki tabeli i widoku, „Filtruj” i „Sortuj” trafiają do `filters`,
+wyszukiwarka do `search`, a istniejące działania do `actions`.
+Kontrolki, sortowanie i wyszukiwarka są po lewej; działania są wyrównane
+do prawej. Do działań należą m.in. „Zapisz”, „Edytuj”, „Usuń”, „Dodaj”,
+eksport, odświeżanie oraz operacje na zaznaczonych wierszach, np. przekazanie
+i zwrot Zasobów. Liczniki i informacje o wynikach pozostają przy kontrolkach.
+Widoczność, wyłączenie i zakres operacji nadal wynikają z uprawnień
+oraz stanu modułu.
+**Aktywne filtry, ich usuwanie, informacje o zakresie wyników i operacje
+zaznaczenia pozostają w tym samym pasku.** Nie renderuj pod nim drugiego
+paska po zastosowaniu filtra lub zaznaczeniu wiersza. `app-toolbar__summary`
+umieszcza etykiety i usuwanie filtrów w `filters`, bez własnej ramki,
+paddingu ani wymuszonej pełnej szerokości. `app-toolbar__selection` grupuje
+operacje zaznaczenia w `actions`. Długie etykiety mogą zawijać się wewnątrz
+paska bez obcinania tekstu i poziomego przewijania strony.
+Dotyczy to widoków Przestrzeni (w tym Raportów i Backlogu), Zasobów oraz
+informacji o wynikach Dysku/Dokumentów, w React i pierwszym renderze Django.
 Pasek pozostaje poza przewijaną listą. Na wąskim ekranie grupy zawijają się,
-a wyszukiwarka przechodzi do pełnego wiersza.
+a wyszukiwarka przechodzi do pełnego wiersza; działania nadal są wyrównane
+do prawej.
 
 `Toolbar` renderuje `div`; `DirectoryToolbar` renderuje `form` i przekazuje
 atrybuty formularza. Oba eksportuje
 [`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx).
-Sloty mają klasy `app-toolbar__controls`, `app-toolbar__actions`
-i `app-toolbar__search`, z zachowaniem wspólnych `tasks-filterbar-*`.
+Sloty w DOM mają kolejność `app-toolbar__controls`, `app-toolbar__search`,
+`app-toolbar__actions`, zgodną z kolejnością klawiatury. Zachowują wspólne
+klasy `tasks-filterbar-*`; historyczna nazwa `tasks-filterbar-right`
+wyszukiwarki nie określa jej bieżącego położenia.
+Wyszukiwarka zaczyna się za kontrolkami, a grupa działań korzysta z
+`margin-left: auto`. Nie dodawaj osobnej powłoki dla lewego i prawego obszaru.
 `children` służy m.in. ukrytym polom formularza. Nie zagnieżdżaj formularzy:
 dla osobnego formularza wyszukiwania lub filtrów wybierz `Toolbar`.
 [`spaces/ViewToolbar.tsx`](../frontend/app/src/spaces/ViewToolbar.tsx) jest
@@ -154,13 +194,37 @@ pozostać skojarzone z nim również po otwarciu panelu (`layer={false}`
 w formularzowym wariancie filtrów).
 
 Styl określa [`components/app-toolbar.css`](../static/css/components/app-toolbar.css),
-a wymiary tokeny w `base/variables.css`: kontrolka 30px
-(`--app-toolbar-control-height`), wyszukiwarka 36px i maksymalnie 420px,
-odstęp 8px, pionowy padding 0.5rem i minimalna wysokość paska 45px.
+a wymiary tokeny w `base/variables.css`: samodzielne przyciski, selecty
+i wyszukiwarka mają wspólną wysokość 36px (`--app-toolbar-control-height`)
+na wszystkich szerokościach ekranu. Wyszukiwarka ma maksymalnie 420px
+szerokości, odstęp między kontrolkami wynosi 8px, a pionowy padding 4px.
+Sloty mają wspólną minimalną wysokość
+wiersza 36px (`--app-toolbar-row-height`), także bez wyszukiwarki.
+Jednowierszowy pasek ma 44px: 36px wiersza oraz po 4px u góry i dołu.
+`--app-toolbar-min-height` wynika z tych tokenów; nie ustawiaj odrębnej
+wysokości ani pionowych marginesów dla modułu.
+`app-toolbar__segments` rozszerza wspólny wariant przełącznika Osi czasu:
+jedna ramka o wysokości kontrolki, połączone przyciski z separatorami
+i szare podświetlenie aktywnego stanu. Kalendarz używa go w `actions`.
 Poziomy padding pochodzi z `--app-page-padding-x` (15px).
-Przy szerokości do 767px kontrolki mają 36px, a wyszukiwarka pełną szerokość.
+Przy szerokości do 767px wyszukiwarka przechodzi do pełnego wiersza;
+wysokość kontrolek pozostaje 36px.
+Na wąskich ekranach i przy większej liczbie kontrolek pasek rośnie wraz
+z zawiniętymi wierszami, zachowując pionowy padding 4px. Formularz
+zaawansowanego zapytania również zachowuje naturalną wysokość treści.
 `app-toolbar--embedded` zeruje wyłącznie padding poziomy, gdy zapewnia go
 rodzic; nie tworzy odrębnego stylu przycisków.
+
+Na granicy paska i treści odstęp zapewnia sam pasek. Kontenery Przestrzeni,
+Zespołów, szczegółów Zasobu i Kalendarza oraz panel tworzenia Dokumentów
+nie dodają tam drugiego górnego paddingu. Dotyczy to także Podsumowania
+Przestrzeni, gdzie `.work-summary` opakowuje `.work-summary-dashboard`
+w React i pierwszym renderze Django. Mierz rzeczywistą przerwę od dolnej
+krawędzi nagłówka do kontrolek i od kontrolek do treści, nie tylko padding
+samego paska. Lista zadań, Oś czasu i Raporty
+nie dodają `gap` bezpośrednio po pasku; odstępy między dalszymi panelami
+pozostają właściwe dla danego widoku. Ta sama zasada dotyczy paska ustawień
+Przestrzeni, bez dodatkowych pionowych marginesów.
 
 Nie dodawaj brakujących funkcji tylko po to, by zapełnić pasek: Workspace
 może mieć samą wyszukiwarkę, a szczegóły Zasobu same działania. Zachowaj
@@ -245,13 +309,18 @@ Pierwszy render Django stosuje te same oznaczenia.
 ## Katalog i profile Zespołów
 
 Zespoły zachowują wspólny nagłówek, zakładki `work-tabs`, wyszukiwarkę,
-karty `work-space-card`, formularze i pasek „Pokaż więcej”. Karty pokazują członkostwo
-oraz linki z liczbą osób, otwartych zadań i przestrzeni. Profil rozdziela
+karty `work-space-card`, formularze i pasek „Pokaż więcej”. Karta katalogu
+ma kolejno baner, nazwę i opis; cała powierzchnia prowadzi do profilu zespołu.
+Baner `.team-card-banner` ma proporcje 3:1 i kadruje istniejące zdjęcie przez
+`object-fit: cover`. Bez zdjęcia używa wspólnej tapety `--app-wallpaper-image`.
+Nazwa i opis znajdują się w `.team-card-body`; brak opisu ma tekst zastępczy.
+Katalog nie pokazuje roli ani liczników na karcie. React i pierwszy render
+Django używają tych samych klas. Profil rozdziela
 „Podsumowanie”, „Zadania”, „Członkowie” i „Przestrzenie”. Podsumowanie rozszerza
 istniejące `work-panel`, `work-summary-metrics` i `work-summary-grid`;
 procent zamkniętych zadań ma natywny, opisany pasek `progress` w kolorze akcentu.
 
-Wariant `.teams-page` dodaje wyłącznie lokalny układ profilu, liczniki kart,
+Wariant `.teams-page` dodaje wyłącznie lokalny układ profilu, banery kart,
 listę wykonawców i kontrolki filtrów. Do 800px metryki mają dwie kolumny,
 a dolne panele jedną. Lista członków używa wspólnych komórek bez menu wiersza,
 z lokalnym wariantem `.team-members-sheet` bez zaznaczania zbiorczego i daty
@@ -578,13 +647,14 @@ Wymiary oraz odstępy określają `--app-toolbar-*` i `components/app-toolbar.cs
 zgodnie z [dolnym paskiem Zasobów](#wspólny-dolny-pasek-narzędzi--wzorzec-zasobów).
 
 Po lewej znajdują się „Filtruj” i „Sortuj” (jeśli dany widok je obsługuje),
-dodatkowe kontrolki i działania; wyszukiwanie znajduje się po prawej.
+dodatkowe kontrolki widoku oraz wyszukiwanie; działania znajdują się po prawej.
 Kolejność wizualna odpowiada kolejności klawiatury. Tagi zachowują wyszukiwanie
 po 350ms od wpisania tekstu, a Oś czasu po zatwierdzeniu. Na małych ekranach
-grupy zawijają się, a wyszukiwarka zajmuje cały wiersz.
+grupy zawijają się, a wyszukiwarka zajmuje cały wiersz; działania zachowują
+wyrównanie do prawej.
 
 Raporty mają pasek nad nagłówkiem, z filtrowaniem, okresem, sprintem
-(w Scrum), wykonawcą oraz odświeżaniem i eksportem po lewej.
+(w Scrum) i wykonawcą po lewej oraz odświeżaniem i eksportem po prawej.
 Etykiety selektorów pozostają dostępne dla czytników ekranu.
 Przełączniki skali Osi czasu zachowują wspólny segment i aktywny stan.
 Zakres danych, uprawnienia oraz sposób zapisu filtrów pozostają bez zmian.
@@ -659,10 +729,15 @@ filtry i sortowanie resetują zakres do 20 pozycji. Nie ma
 dolnego paska paginacji, legendy „Dzisiaj” ani widocznej podpowiedzi przeciągania.
 Linia bieżącego dnia i pomoc dla czytników ekranu pozostają w kalendarzu.
 „Dzisiaj” i trzy przełączniki skali tworzą jeden `tasks-segments` w wariancie
-`work-timeline-scales`: wspólna zaokrąglona ramka i tło, jasne fioletowe tło
-aktywnej skali i szare najechanie. Cała grupa jest wyrównana do prawej
-w pasku wyszukiwania i filtrów; przy braku miejsca przechodzi razem do
-kolejnego wiersza. Grupa ma nazwę „Nawigacja osi czasu”; tylko skale
+`work-timeline-scales`: jedna wspólna zaokrąglona ramka, bez odstępów między
+segmentami, z pojedynczymi pionowymi separatorami i szarym tłem aktywnej skali
+oraz najechania. Tylko zewnętrzne narożniki są zaokrąglone. Całość zachowuje
+wysokość `--app-toolbar-control-height`, a fokus każdego przycisku pozostaje
+widoczny. Reguły wariantu są w `components/app-toolbar.css`.
+Cała grupa należy do prawego obszaru
+działań paska (`ItemToolbar.actions`); filtry, sortowanie i wyszukiwarka
+pozostają po lewej. Przy braku miejsca grupa przechodzi razem do kolejnego
+wiersza, zachowując wyrównanie do prawej. Grupa ma nazwę „Nawigacja osi czasu”; tylko skale
 używają `aria-pressed`. Przycisk „Dzisiaj” przewija kalendarz do bieżącego dnia, zachowując
 wybraną skalę. Działa także po ręcznym przewinięciu osi i jest wyłączony podczas zapisu.
 Nie ma licznika „Zaplanowane”,
@@ -850,7 +925,7 @@ oraz obsługę strzałek, Home i End; pierwszy render Django używa linków
 z `aria-current="page"`. Domyślnie wybrane są „Stany”.
 
 „Stany” pokazują istniejącą `ConfigurationTable` z zaznaczeniami i paskiem
-„Edytuj”, „Usuń”, „Dodaj stan” po lewej. Lista nie pokazuje prawej pary
+„Edytuj”, „Usuń”, „Dodaj stan” po prawej. Lista nie pokazuje dodatkowej pary
 „Zapisz” / „Anuluj”; zapis i odrzucenie całego procesu są dostępne na „Mapie”.
 Przy niezapisanych zmianach lista wskazuje tę zakładkę w komunikacie.
 Nazwa otwiera wspólny formularz etapu. Lista i mapa współdzielą szkic oraz
@@ -976,7 +1051,7 @@ Tabele „Udostępnienia”, „Typy zgłoszeń” i „Proces pracy → Stany�
 `LocalDirectoryTable` z klasami arkusza Tagów (`tasks-tag-sheet`,
 `tasks-spreadsheet-sheet`). Mają wiersze 35px, kolumnę zaznaczeń 40px,
 te same separatory i przewijanie. „Filtruj”, „Sortuj”, „Zarządzaj tabelą”
-oraz grupa działań są po lewej, a wyszukiwarka po prawej we wspólnym pasku.
+oraz wyszukiwarka są po lewej, a grupa działań po prawej we wspólnym pasku.
 Na szerokim ekranie mieszczą się w jednym wierszu; przy braku miejsca zawijają
 się według wspólnego wzorca `ViewToolbar`. Kontener działań wewnątrz
 `settings-directory-toolbar` jest przezroczysty dla układu (`display: contents`).
@@ -993,8 +1068,9 @@ te same domyślne szerokości; kontrolki tabeli są dostępne po uruchomieniu Re
 
 Tabela „Udostępnienia” korzysta z tego samego `shared/AccessEditor` co Pulpity.
 Ma po bokach `--app-page-padding-x`, pięć kolumn bez menu wiersza oraz
-pasek widoczności i akcji nad tabelą. „Zmień rolę”, „Odbierz dostęp” i
-„Udostępnij” wraz z widocznością znajdują się po prawej. Pasek nie ma „Zapisz” ani „Anuluj”.
+pasek widoczności i akcji nad tabelą. Pole widoczności znajduje się po lewej,
+a „Zmień rolę”, „Odbierz dostęp” i „Udostępnij” po prawej.
+Pasek nie ma „Zapisz” ani „Anuluj”.
 Zmiany osób i ról zapisuje zatwierdzenie formularza; zmiana widoczności
 i odebranie dostępu wymagają zatwierdzenia kompaktowego okna.
 Nie ma licznika członków ani dolnej stopki. Wspólne klasy `access-editor`,
@@ -1285,9 +1361,11 @@ dla listy otwartej przestrzeni;
 pozostali odbiorcy `row.html` (Filtry, Dla ciebie, Zespoły i podzadania)
 zachowują dotychczasowy wariant.
 Nie ma osobnego nagłówka „Planowanie sprintów” ani stałego paska zaznaczania.
-`work-backlog-bulk` pojawia się dopiero po zaznaczeniu checkboxu wiersza;
-pokazuje liczbę zaznaczonych zadań, przyciski i `AncoreCustomSelect`.
-Odznaczenie ostatniego zadania lub „Odznacz” ukrywa cały pasek; fokus wraca
+Grupa `app-toolbar__selection` w działaniach istniejącego paska pojawia się
+po zaznaczeniu checkboxu; pokazuje liczbę zadań, przyciski i `AncoreCustomSelect`.
+Pierwszy render Django zachowuje formularz `data-backlog-bulk` jako sąsiada
+formularza filtrów we wspólnej powłoce. Odznaczenie ostatniego zadania lub
+„Odznacz” ukrywa grupę działań, zachowując pasek filtrów; fokus adaptera JS wraca
 do checkboxu wiersza. Zadania tylko do odczytu są pomijane.
 Nagłówki sprintów i Backlogu nie mają checkboxów. Zachowują kolory według stanu,
 zwijanie i licznik strony, dodając `work-planning-summary` dla pełnych
@@ -2128,7 +2206,8 @@ Pasek jest pozycjonowany absolutnie i nie przechwytuje kliknięć ani nie przesu
 Dawne katalogi „Przestrzenie Kanban” i „Tablice” są wycofane. Ich pozostałe
 szablony, klasy CSS i współdzielony JavaScript stanowią kod historyczny, nie
 aktywny interfejs. Nie usuwamy wspólnych komponentów używanych przez Zadania
-ani obecne tablice w Przestrzeniach. Kalendarz ma tylko filtry wydarzeń i zadań.
+ani obecne tablice w Przestrzeniach. Kalendarz pokazuje wydarzenia i zadania;
+wyszukiwanie zawęża pozycje w wybranym okresie.
 
 **Historyczny układ wycofanego modułu Zadań:** dawne menu używało nazw
 „Projekty”, „Grupy” i „Zadania”, w tej kolejności. Poniższy opis zakładek
@@ -3803,8 +3882,9 @@ Pusty katalog i brak wyników mają osobne komunikaty, a działania pozostają w
 
 Zwarty `resources-summary` nad filtrami pokazuje liczniki całego Workspace.
 Przyciski używają `tasks-filter-button`, ikon i istniejących tokenów; kliknięcie
-resetuje filtry do wskazanego zakresu. Aktywne filtry mają osobny, zawijany wiersz
-z usuwaniem. „Eksport CSV” jest w nagłówku, a odświeżanie obok kolumn.
+resetuje filtry do wskazanego zakresu. Aktywne filtry i ich usuwanie są
+w `app-toolbar__summary` przy kontrolkach tego samego paska.
+„Eksport CSV” pozostaje w nagłówku, a odświeżanie w działaniach paska po prawej.
 Nazwa otwiera kartę z danymi i historią. Minimalne warianty
 `resources-detail-panel`, `resources-properties` i `resources-history`
 w `resources.css` zachowują ramki, odstępy i font wspólnej aplikacji;
@@ -3850,7 +3930,7 @@ wspólne wysokości wierszy, separatory, podświetlenia oraz przewijanie.
 Nagłówek oraz toolbar mają 15px odstępu. Katalog nie ma zakładek
 Wszystkie, Ulubione i Moje; pokazuje wszystkie dostępne pulpity.
 Przycisk „Filtruj” po lewej otwiera pole widoczności i zatwierdzenie
-formularza; wyszukiwarka jest po prawej. Pod tabelą pasek „Pokaż więcej"
+formularza; wyszukiwarka znajduje się obok niego po lewej. Pod tabelą pasek „Pokaż więcej"
 odsłania kolejne porcje po 20 wyników. Checkboxy zaznaczają wczytane
 wiersze, bez operacji zbiorczych; doładowanie zachowuje wybór.
 React (a w szablonach zgodności `tasks.js`) obsługuje zaznaczenie, stan częściowego wyboru i szerokości kolumn
@@ -4000,8 +4080,8 @@ Tabela ma po bokach odstępy `--app-page-padding-x` (15 px), wyrównane do
 nagłówka i paska przycisków, oraz wypełnia pozostałą wysokość panelu.
 Wspólny `space-settings-table-body` zapewnia własne przewijanie tabeli,
 a zwarty pasek `tasks-filterbar--directory` zawiera po lewej „Widoczność:
-Publiczna/Prywatna”, „Zmień rolę”, „Odbierz dostęp” i „Udostępnij”, a po prawej
-„Zapisz” i „Anuluj”, we wspólnej grupie `member-access-save-actions`.
+Publiczna/Prywatna”, a po prawej „Zmień rolę”, „Odbierz dostęp”, „Udostępnij”
+oraz „Zapisz” i „Anuluj”, we wspólnej grupie `member-access-save-actions`.
 Wariant `member-access-toolbar` zawija kontrolki na wąskim ekranie i nie ma
 dolnej linii oddzielającej przyciski od nagłówka tabeli. Tabela
 `workplace-members-sheet--toolbar` pomija kolumnę i menu trzech pasków;
