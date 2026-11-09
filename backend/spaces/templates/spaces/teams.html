@@ -27,9 +27,13 @@
 <div class="work-directory">
 {% for team in page %}
 <article class="work-space-card team-card">
-    <div class="work-card-heading"><span class="work-symbol">{% if team.photo_url %}<img src="{{ team.photo_url }}" alt="">{% else %}<i data-icon="users" aria-hidden="true"></i>{% endif %}</span>{% if team.is_member %}<span class="work-caption">{% if team.is_admin %}Administrator zespołu{% else %}Twój zespół{% endif %}</span>{% endif %}</div>
-    <a class="work-card-title" href="{{ team.url }}">{{ team.name }}</a><p>{{ team.description|truncatechars:160|default:'Brak opisu zespołu.' }}</p>
-    <div class="work-card-footer team-card-counts"><a href="{{ team.url }}?view=members">Osoby: {{ team.member_count }}</a><a href="{{ team.url }}?view=work&amp;scope=open">Otwarte: {{ team.open_count }}</a><a href="{{ team.url }}?view=spaces">Przestrzenie: {{ team.space_count }}</a></div>
+    <a class="team-card-link" href="{{ team.url }}">
+        <div class="team-card-banner" aria-hidden="true">{% if team.photo_url %}<img src="{{ team.photo_url }}" alt="" loading="lazy">{% endif %}</div>
+        <div class="team-card-body">
+            <h2 class="work-card-title">{{ team.name }}</h2>
+            <p>{{ team.description|truncatechars:160|default:'Brak opisu zespołu.' }}</p>
+        </div>
+    </a>
 </article>
 {% empty %}<div class="tasks-empty-state tasks-empty-state--illustrated" role="status"><span class="tasks-empty-state__illustration tasks-empty-state__illustration--people" aria-hidden="true"></span><div class="tasks-empty-state__copy"><h2>{% if query %}Nie znaleziono zespołów{% elif tab == 'mine' %}Nie należysz jeszcze do zespołu{% elif tab == 'managed' %}Nie zarządzasz żadnym zespołem{% else %}Brak zespołów{% endif %}</h2><p>{% if query %}Zmień nazwę lub opis, których szukasz.{% else %}Zespoły łączą osoby, przestrzenie i wspólną pracę.{% endif %}</p></div></div>{% endfor %}
 </div>

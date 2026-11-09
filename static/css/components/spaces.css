@@ -2,10 +2,14 @@
 /* Team profiles extend the existing directory and summary components. */
 .teams-page .tasks-topbar-title { overflow-wrap: anywhere; }
 .teams-page .work-panel { min-width: 0; }
-.teams-page .team-card-counts { flex-wrap: wrap; justify-content: flex-start; gap: 10px 16px; }
-.team-card-counts a { display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
-.team-card-counts a:hover { text-decoration: underline; }
-.team-card-counts [data-icon] { width: 15px; height: 15px; }
+.teams-page .team-card { padding: 0; gap: 0; overflow: hidden; }
+.team-card-link { display: flex; flex: 1; flex-direction: column; min-width: 0; color: inherit; text-decoration: none; }
+.team-card-link:hover .work-card-title { text-decoration: underline; }
+.team-card-link:focus-visible { outline-offset: -3px; }
+.team-card-banner { width: 100%; aspect-ratio: 3 / 1; overflow: hidden; background: var(--panel-bg) var(--app-wallpaper-image) center / cover no-repeat; }
+.team-card-banner img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.team-card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; min-width: 0; padding: 20px; }
+.team-card-body .work-card-title { margin: 0; }
 .team-profile { display: flex; align-items: flex-start; gap: 16px; }
 .team-profile > div { min-width: 0; flex: 1; }
 .team-profile p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 12px; }

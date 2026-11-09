@@ -474,36 +474,19 @@ export default function TeamsPage(props: PageProps) {
               {d.teams.length ? (
                 d.teams.map((team) => (
                   <article className="work-space-card team-card" key={team.id}>
-                    <div className="work-card-heading">
-                      <Symbol team={team} />
-                      {team.is_member ? (
-                        <span className="work-caption">
-                          {team.is_admin ? 'Administrator zespołu' : 'Twój zespół'}
-                        </span>
-                      ) : null}
-                    </div>
-                    <a className="work-card-title" href={team.url}>
-                      {team.name}
+                    <a className="team-card-link" href={team.url}>
+                      <div className="team-card-banner" aria-hidden="true">
+                        {team.photo_url ? <img src={team.photo_url} alt="" loading="lazy" /> : null}
+                      </div>
+                      <div className="team-card-body">
+                        <h2 className="work-card-title">{team.name}</h2>
+                        <p>
+                          {team.description.length > 160
+                            ? team.description.slice(0, 159) + '…'
+                            : team.description || 'Brak opisu zespołu.'}
+                        </p>
+                      </div>
                     </a>
-                    <p>
-                      {team.description.length > 160
-                        ? team.description.slice(0, 159) + '…'
-                        : team.description || 'Brak opisu zespołu.'}
-                    </p>
-                    <div className="work-card-footer team-card-counts">
-                      <a href={team.url + '?view=members'}>
-                        <Icon name="users" />
-                        Osoby: {team.member_count}
-                      </a>
-                      <a href={team.url + '?view=work&scope=open'}>
-                        <Icon name="list-checks" />
-                        Otwarte: {team.open_count}
-                      </a>
-                      <a href={team.url + '?view=spaces'}>
-                        <Icon name="layers" />
-                        Przestrzenie: {team.space_count}
-                      </a>
-                    </div>
                   </article>
                 ))
               ) : (
