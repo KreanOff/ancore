@@ -286,60 +286,62 @@ export default function AccessEditor<T extends AccessTeam>({
   }
 
   const toolbarControls = (
+    <Dropdown
+      label={`Widoczność: ${publicAccess ? 'Publiczna' : 'Prywatna'}`}
+      searchable={false}
+      disabled={busy || settingsDirty || !baseline.can_change_visibility}
+      trigger={
+        <>
+          <Icon name={publicAccess ? 'users' : 'lock'} />
+          <span>Widoczność: {publicAccess ? 'Publiczna' : 'Prywatna'}</span>
+          <Icon name="chevron-down" />
+        </>
+      }
+    >
+      {(close) => (
+        <div className="documents-menu-actions">
+          {(
+            [
+              { value: publicVisibility, label: 'Publiczna — cały Workspace', icon: 'users' },
+              { value: 'private', label: 'Prywatna — wybrane osoby', icon: 'lock' },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="menuitemradio"
+              aria-checked={draft.visibility === option.value}
+              className="tasks-project-menu-button"
+              onClick={() => {
+                if (busy || sending.current || settingsDirty || !baseline.can_change_visibility)
+                  return;
+                close();
+                const next = { ...draft, visibility: option.value };
+                if (saveOnAction && next.visibility !== baseline.visibility) {
+                  setError('');
+                  setConfirmation({
+                    next,
+                    title: 'Zmień widoczność',
+                    message:
+                      option.value === publicVisibility
+                        ? 'Udostępnić przestrzeń całemu Workspace?'
+                        : 'Ograniczyć dostęp do właściciela i wybranych osób?',
+                    submit: 'Zmień widoczność',
+                  });
+                } else stage(next);
+                setSelected(new Set());
+              }}
+            >
+              <Icon name={option.icon} />
+              <span>{option.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </Dropdown>
+  );
+  const toolbarActions = (
     <>
-      <Dropdown
-        label={`Widoczność: ${publicAccess ? 'Publiczna' : 'Prywatna'}`}
-        searchable={false}
-        disabled={busy || settingsDirty || !baseline.can_change_visibility}
-        trigger={
-          <>
-            <Icon name={publicAccess ? 'users' : 'lock'} />
-            <span>Widoczność: {publicAccess ? 'Publiczna' : 'Prywatna'}</span>
-            <Icon name="chevron-down" />
-          </>
-        }
-      >
-        {(close) => (
-          <div className="documents-menu-actions">
-            {(
-              [
-                { value: publicVisibility, label: 'Publiczna — cały Workspace', icon: 'users' },
-                { value: 'private', label: 'Prywatna — wybrane osoby', icon: 'lock' },
-              ] as const
-            ).map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="menuitemradio"
-                aria-checked={draft.visibility === option.value}
-                className="tasks-project-menu-button"
-                onClick={() => {
-                  if (busy || sending.current || settingsDirty || !baseline.can_change_visibility)
-                    return;
-                  close();
-                  const next = { ...draft, visibility: option.value };
-                  if (saveOnAction && next.visibility !== baseline.visibility) {
-                    setError('');
-                    setConfirmation({
-                      next,
-                      title: 'Zmień widoczność',
-                      message:
-                        option.value === publicVisibility
-                          ? 'Udostępnić przestrzeń całemu Workspace?'
-                          : 'Ograniczyć dostęp do właściciela i wybranych osób?',
-                      submit: 'Zmień widoczność',
-                    });
-                  } else stage(next);
-                  setSelected(new Set());
-                }}
-              >
-                <Icon name={option.icon} />
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </Dropdown>
       <button
         type="button"
         className="tasks-filter-button"
@@ -401,7 +403,8 @@ export default function AccessEditor<T extends AccessTeam>({
         {directory ? null : (
           <Toolbar
             className="workplace-edit-modal__team-toolbar member-access-toolbar"
-            actions={toolbarControls}
+            filters={toolbarControls}
+            actions={toolbarActions}
           />
         )}
         {error && !saveOnAction ? (
@@ -423,8 +426,9 @@ export default function AccessEditor<T extends AccessTeam>({
             busy={busy}
             selected={selected}
             onSelect={setSelected}
+            controls={toolbarControls}
           >
-            {toolbarControls}
+            {toolbarActions}
           </MemberDirectory>
         ) : (
           <Members

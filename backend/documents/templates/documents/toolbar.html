@@ -55,9 +55,10 @@
             </nav>
         </div>
         {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
+        {% if not is_library_index %}<button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel dysków" aria-label="Pokaż lub ukryj panel dysków" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-icon="panel-right" aria-hidden="true"></i></button>{% endif %}
+        {% if not is_library_index and library_view != 'trash' %}{% if query or has_active_filters %}<span class="app-toolbar__summary" role="status">Wyniki ze wszystkich folderów {% if current_library %}na tym dysku{% else %}i dysków w bieżącym Workspace{% endif %}.</span>{% endif %}{% endif %}
     </div>
     <div class="tasks-filterbar-right app-toolbar__search">
         <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="documents-search-form" value="{{ query }}" placeholder="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" aria-label="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" autocomplete="off"></label>
-        {% if not is_library_index %}<button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel dysków" aria-label="Pokaż lub ukryj panel dysków" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-icon="panel-right" aria-hidden="true"></i></button>{% endif %}
     </div>
 </div>

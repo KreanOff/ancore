@@ -445,6 +445,20 @@ export default function ReportsView({
                 onChange={(value) => navigate(reportUrl(url, 'assignee', value))}
               />
             </fieldset>
+            {activeFilters.length ? (
+              <div className="app-toolbar__summary" aria-label="Aktywne filtry">
+                {activeFilters.map(([key, value]) => (
+                  <span key={key}>
+                    {key === 'summary'
+                      ? data.summary_filter_label
+                      : key === 'q'
+                        ? `Szukaj: ${value}`
+                        : data.filter_options[key]?.find(([option]) => option === value)?.[1] ||
+                          value}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             {hasFilters ? (
               <a className="tasks-filter-button" href={report.reset_url}>
                 <Icon name="x" />
@@ -462,24 +476,6 @@ export default function ReportsView({
           </p>
         </div>
       </header>
-      {report ? (
-        <>
-          {activeFilters.length ? (
-            <div className="work-reports-filter-summary" aria-label="Aktywne filtry">
-              {activeFilters.map(([key, value]) => (
-                <span key={key}>
-                  {key === 'summary'
-                    ? data.summary_filter_label
-                    : key === 'q'
-                      ? `Szukaj: ${value}`
-                      : data.filter_options[key]?.find(([option]) => option === value)?.[1] ||
-                        value}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </>
-      ) : null}
       {error || report?.filter_error ? (
         <div className="tasks-modal__errors work-reports-error" role="alert">
           <span>{error || report?.filter_error}</span>

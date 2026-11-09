@@ -406,7 +406,7 @@ export default function Timeline({ data, url, csrfToken, busy, moreControl, onUp
             ))}
           </div>
         }
-      ></ItemToolbar>
+      />
       {error && !editing ? (
         <div className="tasks-modal__errors work-timeline-error" role="alert">
           {error}

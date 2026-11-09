@@ -59,9 +59,11 @@
                     </section>
                     <section id="task-subtasks" class="tasks-issue-content tasks-issue-subtasks" role="tabpanel" aria-labelledby="task-tab-subtasks" tabindex="0" data-task-tab-panel="subtasks"{% if task_tab != 'subtasks' %} hidden{% endif %}>
                         <div class="tasks-subtasks-toolbar tasks-filterbar tasks-filterbar--directory app-toolbar app-toolbar--embedded" aria-label="Narzędzia podzadań">
-                            <div class="tasks-filterbar-left app-toolbar__controls"><h2 class="tasks-subtasks-title"><span>Podzadania ({{ subtask_count }})</span></h2></div>
-                            <div class="tasks-subtasks-actions app-toolbar__actions">
+                            <div class="tasks-filterbar-left app-toolbar__controls">
+                                <h2 class="tasks-subtasks-title"><span>Podzadania ({{ subtask_count }})</span></h2>
                                 <button type="button" class="tasks-filter-button tasks-issue-tool" title="Sortuj podzadania" aria-label="Sortuj podzadania" data-space-subtasks-sort><i data-icon="arrow-down-wide-narrow" aria-hidden="true"></i></button>
+                            </div>
+                            <div class="tasks-subtasks-actions app-toolbar__actions">
                                 {% if can_edit_task %}<button type="button" class="tasks-filter-button tasks-issue-tool" title="Usuń zaznaczone" aria-label="Usuń zaznaczone podzadania" data-space-subtasks-delete>{% include 'core/includes/trash_icon.html' %}</button><button type="button" class="tasks-filter-button tasks-issue-tool" title="Dodaj podzadanie" aria-label="Dodaj podzadanie" data-space-subtask-open aria-haspopup="dialog" aria-controls="space-subtask-modal"><i data-icon="plus" aria-hidden="true"></i></button>{% endif %}
                             </div>
                         </div>

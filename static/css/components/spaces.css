@@ -241,7 +241,6 @@
 .work-summary-panel > .work-summary-note { margin: 12px 0 0; }
 .work-summary-unassigned { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--system-interaction) 24%, var(--card-bg)); flex-shrink: 0; }
 .work-summary-unassigned [data-icon] { width: 16px; height: 16px; }
-.work-summary-filter { display: flex; align-items: center; gap: 12px; padding: 8px var(--work-space-inline-padding, var(--app-page-padding-x)); border-bottom: 1px solid var(--border-color); font-size: var(--font-size-sm); }
 /* Personal space dashboard: existing summary panels on an editable, responsive grid. */
 .work-summary-dashboard { container-type: inline-size; min-width: 0; }
 .work-summary-toolbar .work-summary-save { background: var(--primary-button-bg); border-color: transparent; }
@@ -375,7 +374,6 @@
     .work-summary-bars a > progress { grid-column: 1; }
     .work-summary-distribution-heading { display: none; }
     .work-summary-bars--distribution a { grid-template-columns: minmax(0, 1fr); gap: 8px; padding-block: 10px; }
-    .work-summary-filter { flex-wrap: wrap; }
 }
 @media (max-width: 360px) {
     .work-summary-status { flex-direction: column; gap: 16px; }
@@ -549,11 +547,6 @@
     .work-issue-row.work-board-drag-preview { rotate: 0deg; scale: 1; }
     .work-backlog-group[data-work-drop-group] { transition: none; }
 }
-.work-backlog-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0.95rem 0; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: var(--radius); font-size: var(--font-size-sm); }
-.work-backlog-bulk[hidden] { display: none; }
-.work-backlog-bulk-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.work-backlog-bulk-controls { margin-left: auto; }
-.work-backlog-bulk-controls .ancore-custom-select { width: 240px; max-width: 280px; flex: 0 1 240px; }
 .work-planning-summary { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-secondary); }
 .work-backlog-group:not(.work-sprint) .work-planning-summary { margin-left: auto; }
 .work-backlog-group > .tasks-issue-group-header:has(> .work-backlog-sprint-create) > .tasks-rail-count { margin-left: 0; }
@@ -573,7 +566,6 @@
 .work-panel .work-item-list { padding: 0; }
 .work-content--tasks > .work-panel-heading { padding: 12px 16px 0; flex-wrap: wrap; }
 .work-page .work-content.work-content--items { display: flex; flex-direction: column; gap: 8px; padding: 5px var(--work-space-inline-padding, var(--app-page-padding-x)); }
-.work-content--items > .work-item-toolbar { min-height: 0; padding: 0; border: 0; }
 /* Space-specific fields; the shared app-toolbar owns control geometry. */
 .work-view-toolbar-fields { display: flex; align-items: center; flex-wrap: wrap; gap: var(--app-toolbar-gap); min-width: 0; max-width: 100%; margin: 0; padding: 0; border: 0; }
 .work-view-toolbar-fields > .documents-field, .work-view-toolbar-field { display: block; width: 190px; min-width: 0; max-width: 100%; margin: 0; }
@@ -585,8 +577,6 @@
 }
 .work-content--items > .tasks-board { padding: 0; }
 .work-content--items > .work-panel-heading { padding: 0; }
-.work-content--items > .work-summary-filter { flex-shrink: 0; padding: 0; border: 0; }
-.work-content--items > .work-backlog-bulk { flex-shrink: 0; margin: 0; }
 .work-member { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--border-color); }
 .work-member > :first-child { flex: 1; min-width: 180px; }
 .work-member form { margin: 0; }
@@ -644,7 +634,7 @@
 }
 .work-configuration { display: grid; gap: 20px; }
 .work-configuration-section { min-width: 0; }
-.work-configuration-section > .workplace-edit-modal__team-toolbar:not(.member-access-toolbar) { justify-content: flex-end; }
+.work-configuration-section > .workplace-edit-modal__team-toolbar:not(.member-access-toolbar, .app-toolbar) { justify-content: flex-end; }
 .work-configuration-section h2 { margin: 0 0 8px; font-size: var(--font-size-lg); }
 /* Configuration lists share the Members table; editing uses the standard modal. */
 .tasks-directory-board.work-configuration-sheet {
@@ -758,11 +748,11 @@
     overflow: auto;
 }
 .work-page .tasks-filterbar.settings-directory-toolbar {
-    margin: 8px var(--app-page-padding-x);
+    margin: 0 var(--app-page-padding-x);
 }
 .settings-directory-toolbar .member-access-toolbar { display: contents; }
-.space-settings-page .space-settings-table-body > .member-access-toolbar,
-.space-settings-page .work-configuration-section > .member-access-toolbar { justify-content: flex-end; }
+.space-settings-page .space-settings-table-body > .member-access-toolbar:not(.app-toolbar),
+.space-settings-page .work-configuration-section > .member-access-toolbar:not(.app-toolbar) { justify-content: flex-end; }
 .tasks-directory-board.settings-directory-sheet {
     width: auto;
     margin-inline: var(--app-page-padding-x);
@@ -1009,15 +999,13 @@
 .work-timeline-bar-body[aria-disabled=true] { cursor: progress; }
 
 /* Reports extend the existing panels, controls and compact space typography. */
-.work-reports { display: grid; gap: 16px; min-width: 0; }
+.work-reports { --work-content-gap: 16px; display: grid; gap: var(--work-content-gap); min-width: 0; }
 .work-reports-header, .work-reports-panel-heading, .work-reports-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
 .work-reports-header { flex-wrap: wrap; }
 .work-reports-header h2 { font-size: 17px; margin: 0 0 4px; }
 .work-reports-header p, .work-reports-panel-heading p { margin: 0; }
 .work-reports .tasks-filter-button { text-decoration: none; }
 .work-reports :is(a, button, summary, [tabindex="0"]):focus-visible { outline: 2px solid var(--system-accent) !important; outline-offset: 2px; }
-.work-reports-filter-summary { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
-.work-reports-filter-summary > span { padding: 3px 8px; background: var(--panel-bg); border-radius: var(--radius); font-size: 12px; overflow-wrap: anywhere; }
 .work-reports-section-heading { flex-wrap: wrap; margin-bottom: -6px; }
 .work-reports h3 { margin: 0; font-size: var(--font-size-base); line-height: 1.5; }
 .work-reports .work-panel { padding: 16px; min-width: 0; }
@@ -1123,7 +1111,7 @@
     .work-reports-chart svg { max-height: 260px; }
 }
 @media (max-width: 650px) {
-    .work-reports { gap: 12px; }
+    .work-reports { --work-content-gap: 12px; }
     .work-reports-header { align-items: flex-start; }
     .work-reports .work-panel { padding: 12px; }
     .work-reports-kpis { gap: 8px; }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { EmbeddedForm, type FormDialogData, type FormSection } from '../forms/FormDialog';
+import { Toolbar } from '../shared/DirectoryToolbar';
 import { Icon } from '../shared/Icon';
 import { Modal } from '../shared/Modal';
 import { Members } from '../shared/Members';
@@ -196,23 +197,28 @@ export default function SettingsDialog({
           <div className="tasks-modal__body">
             {team ? (
               <>
-                <div className="workplace-edit-modal__team-toolbar tasks-filterbar app-toolbar app-toolbar--embedded">
-                  <span className="workplaces-management__count">
-                    {team.name} · Osoby: {team.members.length}
-                  </span>
-                  {team.can_manage ? (
-                    <button
-                      type="button"
-                      className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
-                      disabled={pending}
-                      onClick={() => setSharing(true)}
-                      aria-haspopup="dialog"
-                    >
-                      <Icon name="plus" />
-                      Udostępnij
-                    </button>
-                  ) : null}
-                </div>
+                <Toolbar
+                  className="workplace-edit-modal__team-toolbar app-toolbar--embedded"
+                  filters={
+                    <span className="workplaces-management__count">
+                      {team.name} · Osoby: {team.members.length}
+                    </span>
+                  }
+                  actions={
+                    team.can_manage ? (
+                      <button
+                        type="button"
+                        className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"
+                        disabled={pending}
+                        onClick={() => setSharing(true)}
+                        aria-haspopup="dialog"
+                      >
+                        <Icon name="plus" />
+                        Udostępnij
+                      </button>
+                    ) : null
+                  }
+                />
                 {team.visibility === 'workspace' ? (
                   <p className="workplace-team__hint">
                     Dostęp mają aktywni członkowie Workspace. Aby udostępniać wybranym osobom,

@@ -1,6 +1,6 @@
 {% load space_ui %}
 {% load account_avatar %}
-{% if not toolbar_controls_only %}<form class="tasks-filterbar tasks-filterbar--directory app-toolbar work-view-toolbar work-item-toolbar{% if extra_class %} {{ extra_class }}{% endif %}" method="get">
+{% if not toolbar_controls_only %}{% if view == 'backlog' %}<div class="tasks-filterbar tasks-filterbar--directory app-toolbar work-view-toolbar work-item-toolbar{% if extra_class %} {{ extra_class }}{% endif %}"><form class="app-toolbar__controls" method="get">{% else %}<form class="tasks-filterbar tasks-filterbar--directory app-toolbar work-view-toolbar work-item-toolbar{% if extra_class %} {{ extra_class }}{% endif %}" method="get">{% endif %}
     {% if view %}<input type="hidden" name="view" value="{{ view }}">{% endif %}
     {% if not filters_only %}<input type="hidden" name="sort" value="{{ item_sort.value }}">{% endif %}
     {% if query and view != 'timeline' %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
@@ -40,9 +40,23 @@
                 </div>
             </div>
         </details>{% endif %}
+        {% if summary_filter %}<div class="app-toolbar__summary" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring item_query_params summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}
     {% if not toolbar_controls_only %}
     </div>
         {% if view == 'timeline' %}<div class="tasks-filterbar-right app-toolbar__search"><label class="tasks-search-field work-view-toolbar-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="Szukaj na osi czasu" aria-label="Szukaj na osi czasu"><button type="submit" class="tasks-filter-button" aria-label="Szukaj zadań"><i data-icon="arrow-right" aria-hidden="true"></i></button></label></div>{% endif %}
 </form>
-{% if summary_filter %}<div class="work-summary-filter" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring item_query_params summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}
+{% if view == 'backlog' %}
+{% if can_edit %}
+<form class="app-toolbar__actions app-toolbar__selection" method="post" action="{{ bulk_plan_url }}" data-backlog-bulk hidden>
+    {% csrf_token %}
+    <span data-backlog-selection-count role="status" aria-live="polite"></span>
+    <div class="app-toolbar__selection">
+        <select name="destination" class="tasks-inline-select" aria-label="Miejsce docelowe zaznaczonych zadań"><option value="">Backlog</option>{% if space.template == 'scrum' %}{% for destination in sprints %}<option value="{{ destination.pk }}">{{ destination.name }} · {{ destination.get_state_display }}</option>{% endfor %}{% else %}<option value="board">Tablica</option>{% endif %}</select>
+        <button type="submit" class="tasks-filter-button"><i data-icon="arrow-right" aria-hidden="true"></i>Przenieś zaznaczone</button>
+        <button type="button" class="tasks-filter-button" data-backlog-clear-selection>Odznacz</button>
+    </div>
+</form>
+{% endif %}
+</div>
+{% endif %}
 {% endif %}

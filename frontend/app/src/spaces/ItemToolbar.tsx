@@ -157,7 +157,32 @@ export function ItemToolbar({
         )}
       </Dropdown>
       {children}
+      <ItemSummaryFilter data={data} url={url} />
     </ViewToolbar>
+  );
+}
+
+export function ItemSummaryFilter({
+  data,
+  url,
+}: {
+  data: Pick<DetailData, 'filters' | 'summary_filter_label'>;
+  url: string;
+}) {
+  if (!data.filters.summary) return null;
+  return (
+    <div className="app-toolbar__summary" role="status">
+      <span>{data.summary_filter_label}</span>
+      <button
+        type="button"
+        className="tasks-filter-button"
+        aria-label={`Usuń filtr: ${data.summary_filter_label}`}
+        onClick={() => changeQuery(url, { summary: '' })}
+      >
+        <Icon name="x" />
+        Usuń filtr
+      </button>
+    </div>
   );
 }
 

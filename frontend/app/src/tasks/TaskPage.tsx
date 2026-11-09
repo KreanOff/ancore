@@ -539,12 +539,10 @@ export default function TaskPage(props: PageProps) {
                     className="tasks-subtasks-toolbar app-toolbar--embedded"
                     aria-label="Narzędzia podzadań"
                     filters={
-                      <h2 className="tasks-subtasks-title">
-                        <span>Podzadania ({data.children.length})</span>
-                      </h2>
-                    }
-                    actions={
-                      <div className="tasks-subtasks-actions">
+                      <>
+                        <h2 className="tasks-subtasks-title">
+                          <span>Podzadania ({data.children.length})</span>
+                        </h2>
                         <button
                           type="button"
                           className="tasks-filter-button tasks-issue-tool"
@@ -553,37 +551,39 @@ export default function TaskPage(props: PageProps) {
                         >
                           <Icon name="arrow-down-wide-narrow" />
                         </button>
-                        {data.can_edit ? (
-                          <>
-                            <button
-                              type="button"
-                              className="tasks-filter-button tasks-issue-tool"
-                              aria-label="Usuń zaznaczone podzadania"
-                              disabled={busy}
-                              onClick={removeChildren}
-                            >
-                              <Icon name="trash-2" />
-                            </button>
-                            <button
-                              type="button"
-                              className="tasks-filter-button tasks-issue-tool"
-                              aria-label="Dodaj podzadanie"
-                              disabled={busy}
-                              onClick={() =>
-                                void openDialog({
-                                  kind: 'subtask',
-                                  title: 'Dodaj podzadanie',
-                                  schema: data.subtask_form,
-                                  action: 'create_subtask_modal',
-                                  url: initial.url,
-                                })
-                              }
-                            >
-                              <Icon name="plus" />
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
+                      </>
+                    }
+                    actions={
+                      data.can_edit ? (
+                        <div className="tasks-subtasks-actions">
+                          <button
+                            type="button"
+                            className="tasks-filter-button tasks-issue-tool"
+                            aria-label="Usuń zaznaczone podzadania"
+                            disabled={busy}
+                            onClick={removeChildren}
+                          >
+                            <Icon name="trash-2" />
+                          </button>
+                          <button
+                            type="button"
+                            className="tasks-filter-button tasks-issue-tool"
+                            aria-label="Dodaj podzadanie"
+                            disabled={busy}
+                            onClick={() =>
+                              void openDialog({
+                                kind: 'subtask',
+                                title: 'Dodaj podzadanie',
+                                schema: data.subtask_form,
+                                action: 'create_subtask_modal',
+                                url: initial.url,
+                              })
+                            }
+                          >
+                            <Icon name="plus" />
+                          </button>
+                        </div>
+                      ) : null
                     }
                   />
                   {data.children.length ? (

@@ -171,12 +171,12 @@ export default function SearchPage(props: PageProps) {
                 <a className="tasks-filter-button" href={data.clear_url}>
                   Wyczyść
                 </a>
+                <span role="status" className="work-caption">
+                  Zadania: {data.pagination.count}
+                  {saved ? ` · ${saved.visibility_label}` : ''}
+                </span>
               </div>
               <QueryHelp />
-              <span role="status" className="work-caption">
-                Zadania: {data.pagination.count}
-                {saved ? ` · ${saved.visibility_label}` : ''}
-              </span>
             </form>
           )}
           {data.search_error ? (

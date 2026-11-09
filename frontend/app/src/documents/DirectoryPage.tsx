@@ -336,6 +336,28 @@ export default function DirectoryPage(props: PageProps) {
                 <Icon name="x" />
               </a>
             ) : null}
+            {!data.office && !data.libraries ? (
+              <button
+                ref={sidebar.toggleRef}
+                type="button"
+                className="tasks-icon-button documents-sidebar-toggle"
+                aria-label={sidebar.expanded ? 'Ukryj panel dysków' : 'Pokaż panel dysków'}
+                aria-expanded={sidebar.expanded}
+                aria-controls="documents-sidebar"
+                onClick={sidebar.toggle}
+              >
+                <Icon name="panel-right" />
+              </button>
+            ) : null}
+            {!data.office &&
+            !data.libraries &&
+            data.view !== 'trash' &&
+            (data.query || data.active_filters) ? (
+              <span className="app-toolbar__summary" role="status">
+                Wyniki ze wszystkich folderów{' '}
+                {data.library ? 'na tym dysku' : 'i dysków w bieżącym Workspace'}.
+              </span>
+            ) : null}
           </>
         }
         search={
@@ -375,19 +397,6 @@ export default function DirectoryPage(props: PageProps) {
                 />
               </label>
             </form>
-            {!data.office && !data.libraries ? (
-              <button
-                ref={sidebar.toggleRef}
-                type="button"
-                className="tasks-icon-button documents-sidebar-toggle"
-                aria-label={sidebar.expanded ? 'Ukryj panel dysków' : 'Pokaż panel dysków'}
-                aria-expanded={sidebar.expanded}
-                aria-controls="documents-sidebar"
-                onClick={sidebar.toggle}
-              >
-                <Icon name="panel-right" />
-              </button>
-            ) : null}
           </>
         }
       />
@@ -464,11 +473,6 @@ export default function DirectoryPage(props: PageProps) {
           >
             {data.view === 'trash' ? (
               <p className="u-sr-only">Przywróć plik, aby ponownie go otworzyć lub pobrać.</p>
-            ) : data.query || data.active_filters ? (
-              <p className="documents-results-hint" role="status">
-                Wyniki ze wszystkich folderów{' '}
-                {data.library ? 'na tym dysku' : 'i dysków w bieżącym Workspace'}.
-              </p>
             ) : null}
             {rows}
           </section>

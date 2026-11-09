@@ -175,7 +175,7 @@ class SpaceSummaryTests(TestCase):
                     self.assertEqual({value for value, _ in options['team']}, {'', str(first_team.pk), str(second_team.pk)})
                     self.assertNotIn(str(foreign_team.pk), {value for value, _ in options['team']})
                     html = self.response(self.overview_url(filters, scoped))
-                    self.assertContains(html, '<span>Filtrowanie</span>')
+                    self.assertContains(html, '<span>Filtruj</span>')
                     self.assertContains(html, 'name="work_type"')
                     self.assertContains(html, 'name="assignee"')
                     self.assertContains(html, 'name="status"')

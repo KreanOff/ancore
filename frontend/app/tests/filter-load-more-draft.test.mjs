@@ -170,7 +170,7 @@ test('a new filter search installs its new criteria instead of retaining the pre
   assert.equal(app.root.children[0].value, 'nowe zastosowane kryteria');
 });
 
-test('the right-side q field retains its draft and identity after loading more, independently of panel filters', () => {
+test('the q search field retains its draft and identity after loading more, independently of panel filters', () => {
   const app = harness(),
     initial = page();
   const query = initial.data.form.fields[0];
@@ -218,13 +218,13 @@ test('the right-side q field retains its draft and identity after loading more, 
     ),
     'the active panel filter count excludes q',
   );
-  const actionsSlot = find(
+  const controlsSlot = find(
     next.tree,
     'div',
-    (node) => node.props.className === 'app-toolbar__actions',
+    (node) => node.props.className === 'tasks-filterbar-left app-toolbar__controls',
   );
   assert.ok(
-    find(actionsSlot, 'span', (node) => node.props.role === 'status'),
+    find(controlsSlot, 'span', (node) => node.props.role === 'status'),
     'the result count remains in the left caption slot',
   );
 });

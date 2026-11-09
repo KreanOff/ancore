@@ -27,7 +27,13 @@ const pageUrl = base + '?view=timeline&assignee=me&page=2';
 function nodes(element) {
   if (!element || typeof element !== 'object') return [];
   if (Array.isArray(element)) return element.flatMap(nodes);
-  return [element, ...nodes(element.props?.children), ...(element.type?.name === 'ItemToolbar' ? nodes(element.props?.search) : [])];
+  return [
+    element,
+    ...nodes(element.props?.children),
+    ...(element.type?.name === 'ItemToolbar'
+      ? [...nodes(element.props?.search), ...nodes(element.props?.actions)]
+      : []),
+  ];
 }
 function text(element) {
   if (element == null || typeof element === 'boolean') return '';

@@ -40,6 +40,7 @@ export function LocalDirectoryTable<K extends string | number>({
   selected,
   onSelect,
   busy,
+  controls,
   children,
 }: {
   columns: LocalDirectoryColumn[];
@@ -51,6 +52,7 @@ export function LocalDirectoryTable<K extends string | number>({
   selected: Set<K>;
   onSelect: (next: Set<K>) => void;
   busy: boolean;
+  controls?: ReactNode;
   children?: ReactNode;
 }) {
   const [query, setQuery] = useState('');
@@ -146,6 +148,7 @@ export function LocalDirectoryTable<K extends string | number>({
           </form>
         }
       >
+        {controls}
         <details
           ref={aggregate}
           className={`tasks-project-filter-builder tasks-directory-filter-aggregate ${Object.values(filters).some(Boolean) ? 'is-active' : ''}`}

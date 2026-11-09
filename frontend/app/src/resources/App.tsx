@@ -431,16 +431,6 @@ export default function ResourcesApp({
               className="tasks-filterbar--project-directory resources-filterbar"
               filters={
                 <>
-                  <button
-                    type="button"
-                    className="tasks-filter-button"
-                    disabled={busy}
-                    onClick={() => void load(data.list_url)}
-                    aria-label="Odśwież zasoby"
-                    title="Odśwież zasoby"
-                  >
-                    <Icon name="rotate-ccw" />
-                  </button>
                   <ColumnManager
                     layout={columns.layout}
                     save={columns.saveLayout}
@@ -519,55 +509,99 @@ export default function ResourcesApp({
                       ))
                     }
                   </Dropdown>
+                  {data.has_filters ? (
+                    <div className="app-toolbar__summary" aria-label="Aktywne filtry">
+                      {data.query ? <span>Wyszukiwanie: {data.query}</span> : null}
+                      {data.filters
+                        .filter((filter) => filter.value)
+                        .map((filter) => (
+                          <button
+                            key={filter.name}
+                            className="tasks-filter-button"
+                            disabled={busy}
+                            aria-label={`Usuń filtr: ${filter.label}`}
+                            onClick={() => change(filter.name, '')}
+                          >
+                            {filter.label}: {filter.selected_label}
+                            <Icon name="x" />
+                          </button>
+                        ))}
+                      <button
+                        className="tasks-filter-button"
+                        disabled={busy}
+                        onClick={() => void load(data.base_url)}
+                      >
+                        Wyczyść filtry
+                      </button>
+                    </div>
+                  ) : null}
+                  {selectedResources.length ? (
+                    <>
+                      <span aria-live="polite">Zaznaczono: {selectedResources.length}</span>
+                      {selectedResources.length > 100 ? (
+                        <span role="status">
+                          Wybierz maksymalnie 100 zasobów do jednej operacji.
+                        </span>
+                      ) : null}
+                    </>
+                  ) : null}
                 </>
               }
               actions={
-                selectedResources.length ? (
-                  <div
-                    className="app-toolbar__selection"
-                    role="region"
-                    aria-label="Operacje na zaznaczonych zasobach"
+                <>
+                  <button
+                    type="button"
+                    className="tasks-filter-button"
+                    disabled={busy}
+                    onClick={() => void load(data.list_url)}
+                    aria-label="Odśwież zasoby"
+                    title="Odśwież zasoby"
                   >
-                    <span aria-live="polite">Zaznaczono: {selectedResources.length}</span>
-                    {selectedResources.length > 100 ? (
-                      <span role="status">Wybierz maksymalnie 100 zasobów do jednej operacji.</span>
-                    ) : null}
-                    {(
-                      [
-                        ['handover', 'Przekaż'],
-                        ['return', 'Przyjmij zwrot'],
-                        ['status', 'Zmień status'],
-                        ['location', 'Zmień lokalizację'],
-                      ] as const
-                    ).map(([action, label]) => (
-                      <button
-                        key={action}
-                        className="tasks-filter-button"
-                        disabled={
-                          busy ||
-                          selectedResources.length > 100 ||
-                          (action === 'handover' &&
-                            selectedResources.some(
-                              (resource) => !['available', 'in_use'].includes(resource.status),
-                            )) ||
-                          (action === 'return' &&
-                            selectedResources.some((resource) => resource.status !== 'in_use'))
-                        }
-                        onClick={() => void operate(action, selectedResources)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                    <button
-                      className="tasks-filter-button"
-                      disabled={busy}
-                      onClick={() => setSelected(new Set())}
-                      aria-label="Wyczyść zaznaczenie"
+                    <Icon name="rotate-ccw" />
+                  </button>
+                  {selectedResources.length ? (
+                    <div
+                      className="app-toolbar__selection"
+                      role="region"
+                      aria-label="Operacje na zaznaczonych zasobach"
                     >
-                      <Icon name="x" />
-                    </button>
-                  </div>
-                ) : null
+                      {(
+                        [
+                          ['handover', 'Przekaż'],
+                          ['return', 'Przyjmij zwrot'],
+                          ['status', 'Zmień status'],
+                          ['location', 'Zmień lokalizację'],
+                        ] as const
+                      ).map(([action, label]) => (
+                        <button
+                          key={action}
+                          className="tasks-filter-button"
+                          disabled={
+                            busy ||
+                            selectedResources.length > 100 ||
+                            (action === 'handover' &&
+                              selectedResources.some(
+                                (resource) => !['available', 'in_use'].includes(resource.status),
+                              )) ||
+                            (action === 'return' &&
+                              selectedResources.some((resource) => resource.status !== 'in_use'))
+                          }
+                          onClick={() => void operate(action, selectedResources)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                      <button
+                        className="tasks-filter-button"
+                        disabled={busy}
+                        onClick={() => setSelected(new Set())}
+                        aria-label="Wyczyść zaznaczenie"
+                      >
+                        <Icon name="x" />
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               }
               search={
                 <form
@@ -591,32 +625,6 @@ export default function ResourcesApp({
                 </form>
               }
             />
-            {data.has_filters ? (
-              <div className="resources-active-filters" aria-label="Aktywne filtry">
-                {data.query ? <span>Wyszukiwanie: {data.query}</span> : null}
-                {data.filters
-                  .filter((filter) => filter.value)
-                  .map((filter) => (
-                    <button
-                      key={filter.name}
-                      className="tasks-filter-button"
-                      disabled={busy}
-                      aria-label={`Usuń filtr: ${filter.label}`}
-                      onClick={() => change(filter.name, '')}
-                    >
-                      {filter.label}: {filter.selected_label}
-                      <Icon name="x" />
-                    </button>
-                  ))}
-                <button
-                  className="tasks-filter-button"
-                  disabled={busy}
-                  onClick={() => void load(data.base_url)}
-                >
-                  Wyczyść filtry
-                </button>
-              </div>
-            ) : null}
 
             {busy ? (
               <span className="u-sr-only" role="status">

@@ -53,8 +53,8 @@ function ToolbarContents({ filters, actions, search }: ToolbarSlots) {
   return (
     <>
       {filters ? <div className="tasks-filterbar-left app-toolbar__controls">{filters}</div> : null}
-      {actions ? <div className="app-toolbar__actions">{actions}</div> : null}
       {search ? <div className="tasks-filterbar-right app-toolbar__search">{search}</div> : null}
+      {actions ? <div className="app-toolbar__actions">{actions}</div> : null}
     </>
   );
 }

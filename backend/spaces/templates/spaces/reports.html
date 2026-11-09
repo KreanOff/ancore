@@ -15,7 +15,6 @@
             <a class="tasks-filter-button" href="{{ reports.export_url }}" title="Eksportuj bieżące zadania po filtrach, niezależnie od okresu aktywności" download><i data-icon="download" aria-hidden="true"></i>Eksport CSV</a>
         </div>
     </form>
-    {% if summary_filter %}<div class="work-summary-filter" role="status"><span>{{ summary_filter_label }}</span><a class="tasks-filter-button" href="{% querystring item_query_params summary=None page=None %}" aria-label="Usuń filtr: {{ summary_filter_label }}"><i data-icon="x" aria-hidden="true"></i>Usuń filtr</a></div>{% endif %}
     <header class="work-reports-header">
         <div><h2>Raporty przestrzeni</h2><p class="work-caption">Stan bieżący obejmuje wszystkie dostępne zadania po filtrach, w tym podzadania. Okres dotyczy wyłącznie aktywności i czasu pracy.</p></div>
     </header>

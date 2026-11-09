@@ -16,8 +16,10 @@ export function MemberDirectory({
   busy,
   selected,
   onSelect,
+  controls,
   children,
 }: {
+  controls?: ReactNode;
   children?: ReactNode;
   members: MemberRow[];
   busy: boolean;
@@ -34,6 +36,7 @@ export function MemberDirectory({
       busy={busy}
       selected={selected}
       onSelect={onSelect}
+      controls={controls}
       rows={members.map((member) => ({
         id: member.id,
         label: member.name,

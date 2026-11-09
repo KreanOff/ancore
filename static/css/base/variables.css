@@ -65,12 +65,13 @@
     --page-title-font-weight: 700;
     --page-header-row-height: 45px;
     --page-header-tab-font-size: 13.5px;
-    --app-toolbar-control-height: 30px;
-    --app-toolbar-search-height: 36px;
+    --app-toolbar-control-height: 36px;
+    --app-toolbar-search-height: var(--app-toolbar-control-height);
     --app-toolbar-search-width: 420px;
     --app-toolbar-gap: 8px;
-    --app-toolbar-padding-y: 0.5rem;
-    --app-toolbar-min-height: 45px;
+    --app-toolbar-row-height: var(--app-toolbar-control-height);
+    --app-toolbar-padding-y: 4px;
+    --app-toolbar-min-height: calc(var(--app-toolbar-row-height) + 2 * var(--app-toolbar-padding-y));
     --data-table-row-height: 35px;
     --data-table-control-width: 40px;
     --data-table-font-size: 13px;

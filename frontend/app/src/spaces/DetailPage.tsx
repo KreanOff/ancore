@@ -9,7 +9,7 @@ import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest } from '../shared/page';
 import { ItemCard, ItemRow } from './Item';
-import { ItemFiltering, ItemToolbar } from './ItemToolbar';
+import { ItemFiltering, ItemSummaryFilter, ItemToolbar } from './ItemToolbar';
 import Summary from './Summary';
 import SettingsPage from './SettingsPage';
 import { SpaceHeader } from './SpaceHeader';
@@ -616,42 +616,72 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           onDragEnterCapture={motion.over}
           className={`work-content ${tableView || data.view === 'overview' || data.view === 'reports' ? 'work-content--items' : ''} ${['list', 'board', 'backlog'].includes(data.view) ? 'work-content--tasks' : ''} ${data.view === 'timeline' ? 'work-content--timeline' : ''}`}
         >
-          {tableView ? (
-            <>
-              {data.view !== 'timeline' ? (
-                <ItemToolbar data={data} url={currentUrl.current} />
-              ) : null}
-              {data.filters.summary ? (
-                <div className="work-summary-filter" role="status">
-                  <span>{data.summary_filter_label}</span>
-                  <a
-                    className="tasks-filter-button"
-                    href={(() => {
-                      const url = new URL(initial.url, location.origin);
-                      url.searchParams.delete('summary');
-                      url.searchParams.delete('page');
-                      url.searchParams.delete('timeline_limit');
-                      [...url.searchParams.keys()]
-                        .filter(
-                          (key) =>
-                            key.startsWith('list_limit_') || key.startsWith('backlog_limit_'),
-                        )
-                        .forEach((key) => url.searchParams.delete(key));
-                      return url.pathname + url.search;
-                    })()}
-                    aria-label={`Usuń filtr: ${data.summary_filter_label}`}
+          {tableView && data.view !== 'timeline' ? (
+            <ItemToolbar
+              data={data}
+              url={currentUrl.current}
+              actions={
+                data.view === 'backlog' && data.can_edit && selected.size ? (
+                  <form
+                    className="app-toolbar__selection"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      bulk();
+                    }}
                   >
-                    <Icon name="x" />
-                    Usuń filtr
-                  </a>
-                </div>
-              ) : null}
-            </>
+                    <span role="status">Zaznaczono: {selected.size}</span>
+                    <div className="app-toolbar__selection">
+                      <Select
+                        hideLabel
+                        label="Miejsce docelowe zaznaczonych zadań"
+                        value={destination}
+                        options={
+                          data.space.template === 'scrum'
+                            ? [
+                                ['', 'Backlog'],
+                                ...data.sprints
+                                  .filter((sprint) => sprint.state !== 'closed')
+                                  .map(
+                                    (sprint) =>
+                                      [
+                                        String(sprint.id),
+                                        `${sprint.name} · ${sprint.state_label}`,
+                                      ] as [string, string],
+                                  ),
+                              ]
+                            : [
+                                ['', 'Backlog'],
+                                ['board', 'Tablica'],
+                              ]
+                        }
+                        onChange={setDestination}
+                      />
+                      <button type="submit" className="tasks-filter-button" disabled={busy}>
+                        <Icon name="arrow-right" />
+                        Przenieś zaznaczone
+                      </button>
+                      <button
+                        type="button"
+                        className="tasks-filter-button"
+                        onClick={() => setSelected(new Set())}
+                      >
+                        Odznacz
+                      </button>
+                    </div>
+                  </form>
+                ) : null
+              }
+            />
           ) : null}
           {data.view === 'overview' && data.summary ? (
             <Summary
               data={data.summary}
-              filters={<ItemFiltering data={data} url={initial.url} />}
+              filters={
+                <>
+                  <ItemFiltering data={data} url={initial.url} />
+                  <ItemSummaryFilter data={data} url={initial.url} />
+                </>
+              }
               software={data.space.kind === 'software'}
               api={initial.api_url}
               csrfToken={csrfToken}
@@ -801,55 +831,6 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
           ) : null}
           {data.view === 'backlog' ? (
             <>
-              {data.can_edit && selected.size ? (
-                <form
-                  className="work-backlog-bulk"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    bulk();
-                  }}
-                >
-                  <span role="status">Zaznaczono: {selected.size}</span>
-                  <div className="work-backlog-bulk-controls">
-                    <Select
-                      hideLabel
-                      label="Miejsce docelowe zaznaczonych zadań"
-                      value={destination}
-                      options={
-                        data.space.template === 'scrum'
-                          ? [
-                              ['', 'Backlog'],
-                              ...data.sprints
-                                .filter((sprint) => sprint.state !== 'closed')
-                                .map(
-                                  (sprint) =>
-                                    [
-                                      String(sprint.id),
-                                      `${sprint.name} · ${sprint.state_label}`,
-                                    ] as [string, string],
-                                ),
-                            ]
-                          : [
-                              ['', 'Backlog'],
-                              ['board', 'Tablica'],
-                            ]
-                      }
-                      onChange={setDestination}
-                    />
-                    <button type="submit" className="tasks-filter-button" disabled={busy}>
-                      <Icon name="arrow-right" />
-                      Przenieś zaznaczone
-                    </button>
-                    <button
-                      type="button"
-                      className="tasks-filter-button"
-                      onClick={() => setSelected(new Set())}
-                    >
-                      Odznacz
-                    </button>
-                  </div>
-                </form>
-              ) : null}
               <div className="tasks-table-wrap tasks-board work-backlog">
                 {data.space.template === 'scrum'
                   ? data.sprints

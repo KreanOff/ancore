@@ -1,8 +1,10 @@
 {% load account_avatar %}
 <div class="tasks-modal__body space-settings-table-body access-editor">
     <div class="workplace-edit-modal__team-toolbar tasks-filterbar tasks-filterbar--directory app-toolbar member-access-toolbar">
-        <div class="app-toolbar__actions">
+        <div class="app-toolbar__controls tasks-filterbar-left">
             <button type="button" class="tasks-filter-button" disabled><i data-icon="{% if space.visibility == 'public' %}users{% else %}lock{% endif %}" aria-hidden="true"></i>Widoczność: {% if space.visibility == 'public' %}Publiczna{% else %}Prywatna{% endif %}<i data-icon="chevron-down" aria-hidden="true"></i></button>
+        </div>
+        <div class="app-toolbar__actions">
             <button type="button" class="tasks-filter-button" disabled><i data-icon="pencil" aria-hidden="true"></i>Zmień rolę</button>
             <button type="button" class="tasks-filter-button" disabled><i data-icon="log-out" aria-hidden="true"></i>Odbierz dostęp</button>
             {% if can_manage %}<button type="button" class="tasks-filter-button" disabled><i data-icon="plus" aria-hidden="true"></i>Udostępnij</button>{% endif %}

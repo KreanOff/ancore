@@ -153,8 +153,6 @@ export function SearchToolbar({ data }: { data: SearchData }) {
             </>
           )}
         </Dropdown>
-      </div>
-      <div className="app-toolbar__actions">
         <span role="status" className="work-caption">
           Zadania: {data.pagination.count}
           {data.saved_filter ? ` · ${data.saved_filter.visibility_label}` : ''}

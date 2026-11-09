@@ -95,10 +95,12 @@ export function ResourceDetail({
       <Toolbar
         className="resources-detail-actions"
         filters={
+          <span className="resources-detail-caption">
+            Karta zasobu{resource.inventory_number ? ` · ${resource.inventory_number}` : ''}
+          </span>
+        }
+        actions={
           <>
-            <span className="resources-detail-caption">
-              Karta zasobu{resource.inventory_number ? ` · ${resource.inventory_number}` : ''}
-            </span>
             <button
               type="button"
               className="tasks-filter-button"
@@ -109,49 +111,47 @@ export function ResourceDetail({
             >
               <Icon name="rotate-ccw" />
             </button>
+            {!readOnly ? (
+              <>
+                {['available', 'in_use'].includes(resource.status) ? (
+                  <button
+                    className="tasks-filter-button"
+                    disabled={busy}
+                    onClick={() => operate('handover')}
+                  >
+                    <Icon name="user-round" />
+                    Przekaż
+                  </button>
+                ) : null}
+                {resource.status === 'in_use' ? (
+                  <button
+                    className="tasks-filter-button"
+                    disabled={busy}
+                    onClick={() => operate('return')}
+                  >
+                    <Icon name="rotate-ccw" />
+                    Przyjmij zwrot
+                  </button>
+                ) : null}
+                <button
+                  className="tasks-filter-button"
+                  disabled={busy}
+                  onClick={() => operate('status')}
+                >
+                  <Icon name="circle-check" />
+                  Zmień status
+                </button>
+                <button
+                  className="tasks-filter-button"
+                  disabled={busy}
+                  onClick={() => operate('note')}
+                >
+                  <Icon name="plus" />
+                  Dodaj notatkę
+                </button>
+              </>
+            ) : null}
           </>
-        }
-        actions={
-          !readOnly ? (
-            <>
-              {['available', 'in_use'].includes(resource.status) ? (
-                <button
-                  className="tasks-filter-button"
-                  disabled={busy}
-                  onClick={() => operate('handover')}
-                >
-                  <Icon name="user-round" />
-                  Przekaż
-                </button>
-              ) : null}
-              {resource.status === 'in_use' ? (
-                <button
-                  className="tasks-filter-button"
-                  disabled={busy}
-                  onClick={() => operate('return')}
-                >
-                  <Icon name="rotate-ccw" />
-                  Przyjmij zwrot
-                </button>
-              ) : null}
-              <button
-                className="tasks-filter-button"
-                disabled={busy}
-                onClick={() => operate('status')}
-              >
-                <Icon name="circle-check" />
-                Zmień status
-              </button>
-              <button
-                className="tasks-filter-button"
-                disabled={busy}
-                onClick={() => operate('note')}
-              >
-                <Icon name="plus" />
-                Dodaj notatkę
-              </button>
-            </>
-          ) : null
         }
       />
       <div className="resources-detail-content">

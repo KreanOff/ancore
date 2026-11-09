@@ -21,10 +21,19 @@ body .app-toolbar.tasks-filterbar {
 }
 
 body .app-toolbar.tasks-filterbar.app-toolbar--embedded { padding-inline: 0; }
-/* These content containers already provide the page gutter. */
-body .work-page .work-content:has(> .app-toolbar, > .work-timeline, > .work-reports, > .work-summary-dashboard) { padding-top: 0; }
+/* Only the toolbar supplies vertical spacing at the content boundary. */
+body .work-page .work-content:has(> .app-toolbar, > .work-timeline, > .work-reports, > .work-summary-dashboard),
+body .work-page .work-content:has(> .work-summary > .work-summary-dashboard > .app-toolbar),
+body .app-toolbar + :is(.work-content, .resources-detail-content, .calendar-shell, .office-quick-create),
+body .app-toolbar + .calendar-status.u-hidden + .calendar-shell { padding-top: 0; }
 
-body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions, .app-toolbar__search, .app-toolbar__selection) {
+/* Keep spacing between content sections, without adding a second gap below the toolbar. */
+body .work-page :is(.work-content--items, .work-timeline, .work-reports):has(> .app-toolbar) { row-gap: 0; }
+body .work-page :is(.work-content--items, .work-timeline, .work-reports):has(> .app-toolbar) > :not(.app-toolbar, [hidden], .u-sr-only, script) ~ :not(.app-toolbar, [hidden], .u-sr-only, script) {
+    margin-top: var(--work-content-gap, var(--app-toolbar-gap));
+}
+
+body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions, .app-toolbar__search, .app-toolbar__selection, .app-toolbar__summary) {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -35,8 +44,13 @@ body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions, .app-toolba
     padding: 0;
     border: 0;
 }
+body .app-toolbar > :is(.app-toolbar__controls, .app-toolbar__actions, .app-toolbar__search) {
+    min-height: var(--app-toolbar-row-height);
+}
 body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions) { flex: 0 1 auto; }
-body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions) > .react-select-inline {
+body .app-toolbar .app-toolbar__actions { margin-left: auto; }
+body .app-toolbar :is(.app-toolbar__actions, .app-toolbar__selection) { justify-content: flex-end; }
+body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions, .app-toolbar__selection) > .react-select-inline {
     display: block;
     flex: 0 1 190px;
     width: 190px;
@@ -49,8 +63,9 @@ body .app-toolbar .react-select-inline .ancore-custom-select { width: 100%; min-
 body .app-toolbar.app-toolbar--query .app-toolbar__controls { flex: 1 1 100%; }
 body .app-toolbar .app-toolbar__search {
     flex: 1 1 280px;
-    margin-left: auto;
-    justify-content: flex-end;
+    max-width: var(--app-toolbar-search-width);
+    margin-left: 0;
+    justify-content: flex-start;
 }
 body .app-toolbar .app-toolbar__search > form:not(.tasks-search-field) {
     display: flex;
@@ -94,6 +109,35 @@ body .app-toolbar.tasks-filterbar :is(.tasks-filter-button, .tasks-icon-button, 
     flex-shrink: 0;
 }
 body .app-toolbar.tasks-filterbar .tasks-icon-button { width: var(--app-toolbar-control-height); padding: 0; }
+/* Segmented view controls share the total height of standalone toolbar buttons. */
+body .app-toolbar :is(.work-timeline-scales, .app-toolbar__segments) {
+    flex-wrap: nowrap;
+    gap: 0;
+    margin-left: 0;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--dropdown-control-radius);
+    background: var(--card-bg);
+}
+body .app-toolbar.tasks-filterbar :is(.work-timeline-scales, .app-toolbar__segments) > .tasks-filter-button {
+    height: calc(var(--app-toolbar-control-height) - 2px);
+    min-height: calc(var(--app-toolbar-control-height) - 2px);
+    border: 0;
+    border-radius: 0;
+}
+body .app-toolbar.tasks-filterbar :is(.work-timeline-scales, .app-toolbar__segments) > .tasks-filter-button + .tasks-filter-button {
+    border-left: 1px solid var(--border-color);
+}
+body .app-toolbar.tasks-filterbar :is(.work-timeline-scales, .app-toolbar__segments) > .tasks-filter-button:first-child {
+    border-radius: calc(var(--dropdown-control-radius) - 1px) 0 0 calc(var(--dropdown-control-radius) - 1px);
+}
+body .app-toolbar.tasks-filterbar :is(.work-timeline-scales, .app-toolbar__segments) > .tasks-filter-button:last-child {
+    border-radius: 0 calc(var(--dropdown-control-radius) - 1px) calc(var(--dropdown-control-radius) - 1px) 0;
+}
+body .app-toolbar.tasks-filterbar :is(.work-timeline-scales, .app-toolbar__segments) > .tasks-filter-button:focus-visible {
+    position: relative;
+    z-index: 1;
+}
 body .app-toolbar.tasks-filterbar select.form-select {
     height: var(--app-toolbar-control-height);
     min-height: var(--app-toolbar-control-height);
@@ -160,11 +204,30 @@ body .app-toolbar.tasks-filterbar .tasks-search-field > .tasks-filter-button {
 }
 body .app-toolbar :is(.app-toolbar__controls, .app-toolbar__actions) > * { min-width: 0; max-width: 100%; }
 body .app-toolbar .app-toolbar__controls > [hidden],
-body .app-toolbar .app-toolbar__actions > [hidden] { display: none; }
+body .app-toolbar .app-toolbar__actions > [hidden],
+body .app-toolbar > [hidden] { display: none; }
 
 @media (max-width: 767px) {
-    body .app-toolbar { --app-toolbar-control-height: 36px; }
-    body .app-toolbar .app-toolbar__search { flex-basis: 100%; width: 100%; }
+    body .app-toolbar .app-toolbar__search { flex-basis: 100%; width: 100%; max-width: none; }
     body .app-toolbar .app-toolbar__search > form:not(.tasks-search-field),
     body .app-toolbar.tasks-filterbar .tasks-search-field { max-width: none; }
+}
+
+/* Active filters and result context belong to the existing control row. */
+body .app-toolbar .app-toolbar__summary {
+    flex: 0 1 auto;
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+body .app-toolbar .app-toolbar__summary > * { min-width: 0; max-width: 100%; }
+@media (min-width: 768px) {
+    body .app-toolbar:has(.app-toolbar__summary) .app-toolbar__search { flex-basis: 160px; }
+}
+body .app-toolbar.tasks-filterbar .app-toolbar__summary .tasks-filter-button {
+    height: auto;
+    padding-block: var(--app-toolbar-padding-y);
+    white-space: normal;
+    text-align: left;
+    overflow-wrap: anywhere;
 }

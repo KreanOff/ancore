@@ -41,6 +41,7 @@
                 </nav>
             </div>
             {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
+            {% if query or has_active_filters %}<span class="app-toolbar__summary" role="status">Wyniki ze wszystkich dokumentów w tym Workspace. <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></span>{% endif %}
         </div>
         <div class="tasks-filterbar-right app-toolbar__search">
             <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="office-search" value="{{ query }}" placeholder="Szukaj dokumentów" aria-label="Szukaj dokumentów" autocomplete="off"></label>
@@ -59,7 +60,6 @@
         </ul>
     </section>
     {% endif %}
-    {% if query or has_active_filters %}<p class="documents-results-hint" role="status">Wyniki ze wszystkich dokumentów w tym Workspace. <a href="{{ clear_url }}">Wyczyść wyszukiwanie i filtry</a></p>{% endif %}
     {% if office_view == 'trash' %}<p class="documents-results-hint">Przywróć dokument, aby go otworzyć lub edytować.</p>{% endif %}
     <section class="documents-main" aria-label="Dokumenty" {% if office_view != 'trash' %}data-document-drop="root" data-document-label="Dokumenty"{% endif %}>
         {% if document_display == 'grid' and rows %}

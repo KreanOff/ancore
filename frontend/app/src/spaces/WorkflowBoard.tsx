@@ -225,38 +225,37 @@ export default function WorkflowBoard({
       }}
     >
       <div className="tasks-filterbar tasks-filterbar--directory workplace-edit-modal__team-toolbar member-access-toolbar work-flow-toolbar app-toolbar app-toolbar--embedded">
-        <div
-          className="work-flow-history app-toolbar__controls"
-          role="group"
-          aria-label="Historia zmian procesu"
+        <span
+          className={`work-flow-save-state app-toolbar__controls${actions.dirty ? ' is-dirty' : ''}`}
+          role="status"
         >
-          <button
-            type="button"
-            className="tasks-filter-button work-flow-icon-button"
-            disabled={pending || !history.canUndo}
-            onClick={() => undo()}
-            title="Cofnij (Ctrl / ⌘ + Z)"
-            aria-label="Cofnij zmianę"
-          >
-            <Icon name="rotate-ccw" />
-          </button>
-          <button
-            type="button"
-            className="tasks-filter-button work-flow-icon-button"
-            disabled={pending || !history.canRedo}
-            onClick={() => undo(true)}
-            title="Ponów (Ctrl / ⌘ + Shift + Z)"
-            aria-label="Ponów zmianę"
-          >
-            <span className="work-flow-redo">
-              <Icon name="rotate-ccw" />
-            </span>
-          </button>
-        </div>
-        <span className={`work-flow-save-state${actions.dirty ? ' is-dirty' : ''}`} role="status">
           {actions.statusText}
         </span>
         <div className="member-access-save-actions app-toolbar__actions">
+          <div className="work-flow-history" role="group" aria-label="Historia zmian procesu">
+            <button
+              type="button"
+              className="tasks-filter-button work-flow-icon-button"
+              disabled={pending || !history.canUndo}
+              onClick={() => undo()}
+              title="Cofnij (Ctrl / ⌘ + Z)"
+              aria-label="Cofnij zmianę"
+            >
+              <Icon name="rotate-ccw" />
+            </button>
+            <button
+              type="button"
+              className="tasks-filter-button work-flow-icon-button"
+              disabled={pending || !history.canRedo}
+              onClick={() => undo(true)}
+              title="Ponów (Ctrl / ⌘ + Shift + Z)"
+              aria-label="Ponów zmianę"
+            >
+              <span className="work-flow-redo">
+                <Icon name="rotate-ccw" />
+              </span>
+            </button>
+          </div>
           <button
             type="button"
             className="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight"

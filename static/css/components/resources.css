@@ -36,13 +36,6 @@
 .resources-page .tasks-filterbar-right > form { flex: 1 1 160px; width: auto; max-width: 420px; min-width: 120px; margin: 0; }
 .resources-page .tasks-filterbar-right > form .tasks-search-field { width: 100%; max-width: none; }
 .resources-page :is(a, button):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
-.resources-active-filters, .resources-bulkbar {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-    padding: 10px var(--app-page-padding-x); border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0; font-size: var(--font-size-sm);
-}
-.resources-bulkbar { background: var(--panel-bg); }
-.resources-active-filters .tasks-filter-button { font-size: inherit; }
 .resources-status { display: inline-flex; align-items: center; gap: 6px; }
 .resources-status svg, .resources-deadline-notice > svg { width: 16px; height: 16px; flex-shrink: 0; }
 .resources-detail-header .tasks-titlebar-left { min-width: 0; gap: 10px; }
