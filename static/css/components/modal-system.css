@@ -320,7 +320,7 @@
     justify-content: flex-end;
     gap: 0.6rem;
     padding: var(--app-modal-bar-padding-y) var(--tasks-modal-x-padding);
-    border-top: 1px solid var(--app-modal-border);
+    border-top: 0;
     background: #ffffff;
     box-sizing: border-box;
 }
@@ -828,7 +828,7 @@
     margin: 0;
     gap: 0.6rem;
     padding: var(--app-modal-bar-padding-y) var(--app-modal-padding-x);
-    border-top: 1px solid var(--app-modal-border);
+    border-top: 0;
 }
 
 .confirm-modal-overlay .confirm-modal .confirm-modal__footer :is(.btn, .btn-cancel) {
@@ -890,7 +890,7 @@
 
 .profile-edit-footer,
 .contacts-photo-editor-footer {
-    border-top-color: var(--app-modal-border);
+    border-top: 0;
 }
 
 .tasks-modal #tag-create-form .tasks-tag-fields {
@@ -914,21 +914,21 @@
 .confirm-modal-overlay,
 .contacts-photo-editor-overlay {
     --app-panel-gutter: 24px;
+    --app-panel-viewport-gap: 24px;
+    --app-panel-enter-offset: var(--app-panel-viewport-gap);
     --app-panel-surface: var(--app-modal-surface);
     --app-panel-motion-duration: 320ms;
     --app-panel-motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Center the existing bottom panels horizontally without changing their style. */
+/* Windows float in the center, with space around every edge. */
 .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
 .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
-    --app-panel-top-gap: 24px;
     --app-panel-max-width: calc(100vw - clamp(64px, 13.5vw, 280px) - 16px);
-    --app-panel-enter-offset: 100%;
 
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
-    padding: var(--app-panel-top-gap) var(--app-panel-top-gap) 0;
+    padding: var(--app-panel-viewport-gap);
     box-sizing: border-box;
 }
 
@@ -941,13 +941,12 @@
     flex-direction: column;
     width: 100%;
     max-width: var(--app-panel-max-width);
-    height: 100%;
+    height: auto;
     max-height: 100%;
     min-width: 0;
     min-height: 0;
     border: 1px solid var(--app-modal-border);
-    border-bottom: 0;
-    border-radius: calc(var(--app-modal-radius) * 2) calc(var(--app-modal-radius) * 2) 0 0;
+    border-radius: calc(var(--app-modal-radius) * 2);
     background: var(--app-panel-surface);
     overflow: hidden;
     animation: var(--app-panel-animation, app-panel-enter var(--app-panel-motion-duration) var(--app-panel-motion-easing));
@@ -958,9 +957,9 @@
 .tasks-modal.app-modal-panel .tasks-modal__form,
 .page-container.full-width .tasks-modal.app-modal-panel .tasks-modal__form,
 .profile-edit-overlay.app-modal-panel .profile-edit-form {
-    flex: 1;
+    flex: 0 1 auto;
     width: 100%;
-    height: 100%;
+    height: auto;
     max-height: 100%;
     min-height: 0;
 }
@@ -1026,8 +1025,9 @@
 .contacts-photo-editor-overlay .contacts-photo-editor-footer {
     height: auto;
     min-height: 68px;
-    justify-content: flex-start;
+    justify-content: flex-end;
     padding: 12px var(--app-panel-gutter) max(12px, env(safe-area-inset-bottom));
+    border-top: 0;
     background: var(--card-bg);
 }
 
@@ -1153,12 +1153,13 @@
     .confirm-modal-overlay,
     .contacts-photo-editor-overlay {
         --app-panel-gutter: 18px;
+        --app-panel-viewport-gap: 16px;
     }
 
     .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
     .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
         --app-panel-gutter: 18px;
-        --app-panel-top-gap: 16px;
+        --app-panel-viewport-gap: 16px;
         --app-panel-max-width: calc(100vw - 40px);
     }
 }
@@ -1167,6 +1168,7 @@
     .confirm-modal-overlay,
     .contacts-photo-editor-overlay {
         --app-panel-gutter: 12px;
+        --app-panel-viewport-gap: 12px;
     }
 
     .tasks-modal.app-modal-panel .contacts-modal-fields {
@@ -1176,17 +1178,8 @@
     .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
     .page-container.full-width .app-modal-panel:is(.tasks-modal, .profile-edit-overlay) {
         --app-panel-gutter: 12px;
-        --app-panel-top-gap: 0px;
+        --app-panel-viewport-gap: 12px;
         --app-panel-max-width: none;
-    }
-
-    .tasks-modal.app-modal-panel > .tasks-modal__dialog,
-    .page-container.full-width .tasks-modal.app-modal-panel > .tasks-modal__dialog,
-    #issue-modal.app-modal-panel > .tasks-modal__dialog,
-    .profile-edit-overlay.app-modal-panel > .profile-edit-dialog,
-    .page-container.full-width .profile-edit-overlay.app-modal-panel > .profile-edit-dialog {
-        border: 0;
-        border-radius: 0;
     }
 
     .tasks-modal.app-modal-panel .tasks-modal__header,
@@ -1226,7 +1219,7 @@
     to { transform: none; }
 }
 
-/* Keep the closing overlay rendered until its panel reaches the bottom.
+/* Keep the closing overlay rendered until its panel finishes moving.
    Existing is-open/active classes remain the source of truth for each module. */
 @supports (transition-behavior: allow-discrete) {
     .app-modal-panel:is(.tasks-modal, .profile-edit-overlay),
@@ -1279,32 +1272,20 @@
     }
 }
 
-/* Small forms mirror the large panel at the top edge, with a fitted height. */
-.tasks-modal.app-modal-panel.app-modal-panel--compact,
-.page-container.full-width .tasks-modal.app-modal-panel.app-modal-panel--compact {
-    --app-panel-enter-offset: -100%;
-
-    align-items: flex-start;
-    justify-content: center;
-    padding: 0 1rem 1rem;
-}
-
+/* Compact forms retain their fitted width inside the shared floating shell. */
 .tasks-modal.app-modal-panel.app-modal-panel--compact > .tasks-modal__dialog,
 .page-container.full-width .tasks-modal.app-modal-panel.app-modal-panel--compact > .tasks-modal__dialog {
     width: var(--tasks-modal-shell-width);
     max-width: 100%;
     height: auto;
-    max-height: var(--tasks-modal-max-height);
-    border: 1px solid var(--app-modal-border);
-    border-top: 0;
-    border-radius: 0 0 calc(var(--app-modal-radius) * 2) calc(var(--app-modal-radius) * 2);
+    max-height: min(100%, var(--tasks-modal-max-height));
 }
 
 .tasks-modal.app-modal-panel.app-modal-panel--compact .tasks-modal__form,
 .page-container.full-width .tasks-modal.app-modal-panel.app-modal-panel--compact .tasks-modal__form {
     flex: 0 1 auto;
     height: auto;
-    max-height: var(--tasks-modal-max-height);
+    max-height: 100%;
 }
 
 .tasks-modal.app-modal-panel--compact .tasks-modal__header,
@@ -1326,14 +1307,12 @@
     padding-top: 0;
 }
 
-/* Confirmations and photo editors use the same small top panel. */
+/* Confirmations and photo editors share the centered floating shell. */
 .confirm-modal-overlay,
 .contacts-photo-editor-overlay {
-    --app-panel-enter-offset: -100%;
-
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 0 1rem 1rem;
+    padding: var(--app-panel-viewport-gap);
     box-sizing: border-box;
 }
 
@@ -1347,8 +1326,9 @@
 
 .confirm-modal-overlay .confirm-modal,
 .contacts-photo-editor-overlay .contacts-photo-editor-dialog {
-    border-top: 0;
-    border-radius: 0 0 calc(var(--app-modal-radius) * 2) calc(var(--app-modal-radius) * 2);
+    max-height: min(100%, var(--app-modal-max-height));
+    border: 1px solid var(--app-modal-border);
+    border-radius: calc(var(--app-modal-radius) * 2);
     transform: translateY(var(--app-panel-enter-offset));
     transition: transform var(--app-panel-motion-duration) var(--app-panel-motion-easing);
 }
@@ -1405,13 +1385,10 @@
     }
 }
 
-/* React image editors retain the established photo editor's top panel. */
+/* React image editors retain their width within the shared floating shell. */
 .tasks-modal.app-modal-panel.contacts-photo-editor-overlay,
 .page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay {
-    --app-panel-enter-offset: -100%;
     z-index: 2100;
-    align-items: flex-start;
-    padding: 0 1rem 1rem;
 }
 
 .tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog,
@@ -1419,27 +1396,13 @@
     width: min(1120px, 100%);
     max-width: 100%;
     height: auto;
-    max-height: calc(var(--app-dynamic-viewport-height) - 2rem);
-    border: 0;
-    border-radius: 0 0 calc(var(--app-modal-radius) * 2) calc(var(--app-modal-radius) * 2);
+    max-height: 100%;
 }
 
 .tasks-modal.app-modal-panel.contacts-photo-editor-overlay .tasks-modal__form,
 .page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay .tasks-modal__form {
     flex: 0 1 auto;
     height: auto;
-}
-
-@media (max-width: 720px) {
-    .tasks-modal.app-modal-panel.contacts-photo-editor-overlay,
-    .page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay {
-        padding: 0 0.5rem 0.5rem;
-    }
-
-    .tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog,
-    .page-container.full-width .tasks-modal.app-modal-panel.contacts-photo-editor-overlay > .contacts-photo-editor-dialog {
-        max-height: calc(var(--app-dynamic-viewport-height) - 1rem);
-    }
 }
 
 /* The routed template editor shares the form panel shell. */
