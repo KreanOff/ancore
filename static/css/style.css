@@ -368,6 +368,21 @@ body :focus-visible {
     outline-offset: calc(-2px / var(--app-ui-scale, 1)) !important;
 }
 
+/* Text entry and confirmation buttons keep their regular borders.
+   Keep the system focus indicator available in high-contrast mode. */
+@media not (forced-colors: active) {
+    body :is(
+        input:not([type]),
+        input:is([type="text"], [type="search"], [type="email"], [type="url"],
+            [type="tel"], [type="password"], [type="number"], [type="date"],
+            [type="time"], [type="datetime-local"], [type="month"], [type="week"]),
+        textarea
+    ):focus-visible,
+    body :is(.confirm-modal, .app-confirmation-modal) button:focus-visible {
+        outline: none !important;
+    }
+}
+
 /* A checked checkbox shares the accent background. Separate its indicator
    from the control so it remains visible in every selection state. */
 body input:is([type="checkbox"], [type="radio"]):focus-visible {

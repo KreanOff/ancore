@@ -458,6 +458,7 @@ export default function AccessEditor<T extends AccessTeam>({
         <Modal
           title={confirmation.title}
           size="compact"
+          className="app-confirmation-modal"
           hostId={hostId}
           pending={pending}
           onClose={() => void closeAction()}
