@@ -45,8 +45,8 @@ Schemat formularza:
 │ Opis                                                         │
 │ Pozostałe pola w dwóch kolumnach; na telefonie jedna           │
 │ Błędy przy polach; przewijana treść                            │
-├──────────────────────────────────────────────────────────────┤
-│ Anuluj    Zapisz                                              │
+│                                                              │
+│                                              Anuluj   Zapisz │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -120,8 +120,12 @@ referencyjnym przy tej samej szerokości, również po ponownym wejściu.
 
 ## Klawiatura i błędy formularzy
 
-Fokus klawiatury jest widoczny także w przewijanych listach, formularzach
-oraz na logowaniu. Wspólne `Dropdown` otwiera panel formularza strzałką
+Fokus klawiatury kontrolek jest widoczny także w przewijanych listach,
+formularzach oraz na logowaniu. Pola wpisywania tekstu, liczb i dat oraz
+wyszukiwarki w listach wyboru zachowują zwykłe obramowanie bez fioletowego
+obrysu aktywnego pola. Tak samo zachowują się przyciski w oknach potwierdzenia,
+w tym zamknięcie krzyżykiem; wyjątkiem jest systemowy tryb wymuszonych kolorów.
+Wspólne `Dropdown` otwiera panel formularza strzałką
 w dół na pierwszej widocznej kontrolce. Strzałki, Home i End nie przejmują
 edycji tekstu ani obsługi natywnego selecta. Panel osadzony w formularzu
 zamyka się po przeniesieniu fokusu poza niego, zachowując wartości pól.
@@ -490,7 +494,7 @@ pokazują zapisany kadr bez zmieniania przesłanego pliku. Domyślnie obraz
 jest wyśrodkowany bez dodatkowego powiększenia. Zalecany rozmiar obrazu
 to 1600 × 400 px.
 Osobny `BannerEditor` otwiera wspólny `Modal` w dużej powłoce edytora zdjęcia
-awatara: panel wysuwa się z góry, a pole z szachownicą zawiera prostokątny
+awatara: panel pływa pośrodku ekranu, a pole z szachownicą zawiera prostokątny
 kadr 4:1 z obrysem i przyciemnionym otoczeniem. Bez własnego obrazu i po
 „Usuń” pokazuje pusty podgląd „Wybierz baner użytkownika”. Stopka zawiera
 „Usuń”, „Zmień” i „Zapisz”. „Zmień” otwiera ukryty wybór pliku przyjmujący
@@ -2671,7 +2675,15 @@ tabelach i zakładkach. Checkboxy i radio mają obrys odsunięty o 2px na zewną
 aby był widoczny także na fioletowym zaznaczeniu i stanie pośrednim.
 W trybie wymuszonych kolorów używa systemowego
 `Highlight`. Dotyczy to także uwierzytelniania, formularzy i okien.
-Nie wyłączaj globalnie fokusu klawiatury i nie dodawaj lokalnej poświaty;
+Pola tekstowe, liczbowe, daty i `textarea`, w tym wyszukiwarki list wyboru,
+nie otrzymują tego obrysu w zwykłym trybie kolorów. Zachowują dotychczasowe
+obramowania, kolory błędów i fokus. Przyciski potwierdzenia, anulowania
+i zamknięcia w `.confirm-modal` również nie otrzymują fioletowego obrysu;
+zachowują dotychczasowe tła interakcji i obsługę klawiatury.
+Potwierdzenia zbudowane przez wspólny `Modal` stosują w tym celu klasę
+`app-confirmation-modal`, m.in. zmiany dostępu i usuwanie konfiguracji Przestrzeni.
+Pozostałe przyciski, opcje, checkboxy i radio nadal używają wskaźnika klawiatury.
+Nie wyłączaj fokusu pozostałych kontrolek i nie dodawaj lokalnej poświaty;
 tokeny cieni `--focus-ring` i `--checkbox-focus-ring` nadal mają wartość `none`.
 Zwykłe obramowania i geometria kontrolek pozostają bez zmian.
 
@@ -3222,20 +3234,25 @@ projektów, kontaktów/firm, wydarzeń, Workspace, profilu oraz formularzy Dysku
 i Dokumentów. Wariant jest jawnie oznaczony w szablonach; nie wymaga nowej
 inicjalizacji JS i działa również po częściowej nawigacji oraz błędach formularza.
 
-Panel jest wyśrodkowany poziomo względem całego ekranu, niezależnie od
+Panel jest wyśrodkowany poziomo i pionowo względem całego ekranu, niezależnie od
 szerokości i stanu menu bocznego. Zachowuje dotychczasową szerokość na desktopie:
 `calc(100vw - clamp(64px, 13.5vw, 280px) - 16px)`, ograniczoną dostępnym
-obszarem. Od góry pozostaje 24px, a panel dochodzi do dolnej krawędzi ekranu.
-Odstępy po lewej i prawej są równe. Zachowuje dotychczasowe zaokrąglenie
-tylko górnych rogów oraz brak dolnego obramowania.
+obszarem. Wysokość dopasowuje się do treści, z minimum 24px odstępu od góry
+i dołu; dłuższy formularz przewija się wewnątrz okna. Odstępy po lewej
+i prawej oraz od góry i dołu są równe. Panel jest pływającą kartą z pełnym
+obramowaniem, czterema zaokrąglonymi rogami i wspólnym cieniem okna.
 Całe okno ma jednolite białe tło: `--app-panel-surface` wskazuje
 `--app-modal-surface` (`--card-bg`, `#ffffff`). Nagłówek, zakładki, obrzeża,
 przewijana treść i stopka mają ten sam kolor; treść zachowuje odstępy 24px.
-Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po lewej.
+Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po prawej.
+Stopka łączy się z treścią bez poziomej linii ani osobnego obramowania.
+Dotyczy to dużych i małych okien, potwierdzeń, profilu i edytorów zdjęć;
+przyciski są wyrównane do prawej, z zachowaną kolejnością i działaniem.
 Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, fioletowe
 akcje, kontrolki, obsługa fokusu, Escape, list wyboru i zapisu korzystają
-z dotychczasowych mechanizmów. Panel wysuwa się od dołu i chowa w dół
-w 320ms, z łagodnym wyhamowaniem i zmianą przyciemnienia tła. CSS używa
+z dotychczasowych mechanizmów. Panel pojawia się i znika z krótkim pionowym
+przesunięciem równym `--app-panel-viewport-gap` w 320ms, z łagodnym wyhamowaniem
+i zmianą przyciemnienia tła. CSS używa
 `@starting-style` oraz dyskretnego przejścia `display`, więc usunięcie
 `is-open`/`active` pozostawia okno widoczne do końca animacji. Szybkie ponowne
 otwarcie odwraca ruch bez opóźnionych callbacków. W Dysku i Dokumentach
@@ -3283,8 +3300,9 @@ zachowują dotychczasowe mechanizmy. Wariant dotyczy formularzy, nie tabel
 udostępniania, podglądów plików ani edytorów w szczegółach zadania.
 
 Do 720px pola i nazwa z widocznością przechodzą do jednej kolumny; do 600px
-awatar znajduje się nad polami. Do 900px panel ma 16px odstępu od góry i po
-20px z boków, a do 600px wypełnia ekran, z odstępami treści 12px, większą
+awatar znajduje się nad polami. Do 900px panel ma minimum 16px odstępu od góry
+i dołu oraz po 20px z boków. Do 600px pozostaje pływającą kartą z minimum 12px
+odstępu od każdej krawędzi, z odstępami treści 12px, większą
 stopką przy zawijaniu akcji i uwzględnieniem bezpiecznego obszaru ekranu.
 
 Okna „Informacje” oraz „Notatki” projektów, grup i tagów w Zadaniach oraz
@@ -3295,28 +3313,31 @@ bez osobnego przewijania listy. Okna mają stałą stopkę „Zamknij” oraz
 dotychczasowe zamykanie krzyżykiem i Escape, fokus i obsługę zapisu.
 
 Małe okna formularzy używają `app-modal-panel app-modal-panel--compact`,
-jak „Utwórz pulpit”, „Dodaj osobę”, „Zmień rolę” oraz wybór awatara. Są wyśrodkowane poziomo i przylegają do górnej krawędzi
-ekranu, z wysokością dopasowaną do treści oraz szerokością do 760px.
-Wysuwają się od góry i chowają w górę w 320ms, z tą samą krzywą ruchu
-co duże panele. `--app-panel-enter-offset` określa kierunek: `100%` dla
-dużego panelu i `-100%` dla małego. Mały panel ma zaokrąglone tylko dolne
-rogi i brak górnego obramowania; powierzchnie, nagłówek i stopkę dziedziczy
+jak „Utwórz pulpit”, „Dodaj osobę”, „Zmień rolę” oraz wybór awatara.
+Są wyśrodkowane poziomo i pionowo względem całego ekranu, z wysokością
+dopasowaną do treści oraz szerokością do 760px. Dziedziczą odstęp od każdej
+krawędzi jak duże panele: minimum 24px, do 900px — 16px, do 600px — 12px.
+Wysokość jest ograniczona również dostępnym obszarem wewnątrz tych odstępów.
+Pojawiają się i znikają z krótkim przesunięciem `--app-panel-enter-offset`
+równym `var(--app-panel-viewport-gap)` w 320ms, jak duże panele.
+Mały panel ma cztery zaokrąglone rogi, pełne obramowanie i wspólny cień;
+powierzchnie, nagłówek i stopkę dziedziczy
 po panelu „Edytuj miejsce pracy”.
 `AncoreTaskModals` kończy zamykanie małego formularza po zakończeniu ruchu,
 zanim moduł usunie jego HTML. Ponowne otwarcie anuluje poprzednie sprzątanie
 i zachowuje pierwotny punkt powrotu fokusu.
-Ma jednolite białe tło nagłówka, przewijanej treści i stopki oraz akcje po lewej. Etykiety pozostają
+Ma jednolite białe tło nagłówka, przewijanej treści i stopki oraz akcje po prawej. Etykiety pozostają
 nad kontrolkami; w formularzu dodawania osoby konto i rola są obok siebie. Długi tytuł zawija się.
 Na telefonie zachowuje margines od krawędzi, a stopka może zawijać akcje.
 Potwierdzenia `showConfirmModal` i edytory zdjęć konta, firmy oraz logo Workspace
-korzystają z tego samego małego panelu przy górnej krawędzi oraz reguł
+korzystają z tego samego wyśrodkowanego, pływającego panelu oraz reguł
 powierzchni, nagłówka, białej treści i stopki w `modal-system.css`, zachowując
 własne szerokości i mechanizmy otwierania. Potwierdzenie jest usuwane z DOM
 po zakończeniu ruchu, a powrót fokusu następuje po zamknięciu. Kadrowanie
 używa istniejącego atrybutu `hidden` i dyskretnego przejścia `display`.
 `prefers-reduced-motion` wyłącza ruch również w małych oknach.
 Nagłówki mają minimum 72px i tekst 20px/400; stopki minimum 68px oraz akcje
-po lewej. Do 600px jest to odpowiednio 60px, 18px i 60px, z odstępami 12px.
+po prawej. Do 600px jest to odpowiednio 60px, 18px i 60px, z odstępami 12px.
 Długie komunikaty przewijają się w treści, a przyciski potwierdzeń mogą się
 zawijać. Potwierdzenia mają krzyżyk zamykania bez wykonania operacji;
 Tab obejmuje krzyżyk i oba przyciski, a Escape i powrót fokusu działają jak wcześniej.
