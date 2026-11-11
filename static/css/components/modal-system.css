@@ -1551,18 +1551,25 @@
 }
 
 :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: min(180px, 32%) minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--app-modal-field-gap);
+    row-gap: 6px;
     min-width: 0;
     margin: 0;
 }
 
-:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > :is(label, .form-label) {
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > :is(label, .form-label, .app-field-label) {
+    display: flex;
+    align-items: center;
+    align-self: start;
+    min-height: var(--app-modal-control-height);
     padding: 0;
     margin: 0;
-    grid-column: auto;
+    grid-column: 1;
+    grid-row: 1;
+    overflow-wrap: anywhere;
 }
 
 .tasks-modal.app-modal-panel .tasks-form-field > .app-field-label {
@@ -1571,11 +1578,28 @@
     margin: 0;
 }
 
-:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > :not(label),
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > :not(label, .form-label, .app-field-label) {
+    grid-column: 2;
+    min-width: 0;
+}
+
+/* Keep the React host as one control cell, just like a direct Django widget. */
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout :is(.tasks-form-field, .app-form-field) > .react-field-control {
+    display: grid;
+    align-items: center;
+    min-height: var(--app-modal-control-height);
+}
+
 :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout .react-field-control > *,
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout .ancore-custom-select__source,
 :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading > * {
     grid-column: auto;
     min-width: 0;
+}
+
+/* Combined checkbox labels already contain their control. */
+:is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-layout .app-form-field > .form-label--checkbox {
+    grid-column: 1 / -1;
 }
 
 :is(.tasks-modal.app-modal-panel, .profile-edit-overlay.app-modal-panel, .space-settings-page) .app-form-heading .tasks-form-field {

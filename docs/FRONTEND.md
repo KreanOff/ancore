@@ -742,6 +742,9 @@ Usunięcie kontrolek nie usuwa endpointów ani zasad uprawnień backendu.
 
 Formularze modalne współdzielą `forms/FormDialog.tsx`: `FormLayout` układa
 nazwę/tytuł i opcjonalną widoczność, pełny opis oraz pozostałe pola parami.
+Etykiety są po lewej stronie kontrolek również na wąskich ekranach, a błędy
+pod kontrolkami. Wspólny CSS obejmuje `FieldLabel`, zwykłe etykiety i pierwszy
+render Django; host `react-field-control` zajmuje jedną komórkę siatki pola.
 `FormFields` włącza ten układ przez `layout`; domyślny wariant pozostaje
 bez kontenera dla konfiguracji i osadzonych kontrolek. `PulpitFields` oraz
 zakładki Filtrów zachowują warunkową widoczność swoich pól we wspólnym układzie.

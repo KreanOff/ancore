@@ -41,10 +41,11 @@ Schemat formularza:
 ┌──────────────────────────────────────────────────────────────┐
 │ Tytuł okna                                          Zamknij   │
 ├──────────────────────────────────────────────────────────────┤
-│ Nazwa / tytuł                     Widoczność (jeśli jest)      │
-│ Opis                                                         │
-│ Pozostałe pola w dwóch kolumnach; na telefonie jedna           │
-│ Błędy przy polach; przewijana treść                            │
+│ Tytuł [pole]                      Widoczność [wybór]           │
+│ Opis  [pole wielowierszowe]                                   │
+│ Etykieta [kontrolka]              Etykieta [kontrolka]         │
+│ Na telefonie jedna para w wierszu; etykieta nadal po lewej     │
+│ Błędy pod kontrolkami; przewijana treść                        │
 │                                                              │
 │                                              Anuluj   Zapisz │
 └──────────────────────────────────────────────────────────────┘
@@ -3268,9 +3269,14 @@ w `modal-system.css`. Pierwszy wiersz `app-form-heading` zawiera nazwę/tytuł
 oraz widoczność po prawej, jeżeli formularz udostępnia to pole. Bez widoczności
 nazwa wypełnia wiersz. Opis zajmuje pełną szerokość bezpośrednio pod nazwą;
 dotyczy to także celu sprintu, notatek Zasobu i Bio profilu. Pozostałe pola
-tworzą dwie równe kolumny z odstępem `--app-modal-field-gap`. Etykiety pozostają
-widoczne nad kontrolkami, a błędy pod właściwym polem. Pomoc przy polu nie
-zajmuje osobnego wiersza: znak „!” obok etykiety otwiera dymek po najechaniu
+tworzą dwie równe kolumny z odstępem `--app-modal-field-gap`. Etykiety są
+po lewej stronie kontrolek, także na telefonie; ich kolumna zajmuje do 32%
+szerokości pola, maksymalnie 180px, a długie nazwy mogą się zawijać.
+Etykieta opisu jest wyrównana do pierwszego wiersza kontrolki. Błędy zajmują
+kolumnę kontrolki pod właściwym polem. Dotyczy to wspólnego renderowania
+React i Django; etykiety zawierające checkbox zachowują swój układ inline.
+Pomoc przy polu nie zajmuje osobnego wiersza: znak „!” obok etykiety otwiera
+dymek po najechaniu
 lub fokusie, a kliknięcie/dotknięcie utrzymuje go do zamknięcia. Escape zamyka
 najpierw dymek; kliknięcie poza nim i zamknięcie formularza również go usuwają.
 Dymek zachowuje powiązanie `aria-describedby` z kontrolką i korzysta ze wspólnej
