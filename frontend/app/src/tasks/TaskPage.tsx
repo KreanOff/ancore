@@ -2,6 +2,7 @@ import { Toolbar } from '../shared/DirectoryToolbar';
 import { LoadMore } from '../shared/LoadMore';
 import { PageHeader } from '../shared/PageHeader';
 import { PageTabs } from '../shared/PageTabs';
+import { RightSidebarContent } from '../shared/RightSidebarContent';
 import { statusColorStyle } from '../shared/status-color';
 import { setPageLocation } from '../shared/page';
 import { useEffect, useRef, useState } from 'react';
@@ -34,12 +35,17 @@ const SIDE = [
   'due_at',
   'reminder_at',
 ];
+const taskField = (field: Field) => ({
+  ...field,
+  errors: [],
+  attrs: { ...field.attrs, form: 'space-task-form' },
+});
 export default function TaskPage(props: PageProps) {
   const { initial, csrfToken } = props;
   const [data, setData] = useState(initial.data as TaskData),
     [schema, setSchema] = useState(() => ({
       ...(initial.data as TaskData).form,
-      fields: (initial.data as TaskData).form.fields.map((field) => ({ ...field, errors: [] })),
+      fields: (initial.data as TaskData).form.fields.map(taskField),
     })),
     [tab, setTab] = useState((initial.data as TaskData).tab),
     [busy, setBusy] = useState(false),
@@ -72,7 +78,7 @@ export default function TaskPage(props: PageProps) {
       return added.length
         ? {
             ...current,
-            fields: [...current.fields, ...added.map((field) => ({ ...field, errors: [] }))],
+            fields: [...current.fields, ...added.map(taskField)],
           }
         : current;
     });
@@ -304,6 +310,31 @@ export default function TaskPage(props: PageProps) {
       </div>
     );
   }
+  const errorBanner =
+    error || auto.error ? (
+      <div className="tasks-error-banner" role="alert">
+        <span>{error || auto.error}</span>
+        {error && refreshFailed ? (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={busy}
+            onClick={() => void retryRefresh()}
+          >
+            Odśwież zadanie
+          </button>
+        ) : auto.error ? (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={auto.pending}
+            onClick={() => void auto.save()}
+          >
+            Spróbuj ponownie
+          </button>
+        ) : null}
+      </div>
+    ) : null;
   return (
     <div
       className={`tasks-page tasks-issue-page work-task-page ${data.can_edit ? '' : 'tasks-issue-form--readonly'}`}
@@ -377,32 +408,10 @@ export default function TaskPage(props: PageProps) {
         <span className="u-sr-only" role="status" aria-live="polite">
           {auto.notice}
         </span>
-        {error || auto.error ? (
-          <div className="tasks-error-banner" role="alert">
-            <span>{error || auto.error}</span>
-            {error && refreshFailed ? (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={busy}
-                onClick={() => void retryRefresh()}
-              >
-                Odśwież zadanie
-              </button>
-            ) : auto.error ? (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={auto.pending}
-                onClick={() => void auto.save()}
-              >
-                Spróbuj ponownie
-              </button>
-            ) : null}
-          </div>
-        ) : null}
+        {errorBanner}
         <form
           ref={form}
+          id="space-task-form"
           className="react-task-form"
           onSubmit={(event) => {
             event.preventDefault();
@@ -882,7 +891,7 @@ export default function TaskPage(props: PageProps) {
                   {data.visibility === 'public' ? (
                     <p className="workplace-team__hint">
                       Zadanie publiczne dziedziczy dostęp z przestrzeni i zadania nadrzędnego. Aby
-                      udostępniać wybranym osobom, zapisz widoczność „Prywatne” w zakładce „Główna”.
+                      udostępniać wybranym osobom, zapisz widoczność „Prywatne” w prawym panelu.
                     </p>
                   ) : null}
                   <Members members={data.team.members} busy={busy} />
@@ -905,93 +914,103 @@ export default function TaskPage(props: PageProps) {
                 </section>
               </div>
             </main>
-            <aside className="tasks-issue-sidebar" aria-label="Szczegóły zadania">
-              <TaskWorkflowActions
-                item={data.item}
-                canEdit={data.can_edit}
-                disabled={busy || auto.pending || auto.refreshRequired}
-                pending={auto.pending && !!auto.requestedStatus}
-                requestedStatus={auto.requestedStatus}
-                onTransition={(status) => void auto.changeStatus(status)}
-                errors={auto.errors.status}
-              />
-              <section className="tasks-issue-side-section" aria-label="Widoczność zadania">
-                {field('visibility')}
-              </section>
-              <section className="tasks-issue-side-section" aria-label="Właściwości zadania">
-                <TaskWorkflowStatus item={data.item} />
-                {['priority', 'assignee', 'work_type', 'task_type', 'task_group', 'tags'].map(
-                  (name) => (
-                    <div key={name} className="react-field-slot">
-                      {field(name)}
-                    </div>
-                  ),
-                )}
-              </section>
-              <section
-                className="tasks-issue-side-section"
-                aria-label="Pola dodatkowe i planowanie"
-                hidden={!planningFields.some(visiblePlanningField)}
+            <RightSidebarContent>
+              <div
+                className={`work-task-sidebar ${data.can_edit ? '' : 'tasks-issue-form--readonly'}`}
               >
-                {planningFields.map((value) => (
-                  <div hidden={!visiblePlanningField(value)} key={value.name}>
-                    {field(value.name)}
-                  </div>
-                ))}
-              </section>
-              <section className="tasks-issue-side-section" aria-label="Terminy zadania">
-                {field('start_at')}
-                {field('due_at')}
-                {field('reminder_at')}
-              </section>
-              <section className="tasks-issue-side-section" aria-label="Informacje o zadaniu">
-                <div className="tasks-issue-field">
-                  <span className="tasks-issue-field-label">ID zadania</span>
-                  <strong className="tasks-issue-code">
-                    <span className="tasks-issue-code__value">{data.item.key}</span>
-                    <span className="tasks-issue-code__actions">
-                      <button
-                        type="button"
-                        className="tasks-issue-code__button"
-                        aria-label="Kopiuj ID zadania"
-                        onClick={() => {
-                          void copyText(data.item.key)
-                            .then(() =>
-                              window.showNotification?.('Skopiowano ID zadania.', 'success'),
-                            )
-                            .catch(() => setError('Nie udało się skopiować ID.'));
-                        }}
-                      >
-                        <Icon name="copy" />
-                      </button>
-                    </span>
-                  </strong>
-                </div>
-                <div className="tasks-issue-field">
-                  <span className="tasks-issue-field-label">Utworzył</span>
-                  <strong className="tasks-issue-person">
-                    {data.created_by ? (
-                      <>
-                        <Avatar data={data.created_by.avatar} className="tasks-issue-mini-avatar" />
-                        {data.created_by.name}
-                      </>
-                    ) : (
-                      'System'
+                <aside className="tasks-issue-sidebar" aria-label="Szczegóły zadania">
+                  <div className="work-task-sidebar__feedback">{errorBanner}</div>
+                  <TaskWorkflowActions
+                    item={data.item}
+                    canEdit={data.can_edit}
+                    disabled={busy || auto.pending || auto.refreshRequired}
+                    pending={auto.pending && !!auto.requestedStatus}
+                    requestedStatus={auto.requestedStatus}
+                    onTransition={(status) => void auto.changeStatus(status)}
+                    errors={auto.errors.status}
+                  />
+                  <section className="tasks-issue-side-section" aria-label="Widoczność zadania">
+                    {field('visibility')}
+                  </section>
+                  <section className="tasks-issue-side-section" aria-label="Właściwości zadania">
+                    <TaskWorkflowStatus item={data.item} />
+                    {['priority', 'assignee', 'work_type', 'task_type', 'task_group', 'tags'].map(
+                      (name) => (
+                        <div key={name} className="react-field-slot">
+                          {field(name)}
+                        </div>
+                      ),
                     )}
-                  </strong>
-                </div>
-                <div className="tasks-issue-field">
-                  <span className="tasks-issue-field-label">Utworzono</span>
-                  <strong>{dateLabel(data.created_at, true)}</strong>
-                </div>
-                <div className="tasks-issue-field">
-                  <span className="tasks-issue-field-label">Zamknięto</span>
-                  <strong className="tasks-issue-muted">
-                    {dateLabel(data.completion_date, true) || 'Nie zamknięto'}
-                  </strong>
-                </div>
-              </section>
-            </aside>
+                  </section>
+                  <section
+                    className="tasks-issue-side-section"
+                    aria-label="Pola dodatkowe i planowanie"
+                    hidden={!planningFields.some(visiblePlanningField)}
+                  >
+                    {planningFields.map((value) => (
+                      <div hidden={!visiblePlanningField(value)} key={value.name}>
+                        {field(value.name)}
+                      </div>
+                    ))}
+                  </section>
+                  <section className="tasks-issue-side-section" aria-label="Terminy zadania">
+                    {field('start_at')}
+                    {field('due_at')}
+                    {field('reminder_at')}
+                  </section>
+                  <section className="tasks-issue-side-section" aria-label="Informacje o zadaniu">
+                    <div className="tasks-issue-field">
+                      <span className="tasks-issue-field-label">ID zadania</span>
+                      <strong className="tasks-issue-code">
+                        <span className="tasks-issue-code__value">{data.item.key}</span>
+                        <span className="tasks-issue-code__actions">
+                          <button
+                            type="button"
+                            className="tasks-issue-code__button"
+                            aria-label="Kopiuj ID zadania"
+                            onClick={() => {
+                              void copyText(data.item.key)
+                                .then(() =>
+                                  window.showNotification?.('Skopiowano ID zadania.', 'success'),
+                                )
+                                .catch(() => setError('Nie udało się skopiować ID.'));
+                            }}
+                          >
+                            <Icon name="copy" />
+                          </button>
+                        </span>
+                      </strong>
+                    </div>
+                    <div className="tasks-issue-field">
+                      <span className="tasks-issue-field-label">Utworzył</span>
+                      <strong className="tasks-issue-person">
+                        {data.created_by ? (
+                          <>
+                            <Avatar
+                              data={data.created_by.avatar}
+                              className="tasks-issue-mini-avatar"
+                            />
+                            {data.created_by.name}
+                          </>
+                        ) : (
+                          'System'
+                        )}
+                      </strong>
+                    </div>
+                    <div className="tasks-issue-field">
+                      <span className="tasks-issue-field-label">Utworzono</span>
+                      <strong>{dateLabel(data.created_at, true)}</strong>
+                    </div>
+                    <div className="tasks-issue-field">
+                      <span className="tasks-issue-field-label">Zamknięto</span>
+                      <strong className="tasks-issue-muted">
+                        {dateLabel(data.completion_date, true) || 'Nie zamknięto'}
+                      </strong>
+                    </div>
+                  </section>
+                </aside>
+              </div>
+            </RightSidebarContent>
           </div>
         </form>
       </div>

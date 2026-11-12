@@ -59,14 +59,39 @@
                 if (!['space-settings', 'pulpit-settings'].includes('{{ sidebar_mode|default:"workspace"|escapejs }}') && window.localStorage.getItem('ancoreSidebarCollapsed') === 'true' && window.innerWidth > 767) {
                     root.classList.add('sidebar-collapsed');
                 }
+                if (window.localStorage.getItem('ancoreRightSidebarCollapsed') === 'true') {
+                    root.classList.add('right-sidebar-collapsed');
+                }
             } catch (error) {
                 // The sidebar remains expanded when localStorage is unavailable.
             }
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261111-form-labels-left">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261112-right-sidebar-resize">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
+    <script>
+        (function () {
+            try {
+                var savedWidth = JSON.parse(window.localStorage.getItem('ancoreRightSidebarWidth'));
+                if (typeof savedWidth !== 'number' || !Number.isFinite(savedWidth) || savedWidth < 240 || savedWidth > 520) return;
+                var root = document.documentElement;
+                var style = window.getComputedStyle(root);
+                var maximum = 520;
+                if (window.innerWidth > 1100) {
+                    var scale = parseFloat(style.getPropertyValue('--app-ui-scale')) || 1;
+                    var gap = parseFloat(style.getPropertyValue('--app-shell-gap')) || 4;
+                    var leftWidth = root.classList.contains('sidebar-collapsed')
+                        ? parseFloat(style.getPropertyValue('--sidebar-collapsed-width')) || 64
+                        : parseFloat(style.getPropertyValue('--sidebar-width')) || 272;
+                    maximum = Math.min(520, Math.max(240, Math.floor(window.innerWidth / scale - leftWidth - 4 * gap - 360)));
+                }
+                root.style.setProperty('--app-right-sidebar-user-width', Math.min(maximum, Math.max(240, savedWidth)) + 'px');
+            } catch (error) {
+                // Keep the default width when preferences are unavailable or invalid.
+            }
+        })();
+    </script>
     {% block extra_head %}{% endblock %}
     {% if frontend_bootstrap or request.user.is_authenticated %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261101-task-workflow-actions">{% react_bundle %}{% endif %}
 </head>
@@ -75,6 +100,9 @@
         (function () {
             if (document.documentElement.classList.contains('sidebar-collapsed')) {
                 document.body.classList.add('sidebar-collapsed');
+            }
+            if (document.documentElement.classList.contains('right-sidebar-collapsed')) {
+                document.body.classList.add('right-sidebar-collapsed');
             }
 
             if (document.documentElement.classList.contains('app-page-loading')) {
@@ -180,7 +208,7 @@
             </aside>
         </form>
         {% if global_panels %}</div>{% endif %}
-        <nav class="app-topbar__actions" aria-label="Notatka, powiadomienia i konto">
+        <nav class="app-topbar__actions" aria-label="Notatka, powiadomienia, konto i panel boczny">
             {% if global_panels %}<span id="app-global-actions-host" style="display: contents">{% endif %}
             <button type="button" class="tasks-icon-button app-topbar__action" aria-label="Sticker" title="Sticker" aria-controls="app-sticky-note" aria-expanded="false" data-sticky-note-toggle>
                 <i data-icon="sticky-note" aria-hidden="true"></i>
@@ -198,6 +226,9 @@
                 {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='app-topbar__avatar' only %}
                 <span class="app-topbar__username">{{ request.user.get_full_name|default:request.user.username }}</span>
             </a>
+            <button type="button" class="tasks-icon-button app-topbar__action app-topbar__right-sidebar-toggle" aria-label="Zwiń prawy panel boczny" title="Zwiń prawy panel boczny" aria-controls="app-right-sidebar" aria-expanded="true" data-right-sidebar-toggle>
+                <i data-icon="panel-right" aria-hidden="true"></i>
+            </button>
         </nav>
     </header>
     <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
@@ -304,6 +335,7 @@
         </header>
         <nav class="sidebar-collapsed-flyout__links" aria-label="Podmenu" data-sidebar-collapsed-flyout-links></nav>
     </div>
+    <div id="right-sidebar-backdrop" class="right-sidebar-backdrop" aria-hidden="true"></div>
     {% if global_panels %}
     {{ global_panels|json_script:'ancore-global-panels-data' }}
     {% endif %}
@@ -328,6 +360,9 @@
         </div>
     </div>
     {% if global_panels %}</div>{% endif %}
+    <aside id="app-right-sidebar" class="app-right-sidebar" aria-label="Prawy panel boczny" tabindex="-1">
+        <div id="app-right-sidebar-content"><div data-right-sidebar-fallback>{% block right_sidebar %}{% default_today_sidebar %}{% endblock %}</div></div>
+    </aside>
     {% endblock %}
     <main class="main-content">
         <div class="page-container {% block page_container_class %}{% endblock %}">

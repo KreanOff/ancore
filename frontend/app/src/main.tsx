@@ -66,6 +66,7 @@ async function preparePage(envelope: NavigationEnvelope) {
 }
 function renderPage(envelope: NavigationEnvelope) {
   unmount();
+  document.querySelector('[data-right-sidebar-fallback]')?.remove();
   const container = document.querySelector<HTMLElement>('.main-content .page-container')!;
   container.className = 'page-container full-width';
   const host = document.createElement('div'),
@@ -143,6 +144,7 @@ async function mount() {
     document.querySelector('[data-resource-modal-host]')?.replaceChildren();
     if (host.dataset.reactRoot === 'page')
       document.getElementById('app-page-modals')?.replaceChildren();
+    document.querySelector('[data-right-sidebar-fallback]')?.remove();
     const root = createRoot(host);
     roots.set(host, root);
     root.render(<FrontendBoundary>{content}</FrontendBoundary>);

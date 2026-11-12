@@ -83,51 +83,15 @@
                     </section>
                 </div>
             </main>
-            <aside class="tasks-issue-sidebar" aria-label="Szczegóły zadania">
-                {% if can_edit_task %}<section class="tasks-issue-side-section task-workflow-actions" aria-label="Zmiana etapu zadania">
-                    {% if item.transitions %}
-                    <form method="post" class="task-workflow__transitions" aria-label="Dostępne przejścia" data-space-task-transition>
-                        {% csrf_token %}<input type="hidden" name="action" value="save"><input type="hidden" name="autosave_fields" value='["status"]'><input type="hidden" name="source_status" value="{{ item.status }}"><input type="hidden" name="source_in_backlog" value="{{ item.in_backlog|yesno:'true,false' }}">
-                        {% for status in item.transitions %}<button type="submit" name="status" value="{{ status.key }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight task-workflow__transition" aria-label="Przejdź do: {{ status.label }}" title="{% if status.policy %}{{ status.policy }}{% else %}Przejdź do: {{ status.label }}{% endif %}"><span class="status-indicator status-{{ status.category }}" style="{{ status|status_style }}" aria-hidden="true"></span><span>{{ status.label }}</span></button>{% endfor %}
-                    </form>
-                    {% else %}<p class="task-workflow__hint">Brak dalszych przejść.</p>{% endif %}
-                    {{ form.status.errors }}
-                </section>{% endif %}
-                <section class="tasks-issue-side-section" aria-label="Widoczność zadania">
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.visibility.id_for_label }}">Widoczność</label></span>
-                        {{ form.visibility }}{{ form.visibility.errors }}
-                    </div>
-                </section>
-                <section class="tasks-issue-side-section" aria-label="Właściwości zadania">
-                    <div class="tasks-issue-field task-workflow-field"><span class="tasks-issue-field-label" id="task-workflow-label">Etap zadania</span>
-                        <div class="task-workflow__current" aria-label="Bieżący etap: {{ item.status_label }}"><span class="status-indicator status-{{ task.status }}" style="{{ item.status_color|status_style }}" aria-hidden="true"></span><span>{{ item.status_label }}</span></div>
-                    </div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_priority">Priorytet</label></span>
-                        <select id="id_priority" class="form-select" name="priority" form="space-task-form"{% if not can_edit_task %} disabled{% endif %}>{% for value, label in form.priority.field.choices %}<option value="{{ value }}" data-ancore-option-preview="space-priority-{{ value }}"{% if form.priority.value == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
-                        {% for value, label in form.priority.field.choices %}<template id="space-priority-{{ value }}"><span class="tasks-row-priority priority-{{ value }}">{% include 'core/includes/priority_icon.html' with priority=value only %}</span></template>{% endfor %}
-                        {{ form.priority.errors }}
-                    </div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_assignee">Przypisane do</label></span>{{ form.assignee }}{{ form.assignee.errors }}</div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_work_type">Typ zgłoszenia</label></span>{{ form.work_type }}{{ form.work_type.errors }}</div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_task_type">Kategoria</label></span>{{ form.task_type }}{{ form.task_type.errors }}</div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_task_group">Grupa</label></span>{{ form.task_group }}{{ form.task_group.errors }}</div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_tags">Tagi</label></span>{{ form.tags }}{{ form.tags.errors }}</div>
-                </section>
-                <section class="tasks-issue-side-section" aria-label="Terminy zadania">
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.start_at.id_for_label }}">{{ form.start_at.label }}</label></span>{{ form.start_at }}{{ form.start_at.errors }}</div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="{{ form.due_at.id_for_label }}">{{ form.due_at.label }}</label></span><div class="tasks-issue-due-control"><span class="tasks-row-date tasks-row-due" title="{{ form.due_at.label }}"><i data-icon="flame" aria-hidden="true"></i></span>{{ form.due_at }}{{ form.due_at.errors }}</div></div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label"><label for="id_reminder_at">Przypomnienie</label></span>{{ form.reminder_at }}{{ form.reminder_at.errors }}</div>
-                </section>
-                <section class="tasks-issue-side-section" aria-label="Informacje o zadaniu">
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">ID zadania</span><strong class="tasks-issue-code"><span class="tasks-issue-code__value">{{ item.key }}</span><span class="tasks-issue-code__actions"><button type="button" class="tasks-issue-code__button" data-space-task-copy="{{ item.key }}" aria-label="Kopiuj ID zadania" title="Kopiuj ID zadania"><i data-icon="copy" aria-hidden="true"></i></button></span></strong></div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">Utworzył</span><strong class="tasks-issue-person">{% if task.created_by %}{% user_avatar task.created_by as creator_avatar %}{% include 'accounts/includes/user_avatar.html' with avatar=creator_avatar avatar_class='tasks-issue-mini-avatar' only %}{{ task.created_by.get_full_name|default:task.created_by.email }}{% else %}System{% endif %}</strong></div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">Utworzono</span><strong>{{ task.created_at|date:'d.m.Y, H:i' }}</strong></div>
-                    <div class="tasks-issue-field"><span class="tasks-issue-field-label">Zamknięto</span><strong class="tasks-issue-muted" data-space-task-completion-date>{{ task.completion_date|date:'d.m.Y, H:i'|default:'Nie zamknięto' }}</strong></div>
-                </section>
 
-            </aside>
         </div>
     </div>
+</div>
+{% endblock %}
+
+{% block right_sidebar %}
+<div class="work-task-sidebar{% if not can_edit_task %} tasks-issue-form--readonly{% endif %}">
+    {% include 'spaces/task_sidebar.html' %}
 </div>
 {% endblock %}
 

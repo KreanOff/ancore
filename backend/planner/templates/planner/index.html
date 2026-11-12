@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261108-aligned-calendar-panel">
-<script src="{% static 'js/calendar.js' %}?v=20261108-search-only-toolbar" defer></script>
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261112-calendar-right-sidebar">
+<script src="{% static 'js/calendar.js' %}?v=20261112-calendar-right-sidebar" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -54,6 +54,21 @@
     </aside>
 {% endblock %}
 
+{% block right_sidebar %}
+<aside class="calendar-sidebar" id="calendar-agenda" aria-label="Lista wydarzeń">
+    <div class="calendar-sidebar-header">
+        <div class="calendar-agenda-heading">
+            <h3 class="calendar-sidebar-title" id="cal-agenda-title">Plan dnia</h3>
+            <button type="button" class="calendar-text-button" id="cal-agenda-mode">Cały okres</button>
+        </div>
+        <span class="calendar-sidebar-subtitle" id="cal-agenda-date"></span>
+        <span class="calendar-agenda-count" id="cal-agenda-count" aria-live="polite"></span>
+    </div>
+    <ul class="calendar-events-list" id="calendar-events-list"></ul>
+    <div class="calendar-sidebar-footer"><button type="button" class="tasks-filter-button" data-calendar-add><i data-icon="plus" aria-hidden="true"></i>Dodaj w tym dniu</button></div>
+</aside>
+{% endblock %}
+
 {% block content %}
 <div class="calendar-page tasks-page tasks-list-page">
     <section class="tasks-workspace calendar-workspace" aria-label="Kalendarz">
@@ -81,9 +96,6 @@
                 </button>
                 <span class="calendar-period-label" id="cal-period-label" aria-live="polite"></span>
                 <span class="calendar-filter-summary" id="cal-events-subtitle"></span>
-                <button type="button" class="tasks-icon-button" id="cal-toggle-agenda" title="Pokaż lub ukryj plan" aria-label="Pokaż lub ukryj plan" aria-expanded="true" aria-controls="calendar-agenda">
-                    <i data-icon="panel-right" aria-hidden="true"></i>
-                </button>
             </div>
             <div class="tasks-filterbar-right app-toolbar__search">
                 <label class="tasks-search-field calendar-search">
@@ -127,19 +139,6 @@
                         <div class="calendar-year-grid" id="calendar-year-grid"></div>
                     </div>
                 </div>
-
-                <aside class="calendar-sidebar" id="calendar-agenda" aria-label="Lista wydarzeń">
-                    <div class="calendar-sidebar-header">
-                        <div class="calendar-agenda-heading">
-                            <h3 class="calendar-sidebar-title" id="cal-agenda-title">Plan dnia</h3>
-                            <button type="button" class="calendar-text-button" id="cal-agenda-mode">Cały okres</button>
-                        </div>
-                        <span class="calendar-sidebar-subtitle" id="cal-agenda-date"></span>
-                        <span class="calendar-agenda-count" id="cal-agenda-count" aria-live="polite"></span>
-                    </div>
-                    <ul class="calendar-events-list" id="calendar-events-list"></ul>
-                    <div class="calendar-sidebar-footer"><button type="button" class="tasks-filter-button" data-calendar-add><i data-icon="plus" aria-hidden="true"></i>Dodaj w tym dniu</button></div>
-                </aside>
             </div>
         </div>
     </section>

@@ -45,6 +45,7 @@ export interface ShellData {
   url: string;
   navigation_url: string;
   refresh_url: string;
+  sidebar_url?: string;
   build_id: string;
   workplaces: { id: string; name: string; avatar: AvatarData; switch_url: string }[];
   profile: { name: string; avatar: AvatarData; url: string; active: boolean };

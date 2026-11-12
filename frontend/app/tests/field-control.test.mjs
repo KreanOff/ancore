@@ -152,6 +152,28 @@ test('a valid disabled checkbox group keeps its state without an invalid or dang
   assert.equal(input['aria-describedby'], undefined);
 });
 
+test('checkbox groups retain their external form owner for every choice', () => {
+  const group = renderInput({
+    name: 'custom_modules',
+    type: 'checkboxes',
+    attrs: { form: 'space-task-form' },
+    value: ['spaces'],
+    choices: [
+      { value: 'spaces', label: 'Przestrzenie' },
+      { value: 'documents', label: 'Dokumenty' },
+    ],
+  });
+  const choices = group.children.map((row) => row.children[0].children[0]);
+  assert.deepEqual(
+    choices.map((input) => input.form),
+    ['space-task-form', 'space-task-form'],
+  );
+  assert.deepEqual(
+    choices.map((input) => input.checked),
+    [true, false],
+  );
+});
+
 test('bare inline controls retain an accessible description when their visible label is omitted', () => {
   const { control, tree } = renderControl(
     { type: 'text', help_text: 'Wpisz tytuł zadania.' },

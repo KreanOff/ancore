@@ -173,7 +173,8 @@ export function useTaskSave(
           input instanceof HTMLTextAreaElement ||
           input instanceof HTMLSelectElement
         ) ||
-        !input.name
+        !input.name ||
+        input.form !== element
       )
         return;
       if (!initial.can_edit || !fieldNames.current.has(input.name)) return;
@@ -206,15 +207,16 @@ export function useTaskSave(
         event.returnValue = '';
       }
     }
-    element.addEventListener('input', change);
-    element.addEventListener('change', change);
+    // Task properties live in the shell panel and retain their native form owner.
+    document.addEventListener('input', change);
+    document.addEventListener('change', change);
     document.addEventListener('ancore:before-navigate', beforeNavigate);
     window.addEventListener('beforeunload', beforeUnload);
     return () => {
       clearTimeout(timer.current);
       life.current.abort();
-      element.removeEventListener('input', change);
-      element.removeEventListener('change', change);
+      document.removeEventListener('input', change);
+      document.removeEventListener('change', change);
       document.removeEventListener('ancore:before-navigate', beforeNavigate);
       window.removeEventListener('beforeunload', beforeUnload);
     };

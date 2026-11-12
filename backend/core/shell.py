@@ -28,6 +28,7 @@ def favorite_items(request, workplace):
 
 
 def shell_payload(request, context=None):
+    from planner.sidebar import sidebar_url
     data = dict(context) if context and 'available_workplaces' in context else {**current_workplace(request), **(context or {})}
     workplace = request.workplace
     resolver = request.resolver_match
@@ -84,6 +85,7 @@ def shell_payload(request, context=None):
         'account_id': str(request.user.pk), 'workplace_id': str(workplace.pk) if workplace else '',
         'read_only': read_only(request), 'disabled_modules': workplace.disabled_modules if workplace else [],
         'mode': mode, 'url': request.get_full_path(),
+        'sidebar_url': '' if data.get('disable_react_shell') else sidebar_url(request, data.get('sidebar_mode', 'workspace')),
         'space_settings': data.get('space_settings_sidebar'),
         'pulpit_settings': data.get('pulpit_settings_sidebar'),
         'navigation_url': scoped_workplace_app_path(workplace, 'api', 'v1/navigation/') if workplace else reverse('react-navigation'),

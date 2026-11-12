@@ -450,6 +450,9 @@ function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
           this.set('status', controls.status);
           if (controls.inBacklog) this.set('in_backlog', 'on');
           this.set('files', new File(['Treść'], 'notatka.txt'));
+          for (const input of inputs.values())
+            if (input.external && input.form === form && !input.disabled)
+              this.set(input.name, input.value);
         }
       }
     },
@@ -458,7 +461,10 @@ function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
     HTMLSelectElement: class extends Input {},
     setTimeout: () => 1,
     clearTimeout() {},
-    document: { addEventListener() {}, removeEventListener() {} },
+    document: {
+      addEventListener: (name, callback) => (listeners[name] = callback),
+      removeEventListener: (name) => delete listeners[name],
+    },
     window: { addEventListener() {}, removeEventListener() {} },
     pageRequest: async (_api, _url, _token, _signal, body) => {
       requests.push(body || 'GET');
@@ -492,8 +498,6 @@ function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
   };
   const form = {
     current: {
-      addEventListener: (name, callback) => (listeners[name] = callback),
-      removeEventListener() {},
       querySelector: () => fileInput,
     },
   };
@@ -508,6 +512,7 @@ function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
             fields: [
               { name: 'title', errors: [] },
               { name: 'in_backlog', errors: [] },
+              { name: 'custom_estimate', errors: [] },
             ],
           },
           can_edit: canEdit,
@@ -524,6 +529,7 @@ function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
   function input(name) {
     if (!inputs.has(name)) inputs.set(name, new Input(name));
     const element = inputs.get(name);
+    element.form = form.current;
     element.value = name === 'status' ? controls.status : controls.title || 'Nowy tytuł';
     return element;
   }
@@ -536,8 +542,54 @@ function autosaveHarness({ inBacklog = false, canEdit = true } = {}) {
     savedItem,
     change: (name) => listeners.input({ target: input(name) }),
     blur: (name) => listeners.change({ target: input(name) }),
+    externalChange(name, value, associated = true) {
+      const element = new Input(name);
+      element.value = value;
+      element.form = associated ? form.current : { id: 'another-form' };
+      element.external = true;
+      if (associated) inputs.set(name, element);
+      listeners.input({ target: element });
+      return element;
+    },
+    blurExternal: (element) => listeners.change({ target: element }),
   };
 }
+
+test('task autosave includes associated panel controls outside its DOM form and deduplicates blur', async () => {
+  const app = autosaveHarness();
+  app.controls.failRefresh = false;
+  const panelInput = app.externalChange('custom_estimate', '8');
+  app.change('title');
+  assert.equal(app.states[1], true);
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests[0].get('custom_estimate'), '8');
+  assert.equal(app.requests[0].get('title'), 'Nowy tytuł');
+  assert.deepEqual(JSON.parse(app.requests[0].get('autosave_fields')), [
+    'custom_estimate',
+    'title',
+  ]);
+  app.blurExternal(panelInput);
+  assert.equal(app.states[1], false, 'blur of a committed external field must stay clean');
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests.length, 2);
+});
+
+test('task autosave ignores same-named controls belonging to other forms', async () => {
+  const app = autosaveHarness();
+  const otherInput = app.externalChange('title', 'Tytuł z innego okna', false);
+  app.blurExternal(otherInput);
+  assert.equal(app.states[1], false);
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests.length, 0);
+});
+
+test('associated panel controls preserve read-only task permissions', async () => {
+  const app = autosaveHarness({ canEdit: false });
+  app.externalChange('custom_estimate', '8');
+  assert.equal(app.states[1], false);
+  assert.equal(await app.hook.save(), true);
+  assert.equal(app.requests.length, 0);
+});
 
 test('task transitions reject skipped stages and read-only changes before sending', async () => {
   const app = autosaveHarness();

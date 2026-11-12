@@ -63,6 +63,12 @@
     --secondary-menu-width: 252px;
     --secondary-menu-constrained-width: clamp(var(--secondary-menu-min-width), var(--secondary-menu-width), var(--secondary-menu-max-width));
     --app-sidebar-total-width: var(--sidebar-width);
+    --app-shell-gap: 4px;
+    --app-topbar-padding-y: 2px;
+    --app-shell-radius: 15px;
+    --app-right-sidebar-default-width: 272px;
+    --app-right-sidebar-width: var(--app-right-sidebar-default-width);
+    --app-task-sidebar-width: 370px;
     --page-max-width: 1200px;
     --page-title-font-size: 17px;
     --page-title-font-weight: 700;

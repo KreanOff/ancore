@@ -1,0 +1,16 @@
+{% if sidebar %}
+<div class="today-sidebar" data-today-sidebar>
+    <section class="today-sidebar__calendar" aria-label="Kalendarz">
+        <div class="today-sidebar__month-nav">
+            <span class="today-sidebar__month">{{ sidebar_month_label }}</span>
+            <a class="tasks-icon-button" href="{{ sidebar_previous_url }}" aria-label="Poprzedni miesiąc"><i data-icon="chevron-left" aria-hidden="true"></i></a>
+            <a class="tasks-icon-button" href="{{ sidebar_next_url }}" aria-label="Następny miesiąc"><i data-icon="chevron-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="today-sidebar__weekdays" aria-hidden="true"><span>Pon</span><span>Wto</span><span>Śro</span><span>Czw</span><span>Pią</span><span>Sob</span><span>Nie</span></div>
+        <div class="today-sidebar__days">
+            {% for day in sidebar_days %}<a class="today-sidebar__day{% if day.today %} is-today{% endif %}{% if day.outside %} is-outside{% endif %}" href="{{ day.url }}" aria-label="{{ day.label }}"{% if day.today %} aria-current="date"{% endif %}>{{ day.number }}</a>{% endfor %}
+        </div>
+        <a class="tasks-filter-button today-sidebar__today" href="{{ sidebar_today_url }}">Dzisiaj</a>
+    </section>
+</div>
+{% endif %}

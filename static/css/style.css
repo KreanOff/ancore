@@ -20,7 +20,7 @@
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/auth.css?v=20261112-login-wallpaper';
 @import 'components/workplaces.css?v=20261112-red-brand';
-@import 'calendar.css?v=20261108-aligned-calendar-panel';
+@import 'calendar.css?v=20261112-calendar-right-sidebar';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20261007-directory-controls';
 @import 'theme/elestio.css?v=20261025-shared-status-backgrounds';
@@ -34,6 +34,7 @@
 @import 'components/data-table.css?v=20261105-common-data-tables';
 @import 'components/load-more.css?v=20261105-load-more';
 @import 'components/app-toolbar.css?v=20261108-toolbar-views';
+@import 'layout/panels.css?v=20261112-right-sidebar-resize';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(

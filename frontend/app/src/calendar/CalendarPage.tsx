@@ -1,5 +1,6 @@
 import { Toolbar } from '../shared/DirectoryToolbar';
 import { PageHeader } from '../shared/PageHeader';
+import { openRightSidebar, RightSidebarContent } from '../shared/RightSidebarContent';
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../shared/Icon';
 import { type PageProps, navigate, pageRequest } from '../shared/page';
@@ -49,8 +50,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
     [loading, setLoading] = useState(false),
     [error, setError] = useState('');
   const [query, setQuery] = useState('');
-  const [agenda, setAgenda] = useState(true),
-    [wholePeriod, setWholePeriod] = useState(false),
+  const [wholePeriod, setWholePeriod] = useState(false),
     [revision, setRevision] = useState(0);
   const [editor, setEditor] = useState<{
     event: CalendarEvent | null;
@@ -234,7 +234,8 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                           onClick={(event) => {
                             event.stopPropagation();
                             chooseDate(date);
-                            setAgenda(true);
+                            setWholePeriod(false);
+                            openRightSidebar();
                           }}
                         >
                           +{onDay(date).length - 3} więcej
@@ -413,15 +414,6 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                   ? 'Wczytywanie…'
                   : `${views.find((item) => item[0] === view)?.[1]} · ${visible.length} pozycji`}
               </span>
-              <button
-                type="button"
-                className="tasks-icon-button"
-                aria-label="Pokaż lub ukryj plan"
-                aria-expanded={agenda}
-                onClick={() => setAgenda(!agenda)}
-              >
-                <Icon name="panel-right" />
-              </button>
             </>
           }
           search={
@@ -472,7 +464,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
           </div>
         ) : null}
         <div className="tasks-table-wrap calendar-shell">
-          <div className={`calendar-body ${agenda ? '' : 'calendar-body--agenda-hidden'}`}>
+          <div className="calendar-body">
             <div className="calendar-main">
               {view === 'month' ? (
                 month(anchor)
@@ -522,8 +514,8 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                 timeView()
               )}
             </div>
-            {agenda ? (
-              <aside className="calendar-sidebar" aria-label="Lista wydarzeń">
+            <RightSidebarContent>
+              <aside className="calendar-sidebar" id="calendar-agenda" aria-label="Lista wydarzeń">
                 <div className="calendar-sidebar-header">
                   <div className="calendar-agenda-heading">
                     <h3 className="calendar-sidebar-title">
@@ -602,7 +594,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                   </button>
                 </div>
               </aside>
-            ) : null}
+            </RightSidebarContent>
           </div>
         </div>
       </section>

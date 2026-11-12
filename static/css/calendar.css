@@ -1,5 +1,5 @@
 /* Calendar uses the Ancore shell, typography and shared control tokens. */
-.calendar-page, .calendar-rail, .calendar-modal {
+.calendar-page, .calendar-rail, .calendar-modal, .calendar-sidebar {
     --calendar-selection: var(--system-interaction);
     --calendar-selection-border: var(--system-interaction);
     --calendar-selection-text: var(--text-inverse);
@@ -8,7 +8,7 @@
     --calendar-border: #dddfe3;
 }
 .calendar-page {
-    --calendar-sidebar-width: 280px;
+    --calendar-views-width: 280px;
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -94,8 +94,8 @@
 }
 
 .calendar-page .calendar-filterbar .app-toolbar__actions {
-    flex: 0 0 var(--calendar-sidebar-width);
-    width: var(--calendar-sidebar-width);
+    flex: 0 0 var(--calendar-views-width);
+    width: var(--calendar-views-width);
 }
 
 .calendar-page .calendar-filterbar .app-toolbar__segments {
@@ -318,6 +318,8 @@
     flex-direction: column;
     gap: 4px;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .calendar-page .calendar-event, .calendar-page .calendar-event :where(span) {
@@ -412,19 +414,20 @@
     background: var(--calendar-hover);
 }
 
+#app-right-sidebar-content:has(.calendar-sidebar),
+#app-right-sidebar-content > [data-right-sidebar-fallback]:has(.calendar-sidebar) {
+    height: 100%;
+}
+
 .calendar-sidebar {
     display: flex;
     flex-direction: column;
-    width: var(--calendar-sidebar-width);
-    flex: 0 0 var(--calendar-sidebar-width);
+    width: 100%;
+    height: 100%;
     min-width: 0;
     min-height: 0;
-    margin-block: 5px;
     overflow: hidden;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
     background: var(--card-bg);
-    box-shadow: var(--shadow-md);
 }
 
 .calendar-sidebar-header {
@@ -486,7 +489,7 @@
     list-style: none;
 }
 
-.calendar-page .calendar-list-item {
+.calendar-sidebar .calendar-list-item {
     display: grid;
     grid-template-columns: 3.5rem minmax(0, 1fr);
     gap: .65rem;
@@ -503,7 +506,7 @@
     cursor: pointer;
 }
 
-.calendar-page .calendar-list-item:hover {
+.calendar-sidebar .calendar-list-item:hover {
     background: var(--calendar-event-bg);
 }
 
@@ -800,7 +803,8 @@
     background: var(--system-accent);
 }
 
-.calendar-page :where(button, input, [tabindex]):focus-visible, .calendar-rail button:focus-visible {
+.calendar-page :where(button, input, [tabindex]):focus-visible,
+.calendar-sidebar button:focus-visible, .calendar-rail button:focus-visible {
     outline: 2px solid var(--system-interaction);
     outline-offset: 2px;
 }
@@ -810,8 +814,8 @@
 }
 
 @container (max-width: 1050px) {
-    .calendar-filterbar, .calendar-body {
-        --calendar-sidebar-width: 244px;
+    .calendar-filterbar {
+        --calendar-views-width: 244px;
     }
 
     .calendar-filterbar {
@@ -841,8 +845,8 @@
 
 }
 @container (max-width: 720px) {
-    .calendar-filterbar, .calendar-body {
-        --calendar-sidebar-width: 100%;
+    .calendar-filterbar {
+        --calendar-views-width: 100%;
     }
 
     .calendar-shell {
@@ -858,25 +862,6 @@
     .calendar-main {
         flex: 0 0 540px;
         min-height: 540px;
-    }
-
-    .calendar-sidebar {
-        width: 100%;
-        flex: 0 0 240px;
-        height: 240px;
-    }
-
-    .calendar-sidebar-header {
-        padding: .65rem 1rem;
-        grid-template-columns: 1fr auto;
-    }
-
-    .calendar-agenda-heading {
-        grid-column: 1 / -1;
-    }
-
-    .calendar-sidebar-footer {
-        padding: .5rem 1rem;
     }
 
     .calendar-filterbar {
@@ -999,14 +984,8 @@
     }
 
 }
-@media (max-width: 650px) {
-    .calendar-sidebar {
-        margin-block: 4px;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .calendar-page *, .calendar-modal * {
+    .calendar-page *, .calendar-sidebar *, .calendar-modal * {
         scroll-behavior: auto;
         transition: none;
     }
@@ -1280,7 +1259,7 @@
 
 .calendar-page .calendar-day :where(span, button),
 .calendar-page .calendar-week-day-head,
-.calendar-page .calendar-list-item, .calendar-page .calendar-list-item :where(span),
+.calendar-sidebar .calendar-list-item, .calendar-sidebar .calendar-list-item :where(span),
 .calendar-modal .calendar-color-select__option {
     --app-text-color: var(--text-primary);
 }
@@ -1293,7 +1272,7 @@
     --app-text-color: var(--calendar-event-ink);
 }
 
-.calendar-page .calendar-list-date {
+.calendar-sidebar .calendar-list-date {
     text-transform: none;
 }
 

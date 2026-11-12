@@ -1,5 +1,5 @@
 body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
-    --app-topbar-height: calc(var(--dropdown-control-height) + 8px);
+    --app-topbar-height: calc(var(--dropdown-control-height) + 2 * var(--app-topbar-padding-y));
     isolation: isolate;
     background: var(--app-shell-bg) var(--app-shell-wallpaper-image) left center / cover no-repeat;
 }
@@ -30,7 +30,7 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar)::before {
     grid-template-columns: minmax(0, 1fr) minmax(0, min(672px, 55.2%)) minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
-    padding: 0 1rem;
+    padding: var(--app-topbar-padding-y) 1rem;
     background: var(--sidebar-bg);
 }
 

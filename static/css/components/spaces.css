@@ -52,48 +52,46 @@
 .work-task-page .work-task-visibility { text-decoration: none; }
 .work-task-visibility > [data-icon] { flex-shrink: 0; }
 .work-task-visibility > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.work-task-page .tasks-issue-field > .errorlist { grid-column: 2; margin: 0; }
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-field > .errorlist { grid-column: 2; margin: 0; }
 .work-task-page .tasks-issue-primary { --tasks-issue-content-padding-x: var(--app-page-padding-x); }
 .work-task-page .tasks-issue-overview { --tasks-issue-content-padding-x: 50px; }
 @media (min-width: 1025px) {
-    /* The sidebar margin supplies the gap between the two columns. */
-    .work-task-page .tasks-issue-primary-body > .tasks-issue-content { padding-inline-end: 0; }
-    .work-task-page .tasks-issue-primary-body > .tasks-issue-overview { padding-inline-end: calc(var(--tasks-issue-content-padding-x) - var(--app-page-padding-x)); }
+    .work-task-page .tasks-issue-primary-body > .tasks-issue-content { padding-inline-end: var(--tasks-issue-content-padding-x); }
 }
 /* Keep task properties aligned, including React field wrappers and validation. */
-.work-task-page .tasks-issue-sidebar .tasks-issue-side-section {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-side-section {
     display: grid;
     gap: 0.25rem;
 }
-.work-task-page .tasks-issue-sidebar .tasks-issue-field {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field {
     grid-template-columns: minmax(0, min(128px, 36%)) minmax(0, 1fr);
     column-gap: 0.5rem;
     row-gap: 0.25rem;
     min-height: var(--tasks-detail-control-height);
     margin-top: 0;
 }
-.work-task-page .tasks-issue-sidebar .tasks-issue-field > * { min-width: 0; }
-.work-task-page .tasks-issue-sidebar .tasks-issue-field-label,
-.work-task-page .tasks-issue-sidebar .tasks-issue-field-label label {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field > * { min-width: 0; }
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field-label,
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field-label label {
     white-space: normal;
     overflow-wrap: anywhere;
 }
-.work-task-page .tasks-issue-sidebar .tasks-issue-field > strong {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field > strong {
     padding-inline: calc(0.75rem + 1px);
     white-space: normal;
     overflow-wrap: anywhere;
 }
-.work-task-page .tasks-issue-sidebar .ancore-custom-select__button {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .ancore-custom-select__button {
     height: auto;
     min-height: var(--tasks-detail-control-height);
     padding-block: 0.4rem;
 }
-.work-task-page .tasks-issue-sidebar .ancore-custom-select__label {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .ancore-custom-select__label {
     white-space: normal;
     overflow-wrap: anywhere;
 }
-.work-task-page .tasks-issue-sidebar .ancore-custom-select__source { min-width: 0; }
-.work-task-page .tasks-issue-sidebar .tasks-issue-field > :is(.tasks-modal__errors, .errorlist) {
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .ancore-custom-select__source { min-width: 0; }
+:is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field > :is(.tasks-modal__errors, .errorlist) {
     grid-column: 1 / -1;
     white-space: normal;
     overflow: visible;
@@ -101,8 +99,8 @@
     margin: 0;
 }
 @media (max-width: 360px) {
-    .work-task-page .tasks-issue-sidebar .tasks-issue-field { grid-template-columns: minmax(0, 1fr); }
-    .work-task-page .tasks-issue-sidebar .tasks-issue-field-label { padding-top: 0.5rem; }
+    :is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field { grid-template-columns: minmax(0, 1fr); }
+    :is(.work-task-page, .work-task-sidebar) .tasks-issue-sidebar .tasks-issue-field-label { padding-top: 0.5rem; }
 }
 .work-task-page .tasks-attachment-info > [data-icon] { width: 24px; height: 24px; flex-shrink: 0; }
 .work-page .tasks-workspace { min-height: 0; display: flex; flex-direction: column; }

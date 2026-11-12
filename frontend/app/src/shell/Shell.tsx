@@ -13,6 +13,7 @@ import GlobalPanels from './GlobalPanels';
 import Sidebar from './Sidebar';
 import WorkspaceMenu from './WorkspaceMenu';
 import Toasts from './Toasts';
+import TodaySidebar from './TodaySidebar';
 const Picker = lazy(() => import('./CollectionPicker'));
 const Dialog = lazy(() =>
   import('../forms/FormDialog').then((module) => ({ default: module.FormDialog })),
@@ -294,7 +295,10 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
           </div>
         </div>
         <div id="app-global-search-host" style={{ display: 'contents' }} />
-        <nav className="app-topbar__actions" aria-label="Notatka, powiadomienia i konto">
+        <nav
+          className="app-topbar__actions"
+          aria-label="Notatka, powiadomienia, konto i panel boczny"
+        >
           <span id="app-global-actions-host" style={{ display: 'contents' }} />
           <a
             href={data.settings_url}
@@ -313,6 +317,18 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
             <Avatar data={data.profile.avatar} className="app-topbar__avatar" />
             <span className="app-topbar__username">{data.profile.name}</span>
           </a>
+          <button
+            type="button"
+            className="tasks-icon-button app-topbar__action app-topbar__right-sidebar-toggle"
+            aria-label={layout.rightLabel}
+            title={layout.rightLabel}
+            aria-controls="app-right-sidebar"
+            aria-expanded={layout.rightExpanded}
+            data-right-sidebar-toggle
+            onClick={layout.toggleRight}
+          >
+            <Icon name="panel-right" />
+          </button>
         </nav>
       </header>
       <Sidebar
@@ -330,7 +346,30 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
           setPicker({ group, anchor });
         }}
       />
+      <div
+        id="right-sidebar-backdrop"
+        className="right-sidebar-backdrop"
+        aria-hidden="true"
+        onClick={layout.closeRight}
+      />
+      <div
+        className="right-sidebar-resizer"
+        data-right-sidebar-resizer
+        hidden={!layout.rightResizable}
+        title="Przeciągnij, aby zmienić szerokość. Kliknij dwukrotnie, aby przywrócić domyślną."
+        {...layout.rightResizer}
+      />
       {ready ? <GlobalPanels config={config} token={token} /> : null}
+      {data.sidebar_url ? (
+        <TodaySidebar
+          key={`${data.workplace_id}:${data.url}`}
+          api={config.api_url}
+          url={data.sidebar_url}
+          calendarUrl={data.links.calendar.url}
+          token={token}
+          expanded={layout.rightExpanded}
+        />
+      ) : null}
       {ready ? <Toasts initial={config.messages} /> : null}
       <div id="app-shell-modals" style={{ display: 'contents' }} />
       <Suspense fallback={null}>

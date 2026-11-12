@@ -55,7 +55,7 @@ VIEWS = {
     'accounts.views': {'profile'},
     'workplaces.views': {'workplaces', 'update_workplace', 'delete_workplace', 'switch_workplace', 'set_default_workplace', 'toggle_sidebar_favorite', 'reorder_sidebar_favorites'},
     'workplaces.team_views': {'team', 'member_candidates', 'member_update'},
-    'planner.views': {'index', 'events_list', 'create_event', 'update_event', 'delete_event'},
+    'planner.views': {'index', 'sidebar', 'events_list', 'create_event', 'update_event', 'delete_event'},
     'dashboard.views': {'for_you', 'settings', 'home', 'global_search', 'notifications', 'notification_action'},
     'dashboard.filter_views': {'index', 'manage', 'search', 'lookup', 'edit', 'save_query', 'favorite', 'delete'},
     'dashboard.filter_sharing': {'team', 'candidates'},

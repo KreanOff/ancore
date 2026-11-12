@@ -94,6 +94,16 @@ def index(request):
 
 @login_required
 @require_GET
+def sidebar(request):
+    from .sidebar import today_sidebar_payload
+
+    response = JsonResponse(today_sidebar_payload(request))
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@login_required
+@require_GET
 def events_list(request):
     start = _parse_range_param(request.GET.get('start'))
     end = _parse_range_param(request.GET.get('end'))

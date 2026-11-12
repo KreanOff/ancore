@@ -33,3 +33,13 @@ def react_bundle():
     except (OSError, ValueError, KeyError) as error:
         raise ImproperlyConfigured('Build frontend/app with pnpm install --frozen-lockfile && pnpm build before starting Ancore.') from error
     return format_html('<script type="module" src="{}"></script>', static(f'frontend/{entry}'))
+
+
+@register.inclusion_tag('core/includes/today_sidebar.html', takes_context=True)
+def default_today_sidebar(context):
+    from planner.sidebar import sidebar_template_context, sidebar_url
+
+    request = context.get('request')
+    if not request or not request.user.is_authenticated or context.get('disable_react_shell') or not sidebar_url(request, context.get('sidebar_mode', 'workspace')):
+        return {}
+    return sidebar_template_context(request)

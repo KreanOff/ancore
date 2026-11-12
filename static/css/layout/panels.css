@@ -1,0 +1,321 @@
+/* Shared shell geometry: one topbar above three independent surfaces. */
+body:has([data-app-topbar]) {
+    --app-right-sidebar-width: var(--app-right-sidebar-user-width, var(--app-right-sidebar-default-width));
+    --app-shell-top: var(--app-topbar-height);
+    --app-shell-left: calc(var(--app-sidebar-total-width) + 2 * var(--app-shell-gap));
+    --app-shell-right: calc(var(--app-right-sidebar-width) + 2 * var(--app-shell-gap));
+    --app-shell-height: calc(var(--app-viewport-height) - var(--app-shell-top) - var(--app-shell-gap));
+    --app-shell-width: calc(var(--app-viewport-width) - var(--app-shell-left) - var(--app-shell-right));
+}
+
+html.right-sidebar-collapsed body:has([data-app-topbar]) {
+    --app-shell-right: var(--app-shell-gap);
+}
+
+body:has(.work-task-page) {
+    --app-right-sidebar-default-width: var(--app-task-sidebar-width);
+}
+
+.work-task-page .tasks-issue-main {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.work-task-sidebar .tasks-issue-sidebar {
+    margin: 0;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+}
+
+.work-task-sidebar .tasks-issue-side-section:last-child {
+    border-bottom: 0;
+}
+
+.work-task-sidebar [hidden] {
+    display: none !important;
+}
+
+.work-task-sidebar__feedback {
+    display: none;
+}
+
+body:has([data-app-topbar]) > .main-content {
+    --app-dynamic-viewport-height: var(--app-shell-height);
+
+    flex: 0 0 auto;
+    margin: var(--app-shell-top) var(--app-shell-right) 0 var(--app-shell-left);
+    width: var(--app-shell-width);
+    height: var(--app-shell-height);
+}
+
+body:has([data-app-topbar]) .sidebar,
+body:has([data-app-topbar]) .app-right-sidebar {
+    position: fixed;
+    top: var(--app-shell-top);
+    bottom: var(--app-shell-gap);
+    border: 1px solid var(--border-color);
+    border-radius: var(--app-shell-radius);
+    background: var(--card-bg);
+}
+
+body:has([data-app-topbar]) .sidebar {
+    left: var(--app-shell-gap);
+}
+
+body:has([data-app-topbar]) .app-right-sidebar {
+    right: var(--app-shell-gap);
+    width: var(--app-right-sidebar-width);
+    overflow: auto;
+    z-index: 201;
+}
+
+html.right-sidebar-collapsed .app-right-sidebar {
+    display: none;
+}
+
+body:has([data-app-topbar]) .page-container.full-width {
+    border-radius: var(--app-shell-radius);
+}
+
+body:has([data-app-topbar]) > .app-content-loading {
+    top: var(--app-shell-top);
+    left: var(--app-shell-left);
+    width: var(--app-shell-width);
+    height: var(--app-shell-height);
+    border-radius: var(--app-shell-radius);
+}
+
+body:has([data-app-topbar]) .app-topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, min(672px, 46%)) minmax(0, 1fr);
+}
+
+.right-sidebar-backdrop {
+    display: none;
+}
+
+/* The fixed handle remains reachable while the panel content scrolls. */
+.right-sidebar-resizer {
+    position: fixed;
+    top: var(--app-shell-top);
+    bottom: var(--app-shell-gap);
+    right: calc(var(--app-right-sidebar-width) + var(--app-shell-gap) - 4px);
+    z-index: 202;
+    width: 9px;
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.right-sidebar-resizer[hidden],
+html.right-sidebar-collapsed .right-sidebar-resizer {
+    display: none;
+}
+
+.right-sidebar-resizer::after {
+    content: "";
+    position: absolute;
+    inset: 12px auto 12px 3px;
+    width: 3px;
+    border-radius: 999px;
+    background: transparent;
+    transition: background-color .1s ease;
+}
+
+.right-sidebar-resizer:hover::after,
+.right-sidebar-resizer:focus-visible::after,
+body.right-sidebar-resizing .right-sidebar-resizer::after {
+    background: var(--system-interaction);
+}
+
+.right-sidebar-resizer:focus-visible {
+    outline: none;
+}
+
+body.right-sidebar-resizing,
+body.right-sidebar-resizing * {
+    cursor: col-resize !important;
+    user-select: none;
+}
+
+body.right-sidebar-resizing .app-right-sidebar,
+body.right-sidebar-resizing .main-content,
+body.right-sidebar-resizing .sidebar {
+    transition: none;
+}
+
+/* Compact calendar in the default right panel. */
+#app-right-sidebar-content:has(.today-sidebar),
+[data-right-sidebar-fallback]:has(> .today-sidebar) {
+    height: 100%;
+}
+
+.today-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.today-sidebar__calendar {
+    flex: 0 0 auto;
+    padding: 12px var(--app-page-padding-x);
+}
+
+.today-sidebar__month-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    margin: 0 0 8px;
+}
+
+.today-sidebar__month {
+    flex: 1;
+    margin-left: 0;
+    text-transform: capitalize;
+}
+
+.today-sidebar .tasks-icon-button {
+    flex: 0 0 var(--control-height);
+    width: var(--control-height);
+    height: var(--control-height);
+    padding: 6px;
+    text-decoration: none;
+}
+
+.today-sidebar .tasks-icon-button .ancore-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.today-sidebar__weekdays,
+.today-sidebar__days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+    text-align: center;
+}
+
+.today-sidebar__weekdays {
+    margin-bottom: 6px;
+    font-size: 11px;
+    opacity: .65;
+}
+
+.today-sidebar__day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: var(--control-height);
+    border-radius: var(--dropdown-menu-item-radius);
+    color: inherit;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.today-sidebar__day.is-outside {
+    opacity: .4;
+}
+
+.today-sidebar__day:hover {
+    color: inherit;
+    background: var(--sidebar-interaction-bg);
+    text-decoration: none;
+}
+
+.today-sidebar__day.is-today {
+    background: var(--system-interaction);
+    color: var(--text-inverse);
+    --app-text-color: var(--text-inverse);
+}
+
+.today-sidebar__today {
+    display: flex;
+    justify-content: center;
+    width: fit-content;
+    margin: 10px auto 0;
+    min-height: var(--control-height);
+    text-decoration: none;
+}
+
+@media (max-width: 1280px) {
+    .app-topbar .app-topbar__username {
+        display: none;
+    }
+}
+
+@media (max-width: 1100px) {
+    .right-sidebar-resizer {
+        display: none;
+    }
+    .work-task-sidebar__feedback {
+        display: block;
+    }
+    body:has([data-app-topbar]),
+    html.right-sidebar-collapsed body:has([data-app-topbar]) {
+        --app-shell-right: var(--app-shell-gap);
+    }
+
+    body:has([data-app-topbar]) .app-right-sidebar {
+        display: none;
+        width: min(var(--app-right-sidebar-width), calc(var(--app-viewport-width) - 2 * var(--app-shell-gap)));
+    }
+
+    body.right-sidebar-open .app-right-sidebar.app-right-sidebar--visible {
+        display: block;
+        box-shadow: var(--shadow-md);
+    }
+
+    body.right-sidebar-open .right-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: var(--app-topbar-height) 0 0;
+        z-index: 200;
+        background: var(--modal-scrim-bg);
+    }
+}
+
+@media (max-width: 767px) {
+    body:has([data-app-topbar]) {
+        --app-shell-left: var(--app-shell-gap);
+    }
+
+    body:has([data-app-topbar]) .sidebar:not(.sidebar--visible) {
+        transform: translateX(calc(-100% - var(--app-shell-gap)));
+    }
+
+    body:has([data-app-topbar]) .app-topbar {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+}
+
+@media (max-width: 600px) {
+    body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
+        --app-topbar-height: calc(2 * var(--dropdown-control-height) + 4px + 2 * var(--app-topbar-padding-y));
+    }
+
+    body:has([data-app-topbar]) .app-topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: repeat(2, var(--dropdown-control-height));
+        gap: 4px 8px;
+        padding-block: var(--app-topbar-padding-y);
+    }
+
+    .app-topbar .app-topbar__start {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .app-topbar .app-topbar__actions {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .app-topbar .app-topbar__search {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}

@@ -59,7 +59,6 @@ function initCalendarPage() {
     const eventsSubtitle = document.getElementById('cal-events-subtitle');
     const eventsList = document.getElementById('calendar-events-list');
     const agenda = document.getElementById('calendar-agenda');
-    const agendaToggle = document.getElementById('cal-toggle-agenda');
     const searchInput = document.getElementById('cal-search');
     const statusEl = document.getElementById('cal-status');
     const statusText = document.getElementById('cal-status-text');
@@ -233,8 +232,6 @@ function initCalendarPage() {
     function selectDay(day, focus = false) {
         selectedDate = cloneDate(day);
         agendaMode = 'day';
-        agenda.classList.remove('u-hidden');
-        agendaToggle.setAttribute('aria-expanded', 'true');
         renderCurrentView();
         if (focus) monthDaysEl.querySelector(`[data-date="${toLocalISO(day).slice(0, 10)}"]`)?.focus({ preventScroll: true });
     }
@@ -328,6 +325,7 @@ function initCalendarPage() {
             more.addEventListener('click', (e) => {
                 e.stopPropagation();
                 selectDay(day);
+                document.querySelector('[data-right-sidebar-toggle][aria-expanded="false"]')?.click();
                 agenda.scrollIntoView({ block: 'nearest' });
                 document.getElementById('cal-agenda-mode').focus({ preventScroll: true });
             });
@@ -1099,10 +1097,6 @@ function initCalendarPage() {
         searchQuery = searchInput.value.trim().toLocaleLowerCase('pl');
         if (searchQuery) agendaMode = 'period';
         renderCurrentView();
-    }, pageListenerOptions);
-    agendaToggle.addEventListener('click', () => {
-        const hidden = agenda.classList.toggle('u-hidden');
-        agendaToggle.setAttribute('aria-expanded', String(!hidden));
     }, pageListenerOptions);
     document.getElementById('cal-agenda-mode').addEventListener('click', () => {
         agendaMode = agendaMode === 'day' ? 'period' : 'day';

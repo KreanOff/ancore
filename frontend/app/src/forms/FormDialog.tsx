@@ -159,6 +159,7 @@ export function FieldControl({
         input.name = field.name;
         input.value = choice.value;
         input.id = `${field.id}_${index}`;
+        if (field.attrs.form) input.setAttribute('form', field.attrs.form);
         input.checked = selected.has(choice.value);
         input.disabled = field.disabled;
         input.className = 'tasks-row-checkbox';
