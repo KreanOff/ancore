@@ -784,6 +784,50 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   React tworzy hosty wyszukiwania, przycisków, powiadomień, komunikatów i Stickera.
   `dispose()` odłącza także ten korzeń po zmianie bundla. Szablon udostępnia
   konfigurację przez `global_panels_bootstrap` i bezpieczny `json_script`.
+  `useShellLayout` utrzymuje też prawy panel: preferencję desktopową
+  `ancoreRightSidebarCollapsed` oraz niezależne, tymczasowe otwarcie szuflady
+  do 1100px. Bootstrap odtwarza klasę przed CSS. Wspólny `layout/panels.css`
+  oraz `useShellLayout` obsługują też stały uchwyt lewej krawędzi prawego
+  panelu, renderowany przez Shell poza przewijaną zawartością. Preferencja
+  `ancoreRightSidebarWidth` jest wspólna dla zwykłego panelu, planu Kalendarza
+  i zadania; dwuklik usuwa nadpisanie, przywracając domyślne 272/370px.
+  Bootstrap po odczycie tokenów CSS odtwarza poprawną liczbę z zakresu
+  240–520px, ograniczoną dostępną przestrzenią. Hook zachowuje oryginalną
+  preferencję po zwężeniu okna, uwzględnia `--app-ui-scale` w przeciąganiu
+  oraz sprząta przechwycenie wskaźnika po anulowaniu, zwinięciu i zmianie
+  rozmiaru okna. `shell/sidebarSizing.ts` wylicza ograniczenia obu paneli
+  z preferencji, bez sprzężenia pomiarów ich szerokości. Na szerokościach
+  do 1100px zmiana rozmiaru jest wyłączona. `layout/panels.css` ustala
+  geometrię obu boków, treści i skeletona; [kontrakt UI](UI.md#wspólna-powłoka-react).
+  Host `#app-right-sidebar-content` znajduje się poza oboma korzeniami React.
+  `shared/RightSidebarContent` przekazuje do niego właściwości zadania oraz
+  plan Kalendarza bez utraty stanu przy montowaniu Shell. Pierwszy render
+  Django umieszcza tę zawartość w bloku `right_sidebar`; montowanie strony
+  usuwa `[data-right-sidebar-fallback]`. `TaskPage` używa natywnego
+  `form="space-task-form"`; `useTaskSave` odbiera zdarzenia tylko kontrolek
+  tego formularza, również spoza głównej treści. Opuszczenie strony usuwa portal.
+  `CalendarPage` utrzymuje wybór dnia i tryb planu niezależnie od widoczności
+  panelu. Zwijaniem steruje wyłącznie powłoka; dawny przełącznik w pasku
+  Kalendarza został usunięty. „+N więcej” wybiera plan wskazanego dnia
+  i wywołuje `openRightSidebar`, które otwiera panel tylko, gdy jest zamknięty.
+  Na pozostałych stronach `shell/TodaySidebar.tsx` w tym samym hoście renderuje
+  sam mini kalendarz, bez nagłówka i listy zadań. `shell.sidebar_url`
+  wskazuje scoped `calendar/sidebar/`, odczytywany przez istniejące API stron;
+  jest pusty dla szczegółów zadania, Kalendarza, edytora Pulpitu i przy
+  wyłączonym module Kalendarza. `planner/sidebar.py` zwraca wyłącznie `today`
+  i `time_zone` z potwierdzeniem `status`, bez odczytu zadań i paginacji.
+  Pierwszy render korzysta z tagu `default_today_sidebar` tylko w domyślnym
+  bloku. React anuluje odczyt po opuszczeniu strony i odświeża datę otwartego
+  kalendarza co minutę oraz po powrocie fokusu okna; błąd odczytu nie blokuje
+  nawigacji po kalendarzu. Kliknięcie dnia używa istniejącego
+  `calendar/?date=YYYY-MM-DD`.
+  Plan wypełnia wysokość prawego paska, z przewijaną listą i osobną stopką;
+  wygląd i szerokość określa wspólna powłoka, bez wewnętrznej pływającej karty.
+  Mobilna szuflada blokuje zawartość strony z pominięciem `#app-page-modals`.
+  `shared/inert.ts` liczy aktywne blokady tła wspólne dla `useShellLayout`
+  i `Modal`; przywraca wcześniejszy stan dopiero po zwolnieniu ostatniej.
+  Formularz otwarty z planu pozostaje dostępny, również przy zmianie
+  szerokości, a zamknięcie okna nie odblokowuje tła nadal otwartej szuflady.
 - `PageApp.tsx` ładuje osobne chunki ekranów z `src/calendar/`, `src/dashboard/`,
   `src/spaces/`, `src/tasks/`, `src/tags/`, `src/filters/`, `src/pulpits/`, `src/documents/`, `src/workspaces/`, `src/accounts/` i `src/forms/`.
   `backend/core/frontend.py` jawnie rejestruje

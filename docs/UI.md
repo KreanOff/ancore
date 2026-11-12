@@ -80,7 +80,7 @@ Oba wiersze tworzą jedną białą powierzchnię `app-page-header-group`,
 z linią wyłącznie pod całym nagłówkiem. Tytuł używa tokenów 17px/700,
 interlinii 1.45, wiersz ma minimum 45px i padding 0.5rem / 15px.
 Awatar otwartej Przestrzeni ma 32px; pozostałe tytuły nie rezerwują pola ikony.
-`PageTabs` zachowuje 13.5px/400, ikony 18px i fioletowe podkreślenie
+`PageTabs` zachowuje 13.5px/400, ikony 18px i czerwone podkreślenie
 aktywnego widoku, zgodnie z otwartą Przestrzenią. Na wąskich ekranach akcje
 mogą przejść do kolejnego wiersza, a zakładki przewijają się poziomo wewnątrz
 nagłówka. Wspólny CSS jest w `components/page-header.css`.
@@ -90,28 +90,35 @@ prawej stronie paska narzędzi (`Toolbar.actions`), jako tekstowa grupa
 `tasks-segments app-toolbar__segments`, zgodna z przełącznikiem skali Osi czasu.
 Aktywny przycisk ma `aria-pressed` i szare podświetlenie. Nagłówek zawiera
 tytuł i „Nowe wydarzenie”, bez osobnego wiersza zakładek. Nawigacja po datach,
-nazwa okresu, licznik, przełącznik planu i wyszukiwarka pozostają po lewej.
-Grupa widoków i panel „Plan dnia” mają wspólną szerokość
-`--calendar-sidebar-width`: 280px, a do szerokości kontenera 1050px — 244px.
-Przyciski dzielą tę szerokość równo. Pasek i treść mają ten sam boczny
-padding `--app-page-padding-x`, więc krawędzie grupy i panelu są wyrównane.
-Do szerokości kontenera 720px grupa zajmuje cały kolejny wiersz paska,
-tak jak panel zajmuje pełną szerokość pod siatką.
+nazwa okresu, licznik i wyszukiwarka pozostają po lewej.
+Grupa widoków ma szerokość `--calendar-views-width`: 280px, a do szerokości
+kontenera 1050px — 244px. Przyciski dzielą tę szerokość równo.
+Pasek i treść mają ten sam boczny padding `--app-page-padding-x`.
+Do szerokości kontenera 720px grupa zajmuje cały kolejny wiersz paska.
+Jej szerokość jest niezależna od panelu „Plan dnia”.
 W Zasobach szybkie filtry z licznikami
 korzystają z tego samego paska zakładek i zachowują dotychczasowe filtrowanie.
 Pasek Kalendarza nie zawiera wyboru „Wszystkie pozycje” ani filtra „Kolory”.
 Pokazuje wszystkie dostępne wydarzenia i zadania w wybranym okresie;
-pozostają wyszukiwarka, licznik pozycji oraz przełącznik panelu planu.
+pozostają wyszukiwarka oraz licznik pozycji.
 Kolory wydarzeń i wybór koloru w formularzu pozostają dostępne.
 
-Panel „Plan dnia” w Kalendarzu jest oddzielną pływającą kartą według panelu
-właściwości zadania: obrys `--border-color`, promień `--radius`, tło `--card-bg`
-i cień `--shadow-md`. Siatka kalendarza ma własną ramkę, a odstęp między nią
-i planem wynosi `--app-page-padding-x` (15px). Plan ma pionowy margines 5px
-(4px do szerokości ekranu 650px). Przy szerokości kontenera do 720px karta
-pozostaje pod siatką, zachowując pełny obrys i osobne przewijanie listy.
-Zwijanie planu oddaje miejsce siatce. Wspólne reguły w
+Panel „Plan dnia” zajmuje prawy pasek wspólnej powłoki, obok nagłówka
+i siatki Kalendarza. `shared/RightSidebarContent` renderuje go do
+`#app-right-sidebar-content`; pierwszy render Django używa bloku
+`right_sidebar`. Plan wypełnia wysokość panelu, z osobno przewijaną listą
+i przyciskiem „Dodaj w tym dniu” w stopce. Obrys i promień należą do
+powłoki; plan nie dodaje wewnętrznej karty, cienia ani marginesu.
+Domyślna szerokość wynosi 272px; `--app-right-sidebar-width` uwzględnia
+zapamiętaną szerokość prawego paska, a do 1100px plan
+otwiera się jako wspólna szuflada. Przycisk `panel-right` na końcu górnego
+paska zwija i otwiera panel; pasek Kalendarza nie ma osobnego przełącznika.
+Zwijanie oddaje miejsce siatce i zachowuje wybrany dzień oraz tryb planu.
+„+N więcej” wybiera plan wskazanego dnia i otwiera panel przez
+`openRightSidebar`, bez zamykania już otwartego panelu. Wspólne reguły w
 [`calendar.css`](../static/css/calendar.css) obejmują React i pierwszy render Django.
+Pozycje w komórce miesiąca przewijają się, gdy brakuje wysokości, dzięki
+czemu nie zasłaniają następnego tygodnia i zachowują dostęp do „+N więcej”.
 
 Specjalistyczne treści, np. kalendarz, tablica, karty zespołów, edytor pliku
 i kadrowanie obrazu, zachowują swój układ. Kolejne wyniki odsłania
@@ -123,7 +130,7 @@ referencyjnym przy tej samej szerokości, również po ponownym wejściu.
 
 Fokus klawiatury kontrolek jest widoczny także w przewijanych listach,
 formularzach oraz na logowaniu. Pola wpisywania tekstu, liczb i dat oraz
-wyszukiwarki w listach wyboru zachowują zwykłe obramowanie bez fioletowego
+wyszukiwarki w listach wyboru zachowują zwykłe obramowanie bez czerwonego
 obrysu aktywnego pola. Tak samo zachowują się przyciski w oknach potwierdzenia,
 w tym zamknięcie krzyżykiem; wyjątkiem jest systemowy tryb wymuszonych kolorów.
 Wspólne `Dropdown` otwiera panel formularza strzałką
@@ -297,7 +304,7 @@ Kolumny zaznaczania oraz zachowanych skrótów edycji, informacji, notatek
 i przełączania Workspace mają szerokość 40px. Nagłówki skrótów są wizualnie
 puste, z nazwą dostępną dla czytnika ekranu.
 Nie dodawaj zaznaczania ani działań, których dany moduł nie obsługuje.
-Najechanie i zaznaczenie stosują 8% fioletowego akcentu oraz pasek 3px
+Najechanie i zaznaczenie stosują 8% czerwonego akcentu oraz pasek 3px
 z lewej. Istniejące skróty wierszy zachowują swoje wspólne klasy przycisków.
 
 Siatki oznaczaj przez `app-table-header` i `app-table-row`; komórki zachowują
@@ -317,7 +324,7 @@ Zespoły zachowują wspólny nagłówek, zakładki `work-tabs`, wyszukiwarkę,
 karty `work-space-card`, formularze i pasek „Pokaż więcej”. Karta katalogu
 ma kolejno baner, nazwę i opis; cała powierzchnia prowadzi do profilu zespołu.
 Baner `.team-card-banner` ma proporcje 3:1 i kadruje istniejące zdjęcie przez
-`object-fit: cover`. Bez zdjęcia używa wspólnej tapety `--app-wallpaper-image`.
+`object-fit: cover`. Bez zdjęcia ma jednolite neutralne tło `--panel-bg`.
 Nazwa i opis znajdują się w `.team-card-body`; brak opisu ma tekst zastępczy.
 Katalog nie pokazuje roli ani liczników na karcie. React i pierwszy render
 Django używają tych samych klas. Profil rozdziela
@@ -349,26 +356,77 @@ w `layout/main.css` uwzględnia korzeń Reacta z `display: contents`, zachowują
 wysokość topbaru i położenie sidebaru. Dropdowny korzystają ze wspólnego
 adaptera; `.react-sidebar-row-menu` nie dodaje własnego pola w układzie.
 
-Górny i boczny pasek współdzielą z panelem logowania jasną tapetę z fałdami
-oraz efekt matowego szkła. Token `--app-wallpaper-image` wskazuje jeden obraz
-w tle całej powłoki; `--glass-surface-bg` i `--glass-surface-filter` określają
-55% krycia bieli (45% przezroczystości), rozmycie 20px i nasycenie 115%.
-Jedna dekoracyjna warstwa
-szkła `body::before` obejmuje całe tło, także odsłonięte narożniki zaokrąglonej
-treści. Izolacja powłoki utrzymuje ją nad tapetą i pod interfejsem; filtr
-nie zmienia pozycjonowania menu i paneli.
-Mobilne menu ma pod szkłem własną warstwę tej samej tapety, również gdy
-otwiera się nad treścią strony. Treść stron zachowuje białe wypełnienie.
-Przy ograniczeniu przezroczystości lub braku obsługi filtra powierzchnie
-są w pełni kryjące.
+Powłoka aplikacji używa biało-czerwono-czarnej tapety
+`wallpaper-red-black-white.png` przez osobny token
+`--app-shell-wallpaper-image`. Obraz pokrywa viewport przez `cover`,
+z wyrównaniem do lewej i środka. Jasna górna część tapety zapewnia czytelne
+tło kontrolek górnego paska. Ogólny token `--app-wallpaper-image`
+pozostaje domyślnie `none`. Ekrany logowania i rejestracji lokalnie ustawiają go na
+`var(--app-shell-wallpaper-image)`; karty zespołów zachowują jednolite tło.
+Zachowane wspólne tokeny
+`--glass-surface-bg: var(--card-bg)` i `--glass-surface-filter: none`
+zapewniają białe powierzchnie paneli bez rozmycia. Tło strony używa osobnego
+`--app-shell-bg`: 12% neutralnej szarości `--system-interaction` zmieszanej
+z bielą `--card-bg`, jako kolor zastępczy podczas ładowania obrazu.
+Warstwa `body::before` wyświetla tapetę w odstępach i odsłoniętych
+narożnikach paneli, a przezroczysty górny pasek pokazuje to samo tło. Karty,
+główna treść, boczne panele, modale oraz panele logowania i rejestracji zachowują
+białe powierzchnie.
 
-Podświetlenia menu przepuszczają tapetę: neutralne najechanie korzysta
+Pod górnym paskiem znajdują się trzy osobne powierzchnie: lewe menu,
+główna treść i prawy panel boczny. Mają wspólną górną i dolną krawędź,
+obrys `--border-color` oraz promień `--app-shell-radius` (15px). Odstęp
+między panelami oraz od bocznych i dolnej krawędzi okna wynosi
+`--app-shell-gap` (4px na każdej szerokości ekranu). Panele zaczynają się
+bezpośrednio pod górnym paskiem: od jego kontrolek oddziela je wyłącznie
+dolny padding paska 2px, taki sam jak u góry. Geometrię współdzielą React,
+pierwszy render Django i skeleton nawigacji przez
+[`layout/panels.css`](../static/css/layout/panels.css). Wysokość treści
+uwzględnia odstępy, zachowując wewnętrzne przewijanie stron.
+
+Prawy panel ma bazową szerokość `--app-right-sidebar-width` (272px). Na stronie
+zadania pokazuje jego właściwości i używa `--app-task-sidebar-width` (370px);
+w Kalendarzu pokazuje plan dnia. Na pozostałych stronach aplikacji zawiera
+sam miesięczny kalendarz, bez osobnego nagłówka i przycisku otwarcia.
+Kalendarz korzysta z poniedziałkowego początku tygodnia, wyróżnia dzisiejszy
+dzień, pozwala przełączać miesiące i wrócić przyciskiem „Dzisiaj”. Kliknięcie
+dnia otwiera go w pełnym Kalendarzu. Panel nie zawiera listy „Zadania na dziś”,
+licznika, podpisu daty ani komunikatu o braku zadań.
+Powłokę renderuje `shell/TodaySidebar.tsx`, a pierwszy render Django
+`core/includes/today_sidebar.html`; oba używają klas `today-sidebar`
+z `layout/panels.css`. Wyłączenie modułu Kalendarza ukrywa domyślną zawartość.
+Edytor Pulpitu zachowuje własny układ bez tej zawartości.
+Na komputerze lewą krawędź prawego panelu można przeciągać. Uchwyt
+`right-sidebar-resizer` pozostaje przy krawędzi także podczas przewijania
+zawartości. Zakres wynosi 240–520px i dodatkowo zostawia co najmniej 360px
+na główną treść, uwzględniając szerokość lewego menu i skalę interfejsu.
+Szerokość zapisywana w `ancoreRightSidebarWidth` obowiązuje również w planie
+Kalendarza i właściwościach zadania. Zmniejszenie okna ogranicza bieżący
+rozmiar bez zmiany zapisanej preferencji. Dwuklik przywraca domyślny rozmiar
+(272px, a w zadaniu 370px). Uchwyt obsługuje klawiaturę: strzałka w lewo
+poszerza panel, w prawo zwęża, Shift zwiększa krok z 8 do 24px, Home/End
+wybierają granice zakresu. Do 1100px i po zwinięciu panelu uchwyt jest
+ukryty; mobilna szuflada zachowuje ograniczenie do szerokości ekranu.
+Przycisk `panel-right` na końcu górnego paska zwija go, oddając miejsce
+treści. Desktop zapamiętuje wybór w `ancoreRightSidebarCollapsed`; bootstrap
+odtwarza klasę przed załadowaniem CSS. Przy szerokości okna do 1100px panel
+jest początkowo zamkniętą szufladą, bez zmiany preferencji desktopowej.
+Escape, kliknięcie tła, nawigacja i zmiana szerokości zamykają szufladę.
+Zamknięcie przez Escape lub tło przywraca fokus przycisku. Otwarcie na telefonie
+zamyka lewe menu; treść pod szufladą jest `inert`. Host okien pozostaje
+dostępny, aby formularz otwarty z panelu przyjmował wpisywanie i fokus.
+Szuflada i `Modal` współdzielą blokowanie tła, zachowując je także po
+zmianie szerokości przy otwartym oknie. Panel nie zmienia działania
+Stickera ani Powiadomień. Do 600px wyszukiwarka zajmuje drugi wiersz górnego
+paska, aby kontrolki i pole wyszukiwania mieściły się bez nakładania.
+
+Podświetlenia menu nakładają się na jednolite tło: neutralne najechanie korzysta
 z 6% krycia `--system-interaction`, a naciśnięcie z 10%. Aktywna pozycja
-ma fioletowe tło o kryciu 10%, wzmacniane do 16% przy najechaniu, fokusie
+ma czerwone tło o kryciu 10%, wzmacniane do 16% przy najechaniu, fokusie
 lub otwartym menu wiersza. W aktywnym wierszu tło rodzica jest przezroczyste,
 więc kolory nie nakładają się. Tekst i zwykłe ikony aktywnej pozycji używają
 ciemniejszego wariantu akcentu (`--sidebar-space-selection-ink`: 60% akcentu
-z czernią), aby zachować czytelność nad tapetą; znacznik i fokus zachowują
+z czernią), aby zachować czytelność na jasnym tle; znacznik i fokus zachowują
 bazowy akcent. Krótkie przejście tła ma 120ms; preferencja
 ograniczenia ruchu wyłącza przejścia istniejącą regułą powłoki.
 Fokus klawiatury linków i „Więcej…” ma wewnętrzny obrys 2px,
@@ -391,6 +449,9 @@ Nagłówki sekcji zachowują token `--sidebar-icon-size` o wartości 18px.
 Pickery Przestrzeni, Pulpitów i Filtrów używają istniejącej powłoki popover,
 stanu pustego/błędu/ponowienia, strzałek i Escape z powrotem fokusu.
 Menu mobilne wyłącza treść przez `inert` i ogranicza Tab do swoich kontrolek.
+Maksymalne rozsunięcie lewego menu uwzględnia szerokość otwartego prawego
+panelu, odstępy i skalę UI, zostawiając co najmniej 360px logicznej szerokości
+treści. Ograniczenie chwilowe nie nadpisuje zapamiętanej preferencji szerokości.
 
 Akcje oznaczania Przestrzeni, Pulpitów i Filtrów współdzielą
 `tasks-favorite-toggle` oraz stan `aria-pressed`. Oznaczony element ma pełną
@@ -415,34 +476,31 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 
 Logowanie, rejestracja i krok nazwy Workspace renderują
 `src/accounts/AuthPage.tsx`
-w powłoce `accounts/auth_base.html`. Pełnoekranowa, lokalna tapeta
-`static/img/auth/wallpaper-fluent-bloom-light-4k.webp` jest wspólnym tłem:
-jasną kompozycją błękitno-lawendowych fałd inspirowaną tapetami Windows 11.
-Jasny panel formularza
+w powłoce `accounts/auth_base.html`. Logowanie i rejestracja dodają wariant
+`body.auth-page--wallpaper`, który
+wyświetla tę samą biało-czerwono-czarną tapetę co aplikacja, przez lokalny
+alias `--app-wallpaper-image: var(--app-shell-wallpaper-image)`. Tło
+`.auth-shell` używa `left center / cover`. Krok nazwy Workspace
+oraz wybór i dołączanie do Workspace zachowują jednolite białe tło
+`--bg-main`. Jasny panel formularza
 ma szerokość 520px, wysokość dopasowaną do treści i jest wyśrodkowany pionowo
 po prawej stronie. Korzysta z `--card-bg`, `--border-color` i `--shadow-lg`.
-Panel ma efekt matowego szkła: 55% krycia koloru `--card-bg` (45% przezroczystości),
-rozmycie tapety 20px i nasycenie 115% przez `backdrop-filter` (również z prefiksem WebKit).
-Przy braku obsługi filtra lub preferencji `prefers-reduced-transparency: reduce`
-wraca do pełnego krycia. Pola mają pełne białe wypełnienie `--card-bg`
+Panel jest w pełni kryjący i nie rozmywa tła. Pola mają pełne białe wypełnienie `--card-bg`
 i wyraźniejsze szare obramowanie (80% `--system-interaction` z `--card-bg`).
 Hover i fokus zachowują `--system-interaction`, a fokus dodatkowy obrys 1px.
 Wariant zachowuje szare teksty `--text-primary`
 i neutralne interakcje `--system-interaction`. Przycisk ma lokalny wariant
 `--primary-button-bg: var(--system-accent)` z białym tekstem; hover delikatnie
-przyciemnia fiolet. Aktywna zakładka ma fioletowe podkreślenie.
-Powłoka ma `color-scheme: light`. Znak Ancore korzysta z maski alfa istniejącej
-grafiki `logo-ancore.png` i koloru `--system-accent`. Maska pomija przezroczyste
-marginesy źródła: widoczny znak ma wysokość 24px, odstęp od napisu 8px,
-a napis 18px i odstęp liter 0.04em. Wariant obejmuje tylko ekrany kont;
-plik źródłowy i logo we wspólnej powłoce pozostają bez zmian.
-Tapeta ma 3840×2160px i bezstratny zapis WebP;
-to eksport powiększonego obrazu Image Gen, nie natywna generacja w 4K.
-[Pochodzenie i prompt](../static/img/auth/README.md).
+przyciemnia czerwień. Aktywna zakładka ma czerwone podkreślenie.
+Powłoka ma `color-scheme: light`. Znak Ancore używa oryginalnej grafiki
+`logo.png`, dopasowanej przez `contain` do pola 24×24px, bez maskowania
+i przycinania. Odstęp od napisu wynosi 8px, a napis ma 18px i odstęp liter
+0.04em. Wspólna powłoka i favicon również korzystają z tego pliku; logo
+w nawigacji zachowuje proporcje bez dodatkowego powiększania.
 Logo Ancore pozostaje w lewym górnym rogu.
 Wariant `auth-tabs` przełącza zwykłymi linkami „Rejestrację” i „Logowanie”.
 Napisy zakładek mają rozmiar 18px, z zachowaniem odstępu 24px między nimi.
-Aktywny adres ma `aria-current="page"` i fioletowe podkreślenie. Nad zakładkami
+Aktywny adres ma `aria-current="page"` i czerwone podkreślenie. Nad zakładkami
 jest widoczny nagłówek „Witaj ponownie” lub „Utwórz konto”. Pola mają widoczne
 etykiety i wysokość 48px. Email ma placeholder `email@firma.pl`; pozostałe pola
 nie powtarzają etykiet wewnątrz. Białe tło pól obejmuje także
@@ -458,7 +516,7 @@ Pierwszy render Django zachowuje ten sam układ i formularze POST.
 `auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
 Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
 
-Po utworzeniu konta ekran „Utwórz Workspace” używa tej samej tapety i karty
+Po utworzeniu konta ekran „Utwórz Workspace” używa tego samego jednolitego tła i karty
 co logowanie. Nagłówek nie ma dodatkowego opisu. Jedno wymagane pole nazwy
 ma limit 140 znaków; przycisk
 „Utwórz Workspace” pokazuje rzeczywisty stan zapisu „Przygotowywanie Workspace…”.
@@ -489,7 +547,10 @@ status obecności i stanowisko. Kliknięcie awatara otwiera jego edytor;
 brak stanowiska udostępnia akcję „Dodaj stanowisko”.
 
 Nad awatarem znajduje się osobisty baner z przyciskiem „Zmień baner”.
-Bez własnego obrazu wykorzystuje lokalną tapetę ekranów kont. Baner
+Bez własnego obrazu wykorzystuje lokalną grafikę
+`static/img/auth/wallpaper-fluent-bloom-light-4k.webp`, zachowaną wyłącznie
+jako domyślny baner osobisty. [Pochodzenie i prompt](../static/img/auth/README.md).
+Baner
 i kadr w edytorze mają proporcje 4:1; `object-fit: cover`, pozycja i skala
 pokazują zapisany kadr bez zmieniania przesłanego pliku. Domyślnie obraz
 jest wyśrodkowany bez dodatkowego powiększenia. Zalecany rozmiar obrazu
@@ -509,7 +570,7 @@ Kontrolki powiększenia używają istniejących klas `profile-photo-zoom-control
 z edytora awatara. Zmiana zaczyna obowiązywać po „Zapisz”, także gdy edytowany
 jest tylko kadr istniejącego obrazu. Przycisk zapisu jest nieaktywny bez zmian.
 „Usuń” zmienia wyłącznie szkic: opróżnia podgląd, a dopiero „Zapisz”
-usuwa własny baner i przywraca na profilu domyślną tapetę, środek kadru
+usuwa własny baner i przywraca na profilu domyślną grafikę, środek kadru
 i powiększenie 100%. Usunięcie nowo wybranego pliku przy braku zapisanego
 banera pozostawia profil bez zmian. Zamknięcie edytora zachowuje zapisany obraz.
 Błędy formatu, rozmiaru i odczytu obrazu blokują zapis; błąd serwera zachowuje
@@ -711,7 +772,7 @@ Kategorie nadal określają kolory pasków; kliknięcie tytułu otwiera szczegó
 zadania. Wiersze zachowują uprawnienia i bieżące sortowanie osi.
 Tygodnie pokazują dni i przygaszone weekendy;
 miesiące i kwartały rzeczywiste granice okresów. Linia i znacznik bieżącego
-dnia używają fioletowego akcentu. Pasy sprintów mają obrys, a paski zadań
+dnia używają czerwonego akcentu. Pasy sprintów mają obrys, a paski zadań
 wypełnienie `--tasks-status-background`, takie jak nagłówki grup Listy zadań,
 z delikatnym obrysem kategorii; pojedyncza data ma przerywany obrys.
 Wiersze mają 40px wysokości. Najechanie, fokus i wybrany wiersz korzystają
@@ -924,7 +985,7 @@ istniejące proporcje mieszania. Nagłówki sprintów nadal określają stan spr
 Proces pracy ma podzakładki „Stany” i „Mapa” w drugim wierszu wspólnego
 nagłówka Przestrzeni, przed paskiem działań. Korzystają z `notifications-tabs work-tabs work-tabs--views`,
 jak widoki Przestrzeni: ikony `list-checks` i `workflow`, tekst 13,5px,
-fioletowe podkreślenie aktywnej pozycji i przewijanie poziome na telefonie.
+czerwone podkreślenie aktywnej pozycji i przewijanie poziome na telefonie.
 W React przyciski mają role `tablist`/`tab`/`tabpanel`, `aria-selected`
 oraz obsługę strzałek, Home i End; pierwszy render Django używa linków
 z `aria-current="page"`. Domyślnie wybrane są „Stany”.
@@ -955,7 +1016,7 @@ zachowuje ten sam układ i natywny wybór ikony rozwijany przez „Zmień”.
 
 „Mapa” pokazuje swobodny układ węzłów i kierunkowych połączeń. Lokalny wariant
 `work-flow-*` w `spaces.css` zachowuje wspólny pasek ustawień, przyciski,
-ikony statusów i tokeny powierzchni. Wybrany etap ma fioletowy obrys oraz
+ikony statusów i tokeny powierzchni. Wybrany etap ma czerwony obrys oraz
 wyróżnione wejścia i wyjścia; pozostałe strzałki są przygaszone. Przy karcie
 jest przycisk „+” do połączenia. Mapa zajmuje całą szerokość edytora.
 Mapa nie ma panelu bocznego listy ani szczegółów, liczników, przycisku „Etapy”,
@@ -983,7 +1044,7 @@ ani historii cofania.
 
 Minimapa w prawym dolnym rogu jest lokalną nakładką na niepustej mapie.
 Pokazuje uproszczone karty i połączenia oraz ramkę widocznego obszaru.
-Używa istniejących tokenów powierzchni, obramowania i fioletowego akcentu;
+Używa istniejących tokenów powierzchni, obramowania i czerwonego akcentu;
 na telefonie ma kompaktowy rozmiar. Kliknięcie lub przeciągnięcie przesuwa
 kamerę, a Escape, anulowanie wskaźnika i utrata fokusu okna cofają gest.
 Przy fokusie na podglądzie strzałki przesuwają widok, a Enter, Spacja i Home
@@ -1460,7 +1521,7 @@ wiersza, z istniejącymi cieniami, lekkim przechyleniem i powiększeniem.
 Kopia zachowuje dekoracyjne atrybuty ikon, ale nie zawiera ID ani aktywnych
 hooków aplikacji; ma `inert` i `aria-hidden`. Przezroczysty obraz natywnego drag
 usuwa drugi podgląd przeglądarki. Źródło zachowuje rozmiar i jest przygaszone.
-Cel ma fioletowy obrys i delikatne tło. `work-item-drop-slot` tworzy miejsce
+Cel ma czerwony obrys i delikatne tło. `work-item-drop-slot` tworzy miejsce
 w wysokości zadania; sąsiednie karty płynnie przesuwają się, gdy zmienia się
 miejsce wstawienia. Pusta i zwinięta sekcja przyjmują zadanie na końcu.
 Przy krawędziach gest przewija kolumnę lub backlog pionowo i tablicę poziomo.
@@ -1593,7 +1654,7 @@ Osoby zarządzające przestrzenią klikają jej awatar lub „Zmień awatar”
 w ustawieniach. Okno korzysta z `app-modal-panel--compact`, standardowej
 stopki i `AncoreTaskModals`. Zawiera 30 kolorowych ilustracji, wybór automatyczny
 oraz upload z podglądem i przeciąganiem. Natywna grupa radio zapewnia wybór
-klawiaturą; zaznaczenie ma fioletową ramkę. Na telefonie siatka dopasowuje
+klawiaturą; zaznaczenie ma czerwoną ramkę. Na telefonie siatka dopasowuje
 liczbę kolumn. Zapis, błędy, szkic, Escape i fokus obsługuje `spaces.js`.
 Ilustracje mają pełnokolorowe tła i wypełnione kształty. Korzystają z dwóch
 lokalnych atlasów PNG w `static/img/space-avatars/` i klas `space-avatar-art--*`.
@@ -1613,7 +1674,7 @@ przestrzeni (`work-tabs--views`) zachowują ikony odpowiadające widokom. Wszyst
 wspólne podkreślenie aktywnej zakładki i przewijanie poziome na wąskim ekranie.
 Najechanie na nieaktywną zakładkę pokazuje szare
 podkreślenie (`--system-interaction`), tak jak w katalogu Zadań; po odsunięciu
-kursora podkreślenie znika. Aktywna zakładka zachowuje fioletowe podkreślenie
+kursora podkreślenie znika. Aktywna zakładka zachowuje czerwone podkreślenie
 także pod kursorem. Katalog zespołów ma zakładki bez ikon.
 
 Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
@@ -1623,7 +1684,7 @@ i częściowej nawigacji. Przycisk ma `aria-controls` i `aria-expanded`
 oraz obsługuje Enter/Spację. Przed nazwą jest ikona warstw (`layers`), która
 przy najechaniu lub fokusie klawiatury zmienia się w strzałkę zwijania (`chevron-down`),
 obróconą w prawo dla zwiniętej sekcji. Fokus klawiatury zaznacza całą powłokę
-nagłówka fioletową ramką. W trybie zwiniętego całego paska ikona nadal otwiera
+nagłówka czerwoną ramką. W trybie zwiniętego całego paska ikona nadal otwiera
 panel skrótów. Ikona warstw oznacza również Przestrzenie
 w Favorites (także dla starszych zapisanych skrótów), nagłówku kolumny katalogu
 oraz jego pustym stanie. Wspólny wariant `sidebar-group-header` umieszcza
@@ -1656,12 +1717,12 @@ podpisy i awatary stoją w tej samej kolumnie, 6px od jej krawędzi. Awatar ma
 nawigacji mają wagę 600 również na wewnętrznych `span`, pomimo globalnej
 reguły wagi 400. Pozycje codziennej nawigacji również mają wysokość 32px;
 zwinięty pasek zachowuje dotychczasowe wymiary. Tło głównego paska bocznego
-jest takie samo jak górnego paska aplikacji: wspólna powierzchnia matowego
-szkła, także w codziennym menu Workspace, po zwinięciu i na telefonie.
-Wybrana pozycja (`a.nav-link.active`) ma jasne fioletowe
-tło, fioletowy tekst/ikonę i krótki znacznik przy lewej krawędzi. Ta sama reguła
+jest takie samo jak górnego paska aplikacji: wspólna jednolita biała
+powierzchnia, także w codziennym menu Workspace, po zwinięciu i na telefonie.
+Wybrana pozycja (`a.nav-link.active`) ma jasne czerwone
+tło, czerwony tekst/ikonę i krótki znacznik przy lewej krawędzi. Ta sama reguła
 obejmuje Dashboard, pozostałe moduły, Favorites oraz kategorie
-Ustawień i menu zarządzania. Wybrana pozycja zachowuje fioletowy stan pod
+Ustawień i menu zarządzania. Wybrana pozycja zachowuje czerwony stan pod
 kursorem; szary hover i fokus nieaktywnej pozycji nie oznaczają wyboru.
 Otwarcie menu lub rozwinięcie sekcji także nie wybiera punktu nawigacji.
 Dotychczasowa klasa `active` pochodzi z serwera i jest synchronizowana przy
@@ -1670,20 +1731,19 @@ Lokalne zmienne
 `--sidebar-space-selection`, `--sidebar-space-selection-bg`, `--sidebar-space-focus`
 i `--sidebar-space-marker` są współdzielone przez cały główny pasek boczny
 i jego panel skrótów. Kolor zaznaczenia, ramki fokusu i znacznika wynosi
-`#5b5fc7`; tekst i zwykłe ikony mają ciemniejszy wariant `--sidebar-space-selection-ink`,
+`#df2b2b`; tekst i zwykłe ikony mają ciemniejszy wariant `--sidebar-space-selection-ink`,
 a półprzezroczyste tło używa akcentu z kryciem 10%
-(16% przy interakcji). Ten wariant menu używa palety `brandTeams`
-jasnego motywu [Microsoft Fluent UI](https://github.com/microsoft/fluentui/blob/master/packages/tokens/src/global/brandColors.ts).
+(16% przy interakcji). Wariant menu korzysta ze wspólnej czerwieni Ancore.
 Menu boczne współdzieli główny token akcentu aplikacji `--system-accent`.
 Przy zwiniętym pasku nagłówek grupy z aktywnym podpunktem
-także ma fioletowy stan. Długie nazwy zachowują wielokropek
+także ma czerwony stan. Długie nazwy zachowują wielokropek
 oraz pełną nazwę w `title`. Pozostałe podmenu zachowują dotychczasowe drzewka.
 
 Wariant `sidebar-space-row` dodaje „…” widoczne przy najechaniu/fokusie
 i otwartym menu; na urządzeniach dotykowych i telefonie przycisk jest stały.
 Szare tło wiersza pojawia się przy najechaniu, fokusie klawiatury lub otwartym
 menu; sam fokus po kliknięciu myszą go nie utrzymuje. Aktywna przestrzeń
-zachowuje własne fioletowe zaznaczenie niezależnie od fokusu.
+zachowuje własne czerwone zaznaczenie niezależnie od fokusu.
 `sidebar-space-menu` rozszerza wspólne `tasks-section-menu` i `row-actions.js`:
 osobista gwiazdka, dodawanie osób według praw zarządzania prywatną przestrzenią,
 ustawienia oraz neutralna stopka z rodzajem i sposobem zarządzania.
@@ -1751,7 +1811,7 @@ Wspólny `work-issue-row` w `spaces.css` podświetla cały wiersz przy najechani
 lub fokusie klawiatury wewnątrz: 8% `--system-accent` na białym tle, pasek 3px
 po lewej i przejście 0,12s, tak samo jak w „Dla ciebie”. Link nazwy nie ma
 podkreślenia przy najechaniu. Wzorzec obejmuje też backlog i sprinty;
-zaznaczenie checkboxa utrzymuje to samo fioletowe tło i pasek również po
+zaznaczenie checkboxa utrzymuje to samo czerwone tło i pasek również po
 odsunięciu kursora i utracie fokusu, tak jak zaznaczenie w katalogu Projektów.
 Include `spaces/issue_type.html` dodaje wspólne oznaczenie `tasks-issue-type`:
 ikonę z lokalnego `AncoreIcons` i nazwę typu zgłoszenia na pastelowym tle
@@ -1845,7 +1905,7 @@ pozostawia pusty pasek z `0%`. Liczby zadań są również obok nazw,
 w etykiecie dostępności i podpowiedzi.
 Na telefonie rozkład przechodzi pod nazwę typu. Panel zawiera
 podkreślony odnośnik do wszystkich zadań. Pozostałe natywne
-`progress` w postępie epików zachowują fioletowy akcent.
+`progress` w postępie epików zachowują czerwony akcent.
 „Obciążenie zespołu” korzysta z tego samego wariantu
 `work-summary-bars--distribution`: kolumny „Osoba przypisana” i „Rozkład prac”,
 szare paski 24px i procenty wewnątrz. Nazwy zachowują awatary; nieprzypisane
@@ -2110,7 +2170,7 @@ Pasek używa wspólnych `notifications-tabs work-tabs`, tak jak widoki Przestrze
 tekstu 13,5px/400, ikon 18px, odstępu ikona–tekst 8px, wysokości i podkreślenia.
 Ikony zakładek to `sparkles`, `user-round-check`, `star`, `clock` i `eye`.
 Licznik przypisanych zachowuje szare tło; nieaktywne zakładki pokazują szare
-podkreślenie przy najechaniu, a aktywna — fioletowe. Wewnętrzny odstęp paska
+podkreślenie przy najechaniu, a aktywna — czerwone. Wewnętrzny odstęp paska
 wynosi 15px również na telefonie, zgodnie z Przestrzeniami.
 Lista zaczyna się bezpośrednio pod zakładkami, bez paska filtrów/wyszukiwarki
 i paska opisu aktywnej zakładki. Brak wyników dla parametrów w adresie ma osobny
@@ -2229,9 +2289,9 @@ Katalogi „Projekty”, „Grupy” i „Zadania” mają zakładki „Prywatne
 „Udostępnione”, „Publiczne” i „Ulubione” w nagłówku, po prawej stronie tytułu.
 Wariant `tasks-topbar--with-tabs` umieszcza je w `tasks-titlebar-left` z odstępem
 1.5rem od tytułu. `notifications-tabs tasks-directory-tabs` korzysta ze wspólnego
-fioletowego podkreślenia i tekstu 15px/400, bez osobnej dolnej ramki całego paska.
+czerwonego podkreślenia i tekstu 15px/400, bez osobnej dolnej ramki całego paska.
 Najechanie na nieaktywną zakładkę pokazuje identyczne podkreślenie w szarym
-kolorze `--system-interaction`; aktywna zakładka zachowuje fioletowy pasek.
+kolorze `--system-interaction`; aktywna zakładka zachowuje czerwony pasek.
 Na wąskim ekranie zakładki przechodzą do kolejnego wiersza wewnątrz nagłówka;
 tytuł pozostawia miejsce na mobilny przycisk menu. Poniżej pozostaje pasek filtrów,
 wyszukiwania i paginacji. Zakładki są linkami z `aria-current="page"`,
@@ -2243,7 +2303,7 @@ Nieznana lub pominięta wartość wybiera „Prywatne”; adres
 Menu wiersza zawiera „Dodaj do ulubionych” / „Usuń z ulubionych”. Zapis przez POST
 jest wspólny ze stale widoczną gwiazdką po prawej stronie wiersza zadania.
 Wariant `tasks-issue-row--with-favorite` dodaje kolumnę 30px, a przycisk
-`tasks-icon-button tasks-row-favorite` korzysta z fioletowego akcentu dla
+`tasks-icon-button tasks-row-favorite` korzysta z czerwonego akcentu dla
 `aria-pressed="true"`. Jego kliknięcie i użycie klawiatury nie otwierają szczegółów.
 Gwiazdkę pokazuje wyłącznie katalog „Zadania”. Zapis ulubionych
 blokuje przycisk do zakończenia żądania, pokazuje potwierdzenie albo błąd bez
@@ -2253,10 +2313,11 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 
 Źródło: [core/base.html](../backend/core/templates/core/base.html).
 
-- Stały pasek u góry całej aplikacji (`app-topbar`) ma powierzchnię matowego
-  szkła nad wspólną tapetą, identyczną jak boczna nawigacja, i wysokość
+- Stały pasek u góry całej aplikacji (`app-topbar`) jest przezroczysty,
+  pokazuje tapetę strony `--app-shell-wallpaper-image` i ma wysokość
   `--app-topbar-height`
-  (44px przed skalowaniem UI). Po lewej zawiera przełącznik Workspace
+  (40px przed skalowaniem UI; 80px w dwóch wierszach do 600px).
+  Po lewej zawiera przełącznik Workspace
   z avatarem i nazwą, na środku jedno pole globalnego wyszukiwania,
   a po prawej Sticker, powiadomienia, ustawienia i profil z avatarem.
   Symetryczne boczne kolumny utrzymują wyszukiwarkę na środku całego paska,
@@ -2274,7 +2335,9 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   i są wyśrodkowane pionowo w kontrolkach. Wspólna reguła rozmiaru obejmuje
   bezpośredni awatar przycisku Workspace, z pierwszeństwem przed bazowym
   rozmiarem `space-avatar` (24px); nie obejmuje opcji rozwijanego menu.
-  Pasek zostawia po 4px nad i pod kontrolkami; rozmiary kontrolek są lokalne dla paska.
+  Pasek zostawia po 2px nad i pod kontrolkami (`--app-topbar-padding-y`),
+  bez dodatkowej przerwy przed panelami treści. Na telefonie dwa wiersze
+  kontrolek rozdziela 4px. Rozmiary kontrolek są lokalne dla paska.
   Odsunięcie treści i menu oraz wysokość panelu wyszukiwania uwzględniają wysokość paska.
   Wysokość pola wyszukiwania obejmuje ramkę; wewnętrzny input wypełnia jej wnętrze.
   Także aktywna wyszukiwarka na telefonie zachowuje tę wysokość i pionowe wyśrodkowanie.
@@ -2416,7 +2479,7 @@ definiują bloki `secondary_menu`/`page_header`, których aktualny base nie
 wywołuje. Sprawdź rzeczywiste dziedziczenie, zanim skopiujesz cały szablon.
 
 Ekrany logowania/rejestracji mają oddzielny
-[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z tapetą
+[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z jednolitym białym tłem
 i prawym panelem formularza. Zachowują wspólny Atlassian Sans; szczegóły
 wariantu opisuje rozdział [Konta w React](#konta-w-react).
 
@@ -2465,11 +2528,13 @@ zmiennej zamiast powielania wartości liczbowej.
 | Mały/podstawowy/większy tekst | `--font-size-sm: 13px`, `--font-size-base: 14px`, `--font-size-lg: 15px` |
 | Zwykły tekst | `--text-primary: #40444C` |
 | Tekst na akcencie | `--text-inverse: #FFFFFF` |
-| Główny akcent | `--system-accent: #5b5fc7`, `--system-accent-rgb: 91, 95, 199` |
+| Główny akcent | `--system-accent: #df2b2b`, `--system-accent-rgb: 223, 43, 43` |
 | Interakcje | `--system-interaction: #6f7580`, miękkie tło z alfa 0.1 |
 | Szare podświetlenie menu bocznego | `--sidebar-interaction-bg` (6% krycia `--system-interaction`), naciśnięcie: `--sidebar-interaction-pressed-bg` (10%) |
 | Wybrana pozycja menu bocznego | `--sidebar-space-selection: var(--system-accent)`, tekst/ikony: `--sidebar-space-selection-ink` (60% akcentu z czernią), tło `--sidebar-space-selection-bg` (10% krycia akcentu), `--sidebar-space-selection-hover-bg` (16%); znacznik i ramka fokusu zachowują bazowy akcent |
 | Główna powierzchnia | `--bg-main: #ffffff`, `--card-bg: #ffffff` |
+| Tło zastępcze strony za panelami | `--app-shell-bg`: 12% `--system-interaction` zmieszane z `--card-bg` |
+| Tapeta strony za panelami | `--app-shell-wallpaper-image`: `wallpaper-red-black-white.png`, `left center / cover` |
 | Nawigacja pomocnicza | `--secondary-menu-bg: #FBFBFC` |
 | Tło panelu | `--panel-bg: #f7f6f4` |
 | Delikatna ramka | `--border-color: #e0ddd9` |
@@ -2480,9 +2545,17 @@ zmiennej zamiast powielania wartości liczbowej.
 | Pasek narzędzi | `--toolbar-height: 52px` |
 | Odstęp treści stron od lewej i prawej krawędzi | `--app-page-padding-x: 15px` |
 | Sidebar | bazowo 272px; zwinięty 64px; JS pozwala regulować 220–420px |
+| Odstęp paneli powłoki | `--app-shell-gap`: 4px na każdej szerokości |
+| Odstęp nad i pod kontrolkami górnego paska | `--app-topbar-padding-y`: 2px |
+| Promień paneli powłoki | `--app-shell-radius`: 15px |
+| Prawy panel boczny | `--app-right-sidebar-default-width`: 272px (zadanie 370px); `--app-right-sidebar-user-width` zapisany wybór 240–520px; `--app-right-sidebar-width` bieżący rozmiar; do 1100px szuflada |
 | Skala UI | `--app-ui-scale: 0.98`, stosowana przez `zoom` w resecie |
 
-Główny akcent `#5b5fc7` pochodzi z palety `brandTeams` Microsoft Fluent UI.
+Główny akcent `#df2b2b` jest ciemniejszym wariantem czerwieni nowego logo
+`#ff3131`. Zapewnia kontrast białego tekstu 4,65:1 na pełnym akcencie.
+Logo `static/img/logo.png` zachowuje oryginalne kolory i proporcje; używają go
+powłoka, ekrany kont i favicon. Edytor tablicy w iframe ładuje te same tokeny
+z `base/variables.css`, a paleta kontrolek Excalidraw jest ich adapterem.
 Wspólne kontrolki, aktywne zakładki, zaznaczenia, postęp i jasne tła
 przycisków korzystają z `--system-accent` oraz jego wariantu RGB.
 Interakcje neutralne zachowują szarości; kolory danych i ilustracji
@@ -2499,7 +2572,7 @@ Ważne wyjątki:
 - `--text-muted`, `--text-main`, `--text-strong` są aliasami tej samej podstawowej
   barwy. Nazwa „muted” nie upoważnia do wprowadzania nowego jasnoszarego tekstu.
 - `--accent-red`, `--accent-blue`, `--accent-peach` są historycznymi aliasami;
-  wskazują wspólny fioletowy akcent MS Teams.
+  wskazują wspólny czerwony akcent Ancore.
 - Globalne reguły w `style.css` wymuszają wagę tekstu 400 w szerokim zakresie,
   także dla wielu nagłówków i `strong`. Nie dodawaj lokalnych boldów jako
   domyślnego sposobu wyróżniania nowego ekranu.
@@ -2619,7 +2692,7 @@ Wspólny stos ma szerokość 280–420px; do 767px wypełnia szerokość z margi
 
 Wszystkie typy mają białą powierzchnię `--card-bg`, ramkę `--border-color`,
 zaokrąglenie `--radius`, cień `--shadow-md` i tekst 13px/400 z `--text-primary`.
-Typ rozróżnia wyłącznie lewa ramka 3px: fiolet `--system-accent` dla sukcesu
+Typ rozróżnia wyłącznie lewa ramka 3px: czerwień `--system-accent` dla sukcesu
 i informacji, dotychczasowy czerwony `#c94f45` dla błędu, bursztynowy `#c18a34`
 dla ostrzeżenia, szary `--system-interaction` dla komunikatu bez typu.
 Animacje wejścia/wyjścia respektują `prefers-reduced-motion`.
@@ -2632,7 +2705,7 @@ Przyciski używają wariantu `tasks-tag-topbar-button--row-highlight`:
 tła `color-mix(in srgb, var(--system-accent) 17%, #ffffff)` oraz tekstu i ikony
 w kolorze `--text-primary`. Tło jest o 9 punktów procentowych intensywniejsze
 niż podświetlenie wiersza tabeli; przycisk nie ma paska po lewej ani cienia.
-Po najechaniu na aktywny przycisk udział fioletu rośnie do 24%, z przejściem
+Po najechaniu na aktywny przycisk udział czerwieni rośnie do 24%, z przejściem
 koloru wspólnego komponentu; fokus klawiatury używa tego samego tła, bez obrysu.
 Rozmiar, zaokrąglenie i obsługa modala pochodzą ze wspólnego
 przycisku. Wariant jest stosowany do akcji „Dodaj projekt”, „Dodaj grupę”
@@ -2650,7 +2723,7 @@ i `--primary-button-hover-bg` (24%) są używane także przez „Dodaj projekt�
 Reguła w `style.css` ustala ciemny tekst i ikony, usuwa cień, oznacza
 fokus zmianą tła i osłabia przyciski nieaktywne przez opacity 0.55.
 Przyciski usuwania w `showConfirmModal` korzystają z tej samej reguły:
-jasny fiolet przechodzi po najechaniu w mocniejszy fiolet, z ciemnym tekstem.
+jasna czerwień przechodzi po najechaniu w mocniejszy odcień, z ciemnym tekstem.
 Historyczne style potwierdzeń w `tasks.css` określają ich geometrię,
 bez osobnego szarego tła, białego tekstu ani cienia w stanie hover/focus.
 „Zastosuj” w filtrach tekstowych projektów, Dysku i Dokumentów korzysta
@@ -2673,13 +2746,13 @@ korzysta natomiast ze wspólnego wskaźnika `:focus-visible` w `style.css`:
 wewnętrzny obrys 2px w kolorze `--system-accent`, uwzględniający skalę UI.
 Ujemny offset utrzymuje go wewnątrz kontrolki, również przy przewijanych
 tabelach i zakładkach. Checkboxy i radio mają obrys odsunięty o 2px na zewnątrz,
-aby był widoczny także na fioletowym zaznaczeniu i stanie pośrednim.
+aby był widoczny także na czerwonym zaznaczeniu i stanie pośrednim.
 W trybie wymuszonych kolorów używa systemowego
 `Highlight`. Dotyczy to także uwierzytelniania, formularzy i okien.
 Pola tekstowe, liczbowe, daty i `textarea`, w tym wyszukiwarki list wyboru,
 nie otrzymują tego obrysu w zwykłym trybie kolorów. Zachowują dotychczasowe
 obramowania, kolory błędów i fokus. Przyciski potwierdzenia, anulowania
-i zamknięcia w `.confirm-modal` również nie otrzymują fioletowego obrysu;
+i zamknięcia w `.confirm-modal` również nie otrzymują czerwonego obrysu;
 zachowują dotychczasowe tła interakcji i obsługę klawiatury.
 Potwierdzenia zbudowane przez wspólny `Modal` stosują w tym celu klasę
 `app-confirmation-modal`, m.in. zmiany dostępu i usuwanie konfiguracji Przestrzeni.
@@ -2807,7 +2880,7 @@ odstęp boczny `--documents-index-padding-x: var(--app-page-padding-x)` (15px),
 zgodny z paskiem narzędzi katalogów. Lista używa
 `tasks-directory-sheet tasks-project-sheet` z „Wszystkich
 projektów” oraz wariantu `documents-library-sheet` w `documents.css`.
-Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz fioletowe
+Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz czerwone
 podświetlenie z paskiem po lewej pochodzą ze wspólnego komponentu.
 
 Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
@@ -2853,7 +2926,7 @@ minimum 40px wysokości, pole ikony 30×30px, zdjęcie 28×28px i odstęp 10px o
 Zastępczy SVG z `drive_icon.html` jest wyśrodkowany w tym samym polu.
 Pełna nazwa pozostaje w `title`, a długie nazwy skracają się przez ellipsis.
 Przycisk z ikoną `panel-right` na końcu paska filtrów zwija i rozwija cały
-prawy panel, zgodnie ze wzorcem Kalendarza. Na szerokich ekranach zwinięcie
+prawy panel Dysku. Na szerokich ekranach zwinięcie
 poszerza tabelę i jest zapamiętywane lokalnie w przeglądarce. Do 1100px
 przycisk otwiera dotychczasowy panel wysuwany z tłem, obsługą Escape i fokusu;
 otwarcie tego panelu nie zmienia preferencji szerokiego ekranu.
@@ -2868,7 +2941,7 @@ Przeciąganie w Dysku i Dokumentach inicjalizuje `initDocumentDragDrop` w
 wspólny `AbortController`. Kafelki i wiersze aktywnych plików/folderów Dysku
 mają `data-document-drag`, a miejsca docelowe `data-document-drop` (`folder:<pk>`
 lub `library:<pk>`). W Dokumentach pozostaje wyłącznie upload do katalogu
-(`root`), bez przeciągania wierszy i kafelków między lokalizacjami. Prawidłowy cel podświetla się istniejącym fioletem
+(`root`), bez przeciągania wierszy i kafelków między lokalizacjami. Prawidłowy cel podświetla się istniejącym czerwonym akcentem
 z przerywanym obrysem; komunikat `role=status` podaje nazwę miejsca docelowego.
 Podczas przenoszenia elementu przy kursorze podąża nieprzezroczysta karta
 `documents-drag-preview` (320px): własna ikona pliku/folderu, nazwa do trzech
@@ -2959,7 +3032,7 @@ i przy inicjalizacji po `ancore:content-loaded`, bez powielania listenerów.
 
 Lista Dokumentów używa komponentu `tasks-directory-sheet tasks-project-sheet`
 z katalogu „Projekty”, z wariantem `office-document-sheet` w `office.css`.
-Wiersze mają 35px wysokości; nagłówki z ikonami, tekst, separatory, fioletowe
+Wiersze mają 35px wysokości; nagłówki z ikonami, tekst, separatory, czerwone
 podświetlenie oraz pasek przy lewej krawędzi po najechaniu pochodzą ze wspólnego CSS.
 Pierwsza kolumna 40px zawiera stale widoczne checkboxy w wariancie
 `tasks-project-sheet--selectable`, tak jak lista Dysków. Wspólna obsługa
@@ -3111,19 +3184,17 @@ widoczne w zakładce „Historia”.
 Wspólne style czasu pracy i historii są nadal używane przez Kanban.
 
 Zakładki „Główna”, „Podzadania”, „Dziennik pracy”, „Udostępnienia” i „Historia”
-znajdują się w pełnym nagłówku szczegółów, nad lewą kolumną i panelem
-właściwości. Pasek `notifications-tabs work-tabs` ma boczny odstęp
+znajdują się w nagłówku głównej treści zadania. Panel właściwości zajmuje
+prawy pasek wspólnej powłoki, obok nagłówka i treści. Pasek `notifications-tabs work-tabs` ma boczny odstęp
 `--app-page-padding-x` i tekst 13,5px, tak jak w Przestrzeni. Wspólne style
 obejmują linki widoków i przyciski zakładek; aktywny przycisk zachowuje
-`aria-selected` i fioletowe podkreślenie. Treść lewej kolumny bieżącego zadania
+`aria-selected` i czerwone podkreślenie. Treść lewej kolumny bieżącego zadania
 Przestrzeni ma od krawędzi strony odstęp `--app-page-padding-x` (15px), przez lokalny
 `--tasks-issue-content-padding-x`, i całą pozostałą szerokość bez limitu 980px.
-Powyżej 1024px prawe wcięcie treści wynosi 0: odstęp 15px od panelu właściwości
-zapewnia jego lewy margines, dzięki czemu nie sumuje się z wcięciem treści.
-Do 1024px treść zachowuje po 15px z obu stron, a panel znajduje się pod nią.
-Wyjątkiem jest sekcja tematu i opisu (`tasks-issue-overview`): ma 50px od lewej
-krawędzi strony i 50px od prawego panelu, wliczając jego margines. Do 1024px
-ma po 50px wcięcia z obu stron. Pozostałe sekcje zachowują odstępy 15px.
+Treść zachowuje po 15px z obu stron na wszystkich szerokościach. Wyjątkiem
+jest sekcja tematu i opisu (`tasks-issue-overview`), która ma po 50px wcięcia.
+Po przeniesieniu właściwości do prawego paska `tasks-issue-main` ma jedną
+kolumnę, więc czat, historia i pozostałe zakładki wypełniają główny obszar.
 Dekoracyjne ikony z `AncoreIcons` oznaczają dokument
 przy „Główna”, listę przy „Podzadania”, zegar przy „Dziennik pracy”, osoby
 przy „Udostępnienia” i strzałkę historii przy „Historia”. Mają 18px i odstęp 8px
@@ -3142,26 +3213,32 @@ wypełnia dostępną wysokość treścią, a dłuższą historię przewija wspó
 zakładki (na wąskich ekranach główny obszar szczegółów). Czat zachowuje własny
 limit wysokości. Zapis wpisu czasu odświeża tylko tabelę i historię, zachowując wartości
 tematu i opisu. Dotyczy to zadań i podzadań.
-Prawy panel szczegółów jest wspólny dla wszystkich zakładek zadania
-i podzadania. Wspólna reguła w `tasks.css` dla `.work-task-page .tasks-issue-sidebar`
-oraz `.profile-page .profile-issue-sidebar`
-tworzy pływającą kartę jak lista Osi czasu: obrys `--border-color`,
-zaokrąglenie `--radius`, tło `--card-bg` i cień `--shadow-md`.
-Odstęp poziomy wynosi `--app-page-padding-x` (15px), jak w treści Przestrzeni,
-również na telefonie. Odstęp pionowy wynosi 5px, a do 650px — 4px. Karta kończy się
-na ostatniej sekcji, bez dodatkowego separatora; przy długiej zawartości
-przewija się w dostępnej wysokości. Do 1024px pozostaje pod treścią,
-bez limitu wysokości i z przewijaniem wspólnego obszaru szczegółów.
-Wariant obejmuje React i pierwszy render Django, bez zmiany pól i autosave.
-Przycisk „Zapisz” jest dostępny we wszystkich zakładkach i zapisuje
-ten sam formularz, w tym zmiany z panelu bocznego. „Dodaj czas” pojawia się
+Panel szczegółów jest wspólny dla wszystkich zakładek otwartego zadania.
+`TaskPage` renderuje istniejące pola przez `shared/RightSidebarContent` do
+trwałego `#app-right-sidebar-content`, poza korzeniami strony i powłoki React.
+Pierwszy render korzysta z bloku `right_sidebar` oraz
+`spaces/task_sidebar.html`. Podczas montowania strony usuwana jest tylko
+zawartość `[data-right-sidebar-fallback]`; portal jest usuwany razem z ekranem,
+więc następna strona nie pokazuje danych poprzedniego zadania.
+
+Panel ma obrys i promień wspólnego prawego paska, bez drugiej karty wewnątrz.
+Sekcje i kontrolki zachowują istniejący wygląd. Ma szerokość 370px i własne
+przewijanie, a na wąskim ekranie otwiera się jako szuflada. W tej szufladzie
+błąd zapisu i przycisk ponowienia są dostępne nad właściwościami. Zwijanie
+zachowuje szkic pól oraz preferencję powłoki. Pola portalu wskazują natywny
+formularz `space-task-form`; autosave nasłuchuje dokumentu i sprawdza
+`input.form`, zachowując jeden `FormData`, kolejność zapisu, walidację i ACL.
+Podzadania nadal otwierają się przez zakładkę rodzica oraz istniejący modal;
+przeniesienie panelu nie zmienia tego przepływu.
+
+Automatyczny zapis obejmuje pola treści i prawego paska na każdej zakładce.
+„Dodaj czas” pojawia się
 po prawej stronie górnego wiersza nagłówka w Dzienniku pracy
 i zapisuje wpisy przez osobny formularz modala.
-Panel boczny szczegółów zadania i podzadania nie pokazuje wierszy „Przestrzeń”
-ani „Grupa”. Ostatnia sekcja panelu występuje wyłącznie w podzadaniu i zawiera
-wybór zadania nadrzędnego. Okno „Planowanie i zespół” również nie pozwala zmienić grupy;
-wybór grupy pozostaje w formularzu tworzenia. Picker rodzica podzadania
-obejmuje tylko zadania z tej samej grupy.
+Prawy panel zachowuje widoczność, etap zadania, priorytet, wykonawcę, typ
+zgłoszenia, kategorię, grupę i tagi, a także pola dodatkowe, daty i metadane.
+Dostępność kontrolek i przejść nadal wynika z odpowiedzi serwera; konto tylko
+do odczytu widzi wartości bez możliwości zapisu.
 ARIA tablist/tab/tabpanel, strzałki, Home i End obsługują klawiaturę.
 Wybrany widok jest zapisywany w parametrze `tab=subtasks`, `tab=work-log` lub `tab=history`, bez przeładowania.
 „Podzadania” są dostępne dla zadania głównego, także przy pustej liście.
@@ -3187,7 +3264,7 @@ oraz podzadań, pod zwykłymi i scoped adresami. Kanban zachowuje własną Aktyw
 
 `tasks-work-log` wykorzystuje wariant `tasks-work-log-sheet` wspólnej tabeli
 katalogu projektów: wiersze 35px,
-nagłówki z ikonami, separatory oraz fioletowe podświetlenie z paskiem po lewej.
+nagłówki z ikonami, separatory oraz czerwone podświetlenie z paskiem po lewej.
 Cały dziennik korzysta z `tasks-issue-content`: tabela, podsumowanie, pusty stan
 i pasek „Pokaż więcej” mają tę samą pełną szerokość i boczne odstępy 50px
 co temat i opis, również na telefonie. Podsumowanie i pasek nie dodają
@@ -3249,7 +3326,7 @@ Nagłówek ma 72px i tytuł 20px/400, stopka minimum 68px i akcje po prawej.
 Stopka łączy się z treścią bez poziomej linii ani osobnego obramowania.
 Dotyczy to dużych i małych okien, potwierdzeń, profilu i edytorów zdjęć;
 przyciski są wyrównane do prawej, z zachowaną kolejnością i działaniem.
-Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, fioletowe
+Oba paski pozostają poza przewijaną treścią. Przycisk zamknięcia, czerwone
 akcje, kontrolki, obsługa fokusu, Escape, list wyboru i zapisu korzystają
 z dotychczasowych mechanizmów. Panel pojawia się i znika z krótkim pionowym
 przesunięciem równym `--app-panel-viewport-gap` w 320ms, z łagodnym wyhamowaniem
@@ -3696,7 +3773,7 @@ wypełniają komórkę istniejącym akcentem bez zmiany siatki tabeli.
 
 Okno `workplace-edit-modal` ma zakładki „Główna” (`main`), „Członkowie” (`members`)
 i — tylko dla zarządzających — „Linki do dołączenia” (`links`). Używa
-`notifications-tabs tasks-issue-tabs`, tekstu 15px/400, fioletowego podkreślenia
+`notifications-tabs tasks-issue-tabs`, tekstu 15px/400, czerwonego podkreślenia
 oraz relacji `tablist`/`tab`/`tabpanel`. Strzałki, Home i End przenoszą fokus;
 na telefonie pasek przewija aktywną zakładkę. Zmiana zakładki zachowuje szkic
 ustawień. „Zapisz zmiany” jest na „Głównej”, a „Dodaj osobę” nad członkami.
@@ -3707,7 +3784,7 @@ zamknięcie okna usuwa żądanie otwarcia z URL i przywraca fokus.
 Tabela członków używa `tasks-directory-board tasks-directory-sheet
 tasks-project-sheet workplace-team-sheet` oraz pięciu kolumn: zaznaczenie
 40px, nazwa z awatarem, e-mail, rola i data dołączenia.
-Zachowuje wiersze 35px, tekst 13px/400, cienką siatkę, jasnofioletowe
+Zachowuje wiersze 35px, tekst 13px/400, cienką siatkę, jasnoczerwone
 podświetlenie oraz awatary 30×30px. Checkbox nagłówka obejmuje własną tabelę
 i pokazuje stan częściowy; zaznaczenie nie wykonuje operacji. Nazwa i e-mail
 mają ellipsis i pełną treść w `title`. Na telefonie tabela przewija się poziomo
