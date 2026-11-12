@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { acquireInert } from './inert';
 
 export function Modal({
   title,
@@ -87,12 +88,12 @@ export function Modal({
       node = node.parentElement
     ) {
       [...node.parentElement!.children].forEach((sibling) => {
-        if (sibling !== node && sibling instanceof HTMLElement && !sibling.inert) {
-          sibling.inert = true;
+        if (sibling !== node && sibling instanceof HTMLElement) {
           background.push(sibling);
         }
       });
     }
+    const releaseBackground = acquireInert(background);
     const beforeNavigate = (event: Event) => {
       if (latest.current.dirty || latest.current.pending) {
         event.preventDefault();
@@ -114,9 +115,7 @@ export function Modal({
       element.removeEventListener('ancore:task-modal-closed', closed);
       document.removeEventListener('ancore:before-navigate', beforeNavigate);
       window.removeEventListener('beforeunload', beforeUnload);
-      background.forEach((sibling) => {
-        sibling.inert = false;
-      });
+      releaseBackground();
       if (!document.querySelector('.tasks-modal.is-open'))
         document.body.classList.remove('modal-open');
       if (previous instanceof HTMLElement && previous.isConnected)
