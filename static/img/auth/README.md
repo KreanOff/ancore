@@ -1,21 +1,47 @@
-# Tapety kont i powłoki aplikacji
+# Tapeta aplikacji, baner profilu i wcześniejsze warianty
 
-## Aktywny wariant: jasne fałdy
+## Tapeta aplikacji: biel, czerwień i czerń
 
-`wallpaper-fluent-bloom-light-4k.webp` jest wspólnym tłem logowania,
-rejestracji, dodawania konta oraz górnego i bocznego paska aplikacji.
+`wallpaper-red-black-white.png` jest tapetą wspólnej powłoki aplikacji
+i stron logowania oraz rejestracji, podłączoną przez `--app-shell-wallpaper-image`.
+Logowanie i rejestracja korzystają z lokalnego aliasu `--app-wallpaper-image` na
+`body.auth-page--wallpaper`, dodawanym przez ich szablony.
+Tapeta zachowuje abstrakcyjne fałdy
+poprzedniej tapety, z przewagą bieli, czerwonymi wstęgami i czarnymi akcentami.
+Jasna górna część zapewnia czytelne tło ciemnych kontrolek. Obraz skaluje się
+przez `cover` i jest wyrównany do lewej i środka. Panele pozostają białe.
+
+Wariant utworzono wbudowanym Image Gen na podstawie
+`wallpaper-fluent-bloom-light-4k.webp`. Zachowano natywny wynik PNG
+o wymiarach **1672 × 941 pikseli**, bez zmiany rozdzielczości.
+Poprzedni obraz pozostaje domyślnym banerem profilu. Wybór i tworzenie
+Workspace oraz karty zespołów bez zdjęcia zachowują
+jednolite tło, bez tapety i matowego szkła.
+
+Prompt użyty we wbudowanym Image Gen:
+
+> Use case: style-transfer. Asset type: full-screen wallpaper behind a light productivity application. Edit target: the referenced existing abstract folded-satin bloom wallpaper. Preserve its sculptural flowing folds, soft 3D material, broad elegant curves, wide 16:9 composition and overall placement. Change the color palette only to WHITE, RED and BLACK, with white and pearl-gray dominant, a few confident saturated Ancore red (#df2b2b) ribbons, and restrained deep charcoal/black folds and shadows. Remove every blue, violet, lavender and pink hue. Keep the upper 15% of the entire image light white or pale gray and visually quiet so dark toolbar icons remain legible on desktop and mobile; concentrate red and black sculptural folds lower down and along the left/middle. Bright diffuse studio lighting, refined matte satin finish, no harsh glare. Output a clean full-bleed landscape wallpaper, ideally 3840x2160 if supported. No text, no logos, no letters, no UI, no border or watermark. Opaque background.
+
+## Domyślny baner profilu i poprzednia tapeta: jasne fałdy
+
+`wallpaper-fluent-bloom-light-4k.webp` pozostaje domyślnym osobistym banerem
+profilu użytkownika bez własnego obrazu. Adres przekazuje
+[`backend/accounts/frontend.py`](../../../backend/accounts/frontend.py).
+Wspólna powłoka aplikacji korzysta teraz z osobnego wariantu
+biało-czerwono-czarnego opisanego powyżej.
+
 To autorska, abstrakcyjna kompozycja błękitno-lawendowych fałd inspirowana
-tapetami Windows 11, z jasną, spokojną przestrzenią pod formularzem po prawej.
-Nie zawiera logo, tekstu ani elementów interfejsu. CSS używa `cover`,
-a panele i paski zachowują osobną warstwę matowego szkła. Logo i formularze
-są osobnymi elementami HTML/React.
+tapetami Windows 11. Nie zawiera logo, tekstu ani elementów interfejsu.
+Baner profilu kadruje obraz przez `object-fit: cover` w proporcjach 4:1;
+logo i formularze pozostają osobnymi elementami HTML/React.
 
 Grafikę wygenerowano wbudowanym Image Gen. Źródło ma 1672 × 941 pikseli;
 eksport WebP ma dokładnie **3840 × 2160 pikseli**, 2 642 594 bajty
 i bezstratne kodowanie. Użyto powiększenia Lanczos3 z minimalnym dopasowaniem
 do 16:9. To plik o wymiarach 4K, a nie natywna generacja szczegółów w 4K.
 
-Prompt użyty we wbudowanym Image Gen:
+Historyczny prompt użyty we wbudowanym Image Gen, opisujący pierwotne
+przeznaczenie obrazu jako tapety:
 
 > Use case: stylized-concept. Asset type: full-screen desktop wallpaper for Ancore, shared by a
 > light login screen and translucent application navigation. Primary request: an original elegant

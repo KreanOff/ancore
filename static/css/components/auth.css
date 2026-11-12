@@ -1,4 +1,4 @@
-/* Shared wallpaper shell for login, registration and the account switcher. */
+/* Shared shell for login, registration and the account switcher. */
 body.auth-page {
     --auth-bg: var(--bg-main);
     --auth-ink: var(--text-primary);
@@ -16,6 +16,10 @@ body.auth-page {
     color: var(--auth-ink);
     font-family: var(--font-family-ui);
     color-scheme: light;
+}
+
+body.auth-page--wallpaper {
+    --app-wallpaper-image: var(--app-shell-wallpaper-image);
 }
 
 body.auth-page .auth-shell {
@@ -48,12 +52,9 @@ body.auth-page .auth-brand {
 body.auth-page .auth-brand-mark {
     display: block;
     flex-shrink: 0;
-    width: calc(24px * 790 / 858);
+    width: 24px;
     height: 24px;
-    background: var(--system-accent);
-    /* The 1254px source has a 790 × 858px alpha footprint; omit its padding. */
-    -webkit-mask: url('../../img/logo-ancore.png') center / auto 146.154% no-repeat;
-    mask: url('../../img/logo-ancore.png') center / auto 146.154% no-repeat;
+    background: url('../../img/logo.png') center / contain no-repeat;
 }
 
 body.auth-page .auth-brand-name {

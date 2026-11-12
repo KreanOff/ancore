@@ -1,9 +1,9 @@
 /* Main Style Entry Point */
 @import 'base/fonts.css?v=20261003-atlassian-sans';
-@import 'base/variables.css?v=20261107-toolbar-controls-36px';
+@import 'base/variables.css?v=20261112-right-sidebar-resize';
 @import 'base/reset.css?v=20261003-atlassian-sans';
-@import 'layout/sidebar.css?v=20261017-border-visibility-3pct';
-@import 'layout/main.css?v=20261025-sidebar-highlights';
+@import 'layout/sidebar.css?v=20261112-red-brand';
+@import 'layout/main.css?v=20261112-topbar-gap-2px';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261017-border-visibility-3pct';
 @import 'components/buttons.css?v=20261017-collection-favorite-stars';
@@ -13,13 +13,13 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20261105-no-hamburger';
-@import 'components/shared-controls.css?v=20261018-shared-controls';
+@import 'components/tasks.css?v=20261112-red-brand';
+@import 'components/shared-controls.css?v=20261112-red-brand';
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/auth.css?v=20261104-single-account';
-@import 'components/workplaces.css?v=20261105-no-hamburger';
+@import 'components/auth.css?v=20261112-login-wallpaper';
+@import 'components/workplaces.css?v=20261112-red-brand';
 @import 'calendar.css?v=20261108-aligned-calendar-panel';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20261007-directory-controls';
@@ -1408,7 +1408,7 @@ html:not(.sidebar-collapsed) .sidebar-menu-section--favorites.is-collapsed .side
 .sidebar .sidebar-menu-section.is-drag-over {
     outline: 1px solid var(--sidebar-active);
     outline-offset: -1px;
-    background: #eef4ff;
+    background: var(--sidebar-space-selection-bg);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sidebar-active) 22%, transparent);
 }
 

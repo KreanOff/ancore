@@ -1,9 +1,9 @@
 :root {
-    --workplaces-brand: #ff3131;
-    --workplaces-brand-dark: #d92727;
-    --workplaces-brand-rgb: 255, 49, 49;
-    --workplaces-brand-soft: #fff1f1;
-    --workplaces-brand-border-soft: #ffd8d8;
+    --workplaces-brand: var(--system-accent);
+    --workplaces-brand-dark: color-mix(in srgb, var(--system-accent) 85%, #000000);
+    --workplaces-brand-rgb: var(--system-accent-rgb);
+    --workplaces-brand-soft: color-mix(in srgb, var(--system-accent) 6%, #ffffff);
+    --workplaces-brand-border-soft: color-mix(in srgb, var(--system-accent) 19%, #ffffff);
     --workplaces-accent: var(--system-accent);
     --workplaces-accent-dark: var(--system-accent-hover);
     --workplaces-accent-rgb: var(--system-interaction-rgb);
@@ -3857,7 +3857,7 @@
 }
 
 .workplace-row__current-badge {
-    --app-text-color: #176f6f;
+    --app-text-color: color-mix(in srgb, var(--system-accent) 70%, #000000);
 
     min-height: 20px;
     display: inline-flex;
@@ -3867,7 +3867,7 @@
     border: 1px solid rgba(var(--system-accent-rgb), 0.28);
     border-radius: 999px;
     background: rgba(var(--system-accent-rgb), 0.12);
-    color: #176f6f;
+    color: var(--app-text-color);
     font-size: 0.68rem;
     font-weight: 700;
     line-height: 1;
@@ -3878,7 +3878,7 @@
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-table-icon-button--current:hover,
 .tasks-directory-board.tasks-project-sheet.workplaces-project-sheet .workplace-table-icon-button--current:focus-visible {
     background: transparent;
-    color: #168585;
+    color: var(--system-accent);
     cursor: default;
     opacity: 1;
 }

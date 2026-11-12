@@ -351,7 +351,7 @@
 .contacts-photo-editor-stage .profile-photo-crop-canvas {
     width: min(640px, calc(var(--app-viewport-width) - 6rem), calc(var(--app-viewport-height) - 230px));
     height: min(640px, calc(var(--app-viewport-width) - 6rem), calc(var(--app-viewport-height) - 230px));
-    border: 2px solid #6aa2ff;
+    border: 2px solid var(--system-accent);
     border-radius: 50%;
     background: #eef1f4;
     box-shadow:

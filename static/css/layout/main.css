@@ -1,17 +1,17 @@
 body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
     --app-topbar-height: calc(var(--dropdown-control-height) + 8px);
     isolation: isolate;
-    background: var(--bg-main) var(--app-wallpaper-image) left center / cover no-repeat;
+    background: var(--app-shell-bg) var(--app-shell-wallpaper-image) left center / cover no-repeat;
 }
 
-/* One glass surface also fills the exposed, rounded corners of page content. */
+/* The page backdrop also fills the exposed corners around the white panels. */
 body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar)::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: var(--glass-surface-bg);
+    background: var(--app-shell-bg) var(--app-shell-wallpaper-image) left center / cover no-repeat;
     -webkit-backdrop-filter: var(--glass-surface-filter);
     backdrop-filter: var(--glass-surface-filter);
 }
@@ -195,7 +195,7 @@ body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar)::before {
 }
 
 @media (max-width: 767px) {
-    /* The drawer covers the page, so give its glass a wallpaper of its own. */
+    /* The drawer keeps its own solid background above the page content. */
     body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) .sidebar {
         background: var(--bg-main) var(--app-wallpaper-image) left center / auto var(--app-viewport-height) no-repeat;
     }
@@ -439,7 +439,7 @@ body.app-page-loading .app-loading-overlay {
     height: 18px;
     flex: 0 0 18px;
     border: 2px solid #d6d8dc;
-    border-top-color: #14b8bd;
+    border-top-color: var(--system-accent);
     border-radius: 50%;
     animation: app-loading-spin 0.8s linear infinite;
 }

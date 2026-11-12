@@ -1,5 +1,6 @@
 {% load static %}<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tablica | Ancore</title>
-<link rel="stylesheet" href="{% static 'vendor/board/board.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/base/variables.css' %}?v=20261112-plain-background">
+<link rel="stylesheet" href="{% static 'vendor/board/board.css' %}?v=20261112-red-brand">
 <script type="module" src="{% static 'vendor/board/board.js' %}?v=20261105-no-hamburger"></script>
 </head><body><div id="board-root" data-assets="{% static 'vendor/board/' %}"><p>Ładowanie tablicy…</p></div>{% csrf_token %}{{ board_config|json_script:'board-config' }}</body></html>

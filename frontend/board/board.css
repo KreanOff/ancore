@@ -1,6 +1,29 @@
 html, body, #board-root { margin: 0; width: 100%; height: 100%; overflow: hidden; }
 body { font-family: Inter, system-ui, sans-serif; }
-#board-root .excalidraw { --color-surface-primary-container: #dcf6f6; --color-on-primary-container: #40444c; --color-selection: #1ebfbf; --color-primary: #1ebfbf; --color-primary-darker: #159797; --color-primary-darkest: #137d7d; --color-primary-light: #dcf6f6; }
+/* The iframe loads the shared Ancore tokens before this bundle. */
+#board-root .excalidraw {
+    --color-surface-low: var(--panel-bg);
+    --color-surface-mid: var(--panel-bg);
+    --color-surface-high: var(--system-interaction-soft);
+    --color-border-outline: var(--system-interaction);
+    --color-border-outline-variant: var(--border-color);
+    --color-surface-primary-container: var(--primary-button-bg);
+    --color-on-primary-container: var(--text-primary);
+    --color-slider-track: var(--primary-button-hover-bg);
+    --focus-highlight-color: var(--system-accent);
+    --select-highlight-color: var(--system-accent);
+    --color-logo-text: var(--text-primary);
+    --color-selection: var(--system-accent);
+    --color-primary: var(--system-accent);
+    --color-primary-darker: color-mix(in srgb, var(--system-accent) 90%, #000000);
+    --color-primary-darkest: color-mix(in srgb, var(--system-accent) 75%, #000000);
+    --color-primary-light: var(--primary-button-bg);
+    --color-primary-light-darker: var(--primary-button-hover-bg);
+    --color-primary-hover: var(--color-primary-darker);
+    --color-brand-hover: var(--color-primary-darker);
+    --color-brand-active: var(--color-primary-darkest);
+    --link-color: var(--system-accent);
+}
 
 /* Excalidraw 0.18 always renders a trigger, even for an empty MainMenu. */
 #board-root .excalidraw .main-menu-trigger { display: none; }

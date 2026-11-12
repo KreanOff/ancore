@@ -9275,10 +9275,10 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
     min-height: 32px;
     min-width: 84px;
     padding: 0 0.9rem;
-    border: 1px solid #149c9d;
+    border: 1px solid var(--primary-button-bg);
     border-radius: 6px;
-    background: #1eadae;
-    color: #ffffff;
+    background: var(--primary-button-bg);
+    color: var(--text-primary);
     font: inherit;
     font-size: var(--font-size-sm);
     font-weight: 650;
@@ -9287,12 +9287,12 @@ body.task-list-hide-due .tasks-issue-row:not(.tasks-issue-row--compact) > .tasks
 }
 
 .tasks-issue-save:hover:not(:disabled) {
-    background: #178f90;
-    border-color: #178f90;
+    background: var(--primary-button-hover-bg);
+    border-color: var(--primary-button-hover-bg);
 }
 
 .tasks-issue-save:focus-visible {
-    outline: 2px solid rgba(30, 173, 174, 0.3);
+    outline: 2px solid rgba(var(--system-accent-rgb), 0.3);
     outline-offset: 2px;
 }
 

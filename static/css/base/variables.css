@@ -12,8 +12,9 @@
     --text-primary: #40444C;
     --text-secondary: var(--text-primary);
     --text-inverse: #FFFFFF;
-    --system-accent: #5b5fc7;
-    --system-accent-rgb: 91, 95, 199;
+    /* A darker shade of the logo red keeps white control labels readable. */
+    --system-accent: #df2b2b;
+    --system-accent-rgb: 223, 43, 43;
     --primary-button-bg: color-mix(in srgb, var(--system-accent) 17%, #ffffff);
     --primary-button-hover-bg: color-mix(in srgb, var(--system-accent) 24%, #ffffff);
     --system-interaction: #6f7580;
@@ -41,7 +42,9 @@
     --text-muted: var(--text-primary);
     --border-color: #e0ddd9;
     --card-bg: #ffffff;
-    --app-wallpaper-image: url('../../img/auth/wallpaper-fluent-bloom-light-4k.webp');
+    --app-shell-bg: color-mix(in srgb, var(--system-interaction) 12%, var(--card-bg));
+    --app-shell-wallpaper-image: url('../../img/auth/wallpaper-red-black-white.png');
+    --app-wallpaper-image: none;
     --glass-surface-bg: var(--card-bg);
     --glass-surface-filter: none;
     --panel-bg: #f7f6f4;
@@ -136,18 +139,4 @@
     --error-color-light: #fff6f1;
     --background-secondary: #faf9f7;
     --background-hover: var(--surface-hover);
-}
-
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-    :root {
-        --glass-surface-bg: color-mix(in srgb, var(--card-bg) 55%, transparent);
-        --glass-surface-filter: blur(20px) saturate(115%);
-    }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-    :root {
-        --glass-surface-bg: var(--card-bg);
-        --glass-surface-filter: none;
-    }
 }

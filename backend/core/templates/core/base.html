@@ -26,7 +26,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}ancore{% endblock %}</title>
-    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'img/favicon-ancore-large.png' %}">
+    <link rel="icon" type="image/png" sizes="500x500" href="{% static 'img/logo.png' %}">
     <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin-ext.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% include 'core/includes/bootstrap.html' %}
@@ -142,7 +142,7 @@
                 </div>
                 {% else %}
                 <a href="{% url 'home' %}" class="logo" aria-label="Ancore" title="Ancore">
-                    <img src="{% static 'img/logo-ancore.png' %}" alt="">
+                    <img src="{% static 'img/logo.png' %}" alt="">
                     <span class="sidebar-brand-name">ancore</span>
                 </a>
                 {% endif %}

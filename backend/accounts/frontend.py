@@ -25,7 +25,7 @@ def _auth_page(context, mode, title):
     return {'type': 'account-auth', 'title': title, 'api_url': reverse('accounts-api'), 'data': {
         'mode': mode, 'form': _form(context['form']),
         'urls': {name: reverse(name) for name in ('login', 'register', 'profile', 'home')},
-        'logo': static('img/logo-ancore.png'),
+        'logo': static('img/logo.png'),
     }}
 
 

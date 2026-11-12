@@ -64,7 +64,7 @@ class AuthPageViewTests(TestCase):
         self.assertContains(response, 'aria-current="page">Logowanie</a>')
         self.assertContains(response, 'Zaloguj się')
         self.assertContains(response, 'data-password-toggle')
-        self.assertContains(response, 'class="auth-page auth-page--login"')
+        self.assertContains(response, 'class="auth-page auth-page--login auth-page--wallpaper"')
         self.assertNotContains(response, 'Wróć do strony głównej')
 
     def test_registration_pairs_names_and_keeps_optional_middle_name(self):
