@@ -7,7 +7,7 @@
         </nav>
         {% else %}<h1 class="tasks-topbar-title">{{ view_title }}</h1>{% endif %}
     </div>
-    <form hidden id="documents-search-form" method="get" action="{{ folder_url }}" data-project-search-form data-server-directory-filters="true">
+    {% if not is_library_index %}<form hidden id="documents-search-form" method="get" action="{{ folder_url }}" data-project-search-form data-server-directory-filters="true">
         {% if current_library %}
         <input type="hidden" name="library" value="{{ current_library.pk }}">
         {% endif %}
@@ -16,8 +16,8 @@
         {% for param, value in document_filter_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}" data-project-filter-input="{{ param }}">{% endfor %}
         <input type="hidden" name="sort" value="{{ sort_param }}" data-project-sort-input>
         <input type="hidden" name="display" value="{{ document_display }}">
-    </form>
-    <div class="tasks-titlebar-actions">
+    </form>{% endif %}
+    {% if not frontend_bootstrap.read_only %}<div class="tasks-titlebar-actions">
         {% if not current_library %}
         <a class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-document-modal href="{{ documents_url }}libraries/create/"><i data-icon="plus" aria-hidden="true"></i><span>Nowy dysk</span></a>
         {% else %}
@@ -30,9 +30,9 @@
             </div>
         </div>
         {% endif %}
-    </div>
+    </div>{% endif %}
 </header>
-<div class="app-toolbar tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
+{% if not is_library_index %}<div class="app-toolbar tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory documents-filterbar">
     <div class="tasks-filterbar-left app-toolbar__controls">
         <nav class="documents-display-switch" aria-label="Sposób wyświetlania Dysku">
             {% for option in display_options %}<a class="tasks-icon-button{% if option.active %} is-active{% endif %}" href="{{ option.url }}" aria-label="{{ option.label }}" title="{{ option.label }}" {% if option.active %}aria-current="true"{% endif %} data-document-display="{{ option.value }}"><i data-icon="{{ option.icon }}" aria-hidden="true"></i></a>{% endfor %}
@@ -55,10 +55,10 @@
             </nav>
         </div>
         {% if query %}<a class="tasks-icon-button" href="{{ clear_url }}" aria-label="Wyczyść wyszukiwanie i filtry" title="Wyczyść wyszukiwanie i filtry"><i data-icon="x" aria-hidden="true"></i></a>{% endif %}
-        {% if not is_library_index %}<button type="button" class="tasks-icon-button documents-sidebar-toggle" title="Pokaż lub ukryj panel dysków" aria-label="Pokaż lub ukryj panel dysków" aria-controls="documents-sidebar" aria-expanded="true" data-documents-sidebar-toggle><i data-icon="panel-right" aria-hidden="true"></i></button>{% endif %}
         {% if not is_library_index and library_view != 'trash' %}{% if query or has_active_filters %}<span class="app-toolbar__summary" role="status">Wyniki ze wszystkich folderów {% if current_library %}na tym dysku{% else %}i dysków w bieżącym Workspace{% endif %}.</span>{% endif %}{% endif %}
     </div>
     <div class="tasks-filterbar-right app-toolbar__search">
         <label class="tasks-search-field tasks-project-search" for="filter-search"><i data-icon="search" aria-hidden="true"></i><input id="filter-search" type="search" name="q" form="documents-search-form" value="{{ query }}" placeholder="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" aria-label="{% if is_library_index %}Szukaj dysków{% elif current_library %}Szukaj na dysku{% else %}Szukaj plików{% endif %}" autocomplete="off"></label>
     </div>
 </div>
+{% endif %}

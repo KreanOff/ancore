@@ -46,11 +46,6 @@ class DocumentQueryTests(TestCase):
         self.assertEqual(response.status_code, 200)
         return [row['item'].pk for row in response.context['rows']]
 
-    def libraries(self, **params):
-        response = self.client.get(self.base, params)
-        self.assertEqual(response.status_code, 200)
-        return [item.pk for item in response.context['libraries']]
-
     def test_text_conditions_combine_with_search_and_find_nested_documents(self):
         self.assertEqual(self.rows(library=self.alpha.pk, name='UMOWA'), [self.a.pk])
         self.assertEqual(self.rows(description='oferta', filename='.PDF'), [self.a.pk])
@@ -58,9 +53,6 @@ class DocumentQueryTests(TestCase):
         self.assertEqual(self.rows(description_op='is_empty'), [self.z.pk])
         self.assertEqual(self.rows(description_op='is_not_empty'), [self.a.pk])
         self.assertEqual(self.rows(name='alpha', q='Zulu'), [])
-        self.assertEqual(self.libraries(name='ALPHA', description='zespołu'), [self.alpha.pk])
-        self.assertEqual(self.libraries(description_op='is_empty'), [self.zulu.pk])
-        self.assertEqual(self.libraries(description='zespołu', description_op='not_contains'), [self.zulu.pk])
 
     def test_choice_filters_compose_and_do_not_include_unrelated_folders(self):
         params = {'library': self.alpha.pk, 'file_type': '.pdf', 'size': 'medium', 'starred': 'yes'}
@@ -81,32 +73,28 @@ class DocumentQueryTests(TestCase):
     def test_date_filters_use_deletion_date_in_trash(self):
         self.assertEqual(self.rows(modified='today'), [self.z.pk])
         self.assertEqual(self.rows(modified='30'), [self.z.pk])
-        self.assertEqual(self.libraries(modified='7'), [self.zulu.pk])
         Document.objects.filter(pk=self.a.pk).update(deleted_at=timezone.now())
         self.assertEqual(self.rows(view='trash', modified='today'), [self.a.pk])
         self.assertEqual(self.rows(view='all', modified='today'), [self.z.pk])
 
-    def test_library_presence_counts_distinguish_active_files_and_folders(self):
-        self.assertEqual(self.libraries(folders='yes'), [self.alpha.pk])
-        self.assertEqual(self.libraries(folders='no'), [self.zulu.pk])
-        self.assertEqual(self.libraries(documents='no'), [])
-        Document.objects.filter(pk=self.a.pk).update(deleted_at=timezone.now())
-        self.assertEqual(self.libraries(documents='no', folders='yes'), [self.alpha.pk])
-        self.assertEqual(self.libraries(documents='yes'), [self.zulu.pk])
-
-    def test_library_sort_fields_support_both_directions_and_distinct_counts(self):
-        Document.objects.create(owner=self.user, workplace=self.workspace, library=self.alpha, title='Drugi plik', filename='drugi.txt')
-        expected = {
-            'name': [self.alpha.pk, self.zulu.pk], 'description': [self.zulu.pk, self.alpha.pk],
-            'documents': [self.zulu.pk, self.alpha.pk], 'folders': [self.zulu.pk, self.alpha.pk],
-            'created': [self.alpha.pk, self.zulu.pk], 'updated': [self.alpha.pk, self.zulu.pk],
-        }
-        for field, ids in expected.items():
-            for direction in ['asc', 'desc']:
-                with self.subTest(field=field, direction=direction):
-                    self.assertEqual(self.libraries(sort=f'{field}_{direction}'), ids if direction == 'asc' else ids[::-1])
-        library = self.client.get(self.base).context['libraries'][0]
-        self.assertEqual((library.document_count, library.folder_count), (2, 2))
+    def test_old_library_filters_and_sort_links_keep_the_landing_and_scoped_sidebar(self):
+        for params in (
+            {'name': 'ALPHA', 'description': 'zespołu'}, {'description_op': 'is_empty'},
+            {'description': 'zespołu', 'description_op': 'not_contains'}, {'modified': '7'},
+            {'folders': 'yes'}, {'folders': 'no'}, {'documents': 'yes'}, {'documents': 'no'},
+            {'sort': 'documents_desc'}, {'sort': 'owner__password'}, {'q': 'Hidden'},
+        ):
+            with self.subTest(params=params):
+                response = self.client.get(self.base, params)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context['libraries'], [])
+                self.assertEqual({item.pk for item in response.context['sidebar_libraries']}, {self.alpha.pk, self.zulu.pk})
+                self.assertEqual(response.context['document_filter_fields'], [])
+                self.assertFalse(response.context['has_active_filters'])
+                self.assertContains(response, '<h2>Wybierz dysk</h2>', html=True)
+                self.assertNotContains(response, 'Foreign secret')
+                self.assertNotContains(response, 'Outside secret')
+                self.assertNotContains(response, 'documents-filterbar')
 
     def test_document_sort_fields_support_both_directions_with_null_folders_last(self):
         expected = {
@@ -125,7 +113,6 @@ class DocumentQueryTests(TestCase):
         self.assertEqual(self.rows(view='trash', sort='updated_desc'), [self.a.pk, self.z.pk])
 
     def test_invalid_filters_and_legacy_sort_links_are_safe(self):
-        self.assertEqual(self.libraries(sort='owner__password'), [self.alpha.pk, self.zulu.pk])
         self.assertEqual(self.rows(sort='owner__password', file_type='unknown', size='invalid', modified='invalid'), [self.z.pk, self.a.pk])
         self.assertEqual(self.rows(name='alpha', name_op='invalid'), [self.a.pk])
         for old, current in [('name', 'name_asc'), ('updated', 'updated_desc'), ('oldest', 'created_asc'), ('size', 'size_desc')]:

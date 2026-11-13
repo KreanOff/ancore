@@ -23,7 +23,7 @@
 .documents-breadcrumbs svg { width: 13px; height: 13px; }
 .documents-icon-button { flex-shrink: 0; padding: 0; border: 0; background: transparent; color: inherit; }
 .documents-icon-button.is-starred svg { color: var(--system-accent); }
-.documents-page :is(a, button, summary):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+:is(.documents-page, .documents-sidebar--global) :is(a, button, summary):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
 .documents-table-scroll { width: 100%; min-height: 0; overflow: auto; flex: 1; }
 /* The drive index uses the project directory's compact rows and action cells. */
 .tasks-directory-board.documents-library-sheet {
@@ -45,7 +45,7 @@
 .documents-library-sheet [data-column="size"] { justify-content: flex-end; padding-right: 0.75rem; font-variant-numeric: tabular-nums; }
 /* Match the compact project directory while retaining semantic tables. */
 .documents-table { width: 100%; min-width: 690px; border-collapse: collapse; table-layout: fixed; font-size: var(--font-size-sm); }
-:is(.documents-layout, .office-page) .documents-table { min-width: 870px; }
+.documents-page:not(.documents-library-index) .documents-table { min-width: 870px; }
 .documents-table th { background: var(--bg-main); font-weight: 400; text-align: left; text-transform: uppercase; height: 35px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .documents-table :is(th, td) { padding: 2px 12px; border-bottom: 1px solid var(--tasks-directory-column-separator, #e1e4e7); vertical-align: middle; }
 .documents-table td { height: 36px; }
@@ -53,12 +53,12 @@
 .documents-column-heading { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; }
 .documents-column-heading svg { width: 16px; height: 16px; flex: 0 0 auto; }
 .documents-table :is(th, td):first-child { width: auto; }
-:is(.documents-layout, .office-page) .documents-table :is(th, td):first-child:not(.documents-empty) { padding-left: 24px; }
+.documents-page:not(.documents-library-index) .documents-table :is(th, td):first-child:not(.documents-empty) { padding-left: 24px; }
 .documents-table :is(th, td)[data-document-column="date"] { width: 176px; }
 .documents-table :is(th, td)[data-document-column="size"] { width: 100px; text-align: right; font-variant-numeric: tabular-nums; }
 .documents-table :is(th, td):last-child { width: 126px; }
 .documents-table:not(.documents-libraries-table) :is(th, td):last-child:not(.documents-empty) { width: 156px; }
-:is(.documents-layout, .office-page) .documents-table :is(th, td):last-child:not(.documents-empty) { width: 168px; padding-right: 24px; }
+.documents-page:not(.documents-library-index) .documents-table :is(th, td):last-child:not(.documents-empty) { width: 168px; padding-right: 24px; }
 .documents-table tbody tr:has(td:not(.documents-empty)):is(:hover, :focus-within) { background: var(--system-interaction-soft); }
 .documents-name { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .documents-name > div { min-width: 0; }
@@ -92,7 +92,7 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-libraries-table td:not(.documents-empty) { height: 44px; }
 .documents-muted { font-size: var(--font-size-sm); line-height: 1.5; margin: 0; }
 .documents-row-actions { justify-content: center; gap: 3px; }
-:is(.documents-layout, .office-page) .documents-table .documents-row-actions { justify-content: flex-end; }
+.documents-page:not(.documents-library-index) .documents-table .documents-row-actions { justify-content: flex-end; }
 .documents-row-actions .documents-icon-button { width: 28px; height: 28px; }
 .documents-row-actions form { margin: 0; }
 .documents-item-actions { flex: 0 0 auto; }
@@ -146,6 +146,7 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-card[data-document-drop] .documents-folder-icon { transition: transform 140ms ease; }
 .documents-card.is-document-drop-target .documents-folder-icon { transform: translateY(-4px) scale(1.05); }
 .documents-page .is-document-drop-target,
+.documents-sidebar--global .is-document-drop-target,
 .documents-modal .is-document-drop-target {
     outline: 2px dashed var(--system-accent);
     outline-offset: -3px;
@@ -278,7 +279,7 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
     .documents-page .documents-filterbar .tasks-project-pagination--toolbar { flex: 0 1 auto; max-width: 100%; }
     .documents-page .documents-topbar .documents-actions { flex-wrap: wrap; }
     .documents-page .documents-table { min-width: 620px; }
-    :is(.documents-layout, .office-page) .documents-table { min-width: 800px; }
+    .documents-page:not(.documents-library-index) .documents-table { min-width: 800px; }
     .documents-table :is(th, td):first-child { width: auto; padding-left: 16px; padding-right: 4px; }
     .documents-libraries-table :is(th, td):first-child:not(.documents-empty) { padding-left: 20px; }
     .documents-table :is(th, td):last-child { width: 122px; padding-inline: 4px 12px; }
@@ -302,33 +303,21 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
     .documents-library-open { display: none; }
 }
 
-/* Library navigation stays at the right edge, below the two shared toolbars. */
-.documents-layout { display: grid; grid-template-columns: minmax(0, 1fr) 286px; flex: 1; min-height: 0; }
-.documents-sidebar { min-width: 0; min-height: 0; overflow-y: auto; padding: 18px 12px; border-left: 1px solid var(--border-color); background: var(--bg-main); }
+/* Drive navigation fills the common right panel; the shell owns its drawer. */
+#app-right-sidebar-content:has(.documents-sidebar--global),
+[data-right-sidebar-fallback]:has(> .documents-sidebar--global) { height: 100%; }
+.documents-sidebar--global { display: flex; flex-direction: column; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; padding: 18px 12px; background: var(--bg-main); color: var(--text-main); font-size: var(--font-size-sm); }
 .documents-sidebar svg { width: 17px; height: 17px; flex: 0 0 auto; }
 .documents-sidebar .documents-library-icon { width: 30px; height: 30px; flex: 0 0 30px; }
 .documents-sidebar .documents-library-icon svg { width: 30px; height: 30px; }
 .documents-sidebar-library-link { min-height: 40px; gap: 10px; }
-.documents-sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 0 10px 14px; }
+.documents-sidebar-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 0 10px 14px; }
 .documents-sidebar h2 { margin: 0; font-size: var(--font-size-sm); font-weight: 400; line-height: 1.5; }
-.documents-sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+.documents-sidebar-nav { display: flex; flex: 1; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.documents-sidebar-nav > .tasks-rail-link { flex: 0 0 auto; }
 .documents-sidebar-nav a span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .documents-sidebar-nav a small { flex: 0 0 auto; font-size: 12px; font-variant-numeric: tabular-nums; }
 .documents-sidebar-empty { margin: 4px 10px; font-size: 13px; line-height: 1.6; }
-.documents-sidebar-close { display: none; }
-.documents-page.is-sidebar-collapsed .documents-layout { grid-template-columns: minmax(0, 1fr); }
-.documents-page.is-sidebar-collapsed .documents-sidebar { display: none; }
-.documents-sidebar-backdrop { display: none; }
-@media (min-width: 1101px) and (max-width: 1350px) {
-    .documents-layout { grid-template-columns: minmax(0, 1fr) 264px; }
-}
-@media (max-width: 1100px) {
-    .documents-layout { grid-template-columns: minmax(0, 1fr); }
-    .documents-sidebar-close { display: inline-flex; }
-    .documents-sidebar { position: fixed; inset: 0 0 0 auto; z-index: 2801; width: min(310px, calc(100% - 48px)); padding-top: 18px; box-shadow: -8px 0 24px #0000000d; visibility: hidden; transform: translateX(100%); }
-    .documents-page.is-sidebar-open .documents-sidebar { visibility: visible; transform: translateX(0); }
-    .documents-sidebar-backdrop:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 2800; border: 0; padding: 0; background: #20242a40; cursor: default; }
-}
 
 /* Use the shared application modal shell for every document form. */
 .documents-modal .tasks-modal__header::before { content: none; }

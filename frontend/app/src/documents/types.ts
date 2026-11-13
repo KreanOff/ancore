@@ -88,6 +88,7 @@ export interface DirectoryData {
   breadcrumbs: { name: string; target: string; url: string }[];
   rows: Row[];
   sidebar: Row[];
+  sidebar_window?: DirectoryData['window'];
   views: {
     value: string;
     label: string;

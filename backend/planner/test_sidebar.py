@@ -399,6 +399,18 @@ class TodaySidebarTests(TestCase):
                 self.assertNotContains(response, 'data-today-sidebar')
                 self.assertContains(response, '"sidebar_url": ""')
 
+    def test_drive_directory_replaces_today_sidebar_but_office_keeps_it(self):
+        for url in ('/documents/', self.url('documents', ''), self.url('documents', '') + '?view=all'):
+            with self.subTest(url=url):
+                response = self.client.get(url, follow=True)
+                self.assertContains(response, 'data-documents-sidebar', count=1)
+                self.assertNotContains(response, 'data-today-sidebar')
+                self.assertContains(response, '"sidebar_url": ""')
+        response = self.client.get(self.url('office', ''))
+        self.assertContains(response, 'data-today-sidebar', count=1)
+        self.assertNotContains(response, 'data-documents-sidebar')
+        self.assertContains(response, '"sidebar_url": "' + self.url() + '"')
+
     def test_disabled_calendar_first_render(self):
         response = self.client.get(self.url('spaces', ''))
         self.assertContains(response, 'data-today-sidebar')

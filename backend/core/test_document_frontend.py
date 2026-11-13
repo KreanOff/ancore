@@ -1,7 +1,8 @@
 import json
+import re
 import tempfile
 from io import BytesIO
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlsplit
 import zipfile
 
 from django.contrib.auth import get_user_model
@@ -77,12 +78,14 @@ class ReactDocumentTests(TestCase):
 
     def test_catalog_contract_preserves_colors_recursive_totals_and_location(self):
         index = self.get(self.path()).json()['data']
-        row = next(row for row in index['rows'] if row['id'] == str(self.library.pk))
+        self.assertTrue(index['libraries'])
+        self.assertEqual(index['rows'], [])
+        row = next(row for row in index['sidebar'] if row['id'] == str(self.library.pk))
         self.assertEqual(row['color'], '#123456')
         files = self.get(self.path() + f'?library={self.library.pk}').json()['data']
         self.assertEqual(files['rows'][0]['row_kind'], 'folder')
         self.assertTrue(files['rows'][0]['has_files'])
-        self.assertEqual(files['rows'][0]['size'], row['size'])
+        self.assertEqual(files['rows'][0]['size'], '10\xa0bajtów')
         self.assertEqual(files['rows'][0]['location'], f'library:{self.library.pk}')
         nested = self.get(self.path()+f'?library={self.library.pk}&folder={self.child.pk}').json()['data']
         self.assertEqual([crumb['name'] for crumb in nested['breadcrumbs']], ['Produkt', 'Umowy', 'Podfolder'])
@@ -91,15 +94,144 @@ class ReactDocumentTests(TestCase):
         self.assertNotIn(self.storage.location, encoded)
         self.assertNotIn(self.document.file.name, encoded)
 
+    def test_library_landing_ignores_old_table_queries_and_keeps_drives_only_in_sidebar(self):
+        for base in (self.path(), '/documents/'):
+            target = base + '?q=Nieistniejący&name=Inny&documents=no&sort=name_desc&display=grid&page=2'
+            with self.subTest(target=target):
+                data = self.get(target).json()['data']
+                self.assertTrue(data['libraries'])
+                self.assertEqual(data['rows'], [])
+                self.assertEqual((data['window']['count'], data['window']['next_url']), (0, ''))
+                self.assertEqual((data['query'], data['filters'], data['active_filters'], data['display_options']), ('', [], 0, []))
+                self.assertEqual([row['id'] for row in data['sidebar']], [str(self.second.pk), str(self.library.pk)])
+                response = self.client.get(target, follow=True)
+                self.assertContains(response, '<h2>Wybierz dysk</h2>', html=True)
+                self.assertContains(response, 'data-document-open-sidebar', count=1)
+                self.assertContains(response, '<span>Nowy dysk</span>', html=True)
+                self.assertNotContains(response, 'aria-label="Lista dysków"')
+                self.assertNotContains(response, 'Dyski — kafelki')
+                self.assertNotContains(response, 'documents-filterbar')
+                self.assertNotContains(response, 'id="documents-search-form"')
+                self.assertNotContains(response, 'Nie znaleziono dysków')
+
+    def test_empty_library_landing_keeps_first_drive_and_create_form(self):
+        self.workspace = create_workplace_for_user(self.owner, 'Pusty dysk')
+        self.login(self.owner)
+        base = self.path()
+        data = self.get(base + '?q=Nieistniejący&display=grid').json()['data']
+        self.assertEqual((data['rows'], data['sidebar'], data['sidebar_window']['count']), ([], [], 0))
+        response = self.client.get(base + '?q=Nieistniejący')
+        self.assertContains(response, 'Utwórz pierwszy dysk')
+        self.assertContains(response, 'Brak dysków w tym Workspace.')
+        self.assertNotContains(response, 'data-document-open-sidebar')
+        response = self.client.get(base + 'libraries/create/')
+        self.assertContains(response, 'name="name"')
+        self.assertContains(response, 'data-documents-sidebar', count=1)
+        self.assertNotContains(response, 'documents-filterbar')
+
+    def test_every_drive_directory_uses_one_global_library_sidebar(self):
+        suffixes = ('', f'?library={self.library.pk}', f'?library={self.library.pk}&folder={self.child.pk}',
+                    '?view=all', '?view=recent', '?view=starred', '?view=trash')
+        for base in ('/documents/', self.path()):
+            for suffix in suffixes:
+                with self.subTest(target=base + suffix):
+                    data = self.get(base + suffix).json()['data']
+                    self.assertEqual([row['id'] for row in data['sidebar']], [str(self.second.pk), str(self.library.pk)])
+                    self.assertEqual(data['sidebar_window']['count'], 2)
+                    self.assertEqual(data['sidebar'][1]['color'], '#123456')
+                    response = self.client.get(base + suffix, follow=True)
+                    self.assertContains(response, 'data-documents-sidebar', count=1)
+                    self.assertContains(response, 'documents-sidebar--global', count=1)
+                    self.assertNotContains(response, 'data-today-sidebar')
+                    self.assertNotContains(response, 'data-documents-sidebar-toggle')
+                    self.assertNotContains(response, 'data-documents-sidebar-close')
+                    self.assertNotContains(response, 'data-documents-sidebar-backdrop')
+                    self.assertNotContains(response, 'class="documents-layout"')
+                    self.assertNotContains(response, self.foreign.name)
+                    html = response.content.decode()
+                    self.assertGreater(html.index('data-documents-sidebar'), html.index('id="app-right-sidebar-content"'))
+                    script = re.search(r'<script[^>]+id="ancore-global-panels-data"[^>]*>(.*?)</script>', html, re.S)
+                    self.assertEqual(json.loads(script.group(1))['shell']['sidebar_url'], '')
+        office = self.get(self.path('office')).json()['data']
+        self.assertIsNone(office['sidebar_window'])
+        response = self.client.get(self.path('office'))
+        self.assertContains(response, 'data-today-sidebar', count=1)
+        self.assertNotContains(response, 'data-documents-sidebar')
+
+    def test_library_sidebar_load_more_is_independent_and_retains_main_directory_state(self):
+        DocumentLibrary.objects.bulk_create([
+            DocumentLibrary(owner=self.owner, workplace=self.workspace, name=f'Raport {index:02}')
+            for index in range(25)
+        ])
+        for params in (
+            {'q': 'Produkt', 'sort': 'name_desc', 'display': 'grid', 'limit': '40'},
+            {'library': str(self.library.pk), 'folder': str(self.child.pk), 'q': 'Instrukcja',
+             'sort': 'name_desc', 'display': 'grid', 'limit': '40'},
+        ):
+            with self.subTest(params=params):
+                data = self.get(self.path() + '?' + urlencode(params)).json()['data']
+                self.assertEqual(len(data['sidebar']), 20)
+                self.assertEqual(data['sidebar_window']['count'], 27)
+                self.assertEqual(len(data['rows']), 1 if 'library' in params else 0)
+                next_url = data['sidebar_window']['next_url']
+                self.assertEqual(urlsplit(next_url).path, self.path())
+                query = parse_qs(urlsplit(next_url).query)
+                for key, value in params.items():
+                    self.assertEqual(query[key], [value])
+                self.assertEqual(query['sidebar_library_limit'], ['27'])
+                loaded = self.get(next_url).json()['data']
+                self.assertEqual(len(loaded['sidebar']), 27)
+                self.assertEqual(len({row['id'] for row in loaded['sidebar']}), 27)
+                self.assertEqual(loaded['rows'], data['rows'])
+                self.assertFalse(loaded['sidebar_window']['has_next'])
+                self.assertEqual(loaded['sidebar_window']['next_url'], '')
+        data = self.get(self.path() + '?sidebar_library_page=2').json()['data']
+        self.assertEqual(len(data['sidebar']), 27)
+        self.assertEqual(data['rows'], [])
+
+    def test_sidebar_expands_through_active_library_beyond_first_window(self):
+        DocumentLibrary.objects.bulk_create([
+            DocumentLibrary(owner=self.owner, workplace=self.workspace, name=f'Raport {index:02}')
+            for index in range(45)
+        ])
+        active = DocumentLibrary.objects.get(owner=self.owner, workplace=self.workspace, name='Raport 24')
+        initial = self.get(self.path()).json()['data']
+        self.assertEqual(len(initial['sidebar']), 20)
+        data = self.get(self.path() + f'?library={active.pk}').json()['data']
+        self.assertEqual(len(data['sidebar']), 40)
+        self.assertIn(str(active.pk), [row['id'] for row in data['sidebar']])
+        self.assertEqual(data['library']['id'], str(active.pk))
+        self.assertEqual(data['sidebar_window']['count'], 47)
+        response = self.client.get(self.path() + f'?library={active.pk}')
+        self.assertContains(response, 'documents-sidebar-library-link is-active')
+        self.assertContains(response, f'aria-current="page" title="{active.name}"')
+
+    def test_global_drive_sidebar_keeps_guest_scope_and_direct_form_fallback(self):
+        response = self.client.get(self.path('documents', f'libraries/{self.library.pk}/edit/'))
+        self.assertContains(response, 'data-documents-sidebar', count=1)
+        self.assertNotContains(response, 'data-today-sidebar')
+        self.assertContains(response, '"sidebar_url": ""')
+        self.assertContains(response, 'Ustawienia dysku')
+        WorkplaceMembership.objects.filter(workplace=self.workspace, user=self.member).update(role='guest')
+        data = self.get(self.path()).json()
+        self.assertTrue(data['read_only'])
+        self.assertEqual([row['id'] for row in data['data']['sidebar']], [str(self.second.pk), str(self.library.pk)])
+        response = self.client.get(self.path())
+        self.assertContains(response, 'data-documents-sidebar', count=1)
+        self.assertNotContains(response, 'aria-label="Dodaj dysk"')
+        self.assertNotContains(response, '<span>Nowy dysk</span>')
+        self.assertEqual(self.post(self.path('documents', 'libraries/create/'), {'name': 'Nie'}).status_code, 403)
+
     def test_search_filters_sort_pagination_and_display_session(self):
-        DocumentLibrary.objects.bulk_create([DocumentLibrary(owner=self.owner, workplace=self.workspace, name=f'Raport {i:02}') for i in range(51)])
-        data = self.get(self.path()+'?q=Raport&page_size=10&page=2&sort=name_desc&display=grid').json()['data']
+        Document.objects.bulk_create([Document(owner=self.owner, workplace=self.workspace, library=self.library, title=f'Raport {i:02}', filename=f'raport{i}.txt') for i in range(51)])
+        base = self.path() + f'?library={self.library.pk}'
+        data = self.get(base + '&q=Raport&page_size=10&page=2&sort=name_desc&display=grid').json()['data']
         self.assertEqual((len(data['rows']), data['window']['page'], data['display']), (40, 2, 'grid'))
         self.assertIn('q=Raport', data['window']['next_url'])
-        self.assertEqual(self.get(self.path()).json()['data']['display'], 'grid')
+        self.assertEqual(self.get(base).json()['data']['display'], 'grid')
         target = self.path()+f'?library={self.library.pk}&name_op=is_not_empty&file_type=.txt&sort=size_desc'
         data = self.get(target).json()['data']
-        self.assertEqual([row['id'] for row in data['rows']], [str(self.document.pk)])
+        self.assertEqual(data['rows'][0]['id'], str(self.document.pk))
         self.assertEqual(data['active_filters'], 2)
         self.assertEqual(data['sort'], 'size_desc')
         self.assertEqual(self.get(self.path()+f'?library={self.library.pk}&name=brak').json()['data']['rows'], [])

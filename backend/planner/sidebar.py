@@ -34,6 +34,11 @@ def sidebar_url(request, mode='workspace'):
         module, view = match.func.__module__, match.func.__name__
         if (module, view) == ('spaces.task_views', 'detail'):
             return ''
+        if module == 'documents.views' and view in {
+            'library', 'library_create', 'library_edit', 'upload', 'folder_create',
+            'folder_edit', 'detail', 'preview',
+        }:
+            return ''
     url = scoped_workplace_app_path(workplace, 'calendar', 'sidebar/')
     params = {name: request.GET[name] for name in ('sidebar_task_limit', 'sidebar_task_page') if name in request.GET}
     return url + '?' + urlencode(params) if params else url

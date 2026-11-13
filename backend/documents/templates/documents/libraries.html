@@ -2,45 +2,21 @@
 {% load static %}
 {% block title %}Dyski | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger"><script src="{% static 'js/documents.js' %}?v=20261016-react-migration" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261113-global-drive-sidebar"><script src="{% static 'js/documents.js' %}?v=20261113-drive-landing" defer></script>{% endblock %}
+{% block right_sidebar %}{% include 'documents/sidebar.html' %}{% endblock %}
 {% block content %}
 <div class="documents-page documents-library-index" data-document-display="{{ document_display }}" data-document-dnd="drive" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ library_view }}">
     {% include 'documents/toolbar.html' %}
-    <section class="documents-main" aria-label="Dyski">
-        {% if document_display == 'grid' %}
-            {% include 'documents/includes/libraries_grid.html' %}
-        {% else %}
-        {% if libraries %}
-        <div class="documents-table-scroll tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable documents-library-sheet app-data-table" data-document-selection data-directory-resize="false" role="table" aria-label="Lista dysków">
-            <div class="tasks-directory-group" role="rowgroup">
-                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header" role="row">
-                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader">
-                        <input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" data-document-select-all aria-label="Zaznacz wszystkie dyski na stronie" title="Zaznacz wszystkie dyski na stronie">
-                    </span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">Nazwa<i data-icon="hard-drive" aria-hidden="true"></i></span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="modified" role="columnheader">Zmodyfikowano<i data-icon="calendar-clock" aria-hidden="true"></i></span>
-                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="size" role="columnheader">Rozmiar<i data-icon="hard-drive" aria-hidden="true"></i></span>
-                </div>
-                <div class="tasks-issue-list tasks-directory-list" role="presentation">
-                    {% for item in libraries %}
-                    <div class="tasks-issue-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row" role="row" data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}">
-                        <input type="checkbox" class="tasks-row-checkbox tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" data-document-select value="{{ item.pk }}" aria-label="Zaznacz dysk {{ item.name }}">
-                        <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell"><a class="documents-library-entry" href="{{ documents_url }}?library={{ item.pk }}" title="Otwórz dysk: {{ item.name }}">
-                            {% include 'documents/includes/library_avatar.html' with library=item %}
-                            <span class="documents-library-copy"><span class="documents-library-title">{{ item.name }}</span></span>
-                        </a></div>
-                        <div class="tasks-project-sheet__date tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="modified" role="cell" title="Zmodyfikowano: {{ item.updated_at|date:'d.m.Y, H:i' }}">{{ item.updated_at|date:'d.m.Y' }}</div>
-                        <div class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="size" role="cell">{{ item.total_size|filesizeformat }}</div>
-                    </div>
-                    {% endfor %}
+    <section class="documents-main" aria-label="Wybór dysku">
+        <div class="documents-table-scroll">
+            <div class="tasks-empty-state tasks-empty-state--illustrated" role="status">
+                <span class="tasks-empty-state__illustration tasks-empty-state__illustration--spaces" aria-hidden="true"></span>
+                <div class="tasks-empty-state__copy">
+                    <h2>{% if sidebar_window.count %}Wybierz dysk{% else %}Utwórz pierwszy dysk{% endif %}</h2>
+                    <p>{% if sidebar_window.count %}Otwórz dysk z prawego panelu, aby zobaczyć foldery i pliki.<br><button type="button" class="tasks-filter-button" data-document-open-sidebar>Wybierz dysk</button>{% else %}Dysk to osobne miejsce na foldery i pliki, np. dla projektu lub działu.{% endif %}</p>
                 </div>
             </div>
-            {% include 'tasks/includes/directory_pagination_toolbar.html' with window=document_window only %}
         </div>
-        {% else %}
-        <div class="documents-table-scroll"><div class="documents-empty documents-grid-empty">{% include 'documents/includes/libraries_empty.html' %}</div></div>
-        {% endif %}
-        {% endif %}
     </section>
 </div>
 {% endblock %}

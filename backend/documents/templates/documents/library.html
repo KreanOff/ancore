@@ -2,11 +2,11 @@
 {% load static %}
 {% block title %}Dysk | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger"><script src="{% static 'js/documents.js' %}?v=20261016-react-migration" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261113-global-drive-sidebar"><script src="{% static 'js/documents.js' %}?v=20261113-drive-landing" defer></script>{% endblock %}
+{% block right_sidebar %}{% include 'documents/sidebar.html' %}{% endblock %}
 {% block content %}
 <div class="documents-page" data-document-display="{{ document_display }}" data-document-dnd="drive" data-document-scope="{{ documents_url }}" data-document-upload="{{ documents_url }}upload/" data-document-trash="{{ library_view }}">
     {% include 'documents/toolbar.html' %}
-    <div class="documents-layout">
         <section class="documents-main" aria-label="Pliki i foldery" {% if current_library and library_view != 'trash' %}data-document-drop="{% if current_folder %}folder:{{ current_folder.pk }}{% else %}library:{{ current_library.pk }}{% endif %}" data-document-label="{{ current_folder.name|default:current_library.name }}"{% endif %}>
             {% if library_view == 'trash' %}<p class="u-sr-only">Przywróć plik, aby ponownie go otworzyć lub pobrać.</p>{% endif %}
             {% if document_display == 'grid' %}
@@ -29,8 +29,6 @@
             </div>
             {% endif %}
         </section>
-        {% include 'documents/sidebar.html' %}
-    </div>
 </div>
 {% endblock %}
 {% block page_modals %}{% include 'documents/modal_host.html' %}{% endblock %}

@@ -6,7 +6,9 @@
         controller = new AbortController();
         if (document.querySelector('[data-react-root="page"]')) return;
         const options = { signal: controller.signal };
-        initDocumentSidebar(options);
+        document.querySelector('[data-document-open-sidebar]')?.addEventListener('click', () => {
+            document.querySelector('[data-right-sidebar-toggle][aria-expanded="false"]')?.click();
+        }, options);
         initDocumentColors(options);
         initDocumentSelection(options);
         const modals = initDocumentModals(options);
@@ -223,7 +225,7 @@
             else {
                 const returnFocus = previousFocus?.closest('[data-document-actions]')?.querySelector('[data-document-actions-toggle]')
                     || previousFocus?.closest('[data-section-actions]')?.querySelector('[data-section-menu-toggle]')
-                    || (previousFocus?.closest('[inert]') ? document.querySelector('[data-documents-sidebar-toggle]') : previousFocus);
+                    || (previousFocus?.closest('[inert], [hidden]') ? document.querySelector('[data-right-sidebar-toggle]') : previousFocus);
                 if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
             }
         }
@@ -261,7 +263,6 @@
             if (!modal) previousFocus = trigger;
             pending = true;
             trigger?.setAttribute('aria-busy', 'true');
-            document.querySelector('.documents-page.is-sidebar-open [data-documents-sidebar-close]')?.click();
             const menu = trigger?.closest('[data-section-actions]');
             if (menu?.querySelector('[data-section-menu-toggle]')?.getAttribute('aria-expanded') === 'true') {
                 menu.querySelector('[data-section-menu-toggle]').click();
@@ -406,6 +407,11 @@
     function initDocumentDragDrop(options, modals) {
         const page = document.querySelector('[data-document-dnd]');
         if (!page || !modals) return;
+        const sidebar = page.dataset.documentDnd === 'drive'
+            ? document.querySelector('#app-right-sidebar-content .documents-sidebar--global[data-documents-sidebar]')
+            : null;
+        const inCatalog = target => page.contains(target) || Boolean(sidebar?.contains(target));
+        const inDocumentSurface = target => inCatalog(target) || Boolean(target.closest('[data-document-dialog]'));
         const mime = 'application/x-ancore-document';
         const status = document.createElement('p');
         status.className = 'documents-drag-status';
@@ -522,7 +528,7 @@
             }
             if (page.dataset.documentTrash === 'trash') return null;
             const target = event.target.closest('[data-document-drop]');
-            if (!target || !page.contains(target) || target.closest('[inert]')) return null;
+            if (!target || !inCatalog(target) || target.closest('[inert], [hidden]')) return null;
             if (source && (target === source || source.dataset.documentLocation === target.dataset.documentDrop)) return null;
             return target;
         }
@@ -573,6 +579,7 @@
         for (const name of ['dragenter', 'dragover']) {
             document.addEventListener(name, event => {
                 if (!hasFiles(event) && !isMove(event)) return;
+                if (!inDocumentSurface(event.target)) { clear(); return; }
                 event.preventDefault();
                 indicate(event);
             }, options);
@@ -589,15 +596,18 @@
         }, options);
         document.addEventListener('keydown', event => { if (event.key === 'Escape' && !moving) finish(); }, options);
         window.addEventListener('blur', () => { if (!moving) finish(); }, options);
-        page.addEventListener('click', event => {
-            if (Date.now() < suppressClickUntil) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-            }
-        }, { ...options, capture: true });
+        for (const surface of [page, sidebar].filter(Boolean)) {
+            surface.addEventListener('click', event => {
+                if (Date.now() < suppressClickUntil) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, { ...options, capture: true });
+        }
 
         document.addEventListener('drop', async event => {
             if (!hasFiles(event) && !isMove(event)) return;
+            if (!inDocumentSurface(event.target)) { finish(); return; }
             event.preventDefault();
             const target = destination(event);
             const externalFiles = hasFiles(event);
@@ -665,68 +675,6 @@
             }
         }, options);
         options.signal.addEventListener('abort', () => { finish(); status.remove(); }, { once: true });
-    }
-
-    function initDocumentSidebar(options) {
-        const page = document.querySelector('.documents-page');
-        const sidebar = page?.querySelector('[data-documents-sidebar]');
-        const toggle = page?.querySelector('[data-documents-sidebar-toggle]');
-        const backdrop = page?.querySelector('[data-documents-sidebar-backdrop]');
-        if (!sidebar || !toggle || !backdrop) return;
-        const compact = window.matchMedia('(max-width: 1100px)');
-        const storageKey = 'ancore:documents:sidebar-collapsed:v1';
-        let collapsed = false;
-        try { collapsed = localStorage.getItem(storageKey) === 'true'; } catch (_) {}
-        let open = false;
-
-        function update(restoreFocus = false) {
-            const overlayOpen = compact.matches && open;
-            const expanded = compact.matches ? open : !collapsed;
-            page.classList.toggle('is-sidebar-open', overlayOpen);
-            page.classList.toggle('is-sidebar-collapsed', !compact.matches && collapsed);
-            toggle.setAttribute('aria-expanded', String(expanded));
-            const label = expanded ? 'Ukryj panel dysków' : 'Pokaż panel dysków';
-            toggle.setAttribute('aria-label', label);
-            toggle.title = label;
-            const focusHidden = !expanded && sidebar.contains(document.activeElement);
-            sidebar.inert = !expanded;
-            backdrop.hidden = !overlayOpen;
-            if (overlayOpen) {
-                sidebar.setAttribute('role', 'dialog');
-                sidebar.setAttribute('aria-modal', 'true');
-            } else {
-                sidebar.removeAttribute('role');
-                sidebar.removeAttribute('aria-modal');
-            }
-            if (restoreFocus || focusHidden) toggle.focus();
-        }
-        function close() { open = false; update(true); }
-        toggle.addEventListener('click', () => {
-            if (compact.matches) {
-                open = !open;
-            } else {
-                collapsed = !collapsed;
-                try { localStorage.setItem(storageKey, String(collapsed)); } catch (_) {}
-            }
-            update();
-            if (compact.matches && open) sidebar.querySelector('[data-documents-sidebar-close]').focus();
-        }, options);
-        sidebar.querySelector('[data-documents-sidebar-close]').addEventListener('click', close, options);
-        backdrop.addEventListener('click', close, options);
-        sidebar.addEventListener('keydown', event => {
-            if (!open || !compact.matches) return;
-            if (event.key === 'Escape') { event.preventDefault(); close(); }
-            if (event.key !== 'Tab') return;
-            const links = [...sidebar.querySelectorAll('a[href], button:not([disabled])')];
-            const first = links[0], last = links[links.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault(); last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault(); first.focus();
-            }
-        }, options);
-        compact.addEventListener('change', () => { open = false; update(); }, options);
-        update();
     }
 
     document.addEventListener('ancore:content-loaded', initDocuments);

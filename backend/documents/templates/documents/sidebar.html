@@ -1,16 +1,14 @@
-<aside class="documents-sidebar" id="documents-sidebar" aria-label="Panel dysków" data-documents-sidebar>
+<aside class="documents-sidebar documents-sidebar--global" id="documents-sidebar" aria-label="Panel dysków" data-documents-sidebar>
     <header class="documents-sidebar-header">
         <h2>Dyski</h2>
-        <div class="documents-actions">
+        {% if not frontend_bootstrap.read_only %}<div class="documents-actions">
             <a class="tasks-icon-button documents-icon-button" data-document-modal href="{{ documents_url }}libraries/create/" aria-label="Dodaj dysk" title="Dodaj dysk"><i data-icon="plus" aria-hidden="true"></i></a>
-            <button type="button" class="tasks-icon-button documents-icon-button documents-sidebar-close" aria-label="Zamknij panel dysków" data-documents-sidebar-close><i data-icon="x" aria-hidden="true"></i></button>
-        </div>
+        </div>{% endif %}
     </header>
     <nav class="documents-sidebar-nav" aria-label="Dyski">
-        <a class="tasks-rail-link{% if is_library_index %} is-active{% endif %}" href="{{ documents_url }}" {% if is_library_index %}aria-current="page"{% endif %}><i data-icon="layout-list" aria-hidden="true"></i><span>Wszystkie dyski</span></a>
         {% for item in sidebar_libraries %}
-        <a class="tasks-rail-link documents-sidebar-library-link{% if current_library.pk == item.pk %} is-active{% endif %}" href="{{ documents_url }}?library={{ item.pk }}" {% if current_library.pk == item.pk %}aria-current="page"{% endif %} title="{{ item.name }}" data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}">{% include 'documents/includes/library_avatar.html' with library=item %}<span>{{ item.name }}</span></a>
-        {% empty %}<p class="documents-sidebar-empty">Utwórz dysk, aby dodać foldery i pliki.</p>{% endfor %}
+        <a class="tasks-rail-link documents-sidebar-library-link{% if current_library.pk == item.pk %} is-active{% endif %}" href="{{ documents_url }}?library={{ item.pk }}" {% if current_library.pk == item.pk %}aria-current="page"{% endif %} title="{{ item.name }}"{% if not frontend_bootstrap.read_only %} data-document-drop="library:{{ item.pk }}" data-document-label="{{ item.name }}"{% endif %}>{% include 'documents/includes/library_avatar.html' with library=item %}<span>{{ item.name }}</span></a>
+        {% empty %}<p class="documents-sidebar-empty">Brak dysków w tym Workspace.</p>{% endfor %}
+        {% include 'core/includes/load_more.html' with next_url=sidebar_window.next_url loaded=sidebar_window.end total=sidebar_window.count label='Dyski w panelu' %}
     </nav>
 </aside>
-<button type="button" class="documents-sidebar-backdrop" aria-label="Zamknij panel dysków" data-documents-sidebar-backdrop hidden></button>

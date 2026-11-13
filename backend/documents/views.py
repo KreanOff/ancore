@@ -6,10 +6,9 @@ from urllib.parse import urlencode, urlsplit
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from core.list_window import window_page, window_payload
+from core.list_window import LIST_BATCH_SIZE, window_page, window_payload
 from django.db import IntegrityError, transaction
-from django.db.models import BigIntegerField, Count, OuterRef, Q, Subquery, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q
 from django.db.models.deletion import RestrictedError
 from django.http import FileResponse, Http404, JsonResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect
@@ -30,8 +29,8 @@ from .location_lock import location_write
 from .models import Document, DocumentLibrary, Folder
 from .previews import build_preview, inline_type, validate_inline
 from .query import (
-    DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS, LIBRARY_SORT_FIELDS,
-    PRESENCE_OPTIONS, SIZE_OPTIONS, apply_date_filter, apply_text_filters,
+    DATE_OPTIONS, DOCUMENT_SORT_FIELDS, FILTER_PARAMETERS,
+    SIZE_OPTIONS, apply_date_filter, apply_text_filters,
     choice_field, order_results, query_context, text_field,
 )
 
@@ -101,15 +100,34 @@ def _context(request, library=None, folder=None):
 
 
 
-def _sidebar(request, active_view=None):
+def _sidebar(request, active_view=None, current_library=None):
     counts = _documents(request).aggregate(
         all=Count('pk', filter=Q(deleted_at__isnull=True)),
         starred=Count('pk', filter=Q(deleted_at__isnull=True, is_starred=True)),
         trash=Count('pk', filter=Q(deleted_at__isnull=False)),
     )
     counts['starred'] += _folders(request).filter(library__in=_libraries(request), is_starred=True).count()
+    libraries = _libraries(request).only('id', 'name', 'color', 'updated_at').order_by('name', 'pk')
+    page = window_page(
+        libraries, request,
+        limit_parameter='sidebar_library_limit', page_parameter='sidebar_library_page',
+    )
+    if current_library:
+        position = libraries.filter(
+            Q(name__lt=current_library.name) | Q(name=current_library.name, pk__lte=current_library.pk),
+        ).count()
+        if position > page.limit:
+            page = window_page(libraries, request, limit_parameter='sidebar_library_limit',
+                               page_parameter='sidebar_library_page', parameters={
+                                   'sidebar_library_limit': ((position + LIST_BATCH_SIZE - 1) // LIST_BATCH_SIZE) * LIST_BATCH_SIZE,
+                               })
+    match = request.resolver_match
+    # A direct form is rendered over its directory; its next window must read
+    # that directory instead of opening another form at the form's own path.
+    base = request.path if match and match.func.__name__ == 'library' else _url(request)
     return {
-        'sidebar_libraries': _libraries(request).only('id', 'name', 'color', 'updated_at'),
+        'sidebar_libraries': page.object_list,
+        'sidebar_window': window_payload(request, page, base=base),
         'sidebar_views': [
             {**option, 'url': _url(request, view=option['value']),
              'count': counts.get(option['value']), 'active': active_view == option['value']}
@@ -119,7 +137,7 @@ def _sidebar(request, active_view=None):
 
 
 def _display_context(request, scope):
-    # Keep each account/Workspace and the library index independent in this session.
+    # Keep each account/Workspace directory preference independent in this session.
     key = f'documents_display:{request.user.pk}:{request.workplace.pk}:{scope}'
     display = request.GET.get('display')
     if display not in {'list', 'grid'}:
@@ -129,7 +147,8 @@ def _display_context(request, scope):
     if request.session.get(key) != display:
         request.session[key] = display
     params = {name: request.GET[name] for name in (
-        'library', 'folder', 'view', 'q', 'sort', 'page', 'page_size', 'limit', *FILTER_PARAMETERS,
+        'library', 'folder', 'view', 'q', 'sort', 'page', 'page_size', 'limit',
+        'sidebar_library_limit', 'sidebar_library_page', *FILTER_PARAMETERS,
     ) if name in request.GET}
     return {
         'document_display': display,
@@ -149,41 +168,21 @@ def _pagination(request, total):
 
 
 def _library_index(request, form_context=None):
-    query = request.GET.get('q', '').strip()[:120]
-    fields = [
-        text_field(request.GET, 'name', 'Nazwa dysku', 'hard-drive', 'name'),
-        text_field(request.GET, 'description', 'Opis', 'align-left', 'description'),
-        choice_field(request.GET, 'documents', 'Pliki', 'files', PRESENCE_OPTIONS),
-        choice_field(request.GET, 'folders', 'Foldery', 'folders', PRESENCE_OPTIONS),
-        choice_field(request.GET, 'modified', 'Zmodyfikowano', 'clock-3', DATE_OPTIONS),
-    ]
-    query_state = query_context(request.GET, fields, LIBRARY_SORT_FIELDS, 'name_asc')
-    values = query_state['document_filter_params']
-    library_sizes = _documents(request).filter(
-        library_id=OuterRef('pk'), deleted_at__isnull=True,
-    ).order_by().values('library_id').annotate(total=Sum('file_size')).values('total')
-    libraries = _libraries(request).filter(Q(name__icontains=query) | Q(description__icontains=query)).annotate(
-        document_count=Count('documents', filter=Q(documents__deleted_at__isnull=True, documents__owner=workspace_owner(request), documents__workplace=request.workplace), distinct=True),
-        folder_count=Count('folders', filter=Q(folders__owner=workspace_owner(request), folders__workplace=request.workplace), distinct=True),
-        total_size=Coalesce(Subquery(library_sizes), 0, output_field=BigIntegerField()),
-    )
-    libraries = apply_text_filters(libraries, fields)
-    for param, count in [('documents', 'document_count'), ('folders', 'folder_count')]:
-        if values[param]:
-            lookup = count if values[param] == 'no' else f'{count}__gt'
-            libraries = libraries.filter(**{lookup: 0})
-    libraries = apply_date_filter(libraries, 'updated_at', values['modified'])
-    libraries = order_results(libraries, query_state)
-    page, window = _pagination(request, libraries.count())
-    start = page.start_index() - 1 if page.paginator.count else 0
+    # Drives are selected exclusively from the shared right sidebar. Keep the
+    # directory payload shape, without querying a second list or applying saved
+    # main-table filters to the landing page.
+    page = window_page([], request, parameters={})
     context = _context(request)
     context.update(_sidebar(request))
-    context.update(_display_context(request, 'libraries'))
-    context.update(query_state)
     context.update({
         'is_library_index': True, 'view_title': 'Dyski', 'document_form': form_context,
-        'libraries': libraries[start:page.end_index()], 'page': page, 'document_window': window,
-        'query': query, 'clear_url': _url(request),
+        'libraries': [], 'page': page, 'document_window': window_payload(request, page),
+        'document_display': 'list', 'display_options': [],
+        'document_filter_fields': [], 'document_filter_params': {},
+        'document_active_filters': [], 'has_active_filters': False, 'active_filter_count': 0,
+        'project_text_filter_operators': [], 'sort_fields': [], 'sort': '',
+        'sort_field': '', 'sort_direction': 'asc', 'sort_label': '',
+        'query': '', 'clear_url': _url(request),
     })
     return render(request, 'documents/libraries.html', context)
 
@@ -297,7 +296,8 @@ def _library_page(request, form_context=None):
     library_id = current_library.pk if current_library else None
     view_label = next(option['label'] for option in DOCUMENT_VIEW_OPTIONS if option['value'] == current_view)
     context = _context(request, current_library, folder)
-    context.update(_sidebar(request, active_view=current_view if not current_library else None))
+    context.update(_sidebar(request, active_view=current_view if not current_library else None,
+                            current_library=current_library))
     context.update(_display_context(request, 'files'))
     context.update(query_state)
     context.update({

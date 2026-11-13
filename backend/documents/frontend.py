@@ -85,9 +85,7 @@ def directory_page(request, context):
     libraries = bool(context.get('is_library_index'))
     base = context['documents_url']
     rows = []
-    if libraries:
-        rows = [library_payload(item, base) for item in context['libraries']]
-    else:
+    if not libraries:
         for row in context['rows']:
             item = row['item']
             if row['kind'] == 'folder':
@@ -123,6 +121,7 @@ def directory_page(request, context):
         'folder': {'id': str(current_folder.pk), 'name': current_folder.name} if current_folder else None,
         'breadcrumbs': context.get('breadcrumbs', []), 'rows': rows,
         'sidebar': [library_payload(item, base) for item in context.get('sidebar_libraries', [])],
+        'sidebar_window': context.get('sidebar_window'),
         'views': context['office_views'] if office else context['sidebar_views'],
         'view': context['office_view'] if office else context.get('library_view', ''),
         'display': context['document_display'], 'display_options': context['display_options'],

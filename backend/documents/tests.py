@@ -283,29 +283,20 @@ class DocumentLibraryTests(TestCase):
         self.assertContains(response, 'maksymalnie 20 plików')
         self.assertFalse(Document.objects.exists())
 
-    def test_index_lists_libraries_without_exposing_contents(self):
+    def test_index_keeps_libraries_in_sidebar_without_exposing_contents(self):
         self.document(title='Poufny plik zespołu')
         Folder.objects.create(owner=self.user, workplace=self.workspace, library=self.primary_library, name='Wewnętrzny folder')
         response = self.client.get(self.base)
-        self.assertEqual(list(response.context['libraries']), [self.primary_library, self.secondary_library])
+        self.assertEqual(response.context['libraries'], [])
+        self.assertEqual(list(response.context['sidebar_libraries']), [self.primary_library, self.secondary_library])
+        self.assertContains(response, '<h2>Wybierz dysk</h2>', html=True)
+        self.assertNotContains(response, 'aria-label="Lista dysków"')
         self.assertContains(response, 'Dyski')
         self.assertNotContains(response, 'Poufny plik zespołu')
         self.assertNotContains(response, 'Wewnętrzny folder')
         self.assertNotContains(response, 'documents-rail')
         self.assertNotContains(response, self.other_library.name)
         self.assertNotContains(response, self.foreign_library.name)
-
-    def test_library_sizes_do_not_multiply_files_or_include_trash_and_foreign_data(self):
-        folders = [Folder.objects.create(owner=self.user, workplace=self.workspace,
-                   library=self.primary_library, name=name) for name in ['Umowy', 'Oferty']]
-        self.document(file_size=1024)
-        self.document(file_size=1024, folder=folders[0])
-        self.document(file_size=8192, deleted_at=timezone.now())
-        self.document(file_size=8192, owner=self.other, library=self.primary_library)
-        self.document(file_size=8192, workplace=self.other_workspace, library=self.primary_library)
-        libraries = {item.pk: item for item in self.client.get(self.base).context['libraries']}
-        self.assertEqual(libraries[self.primary_library.pk].total_size, 2048)
-        self.assertEqual(libraries[self.secondary_library.pk].total_size, 0)
 
     def test_folder_sizes_include_descendants_and_keep_access_and_library_scope(self):
         parent = Folder.objects.create(owner=self.user, workplace=self.workspace,
@@ -343,7 +334,8 @@ class DocumentLibraryTests(TestCase):
         item.refresh_from_db()
         self.assertEqual(item.name, 'Archiwum')
         response = self.client.get(self.base, {'q': 'Zamknięte'})
-        self.assertEqual(list(response.context['libraries']), [item])
+        self.assertIn(item, response.context['sidebar_libraries'])
+        self.assertEqual(response.context['libraries'], [])
         self.assertEqual(self.client.get(f'{self.base}libraries/{item.pk}/delete/').status_code, 405)
         self.client.post(f'{self.base}libraries/{item.pk}/delete/')
         self.assertFalse(DocumentLibrary.objects.filter(pk=item.pk).exists())
@@ -425,13 +417,14 @@ class DocumentLibraryTests(TestCase):
             self.assertEqual(views['starred']['url'], f'{self.base}?view=starred')
             self.assertEqual(list(response.context['sidebar_libraries']), [self.primary_library, self.secondary_library])
             if url == self.base:
-                self.assertContains(response, 'id="documents-views-menu"')
+                self.assertNotContains(response, 'id="documents-views-menu"')
                 self.assertNotContains(response, 'documents-workspace-nav')
-                self.assertNotContains(response, 'data-documents-sidebar')
             else:
-                self.assertContains(response, 'data-documents-sidebar')
-            for view in views.values():
-                self.assertContains(response, f'href="{view["url"]}"')
+                self.assertContains(response, 'id="documents-views-menu"')
+                for view in views.values():
+                    self.assertContains(response, f'href="{view["url"]}"')
+            self.assertContains(response, 'data-documents-sidebar', count=1)
+            self.assertNotContains(response, 'data-today-sidebar')
 
     def test_workspace_document_views_include_nested_files_from_all_owned_libraries(self):
         from django.utils import timezone
@@ -480,12 +473,13 @@ class DocumentLibraryTests(TestCase):
         self.client.get(f'{self.library_url}&display=grid')
         for url in [self.library_url, '/documents/?view=all', f'{self.library_url}&display=invalid']:
             self.assertEqual(self.client.get(url, follow=True).context['document_display'], 'grid')
-        # The library index and another Workspace keep their own preference.
+        # The landing has no display switch and does not change the directory preference.
         self.assertEqual(self.client.get(self.base).context['document_display'], 'list')
         other_base = scoped_workplace_app_path(self.other_workspace, 'documents')
         self.assertEqual(self.client.get(f'{other_base}?view=all').context['document_display'], 'list')
         self.client.get(f'{self.base}?display=grid')
-        self.assertContains(self.client.get(self.base), 'Dyski — kafelki')
+        self.assertNotContains(self.client.get(self.base), 'Dyski — kafelki')
+        self.assertEqual(self.client.get(self.library_url).context['document_display'], 'grid')
         self.client.get(f'{self.library_url}&display=list')
         self.assertEqual(self.client.get(self.library_url).context['document_display'], 'list')
         self.client.force_login(self.other)
