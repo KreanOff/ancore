@@ -81,7 +81,7 @@ ancore_banner() {
             printf '  %b%s%b    %s\n' "$ANCORE_LOGO_COLOR" "$ANCORE_LOGO_LINE" \
                 "$ANCORE_LOGO_RESET" "$ANCORE_WORD_LINE"
         done
-    printf '\nNajpierw konfiguracja, potem automatyczna instalacja.\n\n'
+    printf '\n'
 }
 
 ancore_setup_cleanup() {
