@@ -41,7 +41,7 @@ oraz uprawnień użytkownika.
 
 ## Instalacja na serwerze
 
-**IP → port HTTP → przygotowanie aplikacji → administrator Django.**
+**Logo ANCORE → IP → port HTTP → dane administratora → instalacja.**
 
 Potrzebujesz serwera Linux z **Docker Engine i Docker Compose**, źródeł projektu
 oraz internetu do pobrania obrazów i zależności. Użytkownik uruchamiający skrypt
@@ -57,20 +57,26 @@ sh ancore-install.sh
 ```
 
 Możesz także uruchomić `./ancore-install.sh`. Polecenia `install` i `setup`
-uruchamiają ten sam proces.
+uruchamiają ten sam proces. Na początku zobaczysz terminalowe logo i napis
+**ANCORE**. Wszystkie pytania pojawiają się przed pobieraniem obrazów
+i budowaniem aplikacji.
 
 1. **Podaj IPv4 serwera**, np. `192.168.1.20`, bez protokołu i portu.
 2. **Podaj port HTTP** — Enter wybiera `8080`.
-3. **Poczekaj na przygotowanie aplikacji.** Instalator wygeneruje sekrety,
-   zbuduje obrazy i oba frontendy, wykona migracje oraz sprawdzi gotowość usług.
-4. **Utwórz administratora Django.** Podaj e-mail, nazwę użytkownika, imię,
-   nazwisko i dwukrotnie hasło. Podczas wpisywania hasła znaki są ukryte.
+3. **Podaj dane administratora Django.** Podaj e-mail do logowania, nazwę
+   użytkownika (domyślnie `admin`), imię, nazwisko i dwukrotnie hasło.
+   Podczas wpisywania hasła w terminalu znaki są ukryte.
+4. **Poczekaj na instalację.** Instalator wygeneruje sekrety, zbuduje obrazy
+   i oba frontendy, wykona migracje, sprawdzi gotowość usług i utworzy konto.
 5. **Otwórz pokazany adres i zaloguj się utworzonym kontem.** Dla powyższego
    przykładu będzie to `http://192.168.1.20:8080`.
 
-Jeśli aktywny administrator z ustawionym hasłem już istnieje, instalator
-zachowa jego konto i pominie pytania o dane logowania. Po przerwaniu tworzenia
-konta możesz dokończyć ten etap przez `sh ancore-install.sh admin`.
+Przy ponownej instalacji działający backend pozwala sprawdzić, czy aktywny
+administrator z hasłem już istnieje, i pominąć pytania o konto. Jeśli backend
+jest zatrzymany lub nie obsługuje jeszcze tego sprawdzenia, instalator zbierze
+dane na początku, ale zachowa istniejące konto i hasło. Hasło nie trafia do
+konfiguracji ani argumentów polecenia. Jeśli usługi już działają, a utworzenie
+konta się nie powiodło, możesz ponowić ten etap przez `sh ancore-install.sh admin`.
 
 Instalator nie instaluje Dockera ani nie zmienia zapory. Wybrany port musi być
 dostępny z urządzeń, na których otwierasz aplikację.

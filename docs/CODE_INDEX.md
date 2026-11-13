@@ -18,8 +18,8 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 39 | 0 | 27 | 241 |
-| [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 106 |
+| [backend/core](../backend/core) | 39 | 0 | 27 | 247 |
+| [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 112 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
@@ -1734,7 +1734,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
 
-- `ProductionInstallerTests`: 20 metod testowych.
+- `ProductionInstallerTests`: 26 metod testowych.
 
 ### backend/core/test_project_layout.py
 
@@ -1817,7 +1817,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/accounts/test_ensure_admin.py](../backend/accounts/test_ensure_admin.py).
 
-- `EnsureAdminTests`: 6 metod testowych.
+- `EnsureAdminTests`: 12 metod testowych.
 
 ### backend/accounts/test_frontend.py
 
@@ -2558,6 +2558,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [deploy/backend/requirements.txt](../deploy/backend/requirements.txt)
 - [deploy/cli/configure.py](../deploy/cli/configure.py)
 - [deploy/cli/runtime.sh](../deploy/cli/runtime.sh)
+- [deploy/cli/setup.sh](../deploy/cli/setup.sh)
 - [deploy/compose.yaml](../deploy/compose.yaml)
 - [deploy/postgres/init.sh](../deploy/postgres/init.sh)
 - [deploy/production.env.example](../deploy/production.env.example)

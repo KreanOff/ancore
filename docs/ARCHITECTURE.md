@@ -96,12 +96,19 @@ rozdziela `web`, `backend`, `postgres` i `onlyoffice`; pliki mają trwałe lokal
 wolumeny. `/health/ready/` sprawdza gotowość bazy bez ujawniania danych użytkowników.
 Instalacja nie uruchamia backupu ani mechanizmu blokowania żądań na czas kopii.
 
-`ancore-install.sh` jest wspólnym wejściem instalacji i utrzymania. Domyślne polecenie
-pyta o IP, następnie o port HTTP (domyślnie 8080), zapisuje konfigurację,
-buduje obrazy i uruchamia cztery usługi. Po migracjach i sprawdzeniu gotowości
-tworzy administratora Django przez standardowe pytania o dane konta i hasło.
-Jeśli aktywny administrator z ustawionym hasłem już istnieje, pomija ten krok.
-Hasło nie trafia do konfiguracji instalacji ani argumentów polecenia.
+`ancore-install.sh` jest wspólnym wejściem instalacji i utrzymania. Domyślne
+polecenie wyświetla terminalowe logo i napis ANCORE, a następnie w powłoce
+`sh` pyta o IP, port HTTP (domyślnie 8080) oraz dane administratora: e-mail,
+nazwę użytkownika, imię, nazwisko i hasło z potwierdzeniem. Pytania poprzedzają
+pobieranie obrazów, zapis konfiguracji, budowanie i start czterech usług.
+Po migracjach i sprawdzeniu gotowości `ensure_admin --from-stdin` tworzy konto
+z wcześniej podanych danych, zachowując walidację Django. Hasło jest ukryte
+podczas wpisywania w terminalu i przekazywane przez standardowe wejście;
+nie trafia do konfiguracji, argumentów polecenia ani zmiennych środowiska.
+Przy zapisanej konfiguracji działający backend pozwala pominąć pytania o konto
+po udanym `ensure_admin --check-only`. Jeśli sprawdzenie nie jest dostępne,
+dane zbierane są na początku, ale istniejący aktywny administrator z hasłem
+zawsze pozostaje bez zmian.
 Ponowne uruchomienie zachowuje sekrety, konta i wolumeny. Budowanie obrazów i obu
 frontendów odbywa się na tym samym serwerze; obrazy bazowe i zależności są
 pobierane z internetu przy instalacji.

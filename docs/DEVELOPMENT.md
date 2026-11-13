@@ -2,19 +2,36 @@
 
 ## Prosta instalacja HTTP (13.11.2026)
 
-`./ancore-install.sh` pyta o IPv4, następnie port HTTP i automatycznie buduje oraz
-uruchamia cztery usługi: `web`, `backend`, `postgres`, `onlyoffice`.
-Po migracjach i uzyskaniu gotowości tworzy administratora Django przez
-standardowe pytania o dane konta i hasło; pomija ten etap, jeśli aktywny
-administrator z ustawionym hasłem już istnieje. Hasło nie trafia do pliku
-konfiguracji ani argumentów polecenia. `start`, `restart` i `update` nie pytają
-o konto, a `admin` pozwala utworzyć dodatkowego administratora.
+`./ancore-install.sh` pokazuje terminalowe logo i napis ANCORE. Powłoka hosta
+pyta o IPv4, port HTTP, e-mail, nazwę administratora, imię, nazwisko i dwukrotnie
+ukryte hasło, zanim Docker pobierze pierwszy obraz. Potem automatycznie buduje
+oraz uruchamia cztery usługi: `web`, `backend`, `postgres`, `onlyoffice`.
+Po migracjach i uzyskaniu gotowości przekazuje dane przez stdin do
+`ensure_admin --from-stdin`, który waliduje je przez Django i tworzy konto.
+Hasło pozostaje w pamięci, poza konfiguracją, argumentami i środowiskiem
+procesów. Przerwanie odczytu przywraca echo terminala. Przy ponownej instalacji
+działający backend z zapisanej konfiguracji sprawdzany jest przez `--check-only`;
+istniejący administrator pozwala pominąć pytania o konto. Gdy backend nie działa
+lub nie obsługuje sprawdzenia, dane są zbierane z wyprzedzeniem, ale istniejący
+administrator zawsze zachowuje swoje konto i hasło. `start`, `restart` i `update`
+nie pytają o konto, a `admin` pozwala utworzyć dodatkowego administratora.
 Usunięto konfigurację HTTPS, backup, odtwarzanie i middleware blokad backupu.
 Ponowna instalacja zachowuje sekrety, projekt Compose i wolumeny, także
 istniejące mapowanie starszych odzyskanych instalacji. Aktualna instrukcja:
 [Instalacja na serwerze](PRODUCTION.md).
 
-Po dodaniu administratora przeszło **37 testów**: 20 instalatora z kontrolowanym
+Po dodaniu logo i pytań przed instalacją przeszło **49 testów**: 26 instalatora
+z kontrolowanym Docker CLI, 11 konfiguracji/układu repozytorium oraz 12 polecenia
+`ensure_admin` na jednorazowej bazie PostgreSQL. Sprawdzono kolejność pytań przed
+pobieraniem obrazów, walidację, EOF, ponowne uruchomienie, zachowanie istniejących
+kont, rzeczywiste uwierzytelnienie i brak hasła w konfiguracji, argumentach oraz
+środowisku procesów. Próby w pseudoterminalu potwierdziły ukrywanie hasła oraz
+przywrócenie ustawień terminala po sukcesie i SIGTERM. Przeszły także
+`manage.py check`, kontrola składni trzech skryptów `sh`, indeks kodu, lokalne
+linki zmienionych instrukcji i `git diff --check`. Nie uruchamiano pełnego zestawu
+kontenerów ani instalacji na serwerze; zmiana nie dotyczy ekranów przeglądarki.
+
+Przed przeniesieniem pytań na początek przeszło **37 testów**: 20 instalatora z kontrolowanym
 Docker CLI, 11 konfiguracji/układu repozytorium oraz 6 polecenia `ensure_admin`
 na osobnej bazie PostgreSQL przez `scripts/run_tests.py`. Sprawdzono kolejność
 start → tworzenie konta → sukces, błędy i przerwanie tworzenia, brak TTY,

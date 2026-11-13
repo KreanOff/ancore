@@ -1,8 +1,17 @@
 # Instalacja na serwerze
 
-Ancore działa przez HTTP na jednym serwerze Linux. Instalator pyta o
-**adres IPv4 serwera**, następnie **port HTTP**, a po uruchomieniu aplikacji
-o **dane administratora Django**. Sam generuje konfigurację, buduje aplikację
+Ancore działa przez HTTP na jednym serwerze Linux. Instalator wyświetla
+poziomy baner: czerwone terminalowe logo po lewej i duży napis **ANCORE** po
+prawej. Znak odwzorowuje `static/img/logo.png` za pomocą znaków ćwierćblokowych
+Unicode, a napis ma pełne litery bez obrysów. Terminal od 106 kolumn pokazuje
+większy wariant, a mniejszy baner mieści się w 78 kolumnach. Rozmiar jest
+odczytywany przez `stty size`, z wartością zapasową `COLUMNS` lub 80.
+Napis używa domyślnego koloru terminala; logo korzysta z RGB, palety 256 kolorów
+lub jasnej czerwieni ANSI odpowiednio do zgłaszanych możliwości terminala.
+`NO_COLOR` i `TERM=dumb` wyłączają kolory. Baner jest zapisany w skrypcie i nie
+wymaga programu graficznego na serwerze. Następnie instalator pyta o **adres IPv4 serwera**,
+**port HTTP** i **dane administratora Django**. Dopiero po zebraniu odpowiedzi
+pobiera potrzebne obrazy, generuje konfigurację, buduje aplikację
 i uruchamia dokładnie cztery kontenery:
 
 | Kontener | Rola |
@@ -42,18 +51,25 @@ Można również użyć `sh ancore-install.sh`.
 
 1. Podaj IPv4 serwera, pod którym użytkownicy będą otwierać Ancore, np. `192.168.1.20`.
 2. Podaj port HTTP; Enter wybiera domyślne `8080`.
-3. Poczekaj na zbudowanie i uruchomienie aplikacji, a następnie podaj dane
-   administratora: e-mail, nazwę użytkownika, imię, nazwisko i dwukrotnie hasło.
+3. Podaj dane administratora: e-mail do logowania, nazwę użytkownika
+   (domyślnie `admin`), imię, nazwisko i dwukrotnie hasło.
+4. Poczekaj na automatyczną instalację i komunikat z adresem aplikacji.
 
-Po podaniu IP i portu instalator automatycznie zapisuje `deploy/.env`,
-buduje obrazy i oba frontendy, wykonuje migracje oraz `collectstatic`,
-a następnie czeka na gotowość czterech usług. Tworzenie konta korzysta ze
-standardowej walidacji Django; hasło wpisujesz w ukrytym polu terminala.
-Nie jest zapisywane w `deploy/.env` ani przekazywane w argumentach polecenia.
+Pytania obsługuje powłoka `sh` na hoście, zanim Docker pobierze obraz Pythona;
+Python nie jest wymagany na serwerze poza kontenerami. Po zebraniu odpowiedzi
+instalator automatycznie zapisuje `deploy/.env`, buduje obrazy i oba frontendy,
+wykonuje migracje oraz `collectstatic`, a następnie czeka na gotowość czterech
+usług. Dopiero wtedy tworzy konto z wcześniej podanych danych, stosując
+walidację pól i hasła Django. Hasło wpisujesz w ukrytym polu terminala.
+Pozostaje tylko w pamięci procesu do przekazania przez standardowe wejście
+polecenia `ensure_admin --from-stdin`. Nie jest zapisywane w `deploy/.env`
+ani przekazywane w argumentach polecenia lub zmiennych środowiska.
 Dopiero gotowe usługi i konto administratora dają komunikat o zakończeniu
 oraz adres, np. `http://192.168.1.20:8080`. Błąd dowolnego etapu kończy
-polecenie kodem błędu. Po przerwaniu tworzenia konta ponów ten krok przez
-`./ancore-install.sh admin` w interaktywnym terminalu.
+polecenie kodem błędu. Jeśli usługi już działają, a utworzenie konta się nie
+powiodło, ponów ten krok przez `./ancore-install.sh admin` w interaktywnym
+terminalu. Przerwanie odpowiedzi na początku wymaga ponownego uruchomienia
+instalatora.
 
 Nginx publikuje wybrany port na `0.0.0.0`. Na innym komputerze użyj podanego
 IP serwera; sieć i zapora muszą dopuszczać połączenia na wybrany port.
@@ -61,15 +77,20 @@ Portów bazy, backendu i ONLYOFFICE nie publikuje się osobno.
 
 Ponowne uruchomienie instalatora podpowiada zapisany IPv4 i port. Zachowuje
 sekrety, nazwę projektu oraz wolumeny, więc służy także do zmiany adresu
-lub portu. Jeśli istnieje aktywny administrator Django z ustawionym hasłem,
-instalator nie pyta ponownie o konto ani nie zmienia jego danych logowania.
+lub portu. Jeśli zapisano konfigurację i backend działa, instalator sprawdza
+istnienie aktywnego administratora z hasłem przez `ensure_admin --check-only`.
+Po udanym sprawdzeniu pomija pytania o konto. Zatrzymany, niedostępny lub
+starszy backend, który nie obsługuje tego sprawdzenia, powoduje zebranie danych
+administratora przed instalacją. Po uruchomieniu usług ponownie sprawdzane
+jest istnienie administratora: jego konto i hasło zawsze pozostają zachowane,
+niezależnie od podanych odpowiedzi.
 Nie importuje lokalnej bazy developerskiej ani uploadów z repozytorium.
 
 ## Obsługa
 
 | Polecenie | Działanie |
 | --- | --- |
-| `./ancore-install.sh` | IP i port, budowanie, start i utworzenie pierwszego administratora |
+| `./ancore-install.sh` | Logo, IP, port i dane administratora, następnie instalacja |
 | `./ancore-install.sh start` | Uruchomienie wcześniej zbudowanych usług |
 | `./ancore-install.sh stop` | Zatrzymanie usług z zachowaniem danych |
 | `./ancore-install.sh restart` | Ponowne uruchomienie usług |
@@ -130,7 +151,8 @@ Testy instalatora i konfiguracji:
 
 Po instalacji sprawdź `./ancore-install.sh status`, otwarcie podanego adresu,
 logowanie utworzonym kontem administratora, upload i pobranie oraz zapis
-dokumentu w ONLYOFFICE. Ponowna instalacja powinna pominąć tworzenie
-administratora i zachować jego hasło. Ponowny start
-powinien zachować dane. Testy skryptów z zastępczym Docker CLI nie zastępują
+dokumentu w ONLYOFFICE. Ponowna instalacja powinna zachować konto i hasło
+administratora; przy działającym backendzie powinna też pominąć pytania
+o jego dane. Ponowny start powinien zachować dane.
+Testy skryptów z zastępczym Docker CLI nie zastępują
 uruchomienia pełnego zestawu na docelowym serwerze.
