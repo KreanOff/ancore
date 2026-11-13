@@ -1,15 +1,16 @@
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models
 
 
+event_color_validator = RegexValidator(
+    regex=r'\A(?:#[0-9a-fA-F]{6}|red|blue|green|amber|slate)\Z',
+    message='Podaj kolor w formacie #RRGGBB.',
+)
+
+
 class CalendarEvent(models.Model):
-    COLOR_CHOICES = [
-        ('red', 'Czerwony'),
-        ('blue', 'Niebieski'),
-        ('green', 'Zielony'),
-        ('amber', 'Bursztynowy'),
-        ('slate', 'Szary'),
-    ]
+    DEFAULT_COLOR = '#e04f63'
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -28,7 +29,7 @@ class CalendarEvent(models.Model):
     start = models.DateTimeField()
     end = models.DateTimeField()
     all_day = models.BooleanField(default=False)
-    color = models.CharField(max_length=10, choices=COLOR_CHOICES, default='red')
+    color = models.CharField(max_length=10, default=DEFAULT_COLOR, validators=[event_color_validator])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

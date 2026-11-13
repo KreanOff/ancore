@@ -682,7 +682,6 @@
 .work-configuration-name:focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
 .work-configuration-name > .tasks-project-value-badge { max-width: 100%; vertical-align: middle; }
 .work-configuration-badge-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.work-configuration-color > .form-input { width: 110px; flex: 0 1 110px; }
 .tasks-project-filter-choice > .tasks-issue-type { max-width: 100%; justify-self: start; }
 .work-configuration .errorlist { color: var(--text-primary); padding-left: 16px; }
 .work-page :is(a,button,select,input):not(.tasks-issue-close):focus-visible { outline: 2px solid var(--system-accent); outline-offset: 2px; }

@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import CalendarEvent
+from .models import CalendarEvent, event_color_validator
 
 _INPUT_ATTRS = {'class': 'form-input'}
 _DATETIME_FORMATS = [
@@ -13,6 +13,14 @@ _DATETIME_FORMATS = [
 
 
 class CalendarEventForm(forms.ModelForm):
+    color = forms.CharField(
+        label='Kolor', max_length=7, required=False, validators=[event_color_validator],
+        widget=forms.TextInput(attrs={
+            **_INPUT_ATTRS, 'placeholder': CalendarEvent.DEFAULT_COLOR,
+            'autocomplete': 'off', 'spellcheck': 'false',
+        }),
+    )
+
     class Meta:
         model = CalendarEvent
         fields = ['title', 'description', 'start', 'end', 'all_day', 'color']
@@ -32,7 +40,6 @@ class CalendarEventForm(forms.ModelForm):
                 attrs={**_INPUT_ATTRS, 'type': 'datetime-local'},
             ),
             'all_day': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
-            'color': forms.Select(attrs={**_INPUT_ATTRS, 'class': 'form-input form-select'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -47,6 +54,9 @@ class CalendarEventForm(forms.ModelForm):
         if start and end and end < start:
             raise forms.ValidationError('Data zakończenia nie może być wcześniejsza niż data rozpoczęcia.')
         return cleaned
+
+    def clean_color(self):
+        return (self.cleaned_data.get('color') or CalendarEvent.DEFAULT_COLOR).lower()
 
     def save(self, commit=True):
         event = super().save(commit=False)
