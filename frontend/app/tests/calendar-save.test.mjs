@@ -110,6 +110,7 @@ function editor(event, { allDay = false, date = new Date(2026, 5, 1, 10) } = {})
   const capture = context.calendarCapture;
   capture.form.current = { values, elements: { namedItem: (name) => controls[name] } };
   return {
+    html,
     values,
     requests,
     notices,
@@ -126,6 +127,24 @@ const event = (start, end, all_day = false) => ({
   all_day,
   color: 'blue',
   source: 'events',
+});
+
+test('event editor preserves a custom color through a save and resolves legacy colors', async () => {
+  for (const [color, expected] of [
+    ['#a153cc', '#a153cc'],
+    ['blue', '#4f7edb'],
+  ]) {
+    const edit = editor({ ...event('2026-11-12T09:00:00Z', '2026-11-12T10:00:00Z'), color });
+    assert.match(edit.html, new RegExp(`name="color"[^>]*value="${expected}"`));
+    assert.match(edit.html, /type="color"/);
+    assert.match(edit.html, /Domyślny/);
+    assert.match(edit.html, /Podgląd/);
+    await edit.save();
+    assert.equal(edit.requests[0][4].get('color'), expected);
+  }
+  const create = editor(null);
+  await create.save();
+  assert.equal(create.requests[0][4].get('color'), '#e04f63');
 });
 
 for (const zone of ['UTC', 'Europe/Warsaw', 'America/New_York', 'Pacific/Kiritimati']) {
@@ -244,6 +263,8 @@ for (const zone of ['UTC', 'Europe/Warsaw', 'America/New_York']) {
         errors = [];
       const scope = {
         Date,
+        Event,
+        window: new EventTarget(),
         FormData: EditorFormData,
         saving: false,
         editedEvent: existing,
@@ -279,12 +300,15 @@ for (const zone of ['UTC', 'Europe/Warsaw', 'America/New_York']) {
           return { ok: true, json: async () => ({ status: 'success', event: existing }) };
         },
       };
+      let sidebarChanges = 0;
+      scope.window.addEventListener('ancore:calendar-changed', () => sidebarChanges++);
       vm.runInNewContext(functions.join('\n') + '\nglobalThis.submit = saveEvent;', scope);
       values.start = scope.eventInputValue(existing, 'start');
       values.end = scope.eventInputValue(existing, 'end');
       await scope.submit({ preventDefault() {} });
       assert.equal(errors.length, 0);
       assert.equal(requests.length, 1);
+      assert.equal(sidebarChanges, 1);
       assert.equal(
         requests[0].get('start'),
         existing.all_day ? existing.start.slice(0, 16) : existing.start,

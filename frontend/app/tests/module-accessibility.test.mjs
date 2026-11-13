@@ -24,7 +24,7 @@ function nodes(element) {
   if (Array.isArray(element)) return element.flatMap(nodes);
   if (!element.props) return [];
   const children = Object.values(element.props).flatMap(nodes);
-  if (['FieldErrors', 'ModuleFields'].includes(element.type?.name))
+  if (['FieldErrors', 'ModuleFields', 'ColorControl'].includes(element.type?.name))
     children.push(...nodes(element.type(element.props)));
   return [element, ...children];
 }
@@ -125,7 +125,7 @@ for (const readOnly of [true, false]) {
         (node) =>
           node.type === 'button' &&
           (/^Dodaj (całodzienne )?wydarzenie:/.test(node.props['aria-label'] || '') ||
-            ['Nowe wydarzenie', 'Dodaj w tym dniu'].includes(text(node))),
+            text(node) === 'Nowe wydarzenie'),
       );
       assert.ok(creation.length > 2);
       assert.ok(creation.every((node) => node.props.disabled === readOnly));
@@ -168,10 +168,10 @@ for (const field of ['title', 'description', 'start', 'end', 'all_day', 'color',
     if (field) {
       const control = nodes(tree).find(
         (node) =>
-          node.props.name === field ||
-          (field === 'color' && node.props.label === 'Kolor wydarzenia'),
+          (node.type === 'input' && node.props.name === field) ||
+          (node.type === 'textarea' && node.props.name === field),
       );
-      const attributes = field === 'color' ? control.props.triggerProps : control.props;
+      const attributes = control.props;
       assert.equal(attributes['aria-invalid'], true);
       const description = nodes(tree).find(
         (node) => node.props.id === attributes['aria-describedby'],

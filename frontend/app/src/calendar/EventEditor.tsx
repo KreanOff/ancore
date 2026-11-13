@@ -1,17 +1,15 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import { Dropdown } from '../shared/Dropdown';
-import { Icon } from '../shared/Icon';
+import { ColorControl } from '../shared/ColorControl';
 import { Modal } from '../shared/Modal';
 import { PageError, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
+import { eventDate, eventDateValue, eventInput, localInput, type CalendarEvent } from './dates';
 import {
-  colors,
-  eventDate,
-  eventDateValue,
-  eventInput,
-  localInput,
-  type CalendarEvent,
-} from './dates';
+  DEFAULT_EVENT_COLOR,
+  calendarColor,
+  calendarColorClass,
+  calendarColorStyle,
+} from './colors';
 
 export function EventEditor({
   event,
@@ -31,7 +29,7 @@ export function EventEditor({
   urls: { create: string; update: string; delete: string };
   csrfToken: string;
   onClose: () => void;
-  onSaved: (message: string) => void;
+  onSaved: (message: string, saved?: CalendarEvent) => void;
   readOnly?: boolean;
 }) {
   const form = useRef<HTMLFormElement>(null);
@@ -39,7 +37,7 @@ export function EventEditor({
   const [dirty, setDirty] = useState(false),
     [pending, setPending] = useState(false),
     [error, setError] = useState('');
-  const [color, setColor] = useState(event?.color || 'red');
+  const [color, setColor] = useState(() => calendarColor(event?.color));
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const controller = useRef(new AbortController());
   const sending = useRef(false);
@@ -89,14 +87,14 @@ export function EventEditor({
             event ? { event, name } : undefined,
           ),
         );
-      await pageRequest(
+      const result = await pageRequest<{ event: CalendarEvent }>(
         api,
         event ? urls.update.replace('__ID__', String(event.id)) : urls.create,
         csrfToken,
         controller.current.signal,
         data,
       );
-      onSaved('Wydarzenie zapisane.');
+      onSaved('Wydarzenie zapisane.', result.event);
     } catch (exception) {
       if (controller.current.signal.aborted) return;
       if (exception instanceof PageError && exception.data.errors)
@@ -260,43 +258,33 @@ export function EventEditor({
             </label>
             {fieldErrors('all_day')}
           </div>
-          <div className="calendar-dialog-field app-form-field">
-            <span className="form-label">Kolor</span>
-            <Dropdown
-              label="Kolor wydarzenia"
+          <div className="calendar-dialog-field app-form-field app-form-wide documents-field">
+            <label className="form-label" htmlFor="react-event-color">
+              Kolor
+            </label>
+            <ColorControl
+              id="react-event-color"
+              name="color"
+              label="Wybierz kolor wydarzenia"
+              value={color}
+              color={calendarColor(color)}
+              placeholder={DEFAULT_EVENT_COLOR}
+              pattern="#[0-9a-fA-F]{6}"
               disabled={pending}
-              triggerProps={{
-                'aria-invalid': !!errors.color?.length,
-                'aria-describedby': errors.color?.length ? 'react-event-color-error' : undefined,
+              invalid={!!errors.color?.length}
+              describedBy={errors.color?.length ? 'react-event-color-error' : undefined}
+              onChange={(value) => {
+                setColor(value);
+                setDirty(true);
               }}
-              trigger={
-                <>
-                  <span className={`calendar-color-dot calendar-color-dot--${color}`} />
-                  <span>{colors.find((item) => item[0] === color)?.[1]}</span>
-                  <Icon name="chevron-down" />
-                </>
-              }
             >
-              {(close) =>
-                colors.map(([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    role="menuitemradio"
-                    aria-checked={color === value}
-                    disabled={pending}
-                    onClick={() => {
-                      setColor(value);
-                      setDirty(true);
-                      close();
-                    }}
-                  >
-                    <span className={`calendar-color-dot calendar-color-dot--${value}`} />
-                    <span>{label}</span>
-                  </button>
-                ))
-              }
-            </Dropdown>
+              <span
+                className={`calendar-event calendar-event--${calendarColorClass(color)} calendar-color-preview`}
+                style={calendarColorStyle(color)}
+              >
+                Podgląd
+              </span>
+            </ColorControl>
             {fieldErrors('color')}
           </div>
         </div>

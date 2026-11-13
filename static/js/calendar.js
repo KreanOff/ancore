@@ -33,7 +33,14 @@ function initCalendarPage() {
     const DAY_NAMES = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
     const WEEKDAY_SHORT = ['Pon', 'Wto', 'Śro', 'Czw', 'Pią', 'Sob', 'Nie'];
     const MAX_EVENTS_PER_CELL = 3;
-    const COLORS = ['red', 'blue', 'green', 'amber', 'slate'];
+    const DEFAULT_EVENT_COLOR = '#e04f63';
+    const EVENT_COLORS = {
+        red: [DEFAULT_EVENT_COLOR, '#fff1f3'],
+        blue: ['#4f7edb', '#edf3ff'],
+        green: ['#43a36a', '#edf9f1'],
+        amber: ['#d79a35', '#fff7e8'],
+        slate: ['#7b8493', '#f1f3f6'],
+    };
 
     let anchorDate = startOfDay(new Date(
         Number(config.initialYear) || new Date().getFullYear(),
@@ -43,7 +50,6 @@ function initCalendarPage() {
     let currentView = 'month';
     let events = [];
     let selectedDate = cloneDate(anchorDate);
-    let agendaMode = 'day';
     let searchQuery = '';
     let saving = false;
     let editedEvent = null;
@@ -57,8 +63,6 @@ function initCalendarPage() {
 
     const periodLabel = document.getElementById('cal-period-label');
     const eventsSubtitle = document.getElementById('cal-events-subtitle');
-    const eventsList = document.getElementById('calendar-events-list');
-    const agenda = document.getElementById('calendar-agenda');
     const searchInput = document.getElementById('cal-search');
     const statusEl = document.getElementById('cal-status');
     const statusText = document.getElementById('cal-status-text');
@@ -85,12 +89,28 @@ function initCalendarPage() {
     const eventDialogTitle = document.getElementById('event-dialog-title');
     const eventFormError = document.getElementById('event-form-error');
     const eventDeleteBtn = document.getElementById('event-delete-btn');
-    const eventColorSelect = document.querySelector('[data-calendar-color-select]');
-    const eventColorToggle = eventColorSelect?.querySelector('[data-calendar-color-toggle]');
-    const eventColorMenu = eventColorSelect?.querySelector('[data-calendar-color-menu]');
-    const eventColorLabel = eventColorSelect?.querySelector('[data-calendar-color-label]');
-    const eventColorDot = eventColorSelect?.querySelector('[data-calendar-color-dot]');
-    const eventColorOptions = Array.from(eventColorSelect?.querySelectorAll('[data-calendar-color-option]') || []);
+    const eventColorPicker = document.querySelector('[data-calendar-color-picker]');
+    const eventColorReset = document.querySelector('[data-calendar-color-reset]');
+    const eventColorPreview = document.querySelector('[data-calendar-color-preview]');
+    const eventColorError = document.getElementById('event-color-error');
+
+    function calendarColor(value) {
+        const color = String(value || '').trim().toLowerCase();
+        if (/^#[0-9a-f]{6}$/.test(color)) return color;
+        return Object.hasOwn(EVENT_COLORS, color) ? EVENT_COLORS[color][0] : DEFAULT_EVENT_COLOR;
+    }
+
+    function calendarColorClass(value) {
+        return Object.hasOwn(EVENT_COLORS, value) ? value : 'custom';
+    }
+
+    function applyEventColor(element, value) {
+        const color = calendarColor(value);
+        const background = Object.values(EVENT_COLORS).find(([hex]) => hex === color)?.[1];
+        element.style.setProperty('--calendar-event-color', color);
+        element.style.setProperty('--calendar-event-bg', background || `color-mix(in srgb, ${color} 10%, #ffffff)`);
+        element.style.setProperty('--calendar-event-ink', 'var(--text-primary)');
+    }
 
     function apiUrl(key, id) {
         const pattern = urls[key];
@@ -231,7 +251,6 @@ function initCalendarPage() {
 
     function selectDay(day, focus = false) {
         selectedDate = cloneDate(day);
-        agendaMode = 'day';
         renderCurrentView();
         if (focus) monthDaysEl.querySelector(`[data-date="${toLocalISO(day).slice(0, 10)}"]`)?.focus({ preventScroll: true });
     }
@@ -293,7 +312,8 @@ function initCalendarPage() {
     function createEventButton(event, showTime) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `calendar-event calendar-event--${COLORS.includes(event.color) ? event.color : 'slate'}`;
+        btn.className = `calendar-event calendar-event--${calendarColorClass(event.color)}`;
+        applyEventColor(btn, event.color);
         const eventStart = eventDate(event), eventEnd = eventDate(event, 'end');
         btn.title = `${event.title} · ${dateLabel(eventStart)} · ${event.all_day ? 'Cały dzień' : `${pad(eventStart.getHours())}:${pad(eventStart.getMinutes())} – ${!isSameDay(eventStart, eventEnd) ? dateLabel(eventEnd) + ' ' : ''}${pad(eventEnd.getHours())}:${pad(eventEnd.getMinutes())}`}`;
         if (event.url) btn.title = `${event.title} · Termin: ${dateLabel(eventStart)}, ${formatEventTime(event)} · Otwórz szczegóły`;
@@ -324,10 +344,8 @@ function initCalendarPage() {
             more.textContent = `+${dayEvents.length - limit} więcej`;
             more.addEventListener('click', (e) => {
                 e.stopPropagation();
-                selectDay(day);
-                document.querySelector('[data-right-sidebar-toggle][aria-expanded="false"]')?.click();
-                agenda.scrollIntoView({ block: 'nearest' });
-                document.getElementById('cal-agenda-mode').focus({ preventScroll: true });
+                selectedDate = cloneDate(day);
+                setView('day');
             });
             container.appendChild(more);
         }
@@ -598,58 +616,6 @@ function initCalendarPage() {
         }
     }
 
-    function renderEventsList() {
-        eventsList.innerHTML = '';
-        document.getElementById('cal-agenda-title').textContent = agendaMode === 'day' ? 'Plan dnia' : 'Wydarzenia';
-        document.getElementById('cal-agenda-mode').textContent = agendaMode === 'day' ? 'Cały okres' : 'Plan dnia';
-        document.getElementById('cal-agenda-date').textContent = agendaMode === 'day' ? dateLabel(selectedDate, true) : periodLabel.textContent;
-        const sorted = (agendaMode === 'day' ? eventsOnDay(selectedDate) : periodEvents()).sort((a, b) => eventDate(a) - eventDate(b));
-        document.getElementById('cal-agenda-count').textContent = loading ? 'Wczytywanie…' : eventCountLabel(sorted.length);
-        if (!sorted.length) {
-            const empty = document.createElement('li');
-            empty.className = 'calendar-events-empty';
-            const title = document.createElement('strong');
-            title.textContent = loading ? 'Wczytywanie pozycji…' : loadFailed ? 'Nie udało się wczytać pozycji' : searchQuery ? 'Brak pasujących pozycji' : 'Czas na Twoje plany';
-            const description = document.createElement('span');
-            description.textContent = loading ? 'Za chwilę pojawi się Twój plan.' : loadFailed ? 'Spróbuj ponownie za pomocą przycisku nad kalendarzem.' : searchQuery ? 'Zmień wyszukiwanie.' : 'Dodaj wydarzenie i zaplanuj ten dzień.';
-            empty.append(title, description);
-            eventsList.appendChild(empty);
-            return;
-        }
-        let lastDate = '';
-        sorted.forEach((event) => {
-            const start = eventDate(event), end = eventDate(event, 'end');
-            if (agendaMode === 'period' && dateLabel(start) !== lastDate) {
-                lastDate = dateLabel(start);
-                const heading = document.createElement('li');
-                heading.className = 'calendar-agenda-group';
-                heading.textContent = dateLabel(start, true);
-                eventsList.appendChild(heading);
-            }
-            const li = document.createElement('li');
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = `calendar-list-item calendar-list-item--${COLORS.includes(event.color) ? event.color : 'slate'}`;
-            const time = document.createElement('span');
-            time.className = 'calendar-list-time';
-            time.textContent = event.all_day ? 'Cały dzień' : `${pad(start.getHours())}:${pad(start.getMinutes())}`;
-            const body = document.createElement('span');
-            body.className = 'calendar-list-body';
-            const title = document.createElement('span');
-            title.className = 'calendar-list-title';
-            title.textContent = event.title;
-            const detail = document.createElement('span');
-            detail.className = 'calendar-list-date';
-            detail.textContent = !isSameDay(start, end) ? `${dateLabel(start)} – ${dateLabel(end)}` : event.all_day ? 'Cały dzień' : `${pad(start.getHours())}:${pad(start.getMinutes())} – ${pad(end.getHours())}:${pad(end.getMinutes())} · ${Math.round((end - start) / 60000)} min`;
-            if (event.url) detail.textContent = `Termin · ${formatEventTime(event)} · Otwórz szczegóły`;
-            body.append(title, detail);
-            button.append(time, body);
-            button.addEventListener('click', () => openDialog('edit', null, event));
-            li.appendChild(button);
-            eventsList.appendChild(li);
-        });
-    }
-
     function setActiveViewContainer() {
         weekdaysHeader.classList.toggle('u-hidden', currentView !== 'month');
         Object.entries(viewContainers).forEach(([view, el]) => {
@@ -672,7 +638,6 @@ function initCalendarPage() {
             case 'year': renderYearView(); break;
             default: break;
         }
-        renderEventsList();
     }
 
     function setView(view) {
@@ -781,127 +746,26 @@ function initCalendarPage() {
     function clearFormError() {
         eventFormError.textContent = '';
         eventFormError.classList.add('u-hidden');
-    }
-
-    function selectedEventColorOption() {
-        return eventColorOptions.find((option) => option.classList.contains('is-selected'))
-            || eventColorOptions[0];
-    }
-
-    function syncEventColorSelect(value = eventColorInput?.value || 'red', dispatchChange = false) {
-        if (!eventColorInput || !eventColorOptions.length) return;
-
-        const option = eventColorOptions.find((item) => item.dataset.value === value) || eventColorOptions[0];
-        const nextValue = option.dataset.value || '';
-        eventColorInput.value = nextValue;
-
-        if (eventColorLabel) {
-            eventColorLabel.textContent = option.dataset.label || option.textContent.trim();
-        }
-
-        if (eventColorDot) {
-            eventColorDot.className = `calendar-color-dot calendar-color-dot--${nextValue}`;
-        }
-
-        eventColorOptions.forEach((item) => {
-            const isSelected = item === option;
-            item.classList.toggle('is-selected', isSelected);
-            item.setAttribute('aria-selected', String(isSelected));
-            item.tabIndex = isSelected ? 0 : -1;
-        });
-
-        if (dispatchChange) {
-            eventColorInput.dispatchEvent(new Event('change', { bubbles: true }));
+        eventColorInput?.removeAttribute('aria-invalid');
+        eventColorPicker?.removeAttribute('aria-invalid');
+        if (eventColorError) {
+            eventColorError.textContent = '';
+            eventColorError.classList.add('u-hidden');
         }
     }
 
-    function closeEventColorSelect(restoreFocus = false) {
-        if (!eventColorSelect) return;
-
-        window.AncoreDropdownLayer?.hide(eventColorMenu);
-        eventColorSelect.classList.remove('is-open');
-        eventColorToggle?.setAttribute('aria-expanded', 'false');
-        if (eventColorMenu) eventColorMenu.hidden = true;
-        if (restoreFocus) eventColorToggle?.focus({ preventScroll: true });
+    function syncEventColor() {
+        if (!eventColorInput) return;
+        const color = calendarColor(eventColorInput.value);
+        if (eventColorPicker) eventColorPicker.value = color;
+        if (eventColorPreview) applyEventColor(eventColorPreview, color);
     }
 
-    function openEventColorSelect(focusSelected = false) {
-        if (!eventColorSelect) return;
-
-        syncEventColorSelect();
-        eventColorSelect.classList.add('is-open');
-        eventColorToggle?.setAttribute('aria-expanded', 'true');
-        if (eventColorMenu) eventColorMenu.hidden = false;
-        window.AncoreDropdownLayer?.open(eventColorMenu, eventColorToggle, () => closeEventColorSelect());
-
-        if (focusSelected) {
-            selectedEventColorOption()?.focus({ preventScroll: true });
-        }
-    }
-
-    function selectEventColorOption(option) {
-        if (!option || option.disabled) return;
-
-        syncEventColorSelect(option.dataset.value || '', true);
-        closeEventColorSelect(true);
-    }
-
-    function focusEventColorOption(direction) {
-        if (!eventColorOptions.length) return;
-
-        if (!eventColorSelect?.classList.contains('is-open')) {
-            openEventColorSelect();
-        }
-
-        const focusedIndex = eventColorOptions.indexOf(document.activeElement);
-        const selectedIndex = eventColorOptions.indexOf(selectedEventColorOption());
-        const currentIndex = focusedIndex >= 0 ? focusedIndex : Math.max(0, selectedIndex);
-        const nextIndex = (currentIndex + direction + eventColorOptions.length) % eventColorOptions.length;
-        eventColorOptions[nextIndex]?.focus({ preventScroll: true });
-    }
-
-    function handleEventColorKeydown(e) {
-        if (!eventColorSelect?.contains(e.target)) return false;
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            focusEventColorOption(1);
-            return true;
-        }
-
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            focusEventColorOption(-1);
-            return true;
-        }
-
-        if (e.key === 'Home') {
-            e.preventDefault();
-            openEventColorSelect();
-            eventColorOptions[0]?.focus({ preventScroll: true });
-            return true;
-        }
-
-        if (e.key === 'End') {
-            e.preventDefault();
-            openEventColorSelect();
-            eventColorOptions[eventColorOptions.length - 1]?.focus({ preventScroll: true });
-            return true;
-        }
-
-        if (e.key === 'Escape' && eventColorSelect.classList.contains('is-open')) {
-            e.preventDefault();
-            closeEventColorSelect(true);
-            return true;
-        }
-
-        if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-calendar-color-option]')) {
-            e.preventDefault();
-            selectEventColorOption(e.target);
-            return true;
-        }
-
-        return false;
+    function chooseEventColor(value) {
+        if (!eventColorInput || saving) return;
+        eventColorInput.value = value;
+        eventColorInput.dispatchEvent(new Event('input', { bubbles: true }));
+        eventColorInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
     function openDialog(mode, presetDate, event) {
@@ -912,7 +776,6 @@ function initCalendarPage() {
         }
         if (saving) return;
         dialogTrigger = document.activeElement;
-        closeEventColorSelect();
         clearFormError();
         eventForm.reset();
         editedEvent = mode === 'create' ? null : event;
@@ -929,7 +792,7 @@ function initCalendarPage() {
             end.setHours(start.getHours() + 1);
             eventStartInput.value = toLocalInputValue(start);
             eventEndInput.value = toLocalInputValue(end);
-            eventColorInput.value = 'red';
+            eventColorInput.value = DEFAULT_EVENT_COLOR;
         } else {
             eventDialogTitle.textContent = 'Edytuj wydarzenie';
             eventDeleteBtn.classList.remove('u-hidden');
@@ -939,10 +802,10 @@ function initCalendarPage() {
             eventAllDayInput.checked = event.all_day;
             eventStartInput.value = eventInputValue(event, 'start');
             eventEndInput.value = eventInputValue(event, 'end');
-            eventColorInput.value = event.color;
+            eventColorInput.value = calendarColor(event.color);
         }
 
-        syncEventColorSelect(eventColorInput.value);
+        syncEventColor();
         dialogOverlay.classList.add('active');
         dialogOverlay.setAttribute('aria-hidden', 'false');
         eventTitleInput.focus();
@@ -950,7 +813,6 @@ function initCalendarPage() {
 
     function closeDialog() {
         if (saving) return;
-        closeEventColorSelect();
         dialogOverlay.classList.remove('active');
         dialogOverlay.setAttribute('aria-hidden', 'true');
         clearFormError();
@@ -970,6 +832,9 @@ function initCalendarPage() {
         eventDeleteBtn.disabled = value;
         saveButton.textContent = value ? 'Zapisywanie…' : 'Zapisz';
         eventForm.setAttribute('aria-busy', String(value));
+        for (const control of [eventColorInput, eventColorPicker, eventColorReset]) {
+            if (control) control.disabled = value;
+        }
     }
 
     async function saveEvent(e) {
@@ -1003,13 +868,21 @@ function initCalendarPage() {
             const data = await response.json();
             if (!response.ok || data.status !== 'success') {
                 showFormError(data.errors ? Object.values(data.errors).flat()[0] || 'Sprawdź dane wydarzenia.' : data.message || 'Nie udało się zapisać wydarzenia.');
+                if (data.errors?.color?.length && eventColorError) {
+                    eventColorError.textContent = data.errors.color.join(' ');
+                    eventColorError.classList.remove('u-hidden');
+                    eventColorInput?.setAttribute('aria-invalid', 'true');
+                    eventColorPicker?.setAttribute('aria-invalid', 'true');
+                    setSaving(false);
+                    eventColorInput?.focus();
+                }
                 return;
             }
-            agendaMode = 'day';
             selectedDate = startOfDay(eventDate(data.event));
             anchorDate = cloneDate(selectedDate);
             setSaving(false);
             closeDialog();
+            window.dispatchEvent(new Event('ancore:calendar-changed'));
             await fetchEvents();
         } catch (error) {
             showFormError('Nie udało się zapisać wydarzenia. Sprawdź połączenie i spróbuj ponownie.');
@@ -1030,6 +903,7 @@ function initCalendarPage() {
                     if (!response.ok || data.status !== 'success') throw new Error('delete');
                     setSaving(false);
                     closeDialog();
+                    window.dispatchEvent(new Event('ancore:calendar-changed'));
                     await fetchEvents();
                 } catch (error) { showFormError('Nie udało się usunąć wydarzenia. Spróbuj ponownie.'); }
                 finally { setSaving(false); }
@@ -1058,28 +932,16 @@ function initCalendarPage() {
     eventDeleteBtn?.addEventListener('click', deleteEvent, pageListenerOptions);
     eventForm?.addEventListener('submit', saveEvent, pageListenerOptions);
     eventAllDayInput?.addEventListener('change', applyAllDayTimes, pageListenerOptions);
-    eventColorToggle?.addEventListener('click', () => {
-        if (eventColorSelect?.classList.contains('is-open')) {
-            closeEventColorSelect();
-        } else {
-            openEventColorSelect();
-        }
-    }, pageListenerOptions);
-    eventColorOptions.forEach((option) => {
-        option.addEventListener('click', () => selectEventColorOption(option), pageListenerOptions);
-    });
-    eventColorInput?.addEventListener('change', () => syncEventColorSelect(eventColorInput.value), pageListenerOptions);
+    eventColorPicker?.addEventListener('input', () => chooseEventColor(eventColorPicker.value), pageListenerOptions);
+    eventColorReset?.addEventListener('click', () => chooseEventColor(''), pageListenerOptions);
+    eventColorInput?.addEventListener('input', syncEventColor, pageListenerOptions);
+    eventColorInput?.addEventListener('change', syncEventColor, pageListenerOptions);
 
     dialogOverlay?.addEventListener('click', (e) => {
         if (e.target === dialogOverlay) closeDialog();
     }, pageListenerOptions);
 
-    document.addEventListener('click', (e) => {
-        if (!eventColorSelect?.contains(e.target)) closeEventColorSelect();
-    }, pageListenerOptions);
-
     document.addEventListener('keydown', (e) => {
-        if (handleEventColorKeydown(e)) return;
         if (dialogOverlay?.classList.contains('active')) {
             if (document.querySelector('.confirm-modal-overlay.is-visible')) return;
             if (e.key === 'Escape') { e.preventDefault(); closeDialog(); }
@@ -1095,12 +957,7 @@ function initCalendarPage() {
 
     searchInput.addEventListener('input', () => {
         searchQuery = searchInput.value.trim().toLocaleLowerCase('pl');
-        if (searchQuery) agendaMode = 'period';
         renderCurrentView();
-    }, pageListenerOptions);
-    document.getElementById('cal-agenda-mode').addEventListener('click', () => {
-        agendaMode = agendaMode === 'day' ? 'period' : 'day';
-        renderEventsList();
     }, pageListenerOptions);
     retryButton.addEventListener('click', fetchEvents, pageListenerOptions);
     const resizeObserver = new ResizeObserver(() => { if (currentView === 'month') renderMonthView(); });
@@ -1121,7 +978,7 @@ function initCalendarPage() {
     }, 60000);
     pageListenersController?.signal.addEventListener('abort', () => clearInterval(clockTimer));
     pageListenersController?.signal.addEventListener('abort', () => requestController?.abort());
-    syncEventColorSelect();
+    syncEventColor();
     renderCurrentView();
     fetchEvents();
 }

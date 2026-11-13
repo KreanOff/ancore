@@ -1,12 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import { addDays, dateKey, monthBounds, periodStep, weekdays } from '../calendar/dates';
 import { Icon } from '../shared/Icon';
-import { pageRequest } from '../shared/page';
+import { LoadMore } from '../shared/LoadMore';
+import { errorMessage } from '../shared/api';
+import { PageError, pageRequest } from '../shared/page';
 import { RightSidebarContent } from '../shared/RightSidebarContent';
 
 interface TodayData {
   today: string;
   time_zone: string;
+  tasks_enabled: boolean;
+  entries: {
+    id: string;
+    source: 'events' | 'tasks';
+    title: string;
+    url: string;
+    subtitle: string;
+    starts_at: string;
+    time_label: string;
+    color: string;
+  }[];
+  pagination: {
+    count: number;
+    has_next: boolean;
+    next_url: string;
+  };
 }
 
 export default function TodaySidebar({
@@ -24,30 +42,44 @@ export default function TodaySidebar({
 }) {
   const [data, setData] = useState<TodayData>();
   const [month, setMonth] = useState<Date>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const pending = useRef<AbortController>();
+  const currentTarget = useRef(url);
+  const retryTarget = useRef(url);
 
-  async function load() {
+  async function load(target = currentTarget.current) {
     if (pending.current) return;
     const controller = new AbortController();
     pending.current = controller;
+    retryTarget.current = target;
+    setLoading(true);
+    setError('');
     try {
-      const result = await pageRequest<TodayData>(api, url, token, controller.signal);
-      if (controller.signal.aborted) return;
+      const result = await pageRequest<TodayData>(api, target, token, controller.signal);
+      if (controller.signal.aborted || pending.current !== controller) return;
       setData(result);
+      currentTarget.current = target;
       setMonth((previous) => previous || new Date(`${result.today}T12:00:00`));
-    } catch {
-      // Calendar navigation remains available using the last known or local date.
-      // Refresh the server date again on focus or the next clock tick.
+    } catch (exception) {
+      if (controller.signal.aborted || pending.current !== controller) return;
+      if (exception instanceof PageError && [401, 403, 404].includes(exception.status))
+        setData(undefined);
+      setError(errorMessage(exception));
     } finally {
-      if (!controller.signal.aborted) {
+      if (pending.current === controller) {
         pending.current = undefined;
+        setLoading(false);
       }
     }
   }
 
   useEffect(() => {
     document.querySelector('[data-right-sidebar-fallback]:has([data-today-sidebar])')?.remove();
-    void load();
+    currentTarget.current = url;
+    retryTarget.current = url;
+    setData(undefined);
+    void load(url);
     return () => {
       pending.current?.abort();
       pending.current = undefined;
@@ -60,13 +92,21 @@ export default function TodaySidebar({
       if (document.visibilityState === 'hidden') return;
       void load();
     };
-    // Keep the current-day marker accurate when the shell stays open overnight.
+    const changed = () => {
+      // A request started before a save may still contain the previous event values.
+      pending.current?.abort();
+      pending.current = undefined;
+      void load();
+    };
+    // Keep today's plan current without collapsing an expanded result window.
     refresh();
     const timer = window.setInterval(refresh, 60000);
     window.addEventListener('focus', refresh);
+    window.addEventListener('ancore:calendar-changed', changed);
     return () => {
       clearInterval(timer);
       window.removeEventListener('focus', refresh);
+      window.removeEventListener('ancore:calendar-changed', changed);
     };
   }, [expanded, api, url, token]);
 
@@ -139,6 +179,62 @@ export default function TodaySidebar({
           >
             Dzisiaj
           </button>
+        </section>
+        <section className="today-sidebar__tasks" aria-label="Plan na dziś" aria-busy={loading}>
+          <header className="today-sidebar__heading">
+            <h3>Plan na dziś</h3>
+            {data ? <span className="today-sidebar__count">{data.pagination.count}</span> : null}
+          </header>
+          <div className="today-sidebar__list">
+            {data?.entries.map((entry) => (
+              <a className="today-sidebar__task" href={entry.url} key={entry.id}>
+                <span className="today-sidebar__task-title">
+                  {entry.source === 'events' ? (
+                    <span
+                      className="today-sidebar__event-color"
+                      aria-hidden="true"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                  ) : null}
+                  {entry.title}
+                </span>
+                <span className="today-sidebar__task-meta">
+                  <span>{entry.subtitle}</span>
+                  <time dateTime={entry.starts_at}>{entry.time_label}</time>
+                </span>
+              </a>
+            ))}
+            {loading && !data ? (
+              <p className="today-sidebar__empty" role="status">
+                Wczytywanie planu…
+              </p>
+            ) : !error && data && !data.entries.length ? (
+              <p className="today-sidebar__empty">Brak zadań i wydarzeń na dziś.</p>
+            ) : null}
+            {error ? (
+              <div className="today-sidebar__error" role="alert">
+                <p>{error}</p>
+                <button
+                  type="button"
+                  className="tasks-filter-button"
+                  onClick={() => void load(retryTarget.current)}
+                  disabled={loading}
+                >
+                  Spróbuj ponownie
+                </button>
+              </div>
+            ) : null}
+            {data ? (
+              <LoadMore
+                loaded={data.entries.length}
+                total={data.pagination.count}
+                hasMore={data.pagination.has_next}
+                loading={loading}
+                label="Plan na dziś"
+                onLoad={() => void load(data.pagination.next_url)}
+              />
+            ) : null}
+          </div>
         </section>
       </div>
     </RightSidebarContent>

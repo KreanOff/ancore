@@ -10,13 +10,6 @@ export interface CalendarEvent {
   source: string;
   url?: string;
 }
-export const colors = [
-  ['red', 'Czerwony'],
-  ['blue', 'Niebieski'],
-  ['green', 'Zielony'],
-  ['amber', 'Bursztynowy'],
-  ['slate', 'Szary'],
-];
 export const views: [View, string][] = [
   ['day', 'Dzień'],
   ['week', 'Tydzień'],

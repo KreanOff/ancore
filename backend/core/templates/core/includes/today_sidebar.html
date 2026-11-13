@@ -12,5 +12,25 @@
         </div>
         <a class="tasks-filter-button today-sidebar__today" href="{{ sidebar_today_url }}">Dzisiaj</a>
     </section>
+    <section class="today-sidebar__tasks" aria-label="Plan na dziś">
+        <header class="today-sidebar__heading">
+            <h3>Plan na dziś</h3>
+            <span class="today-sidebar__count">{{ sidebar.pagination.count }}</span>
+        </header>
+        <div class="today-sidebar__list">
+            {% for entry in sidebar.entries %}
+            <a class="today-sidebar__task" href="{{ entry.url }}">
+                <span class="today-sidebar__task-title">{% if entry.source == 'events' %}<span class="today-sidebar__event-color" aria-hidden="true" style="background-color: {{ entry.color }}"></span>{% endif %}{{ entry.title }}</span>
+                <span class="today-sidebar__task-meta">
+                    <span>{{ entry.subtitle }}</span>
+                    {% if entry.time_label %}<time datetime="{{ entry.starts_at }}">{{ entry.time_label }}</time>{% endif %}
+                </span>
+            </a>
+            {% empty %}
+            <p class="today-sidebar__empty">Brak zadań i wydarzeń na dziś.</p>
+            {% endfor %}
+            {% include 'core/includes/load_more.html' with next_url=sidebar_tasks_next_url loaded=sidebar.pagination.end total=sidebar.pagination.count label='Plan na dziś' %}
+        </div>
+    </section>
 </div>
 {% endif %}

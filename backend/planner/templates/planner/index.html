@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261112-calendar-right-sidebar">
-<script src="{% static 'js/calendar.js' %}?v=20261112-calendar-right-sidebar" defer></script>
+<link rel="stylesheet" href="{% static 'css/calendar.css' %}?v=20261112-event-color">
+<script src="{% static 'js/calendar.js' %}?v=20261113-sidebar-entries" defer></script>
 {% endblock %}
 
 {% block page_header %}{% endblock %}
@@ -52,21 +52,6 @@
             </div>
         </nav>
     </aside>
-{% endblock %}
-
-{% block right_sidebar %}
-<aside class="calendar-sidebar" id="calendar-agenda" aria-label="Lista wydarzeń">
-    <div class="calendar-sidebar-header">
-        <div class="calendar-agenda-heading">
-            <h3 class="calendar-sidebar-title" id="cal-agenda-title">Plan dnia</h3>
-            <button type="button" class="calendar-text-button" id="cal-agenda-mode">Cały okres</button>
-        </div>
-        <span class="calendar-sidebar-subtitle" id="cal-agenda-date"></span>
-        <span class="calendar-agenda-count" id="cal-agenda-count" aria-live="polite"></span>
-    </div>
-    <ul class="calendar-events-list" id="calendar-events-list"></ul>
-    <div class="calendar-sidebar-footer"><button type="button" class="tasks-filter-button" data-calendar-add><i data-icon="plus" aria-hidden="true"></i>Dodaj w tym dniu</button></div>
-</aside>
 {% endblock %}
 
 {% block content %}
@@ -187,55 +172,15 @@
                         Cały dzień
                     </label>
                 </div>
-                <div class="calendar-dialog-field app-form-field">
-                    <label class="form-label" id="event-color-label" for="event-color-button">Kolor</label>
-                    <div class="calendar-color-select" data-calendar-color-select>
-                        <select id="event-color" name="color" class="tasks-inline-input form-select" aria-hidden="true" tabindex="-1" data-calendar-color-source>
-                            <option value="red">Czerwony</option>
-                            <option value="blue">Niebieski</option>
-                            <option value="green">Zielony</option>
-                            <option value="amber">Bursztynowy</option>
-                            <option value="slate">Szary</option>
-                        </select>
-                        <button type="button"
-                                id="event-color-button"
-                                class="calendar-color-select__button"
-                                aria-haspopup="listbox"
-                                aria-expanded="false"
-                                aria-labelledby="event-color-label event-color-current"
-                                data-calendar-color-toggle>
-                            <span class="calendar-color-dot calendar-color-dot--red" aria-hidden="true" data-calendar-color-dot></span>
-                            <span id="event-color-current" data-calendar-color-label>Czerwony</span>
-                            <i class="calendar-color-select__caret" data-icon="chevron-down" aria-hidden="true"></i>
-                        </button>
-                        <div class="calendar-color-select__menu" role="listbox" aria-labelledby="event-color-label" hidden data-calendar-color-menu>
-                            <button type="button" class="calendar-color-select__option is-selected" role="option" aria-selected="true" data-calendar-color-option data-value="red" data-label="Czerwony">
-                                <span class="calendar-color-select__check" aria-hidden="true"></span>
-                                <span class="calendar-color-dot calendar-color-dot--red" aria-hidden="true"></span>
-                                <span>Czerwony</span>
-                            </button>
-                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="blue" data-label="Niebieski">
-                                <span class="calendar-color-select__check" aria-hidden="true"></span>
-                                <span class="calendar-color-dot calendar-color-dot--blue" aria-hidden="true"></span>
-                                <span>Niebieski</span>
-                            </button>
-                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="green" data-label="Zielony">
-                                <span class="calendar-color-select__check" aria-hidden="true"></span>
-                                <span class="calendar-color-dot calendar-color-dot--green" aria-hidden="true"></span>
-                                <span>Zielony</span>
-                            </button>
-                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="amber" data-label="Bursztynowy">
-                                <span class="calendar-color-select__check" aria-hidden="true"></span>
-                                <span class="calendar-color-dot calendar-color-dot--amber" aria-hidden="true"></span>
-                                <span>Bursztynowy</span>
-                            </button>
-                            <button type="button" class="calendar-color-select__option" role="option" aria-selected="false" data-calendar-color-option data-value="slate" data-label="Szary">
-                                <span class="calendar-color-select__check" aria-hidden="true"></span>
-                                <span class="calendar-color-dot calendar-color-dot--slate" aria-hidden="true"></span>
-                                <span>Szary</span>
-                            </button>
-                        </div>
+                <div class="calendar-dialog-field app-form-field app-form-wide documents-field">
+                    <label class="form-label" for="event-color">Kolor</label>
+                    <div class="documents-color-control work-configuration-color">
+                        <input type="color" class="documents-color-input" value="#e04f63" aria-label="Wybierz kolor wydarzenia" aria-describedby="event-color-error" data-calendar-color-picker>
+                        <input type="text" id="event-color" name="color" class="form-input" value="#e04f63" placeholder="#e04f63" maxlength="7" pattern="#[0-9a-fA-F]{6}" aria-describedby="event-color-error">
+                        <button type="button" class="btn btn-secondary btn-sm" data-calendar-color-reset>Domyślny</button>
+                        <span class="calendar-event calendar-color-preview" data-calendar-color-preview>Podgląd</span>
                     </div>
+                    <p class="calendar-form-error u-hidden" id="event-color-error" role="alert"></p>
                 </div>
                 <p class="calendar-form-error app-form-wide u-hidden" id="event-form-error" role="alert"></p>
             </div>

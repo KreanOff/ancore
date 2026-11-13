@@ -1,11 +1,11 @@
 import { Toolbar } from '../shared/DirectoryToolbar';
 import { PageHeader } from '../shared/PageHeader';
-import { openRightSidebar, RightSidebarContent } from '../shared/RightSidebarContent';
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../shared/Icon';
 import { type PageProps, navigate, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
 import { EventEditor } from './EventEditor';
+import { calendarColorClass, calendarColorStyle } from './colors';
 import {
   addDays,
   bounds,
@@ -50,8 +50,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
     [loading, setLoading] = useState(false),
     [error, setError] = useState('');
   const [query, setQuery] = useState('');
-  const [wholePeriod, setWholePeriod] = useState(false),
-    [revision, setRevision] = useState(0);
+  const [revision, setRevision] = useState(0);
   const [editor, setEditor] = useState<{
     event: CalendarEvent | null;
     date: Date;
@@ -125,16 +124,13 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
         : view === 'day'
           ? `${formatDate(anchor, true)} ${anchor.getFullYear()}`
           : `${formatDate(range.start)} – ${formatDate(addDays(range.end, -1))} ${anchor.getFullYear()}`;
-  const agendaEvents = (wholePeriod ? visible : onDay(selected))
-    .slice()
-    .sort((a, b) => a.start.localeCompare(b.start));
   function eventButton(event: CalendarEvent, className = '', style?: CSSProperties) {
     return (
       <button
         type="button"
         key={event.id}
-        className={`calendar-event calendar-event--${event.color} ${className}`}
-        style={style}
+        className={`calendar-event calendar-event--${calendarColorClass(event.color)} ${className}`}
+        style={{ ...calendarColorStyle(event.color), ...style }}
         title={`${event.title} · ${formatDate(eventDate(event))} · ${event.all_day ? 'Cały dzień' : time(eventDate(event))}`}
         onClick={(e) => {
           e.stopPropagation();
@@ -233,9 +229,7 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                           className="calendar-event-more"
                           onClick={(event) => {
                             event.stopPropagation();
-                            chooseDate(date);
-                            setWholePeriod(false);
-                            openRightSidebar();
+                            chooseDate(date, 'day');
                           }}
                         >
                           +{onDay(date).length - 3} więcej
@@ -514,87 +508,6 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
                 timeView()
               )}
             </div>
-            <RightSidebarContent>
-              <aside className="calendar-sidebar" id="calendar-agenda" aria-label="Lista wydarzeń">
-                <div className="calendar-sidebar-header">
-                  <div className="calendar-agenda-heading">
-                    <h3 className="calendar-sidebar-title">
-                      {wholePeriod ? 'Wydarzenia' : 'Plan dnia'}
-                    </h3>
-                    <button
-                      type="button"
-                      className="calendar-text-button"
-                      onClick={() => setWholePeriod(!wholePeriod)}
-                    >
-                      {wholePeriod ? 'Plan dnia' : 'Cały okres'}
-                    </button>
-                  </div>
-                  <span className="calendar-sidebar-subtitle">
-                    {wholePeriod ? period : formatDate(selected, true)}
-                  </span>
-                  <span className="calendar-agenda-count" aria-live="polite">
-                    {loading ? 'Wczytywanie…' : `${agendaEvents.length} pozycji`}
-                  </span>
-                </div>
-                <ul className="calendar-events-list">
-                  {agendaEvents.length ? (
-                    agendaEvents.map((event) => (
-                      <li key={event.id}>
-                        <button
-                          type="button"
-                          className={`calendar-list-item calendar-list-item--${event.color}`}
-                          onClick={() => open(event)}
-                        >
-                          <span className="calendar-list-time">
-                            {event.all_day ? 'Cały dzień' : time(new Date(event.start))}
-                          </span>
-                          <span className="calendar-list-body">
-                            <span className="calendar-list-title">{event.title}</span>
-                            <span className="calendar-list-date">
-                              {event.url ? 'Termin · ' : ''}
-                              {formatDate(eventDate(event))}
-                              {event.all_day
-                                ? ''
-                                : ` · ${time(new Date(event.start))} – ${time(new Date(event.end))}`}
-                            </span>
-                          </span>
-                        </button>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="calendar-events-empty">
-                      <strong>
-                        {loading
-                          ? 'Wczytywanie pozycji…'
-                          : error
-                            ? 'Nie udało się wczytać pozycji'
-                            : query
-                              ? 'Brak pasujących pozycji'
-                              : 'Czas na Twoje plany'}
-                      </strong>
-                      <span>
-                        {error
-                          ? 'Spróbuj ponownie.'
-                          : initial.read_only
-                            ? 'W tym widoku nie ma wydarzeń ani zadań.'
-                            : 'Dodaj wydarzenie i zaplanuj ten dzień.'}
-                      </span>
-                    </li>
-                  )}
-                </ul>
-                <div className="calendar-sidebar-footer">
-                  <button
-                    type="button"
-                    className="tasks-filter-button"
-                    disabled={initial.read_only}
-                    onClick={() => newEvent()}
-                  >
-                    <Icon name="plus" />
-                    Dodaj w tym dniu
-                  </button>
-                </div>
-              </aside>
-            </RightSidebarContent>
           </div>
         </div>
       </section>
@@ -608,9 +521,16 @@ export default function CalendarPage({ initial, csrfToken }: PageProps) {
           urls={config.urls}
           csrfToken={csrfToken}
           onClose={() => setEditor(undefined)}
-          onSaved={(message) => {
+          onSaved={(message, saved) => {
+            if (saved)
+              setEvents((current) =>
+                current.some((item) => item.id === saved.id)
+                  ? current.map((item) => (item.id === saved.id ? saved : item))
+                  : [...current, saved],
+              );
             setEditor(undefined);
             setRevision((value) => value + 1);
+            window.dispatchEvent(new Event('ancore:calendar-changed'));
             window.showNotification?.(message, 'success');
           }}
         />
