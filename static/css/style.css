@@ -3,7 +3,7 @@
 @import 'base/variables.css?v=20261112-right-sidebar-resize';
 @import 'base/reset.css?v=20261003-atlassian-sans';
 @import 'layout/sidebar.css?v=20261112-red-brand';
-@import 'layout/main.css?v=20261112-topbar-gap-2px';
+@import 'layout/main.css?v=20261113-square-loader';
 @import 'layout/responsive.css?v=20261003-sidebar-content-width';
 @import 'components/cards.css?v=20261017-border-visibility-3pct';
 @import 'components/buttons.css?v=20261017-collection-favorite-stars';

@@ -68,7 +68,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261113-sidebar-entries">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261113-square-loader">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
     <script>
         (function () {
@@ -111,10 +111,8 @@
         })();
     </script>
     <div class="app-loading-overlay" id="app-loading-overlay" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">
-        <div class="app-loading-dialog">
-            <span class="app-loading-spinner" aria-hidden="true"></span>
-            <span class="app-loading-title">Ładowanie…</span>
-        </div>
+        {% include 'core/includes/loading_indicator.html' %}
+        <span class="u-sr-only">Ładowanie…</span>
     </div>
     {% block app_navigation %}
     {% if global_panels %}<div data-react-global-panels data-csrf-token="{{ csrf_token }}" style="display: contents">{% endif %}

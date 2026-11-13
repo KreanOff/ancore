@@ -621,9 +621,14 @@ użytkownika i pozostają domyślnie nieprzeczytane również dla właściciela.
    komponentów do tej samej historii. Błąd pobrania zachowuje ekran i pokazuje
    komunikat. Konto, Workspace lub inny build w odpowiedzi wymuszają pełny
    reload, aby osobiste elementy nie przetrwały zmiany tożsamości.
-6. `.main-content[aria-busy]` oznacza pobieranie. Po 180 ms pojawia się istniejący
-   szkielet nad treścią i tymczasowe `inert`; szybka odpowiedź nie miga szkieletem.
-   Tylko zakończenie bieżącego żądania usuwa jego stan ładowania.
+6. `.main-content[aria-busy]` oznacza pobieranie. Po 180 ms pojawia się zasłona
+   z czterema kolejno wygaszanymi kwadratami 2×2 i tymczasowe `inert` przez
+   `shared/inert.ts`; szybka odpowiedź nie pokazuje animacji. Tylko zakończenie
+   bieżącego żądania usuwa jego stan ładowania. Kolejne żądania zachowują jedną
+   blokadę; zwolnienie jej respektuje inne aktywne blokady modali/szuflad.
+   Po błędzie fokus wraca do wcześniejszej kontrolki, jeśli nadal istnieje
+   i treść nie jest zablokowana. Ten sam wskaźnik jest w zasłonie pełnego reloadu;
+   ograniczenie ruchu wyłącza animację.
 
 `Sidebar.tsx` obsługuje menu Workspace, Ustawień, zarządzania i edytora pulpitu.
 Zwijanie grup, Favorites i szerokość zachowują dotychczasowe klucze. Menu mobilne

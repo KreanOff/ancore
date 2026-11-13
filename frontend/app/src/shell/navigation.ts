@@ -1,4 +1,5 @@
 import { request, ApiError, errorMessage } from '../shared/api';
+import { acquireInert } from '../shared/inert';
 import { flushSync } from 'react-dom';
 import type {
   NavigationEnvelope,
@@ -163,18 +164,22 @@ export function startNavigation(
   );
 
   let loadingTimer: ReturnType<typeof setTimeout> | undefined;
-  let loadingPage: HTMLElement | null = null,
-    wasInert = false;
+  let releaseLoadingPage: (() => void) | undefined;
+  let loadingFocus: HTMLElement | null = null;
   function loading(on: boolean) {
     clearTimeout(loadingTimer);
     document.body.classList.toggle('app-partial-navigation', on);
     const content = document.querySelector('.main-content');
     if (on) {
       content?.setAttribute('aria-busy', 'true');
+      // A replacement request keeps the visible loader and its original background lock.
+      if (releaseLoadingPage) return;
       loadingTimer = setTimeout(() => {
-        loadingPage = document.querySelector('.page-container');
-        wasInert = Boolean(loadingPage?.inert);
-        if (loadingPage) loadingPage.inert = true;
+        const page = document.querySelector<HTMLElement>('.page-container');
+        loadingFocus = page?.contains(document.activeElement)
+          ? (document.activeElement as HTMLElement)
+          : null;
+        releaseLoadingPage = acquireInert(page ? [page] : []);
         const skeleton = document.getElementById('app-content-loading');
         if (skeleton) skeleton.hidden = false;
       }, 180);
@@ -182,8 +187,16 @@ export function startNavigation(
       content?.removeAttribute('aria-busy');
       const skeleton = document.getElementById('app-content-loading');
       if (skeleton) skeleton.hidden = true;
-      if (loadingPage?.isConnected) loadingPage.inert = wasInert;
-      loadingPage = null;
+      releaseLoadingPage?.();
+      releaseLoadingPage = undefined;
+      const focus = loadingFocus;
+      loadingFocus = null;
+      if (
+        focus?.isConnected &&
+        !focus.closest('[inert]') &&
+        document.activeElement === document.body
+      )
+        focus.focus({ preventScroll: true });
     }
   }
   async function navigate(href: string, options: NavigateOptions = {}): Promise<boolean> {

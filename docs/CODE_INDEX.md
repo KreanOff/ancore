@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 39 | 0 | 28 | 249 |
+| [backend/core](../backend/core) | 39 | 0 | 29 | 249 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 112 |
 | [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
@@ -1083,6 +1083,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/field_help.html](../backend/core/templates/core/includes/field_help.html)
 - [backend/core/templates/core/includes/icon_credit.html](../backend/core/templates/core/includes/icon_credit.html)
 - [backend/core/templates/core/includes/load_more.html](../backend/core/templates/core/includes/load_more.html)
+- [backend/core/templates/core/includes/loading_indicator.html](../backend/core/templates/core/includes/loading_indicator.html)
 - [backend/core/templates/core/includes/modal_form_field.html](../backend/core/templates/core/includes/modal_form_field.html)
 - [backend/core/templates/core/includes/modal_form_fields.html](../backend/core/templates/core/includes/modal_form_fields.html)
 - [backend/core/templates/core/includes/photo_crop_dialog.html](../backend/core/templates/core/includes/photo_crop_dialog.html)

@@ -387,7 +387,7 @@ między panelami oraz od bocznych i dolnej krawędzi okna wynosi
 `--app-shell-gap` (4px na każdej szerokości ekranu). Panele zaczynają się
 bezpośrednio pod górnym paskiem: od jego kontrolek oddziela je wyłącznie
 dolny padding paska 2px, taki sam jak u góry. Geometrię współdzielą React,
-pierwszy render Django i skeleton nawigacji przez
+pierwszy render Django i zasłona ładowania nawigacji przez
 [`layout/panels.css`](../static/css/layout/panels.css). Wysokość treści
 uwzględnia odstępy, zachowując wewnętrzne przewijanie stron.
 
@@ -2414,7 +2414,7 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   z ograniczeniem do szerokości ekranu.
   Na telefonie menu Workspace wyrównuje się do lewej krawędzi paska,
   aby mieściło się w szerokości ekranu.
-  Menu, treść, szkielet ładowania oraz panel wyszukiwania zaczynają się
+  Menu, treść, zasłona ładowania oraz panel wyszukiwania zaczynają się
   pod nim, także na telefonie. Modal powiadomień przykrywa również górny pasek,
   zgodnie ze wspólną powłoką „Utwórz zadanie”.
   Wysokość treści uwzględnia pasek, zachowując przewijanie i widoczną dolną
@@ -2477,13 +2477,22 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 Zwykła nawigacja między ekranami podmienia treść przy zachowaniu bocznego menu,
 także pod adresami Workspace. Działają historia Wstecz/Dalej, filtry GET,
 powrót ze szczegółów i ponowna inicjalizacja kontrolek. Podczas pobierania obszar
-główny ma `aria-busy`. Po 180 ms pojawia się szkielet nagłówka, narzędzi i wierszy
-z delikatnym przesuwającym się rozjaśnieniem. Używa istniejących tokenów szarości,
-powierzchni i zaokrągleń; pozostawia aktywne menu boczne oraz mobilny przycisk menu.
-`core/includes/content_skeleton.html` jest stałą częścią powłoki poza podmienianą
-treścią. Szybkie odpowiedzi nie pokazują szkieletu i nie czekają na animację.
-Przy `prefers-reduced-motion` placeholdery są nieruchome. Zasłonięta treść ma
-tymczasowo `inert`, a czytnik ekranu otrzymuje „Wczytywanie widoku…”.
+główny ma `aria-busy`. Po 180 ms pojawia się biała zasłona z wyśrodkowanym
+wskaźnikiem: cztery szare kwadraty w siatce 2×2 kolejno rozjaśniają się
+i wygaszają zgodnie z ruchem wskazówek zegara. Cały wskaźnik ma 24px,
+odstęp 3px, a cykl trwa 1,6s; kolor pochodzi z `--system-interaction`,
+tło z `--bg-main`. Menu boczne oraz mobilny przycisk menu pozostają aktywne.
+`core/includes/content_skeleton.html` zachowuje historyczną nazwę i stały host
+poza podmienianą treścią; wspólny `core/includes/loading_indicator.html` służy
+również pełnoekranowej zasłonie przeładowania strony, bez ramki i widocznej
+etykiety. Style obu wariantów są w `layout/main.css`; geometrię treści
+nadal wyznacza `layout/panels.css`. Szybkie odpowiedzi nie pokazują wskaźnika
+i nie czekają na animację. Ukryte wskaźniki mają wstrzymaną animację,
+a `prefers-reduced-motion` pokazuje cztery nieruchome kwadraty. Zasłonięta
+treść ma tymczasowe `inert` przez wspólny mechanizm blokad, a czytnik ekranu
+otrzymuje „Wczytywanie widoku…”. Kolejne żądanie zachowuje tę samą blokadę;
+błąd usuwa zasłonę i przywraca dostęp oraz wcześniejszy fokus treści,
+o ile inny panel nadal jej nie blokuje.
 Logowanie, wylogowanie, zmiana Workspace, edytory i adresy spoza listy ekranów
 zachowują pełną nawigację. Szczegóły zadania przestrzeni czekają na automatyczny
 zapis przed podmianą i zatrzymują nawigację przy błędzie. Pełne wyjście z

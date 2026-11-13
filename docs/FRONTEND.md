@@ -880,7 +880,7 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   rozmiaru okna. `shell/sidebarSizing.ts` wylicza ograniczenia obu paneli
   z preferencji, bez sprzężenia pomiarów ich szerokości. Na szerokościach
   do 1100px zmiana rozmiaru jest wyłączona. `layout/panels.css` ustala
-  geometrię obu boków, treści i skeletona; [kontrakt UI](UI.md#wspólna-powłoka-react).
+  geometrię obu boków, treści i zasłony ładowania; [kontrakt UI](UI.md#wspólna-powłoka-react).
   Host `#app-right-sidebar-content` znajduje się poza oboma korzeniami React.
   `shared/RightSidebarContent` przekazuje do niego właściwości zadania
   bez utraty stanu przy montowaniu Shell. Pierwszy render

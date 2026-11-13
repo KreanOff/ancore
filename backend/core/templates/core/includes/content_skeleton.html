@@ -1,23 +1,4 @@
 <div class="app-content-loading" id="app-content-loading" hidden>
     <span class="u-sr-only" role="status" aria-live="polite">Wczytywanie widoku…</span>
-    <div class="app-content-skeleton" aria-hidden="true">
-        <div class="app-content-skeleton__header">
-            <span class="app-content-skeleton__block app-content-skeleton__title"></span>
-            <span class="app-content-skeleton__block app-content-skeleton__button"></span>
-        </div>
-        <div class="app-content-skeleton__toolbar">
-            <span class="app-content-skeleton__block app-content-skeleton__button"></span>
-            <span class="app-content-skeleton__block app-content-skeleton__search"></span>
-        </div>
-        <div class="app-content-skeleton__rows">
-            {% for row in '12345678' %}
-            <div class="app-content-skeleton__row">
-                <span class="app-content-skeleton__block app-content-skeleton__icon"></span>
-                <span class="app-content-skeleton__block app-content-skeleton__line"></span>
-                <span class="app-content-skeleton__block app-content-skeleton__line"></span>
-                <span class="app-content-skeleton__block app-content-skeleton__line"></span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+    {% include 'core/includes/loading_indicator.html' %}
 </div>
