@@ -368,7 +368,7 @@ Powłoka aplikacji używa biało-czerwono-czarnej tapety
 `--app-shell-wallpaper-image`. Obraz pokrywa viewport przez `cover`,
 z wyrównaniem do lewej i środka. Jasna górna część tapety zapewnia czytelne
 tło kontrolek górnego paska. Ogólny token `--app-wallpaper-image`
-pozostaje domyślnie `none`. Ekrany logowania i rejestracji lokalnie ustawiają go na
+pozostaje domyślnie `none`. Ekrany logowania, rejestracji i tworzenia Workspace lokalnie ustawiają go na
 `var(--app-shell-wallpaper-image)`; karty zespołów zachowują jednolite tło.
 Zachowane wspólne tokeny
 `--glass-surface-bg: var(--card-bg)` i `--glass-surface-filter: none`
@@ -494,12 +494,11 @@ wyglądu oraz zgodność; aktualne interakcje przeniesionych ekranów należą d
 
 Logowanie, rejestracja i krok nazwy Workspace renderują
 `src/accounts/AuthPage.tsx`
-w powłoce `accounts/auth_base.html`. Logowanie i rejestracja dodają wariant
+w powłoce `accounts/auth_base.html`. Wszystkie trzy ekrany dodają wariant
 `body.auth-page--wallpaper`, który
 wyświetla tę samą biało-czerwono-czarną tapetę co aplikacja, przez lokalny
 alias `--app-wallpaper-image: var(--app-shell-wallpaper-image)`. Tło
-`.auth-shell` używa `left center / cover`. Krok nazwy Workspace
-oraz wybór i dołączanie do Workspace zachowują jednolite białe tło
+`.auth-shell` używa `left center / cover`. Wybór i dołączanie do Workspace zachowują jednolite białe tło
 `--bg-main`. Jasny panel formularza
 ma szerokość 520px, wysokość dopasowaną do treści i jest wyśrodkowany pionowo
 po prawej stronie. Korzysta z `--card-bg`, `--border-color` i `--shadow-lg`.
@@ -534,7 +533,7 @@ Pierwszy render Django zachowuje ten sam układ i formularze POST.
 `auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
 Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
 
-Po utworzeniu konta ekran „Utwórz Workspace” używa tego samego jednolitego tła i karty
+Po utworzeniu konta ekran „Utwórz Workspace” używa tej samej tapety i białej karty
 co logowanie. Nagłówek nie ma dodatkowego opisu. Jedno wymagane pole nazwy
 ma limit 140 znaków; przycisk
 „Utwórz Workspace” pokazuje rzeczywisty stan zapisu „Przygotowywanie Workspace…”.
