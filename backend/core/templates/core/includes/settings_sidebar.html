@@ -5,7 +5,7 @@
             <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i>
             <span class="nav-label">Wróć do przestrzeni</span>
         </a>
-        <a href="{% url 'settings' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if sidebar_mode == 'settings' %} active{% endif %}" data-settings-category="all"{% if sidebar_mode == 'settings' %} aria-current="page"{% endif %} aria-label="Ogólne" title="Ogólne">
+        <a href="{% url 'settings' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if sidebar_mode == 'settings' and settings_category != 'workspace' and settings_category != 'spaces' %} active{% endif %}" data-settings-category="all"{% if sidebar_mode == 'settings' and settings_category != 'workspace' and settings_category != 'spaces' %} aria-current="page"{% endif %} aria-label="Ogólne" title="Ogólne">
             <i class="nav-icon" data-icon="settings" aria-hidden="true"></i>
             <span class="nav-label">Ogólne</span>
         </a>
@@ -13,9 +13,15 @@
             <i class="nav-icon" data-icon="user-round" aria-hidden="true"></i>
             <span class="nav-label">Konto i dostęp</span>
         </a>
-        <a href="{% url 'settings' %}#workspace" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-category="workspace" aria-label="Workspace" title="Workspace">
+        <a href="{% url 'workplaces:workplaces' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if sidebar_mode == 'settings' and settings_category == 'workspace' %} active{% endif %}" data-settings-category="workspace"{% if sidebar_mode == 'settings' and settings_category == 'workspace' %} aria-current="page"{% endif %} aria-label="Workspace" title="Workspace">
             <i class="nav-icon" data-icon="folder" aria-hidden="true"></i>
             <span class="nav-label">Workspace</span>
         </a>
+        {% if current_workplace and 'spaces' not in current_workplace.disabled_modules %}
+        <a href="{% url 'settings' %}?section=spaces" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if sidebar_mode == 'settings' and settings_category == 'spaces' %} active{% endif %}" data-settings-category="spaces"{% if sidebar_mode == 'settings' and settings_category == 'spaces' %} aria-current="page"{% endif %} aria-label="Przestrzenie" title="Przestrzenie">
+            <i class="nav-icon" data-icon="layers" aria-hidden="true"></i>
+            <span class="nav-label">Przestrzenie</span>
+        </a>
+        {% endif %}
     </section>
 </nav>

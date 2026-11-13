@@ -95,6 +95,27 @@
     .workplace-module-card__toggle span::before { transition: none; }
 }
 .workspace-read-only-hint { margin: 0; padding: 6px 16px; color: var(--text-secondary); font-size: var(--font-size-sm); }
+/* Workspace reuses the Space settings page; its avatar lives inside the shared form fields. */
+.workspace-settings-page .workspace-settings-main .app-form-avatar-layout {
+    grid-template-columns: 100px minmax(0, 1fr);
+    column-gap: 32px;
+}
+.workspace-settings-page .space-settings-table-body > .workplace-team-sheet {
+    margin-inline: var(--app-page-padding-x);
+}
+.workspace-settings-page .workplace-invite-links { margin-top: 0; }
+@container space-settings (max-width: 960px) {
+    .workspace-settings-page .workspace-settings-main .app-form-avatar-layout { column-gap: 24px; }
+    .workspace-settings-main .workplace-module-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@container space-settings (max-width: 640px) {
+    .workspace-settings-page .workspace-settings-main .app-form-avatar-layout { grid-template-columns: minmax(0, 1fr); }
+    .workspace-settings-page .workspace-settings-main .app-form-avatar-layout > .app-form-layout { grid-column: 1 / -1; }
+    .workspace-settings-main .workplace-module-card__body { display: contents; }
+    .workspace-settings-main .workplace-module-card__name { grid-column: 2; grid-row: 1; }
+    .workspace-settings-main .workplace-module-card__description { grid-column: 1 / -1; grid-row: 2; }
+    .workspace-settings-main .workplace-module-card__toggle { grid-column: 3; grid-row: 1; }
+}
 .workplace-invitation__details { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: var(--app-modal-field-gap); margin: 0 0 var(--app-modal-padding-y); font-size: var(--font-size-sm); }
 .workplace-invitation__details :is(dt, dd) { margin: 0; overflow-wrap: anywhere; }
 

@@ -80,6 +80,7 @@ export interface FormSchema {
   bound: boolean;
   compact: boolean;
   submit_label: string;
+  confirmation_message?: string;
   templates?: Template[];
   avatars?: { key: string; label: string; preset_class: string }[];
   current_avatar?: AvatarData;
@@ -723,6 +724,9 @@ export function EmbeddedForm({
             ))}
           </div>
         ) : null}
+        {schema.confirmation_message ? (
+          <p className="resources-form-wide app-form-wide">{schema.confirmation_message}</p>
+        ) : null}
         {schema.planning_summary ? (
           <div className="work-sprint-preview resources-form-wide">
             <p>{schema.sprint_name}</p>
@@ -1095,7 +1099,9 @@ export default function FormPage({ initial, csrfToken }: PageProps) {
             data.space_settings ? data.return_url.replace('?view=settings', '') : data.return_url,
           )
         }
-        onSaved={navigate}
+        onSaved={
+          initial.type === 'workspace-form' ? (url) => window.location.assign(url) : navigate
+        }
       />
     </div>
   );

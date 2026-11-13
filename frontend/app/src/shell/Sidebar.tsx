@@ -48,6 +48,11 @@ export default function Sidebar({
     keyboard: boolean;
   }>();
   const [category, setCategory] = useState(settingsCategory);
+  const activeSettingsCategory =
+    data.settings_category === 'workspace' || data.settings_category === 'spaces'
+      ? data.settings_category
+      : category;
+  useEffect(() => setCategory(settingsCategory()), [data.url]);
   const [spaceSection, setSpaceSection] = useState(() => location.hash.slice(1));
   useEffect(() => {
     const sync = () => setSpaceSection(location.hash.slice(1));
@@ -204,7 +209,36 @@ export default function Sidebar({
         })}
       </>
     );
-  else if (data.mode === 'settings')
+  else if (data.mode === 'workspace-settings' && data.workspace_settings) {
+    const workspaceSettings = data.workspace_settings;
+    management = (
+      <>
+        {(
+          [
+            ['main', 'Ustawienia', 'settings'],
+            ['members', 'Członkowie', 'users'],
+            ['links', 'Linki do dołączenia', 'link'],
+          ] as const
+        ).map(([key, label, icon]) => {
+          const url = workspaceSettings.links[key];
+          if (!url) return null;
+          const current = workspaceSettings.tab === key;
+          return (
+            <a
+              key={key}
+              href={url}
+              className={`nav-link sidebar-primary-link sidebar-primary-link--standalone${current ? ' active' : ''}`}
+              aria-current={current ? 'page' : undefined}
+              title={label}
+            >
+              <Icon name={icon} className="nav-icon" />
+              <span className="nav-label">{label}</span>
+            </a>
+          );
+        })}
+      </>
+    );
+  } else if (data.mode === 'settings')
     management = (
       <>
         <h2 className="sidebar-menu-section-title">Ustawienia Ancore</h2>
@@ -219,19 +253,28 @@ export default function Sidebar({
           ['all', 'Ogólne', 'settings'],
           ['account', 'Konto i dostęp', 'user-round'],
           ['workspace', 'Workspace', 'folder'],
-        ].map(([key, label, icon]) => (
-          <a
-            key={key}
-            href={data.settings_url + (key === 'all' ? '' : `#${key}`)}
-            className={`nav-link sidebar-primary-link sidebar-primary-link--standalone${category === key ? ' active' : ''}`}
-            data-settings-category={key}
-            aria-current={category === key ? 'page' : undefined}
-            title={label}
-          >
-            <Icon name={icon} className="nav-icon" />
-            <span className="nav-label">{label}</span>
-          </a>
-        ))}
+          ['spaces', 'Przestrzenie', 'layers'],
+        ]
+          .filter(([key]) => key !== 'spaces' || !data.disabled_modules?.includes('spaces'))
+          .map(([key, label, icon]) => (
+            <a
+              key={key}
+              href={
+                key === 'workspace'
+                  ? data.workplaces_url
+                  : key === 'spaces'
+                    ? data.settings_url + '?section=spaces'
+                    : data.settings_url + (key === 'all' ? '' : `#${key}`)
+              }
+              className={`nav-link sidebar-primary-link sidebar-primary-link--standalone${activeSettingsCategory === key ? ' active' : ''}`}
+              data-settings-category={key}
+              aria-current={activeSettingsCategory === key ? 'page' : undefined}
+              title={label}
+            >
+              <Icon name={icon} className="nav-icon" />
+              <span className="nav-label">{label}</span>
+            </a>
+          ))}
       </>
     );
   else if (data.mode === 'workplaces')

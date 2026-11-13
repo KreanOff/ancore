@@ -24,6 +24,7 @@ SCREENS = {
     'workplaces/join.html': ('workplaces.frontend', 'join_page'),
     'accounts/profile.html': ('accounts.frontend', 'profile_page'),
     'workplaces/workplaces.html': ('workplaces.frontend', 'directory_page'),
+    'workplaces/form_page.html': ('workplaces.frontend', 'form_page'),
     'planner/index.html': ('planner.frontend', 'calendar_page'),
     'dashboard/for_you.html': ('dashboard.frontend', 'for_you_page'),
     'dashboard/settings.html': ('dashboard.frontend', 'settings_page'),
@@ -61,7 +62,7 @@ VIEWS = {
     'dashboard.filter_sharing': {'team', 'candidates'},
     'dashboard.pulpit_views': {'index', 'search', 'manage', 'detail', 'default', 'gadgets', 'edit', 'access', 'delete', 'favorite', 'gadget_edit', 'gadget_delete', 'gadget_quick_add', 'arrange'},
     'dashboard.pulpit_sharing': {'team', 'candidates'},
-    'spaces.views': {'index', 'search', 'manage', 'detail', 'configuration', 'edit', 'avatar_edit', 'favorite', 'members', 'remove_member', 'item_edit', 'item_action', 'backlog_plan', 'sprint_create', 'sprint_plan', 'sprint_action'},
+    'spaces.views': {'index', 'search', 'manage', 'detail', 'configuration', 'edit', 'delete', 'avatar_edit', 'favorite', 'members', 'remove_member', 'item_edit', 'item_action', 'backlog_plan', 'sprint_create', 'sprint_plan', 'sprint_action'},
     'spaces.task_views': {'detail', 'members'},
     'spaces.task_team': {'team', 'candidates'},
     'spaces.space_team': {'team', 'candidates'},
@@ -177,6 +178,8 @@ def form_payload(form):
         fields.append(info)
     result = {'fields': fields, 'errors': list(form.non_field_errors()), 'bound': form.is_bound,
               'submit_label': getattr(form, 'submit_label', 'Zapisz'), 'compact': bool(getattr(form, 'compact', False))}
+    if getattr(form, 'confirmation_message', None):
+        result['confirmation_message'] = form.confirmation_message
     if getattr(form, 'template_options', None):
         result['templates'] = [{**option, 'image': static(f'img/space-templates/{option["key"]}.svg')} for option in form.template_options]
     if getattr(form, 'avatar_options', None):

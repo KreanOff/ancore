@@ -256,10 +256,34 @@ przejść, WIP ani uprawnień. Własny kolor jest opcjonalnym `color` w JSON
 konfiguracji; pusta wartość przywraca dotychczasową paletę typu/stanu.
 
 
-„Ustawienia przestrzeni” jest osobną stroną w powłoce aplikacji. Centrum
-`/settings/` pokazuje w kategorii Workspace listę przestrzeni dostępnych przez
-`visible_spaces`, z linkiem do ustawień każdej z nich. Lista korzysta z aktywnego
-Workspace i uwzględnia włączenie modułu Przestrzeni. Wejścia z zakładki
+„Ustawienia przestrzeni” jest osobną stroną w powłoce aplikacji. Kategoria
+„Przestrzenie” pod `/settings/?section=spaces` pokazuje tabelę wzorowaną na
+Workspace: zaznaczenie, nazwę z awatarem, klucz, opis, rodzaj, szablon i liczbę
+widocznych zadań. Serwer ogranicza przestrzenie przez `visible_spaces`,
+wyszukuje po nazwie, kluczu i opisie przed doładowaniem kolejnych 20 wyników.
+Katalog korzysta z aktywnego Workspace i uwzględnia włączenie modułu Przestrzeni;
+widok Ogólne centrum Ustawień zawiera tylko skrót do katalogu.
+„Edytuj” otwiera ustawienia jednej zaznaczonej przestrzeni, „Usuń” potwierdzenie
+jej usunięcia, a „Utwórz przestrzeń” istniejący kreator. Edycja i usuwanie
+wymagają prawa zarządzania wybraną przestrzenią, tworzenie zachowuje dostęp
+aktywnego właściciela, administratora i członka Workspace. Gość ma tylko odczyt.
+Kliknięcie nazwy lub wiersza nadal prowadzi do ustawień z kontrolą dostępu.
+Kreator otwarty z tej kategorii używa `return_to=settings`: anulowanie wraca
+do katalogu, a zapis otwiera ustawienia utworzonej przestrzeni. Usunięcie
+wymaga przepisania aktualnej nazwy i ponownego sprawdzenia dostępu przy zapisie;
+usuwa przestrzeń wraz z jej zadaniami i ich zawartością. Po zatwierdzeniu
+wraca do `/settings/?section=spaces` bez filtra i zaznaczenia.
+Adres `/space/<slug>/delete/` i jego scoped odpowiednik obsługują GET
+formularza oraz POST usunięcia. Operacja ponownie sprawdza włączony moduł,
+bieżącą rolę Workspace, widoczność i `manage_space` po zablokowaniu Workspace
+i rekordu przestrzeni. Gość nie może odczytać formularza ani go zatwierdzić.
+Potwierdzenie nazwy jest sprawdzane ponownie pod blokadą, więc zmiana nazwy
+po otwarciu okna zatrzymuje usunięcie. Kaskady obejmują zadania, podzadania,
+historię, załączniki, sprinty, tagi, udostępnienia i gadżety oparte na tej
+przestrzeni; usuwane są także jej powiązania z zespołami i pulpitami.
+Pozostałe przestrzenie, zespoły, pulpity i konfiguracje pozostają.
+Istniejące sygnały sprzątają awatar i pliki zadań po zatwierdzeniu transakcji.
+Wejścia z zakładki
 Przestrzeni oraz zachowanego menu bocznego również prowadzą na tę stronę.
 Górny nagłówek zachowuje strzałkę powrotu oraz tytuł „Ustawienia przestrzeni
 · nazwa”. Typografia i odstępy odpowiadają nagłówkowi otwartej Przestrzeni.

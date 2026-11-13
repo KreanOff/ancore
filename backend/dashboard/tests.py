@@ -9,7 +9,7 @@ from django.utils import timezone
 from dashboard.views import _dashboard_notifications
 from planner.models import CalendarEvent
 from tasks.models import TaskTag
-from workplaces.models import create_workplace_for_user
+from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
 
@@ -43,6 +43,10 @@ class DashboardViewTests(TestCase):
         menu = response.content.decode().split('data-sidebar-navigation="settings"', 1)[1].split('</nav>', 1)[0]
         for label in ['Zarządzaj przestrzeniami', 'Zarządzaj pulpitami', 'Zarządzaj filtrami']:
             self.assertNotIn(label, menu)
+        self.assertIn(f'href="{reverse("workplaces:workplaces")}"', menu)
+        self.assertIn('data-settings-category="all" aria-current="page"', menu)
+        self.assertNotIn('data-settings-category="workspace" aria-current="page"', menu)
+        self.assertNotIn(f'href="{reverse("settings")}#workspace"', menu)
         self.assertContains(response, f'href="{reverse("settings")}#account"')
         self.assertContains(response, 'Ustawienia Ancore')
         self.assertNotContains(response, 'settings/project-fields/')
@@ -275,3 +279,155 @@ class GlobalSearchTests(TestCase):
         self.assertEqual(len(task_group['results']), len(matching_titles))
         self.assertFalse(task_group['has_more'])
         self.assertFalse(payload['truncated'])
+
+
+class SettingsSpacesCategoryTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        users = get_user_model()
+        cls.owner = users.objects.create_user(username='space-settings-owner', email='space-settings-owner@example.test')
+        cls.member = users.objects.create_user(username='space-settings-member', email='space-settings-member@example.test')
+        cls.workspace = create_workplace_for_user(cls.owner, 'Workspace ustawień przestrzeni')
+        cls.other = create_workplace_for_user(cls.owner, 'Drugi Workspace ustawień')
+        WorkplaceMembership.objects.create(workplace=cls.workspace, user=cls.member)
+        cls.spaces = [make_space(user=cls.owner, workplace=cls.workspace, name=f'Przestrzeń {i:02d}', visibility='public') for i in range(25)]
+        cls.hidden = make_space(user=cls.owner, workplace=cls.workspace, name='Ukryta przestrzeń', visibility='private', private_owner=cls.owner)
+        cls.foreign = make_space(user=cls.owner, workplace=cls.other, name='Przestrzeń innego Workspace', visibility='public')
+
+    def setUp(self):
+        self.client.force_login(self.member)
+        session = self.client.session
+        session['active_workplace_id'] = self.workspace.pk
+        session.save()
+
+    def api(self, target, scoped=True):
+        endpoint = scoped_workplace_app_path(self.workspace, 'api', 'v1/page/') if scoped else '/api/v1/page/'
+        return self.client.get(endpoint, {'url': target})
+
+    def test_general_settings_have_only_a_shortcut_without_loading_space_rows(self):
+        response = self.client.get(reverse('settings'))
+        self.assertEqual(response.context['settings_category'], 'all')
+        self.assertEqual(response.context['settings_spaces'], [])
+        self.assertIsNone(response.context['settings_spaces_page'])
+        self.assertContains(response, 'settings-spaces-shortcut-title')
+        self.assertNotContains(response, 'id="settings-spaces-title"')
+        data = self.api(reverse('settings')).json()['data']
+        self.assertEqual(data['category'], 'all')
+        self.assertEqual(data['spaces'], [])
+        self.assertIsNone(data['pagination'])
+        shortcut = next(row for row in data['rows'] if row['category'] == 'spaces')
+        self.assertEqual(shortcut['url'], reverse('settings') + '?section=spaces')
+        self.assertEqual(data['settings_spaces_url'], shortcut['url'])
+
+    def test_space_category_has_a_cumulative_twenty_item_window_and_keeps_the_section(self):
+        target = reverse('settings') + '?section=spaces'
+        response = self.client.get(target)
+        self.assertEqual(response.context['settings_category'], 'spaces')
+        self.assertEqual(len(response.context['settings_spaces']), 20)
+        self.assertEqual(response.context['settings_spaces_page'].paginator.count, 25)
+        self.assertContains(response, 'data-settings-category="spaces" aria-current="page"')
+        self.assertNotContains(response, 'data-settings-category="all" aria-current="page"')
+        self.assertNotContains(response, 'data-settings-account-summary')
+        self.assertContains(response, 'Pokaż więcej')
+        self.assertEqual(response.context['settings_spaces_next'], target + '&limit=25')
+        for scoped in (False, True):
+            with self.subTest(scoped=scoped):
+                payload = self.api(target, scoped=scoped).json()
+                self.assertEqual(payload['title'], 'Przestrzenie')
+                data = payload['data']
+                self.assertEqual(data['category'], 'spaces')
+                self.assertEqual([row['name'] for row in data['spaces']], [space.name for space in self.spaces[:20]])
+                self.assertEqual(data['pagination']['count'], 25)
+                self.assertEqual(data['pagination']['next'], target + '&limit=25')
+                more = self.api(data['pagination']['next'], scoped=scoped).json()['data']
+                self.assertEqual([row['name'] for row in more['spaces']], [space.name for space in self.spaces])
+                self.assertEqual(more['spaces'][:20], data['spaces'])
+                self.assertEqual(more['pagination']['next'], '')
+                self.assertEqual(more['pagination']['end'], 25)
+
+    def test_space_category_excludes_private_and_other_workspace_data(self):
+        response = self.api(reverse('settings') + '?section=spaces&limit=100')
+        data = response.json()['data']
+        self.assertEqual(len(data['spaces']), 25)
+        self.assertNotContains(response, self.hidden.slug)
+        self.assertNotContains(response, self.foreign.slug)
+        self.assertTrue(all(row['url'].startswith(scoped_workplace_app_path(self.workspace, 'space')) for row in data['spaces']))
+        self.assertTrue(all(row['url'].endswith('/?view=settings') for row in data['spaces']))
+        self.assertEqual(self.client.session['active_workplace_id'], self.workspace.pk)
+
+    def test_disabled_module_has_no_shortcut_or_data_even_for_direct_category_url(self):
+        self.workspace.disabled_modules = ['spaces']
+        self.workspace.save(update_fields=['disabled_modules'])
+        response = self.client.get(reverse('settings') + '?section=spaces')
+        self.assertEqual(response.context['settings_spaces'], [])
+        self.assertContains(response, 'Brak dostępnych przestrzeni w tym Workspace.')
+        self.assertNotContains(response, 'data-settings-category="spaces"')
+        section = response.content.decode().split('data-settings-spaces-directory', 1)[1].split('id="app-notifications"', 1)[0]
+        self.assertNotIn('Pokaż więcej', section)
+        data = self.api(reverse('settings') + '?section=spaces').json()['data']
+        self.assertEqual(data['spaces'], [])
+        self.assertEqual(data['pagination']['count'], 0)
+        general = self.api(reverse('settings')).json()['data']
+        self.assertFalse(any(row['category'] == 'spaces' for row in general['rows']))
+
+
+    def test_directory_rows_use_real_space_fields_and_only_visible_task_counts(self):
+        space = self.spaces[0]
+        space.description = '<p>Opis <strong>przestrzeni</strong></p>'
+        space.save(update_fields=['description'])
+        make_task(user=self.owner, workplace=self.workspace, space=space, title='Dostępne zadanie')
+        hidden = make_task(user=self.owner, workplace=self.workspace, space=space, title='Prywatne zadanie', visibility='private', private_owner=self.owner)
+        make_task(user=self.owner, workplace=self.workspace, space=space, title='Dziecko prywatnego zadania', parent=hidden)
+        target = reverse('settings') + '?section=spaces&q=' + space.key
+        row = self.api(target).json()['data']['spaces'][0]
+        self.assertEqual(set(row), {'id', 'name', 'url', 'avatar', 'key', 'description', 'kind_label', 'template_label', 'item_count', 'can_manage', 'edit_url', 'delete_url'})
+        self.assertEqual((row['id'], row['name'], row['key']), (space.pk, space.name, space.key))
+        self.assertEqual(row['description'], 'Opis przestrzeni')
+        self.assertEqual(row['kind_label'], space.get_kind_display())
+        self.assertEqual(row['template_label'], space.get_template_display())
+        self.assertIn('preset_class', row['avatar'])
+        self.assertEqual(row['item_count'], 1)
+        response = self.client.get(target)
+        self.assertContains(response, 'settings-spaces-sheet')
+        self.assertContains(response, 'app-data-table')
+        self.assertContains(response, 'data-settings-spaces-search')
+        self.assertNotContains(response, 'class="icon-credit"')
+        self.assertNotContains(response, 'Wybierz przestrzeń, aby otworzyć')
+        header = response.content.decode().split('role="table" aria-label="Lista przestrzeni"', 1)[1].split('role="rowgroup"', 1)[0]
+        positions = [header.index(f'data-column="{column}"') for column in ('select', 'name', 'key', 'description', 'kind', 'template', 'tasks_count')]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_search_filters_all_visible_spaces_before_the_twenty_item_window(self):
+        from urllib.parse import urlencode
+        last = self.spaces[-1]
+        last.description = '<p>Unikatowy szukany opis</p>'
+        last.save(update_fields=['description'])
+        self.hidden.description = last.description
+        self.hidden.save(update_fields=['description'])
+        self.foreign.description = last.description
+        self.foreign.save(update_fields=['description'])
+        for query in (last.name.lower(), last.key.lower(), 'szukany opis'):
+            with self.subTest(query=query):
+                target = reverse('settings') + '?' + urlencode({'section': 'spaces', 'q': query})
+                data = self.api(target).json()['data']
+                self.assertEqual(data['query'], query)
+                self.assertEqual([row['id'] for row in data['spaces']], [last.pk])
+                self.assertEqual(data['pagination']['count'], 1)
+                self.assertEqual(data['pagination']['next'], '')
+        missing = self.client.get(reverse('settings'), {'section': 'spaces', 'q': 'nieistniejąca wartość'})
+        self.assertEqual(missing.context['settings_spaces'], [])
+        self.assertContains(missing, 'Nie znaleziono przestrzeni.')
+        self.assertContains(missing, 'value="nieistniejąca wartość"')
+
+    def test_load_more_preserves_search_and_section_and_keeps_existing_rows(self):
+        from urllib.parse import parse_qs, urlencode, urlsplit
+        target = reverse('settings') + '?' + urlencode({'section': 'spaces', 'q': 'Przestrzeń'})
+        data = self.api(target).json()['data']
+        self.assertEqual(len(data['spaces']), 20)
+        next_url = data['pagination']['next']
+        self.assertEqual(parse_qs(urlsplit(next_url).query), {'section': ['spaces'], 'q': ['Przestrzeń'], 'limit': ['25']})
+        more = self.api(next_url).json()['data']
+        self.assertEqual(more['spaces'][:20], data['spaces'])
+        self.assertEqual(len(more['spaces']), 25)
+        self.assertEqual(more['query'], 'Przestrzeń')
+        self.assertEqual(more['pagination']['next'], '')

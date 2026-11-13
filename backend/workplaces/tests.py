@@ -52,6 +52,13 @@ class WorkplaceSelectionTests(TestCase):
         response = self.client.get(reverse('workplaces:workplaces'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['sidebar_mode'], 'settings')
+        self.assertEqual(response.context['settings_category'], 'workspace')
+        self.assertNotContains(response, 'data-sidebar-navigation="settings" hidden')
+        menu = response.content.decode().split('data-sidebar-navigation="settings"', 1)[1].split('</nav>', 1)[0]
+        self.assertIn('data-settings-category="workspace" aria-current="page"', menu)
+        self.assertNotIn('data-settings-category="all" aria-current="page"', menu)
+        self.assertIn(f'href="{reverse("workplaces:workplaces")}"', menu)
         self.assertContains(response, 'workplaces-page workplaces-settings-page')
         self.assertContains(response, 'tasks-topbar tasks-topbar--directory tasks-topbar--project-directory workplaces-task-topbar')
         self.assertContains(response, 'id="workplaces-search-input"')
@@ -162,25 +169,25 @@ class WorkplaceSelectionTests(TestCase):
         )
         self.assertNotContains(response, 'data-icon="landmark"')
 
-    def test_workplace_edit_renders_in_tasks_modal_shell(self):
+    def test_workplace_edit_renders_in_space_settings_page_shell(self):
         self.client.force_login(self.user)
 
-        response = self.client.get(reverse('workplaces:workplaces'), {'workspace': self.first_workplace.pk, 'view': 'workspaces'})
+        response = self.client.get(reverse('workplaces:workplaces'), {'workspace': self.first_workplace.pk, 'tab': 'main'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-workplace-edit-modal data-initial-tab=', count=1)
-        self.assertContains(response, 'data-workplace-edit-open="workplace-edit-modal-')
-        self.assertContains(response, 'tasks-modal app-modal-panel tasks-project-modal tasks-project-edit-modal tasks-issue-modal workplace-edit-modal')
-        self.assertContains(response, 'tasks-modal__form tasks-project-modal__form tasks-project-edit-modal__form tasks-issue-modal__form workplace-edit-modal__form')
-        self.assertContains(response, 'Edytuj miejsce pracy')
+        self.assertContains(response, 'data-workspace-settings-page', count=1)
+        self.assertNotContains(response, 'data-workplace-edit-modal')
+        self.assertNotContains(response, 'data-workplace-edit-open')
+        self.assertContains(response, 'space-settings-page workspace-settings-page')
+        self.assertContains(response, 'Ustawienia Workspace · ' + self.first_workplace.name)
         self.assertContains(response, f'value="{self.first_workplace.code}"')
         self.assertNotContains(response, 'name="code"')
         self.assertContains(response, 'name="description"')
-        self.assertContains(response, 'class="tasks-project-create-fields tasks-issue-fields workplace-modal__fields workplace-edit-modal__fields"')
-        self.assertContains(response, 'name="workplace_photo_crop"', count=2)
-        self.assertContains(response, 'data-profile-photo-save', count=2)
-        self.assertContains(response, 'data-profile-photo-change', count=2)
-        self.assertContains(response, 'data-profile-photo-remove>Usuń</button>', count=2)
+        self.assertContains(response, 'class="tasks-form-field workplace-edit-modal__code-field app-form-field"')
+        self.assertContains(response, 'name="workplace_photo_crop"', count=1)
+        self.assertContains(response, 'data-profile-photo-save', count=1)
+        self.assertContains(response, 'data-profile-photo-change', count=1)
+        self.assertContains(response, 'data-profile-photo-remove>Usuń</button>', count=1)
         self.assertNotContains(response, '<span>Slug</span>', html=True)
         self.assertNotContains(response, 'class="workplace-settings workplace-settings--inspector"')
         self.assertNotContains(response, 'class="workplace-settings__form"')
@@ -857,7 +864,7 @@ class WorkplaceSelectionTests(TestCase):
         self.client.force_login(self.user)
         self._activate(self.first_workplace)
 
-        response = self.client.post(reverse('workplaces:delete', args=[self.first_workplace.pk]))
+        response = self.client.post(reverse('workplaces:delete', args=[self.first_workplace.pk]), {'name': self.first_workplace.name})
 
         self.assertRedirects(response, reverse('workplaces:workplaces'))
         self.assertFalse(type(self.first_workplace).objects.filter(pk=self.first_workplace.pk).exists())
@@ -867,7 +874,7 @@ class WorkplaceSelectionTests(TestCase):
         self.second_workplace.delete()
         self.client.force_login(self.user)
 
-        response = self.client.post(reverse('workplaces:delete', args=[self.first_workplace.pk]))
+        response = self.client.post(reverse('workplaces:delete', args=[self.first_workplace.pk]), {'name': self.first_workplace.name})
 
         self.assertRedirects(response, reverse('workplaces:workplaces'))
         self.assertTrue(type(self.first_workplace).objects.filter(pk=self.first_workplace.pk).exists())

@@ -53,10 +53,18 @@ def settings_page(request, context):
         {'category': 'account', 'url': reverse('profile'), 'icon': 'circle-user-round', 'title': 'Profil użytkownika', 'description': 'Dane osobowe, zdjęcie i status dostępności.'},
         {'category': 'workspace', 'url': reverse('workplaces:workplaces'), 'icon': 'folder', 'title': 'Zarządzaj Workspace', 'description': 'Wszystkie Workspace, ich ustawienia, członkowie i linki do dołączenia.'},
     ]
+    if context['settings_spaces_enabled']:
+        rows.append({'category': 'spaces', 'url': context['settings_spaces_url'], 'icon': 'layers', 'title': 'Ustawienia przestrzeni', 'description': 'Wybierz przestrzeń i otwórz jej ustawienia.'})
     if request.user.is_staff:
         rows.append({'category': 'workspace', 'url': reverse('admin:index'), 'icon': 'shield-check', 'title': 'Panel administracyjny', 'description': 'Zarządzaj systemem i dostępem użytkowników.'})
-    return {'type': 'settings', 'title': 'Ustawienia', 'data': {
+    return {'type': 'settings', 'title': context['settings_title'], 'data': {
+        'category': context['settings_category'],
+        'query': context['settings_query'],
         'user': {'name': request.user.get_full_name() or request.user.username, 'email': request.user.email, 'avatar': account_avatar(request.user)},
         'profile_url': reverse('profile'), 'logout_url': reverse('logout'), 'rows': rows,
+        'workspaces_url': reverse('workplaces:workplaces'),
+        'settings_spaces_url': context['settings_spaces_url'],
+        'create_url': context['settings_create_url'],
+        'pagination': pagination_payload(request, context['settings_spaces_page']),
         'spaces': context.get('settings_spaces', []),
     }}

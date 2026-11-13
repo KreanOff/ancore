@@ -39,6 +39,14 @@ def schema(form):
     return result
 
 
+def form_page(request, context):
+    modal = context['modal']
+    return {'type': 'workspace-form', 'title': modal['title'], 'data': {
+        'title': modal['title'], 'action': modal['action'], 'return_url': modal['return_url'],
+        'form': schema(modal['form']),
+    }}
+
+
 def directory_page(request, context):
     selected = context.get('team_workplace')
     team = None
@@ -69,11 +77,14 @@ def directory_page(request, context):
                 'date': date(timezone.localtime(link.expires_at), 'd.m.Y H:i'),
                 'revoke_url': path('invite-link-revoke', selected.pk, link.pk),
             } for link in selected.invite_links.filter(revoked_at__isnull=True, expires_at__gt=timezone.now()).order_by('-pk')]
-    return {'type': 'workspace-directory', 'title': 'Workspace', 'data': {
+    title = f'Ustawienia Workspace · {selected.name}' if context['workplace_edit_modal_open'] and selected else 'Workspace'
+    return {'type': 'workspace-directory', 'title': title, 'data': {
         'base_url': path('workplaces'),
         'rows': [{'id': str(item.pk), 'name': item.name, 'code': item.code, 'description': item.description,
                   'avatar': workplace_avatar(item), 'members': item.team_member_count, 'role': item.viewer_role_label,
                   'can_manage': item.can_manage_team, 'active': item.pk == getattr(context['active_workplace'], 'pk', None),
+                  'edit_url': item.edit_url, 'can_delete': item.can_delete, 'delete_url': item.delete_url,
+                  'delete_disabled_reason': item.delete_disabled_reason,
                   'is_default': item.pk == request.user.default_workplace_id,
                   'default_url': path('set-default', item.pk),
                   'switch_url': path('switch', item.pk)} for item in context['workplaces']],

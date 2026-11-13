@@ -1,0 +1,9 @@
+{% if sidebar_mode == 'workspace-settings' %}
+<nav class="sidebar-navigation" aria-label="Ustawienia Workspace" data-sidebar-navigation="workspace-settings">
+    <div class="sidebar-primary-links">
+        <a href="{{ workspace_settings_sidebar.links.main }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if workspace_settings_sidebar.tab == 'main' %} active{% endif %}"{% if workspace_settings_sidebar.tab == 'main' %} aria-current="page"{% endif %}><i class="nav-icon" data-icon="settings" aria-hidden="true"></i><span class="nav-label">Ustawienia</span></a>
+        <a href="{{ workspace_settings_sidebar.links.members }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if workspace_settings_sidebar.tab == 'members' %} active{% endif %}"{% if workspace_settings_sidebar.tab == 'members' %} aria-current="page"{% endif %}><i class="nav-icon" data-icon="users" aria-hidden="true"></i><span class="nav-label">Członkowie</span></a>
+        {% if workspace_settings_sidebar.links.links %}<a href="{{ workspace_settings_sidebar.links.links }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if workspace_settings_sidebar.tab == 'links' %} active{% endif %}"{% if workspace_settings_sidebar.tab == 'links' %} aria-current="page"{% endif %}><i class="nav-icon" data-icon="link" aria-hidden="true"></i><span class="nav-label">Linki do dołączenia</span></a>{% endif %}
+    </div>
+</nav>
+{% endif %}

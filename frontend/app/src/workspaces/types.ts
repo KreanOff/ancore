@@ -12,6 +12,10 @@ export interface Workspace {
   members: number;
   role: string;
   can_manage: boolean;
+  edit_url: string;
+  can_delete: boolean;
+  delete_url: string;
+  delete_disabled_reason?: string;
   active: boolean;
   is_default: boolean;
   default_url: string;

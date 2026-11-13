@@ -17,6 +17,7 @@ from django.http import FileResponse, Http404, HttpResponseBadRequest, JsonRespo
 from django.shortcuts import get_object_or_404, redirect
 from core.frontend import render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
@@ -25,7 +26,7 @@ from dashboard.recent import remember_view
 from .access import editable_to, require_editable, visible_to
 from .models import SpaceTask, SpaceMembership
 from workplaces.models import Workplace
-from workplaces.policy import read_only
+from workplaces.policy import module_enabled, read_only
 from workplaces.services import workplace_people, workspace_owner
 from .avatars import save_space_avatar
 from .backlog import bulk_plan_items, move_backlog_item
@@ -33,7 +34,7 @@ from .backlog_window import backlog_more_url, backlog_window
 from .board import move_board_item
 from .defaults import TEMPLATES, classification_options, configuration_name_color, issue_type_icon, status_appearance, status_flow_stage, status_icon, template_settings
 from .dashboard import dashboard_payload
-from .forms import CategoryForm, CustomFieldForm, GroupForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
+from .forms import CategoryForm, CustomFieldForm, GroupForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceDeleteForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
 from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, materialized_summary_items, space_summary
@@ -493,13 +494,15 @@ def dialog_response(request, form, title, return_url, saved=False, directory=Fal
 @login_required
 @require_http_methods(['GET', 'POST'])
 def edit(request, pk=None, management=False):
+    from_settings = pk is None and request.GET.get('return_to') == 'settings'
     if management and not can_manage_spaces(request):
         raise PermissionDenied
     space = space_object(request, pk) if pk else None
     if space and not manage_space(request, space):
         raise PermissionDenied
     form = SpaceForm(request.POST if request.method == 'POST' else None, request.FILES or None, request=request, space=space)
-    url = directory_url(request) if management else space_url(request, space, '?view=settings') if pk else app_url(request)
+    url = (reverse('settings') + '?section=spaces' if from_settings else
+           directory_url(request) if management else space_url(request, space, '?view=settings') if pk else app_url(request))
     if request.method == 'POST' and form.is_valid():
         data = form.cleaned_data
         saved_file = None
@@ -529,7 +532,8 @@ def edit(request, pk=None, management=False):
                         space.save()
                     if visibility_changed:
                         space.memberships.all().delete()
-                url = directory_url(request) if management else space_url(request, space)
+                url = (space_url(request, space, '?view=settings') if from_settings else
+                       directory_url(request) if management else space_url(request, space))
         except ValidationError as error:
             form.add_error('avatar_photo', error)
         except Exception as error:
@@ -540,7 +544,34 @@ def edit(request, pk=None, management=False):
             form.add_error('key', 'Ten klucz został właśnie zajęty. Wybierz inny.')
         else:
             return dialog_response(request, form, '', url, saved=True)
-    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=pk is None or management, settings_space=space if pk else None)
+    return dialog_response(request, form, 'Ustawienia przestrzeni' if pk else 'Utwórz przestrzeń', url, directory=(pk is None or management) and not from_settings, settings_space=space if pk else None)
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def delete(request, pk):
+    if read_only(request):
+        raise PermissionDenied('Gość ma dostęp tylko do odczytu.')
+    space = space_object(request, pk)
+    if not manage_space(request, space):
+        raise PermissionDenied
+    form = SpaceDeleteForm(request.POST if request.method == 'POST' else None, space=space)
+    return_url = reverse('settings') + '?section=spaces'
+    if request.method == 'POST' and form.is_valid():
+        with transaction.atomic():
+            request.workplace = get_object_or_404(Workplace.objects.select_for_update(), pk=request.workplace.pk)
+            if not module_enabled(request.workplace, 'spaces'):
+                raise Http404
+            space = get_object_or_404(visible_spaces(request).select_for_update(of=('self',)), pk=space.pk)
+            if read_only(request) or not manage_space(request, space):
+                raise PermissionDenied
+            if space.name != form.cleaned_data['name']:
+                form.add_error('name', 'Nazwa przestrzeni zmieniła się. Odśwież formularz.')
+            else:
+                space.delete()
+                messages.success(request, 'Przestrzeń została usunięta.')
+                return dialog_response(request, form, '', return_url, saved=True)
+    return dialog_response(request, form, 'Usuń przestrzeń', return_url)
 
 
 @login_required

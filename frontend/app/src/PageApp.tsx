@@ -18,6 +18,7 @@ const loaders: Record<string, () => Promise<{ default: React.ComponentType<PageP
   'pulpit-detail': () => import('./pulpits/DetailPage'),
   'pulpit-edit': () => import('./pulpits/EditPage'),
   'workspace-directory': () => import('./workspaces/DirectoryPage'),
+  'workspace-form': () => import('./forms/FormDialog'),
   'document-directory': () => import('./documents/DirectoryPage'),
   'office-text': () => import('./documents/TextPage'),
   'office-suite': () => import('./documents/SuitePage'),

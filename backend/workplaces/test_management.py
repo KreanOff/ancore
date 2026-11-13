@@ -40,7 +40,8 @@ class WorkspaceManagementTests(TestCase):
         self.assertTrue(response.context['workplace_edit_modal_open'])
         self.assertEqual(response.context['workplace_edit_tab'], 'members')
         self.assertContains(response, 'id="workspace-team-members"', count=1)
-        self.assertContains(response, 'data-workplace-row ')
+        self.assertNotContains(response, 'data-workplace-row ')
+        self.assertContains(response, 'data-workspace-settings-page')
         self.assert_active_unchanged()
 
     def test_members_legacy_link_and_settings_open_the_requested_tab(self):
@@ -52,7 +53,7 @@ class WorkspaceManagementTests(TestCase):
             self.assertNotContains(response, 'href="/workplaces/?view=members')
             self.assert_active_unchanged()
 
-    def test_member_can_read_modal_but_cannot_change_settings(self):
+    def test_member_can_read_settings_but_cannot_change_them(self):
         self.client.force_login(self.member)
         response = self.client.get(workplace_management_url(self.selected))
         self.assertTrue(response.context['workplace_edit_modal_open'])
@@ -61,7 +62,8 @@ class WorkspaceManagementTests(TestCase):
         self.assertNotContains(response, 'data-workplace-main-action')
         self.assertNotContains(response, 'data-team-remove')
         self.assertNotContains(response, 'id="team-role-modal"')
-        self.assertContains(response, 'data-sidebar-navigation="settings" hidden')
+        self.assertContains(response, 'data-sidebar-navigation="workspace-settings"')
+        self.assertEqual(response.context['settings_category'], 'workspace')
         response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {'name': 'Nie wolno'})
         self.assertEqual(response.status_code, 403)
         self.selected.refresh_from_db()
@@ -76,8 +78,11 @@ class WorkspaceManagementTests(TestCase):
         self.assertTrue(response.context['workplace_edit_modal_open'])
         self.assertEqual(response.context['workplace_edit_tab'], 'main')
         self.assertContains(response, 'Opis do zachowania')
-        self.assertEqual(response.context['sidebar_mode'], 'workplaces')
-        self.assertContains(response, 'aria-current="page" aria-label="Workspace"')
+        self.assertEqual(response.context['sidebar_mode'], 'workspace-settings')
+        self.assertEqual(response.context['settings_category'], 'workspace')
+        self.assertContains(response, '"settings_category": "workspace"')
+        self.assertContains(response, 'data-sidebar-navigation="workspace-settings"')
+        self.assertEqual(response.context['workspace_settings_sidebar']['tab'], 'main')
         self.selected.refresh_from_db()
         self.assertEqual(self.selected.name, 'Wybrany Workspace')
         self.assert_active_unchanged()
@@ -159,16 +164,18 @@ class WorkspaceManagementTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session['active_workplace_id'], created.pk)
 
-    def test_link_tab_keeps_directory_and_active_context(self):
+    def test_link_tab_opens_settings_and_keeps_active_context(self):
         response = self.client.get(reverse('workplaces:workplaces'))
-        self.assertEqual(response.context['sidebar_mode'], 'workplaces')
+        self.assertEqual(response.context['sidebar_mode'], 'settings')
+        self.assertEqual(response.context['settings_category'], 'workspace')
         self.assertEqual(response.context['management_view'], 'workspaces')
         self.assertFalse(response.context['workplace_edit_modal_open'])
         response = self.client.get(workplace_management_url(self.selected, 'links'))
         self.assertEqual(response.context['management_view'], 'workspaces')
         self.assertTrue(response.context['workplace_edit_modal_open'])
         self.assertEqual(response.context['workplace_edit_tab'], 'links')
-        self.assertContains(response, 'data-workplace-row ')
+        self.assertNotContains(response, 'data-workplace-row ')
+        self.assertContains(response, 'data-workspace-settings-page')
         self.assert_active_unchanged()
 
     def test_retired_received_query_does_not_open_an_invitation(self):
@@ -192,3 +199,30 @@ class WorkspaceManagementTests(TestCase):
         response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {'name': self.selected.name, 'view': 'workspaces'})
         self.assertRedirects(response, workplace_management_url(self.selected, 'workspaces'))
         self.assert_active_unchanged()
+
+    def test_save_from_main_page_returns_to_settings_without_switching_workspace(self):
+        response = self.client.post(reverse('workplaces:update', args=[self.selected.pk]), {
+            'name': 'Zapis z ustawień', 'description': 'Zachowany opis',
+            'view': 'workspaces', 'tab': 'main',
+        })
+        self.assertRedirects(response, workplace_management_url(self.selected) + '&tab=main')
+        self.selected.refresh_from_db()
+        self.assertEqual(self.selected.name, 'Zapis z ustawień')
+        self.assertEqual(self.selected.description, 'Zachowany opis')
+        self.assert_active_unchanged()
+
+    def test_settings_sidebar_contains_authorized_links_and_back_to_directory(self):
+        response = self.client.get(workplace_management_url(self.selected) + '&tab=main')
+        self.assertEqual(response.context['sidebar_mode'], 'workspace-settings')
+        sidebar = response.context['workspace_settings_sidebar']
+        self.assertEqual(sidebar['name'], self.selected.name)
+        self.assertEqual(sidebar['tab'], 'main')
+        self.assertEqual(set(sidebar['links']), {'main', 'members', 'links'})
+        self.assertNotContains(response, 'data-workplace-edit-modal')
+        self.assertContains(response, 'Ustawienia Workspace · ' + self.selected.name)
+        self.assertContains(response, 'aria-label="Wróć do Workspace"')
+        self.client.force_login(self.member)
+        response = self.client.get(workplace_management_url(self.selected, 'links'))
+        self.assertEqual(response.context['sidebar_mode'], 'workspace-settings')
+        self.assertEqual(response.context['workspace_settings_sidebar']['tab'], 'members')
+        self.assertEqual(set(response.context['workspace_settings_sidebar']['links']), {'main', 'members'})

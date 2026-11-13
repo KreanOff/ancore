@@ -1,28 +1,44 @@
 import { PageHeader } from '../shared/PageHeader';
+import { SpacesSettingsDirectory } from './SpacesSettingsDirectory';
 import { useEffect, useState } from 'react';
 import { Avatar, type AvatarData } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { setPageLocation } from '../shared/page';
 import type { PageProps } from '../shared/page';
 interface Data {
+  category: 'all' | 'spaces';
   user: { name: string; email: string; avatar: AvatarData };
-  spaces: { name: string; url: string }[];
   profile_url: string;
   logout_url: string;
+  workspaces_url: string;
   rows: { category: string; url: string; icon: string; title: string; description: string }[];
 }
-const categoryFromHash = () =>
+const categoryFromHash = (fallback: string = 'all') =>
   ['account', 'security'].includes(location.hash.slice(1))
     ? 'account'
     : location.hash === '#workspace'
       ? 'workspace'
-      : 'all';
-export default function SettingsPage({ initial, csrfToken }: PageProps) {
+      : fallback;
+export default function SettingsPage(props: PageProps) {
+  return (props.initial.data as Data).category === 'spaces' ? (
+    <SpacesSettingsDirectory {...props} />
+  ) : (
+    <GeneralSettingsPage {...props} />
+  );
+}
+function GeneralSettingsPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as Data;
-  const [category, setCategory] = useState(categoryFromHash);
+  const [category, setCategory] = useState(() => categoryFromHash(data.category));
   useEffect(() => {
     const controller = new AbortController();
-    const sync = () => setCategory(categoryFromHash());
+    const sync = () => {
+      if (location.hash === '#workspace') {
+        location.replace(data.workspaces_url);
+        return;
+      }
+      setCategory(categoryFromHash(data.category));
+    };
+    sync();
     window.addEventListener('hashchange', sync, { signal: controller.signal });
     window.addEventListener('popstate', sync, { signal: controller.signal });
     const click = (event: MouseEvent) => {
@@ -30,8 +46,10 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
         '[data-sidebar-navigation="settings"] [data-settings-category]',
       );
       if (!target || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-      event.preventDefault();
+      if (target.pathname !== location.pathname || target.search !== location.search) return;
       const next = target.dataset.settingsCategory || 'all';
+      if (next === 'spaces') return;
+      event.preventDefault();
       setPageLocation(
         location.pathname + location.search + (next === 'all' ? '' : `#${next}`),
         true,
@@ -42,20 +60,20 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
     };
     document.addEventListener('click', click, { signal: controller.signal, capture: true });
     return () => controller.abort();
-  }, []);
+  }, [data.workspaces_url, data.category]);
   return (
     <div className="dashboard-page settings-center" data-react-screen="settings">
       <PageHeader
         heading={
           <h1 className="tasks-topbar-title" id="settings-title">
-            Ustawienia
+            {initial.title}
           </h1>
         }
       />
       <div className="settings-scroll-area">
         <div className="settings-layout">
           <div className="settings-content" aria-labelledby="settings-title">
-            {category !== 'workspace' ? (
+            {category === 'all' || category === 'account' ? (
               <div className="settings-account-summary">
                 <Avatar data={data.user.avatar} className="settings-account-avatar" />
                 <div className="settings-account-copy">
@@ -71,9 +89,14 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
               [
                 ['account', 'Konto i dostęp', 'Dane osobowe i ustawienia konta.'],
                 ['workspace', 'Workspace', 'Organizacja pracy, przestrzenie, pulpity i filtry.'],
+                ['spaces', 'Przestrzenie', 'Ustawienia przestrzeni w bieżącym Workspace.'],
               ] as const
             )
-              .filter(([key]) => category === 'all' || category === key)
+              .filter(
+                ([key]) =>
+                  (category === 'all' || category === key) &&
+                  data.rows.some((row) => row.category === key),
+              )
               .map(([key, label, description]) => (
                 <section key={key} className="settings-group" id={key}>
                   <header className="settings-group-heading">
@@ -100,36 +123,7 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
                   </div>
                 </section>
               ))}
-            {category !== 'account' ? (
-              <section className="settings-group" aria-labelledby="settings-spaces-title">
-                <header className="settings-group-heading">
-                  <h2 id="settings-spaces-title">Ustawienia przestrzeni</h2>
-                  <p>
-                    Wybierz przestrzeń, aby zmienić ustawienia, udostępnienia oraz statusy, typy i
-                    pola.
-                  </p>
-                </header>
-                <div className="settings-rows">
-                  {data.spaces.map((space) => (
-                    <a key={space.url} href={space.url} className="settings-row settings-row--link">
-                      <span className="settings-row-icon">
-                        <Icon name="layers" />
-                      </span>
-                      <span className="settings-row-copy">
-                        <strong>{space.name}</strong>
-                      </span>
-                      <span className="settings-row-arrow">
-                        <Icon name="chevron-right" />
-                      </span>
-                    </a>
-                  ))}
-                  {!data.spaces.length ? (
-                    <p className="work-caption">Brak dostępnych przestrzeni w tym Workspace.</p>
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
-            {category !== 'workspace' ? (
+            {category === 'all' || category === 'account' ? (
               <section
                 className="settings-session"
                 id="security"

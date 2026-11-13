@@ -1599,17 +1599,52 @@ wyłącznie w istniejącej nawigacji bocznej.
 Formularz tworzenia zachowuje powłokę modalną nad katalogiem oraz zwykłą
 nawigację Workspace. Edycja, dostęp i konfiguracja zadań korzystają z osobnej
 strony ustawień konkretnej przestrzeni. Uprawnienia: [SPACES.md](SPACES.md).
-Katalog Workspace zachowuje własny wariant menu nawigacji; dawne osobne katalogi
+Katalog Workspace korzysta z menu Ustawień z aktywną kategorią „Workspace”; dawne osobne katalogi
 zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
 
 Centrum „Ustawienia” (`/settings/`) jest osobną stroną z własnym wariantem
 głównego paska bocznego (`core/includes/settings_sidebar.html`). Zastępuje
-menu Workspace kategoriami Ogólne, Konto i dostęp i Workspace.
+menu Workspace kategoriami Ogólne, Konto i dostęp, Workspace i Przestrzenie.
 Ustawienia konta prowadzą do profilu i wylogowania; nie zawierają
 „Kont w sesji” ani „Dodaj konto”.
-Sekcja Workspace zawiera „Zarządzaj Workspace”, dla personelu także „Panel
-administracyjny”, oraz listę „Ustawienia przestrzeni”. Lista obejmuje widoczne
-przestrzenie aktywnego Workspace; brak dostępnych przestrzeni pokazuje komunikat.
+Kategoria Workspace otwiera bezpośrednio katalog `/workplaces/`: nagłówek
+„Workspace”, „Dodaj Workspace”, wyszukiwarkę i dotychczasową tabelę.
+W menu pozostają wszystkie kategorie z aktywną pozycją Workspace.
+Widok Ogólne zachowuje skrót „Zarządzaj Workspace”, dla personelu także „Panel
+administracyjny”, oraz krótki skrót do kategorii „Przestrzenie”.
+Kategoria „Przestrzenie”, oznaczona ikoną warstw, otwiera
+`/settings/?section=spaces` z katalogiem widocznych przestrzeni aktywnego
+Workspace. Układ odpowiada katalogowi Workspace: wspólny `PageHeader`,
+wyszukiwarka w `DirectoryToolbar` oraz kompaktowa tabela `app-data-table`.
+Kolumny obejmują zaznaczenie, nazwę z awatarem, klucz, opis, rodzaj, szablon
+i liczbę zadań. Awatary korzystają ze wspólnego `Avatar`. Checkbox nagłówka
+zaznacza wczytane wiersze; zaznaczenie nie wykonuje operacji zbiorczych.
+„Utwórz przestrzeń” znajduje się w nagłówku. Po prawej stronie
+`DirectoryToolbar` są „Edytuj” i „Usuń”, z wyszukiwarką po lewej. Te dwa działania
+wymagają dokładnie jednej zaznaczonej przestrzeni oraz uprawnienia do
+zarządzania nią. Edycja otwiera dotychczasową stronę ustawień, tworzenie
+dotychczasowy kreator we wspólnym `FormDialog`, a usuwanie kompaktowe okno
+z potwierdzeniem aktualnej nazwy. Okno wyjaśnia, że usunięta zostanie także
+zawartość przestrzeni. Gość i wyłączony moduł nie udostępniają tych operacji.
+Opcjonalne `form.confirmation_message` rozszerza wspólny formularz o widoczny
+akapit nad polami, na pełną szerokość `app-form-wide`. Usuwanie Przestrzeni
+pokazuje w nim nazwę oraz zakres trwałego usunięcia. React i pierwszy render
+Django wyświetlają ten sam tekst bez otwierania tooltipa; pozostałe formularze
+nie wymagają tego pola.
+Anulowanie kreatora wraca do katalogu ustawień, a utworzenie przestrzeni
+otwiera jej ustawienia. Zatwierdzone usunięcie wraca do katalogu bez filtra
+wyszukiwania i bez zaznaczeń.
+Kliknięcie nazwy lub wiersza, również Enter i Spacja na wierszu, prowadzi
+do istniejących ustawień wybranej przestrzeni. Checkboxy, pozostałe kontrolki
+i zaznaczanie tekstu zachowują własne działanie. Wszystkie operacje są
+ponownie autoryzowane przez Django.
+Wyszukiwanie po nazwie, kluczu i opisie odbywa się po stronie serwera przed
+oknem wyników. Nowe wyszukiwanie rozpoczyna okno od 20; kolejne wyniki odsłania
+wspólne „Pokaż więcej”, zachowując dotychczasowe wiersze i zaznaczenia.
+Brak przestrzeni oraz brak dopasowań mają odrębne komunikaty.
+Katalog nie jest powielany w widoku Ogólne; pozostaje tam tylko skrót.
+Wyłączenie modułu Przestrzeni ukrywa tę pozycję menu i skrót w Ogólnych;
+bezpośredni adres nie ujawnia wtedy katalogu.
 Prawo zarządzania i konfigurowania jest sprawdzane na stronie wybranej przestrzeni.
 Na stronie centrum jest „Wróć do przestrzeni”. Strona ustawień przestrzeni
 zastępuje główne menu sześcioma sekcjami bez dodatkowych nagłówków i powrotu.
@@ -1617,11 +1652,12 @@ Treść nie ma dodatkowej wewnętrznej nawigacji;
 wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
 `dashboard/SettingsPage.tsx` i `shell/Sidebar.tsx` obsługują kategorie w stałej
 powłoce, aktywne pozycje, adresy
-z fragmentem (`#account`, `#workspace` i skrót `#security`),
+z fragmentem (`#account` i skrót `#security`) oraz `?section=spaces`,
 historię Wstecz/Dalej i ponowne wejście po częściowej nawigacji. Wybór kategorii
 zamyka menu na telefonie; stan zwinięcia i szerokość są wspólne z resztą aplikacji.
 Wyjście ze strony usuwa jej listenery; `settings.js` zachowuje obsługę
-starszego renderowania HTML.
+starszego renderowania HTML. Dawny adres `/settings/#workspace` przechodzi
+do katalogu Workspace przez zastąpienie bieżącego wpisu historii.
 Sekcja Preferencje i jej opcje są usunięte z Ustawień; zwijanie menu i panel
 powiadomień pozostają dostępne przez kontrolki wspólnej powłoki aplikacji.
 Profil nie odsyła już do usuniętych opcji. Dla zgodności
@@ -3686,20 +3722,17 @@ w przeglądarce, nazwij weryfikację przeglądem kodu, a nie wizualnym testem.
 
 ## 12. Zarządzanie Workspace i zespołem
 
-Katalog `/workplaces/` jest osobną stroną administracyjną. Zastępuje codzienne menu własnym
-`core/includes/workplace_management_sidebar.html` (tryb `workplaces`):
-Link powrotu prowadzi do miejsca wejścia (z Ustawień: „Wróć do ustawień”),
-a „Workspace” jest pozycją aktywną. Bez wcześniejszego wejścia w aplikacji
-domyślnym powrotem jest Dashboard aktywnego Workspace. Menu nie zawiera
-dodatkowych pozycji przestrzeni ani Ustawień Ancore.
-Treść zajmuje całą szerokość obok głównego paska; nie zawiera dodatkowego menu
-ustawień. `render_workplaces` zachowuje ten tryb również dla okien zespołu,
-linków do dołączenia i błędów formularzy. Istniejący `layout.js` synchronizuje osobne menu
-każdego ekranu przy częściowej nawigacji i przejściach Wstecz/Dalej.
-Powrót zachowuje pełny adres poprzedniego widoku, kategorię ustawień,
-filtry i pozycję przewinięcia. Punkt wejścia jest zapisany w historii i
-`sessionStorage` osobno dla obu ekranów, konta, Workspace i karty przeglądarki;
-pozostaje dostępny po przeładowaniu, otwieraniu okien i błędach/zapisie formularzy.
+Katalog `/workplaces/` jest stroną kategorii „Workspace” we wspólnym menu
+„Ustawienia Ancore” (tryb `settings`, `settings_category=workspace`).
+Menu zawiera „Ogólne”, „Konto i dostęp”, aktywną pozycję „Workspace”, „Przestrzenie” oraz
+powrót do przestrzeni. Treść katalogu zajmuje środkowy panel aplikacji.
+Wybranie Workspace otwiera pełną stronę ustawień z trybem
+`workspace-settings`: główne menu zastępują sekcje „Ustawienia”, „Członkowie”
+i dostępne zarządzającym „Linki do dołączenia”. Pierwszy render używa
+`core/includes/workspace_settings_sidebar.html`, a React `shell/Sidebar`.
+`render_workplaces` utrzymuje wybraną sekcję także po walidacji formularza.
+Strzałka nagłówka i „Anuluj” wracają do katalogu `/workplaces/`;
+historia przeglądarki zachowuje adresy odwiedzanych sekcji.
 Oglądanie lub edycja wybranego Workspace nie przełącza aktywnego kontekstu pracy.
 
 Etykieta „Domyślny” z opisem „Otwierany po zalogowaniu” wskazuje zapisaną
@@ -3759,23 +3792,46 @@ Tytuł „Workspace” ma rozmiar 17px i grubość 700. Dwa wspólne paski
 `tasks-topbar--directory` oraz `tasks-filterbar--directory` zachowują tytuł,
 akcje i wyszukiwanie. Tabela zaczyna się pod paskami, a pod wynikami
 znajduje się „Pokaż więcej”, odsłaniające po 20 kolejnych Workspace.
+Po prawej stronie paska wyszukiwania są „Edytuj” i „Usuń”, zgodnie z katalogiem
+Przestrzeni w Ustawieniach. Działania dotyczą dokładnie jednego zaznaczonego,
+widocznego wiersza. „Edytuj” wymaga właściciela albo administratora wybranego
+Workspace i otwiera `?workspace=<id>&tab=main`. „Usuń” jest dostępne wyłącznie
+właścicielowi, jeżeli pozostanie co najmniej jeden jego własny Workspace.
+Kompaktowy `FormDialog` pokazuje nazwę i zakres usunięcia przez
+`confirmation_message` oraz wymaga przepisania aktualnej nazwy.
+Prawa dotyczą wybranego wiersza: rola gościa w aktywnym Workspace nie odbiera
+możliwości zarządzania innym Workspace, którego użytkownik jest właścicielem.
+Nie ma zbiorczej edycji ani usuwania; „Dodaj Workspace” pozostaje w nagłówku.
 
-Nazwa Workspace otwiera „Główną” w oknie miejsca pracy, liczba członków —
+Nazwa Workspace otwiera główną sekcję strony ustawień, liczba członków —
 „Członkowie”. Tabela nie zawiera hamburgera ani kolumny jego menu.
 Znacznik „Bieżący” oraz przycisk przełączenia zachowują oddzielne działanie.
-Kliknięcie reszty wiersza, Enter i Spacja otwierają „Główną”; zaznaczenie tekstu,
+Kliknięcie reszty wiersza, Enter i Spacja otwierają ustawienia; zaznaczenie tekstu,
 checkboxy i pozostałe linki zachowują własne akcje. Hover i fokus ikon
 wypełniają komórkę istniejącym akcentem bez zmiany siatki tabeli.
 
-Okno `workplace-edit-modal` ma zakładki „Główna” (`main`), „Członkowie” (`members`)
-i — tylko dla zarządzających — „Linki do dołączenia” (`links`). Używa
-`notifications-tabs tasks-issue-tabs`, tekstu 15px/400, czerwonego podkreślenia
-oraz relacji `tablist`/`tab`/`tabpanel`. Strzałki, Home i End przenoszą fokus;
-na telefonie pasek przewija aktywną zakładkę. Zmiana zakładki zachowuje szkic
-ustawień. „Zapisz zmiany” jest na „Głównej”, a „Dodaj osobę” nad członkami.
-Członek i gość mają odczyt „Głównej” oraz członków bez przycisków zarządzania.
-Ustawienia i formularze akcji pozostają oddzielone. Błąd zachowuje formularz;
-zamknięcie okna usuwa żądanie otwarcia z URL i przywraca fokus.
+Strona ustawień Workspace korzysta z układu ustawień Przestrzeni.
+`PageHeader` zawiera strzałkę powrotu do katalogu i tytuł
+„Ustawienia Workspace · <nazwa>”, bez ikony przy tytule. Menu po lewej
+pokazuje „Ustawienia” (`main`), „Członkowie” (`members`) i — tylko dla
+zarządzających — „Linki do dołączenia” (`links`). Aktywna sekcja ma
+`aria-current="page"` i ten sam styl co menu ustawień Przestrzeni.
+Menu zaczyna wizytę rozwinięte; na telefonie korzysta ze wspólnej szuflady.
+„Zapisz” i „Anuluj” są po prawej we wspólnym `Toolbar` nad formularzem,
+a „Dodaj osobę” nad tabelą członków. Awatar, nazwa, opis, niezmienny kod
+i włączone moduły zachowują dotychczasowe kontrolki. Formularz chroni
+niezapisane zmiany przy nawigacji. Członek i gość odczytują ustawienia
+oraz członków bez przycisków zarządzania. Błąd zachowuje formularz;
+tworzenie Workspace i dodawanie osoby nadal korzystają ze wspólnych modali.
+
+Powłoka strony współdzieli `.space-settings-page`, przewijanie paneli
+i kontener responsywny `space-settings` z ustawieniami Przestrzeni.
+Minimalny wariant `.workspace-settings-main` w `components/workplace-team.css`
+układa awatar wewnątrz wspólnych pól (`.app-form-avatar-layout`): kolumna
+awatara ma 100px, a resztę zajmują pola. Do szerokości kontenera 960px karty
+modułów przechodzą do jednej kolumny, a do 640px formularz układa awatar
+nad polami. Opis modułu zajmuje wtedy pełny wiersz karty pod nazwą i
+przełącznikiem. Wariant nie zmienia formularza tworzenia ani innych ekranów.
 
 Tabela członków używa `tasks-directory-board tasks-directory-sheet
 tasks-project-sheet workplace-team-sheet` oraz pięciu kolumn: zaznaczenie
@@ -3819,7 +3875,8 @@ Dawne parametry `view=received`, `view=invitations` i `invitation` nie otwieraj�
 wycofanych ekranów. Odebranie dostępu nadal wymaga `showConfirmModal`
 wyjaśniającego wpływ na sesje Office. React oraz szablony zgodności zachowują
 wspólny fokus, `inert`, Escape i inicjalizację po `ancore:content-loaded`.
-Ustawienia prowadzą do katalogu przez „Zarządzaj Workspace”.
+Kategoria „Workspace” w Ustawieniach prowadzi bezpośrednio do katalogu,
+bez pośredniego ekranu „Zarządzaj Workspace”. Skrót pozostaje w widoku Ogólne.
 [Funkcje, role i migracje](TEAMWORK.md).
 
 ## 13. Centrum powiadomień
@@ -4342,10 +4399,10 @@ nową kartę; blokada popupu pokazuje jeden link do zapisanego dokumentu.
 Zarządzanie Workspace renderuje `src/workspaces/`. Zachowuje katalog, lokalne
 wyszukiwanie, odsłanianie po 20 przez „Pokaż więcej”, zaznaczenia wczytanych
 wierszy i oddzielne przełączanie
-kontekstu. Okna używają istniejących klas `workplace-create-modal`,
-`workplace-edit-modal`, zakładek „Główna”, „Członkowie”, „Linki do dołączenia”,
-tabeli członków oraz kompaktowych okien dodawania osoby i zmiany roli. Zmiana zakładki zachowuje szkic ustawień; zamknięcie
-zagnieżdżonego okna wraca do rodzica. `shared/Modal` ma opcjonalny nagłówek
+kontekstu. Ustawienia korzystają z pełnej strony, menu sekcji po lewej,
+wspólnego `PageHeader` oraz `Toolbar`, zgodnie z ustawieniami Przestrzeni.
+Tworzenie zachowuje `workplace-create-modal`; dodawanie osoby pozostaje
+kompaktowym oknem nad stroną członków. `shared/Modal` ma opcjonalny nagłówek
 i klasy dialogu dla powłoki Projektów, z tą samą obsługą fokusu i Escape.
 Picker awatara/kadrowania jest wyspą DOM z dotychczasowym wyglądem i helperami.
 Escape w kadrze lub podpowiedziach osoby zamyka najpierw ten element.

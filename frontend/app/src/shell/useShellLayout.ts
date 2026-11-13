@@ -32,7 +32,8 @@ function shellMetrics() {
 }
 
 export function useShellLayout(mode: string) {
-  const entitySettings = mode === 'space-settings' || mode === 'pulpit-settings';
+  const entitySettings =
+    mode === 'space-settings' || mode === 'pulpit-settings' || mode === 'workspace-settings';
   const [mobile, setMobile] = useState(innerWidth <= 767),
     [workspaceCollapsed, setWorkspaceCollapsed] = useState(
       () => read<boolean>('ancoreSidebarCollapsed', false) === true,

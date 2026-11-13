@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 39 | 0 | 27 | 247 |
+| [backend/core](../backend/core) | 39 | 0 | 28 | 249 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 112 |
-| [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
+| [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
-| [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
+| [backend/dashboard](../backend/dashboard) | 55 | 8 | 44 | 323 |
 | [backend/planner](../backend/planner) | 12 | 2 | 1 | 40 |
 | [backend/documents](../backend/documents) | 41 | 3 | 30 | 215 |
 | [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
-| [backend/spaces](../backend/spaces) | 71 | 6 | 47 | 501 |
+| [backend/spaces](../backend/spaces) | 72 | 6 | 47 | 513 |
 
 ## 2. Modele i relacje
 
@@ -580,6 +580,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 
 - `WorkplaceModuleSelect`
 - `RegistrationWorkspaceForm`
+- `WorkplaceDeleteForm`
 - `WorkplaceForm` — Meta.fields: `['avatar', 'workplace_photo', 'name', 'description']`
 
 ### tasks
@@ -620,6 +621,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `StyledForm`
 - `SpaceAvatarForm`
 - `SpaceForm`
+- `SpaceDeleteForm`
 - `ItemForm`
 - `DetailForm`
 - `SubtaskForm`
@@ -823,6 +825,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'space/<slug:space_pk>/tasks/<slug:key>/members/'` | `task_views.members` | 'task_members' |
 | `'space/<slug:space_pk>/tasks/<slug:key>/files/<int:file_pk>/'` | `task_views.download` | 'task_file' |
 | `'space/<slug:pk>/edit/'` | `views.edit` | 'edit' |
+| `'space/<slug:pk>/delete/'` | `views.delete` | 'delete' |
 | `'space/<slug:pk>/avatar/'` | `views.avatar_edit` | 'avatar' |
 | `'space/<slug:pk>/avatar/photo/'` | `views.avatar_photo` | 'avatar_photo' |
 | `'space/<slug:pk>/favorite/'` | `views.favorite` | 'favorite' |
@@ -920,8 +923,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/workplaces/admin.py](../backend/workplaces/admin.py) — `WorkplaceMembershipInline`, `WorkplaceAdmin`, `WorkplaceMembershipAdmin`, `SidebarFavoriteAdmin`
 - [backend/workplaces/apps.py](../backend/workplaces/apps.py) — `WorkplacesConfig`
 - [backend/workplaces/context_processors.py](../backend/workplaces/context_processors.py) — `current_workplace`
-- [backend/workplaces/forms.py](../backend/workplaces/forms.py) — `WorkplaceModuleSelect`, `RegistrationWorkspaceForm`, `WorkplaceForm`
-- [backend/workplaces/frontend.py](../backend/workplaces/frontend.py) — `path`, `person`, `join_page`, `schema`, `directory_page`
+- [backend/workplaces/forms.py](../backend/workplaces/forms.py) — `WorkplaceModuleSelect`, `RegistrationWorkspaceForm`, `WorkplaceDeleteForm`, `WorkplaceForm`
+- [backend/workplaces/frontend.py](../backend/workplaces/frontend.py) — `path`, `person`, `join_page`, `schema`, `form_page`, `directory_page`
 - [backend/workplaces/invitations.py](../backend/workplaces/invitations.py) — `pending_join_url`, `InviteLinkForm`, `create_link`, `revoke_link`, `join`
 - [backend/workplaces/middleware.py](../backend/workplaces/middleware.py) — `ActiveWorkplaceMiddleware`
 - [backend/workplaces/models.py](../backend/workplaces/models.py) — `generate_workplace_code`, `Workplace`, `WorkplaceMembership`, `invitation_expiry`, `WorkplaceInviteLink`, `WorkplaceInviteLinkUse`, `SidebarFavorite`, `create_workplace_for_user`
@@ -1038,7 +1041,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
 - [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `classification_options`, `classification_label`, `issue_type_icon`, `configuration_name_color`, `status_appearance`, `status_icon`, `status_flow_stage`, `template_settings`
-- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `TeamDeleteForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
+- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `SpaceDeleteForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `TeamDeleteForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
 - [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
@@ -1062,7 +1065,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
 - [backend/spaces/timeline.py](../backend/spaces/timeline.py) — `local_end`, `posted_date`, `posted_source`, `serialized_precision`, `posted_datetime`, `datetime_label`, `error_response`, `update_dates`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
-- [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `settings_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `board_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
+- [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `settings_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `board_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `delete`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
 - [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
 - [backend/spaces/workflow.py](../backend/spaces/workflow.py) — `initial_status`, `assert_snapshot`, `validate_placement`, `update_flow_times`, `flow_snapshot`, `board_wip`, `block_responsible_people`, `set_block`
 
@@ -1095,6 +1098,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/today_sidebar.html](../backend/core/templates/core/includes/today_sidebar.html)
 - [backend/core/templates/core/includes/trash_icon.html](../backend/core/templates/core/includes/trash_icon.html)
 - [backend/core/templates/core/includes/workplace_management_sidebar.html](../backend/core/templates/core/includes/workplace_management_sidebar.html)
+- [backend/core/templates/core/includes/workspace_settings_sidebar.html](../backend/core/templates/core/includes/workspace_settings_sidebar.html)
 - [backend/core/templates/core/widgets/emoji_picker.html](../backend/core/templates/core/widgets/emoji_picker.html)
 - [backend/core/templates/core/widgets/visual_select.html](../backend/core/templates/core/widgets/visual_select.html)
 
@@ -1113,12 +1117,13 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 ### workplaces
 
+- [backend/workplaces/templates/workplaces/form_page.html](../backend/workplaces/templates/workplaces/form_page.html)
 - [backend/workplaces/templates/workplaces/includes/avatar_picker.html](../backend/workplaces/templates/workplaces/includes/avatar_picker.html)
-- [backend/workplaces/templates/workplaces/includes/edit_modal.html](../backend/workplaces/templates/workplaces/includes/edit_modal.html)
 - [backend/workplaces/templates/workplaces/includes/invitation_person.html](../backend/workplaces/templates/workplaces/includes/invitation_person.html)
 - [backend/workplaces/templates/workplaces/includes/invite_links.html](../backend/workplaces/templates/workplaces/includes/invite_links.html)
 - [backend/workplaces/templates/workplaces/includes/management_toolbar.html](../backend/workplaces/templates/workplaces/includes/management_toolbar.html)
 - [backend/workplaces/templates/workplaces/includes/members_table.html](../backend/workplaces/templates/workplaces/includes/members_table.html)
+- [backend/workplaces/templates/workplaces/includes/settings_page.html](../backend/workplaces/templates/workplaces/includes/settings_page.html)
 - [backend/workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html](../backend/workplaces/templates/workplaces/includes/sidebar_favorite_toggle.html)
 - [backend/workplaces/templates/workplaces/includes/sidebar_favorites.html](../backend/workplaces/templates/workplaces/includes/sidebar_favorites.html)
 - [backend/workplaces/templates/workplaces/includes/team_modals.html](../backend/workplaces/templates/workplaces/includes/team_modals.html)
@@ -1178,6 +1183,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/dashboard/templates/dashboard/includes/notification_list.html](../backend/dashboard/templates/dashboard/includes/notification_list.html)
 - [backend/dashboard/templates/dashboard/includes/notification_pagination.html](../backend/dashboard/templates/dashboard/includes/notification_pagination.html)
 - [backend/dashboard/templates/dashboard/includes/settings_row.html](../backend/dashboard/templates/dashboard/includes/settings_row.html)
+- [backend/dashboard/templates/dashboard/includes/settings_spaces_directory.html](../backend/dashboard/templates/dashboard/includes/settings_spaces_directory.html)
 - [backend/dashboard/templates/dashboard/includes/work_progress.html](../backend/dashboard/templates/dashboard/includes/work_progress.html)
 - [backend/dashboard/templates/dashboard/pulpits/actions.html](../backend/dashboard/templates/dashboard/pulpits/actions.html)
 - [backend/dashboard/templates/dashboard/pulpits/base.html](../backend/dashboard/templates/dashboard/pulpits/base.html)
@@ -1450,6 +1456,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/calendar/dates.ts](../frontend/app/src/calendar/dates.ts)
 - [frontend/app/src/dashboard/ForYouPage.tsx](../frontend/app/src/dashboard/ForYouPage.tsx)
 - [frontend/app/src/dashboard/SettingsPage.tsx](../frontend/app/src/dashboard/SettingsPage.tsx)
+- [frontend/app/src/dashboard/SpacesSettingsDirectory.tsx](../frontend/app/src/dashboard/SpacesSettingsDirectory.tsx)
 - [frontend/app/src/documents/DirectoryPage.tsx](../frontend/app/src/documents/DirectoryPage.tsx)
 - [frontend/app/src/documents/DocumentDialog.tsx](../frontend/app/src/documents/DocumentDialog.tsx)
 - [frontend/app/src/documents/Filters.tsx](../frontend/app/src/documents/Filters.tsx)
@@ -1594,7 +1601,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/DirectoryPage.tsx](../frontend/app/src/workspaces/DirectoryPage.tsx)
 - [frontend/app/src/workspaces/JoinPage.tsx](../frontend/app/src/workspaces/JoinPage.tsx)
 - [frontend/app/src/workspaces/Picker.tsx](../frontend/app/src/workspaces/Picker.tsx)
-- [frontend/app/src/workspaces/TeamDialog.tsx](../frontend/app/src/workspaces/TeamDialog.tsx)
+- [frontend/app/src/workspaces/SettingsPage.tsx](../frontend/app/src/workspaces/SettingsPage.tsx)
 - [frontend/app/src/workspaces/TeamTable.tsx](../frontend/app/src/workspaces/TeamTable.tsx)
 - [frontend/app/src/workspaces/WorkspaceForm.tsx](../frontend/app/src/workspaces/WorkspaceForm.tsx)
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
@@ -1721,7 +1728,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_navigation_frontend.py](../backend/core/test_navigation_frontend.py).
 
-- `ReactNavigationTests`: 15 metod testowych.
+- `ReactNavigationTests`: 17 metod testowych.
 
 ### backend/core/test_production.py
 
@@ -1875,7 +1882,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/workplaces/test_deletions.py](../backend/workplaces/test_deletions.py).
 
-- `ConcurrentWorkplaceDeletionTests`: 2 metod testowych.
+- `ConcurrentWorkplaceDeletionTests`: 3 metod testowych.
+
+### backend/workplaces/test_directory_actions.py
+
+Źródło: [backend/workplaces/test_directory_actions.py](../backend/workplaces/test_directory_actions.py).
+
+- `WorkspaceDirectoryActionTests`: 12 metod testowych.
 
 ### backend/workplaces/test_email_retirement_migration.py
 
@@ -1893,7 +1906,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/workplaces/test_management.py](../backend/workplaces/test_management.py).
 
-- `WorkspaceManagementTests`: 16 metod testowych.
+- `WorkspaceManagementTests`: 18 metod testowych.
 
 ### backend/workplaces/test_manual_members.py
 
@@ -2102,6 +2115,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DashboardViewTests`: 7 metod testowych.
 - `GlobalSearchTests`: 5 metod testowych.
+- `SettingsSpacesCategoryTests`: 7 metod testowych.
 
 ### backend/planner/test_sidebar.py
 
@@ -2373,6 +2387,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_schedule_migration.py](../backend/spaces/test_schedule_migration.py).
 
 - `ScheduleMigrationTests`: 1 metod testowych.
+
+### backend/spaces/test_settings_actions.py
+
+Źródło: [backend/spaces/test_settings_actions.py](../backend/spaces/test_settings_actions.py).
+
+- `SpaceSettingsActionTests`: 12 metod testowych.
 
 ### backend/spaces/test_space_sharing.py
 

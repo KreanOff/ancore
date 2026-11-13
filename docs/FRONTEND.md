@@ -410,9 +410,77 @@ i zachowuje historię Wstecz/Dalej; starsze `#configuration`
 i `#fields` mapują na `types`, a `#statuses` na Proces pracy.
 Zdarzenie `ancore:space-settings-tab` synchronizuje aktywny
 wiersz menu. Pierwszy render menu zapewnia
-`core/includes/space_settings_sidebar.html`. Centrum Ustawień otrzymuje `spaces`
-z widocznymi przestrzeniami aktywnego Workspace i wyświetla ich linki w kategorii
-Workspace, także w widoku Ogólne.
+`core/includes/space_settings_sidebar.html`. Kategoria „Przestrzenie” w centrum
+Ustawień otwiera `/settings/?section=spaces`. Kontrakt `settings` przekazuje
+`category=spaces` oraz `spaces` z widocznymi przestrzeniami aktywnego Workspace.
+Katalog używa wspólnego `PageHeader`, `DirectoryToolbar`, `Avatar`,
+`app-data-table` i `LoadMore`, zgodnie z katalogiem Workspace. Wiersze zawierają
+identyfikator, nazwę i awatar, klucz, opis, rodzaj, szablon, liczbę widocznych
+zadań oraz adres istniejących ustawień. Nazwa i kliknięcie wiersza prowadzą
+pod ten adres; checkboxy zaznaczają wczytane wiersze bez działań zbiorczych.
+Pasek działań udostępnia „Edytuj” i „Usuń” dla jednej zaznaczonej przestrzeni
+z prawem zarządzania, a nagłówek „Utwórz przestrzeń” według dotychczasowych
+zasad tworzenia. Formularze tworzenia i potwierdzenia usunięcia używają wspólnego
+`FormDialog`, a edycja prowadzi do istniejących ustawień. Przyciski zapamiętują
+`returnFocus` przed odczytem formularza i wyłączeniem na czas żądania.
+Gość nie otrzymuje możliwości zapisu; Django ponownie sprawdza uprawnienia
+przy wykonywaniu operacji. Serwer ogranicza dane przez `visible_spaces`,
+wyszukuje po nazwie, kluczu i opisie przed zastosowaniem okna wyników po 20.
+`create_url` wskazuje istniejący scoped kreator z `?return_to=settings`:
+anulowanie wraca do katalogu ustawień, a zapis otwiera ustawienia nowej
+przestrzeni. Wiersz przekazuje `can_manage`, `edit_url` do bieżących ustawień
+i autoryzowany `delete_url`. Usunięcie potwierdza aktualną nazwę przez
+kompaktowy formularz i po zapisie wraca do `/settings/?section=spaces`,
+resetując wyszukiwanie i zaznaczenie.
+`form_payload` przekazuje opcjonalny `confirmation_message` formularza.
+Wspólny `FormSchema` i `FormDialog` renderują go jako zwykły tekst w akapicie
+nad polami; szablon formularza Django zachowuje ten sam układ. `SpaceDeleteForm`
+używa go do widocznego wskazania nazwy i zakresu nieodwracalnej operacji,
+niezależnie od pomocy pojedynczego pola.
+Zmiana wyszukiwania zaczyna okno od nowa; `useLoadMorePage` zachowuje wiersze
+i zaznaczenia podczas doładowania. Widok Ogólne zawiera jedynie skrót do
+katalogu. `settings_spaces_url` wskazuje adres kategorii, a `pagination`
+opisuje serwerowe okno wyników. Wyłączenie modułu
+Przestrzeni ukrywa skrót i pozycję menu oraz pozostawia pusty wynik pod
+bezpośrednim adresem. Kategoria „Workspace” prowadzi bezpośrednio do istniejącego
+`workspace-directory` pod `/workplaces/`, zachowując wspólne menu Ustawień.
+Kontrakt powłoki `settings_category=workspace` albo `spaces` ustawia aktywną
+pozycję odpowiedniego katalogu także po odświeżeniu. Pozostałe kategorie
+zachowują obsługę fragmentów konta. Dawne `/settings/#workspace` przechodzi do katalogu bez
+dodawania pośredniego wpisu historii.
+
+Wybrany Workspace otwiera pełną stronę ustawień przez dotychczasowe parametry
+`?workspace=<pk>&tab=main`, `?workspace=<pk>&view=members` lub
+`?workspace=<pk>&view=links`. Kontrakt `workspace-directory` zachowuje dane
+formularza i zespołu; `edit_open` wybiera stronę ustawień zamiast katalogu.
+Powłoka używa trybu `workspace-settings` i obiektu `workspace_settings`
+z nazwą, aktywnym `tab` oraz autoryzowanymi adresami w `links` (`main`,
+`members`, opcjonalnie `links`). `shell/Sidebar` pokazuje „Ustawienia”,
+„Członkowie” i dostępne zarządzającym „Linki do dołączenia”. Zwykłe linki
+zachowują bezpośrednie wejście i historię przeglądarki; formularz chroni
+niezapisane zmiany przy opuszczaniu sekcji. Menu zaczyna wizytę rozwinięte,
+tak jak w ustawieniach Przestrzeni, bez nadpisywania preferencji zwykłego menu.
+`PageHeader` zawiera „Ustawienia Workspace · <nazwa>” i powrót do katalogu;
+`Toolbar` umieszcza „Zapisz” i „Anuluj” nad głównym formularzem.
+Pierwszy render Django zachowuje tę samą stronę i nawigację.
+Formularze, endpointy oraz zakresy dostępu pozostają wspólne z dotychczasowym
+katalogiem; wybór ustawień nie przełącza aktywnego Workspace.
+Toolbar katalogu Workspace dodaje „Edytuj” i „Usuń” dla jednej zaznaczonej
+widocznej pozycji, z uprawnieniami przekazanymi dla konkretnego wiersza.
+Edycja otwiera istniejącą stronę ustawień, usuwanie wspólny kompaktowy
+`FormDialog` z widocznym `confirmation_message` i aktualną nazwą do przepisania.
+Kontrakt `workspace-form` korzysta z tego samego `forms/FormDialog` co zwykły
+formularz; odróżnia uprawnienia zarządzania wskazanym Workspace od trybu
+tylko do odczytu aktywnego środowiska. Po skutecznym usunięciu zarówno okno
+katalogu, jak i bezpośrednio otwarta strona formularza wykonują pełne przejście
+przez `location.assign`, aby odtworzyć powłokę i adres scoped API po możliwej
+zmianie aktywnego Workspace.
+Spóźnione odczyty formularza nie mogą otworzyć okna po opuszczeniu katalogu;
+przycisk jest zapamiętywany jako `returnFocus` przed rozpoczęciem żądania.
+Uprawnienia formularza Workspace wynikają z wybranego Workspace, niezależnie
+od roli gościa w aktywnym kontekście. Backend nadal chroni ostatni własny
+Workspace. Usunięcie bieżącego środowiska wybiera inne własne i odświeża
+powłokę z nowym kontekstem; usunięcie pozostałego zachowuje aktywne środowisko.
 
 Dane sekcji są ładowane przy jej pierwszym otwarciu, a formularz głównych
 ustawień pozostaje zamontowany po ukryciu panelu. `EmbeddedForm`

@@ -37,8 +37,10 @@ def shell_payload(request, context=None):
     mode = data.get('sidebar_mode', 'workspace')
     if mode == 'pulpit-editor':
         mode = 'workspace'
-    if app == 'workplaces':
-        mode = 'workplaces'
+    settings_category = data.get('settings_category', 'all')
+    if mode != 'workspace-settings' and (data.get('workplaces_management_mode') or (app == 'workplaces' and view == 'workplaces')):
+        mode = 'settings'
+        settings_category = 'workspace'
     active_space = data.get('space')
     def space_row(item):
         return {'id': str(item.pk), 'name': item.name, 'url': item.url, 'avatar': space_avatar(item),
@@ -84,9 +86,10 @@ def shell_payload(request, context=None):
     return {
         'account_id': str(request.user.pk), 'workplace_id': str(workplace.pk) if workplace else '',
         'read_only': read_only(request), 'disabled_modules': workplace.disabled_modules if workplace else [],
-        'mode': mode, 'url': request.get_full_path(),
+        'mode': mode, 'settings_category': settings_category, 'url': request.get_full_path(),
         'sidebar_url': '' if data.get('disable_react_shell') else sidebar_url(request, data.get('sidebar_mode', 'workspace')),
         'space_settings': data.get('space_settings_sidebar'),
+        'workspace_settings': data.get('workspace_settings_sidebar'),
         'pulpit_settings': data.get('pulpit_settings_sidebar'),
         'navigation_url': scoped_workplace_app_path(workplace, 'api', 'v1/navigation/') if workplace else reverse('react-navigation'),
         'refresh_url': scoped_workplace_app_path(workplace, 'api', 'v1/shell/') if workplace else reverse('react-shell'), 'build_id': build_id(),
@@ -94,7 +97,7 @@ def shell_payload(request, context=None):
                         'switch_url': reverse('workplaces:switch', args=[item.pk])} for item in data['available_workplaces']],
         'profile': {'name': request.user.get_full_name() or request.user.username, 'avatar': account_avatar(request.user),
                     'url': reverse('profile'), 'active': resolver.view_name == 'profile'},
-        'settings_url': reverse('settings'), 'settings_active': mode in {'space-settings', 'pulpit-settings'} or resolver.view_name == 'settings' or app == 'workplaces' or data.get('pulpits_management_mode', False),
+        'settings_url': reverse('settings'), 'settings_active': mode in {'space-settings', 'pulpit-settings', 'workspace-settings'} or resolver.view_name == 'settings' or app == 'workplaces' or data.get('pulpits_management_mode', False),
         'workplaces_url': reverse('workplaces:workplaces'), 'links': links,
         'favorites': favorite_items(request, workplace) if workplace else [],
         'favorite_toggle_url': reverse('workplaces:toggle-sidebar-favorite', args=[workplace.pk]) if workplace else '',
@@ -121,11 +124,11 @@ def page_styles(page):
     kind = page['type']
     if kind.startswith('pulpit') or kind == 'for-you':
         names += ['components/dashboard.css', 'components/pulpits.css']
-    if kind.startswith('filter') or kind == 'form':
+    if kind.startswith('filter') or kind in {'form', 'workspace-form'}:
         names += ['components/task-filters.css', 'components/pulpits.css']
     if kind == 'settings':
         names += ['components/settings.css']
-    if kind in {'workspace-directory', 'teams', 'team', 'form'} or kind.startswith(('space-', 'pulpit', 'filter')):
+    if kind in {'workspace-directory', 'workspace-form', 'teams', 'team', 'form'} or kind.startswith(('space-', 'pulpit', 'filter')):
         names += ['components/workplace-team.css']
     if kind.startswith(('document', 'office')):
         names += ['components/office.css']

@@ -54,6 +54,31 @@ class RegistrationWorkspaceForm(forms.Form):
         return ' '.join((self.cleaned_data.get('name') or '').split())
 
 
+class WorkplaceDeleteForm(forms.Form):
+    name = forms.CharField(
+        label='Nazwa Workspace', max_length=140, strip=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'autocomplete': 'off'}),
+    )
+    compact = True
+    submit_label = 'Usuń Workspace'
+
+    def __init__(self, *args, workplace, **kwargs):
+        self.workplace = workplace
+        super().__init__(*args, **kwargs)
+        self.fields['name'].help_text = f'Wpisz „{workplace.name}”, aby potwierdzić.'
+        self.confirmation_message = (
+            f'Usunięcie Workspace „{workplace.name}” trwale usunie wszystkie jego dane, '
+            'w tym przestrzenie, zadania, podzadania, historię, załączniki, dokumenty, '
+            'zespoły, kalendarze, zasoby, pulpity, filtry i udostępnienia. '
+            'Tej operacji nie można cofnąć.'
+        )
+
+    def clean_name(self):
+        if self.cleaned_data['name'] != self.workplace.name:
+            raise forms.ValidationError('Wpisz dokładną nazwę Workspace.')
+        return self.cleaned_data['name']
+
+
 class WorkplaceForm(forms.ModelForm):
     enabled_modules = forms.MultipleChoiceField(
         label='Włączone moduły', choices=MODULES, required=False,

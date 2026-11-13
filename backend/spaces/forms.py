@@ -137,6 +137,27 @@ class SpaceForm(SpaceAvatarForm):
         return data
 
 
+class SpaceDeleteForm(StyledForm):
+    name = forms.CharField(label='Nazwa przestrzeni', max_length=120)
+    compact = True
+    submit_label = 'Usuń przestrzeń'
+
+    def __init__(self, *args, space, **kwargs):
+        self.space = space
+        super().__init__(*args, **kwargs)
+        self.fields['name'].help_text = f'Wpisz „{space.name}”, aby potwierdzić.'
+        self.confirmation_message = (
+            f'Usunięcie przestrzeni „{space.name}” trwale usunie jej zadania, podzadania, historię, '
+            'załączniki, sprinty, tagi, udostępnienia i powiązane gadżety. '
+            'Tej operacji nie można cofnąć.'
+        )
+
+    def clean_name(self):
+        if self.cleaned_data['name'] != self.space.name:
+            raise ValidationError('Wpisz dokładną nazwę przestrzeni.')
+        return self.cleaned_data['name']
+
+
 class ItemForm(StyledForm):
     editable_subtask_status = True
     title = forms.CharField(label='Tytuł', max_length=255)

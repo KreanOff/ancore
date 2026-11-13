@@ -56,7 +56,7 @@
                     root.style.setProperty('--sidebar-width', savedSidebarWidth + 'px');
                 }
 
-                if (!['space-settings', 'pulpit-settings'].includes('{{ sidebar_mode|default:"workspace"|escapejs }}') && window.localStorage.getItem('ancoreSidebarCollapsed') === 'true' && window.innerWidth > 767) {
+                if (!['space-settings', 'pulpit-settings', 'workspace-settings'].includes('{{ sidebar_mode|default:"workspace"|escapejs }}') && window.localStorage.getItem('ancoreSidebarCollapsed') === 'true' && window.innerWidth > 767) {
                     root.classList.add('sidebar-collapsed');
                 }
                 if (window.localStorage.getItem('ancoreRightSidebarCollapsed') === 'true') {
@@ -320,6 +320,7 @@
         {% include 'core/includes/workplace_management_sidebar.html' %}
         {% include 'core/includes/settings_sidebar.html' %}
         {% include 'core/includes/space_settings_sidebar.html' %}
+        {% include 'core/includes/workspace_settings_sidebar.html' %}
         {% include 'core/includes/pulpit_settings_sidebar.html' %}
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
     </aside>

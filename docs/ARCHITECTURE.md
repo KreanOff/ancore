@@ -265,14 +265,20 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
 - `/accounts/...` obsługuje konto, w tym `/accounts/register/workspace/` jako
   jawne utworzenie nazwanego Workspace po rejestracji oraz `/accounts/workspaces/`
   jako osobny wybór dostępnego Workspace w powłoce kont; `/workplaces/...` Workspace.
-  Katalog `/workplaces/` jest osobną stroną z własnym menu zarządzania Workspace.
+  Katalog `/workplaces/` jest stroną kategorii „Workspace” w menu Ustawień.
   Segment `<slug>` w adresach Workspace ma wartość stałego losowego kodu
   `w_` + 26 małych liter/cyfr, niezależnego od dowolnej, powtarzalnej nazwy.
   Stare segmenty zachowuje `Workplace.legacy_slug`; middleware obsługuje je
   z dotychczasowymi kontrolami członkostwa i kieruje GET/HEAD na aktualny adres.
   Osobne ekrany zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
   Ich dawne adresy prowadzą do zwykłych katalogów. Zarządzanie Workspace
-  zachowuje własny ekran i menu; edycja ustawień i zespołu nie zmienia aktywnego Workspace. Utworzenie otwiera nowe „Dla ciebie”.
+  otwiera katalog `/workplaces/` bezpośrednio w kategorii „Workspace” wspólnego
+  menu Ustawień; edycja ustawień i zespołu nie zmienia aktywnego Workspace.
+  Wybrany Workspace ma pełną stronę z sekcjami ustawień, członków i linków
+  do dołączenia oraz osobnym trybem menu `workspace-settings`, zgodnie
+  z ustawieniami Przestrzeni. Dotychczasowe parametry wyboru i endpointy
+  zapisu pozostają aktywne.
+  Utworzenie otwiera nowe „Dla ciebie”.
 - Moduły mają adresy bazowe `/calendar/`,
   `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.
@@ -289,8 +295,12 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   zwraca 404; projekty zachowują swoje pola i dotychczasowe wartości.
 - `/settings/` jest centrum ustawień konta i Workspace oraz zarządzania sesją.
   Główny pasek boczny pokazuje jego kategorie zamiast menu Workspace,
-  także przy częściowej nawigacji. Kategoria Workspace zawiera listę widocznych
-  przestrzeni aktywnego Workspace z linkami do ich ustawień.
+  także przy częściowej nawigacji. Kategoria „Workspace” prowadzi do katalogu
+  `/workplaces/`, a kategoria „Przestrzenie” do `/settings/?section=spaces`:
+  katalogu widocznych przestrzeni aktywnego Workspace z tabelą i wyszukiwarką
+  wzorowanymi na Workspace. Wyszukiwanie poprzedza serwerowe okno po 20;
+  wiersze otwierają istniejące ustawienia przestrzeni. Widok „Ogólne” zawiera
+  skrót do tego katalogu.
   `/space/<slug>/?view=settings` oraz bezpośrednie `edit/`, `avatar/`, `members/`
   i `configuration/`, również scoped, renderują osobną stronę ustawień
   przestrzeni. Tryb powłoki `space-settings` zastępuje główne menu sekcjami

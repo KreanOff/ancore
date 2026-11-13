@@ -1,8 +1,7 @@
 import { Toolbar } from '../shared/DirectoryToolbar';
 import { PageHeader } from '../shared/PageHeader';
 import { EmptyState } from '../shared/EmptyState';
-import { setPageLocation } from '../shared/page';
-import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
@@ -11,8 +10,9 @@ import { navigate, pageRequest, type Page, type PageProps } from '../shared/page
 import { errorMessage } from '../shared/api';
 import { useDirtyGuard } from '../shared/useDirtyGuard';
 import CreateDialog from './WorkspaceForm';
-import TeamDialog from './TeamDialog';
-import type { DirectoryData, Tab, Workspace } from './types';
+import SettingsPage from './SettingsPage';
+import type { DirectoryData, Workspace } from './types';
+import { FormDialog, type FormDialogData } from '../forms/FormDialog';
 const columns = [
   ['name', 'Nazwa', 'briefcase-business'],
   ['code', 'Kod miejsca pracy', 'hash'],
@@ -27,16 +27,14 @@ export default function DirectoryPage(props: PageProps) {
     [limit, setLimit] = useState(20),
     [selected, setSelected] = useState<Set<string>>(new Set()),
     [create, setCreate] = useState(data.create_open),
-    [edit, setEdit] = useState(data.edit_open),
-    [tab, setTab] = useState<Tab>(data.tab),
+    [deleteDialog, setDeleteDialog] = useState<FormDialogData | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const life = useRef(new AbortController()),
     sending = useRef(false),
     all = useRef<HTMLInputElement>(null),
     search = useRef<HTMLInputElement>(null),
-    retry = useRef(''),
-    retryTab = useRef<Tab>('main');
+    deleteReturnFocus = useRef<HTMLElement | null>(null);
   useEffect(() => () => life.current.abort(), []);
   useDirtyGuard(false, busy);
   const filtered = data.rows.filter((row) =>
@@ -54,7 +52,22 @@ export default function DirectoryPage(props: PageProps) {
         .includes(query.trim().toLocaleLowerCase('pl')),
     ),
     visible = filtered.slice(0, limit),
-    count = visible.filter((row) => selected.has(row.id)).length;
+    selectedRows = visible.filter((row) => selected.has(row.id)),
+    count = selectedRows.length,
+    selectedWorkspace = count === 1 ? selectedRows[0] : null;
+  const editTitle =
+    count !== 1
+      ? 'Zaznacz jeden Workspace.'
+      : !selectedWorkspace?.can_manage
+        ? 'Nie masz uprawnień do edycji tego Workspace.'
+        : undefined;
+  const deleteTitle =
+    count !== 1
+      ? 'Zaznacz jeden Workspace.'
+      : !selectedWorkspace?.can_delete
+        ? selectedWorkspace?.delete_disabled_reason ||
+          'Nie masz uprawnień do usunięcia tego Workspace.'
+        : undefined;
   useLayoutEffect(() => {
     if (all.current) all.current.indeterminate = count > 0 && count < visible.length;
   }, [count, visible.length]);
@@ -70,31 +83,6 @@ export default function DirectoryPage(props: PageProps) {
     if (!life.current.signal.aborted) setData(response.data as DirectoryData);
     return response.data as DirectoryData;
   }
-  async function open(row: Workspace, desired: Tab) {
-    if (sending.current) return;
-    sending.current = true;
-    setBusy(true);
-    setError('');
-    const url =
-      data.base_url +
-      '?workspace=' +
-      row.id +
-      (desired === 'main' ? '&tab=main' : desired === 'links' ? '&view=links' : '');
-    retry.current = url;
-    retryTab.current = desired;
-    try {
-      const next = await load(url);
-      if (!life.current.signal.aborted) {
-        setTab(desired);
-        setEdit(next.edit_open);
-      }
-    } catch (e) {
-      if (!life.current.signal.aborted) setError(errorMessage(e));
-    } finally {
-      sending.current = false;
-      setBusy(false);
-    }
-  }
   function toggle(id: string) {
     setSelected((current) => {
       const next = new Set(current);
@@ -108,7 +96,6 @@ export default function DirectoryPage(props: PageProps) {
     sending.current = true;
     setBusy(true);
     setError('');
-    retry.current = '';
     try {
       const result = await pageRequest<{ redirect: string }>(
         props.initial.api_url,
@@ -127,16 +114,47 @@ export default function DirectoryPage(props: PageProps) {
       setBusy(false);
     }
   }
-  function closeEdit() {
-    setEdit(false);
-    setPageLocation(data.base_url + '?workspace=' + data.team?.id + '&view=workspaces');
+  async function openDelete(row: Workspace, trigger: HTMLElement) {
+    if (sending.current || !row.can_delete || !row.delete_url) return;
+    deleteReturnFocus.current = trigger;
+    sending.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const result = await pageRequest<Page>(
+        props.initial.api_url,
+        row.delete_url,
+        props.csrfToken,
+        life.current.signal,
+      );
+      if (life.current.signal.aborted) return;
+      if (result.type !== 'workspace-form') throw new Error('Nie udało się otworzyć formularza.');
+      setDeleteDialog(result.data as FormDialogData);
+    } catch (exception) {
+      if (!life.current.signal.aborted) setError(errorMessage(exception));
+    } finally {
+      sending.current = false;
+      if (!life.current.signal.aborted) setBusy(false);
+    }
   }
-
-  const link = (event: MouseEvent, row: Workspace, desired: Tab) => {
-    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-    event.preventDefault();
-    void open(row, desired);
-  };
+  if (data.edit_open && data.team) {
+    return (
+      <SettingsPage
+        key={data.team.id}
+        team={data.team}
+        initialTab={data.tab}
+        backUrl={data.base_url}
+        addOpen={data.add_open}
+        api={props.initial.api_url}
+        token={props.csrfToken}
+        onClose={() => void navigate(data.base_url)}
+        onSaved={navigate}
+        reload={async (url) => {
+          await load(url);
+        }}
+      />
+    );
+  }
   return (
     <div
       className="workplaces-page workplaces-settings-page workplaces-management"
@@ -179,6 +197,35 @@ export default function DirectoryPage(props: PageProps) {
           />
           <Toolbar
             className="tasks-filterbar--project-directory workplaces-management__toolbar"
+            actions={
+              <>
+                <button
+                  type="button"
+                  className="tasks-filter-button"
+                  disabled={busy || !selectedWorkspace?.can_manage || !selectedWorkspace.edit_url}
+                  title={editTitle}
+                  data-workplaces-edit-selected=""
+                  onClick={() => selectedWorkspace && void navigate(selectedWorkspace.edit_url)}
+                >
+                  <Icon name="pencil" />
+                  Edytuj
+                </button>
+                <button
+                  type="button"
+                  className="tasks-filter-button"
+                  disabled={busy || !selectedWorkspace?.can_delete || !selectedWorkspace.delete_url}
+                  title={deleteTitle}
+                  aria-haspopup="dialog"
+                  data-workplaces-delete-selected=""
+                  onClick={(event) =>
+                    selectedWorkspace && void openDelete(selectedWorkspace, event.currentTarget)
+                  }
+                >
+                  <Icon name="trash-2" />
+                  Usuń
+                </button>
+              </>
+            }
             search={
               <label className="tasks-search-field tasks-project-search">
                 <Icon name="search" />
@@ -188,10 +235,12 @@ export default function DirectoryPage(props: PageProps) {
                   placeholder="Szukaj Workspace"
                   aria-label="Szukaj Workspace"
                   autoComplete="off"
+                  disabled={busy}
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
                     setLimit(20);
+                    setSelected(new Set());
                   }}
                 />
               </label>
@@ -200,23 +249,6 @@ export default function DirectoryPage(props: PageProps) {
           {error ? (
             <div className="tasks-modal__errors" role="alert">
               {error}
-              {retry.current ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  disabled={busy}
-                  onClick={() => {
-                    const row = data.rows.find(
-                      (row) =>
-                        row.id ===
-                        new URL(retry.current, location.origin).searchParams.get('workspace'),
-                    );
-                    if (row) void open(row, retryTab.current);
-                  }}
-                >
-                  Spróbuj ponownie
-                </button>
-              ) : null}
             </div>
           ) : null}
           <div className="workplaces-console__body">
@@ -246,7 +278,7 @@ export default function DirectoryPage(props: PageProps) {
                           className="tasks-row-checkbox"
                           aria-label="Zaznacz wszystkie miejsca pracy"
                           checked={!!visible.length && count === visible.length}
-                          disabled={!visible.length}
+                          disabled={busy || !visible.length}
                           onChange={(e) => {
                             const checked = e.target.checked;
                             setSelected((current) => {
@@ -298,6 +330,7 @@ export default function DirectoryPage(props: PageProps) {
                           aria-current={row.active ? 'true' : undefined}
                           onClick={(e) => {
                             if (
+                              !busy &&
                               !e.defaultPrevented &&
                               e.button === 0 &&
                               !e.ctrlKey &&
@@ -309,12 +342,16 @@ export default function DirectoryPage(props: PageProps) {
                               ) &&
                               !getSelection()?.toString()
                             )
-                              void open(row, 'main');
+                              void navigate(data.base_url + '?workspace=' + row.id + '&tab=main');
                           }}
                           onKeyDown={(e) => {
-                            if (e.target === e.currentTarget && ['Enter', ' '].includes(e.key)) {
+                            if (
+                              !busy &&
+                              e.target === e.currentTarget &&
+                              ['Enter', ' '].includes(e.key)
+                            ) {
                               e.preventDefault();
-                              void open(row, 'main');
+                              void navigate(data.base_url + '?workspace=' + row.id + '&tab=main');
                             }
                           }}
                         >
@@ -323,7 +360,7 @@ export default function DirectoryPage(props: PageProps) {
                             data-column="select"
                             role="cell"
                             onClick={(e) => {
-                              if (e.target === e.currentTarget) toggle(row.id);
+                              if (!busy && e.target === e.currentTarget) toggle(row.id);
                             }}
                           >
                             <input
@@ -331,6 +368,7 @@ export default function DirectoryPage(props: PageProps) {
                               className="tasks-row-checkbox"
                               aria-label={'Zaznacz miejsce pracy ' + row.name}
                               checked={selected.has(row.id)}
+                              disabled={busy}
                               onChange={() => toggle(row.id)}
                             />
                           </span>
@@ -372,8 +410,6 @@ export default function DirectoryPage(props: PageProps) {
                                 className="tasks-row-title-text workplaces-management__select"
                                 href={data.base_url + '?workspace=' + row.id + '&tab=main'}
                                 aria-label={'Zarządzaj ' + row.name}
-                                aria-haspopup="dialog"
-                                onClick={(e) => link(e, row, 'main')}
                               >
                                 {row.name}
                               </a>
@@ -414,7 +450,6 @@ export default function DirectoryPage(props: PageProps) {
                             <a
                               href={data.base_url + '?workspace=' + row.id}
                               aria-label={'Zespół ' + row.name}
-                              onClick={(e) => link(e, row, 'members')}
                             >
                               {row.members} {row.members === 1 ? 'członek' : 'członków'}
                             </a>
@@ -475,18 +510,16 @@ export default function DirectoryPage(props: PageProps) {
           onSaved={navigate}
         />
       ) : null}
-      {edit && data.team ? (
-        <TeamDialog
-          key={data.team.id}
-          team={data.team}
-          initialTab={tab}
-          addOpen={data.add_open}
+      {deleteDialog ? (
+        <FormDialog
+          data={deleteDialog}
           api={props.initial.api_url}
-          token={props.csrfToken}
-          onClose={closeEdit}
-          onSaved={navigate}
-          reload={async (url) => {
-            await load(url);
+          csrfToken={props.csrfToken}
+          returnFocus={deleteReturnFocus.current}
+          onClose={() => setDeleteDialog(null)}
+          onSaved={(url) => {
+            // Deletion can replace the active Workspace and invalidate its scoped API.
+            window.location.assign(url);
           }}
         />
       ) : null}

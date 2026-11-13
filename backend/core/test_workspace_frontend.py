@@ -192,8 +192,11 @@ class ReactWorkspaceTests(TestCase):
         self.assertEqual(self.get(self.base+f'?workspace={self.foreign.pk}').status_code, 404)
         self.assertEqual(self.post(self.target('update', self.foreign.pk), {'name':'Nie'}).status_code, 404)
         self.assertEqual(self.post(self.target('member-update', self.active.pk, self.membership.pk), {'action':'remove'}).status_code, 404)
-        self.assertEqual(self.post(self.target('delete', self.active.pk), {}).status_code, 200)
-        self.assertEqual(self.post(self.target('delete', self.selected.pk), {}).status_code, 200)
+        self.assertEqual(self.post(self.target('delete', self.active.pk), {}).status_code, 400)
+        self.assertTrue(Workplace.objects.filter(pk=self.active.pk).exists())
+        self.assertEqual(self.post(self.target('delete', self.active.pk), {'name': self.active.name}).status_code, 200)
+        self.assertFalse(Workplace.objects.filter(pk=self.active.pk).exists())
+        self.assertEqual(self.post(self.target('delete', self.selected.pk), {'name': self.selected.name}).status_code, 200)
         self.assertTrue(Workplace.objects.filter(pk=self.selected.pk).exists())
 
     def test_session_csrf_methods_and_revoked_membership(self):

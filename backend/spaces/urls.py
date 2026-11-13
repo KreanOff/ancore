@@ -24,6 +24,7 @@ urlpatterns = [
     path('space/<slug:space_pk>/tasks/<slug:key>/members/', task_views.members, name='task_members'),
     path('space/<slug:space_pk>/tasks/<slug:key>/files/<int:file_pk>/', task_views.download, name='task_file'),
     path('space/<slug:pk>/edit/', views.edit, name='edit'),
+    path('space/<slug:pk>/delete/', views.delete, name='delete'),
     path('space/<slug:pk>/avatar/', views.avatar_edit, name='avatar'),
     path('space/<slug:pk>/avatar/photo/', views.avatar_photo, name='avatar_photo'),
     path('space/<slug:pk>/favorite/', views.favorite, name='favorite'),

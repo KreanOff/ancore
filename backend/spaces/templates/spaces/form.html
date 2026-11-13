@@ -2,6 +2,7 @@
 <div class="tasks-modal__dialog"><form method="post" action="{{ modal.action }}" enctype="multipart/form-data" class="tasks-modal__form" data-work-form>
 {% csrf_token %}<header class="tasks-modal__header"><h2 id="work-modal-title">{{ modal.title }}</h2><button type="button" class="tasks-modal__close" aria-label="Zamknij" data-close-modal></button></header>
 <div class="tasks-modal__body documents-form resources-form app-form-layout"><div class="tasks-modal__errors resources-form-wide app-form-wide" role="alert" data-work-error hidden></div>{% if modal.form.non_field_errors %}<div class="tasks-modal__errors resources-form-wide app-form-wide" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
+{% if modal.form.confirmation_message %}<p class="resources-form-wide app-form-wide">{{ modal.form.confirmation_message }}</p>{% endif %}
 {% if modal.form.template_options %}{% include 'spaces/template_picker.html' %}{% elif modal.form.avatar_options and not modal.form.inline_avatar %}{% include 'spaces/avatar_picker.html' %}{% else %}
 {% if modal.form.planning_summary %}<div class="work-sprint-preview resources-form-wide"><p>{{ modal.form.sprint_name }}</p><span>{{ modal.form.planning_summary.total }} zadań · {{ modal.form.planning_summary.finished }} ukończonych · {{ modal.form.planning_summary.points }} pkt</span>{% if modal.form.planning_summary.unestimated %}<p>{{ modal.form.planning_summary.unestimated }} zadań bez estymacji</p>{% endif %}</div>{% endif %}
 {% include 'core/includes/modal_form_fields.html' with form=modal.form only %}{% endif %}

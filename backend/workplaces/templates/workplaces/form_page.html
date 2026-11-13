@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{{ modal.title }} | ancore{% endblock %}
+{% block page_container_class %}full-width{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261113-workspace-settings">
+{% endblock %}
+{% block content %}
+<div class="tasks-page work-page">
+    <section class="tasks-workspace">
+        <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory app-page-header">
+            <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title">{{ modal.title }}</h1></div>
+        </header>
+        <div class="work-content"><a href="{{ modal.return_url }}" class="btn btn-secondary">Wróć</a><noscript><p>Włącz JavaScript, aby korzystać z okna formularza.</p></noscript></div>
+    </section>
+</div>
+{% endblock %}
+{% block page_modals %}
+<div data-workspace-confirmation data-return-url="{{ modal.return_url }}">{% include 'spaces/form.html' %}</div>
+<script>
+(function () {
+    if (window.AncoreWorkspaceConfirmation) return;
+    function init() {
+        if (document.querySelector('[data-react-root="page"]')) return;
+        const host = document.querySelector('[data-workspace-confirmation]');
+        const modal = host?.querySelector('[data-work-modal]');
+        if (!modal || host.dataset.ready) return;
+        host.dataset.ready = 'true';
+        modal.addEventListener('ancore:task-modal-closed', () => window.location.assign(host.dataset.returnUrl));
+        window.AncoreTaskModals.open(modal, modal.querySelector('[aria-invalid="true"]') || modal.querySelector('[name="name"]'));
+    }
+    window.AncoreWorkspaceConfirmation = init;
+    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('ancore:content-loaded', init);
+    if (document.readyState !== 'loading') init();
+})();
+</script>
+{% endblock %}

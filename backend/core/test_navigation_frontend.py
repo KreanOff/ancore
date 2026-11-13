@@ -203,13 +203,55 @@ class ReactNavigationTests(TestCase):
     def test_management_modes_and_editor_links_match_server_context(self):
         self.client.force_login(self.owner)
         self.activate(self.workspace)
-        for name, mode in [('workplaces:workplaces', 'workplaces'), ('settings', 'settings')]:
+        for name, category in [('workplaces:workplaces', 'workspace'), ('settings', 'all')]:
             with self.subTest(name=name):
                 response = self.nav(reverse(name))
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.json()['shell']['mode'], mode)
+                self.assertEqual(response.json()['shell']['mode'], 'settings')
+                self.assertEqual(response.json()['shell']['settings_category'], category)
+                self.assertEqual(response.json()['shell']['workplaces_url'], reverse('workplaces:workplaces'))
+                if category == 'all':
+                    self.assertEqual(response.json()['page']['data']['workspaces_url'], reverse('workplaces:workplaces'))
         response = self.nav(reverse('pulpits:edit', args=[self.dashboard.slug]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['shell']['mode'], 'pulpit-settings')
         self.assertTrue(response.json()['page']['data']['settings_tabs'])
         self.assertEqual(response.json()['shell']['pulpit_settings']['tab'], 'settings')
+
+    def test_workspace_settings_navigation_preserves_context_and_filters_links_by_role(self):
+        self.client.force_login(self.owner)
+        self.activate(self.workspace)
+        target = reverse('workplaces:workplaces') + f'?workspace={self.workspace.pk}&tab=main'
+        payload = self.nav(target).json()
+        self.assertEqual(payload['page']['type'], 'workspace-directory')
+        self.assertEqual(payload['page']['title'], 'Ustawienia Workspace · ' + self.workspace.name)
+        self.assertTrue(payload['page']['data']['edit_open'])
+        self.assertEqual(payload['shell']['mode'], 'workspace-settings')
+        self.assertEqual(payload['shell']['workspace_settings']['tab'], 'main')
+        self.assertEqual(set(payload['shell']['workspace_settings']['links']), {'main', 'members', 'links'})
+        self.assertEqual(payload['shell']['workplace_id'], str(self.workspace.pk))
+        self.client.force_login(self.member)
+        payload = self.nav(target).json()
+        self.assertEqual(payload['shell']['mode'], 'workspace-settings')
+        self.assertEqual(set(payload['shell']['workspace_settings']['links']), {'main', 'members'})
+        self.assertFalse(payload['page']['data']['team']['can_manage'])
+        self.assertIsNone(payload['page']['data']['team']['form'])
+        self.assertEqual(payload['page']['data']['team']['update_url'], '')
+
+    def test_spaces_settings_category_has_its_own_navigation_and_opens_existing_settings(self):
+        response = self.nav(reverse('settings') + '?section=spaces')
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['shell']['mode'], 'settings')
+        self.assertEqual(payload['shell']['settings_category'], 'spaces')
+        self.assertEqual(payload['page']['type'], 'settings')
+        self.assertEqual(payload['page']['title'], 'Przestrzenie')
+        self.assertEqual(payload['page']['data']['category'], 'spaces')
+        self.assertEqual([row['name'] for row in payload['page']['data']['spaces']], [self.space.name])
+        target = payload['page']['data']['spaces'][0]['url']
+        self.assertEqual(target, scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/?view=settings'))
+        self.assertEqual(self.nav(target).json()['shell']['mode'], 'space-settings')
+        general = self.nav(reverse('settings')).json()
+        self.assertEqual(general['shell']['settings_category'], 'all')
+        self.assertEqual(general['page']['data']['spaces'], [])
+        self.assertEqual(general['page']['data']['category'], 'all')

@@ -1,4 +1,78 @@
 /* Settings share Ancore's shell, palette and icon family. */
+.settings-spaces-directory {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.settings-spaces-directory__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding-inline: var(--app-page-padding-x);
+}
+
+.tasks-directory-board.tasks-project-sheet.settings-spaces-sheet {
+    --tasks-directory-grid: var(--tasks-directory-select-width) minmax(280px, 1.1fr) 150px minmax(300px, 1.25fr) 190px 220px 130px;
+    --settings-spaces-table-width: calc(var(--tasks-directory-select-width) + 1270px);
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.settings-spaces-sheet .tasks-directory-group {
+    min-width: var(--settings-spaces-table-width);
+}
+
+.tasks-directory-board.tasks-project-sheet.settings-spaces-sheet .tasks-directory-header,
+.tasks-directory-board.tasks-project-sheet.settings-spaces-sheet .tasks-directory-list .tasks-directory-row {
+    --tasks-directory-grid: inherit;
+    width: 100%;
+    min-width: var(--settings-spaces-table-width);
+    padding-inline: 0;
+}
+
+.settings-spaces-sheet .tasks-directory-header > [data-column] {
+    grid-area: auto;
+}
+
+.settings-spaces-sheet .tasks-directory-list {
+    overflow: visible;
+}
+
+.settings-spaces-sheet .settings-spaces-row {
+    cursor: pointer;
+}
+
+.settings-spaces-sheet .settings-spaces-row > [data-column="select"] {
+    display: flex;
+}
+
+.settings-spaces-sheet .tasks-row-checkbox {
+    position: static;
+    opacity: 1;
+    margin: 0;
+}
+
+.settings-spaces-sheet .tasks-directory-name {
+    gap: 0.75rem;
+}
+
+.settings-spaces-sheet .tasks-row-title-text {
+    text-decoration: none;
+}
+
+.settings-spaces-sheet .settings-spaces-avatar {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+}
+
 .settings-center {
     --settings-line: #e7e9ed;
     --settings-soft: #f7f7f9;

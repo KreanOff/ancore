@@ -39,8 +39,17 @@ nie omija prywatności Przestrzeni ani zadania. Gość Workspace ma wyłącznie 
 Właściciel wynika z `Workplace.owner`; nie można go usunąć z zespołu ani
 zmienić tą ścieżką. Przenoszenie własności i usuwanie kont właścicieli nie
 wchodzą w zakres tej wersji.
-Usunięcie Workspace blokuje właściciela przed wyborem zastępczego miejsca
-pracy. Ochrona ostatniego własnego Workspace obejmuje równoczesne żądania.
+Usunięcie Workspace blokuje w bazie wiersz właściciela przed wyborem zastępczego
+miejsca pracy. Ochrona ostatniego własnego Workspace obejmuje równoczesne żądania.
+Katalog udostępnia „Edytuj” właścicielowi lub administratorowi jednej wybranej
+pozycji, a „Usuń” wyłącznie jej właścicielowi, mającemu także inny własny
+Workspace. Zwykłe członkostwo w innym Workspace nie zastępuje tego warunku.
+Formularz usuwania wymaga dokładnej aktualnej nazwy i pokazuje zakres trwałego
+usunięcia. GET nie usuwa danych; POST ponownie sprawdza własność, nazwę i
+możliwość pozostawienia innego własnego Workspace. Usunięcie aktywnego
+środowiska przełącza na inne własne, a pozostałego nie zmienia aktywnego.
+Zarządzanie wybraną pozycją nie jest ograniczane przez rolę gościa w innym,
+aktualnie aktywnym Workspace.
 
 Zasoby są wspólne dla właściciela i aktywnych członków Workspace. Obowiązuje
 ten sam zakres tworzenia, edycji i usuwania co dla innych wspólnych danych.
@@ -108,15 +117,19 @@ Role i ograniczenia rodziców opisuje sekcja
 
 ## Dodawanie osób i linki do dołączenia
 
-Ekran `/workplaces/` jest katalogiem z własnym menu „Zarządzanie Workspace”.
-Okno wybranego Workspace ma zakładki „Główna” (`main`), „Członkowie” (`members`)
+Ekran `/workplaces/` jest katalogiem otwieranym bezpośrednio przez kategorię
+„Workspace” w Ustawieniach. Zachowuje menu „Ustawienia Ancore” z kategoriami
+„Ogólne”, „Konto i dostęp”, aktywną „Workspace” i „Przestrzenie”, także przy wejściu ze
+zmieniacza Workspace i bezpośrednim otwarciu adresu.
+Wybrany Workspace ma osobną stronę ustawień, zgodną z ustawieniami Przestrzeni.
+Menu po lewej zawiera „Ustawienia” (`main`), „Członkowie” (`members`)
 i — dla właściciela oraz administratora — „Linki do dołączenia” (`links`).
-Nazwa i ikona ustawień otwierają „Główną”; liczba członków oraz stare linki
+Nazwa i ikona ustawień otwierają „Ustawienia”; liczba członków oraz stare linki
 `?workspace=<pk>` / `?view=members&workspace=<pk>` otwierają „Członkowie”.
 Zarządzanie wybranym Workspace nie przełącza aktywnego kontekstu. Znacznik
 „Bieżący” wskazuje aktualne środowisko, a strzałka otwiera jego „Dla ciebie”.
 Członek i gość odczytują ustawienia oraz skład bez operacji zarządzania.
-Powrót do Ustawień lub wcześniejszego widoku zachowuje kontekst wejścia.
+Strzałka w nagłówku wraca do katalogu Workspace i wspólnego menu Ustawień.
 
 „Dodaj osobę” od razu nadaje dostęp istniejącemu, aktywnemu kontu Ancore.
 Picker wyszukuje od 2 znaków imienia, drugiego imienia, nazwiska, ID konta lub
@@ -249,7 +262,7 @@ jednorazowo odwzorowane podczas migracji opisanej w [SPACES.md](SPACES.md).
 
 ## Interfejs zarządzania Workspace w React
 
-Katalog i okna ustawień, członków oraz linków do dołączenia korzystają z React/TypeScript oraz
+Katalog i strona ustawień z sekcjami członków oraz linków do dołączenia korzystają z React/TypeScript oraz
 JSON API Django (`backend/workplaces/frontend.py`, `frontend/app/src/workspaces/`).
 Reguły ról, transakcje i operacje domenowe pozostają w `views.py` oraz
 `team_views.py`. Wybór do zarządzania nadal nie przełącza aktywnego Workspace.
@@ -279,7 +292,7 @@ z dotychczasowego POST `workplaces:switch`, który ponownie sprawdza dostęp.
 Osoba z istniejącym Workspace może też jawnie utworzyć kolejny przez ten
 formularz. Bez dostępnych środowisk widoczny jest komunikat pustej listy.
 
-„Główna” okna Workspace pozwala wybrać włączone moduły: Przestrzenie i zadania,
+Sekcja „Ustawienia” Workspace pozwala wybrać włączone moduły: Przestrzenie i zadania,
 Zespoły, Kalendarz, Dysk, Dokumenty, Zasoby, Pulpity i Filtry. Wyłączenie ukrywa
 nawigację i blokuje bezpośrednie adresy oraz API modułu; dane pozostają w bazie.
 Włączenie przywraca dostęp. Polityka działa też dla już otwartych ekranów.

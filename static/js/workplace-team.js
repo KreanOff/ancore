@@ -278,7 +278,7 @@
             return observer;
         });
         function openWorkplaceRow(row) {
-            const link = row.querySelector('.workplaces-management__select[data-workplace-edit-open]');
+            const link = row.querySelector('.workplaces-management__select[href]');
             if (!link) return;
             link.focus({ preventScroll: true });
             link.click();
@@ -303,7 +303,7 @@
                 );
                 return;
             }
-            const row = event.target.closest('[data-workplace-row-modal]');
+            const row = event.target.closest('[data-workplace-settings-url]');
             if (row && !event.defaultPrevented && event.button === 0
                 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
                 && !event.target.closest('a, button, input, select, textarea, label, form, [contenteditable], [data-row-actions], [data-column="select"], [data-column="action"]')
@@ -340,7 +340,7 @@
             syncModal(modal);
         }, options);
         page.addEventListener('keydown', event => {
-            if (event.target.matches('[data-workplace-row-modal]')
+            if (event.target.matches('[data-workplace-settings-url]')
                 && ['Enter', ' '].includes(event.key) && !event.defaultPrevented
                 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
                 event.preventDefault();

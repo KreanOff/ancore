@@ -51,6 +51,7 @@ export interface ShellData {
   profile: { name: string; avatar: AvatarData; url: string; active: boolean };
   settings_url: string;
   settings_active: boolean;
+  settings_category?: 'all' | 'workspace' | 'spaces';
   space_settings?: {
     name: string;
     tab: string;
@@ -60,6 +61,11 @@ export interface ShellData {
     name: string;
     tab: string;
     links: { key: string; label: string; icon: string; url: string }[];
+  } | null;
+  workspace_settings?: {
+    name: string;
+    tab: 'main' | 'members' | 'links';
+    links: { main: string; members: string; links?: string };
   } | null;
   workplaces_url: string;
   links: Record<string, Link>;

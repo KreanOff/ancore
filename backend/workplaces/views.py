@@ -10,12 +10,13 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from core.frontend import render
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from core.api import api_error
 
-from .forms import WorkplaceForm
-from .models import SidebarFavorite, create_workplace_for_user
+from .forms import WorkplaceDeleteForm, WorkplaceForm
+from .models import SidebarFavorite, Workplace, create_workplace_for_user
 from .navigation import SIDEBAR_FAVORITE_KEYS, sidebar_favorites_for_request
 from .services import can_manage_team, enable_workspace_url_scope, scoped_workplace_app_path, set_active_workplace, workplaces_for_user, workplace_management_url
 from .team_views import team_context
@@ -69,12 +70,20 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
     user_workplaces = user_workplaces.prefetch_related('memberships').annotate(
         team_member_count=Count('memberships', filter=Q(memberships__is_active=True), distinct=True),
     )
+    owned_count = sum(item.owner_id == request.user.pk for item in user_workplaces)
     for workplace in user_workplaces:
         role = ('owner' if workplace.owner_id == request.user.pk else next(
             (member.role for member in workplace.memberships.all()
              if member.user_id == request.user.pk and member.is_active), ''
         ))
         workplace.can_manage_team = role in {'owner', 'admin'}
+        workplace.edit_url = workplace_management_url(workplace) + '&tab=main' if workplace.can_manage_team else ''
+        workplace.can_delete = role == 'owner' and owned_count > 1
+        workplace.delete_url = reverse('workplaces:delete', args=[workplace.pk]) if workplace.can_delete else ''
+        workplace.delete_disabled_reason = (
+            '' if workplace.can_delete else 'Tylko właściciel może usunąć Workspace.' if role != 'owner'
+            else 'Nie możesz usunąć ostatniego miejsca pracy.'
+        )
         workplace.viewer_role_label = {'owner': 'Właściciel', 'admin': 'Administrator', 'member': 'Członek', 'guest': 'Gość — tylko odczyt'}.get(role, '')
     selected_id = str(team_workplace.pk) if team_workplace else request.GET.get('workspace')
     if selected_id is not None:
@@ -96,7 +105,7 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
     if edit_form is not None:
         management_view = 'links' if request.POST.get('view') == 'links' else 'workspaces'
     if management_view == 'links' and not selected_team_context.get('can_manage_team'):
-        management_view = 'workspaces'
+        management_view = 'members'
     workplace_edit_modal_open = management_view in {'members', 'links'} or edit_form is not None
     workplace_edit_tab = (
         'main' if not workplace_edit_modal_open or request.GET.get('tab') == 'main' or edit_form is not None
@@ -109,9 +118,23 @@ def render_workplaces(request, *, form=None, workplace_create_modal_open=False, 
         avatar_edit_form = WorkplaceForm(
             instance=team_workplace, user=team_workplace.owner, auto_id='workplace-edit-%s',
         )
+    settings_sidebar = None
+    if workplace_edit_modal_open and team_workplace is not None:
+        settings_base = workplace_management_url(team_workplace)
+        settings_sidebar = {
+            'name': team_workplace.name, 'tab': workplace_edit_tab,
+            'links': {
+                'main': settings_base + '&tab=main',
+                'members': settings_base + '&view=members',
+                **({'links': workplace_management_url(team_workplace, 'links')}
+                   if selected_team_context.get('can_manage_team') else {}),
+            },
+        }
     invalid = any(bound is not None and bound.is_bound and bound.errors for bound in (form, add_form, edit_form))
     return render(request, 'workplaces/workplaces.html', {
-        'sidebar_mode': 'workplaces',
+        'sidebar_mode': 'workspace-settings' if settings_sidebar else 'settings',
+        'workspace_settings_sidebar': settings_sidebar,
+        'settings_category': 'workspace',
         'workplaces_management_mode': True,
         'workplaces': user_workplaces,
         'form': form if form is not None else WorkplaceForm(user=request.user),
@@ -310,25 +333,40 @@ def update_workplace(request, workplace_id):
         messages.success(request, 'Ustawienia miejsca pracy zapisane.')
     else:
         return render_workplaces(request, team_workplace=workplace, edit_form=form)
+    if request.POST.get('tab') == 'main':
+        return redirect(workplace_management_url(workplace) + '&tab=main')
     return redirect(workplace_management_url(workplace, request.POST.get('view')))
 
 
 @login_required
-@require_POST
-@transaction.atomic
+@require_http_methods(['GET', 'POST'])
 def delete_workplace(request, workplace_id):
-    # Lock a row shared by all of this owner's deletions before choosing a replacement.
-    get_user_model().objects.select_for_update().get(pk=request.user.pk)
-    workplaces = workplaces_for_user(request.user).filter(owner=request.user)
-    workplace = get_object_or_404(workplaces, pk=workplace_id)
-    replacement = workplaces.exclude(pk=workplace.pk).first()
-    if replacement is None:
-        messages.error(request, 'Nie możesz usunąć ostatniego miejsca pracy.')
-        return redirect('workplaces:workplaces')
-
-    was_active = getattr(request, 'workplace', None) and request.workplace.pk == workplace.pk
-    workplace.delete()
-    if was_active:
-        set_active_workplace(request, replacement)
-    messages.success(request, 'Miejsce pracy usunięte.')
-    return redirect('workplaces:workplaces')
+    owned = Workplace.objects.filter(owner=request.user)
+    if request.method == 'POST':
+        with transaction.atomic():
+            # Serialize this owner's deletions before checking the last owned Workspace.
+            get_user_model().objects.select_for_update().get(pk=request.user.pk)
+            workplace = get_object_or_404(owned.select_for_update(of=('self',)), pk=workplace_id)
+            replacement = owned.exclude(pk=workplace.pk).first()
+            if replacement is None:
+                messages.error(request, 'Nie możesz usunąć ostatniego miejsca pracy.')
+                return redirect('workplaces:workplaces')
+            # Validate against the locked, current name, including a rename since GET.
+            form = WorkplaceDeleteForm(request.POST, workplace=workplace)
+            if form.is_valid():
+                was_active = getattr(request, 'workplace', None) and request.workplace.pk == workplace.pk
+                workplace.delete()
+                if was_active:
+                    set_active_workplace(request, replacement)
+                messages.success(request, 'Miejsce pracy usunięte.')
+                return redirect('workplaces:workplaces')
+    else:
+        workplace = get_object_or_404(owned, pk=workplace_id)
+        if not owned.exclude(pk=workplace.pk).exists():
+            raise PermissionDenied('Nie możesz usunąć ostatniego miejsca pracy.')
+        form = WorkplaceDeleteForm(workplace=workplace)
+    return render(request, 'workplaces/form_page.html', {
+        'sidebar_mode': 'settings', 'settings_category': 'workspace', 'workplaces_management_mode': True,
+        'modal': {'title': 'Usuń Workspace', 'form': form, 'action': request.get_full_path(),
+                  'return_url': reverse('workplaces:workplaces')},
+    }, status=400 if form.is_bound else 200)

@@ -25,7 +25,7 @@ class ConcurrentWorkplaceDeletionTests(TransactionTestCase):
             SpaceTask.objects.create(space=space, title='Zachowaj ostatnie dane', created_by=self.owner)
 
     def request(self, workplace):
-        request = RequestFactory().post(reverse('workplaces:delete', args=[workplace.pk]))
+        request = RequestFactory().post(reverse('workplaces:delete', args=[workplace.pk]), {'name': workplace.name})
         request.user, request.workplace = self.owner, workplace
         request.session = SessionStore()
         request._messages = FallbackStorage(request)
@@ -69,6 +69,27 @@ class ConcurrentWorkplaceDeletionTests(TransactionTestCase):
 
         with transaction.atomic():
             get_user_model().objects.select_for_update().get(pk=self.owner.pk)
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                self.assertEqual(executor.submit(remove).result(timeout=10), '55P03')
+        self.assertEqual(Workplace.objects.filter(owner=self.owner).count(), 2)
+        self.assertEqual(SpaceTask.objects.count(), 2)
+
+    def test_deletion_locks_target_before_validating_current_name(self):
+        def remove():
+            close_old_connections()
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SET lock_timeout = '250ms'")
+                try:
+                    delete_workplace(self.request(self.workspaces[0]), self.workspaces[0].pk)
+                except OperationalError as error:
+                    return error.__cause__.pgcode
+                return None
+            finally:
+                close_old_connections()
+
+        with transaction.atomic():
+            Workplace.objects.select_for_update().get(pk=self.workspaces[0].pk)
             with ThreadPoolExecutor(max_workers=1) as executor:
                 self.assertEqual(executor.submit(remove).result(timeout=10), '55P03')
         self.assertEqual(Workplace.objects.filter(owner=self.owner).count(), 2)

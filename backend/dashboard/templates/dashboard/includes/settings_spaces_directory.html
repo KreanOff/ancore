@@ -1,0 +1,60 @@
+<div class="tasks-page work-page settings-spaces-directory" data-settings-spaces-directory>
+    <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory app-page-header">
+        <div class="tasks-titlebar-left"><h1 class="tasks-topbar-title" id="settings-spaces-title">Przestrzenie</h1></div>
+        <div class="tasks-titlebar-actions">
+            {% if settings_create_url %}<a href="{{ settings_create_url }}" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" data-settings-spaces-create aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i><span>Utwórz przestrzeń</span></a>{% else %}<button type="button" class="tasks-tag-topbar-button tasks-tag-topbar-button--row-highlight" disabled data-settings-spaces-create><i data-icon="plus" aria-hidden="true"></i><span>Utwórz przestrzeń</span></button>{% endif %}
+        </div>
+    </header>
+    <form method="get" action="{% url 'settings' %}" class="tasks-filterbar tasks-filterbar--directory tasks-filterbar--project-directory app-toolbar settings-spaces-toolbar">
+        <input type="hidden" name="section" value="spaces">
+        <div class="tasks-filterbar-right app-toolbar__search">
+            <label class="tasks-search-field tasks-project-search"><i data-icon="search" aria-hidden="true"></i><input type="search" name="q" value="{{ settings_query }}" placeholder="Szukaj przestrzeni" aria-label="Szukaj przestrzeni" autocomplete="off" data-settings-spaces-search></label>
+        </div>
+        <div class="app-toolbar__actions">
+            <button type="button" class="tasks-filter-button" disabled data-settings-spaces-edit><i data-icon="pencil" aria-hidden="true"></i><span>Edytuj</span></button>
+            <button type="button" class="tasks-filter-button" disabled data-settings-spaces-delete><i data-icon="trash-2" aria-hidden="true"></i><span>Usuń</span></button>
+        </div>
+    </form>
+    <div class="settings-spaces-directory__body">
+        {% if settings_spaces %}
+        <div class="app-data-table tasks-table-wrap tasks-board tasks-directory-board tasks-directory-sheet tasks-project-sheet tasks-project-sheet--selectable settings-spaces-sheet">
+            <section class="tasks-issue-group tasks-directory-group" role="table" aria-label="Lista przestrzeni">
+                <div class="tasks-directory-header tasks-directory-sheet__header tasks-project-sheet__header app-table-header" role="row">
+                    <span class="tasks-directory-header-select tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="columnheader"><input type="checkbox" class="tasks-row-checkbox tasks-select-all-checkbox tasks-directory-select-all" aria-label="Zaznacz wszystkie przestrzenie" data-settings-spaces-select-all></span>
+                    <span class="tasks-directory-header-name tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="columnheader">NAZWA<i data-icon="layers" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="columnheader">KLUCZ<i data-icon="hash" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="columnheader">OPIS<i data-icon="align-left" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="columnheader">RODZAJ<i data-icon="shapes" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="template" role="columnheader">SZABLON<i data-icon="layout-dashboard" aria-hidden="true"></i></span>
+                    <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count" role="columnheader">ZADANIA<i data-icon="list-checks" aria-hidden="true"></i></span>
+                </div>
+                <div class="tasks-issue-list tasks-project-list tasks-directory-list" role="rowgroup">
+                    {% for item in settings_spaces %}
+                    <article class="tasks-issue-row tasks-project-row tasks-directory-row tasks-directory-sheet__row tasks-project-sheet__row app-table-row settings-spaces-row" role="row" tabindex="0" aria-label="Ustawienia przestrzeni {{ item.name }}" data-settings-spaces-row data-settings-space-url="{{ item.url }}" data-settings-space-edit-url="{{ item.edit_url }}" data-settings-space-delete-url="{{ item.delete_url }}">
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="select" role="cell"><input type="checkbox" class="tasks-row-checkbox" value="{{ item.id }}" aria-label="Zaznacz przestrzeń {{ item.name }}" data-settings-spaces-select></span>
+                        <span class="tasks-directory-name tasks-row-title tasks-project-row-title tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="name" role="cell">
+                            <span class="profile-avatar space-avatar settings-spaces-avatar {{ item.avatar.color_class }}{% if item.avatar.photo_url %} has-photo{% else %} space-avatar-art {{ item.avatar.preset_class }}{% endif %}" aria-hidden="true" data-space-avatar="{{ item.id }}">{% if item.avatar.photo_url %}<img src="{{ item.avatar.photo_url }}" alt="" draggable="false">{% endif %}</span>
+                            <span class="tasks-row-title-main"><a class="tasks-row-title-text" href="{{ item.url }}" title="{{ item.name }}">{{ item.name }}</a></span>
+                        </span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="key" role="cell" title="{{ item.key }}">{{ item.key }}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="description" role="cell" title="{{ item.description }}">{{ item.description|default:'—' }}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="kind" role="cell" title="{{ item.kind_label }}">{{ item.kind_label }}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="template" role="cell" title="{{ item.template_label }}">{{ item.template_label }}</span>
+                        <span class="tasks-directory-sheet__cell tasks-project-sheet__cell" data-column="tasks_count" role="cell">{{ item.item_count }}</span>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+            {% include 'core/includes/load_more.html' with next_url=settings_spaces_next loaded=settings_spaces_page.end_index total=settings_spaces_page.paginator.count only %}
+        </div>
+        {% else %}
+        <div class="tasks-empty-state tasks-empty-state--illustrated" role="status">
+            <span class="tasks-empty-state__illustration tasks-empty-state__illustration--spaces" aria-hidden="true"></span>
+            <div class="tasks-empty-state__copy">
+                <h2>{% if settings_query %}Nie znaleziono przestrzeni.{% else %}Brak dostępnych przestrzeni w tym Workspace.{% endif %}</h2>
+                {% if settings_query %}<p>Zmień wyszukiwanie lub wyczyść wyszukiwaną nazwę.</p>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>

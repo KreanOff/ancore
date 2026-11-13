@@ -1,0 +1,73 @@
+{% load workplace_avatar %}
+{% workplace_avatar workplace as workplace_logo %}
+<div class="tasks-page work-page space-settings-page workspace-settings-page" data-workspace-settings-page data-team-modal-page>
+    <div class="app-page-header-group">
+        <header class="tasks-topbar app-page-header">
+            <div class="tasks-titlebar-left">
+                <a href="{% url 'workplaces:workplaces' %}" class="tasks-issue-close" aria-label="Wróć do Workspace"><i data-icon="arrow-left" aria-hidden="true"></i></a>
+                <h1 class="tasks-topbar-title work-space-title">Ustawienia Workspace · {{ workplace.name }}</h1>
+            </div>
+        </header>
+    </div>
+                <section id="workplace-panel-main" class="space-settings-panel" aria-label="Ustawienia Workspace" data-workplace-tab-panel="main"{% if workplace_edit_tab != 'main' %} hidden{% endif %}>
+                    <form id="workplace-edit-form" method="post" action="{% url 'workplaces:update' workplace.pk %}" enctype="multipart/form-data" class="tasks-modal__form">
+                        {% csrf_token %}
+                        <input type="hidden" name="view" value="{{ management_view }}">
+                        <input type="hidden" name="tab" value="main">
+                        <div class="tasks-filterbar tasks-filterbar--directory app-toolbar workplace-edit-modal__team-toolbar">
+                            <div class="app-toolbar__actions">
+                                {% if can_manage_team %}<button type="submit" class="tasks-filter-button" data-workplace-main-action><i data-icon="circle-check" aria-hidden="true"></i><span>Zapisz</span></button>{% endif %}
+                                <a href="{% url 'workplaces:workplaces' %}" class="tasks-filter-button">Anuluj</a>
+                            </div>
+                        </div>
+                        <div class="tasks-modal__body space-settings-main workspace-settings-main">
+                        {% if edit_form.errors %}<div class="tasks-modal__errors" role="alert">{% for field in edit_form %}{% for error in field.errors %}<p>{{ field.label }}: {{ error }}</p>{% endfor %}{% endfor %}{% for error in edit_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                        <div class="workplace-modal__content app-form-avatar-layout" data-profile-photo-layout>
+                            {% if can_manage_team %}{% include 'workplaces/includes/workplace_photo_editor.html' with form=avatar_edit_form workplace_logo=workplace_logo photo_button_label='Zmień' form_id='workplace-edit-form' %}{% endif %}
+                            <div class="workplace-modal__details app-form-layout">
+                                <div class="app-form-heading"><div class="tasks-form-field app-form-field">
+                                    <label for="workplace-edit-name">Nazwa miejsca pracy</label>
+                                    <input id="workplace-edit-name" type="text" name="name" value="{% if edit_form %}{{ edit_form.name.value|default_if_none:'' }}{% else %}{{ workplace.name }}{% endif %}" class="tasks-inline-input" placeholder="Nazwa miejsca pracy" autocomplete="off" required data-workplace-edit-autofocus{% if not can_manage_team %} readonly{% endif %}>
+                                </div></div>
+                                <div class="tasks-form-field app-form-field app-form-description">
+                                    <label for="workplace-edit-description">Opis</label>
+                                    <textarea id="workplace-edit-description" name="description" class="tasks-inline-input tasks-modal-textarea" rows="3" placeholder="Dodaj krótki opis miejsca pracy…"{% if not can_manage_team %} readonly{% endif %}>{% if edit_form %}{{ edit_form.description.value|default_if_none:'' }}{% else %}{{ workplace.description }}{% endif %}</textarea>
+                                </div>
+                                <div class="tasks-form-field workplace-edit-modal__code-field app-form-field">
+                                    <div class="app-field-label"><label for="workplace-edit-code">Kod miejsca pracy</label>{% include 'core/includes/field_help.html' with text='Stały, unikatowy identyfikator Workspace. Zmiana nazwy nie zmienia kodu ani adresu.' label='Kod miejsca pracy' id='workplace-edit-code-hint' only %}</div>
+                                    <input id="workplace-edit-code" type="text" value="{{ workplace.code }}" class="tasks-inline-input" readonly aria-describedby="workplace-edit-code-hint">
+                                </div>
+                                {% if can_manage_team %}<div class="tasks-form-field workplace-module-fields app-form-field app-form-wide">
+                                    <div class="app-field-label"><label for="{{ avatar_edit_form.enabled_modules.id_for_label }}">{{ avatar_edit_form.enabled_modules.label }}</label>{% include 'core/includes/field_help.html' with text=avatar_edit_form.enabled_modules.help_text label=avatar_edit_form.enabled_modules.label id=avatar_edit_form.enabled_modules.auto_id|add:'_helptext' only %}</div>
+                                    <input type="hidden" name="modules_submitted" value="1">
+                                    {{ avatar_edit_form.enabled_modules }}
+                                </div>{% endif %}
+                            </div>
+                        </div>
+                        </div>
+                    </form>
+                </section>
+                <section id="workplace-panel-members" class="space-settings-panel space-settings-table-body" aria-label="Członkowie" data-workplace-tab-panel="members"{% if workplace_edit_tab != 'members' %} hidden{% endif %}>
+                    <div class="tasks-filterbar tasks-filterbar--directory app-toolbar workplace-edit-modal__team-toolbar">
+                        <div class="tasks-filterbar-left app-toolbar__controls">
+                        <span class="workplaces-management__count">{{ workplace.name }} · Członkowie: {{ members|length }}</span>
+                        </div>
+                        {% if can_manage_team %}<div class="app-toolbar__actions"><button type="button" class="tasks-filter-button" data-team-modal-open="team-add-modal" aria-haspopup="dialog" aria-controls="team-add-modal" aria-expanded="false"><i data-icon="plus" aria-hidden="true"></i><span>Dodaj osobę</span></button></div>{% endif %}
+                    </div>
+                    {% include 'workplaces/includes/team_panel.html' %}
+                    {% if can_manage_team %}<noscript>
+                        <form method="post" action="{% url 'workplaces:team' team_workplace.pk %}?view=members" class="documents-form">
+                            {% csrf_token %}
+                            <div class="tasks-form-field"><label for="native-team-user">ID konta Ancore</label><input id="native-team-user" name="user_id" class="form-input" placeholder="@jan.nowak" maxlength="150" required><small>Wpisz ID istniejącego konta. Osoba od razu uzyska dostęp do Workspace.</small></div>
+                            <div class="tasks-form-field"><label for="native-team-role">Rola</label><select id="native-team-role" name="role" class="form-select">{% for value, label in add_form.role.field.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                            <button type="submit" class="btn btn-primary">Dodaj do Workspace</button>
+                        </form>
+                    </noscript>{% endif %}
+                </section>
+                {% if can_manage_team %}
+                <section id="workplace-panel-links" class="space-settings-panel" aria-label="Linki do dołączenia" data-workplace-tab-panel="links"{% if workplace_edit_tab != 'links' %} hidden{% endif %}>
+                    <div class="tasks-modal__body workspace-settings-links">{% include 'workplaces/includes/invite_links.html' %}</div>
+                </section>
+                {% endif %}
+
+</div>

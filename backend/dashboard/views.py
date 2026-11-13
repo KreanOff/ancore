@@ -340,13 +340,43 @@ def global_search(request):
 
 @login_required
 def settings(request):
-    from spaces.services import visible_spaces, space_url
-    from workplaces.policy import module_enabled
-    spaces = visible_spaces(request).order_by('name', 'pk') if request.workplace and module_enabled(request.workplace, 'spaces') else []
-    settings_spaces = [{'name': space.name, 'url': space_url(request, space, '?view=settings')} for space in spaces]
+    from core.list_window import window_page, window_url
+    from spaces.frontend import space_payload
+    from spaces.services import app_url, decorate_directory_spaces, space_url, visible_spaces
+    from workplaces.policy import module_enabled, read_only
+
+    category = 'spaces' if request.GET.get('section') == 'spaces' else 'all'
+    spaces_enabled = bool(request.workplace and module_enabled(request.workplace, 'spaces'))
+    can_write = spaces_enabled and not read_only(request)
+    query = request.GET.get('q', '').strip()[:120] if category == 'spaces' else ''
+    spaces_page = None
+    if category == 'spaces':
+        spaces = visible_spaces(request).order_by('name', 'pk') if spaces_enabled else []
+        if query and spaces_enabled:
+            spaces = spaces.filter(Q(name__icontains=query) | Q(key__icontains=query) | Q(description__icontains=query))
+        spaces_page = window_page(spaces, request)
+        spaces_page.object_list = decorate_directory_spaces(request, spaces_page.object_list)
+    settings_spaces = []
+    for space in spaces_page or []:
+        row = space_payload(space)
+        can_manage = can_write and row['can_manage']
+        settings_spaces.append({
+            **{key: row[key] for key in ('id', 'name', 'avatar', 'key', 'description', 'kind_label', 'template_label', 'item_count')},
+            'url': row['settings_url'], 'can_manage': can_manage,
+            'edit_url': row['settings_url'] if can_manage else '',
+            'delete_url': space_url(request, space, 'delete/') if can_manage else '',
+        })
     return render(request, 'dashboard/settings.html', {
         'current_account_avatar': account_avatar(request.user),
+        'settings_category': category,
+        'settings_title': 'Przestrzenie' if category == 'spaces' else 'Ustawienia',
+        'settings_query': query,
+        'settings_spaces_enabled': spaces_enabled,
+        'settings_spaces_url': reverse('settings') + '?section=spaces',
+        'settings_create_url': app_url(request, 'create/?return_to=settings') if can_write else '',
         'settings_spaces': settings_spaces,
+        'settings_spaces_page': spaces_page,
+        'settings_spaces_next': window_url(request, spaces_page) if spaces_page is not None else '',
     })
 
 

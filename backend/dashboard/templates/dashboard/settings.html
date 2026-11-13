@@ -1,18 +1,26 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Ustawienia | ancore{% endblock %}
+{% block title %}{{ settings_title }} | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261017-page-padding-15px">
-<script src="{% static 'js/settings.js' %}?v=20261016-react-migration" defer></script>
+{% if settings_category == 'spaces' %}
+<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261105-no-hamburger">
+<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261113-settings-spaces">
+{% endif %}
+<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261113-spaces-table">
+<script src="{% static 'js/settings.js' %}?v=20261113-spaces-actions" defer></script>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-page settings-center" data-settings-center>
+{% if settings_category == 'spaces' %}
+    {% include 'dashboard/includes/settings_spaces_directory.html' %}
+{% else %}
+<div class="dashboard-page settings-center" data-settings-center data-settings-section="{{ settings_category }}">
     <header class="tasks-topbar tasks-topbar--directory tasks-topbar--project-directory app-page-header">
         <div class="tasks-titlebar-left">
-            <h1 class="tasks-topbar-title" id="settings-title">Ustawienia</h1>
+            <h1 class="tasks-topbar-title" id="settings-title">{{ settings_title }}</h1>
         </div>
     </header>
     <div class="settings-scroll-area">
@@ -44,14 +52,14 @@
                         {% endif %}
                     </div>
                 </section>
-                <section class="settings-group" data-settings-group="workspace" aria-labelledby="settings-spaces-title">
-                    <header class="settings-group-heading"><h2 id="settings-spaces-title">Ustawienia przestrzeni</h2><p>Wybierz przestrzeń, aby zmienić ustawienia, udostępnienia oraz statusy, typy i pola.</p></header>
+                {% if settings_spaces_enabled %}
+                <section class="settings-group" id="spaces" data-settings-group="spaces" aria-labelledby="settings-spaces-shortcut-title">
+                    <header class="settings-group-heading"><h2 id="settings-spaces-shortcut-title">Przestrzenie</h2><p>Ustawienia przestrzeni w bieżącym Workspace.</p></header>
                     <div class="settings-rows">
-                        {% for item in settings_spaces %}
-                            {% include 'dashboard/includes/settings_row.html' with href=item.url icon='layers' title=item.name only %}
-                        {% empty %}<p class="work-caption">Brak dostępnych przestrzeni w tym Workspace.</p>{% endfor %}
+                        {% include 'dashboard/includes/settings_row.html' with href=settings_spaces_url icon='layers' title='Ustawienia przestrzeni' description='Wybierz przestrzeń i otwórz jej ustawienia.' only %}
                     </div>
                 </section>
+                {% endif %}
                 <section class="settings-session" id="security" data-settings-group="account" aria-label="Sesja i bezpieczeństwo">
                     <div class="settings-row" data-settings-row>
                         <span class="settings-row-icon" aria-hidden="true"><i data-icon="shield-check"></i></span>
@@ -65,4 +73,5 @@
         {% include 'core/includes/icon_credit.html' %}
     </div>
 </div>
+{% endif %}
 {% endblock %}
