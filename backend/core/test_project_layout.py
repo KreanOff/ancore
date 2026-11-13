@@ -24,15 +24,15 @@ class ProjectLayoutTests(SimpleTestCase):
             target.parent.mkdir(parents=True)
             shutil.copyfile(settings.BASE_DIR / 'deploy/cli/configure.py', target)
             command = [sys.executable, str(target)]
-            result = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+            result = subprocess.run(command, cwd=directory, input="192.0.2.10\n\n", capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             configuration = root / 'deploy/.env'
             original = configuration.read_bytes()
             self.assertEqual(configuration.stat().st_mode & 0o777, 0o600)
             values = dict(line.split('=', 1) for line in original.decode().splitlines() if '=' in line)
-            self.assertEqual(values['ANCORE_BACKUP_DIR'], f"'{root / 'deploy/backups'}'")
-            self.assertTrue((root / 'deploy/backups').is_dir())
-            repeated = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+            self.assertEqual(values['ANCORE_PUBLIC_URL'], "'http://192.0.2.10:8080'")
+            self.assertFalse((root / 'deploy/backups').exists())
+            repeated = subprocess.run(command, cwd=directory, input="\n\n", capture_output=True, text=True)
             self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
             self.assertEqual(configuration.read_bytes(), original)
 

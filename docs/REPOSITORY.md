@@ -18,18 +18,16 @@ ancore/
 ├── deploy/
 │   ├── cli/                 instalacja, konfigurator i operacje Compose
 │   ├── backend/             entrypoint Django, Gunicorn, zależności produkcji
-│   ├── web/                 Nginx: szablon konfiguracji i entrypoint
+│   ├── web/                 stała konfiguracja HTTP Nginx
 │   ├── postgres/            inicjalizacja roli aplikacji w bazie
-│   ├── backup/              harmonogram, archiwizacja i odtwarzanie
 │   ├── Dockerfile           wspólny build obrazów usług i obu frontendów
-│   ├── compose*.yaml        usługi, wariant HTTPS i odtwarzanie
+│   ├── compose.yaml         cztery usługi HTTP
 │   └── production.env.example
 ├── scripts/
 │   ├── assets/              generator ikon i jego mapowanie
 │   ├── office/              lokalna konfiguracja i start ONLYOFFICE
 │   ├── run_tests.py         testy z osobną bazą i tymczasowym storage
 │   ├── update_code_index.py generator indeksu dokumentacji
-│   ├── production.py        zgodność starszych poleceń produkcji
 │   └── start_office.sh      zgodność starszego polecenia ONLYOFFICE
 ├── docs/                    dokumentacja i generowany CODE_INDEX.md
 ├── .vscode/settings.json    wspólne ustawienia edytora
@@ -39,8 +37,7 @@ ancore/
 ├── .dockerignore            wykluczenia z kontekstu budowania
 ├── AGENTS.md                zasady pracy nad projektem
 ├── README.md                start i mapa dokumentacji
-├── ancore.sh                publiczne polecenia produkcji
-├── restore.sh               samodzielne odzyskiwanie z listy 10 kopii
+├── ancore-install.sh        publiczne polecenia produkcji
 ├── manage.py                publiczne polecenia Django
 └── requirements.txt         wspólne zależności Pythona
 ```
@@ -63,9 +60,9 @@ Szablony, testy i migracje pozostają przy swoich aplikacjach.
 | Bieżące środowisko i zależności | `.venv/`, `node_modules/` | Lokalne; odtwarzane z zależności i lockfile |
 | Cache narzędzi | `.cache/`, `__pycache__/` | Lokalne pliki odtwarzalne |
 | Konfiguracja z sekretami | `.env`, `.env.office`, `deploy/.env` | Prywatne pliki lokalne; nie nadpisywać przy porządkowaniu |
-| Uploady | `media/`, `private_documents/` lub skonfigurowane ścieżki | Trwałe dane; wymagają backupu |
-| Archiwa i certyfikaty | `deploy/backups/`, `deploy/certs/` lub skonfigurowane ścieżki | Trwałe dane lokalne; nowe kopie zawierają także kod, konfigurację i certyfikaty |
-| Odzyskane instalacje | `.recovery/` lub `restore.sh --target`; `deploy/compose.recovery.yaml` w odzyskanej aplikacji | Prywatne dane poza Git/buildem; katalog `application` pozostaje aktywną instalacją |
+| Uploady | `media/`, `private_documents/` lub skonfigurowane ścieżki | Trwałe dane; w produkcji zapisane w wolumenach |
+| Archiwa i certyfikaty starszych instalacji | `deploy/backups/`, `deploy/certs/` | Prywatne dane poza Git/buildem; nowy instalator ich nie tworzy |
+| Pozostałości starszego odzyskiwania | `.recovery/`, `deploy/compose.recovery.yaml` | Prywatne dane poza Git/buildem; nie usuwać przy porządkowaniu |
 
 Lokalne zależności, cache, archiwa, konfiguracja z sekretami i dane aplikacji
 są wyłączone z Git oraz kontekstu Dockera. Build sam tworzy oba bundle.
@@ -84,8 +81,7 @@ Pliki nadal są na dysku; widoczność reguluje
 1. Aplikacje Django dodawaj do `backend/`, moduły Reacta do istniejącego
    `frontend/app/src/`, a wspólne zasoby do `static/`.
 2. Pliki kontenera umieszczaj w odpowiednim podkatalogu `deploy/`.
-   Instalacja ma jedną implementację w `deploy/cli/` i wejście `ancore.sh`.
-   Samodzielny `restore.sh` jest osobnym wejściem odzyskiwania, niezależnym od instalatora.
+   Instalacja ma jedną implementację w `deploy/cli/` i wejście `ancore-install.sh`.
 3. Narzędzia integracji i zasobów umieszczaj w podkatalogach `scripts/`.
    Rozwiązuj ścieżki względem pliku skryptu, aby działał również spoza repozytorium.
 4. Nie twórz katalogów `old/`, `misc/`, `temp/` ani kopii `plik_final_2`.

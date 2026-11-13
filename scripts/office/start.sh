@@ -3,7 +3,7 @@
 set -eu
 cd "$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)"
 if [ ! -f deploy/office.compose.yml ]; then
-    echo 'Brak lokalnej konfiguracji deploy/office.compose.yml. Pełną instalację z ONLYOFFICE uruchom przez sh ancore.sh setup; opis developmentu: docs/OFFICE.md.' >&2
+    echo 'Brak lokalnej konfiguracji deploy/office.compose.yml. Pełną instalację z ONLYOFFICE uruchom przez sh ancore-install.sh setup; opis developmentu: docs/OFFICE.md.' >&2
     exit 1
 fi
 PATH="/opt/homebrew/bin:$PATH"

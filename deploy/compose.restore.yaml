@@ -1,6 +1,0 @@
-# Used only while web, backend, backup scheduler and ONLYOFFICE are stopped.
-services:
-  backup:
-    volumes:
-      - private:/source/private
-      - media:/source/media

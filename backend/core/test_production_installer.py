@@ -1,4 +1,4 @@
-"""Exercise the shell installer with a controlled Docker CLI, without real data."""
+"""Exercise installation prompts and lifecycle with a controlled Docker CLI."""
 import json
 import os
 from pathlib import Path
@@ -16,9 +16,6 @@ import json, os, pathlib, subprocess, sys
 args = sys.argv[1:]
 with open(os.environ['INSTALLER_CALLS'], 'a') as output:
     output.write(json.dumps([pathlib.Path(sys.argv[0]).name, *args]) + '\n')
-if os.getenv('INSTALLER_FINGERPRINTS') and os.getenv('ANCORE_CONFIG_FINGERPRINT'):
-    with open(os.environ['INSTALLER_FINGERPRINTS'], 'a') as output:
-        output.write(json.dumps({'args': args, 'fingerprint': os.environ['ANCORE_CONFIG_FINGERPRINT']}) + '\n')
 if pathlib.Path(sys.argv[0]).name == 'ss':
     print(os.getenv('INSTALLER_LISTENERS', ''))
     sys.exit(0)
@@ -31,13 +28,8 @@ elif args[0] == 'info':
         sys.exit(1)
     print('linux')
 elif args[0] == 'run':
-    index = next(index for index, argument in enumerate(args)
-                 if argument == 'deploy/cli/configure.py' or argument.endswith('/recovery.py'))
-    sys.exit(subprocess.call([sys.executable, *args[index:]]))
-elif args[0] == 'create':
-    sys.exit(1 if os.getenv('INSTALLER_LOCKED') else 0)
-elif args[0] == 'rm':
-    pass
+    index = next(index for index, argument in enumerate(args) if argument.endswith('deploy/cli/configure.py'))
+    sys.exit(subprocess.call([sys.executable, 'deploy/cli/configure.py', *args[index + 1:]]))
 elif args[0] == 'port':
     print(os.getenv('INSTALLER_WEB_PORTS', '80/tcp -> 0.0.0.0:8080'))
 elif args[0] == 'ps':
@@ -48,31 +40,30 @@ elif args[0] == 'compose':
     args.pop(0)
     if args[0] == 'version':
         sys.exit(1 if os.getenv('INSTALLER_STANDALONE') else 0)
-    while args[0] in ('--env-file', '-f', '--project-name'):
+    while args[0] in ('--env-file', '-f', '--project-name', '--project-directory'):
         args = args[2:]
     if args[0] == 'up' and '--help' in args:
         print('--wait-timeout' if not os.getenv('INSTALLER_OLD_COMPOSE') else '--detach')
     elif args[0] == 'ps':
         if args[-1] == 'web':
             print(os.getenv('INSTALLER_WEB_ID', ''))
-        elif args[-1] == 'backup':
-            print(os.getenv('INSTALLER_BACKUP_ID', ''))
         else:
-            print('backend web postgres backup onlyoffice')
+            print('backend web postgres onlyoffice')
     elif args[0] == 'build':
         sys.exit(1 if os.getenv('INSTALLER_BUILD_ERROR') else 0)
     elif args[0] == 'up':
         sys.exit(1 if os.getenv('INSTALLER_START_ERROR') else 0)
-    elif args[0] == 'exec':
-        sys.exit(1 if os.getenv('INSTALLER_EXEC_ERROR') else 0)
     elif args[0] == 'config':
         sys.exit(1 if os.getenv('INSTALLER_CONFIG_ERROR') else 0)
-    elif args[0] == 'run' and 'restore' in args:
-        sys.exit(1 if os.getenv('INSTALLER_RESTORE_ERROR') else 0)
-    elif args[0] == 'run' and 'restore-prepared' in args:
-        sys.exit(1 if os.getenv('INSTALLER_RESTORE_ERROR') else 0)
-    elif args[0] == 'run' and 'pg_restore' in args:
-        sys.exit(1 if os.getenv('INSTALLER_DUMP_ERROR') else 0)
+    elif args[0] == 'exec':
+        if args[-1] == 'ensure_admin':
+            if os.getenv('INSTALLER_ADMIN_ERROR'):
+                sys.exit(1)
+            print('TEST: administrator jest gotowy.')
+    elif args[0] in ('stop', 'logs', 'pull'):
+        pass
+    else:
+        raise RuntimeError(args)
 else:
     raise RuntimeError(args)
 '''
@@ -84,10 +75,8 @@ class ProductionInstallerTests(SimpleTestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name) / 'repo with spaces'
         self.root.mkdir()
-        for name in ('ancore.sh', 'deploy/cli/runtime.sh',
-                     'deploy/cli/setup.sh', 'deploy/cli/configure.py', 'scripts/production.py',
-                     'scripts/start_office.sh', 'scripts/office/start.sh',
-                     'deploy/compose.yaml', 'deploy/compose.tls.yaml', 'deploy/compose.restore.yaml'):
+        for name in ('ancore-install.sh', 'deploy/cli/runtime.sh', 'deploy/cli/configure.py',
+                     'deploy/compose.yaml', 'scripts/start_office.sh', 'scripts/office/start.sh'):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(settings.BASE_DIR / name, target)
@@ -103,8 +92,8 @@ class ProductionInstallerTests(SimpleTestCase):
         self.environment.update(PATH=str(self.bin) + os.pathsep + os.environ['PATH'],
                                 INSTALLER_CALLS=str(self.calls))
 
-    def run_script(self, name, *arguments, answers='', **environment):
-        return subprocess.run(['sh', str(self.root / name), *arguments],
+    def run_script(self, *arguments, answers='', **environment):
+        return subprocess.run(['sh', str(self.root / 'ancore-install.sh'), *arguments],
                               input=answers, capture_output=True, text=True,
                               env={**self.environment, **environment}, cwd=self.bin, timeout=30)
 
@@ -112,131 +101,131 @@ class ProductionInstallerTests(SimpleTestCase):
         path = self.root / 'deploy/.env'
         return dict(line.split('=', 1) for line in path.read_text().splitlines() if '=' in line)
 
+    def recorded_calls(self):
+        return [json.loads(line) for line in self.calls.read_text().splitlines()] if self.calls.exists() else []
+
     def commands(self, action):
-        calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
-        return [call for call in calls if action in call and '--help' not in call]
+        return [call for call in self.recorded_calls() if action in call and '--help' not in call]
 
     def prepare(self):
-        result = self.run_script('ancore.sh', 'install', '--configure-only')
+        result = self.run_script('install', answers='192.0.2.10\n\n')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.calls.write_text('')
 
-    def test_wizard_saves_lan_configuration_without_starting_and_keeps_secrets(self):
-        result = self.run_script('ancore.sh', 'setup', answers='192.0.2.10\n1\n8087\n1\n\nn\n')
+    def test_default_installation_configures_ip_port_and_prepares_admin_after_start(self):
+        result = self.run_script(answers='192.0.2.10\n8087\n')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        config = self.config()
-        self.assertEqual(config['ANCORE_PUBLIC_URL'], "'http://192.0.2.10:8087'")
-        self.assertEqual(config['ANCORE_BIND'], "'0.0.0.0'")
-        self.assertFalse(self.commands('build'))
-        self.assertFalse(self.commands('up'))
-        repeated = self.run_script('ancore.sh', 'setup', answers='\n\n\n\n\nn\n')
-        self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
-        self.assertEqual(self.config(), config)
-        self.assertEqual((self.root / 'deploy/.env').stat().st_mode & 0o777, 0o600)
-        for key in ('SECRET_KEY', 'POSTGRES_PASSWORD', 'POSTGRES_ADMIN_PASSWORD', 'ONLYOFFICE_JWT_SECRET'):
-            self.assertNotIn(config[key].strip("'"), result.stdout + result.stderr)
-
-    def test_wizard_builds_then_waits_for_services_only_after_start_answer(self):
-        result = self.run_script('ancore.sh', 'setup', answers='\n\n\n\n\nt\n', INSTALLER_OFFICE_MISSING='1')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.config()['ANCORE_PUBLIC_URL'], "'http://192.0.2.10:8087'")
+        self.assertEqual(self.config()['ANCORE_HOST'], "'192.0.2.10'")
+        self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8087'")
         self.assertEqual(len(self.commands('build')), 1)
+        build = self.commands('build')[0]
+        self.assertEqual({value for value in build[build.index('build') + 1:] if not value.startswith('-')},
+                         {'web', 'backend', 'postgres'})
+        self.assertEqual(len(self.commands('up')), 1)
         self.assertIn('--wait', self.commands('up')[0])
         self.assertIn('--no-build', self.commands('up')[0])
-        self.assertEqual(self.commands('pull')[0][-1], 'onlyoffice')
-        self.assertIn('Usługi Ancore są gotowe.', result.stdout)
+        self.assertIn('--remove-orphans', self.commands('up')[0])
+        self.assertIn('http://192.0.2.10:8087', result.stdout)
+        self.assertEqual(len(self.commands('exec')), 1)
+        admin = self.commands('exec')[0]
+        self.assertEqual(admin[-4:], ['backend', 'python', 'manage.py', 'ensure_admin'])
+        calls = self.recorded_calls()
+        self.assertLess(calls.index(build), calls.index(self.commands('up')[0]))
+        self.assertLess(calls.index(self.commands('up')[0]), calls.index(admin))
+        self.assertLess(result.stdout.index('TEST: administrator jest gotowy.'),
+                        result.stdout.index('Usługi Ancore są gotowe.'))
+        self.assertFalse(self.commands('stop'))
+        self.assertEqual((self.root / 'deploy/.env').stat().st_mode & 0o777, 0o600)
+        for key in ('SECRET_KEY', 'POSTGRES_PASSWORD', 'POSTGRES_ADMIN_PASSWORD', 'ONLYOFFICE_JWT_SECRET'):
+            self.assertNotIn(self.config()[key].strip("'"), result.stdout + result.stderr)
 
-    def test_wizard_reprompts_invalid_port_and_host_and_handles_eof(self):
-        result = self.run_script('ancore.sh', 'setup', answers='http://example.test:80\nexample.test\n1\nwrong\n999999999999999999999\n8087\n1\n\nn\n')
+    def test_setup_alias_uses_two_answers_and_pulls_missing_office(self):
+        result = self.run_script('setup', answers='192.0.2.10\n\n', INSTALLER_OFFICE_MISSING='1')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8080'")
+        self.assertEqual(self.commands('pull')[0][-1], 'onlyoffice')
+        self.assertIn('--rm', self.commands('run')[0])
+        self.assertIn('-i', self.commands('run')[0])
+        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+
+    def test_repeated_install_preserves_secrets_project_and_saved_defaults(self):
+        self.prepare()
+        before = (self.root / 'deploy/.env').read_bytes()
+        repeated = self.run_script('install', answers='\n\n')
+        self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
+        self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
+        self.assertEqual(len(self.commands('build')), 1)
+        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+
+    def test_changed_address_preserves_existing_credentials_and_volume_project(self):
+        self.prepare()
+        before = self.config()
+        changed = self.run_script('install', answers='192.0.2.11\n8090\n')
+        self.assertEqual(changed.returncode, 0, changed.stdout + changed.stderr)
+        after = self.config()
+        self.assertEqual(after['ANCORE_PUBLIC_URL'], "'http://192.0.2.11:8090'")
+        for key in ('SECRET_KEY', 'POSTGRES_PASSWORD', 'POSTGRES_ADMIN_PASSWORD',
+                    'ONLYOFFICE_JWT_SECRET', 'ANCORE_PROJECT'):
+            self.assertEqual(after[key], before[key])
+
+    def test_invalid_address_and_port_reprompt_without_extra_configuration_questions(self):
+        result = self.run_script('install', answers='http://192.0.2.10\nexample.test\n999.1.1.1\n192.0.2.10\nwrong\n0\n65536\n999999999999999999999\n8087\n')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8087'")
-        before = (self.root / 'deploy/.env').read_bytes()
-        interrupted = self.run_script('ancore.sh', 'setup')
-        self.assertNotEqual(interrupted.returncode, 0)
-        self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
+        self.assertEqual(self.config()['ANCORE_HOST'], "'192.0.2.10'")
 
-    def test_direct_https_is_managed_by_compose_including_later_start(self):
-        tls = self.root / 'certificates with spaces'
-        tls.mkdir()
-        for name in ('fullchain.pem', 'privkey.pem'):
-            (tls / name).write_text('fixture')
-        result = self.run_script('ancore.sh', 'setup', answers=f'example.test\n2\n8080\n8443\n{tls}\n1\n\nn\n')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.config()['ANCORE_TLS_MODE'], "'direct'")
-        started = self.run_script('ancore.sh', 'start')
-        self.assertEqual(started.returncode, 0, started.stdout + started.stderr)
-        self.assertIn(str((self.root / 'deploy/compose.tls.yaml').resolve()), self.commands('up')[-1])
-
-    def test_existing_external_https_keeps_public_port_and_local_proxy_binding(self):
-        configured = self.run_script('ancore.sh', 'install', '--url', 'https://example.test:8443', '--configure-only')
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        result = self.run_script('ancore.sh', 'setup', answers='\n\n\n\n\nn\n')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.config()['ANCORE_PUBLIC_URL'], "'https://example.test:8443'")
-        self.assertEqual(self.config()['ANCORE_BIND'], "'127.0.0.1'")
-
-    def test_start_refreshes_backup_configuration_after_atomic_reconfigure(self):
+    def test_eof_keeps_existing_configuration_and_never_builds(self):
         self.prepare()
-        fingerprints = self.root.parent / 'fingerprints.jsonl'
-        def start_fingerprint():
-            result = self.run_script('ancore.sh', 'start', INSTALLER_FINGERPRINTS=str(fingerprints))
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            calls = [json.loads(line) for line in fingerprints.read_text().splitlines()]
-            fingerprint = next(call['fingerprint'] for call in reversed(calls)
-                               if 'up' in call['args'] and '--help' not in call['args'])
-            expected = subprocess.check_output(['cksum'], input=(self.root / 'deploy/.env').read_bytes()).decode().strip()
-            self.assertEqual(fingerprint, expected)
-            return fingerprint
-        initial = start_fingerprint()
+        before = (self.root / 'deploy/.env').read_bytes()
+        for answers in ('', '192.0.2.11\n'):
+            with self.subTest(answers=answers):
+                interrupted = self.run_script('install', answers=answers)
+                self.assertNotEqual(interrupted.returncode, 0)
+                self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
+                self.assertFalse(self.commands('build'))
+                self.assertFalse(self.commands('up'))
+
+    def test_incomplete_existing_credentials_fail_without_replacement(self):
+        self.prepare()
         path = self.root / 'deploy/.env'
-        initial_inode = path.stat().st_ino
-        configured = self.run_script('ancore.sh', 'configure', '--reconfigure', '--url', 'http://new.example.test:8089')
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        self.assertNotEqual(path.stat().st_ino, initial_inode)
-        changed = start_fingerprint()
-        self.assertNotEqual(changed, initial)
-        self.assertEqual(start_fingerprint(), changed)
-
-    def test_https_start_passes_custom_configuration_fingerprint(self):
-        custom = self.root.parent / 'custom configuration' / '.env'
-        tls = self.root / 'certs'
-        tls.mkdir()
-        for name in ('fullchain.pem', 'privkey.pem'):
-            (tls / name).write_text('fixture')
-        configured = self.run_script('ancore.sh', '--env-file', str(custom), 'configure',
-                                     '--url', 'https://example.test', '--tls-dir', str(tls))
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        fingerprints = self.root.parent / 'fingerprints.jsonl'
-        started = self.run_script('ancore.sh', '--env-file', str(custom), 'start',
-                                  INSTALLER_FINGERPRINTS=str(fingerprints))
-        self.assertEqual(started.returncode, 0, started.stdout + started.stderr)
-        calls = [json.loads(line) for line in fingerprints.read_text().splitlines()]
-        started_call = next(call for call in calls if 'up' in call['args'] and '--help' not in call['args'])
-        self.assertEqual(started_call['fingerprint'], subprocess.check_output(['cksum'], input=custom.read_bytes()).decode().strip())
-
-    def test_invalid_bind_and_colliding_tls_ports_never_write_configuration(self):
-        tls = self.root / 'certs'
-        tls.mkdir()
-        for name in ('fullchain.pem', 'privkey.pem'):
-            (tls / name).write_text('fixture')
-        for arguments in (('--bind', 'server:8080'),
-                          ('--url', 'https://example.test:8080', '--http-port', '8080', '--tls-dir', str(tls))):
-            with self.subTest(arguments=arguments):
-                result = self.run_script('ancore.sh', 'install', '--configure-only', *arguments)
+        for key in ('SECRET_KEY', 'POSTGRES_PASSWORD', 'POSTGRES_ADMIN_PASSWORD', 'ONLYOFFICE_JWT_SECRET'):
+            with self.subTest(key=key):
+                original = path.read_text()
+                broken = '\n'.join(line for line in original.splitlines() if not line.startswith(key + '=')) + '\n'
+                path.write_text(broken)
+                result = self.run_script('install', answers='\n\n')
                 self.assertNotEqual(result.returncode, 0)
-                self.assertFalse((self.root / 'deploy/.env').exists())
+                self.assertEqual(path.read_text(), broken)
+                self.assertFalse(self.commands('build'))
+                path.write_text(original)
 
-    def test_occupied_host_port_aborts_before_backup_or_build(self):
-        result = self.run_script('ancore.sh', 'install', INSTALLER_LISTENERS='LISTEN 0 511 0.0.0.0:8080')
+    def test_old_configuration_migrates_without_backup_tls_or_credential_changes(self):
+        self.prepare()
+        path = self.root / 'deploy/.env'
+        original = self.config()
+        path.write_text(path.read_text() + "ANCORE_TLS_MODE='direct'\nANCORE_BACKUP_DIR='/old/backups'\nBACKUP_KEEP='10'\n")
+        path.rename(path.with_name('.env.production'))
+        migrated = self.run_script('install', answers='\n\n')
+        self.assertEqual(migrated.returncode, 0, migrated.stdout + migrated.stderr)
+        self.assertEqual(self.config(), original)
+        self.assertFalse((self.root / 'deploy/backups').exists())
+        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+
+    def test_occupied_host_port_aborts_before_build_or_start(self):
+        result = self.run_script('install', answers='192.0.2.10\n\n',
+                                 INSTALLER_LISTENERS='LISTEN 0 511 0.0.0.0:8080')
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn('Port 8080 jest zajęty', result.stderr)
+        self.assertIn('8080', result.stderr)
         self.assertFalse(self.commands('build'))
-        self.assertFalse(self.commands('exec'))
+        self.assertFalse(self.commands('up'))
         self.assertNotIn('są gotowe', result.stdout)
 
     def test_other_container_port_is_rejected_but_own_web_is_allowed(self):
         self.prepare()
-        rejected = self.run_script('ancore.sh', 'start', INSTALLER_OTHER_PORTS='0.0.0.0:8080->80/tcp')
+        rejected = self.run_script('start', INSTALLER_OTHER_PORTS='0.0.0.0:8080->80/tcp')
         self.assertNotEqual(rejected.returncode, 0)
-        allowed = self.run_script('ancore.sh', 'start', INSTALLER_WEB_ID='own-web',
+        allowed = self.run_script('start', INSTALLER_WEB_ID='own-web',
                                   INSTALLER_LISTENERS='LISTEN 0 511 0.0.0.0:8080')
         self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
 
@@ -244,128 +233,105 @@ class ProductionInstallerTests(SimpleTestCase):
         for environment in ({'INSTALLER_NO_ACCESS': '1'}, {'INSTALLER_ENDPOINT': 'ssh://remote'},
                             {'INSTALLER_OLD_COMPOSE': '1'}):
             with self.subTest(environment=environment):
-                result = self.run_script('ancore.sh', 'setup', **environment)
+                result = self.run_script('install', answers='192.0.2.10\n\n', **environment)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse((self.root / 'deploy/.env').exists())
+                self.assertFalse(self.commands('build'))
 
-    def test_failed_build_or_start_never_reports_ready_and_update_keeps_backup(self):
+    def test_failed_build_configuration_or_start_never_creates_admin_or_reports_ready(self):
         self.prepare()
-        for environment in ({'INSTALLER_BUILD_ERROR': '1'}, {'INSTALLER_START_ERROR': '1'}):
-            with self.subTest(environment=environment):
-                result = self.run_script('ancore.sh', 'update', INSTALLER_BACKUP_ID='backup', **environment)
-                self.assertNotEqual(result.returncode, 0)
-                self.assertNotIn('są gotowe', result.stdout)
-        self.assertTrue(self.commands('exec'))
+        for action in ('install', 'update'):
+            for environment in ({'INSTALLER_BUILD_ERROR': '1'}, {'INSTALLER_START_ERROR': '1'},
+                                {'INSTALLER_CONFIG_ERROR': '1'}):
+                with self.subTest(action=action, environment=environment):
+                    result = self.run_script(action, answers='\n\n', **environment)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertNotIn('są gotowe', result.stdout)
+        self.assertFalse(self.commands('exec'))
 
-    def test_standalone_compose_and_read_only_status_do_not_build_or_start(self):
+    def test_failed_admin_creation_never_reports_installation_ready(self):
+        result = self.run_script('install', answers='192.0.2.10\n\n', INSTALLER_ADMIN_ERROR='1')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(len(self.commands('up')), 1)
+        self.assertEqual(len(self.commands('exec')), 1)
+        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+        self.assertNotIn('Usługi Ancore są gotowe.', result.stdout)
+        self.assertNotIn('Adres Ancore:', result.stdout)
+        self.assertFalse(self.commands('down'))
+        self.assertFalse(self.commands('volume'))
+
+    def test_explicit_admin_command_remains_available_without_rebuild(self):
         self.prepare()
-        result = self.run_script('ancore.sh', 'status', INSTALLER_STANDALONE='1')
+        result = self.run_script('admin')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.commands('exec')[0][-4:], ['backend', 'python', 'manage.py', 'createsuperuser'])
+        self.assertFalse(self.commands('build'))
+        self.assertFalse(self.commands('up'))
+
+    def test_standalone_compose_status_does_not_build_or_start(self):
+        self.prepare()
+        result = self.run_script('status', INSTALLER_STANDALONE='1')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue(any(call[0] == 'docker-compose' for call in self.commands('ps')))
         self.assertFalse(self.commands('build'))
         self.assertFalse(self.commands('up'))
 
-    def test_local_only_address_and_explicit_loopback_are_identified_in_diagnostics(self):
-        configured = self.run_script('ancore.sh', 'install', '--configure-only', '--bind', '127.0.0.1')
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        result = self.run_script('ancore.sh', 'doctor')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('Adres Ancore: http://127.0.0.1:8080', result.stdout)
-        configured = self.run_script('ancore.sh', 'install', '--configure-only', '--reconfigure',
-                                     '--url', 'http://localhost:8080')
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        result = self.run_script('ancore.sh', 'doctor')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('Adres localhost/127.x jest lokalny.', result.stdout)
-
-    def test_unknown_command_and_help_need_no_daemon_and_reload_checks_config(self):
-        result = self.run_script('ancore.sh', '--help', INSTALLER_NO_ACCESS='1')
+    def test_unknown_retired_commands_and_help_need_no_daemon(self):
+        result = self.run_script('--help', INSTALLER_NO_ACCESS='1')
         self.assertEqual(result.returncode, 0)
-        unknown = self.run_script('ancore.sh', 'not-a-command')
-        self.assertNotEqual(unknown.returncode, 0)
-        extra = self.run_script('ancore.sh', 'start', '--configure-only')
-        self.assertNotEqual(extra.returncode, 0)
+        for arguments in (('not-a-command',), ('backup',), ('restore',), ('configure',),
+                          ('start', '--configure-only'), ('install', '--url', 'https://example.test')):
+            with self.subTest(arguments=arguments):
+                self.assertNotEqual(self.run_script(*arguments).returncode, 0)
         self.assertFalse(self.calls.exists())
-        self.prepare()
-        reload = self.run_script('ancore.sh', 'reload', INSTALLER_EXEC_ERROR='1')
-        self.assertNotEqual(reload.returncode, 0)
-        self.assertEqual(len(self.commands('exec')), 1)
-        self.assertIn('-t', self.commands('exec')[0])
 
-    def test_update_requires_existing_installation_and_configure_does_not_start(self):
-        missing = self.run_script('ancore.sh', 'update')
+    def test_update_requires_configuration_then_builds_without_prompting(self):
+        missing = self.run_script('update')
         self.assertNotEqual(missing.returncode, 0)
         self.assertFalse((self.root / 'deploy/.env').exists())
-        result = self.run_script('ancore.sh', 'configure', '--http-port', '8089')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8089'")
-        self.assertFalse(self.commands('build'))
-        self.assertFalse(self.commands('up'))
-
-    def test_update_migrates_previous_default_retention_without_replacing_secrets(self):
         self.prepare()
-        path = self.root / 'deploy/.env'
-        original = path.read_text()
-        path.write_text(original.replace("BACKUP_KEEP='10'", "BACKUP_KEEP='14'"))
-        result = self.run_script('ancore.sh', 'update')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(path.read_text(), original)
-
-    def test_custom_configuration_and_legacy_python_command_use_same_runtime(self):
-        custom = self.root.parent / 'custom configuration' / '.env'
-        configured = self.run_script('ancore.sh', '--env-file', str(custom), 'configure')
-        self.assertEqual(configured.returncode, 0, configured.stdout + configured.stderr)
-        self.assertTrue(custom.is_file())
-        self.assertFalse((self.root / 'deploy/.env').exists())
-        status = subprocess.run([sys.executable, str(self.root / 'scripts/production.py'),
-                                 '--env-file', str(custom), 'status'], cwd=self.bin,
-                                capture_output=True, text=True, env=self.environment, timeout=30)
-        self.assertEqual(status.returncode, 0, status.stdout + status.stderr)
-        self.assertIn(str(custom.resolve()), self.commands('ps')[-1])
-        self.assertFalse(self.commands('build'))
-        misplaced = self.root.parent / 'misplaced.env'
-        invalid = self.run_script('ancore.sh', 'configure', '--env-file', str(misplaced))
-        self.assertNotEqual(invalid.returncode, 0)
-        self.assertFalse(misplaced.exists())
-
-    def test_restore_requires_confirmation_and_valid_location_before_stopping_writers(self):
-        self.prepare()
-        backup_dir = self.root / 'deploy/backups'
-        archive = backup_dir / 'ancore-qa.tar.gz'
-        archive.write_bytes(b'QA archive')
-        for args in ((str(archive),), (str(archive), '--yes')):
-            result = self.run_script('ancore.sh', 'restore', *args)
-            self.assertNotEqual(result.returncode, 0)
-        outside = self.root / 'outside-backup-directory.tar.gz'
-        outside.write_bytes(b'QA archive')
-        outside.with_name(outside.name + '.sha256').write_text('QA checksum')
-        misplaced = self.run_script('ancore.sh', 'restore', str(outside), '--yes')
-        self.assertNotEqual(misplaced.returncode, 0)
-        self.assertFalse(self.commands('stop'))
-        archive.with_name(archive.name + '.sha256').write_text('QA checksum')
-        result = self.run_script('ancore.sh', 'restore', str(archive), '--yes')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        restore = next(call for call in self.commands('run') if 'restore' in call)
-        self.assertIn(str((self.root / 'deploy/compose.restore.yaml').resolve()), restore)
-        self.assertIn('/backups/ancore-qa.tar.gz', restore)
-        self.assertEqual(len(self.commands('stop')), 1)
-
-    def test_failed_restore_keeps_writers_stopped_and_unlock_works_without_running_backup(self):
-        self.prepare()
-        archive = self.root / 'deploy/backups/ancore-qa.tar.gz'
-        archive.write_bytes(b'QA archive')
-        archive.with_name(archive.name + '.sha256').write_text('QA checksum')
-        result = self.run_script('ancore.sh', 'restore', str(archive), '--yes', INSTALLER_RESTORE_ERROR='1')
-        self.assertNotEqual(result.returncode, 0)
+        before = (self.root / 'deploy/.env').read_bytes()
+        update = self.run_script('update')
+        self.assertEqual(update.returncode, 0, update.stdout + update.stderr)
+        self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
+        self.assertEqual(len(self.commands('build')), 1)
         self.assertEqual(len(self.commands('up')), 1)
-        self.assertEqual(self.commands('up')[0][-1], 'postgres')
-        self.assertNotIn('są gotowe', result.stdout)
-        unlocked = self.run_script('ancore.sh', 'unlock')
-        self.assertEqual(unlocked.returncode, 0, unlocked.stdout + unlocked.stderr)
-        self.assertIn('unlock', self.commands('run')[-1])
+        self.assertFalse(self.commands('run'))
+        self.assertFalse(self.commands('exec'))
+
+    def test_start_restart_and_stop_preserve_data_without_rebuilding_or_admin_prompts(self):
+        self.prepare()
+        started = self.run_script('start')
+        self.assertEqual(started.returncode, 0, started.stdout + started.stderr)
+        self.assertIn('--pull', self.commands('up')[0])
+        self.assertIn('never', self.commands('up')[0])
+        restarted = self.run_script('restart')
+        self.assertEqual(restarted.returncode, 0, restarted.stdout + restarted.stderr)
+        stopped = self.run_script('stop')
+        self.assertEqual(stopped.returncode, 0, stopped.stdout + stopped.stderr)
+        self.assertFalse(self.commands('build'))
+        self.assertFalse(self.commands('pull'))
+        self.assertFalse(self.commands('down'))
+        self.assertFalse(self.commands('volume'))
+        self.assertFalse(self.commands('exec'))
+
+    def test_recovered_installation_keeps_its_existing_volume_mapping(self):
+        self.prepare()
+        override = self.root / 'deploy/compose.recovery.yaml'
+        content = 'volumes:\n  postgres:\n    name: previous-recovery-postgres\n'
+        override.write_text(content)
+        for action, answers in (('start', ''), ('update', ''), ('install', '\n\n')):
+            with self.subTest(action=action):
+                self.calls.write_text('')
+                result = self.run_script(action, answers=answers)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(str(override.resolve()), self.commands('up')[0])
+                self.assertEqual(override.read_text(), content)
+                self.assertFalse(self.commands('volume'))
 
     def test_retired_office_launcher_fails_before_creating_configuration(self):
-        result = self.run_script('scripts/start_office.sh')
+        result = subprocess.run(['sh', str(self.root / 'scripts/start_office.sh')], cwd=self.bin,
+                                capture_output=True, text=True, env=self.environment, timeout=30)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('Brak lokalnej konfiguracji deploy/office.compose.yml', result.stderr)
         self.assertFalse((self.root / '.env.office').exists())

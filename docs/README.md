@@ -25,10 +25,10 @@ w `static/`. Główne instrukcje startu i mapa repozytorium są w
 6. [Pełne edytory Dokumentów](OFFICE.md) — ONLYOFFICE, tablica, zapis i uruchomienie.
 7. [Indeks kodu](CODE_INDEX.md) — generowany katalog modeli, relacji,
    formularzy, tras URL, szablonów, zasobów i testów.
-8. [Produkcja Docker Compose](PRODUCTION.md) — konfigurator terminalowy,
-   wspólne polecenie `ancore.sh`, lokalne budowanie i obsługa usług, HTTP bez
-   domeny na 8080, opcjonalne HTTPS, wolumeny oraz pełny backup i samodzielny
-   `restore.sh` z wyborem jednej z 10 kopii.
+8. [Instalacja na serwerze](PRODUCTION.md) — konfiguracja IP i portu HTTP,
+   uruchomienie czterech kontenerów (`web`, `backend`, `postgres`, `onlyoffice`)
+   i utworzenie administratora; lokalne budowanie i trwałe wolumeny,
+   bez backupu i konfiguracji HTTPS.
 
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.

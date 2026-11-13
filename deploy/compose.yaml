@@ -10,13 +10,7 @@ services:
     build: {context: .., dockerfile: deploy/Dockerfile, target: web}
     restart: unless-stopped
     ports:
-      - '${ANCORE_BIND:-0.0.0.0}:${ANCORE_HTTP_PORT:-8080}:80'
-    environment:
-      ANCORE_TLS_MODE: ${ANCORE_TLS_MODE:-http}
-      ANCORE_PUBLIC_URL: ${ANCORE_PUBLIC_URL:-}
-      ANCORE_HOST: ${ANCORE_HOST:-_}
-      ANCORE_AUTHORITY: ${ANCORE_AUTHORITY:-localhost}
-      ANCORE_SCHEME: ${ANCORE_SCHEME:-http}
+      - '0.0.0.0:${ANCORE_HTTP_PORT:?Podaj port HTTP}:80'
     volumes:
       - static:/srv/static:ro
       - media:/srv/media:ro
@@ -39,14 +33,14 @@ services:
     environment:
       DEBUG: 'false'
       SECRET_KEY: ${SECRET_KEY:?Wygeneruj sekret Django}
-      ALLOWED_HOSTS: ${ANCORE_ALLOWED_HOSTS:-${ANCORE_HOST:-*},localhost}
-      ALLOW_IP_HOSTS: ${ANCORE_ALLOW_IP_HOSTS:-false}
-      CSRF_TRUSTED_ORIGINS: ${ANCORE_PUBLIC_URL:-}
+      ALLOWED_HOSTS: ${ANCORE_HOST:?Podaj adres IP serwera},localhost
+      ALLOW_IP_HOSTS: 'false'
+      CSRF_TRUSTED_ORIGINS: ${ANCORE_PUBLIC_URL:?Podaj adres HTTP aplikacji}
       TRUST_PROXY_HEADERS: 'true'
-      SECURE_SSL_REDIRECT: ${ANCORE_HTTPS:-false}
-      SESSION_COOKIE_SECURE: ${ANCORE_HTTPS:-false}
-      CSRF_COOKIE_SECURE: ${ANCORE_HTTPS:-false}
-      SECURE_HSTS_SECONDS: ${ANCORE_HSTS_SECONDS:-0}
+      SECURE_SSL_REDIRECT: 'false'
+      SESSION_COOKIE_SECURE: 'false'
+      CSRF_COOKIE_SECURE: 'false'
+      SECURE_HSTS_SECONDS: '0'
       DB_HOST: postgres
       DB_PORT: '5432'
       DB_NAME: ancore
@@ -55,7 +49,6 @@ services:
       MEDIA_ROOT: /data/media
       PRIVATE_DOCUMENT_ROOT: /data/private
       STATIC_ROOT: /app/staticfiles
-      BACKUP_CONTROL_ROOT: /data/control
       FILE_UPLOAD_TEMP_DIR: /data/tmp
       ONLYOFFICE_URL: /onlyoffice
       ONLYOFFICE_INTERNAL_URL: http://onlyoffice
@@ -66,13 +59,12 @@ services:
     volumes:
       - private:/data/private
       - media:/data/media
-      - control:/data/control
       - temporary:/data/tmp
       - static:/app/staticfiles
     depends_on:
       postgres: {condition: service_healthy}
     healthcheck:
-      test: [CMD, python, -c, 'import os,urllib.request; r=urllib.request.Request("http://127.0.0.1:8000/health/ready/",headers={"Host": "localhost", "X-Forwarded-Proto": "https"}); urllib.request.urlopen(r,timeout=5).read()']
+      test: [CMD, python, -c, 'import urllib.request; r=urllib.request.Request("http://127.0.0.1:8000/health/ready/",headers={"Host": "localhost"}); urllib.request.urlopen(r,timeout=5).read()']
       start_period: 180s
       interval: 30s
       timeout: 10s
@@ -95,38 +87,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
-    logging: *logging
-
-  backup:
-    image: ${ANCORE_PROJECT:-ancore-prod}-backup:${ANCORE_RELEASE:-local}
-    build: {context: .., dockerfile: deploy/Dockerfile, target: backup}
-    restart: unless-stopped
-    init: true
-    environment:
-      PGHOST: postgres
-      PGPORT: '5432'
-      PGDATABASE: ancore
-      PGUSER: ancore
-      PGPASSWORD: ${POSTGRES_PASSWORD:?Wygeneruj hasło bazy}
-      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
-      BACKUP_KEEP: ${BACKUP_KEEP:-10}
-      BACKUP_TLS_MODE: ${ANCORE_TLS_MODE:-http}
-      ANCORE_CONFIG_FINGERPRINT: ${ANCORE_CONFIG_FINGERPRINT:-}
-      ANCORE_RELEASE: ${ANCORE_RELEASE:-local}
-    volumes:
-      - private:/source/private:ro
-      - media:/source/media:ro
-      - control:/control
-      - ${ANCORE_ENV_FILE:-./.env}:/source/production.env:ro
-      - ${ANCORE_BACKUP_DIR:?Wskaż katalog backupów}:/backups
-    depends_on:
-      backend: {condition: service_healthy}
-    healthcheck:
-      test: [CMD, python3, /opt/ancore/backup.py, health]
-      start_period: 30s
-      interval: 60s
-      timeout: 5s
-      retries: 3
     logging: *logging
 
   onlyoffice:
@@ -163,7 +123,6 @@ volumes:
   private:
   media:
   temporary:
-  control:
   static:
   office_data:
   office_cache:

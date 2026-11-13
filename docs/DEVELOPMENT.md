@@ -1,5 +1,41 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Prosta instalacja HTTP (13.11.2026)
+
+`./ancore-install.sh` pyta o IPv4, następnie port HTTP i automatycznie buduje oraz
+uruchamia cztery usługi: `web`, `backend`, `postgres`, `onlyoffice`.
+Po migracjach i uzyskaniu gotowości tworzy administratora Django przez
+standardowe pytania o dane konta i hasło; pomija ten etap, jeśli aktywny
+administrator z ustawionym hasłem już istnieje. Hasło nie trafia do pliku
+konfiguracji ani argumentów polecenia. `start`, `restart` i `update` nie pytają
+o konto, a `admin` pozwala utworzyć dodatkowego administratora.
+Usunięto konfigurację HTTPS, backup, odtwarzanie i middleware blokad backupu.
+Ponowna instalacja zachowuje sekrety, projekt Compose i wolumeny, także
+istniejące mapowanie starszych odzyskanych instalacji. Aktualna instrukcja:
+[Instalacja na serwerze](PRODUCTION.md).
+
+Po dodaniu administratora przeszło **37 testów**: 20 instalatora z kontrolowanym
+Docker CLI, 11 konfiguracji/układu repozytorium oraz 6 polecenia `ensure_admin`
+na osobnej bazie PostgreSQL przez `scripts/run_tests.py`. Sprawdzono kolejność
+start → tworzenie konta → sukces, błędy i przerwanie tworzenia, brak TTY,
+zachowanie istniejącego administratora oraz rzeczywisty zapis hasha i logowanie
+przez backend uwierzytelnienia. Baza testowa została usunięta po przebiegu.
+
+Przed dodaniem etapu tworzenia administratora przeszło **29 testów**
+`core.test_production_installer`, `core.test_production`
+i `core.test_project_layout` (dwie poprawione asercje sprawdzono ponownie).
+Testy instalatora używają kontrolowanego Docker CLI i rzeczywistych pytań oraz
+zapisu konfiguracji w katalogach tymczasowych. Obejmują walidację, EOF,
+zachowanie sekretów, stare ustawienia, zajęty port, błędy budowania/startu
+i zachowanie wolumenów. Rzeczywisty `docker-compose config --format json`
+potwierdził cztery usługi, pojedynczy port HTTP, prywatne usługi wewnętrzne,
+zgodność JWT/CSRF i brak backupu. Przeszły `manage.py check`, składnia skryptów
+powłoki, kontrola indeksu kodu, lokalnych linków dokumentacji i `git diff --check`.
+
+Nie zbudowano ani nie uruchomiono pełnego zestawu kontenerów: sockety obu
+dostępnych lokalnych kontekstów Docker były niedostępne. Nie sprawdzano więc
+przez HTTP logowania, uploadów ani zapisu w działającym ONLYOFFICE.
+
 ## Przekrojowy przegląd UI i dostępności (05.11.2026)
 
 Przegląd z użyciem `ui-ux-pro-max` objął wspólne formularze, okna,
@@ -2944,6 +2980,10 @@ Nie sprawdzano Safari/Firefox ani pełnego zestawu repozytorium.
 
 ## Pełny backup i samodzielne odzyskiwanie (22.10.2026)
 
+Opis historyczny. Instalator został zastąpiony 13.11.2026 wersją HTTP
+z czterema kontenerami i bez backupu/odtwarzania. Bieżące polecenia:
+[Instalacja na serwerze](PRODUCTION.md).
+
 Backup ma domyślny interwał 24 godzin i retencję 10 kopii. Format 2 dodaje
 do bazy i zapisanych plików pakiet źródeł, konfigurację produkcji i certyfikaty
 HTTPS Nginx Ancore. Snapshot kodu powstaje podczas budowania obrazu backupu;
@@ -2957,7 +2997,7 @@ po wyborze sprawdza archiwum i zrzut, buduje zapisany kod, odtwarza bazę i plik
 na nowych wolumenach oraz czeka na healthchecki. Poprzednie wolumeny zachowuje.
 Nie wywołuje instalatora ani jego helperów. Odtworzona instalacja ma osobny
 katalog i `deploy/compose.recovery.yaml`, uwzględniany przez jej polecenia
-utrzymania. [Procedura, zakres kopii i wymagania](PRODUCTION.md#backup-i-odtwarzanie).
+utrzymania. Obecny instalator nie zawiera już tego mechanizmu.
 
 Przeszło **50/50 testów** `core.test_backup_recovery`,
 `core.test_production_installer`, `core.test_production` i `core.test_project_layout`.
@@ -2977,7 +3017,7 @@ Docker Linux, bez bazy ani uploadów użytkownika:
   obrazy, odtworzył bazę i pliki oraz uruchomił pięć zdrowych usług z ONLYOFFICE;
 - porównano odzyskany rekord i treść plików ze stanem sprzed zmian; stary wolumen
   nadal zawierał późniejszą treść, co potwierdziło jego zachowanie;
-- polecenie `ancore.sh status` odtworzonej instalacji wskazało właściwe usługi;
+- polecenie `ancore-install.sh status` odtworzonej instalacji wskazało właściwe usługi;
   uszkodzona kopia została odrzucona bez zatrzymania odzyskanej aplikacji;
 - wykonano 11 kolejnych rzeczywistych kopii i potwierdzono dokładnie 10 archiwów
   oraz 10 odpowiadających plików SHA-256.
@@ -2994,7 +3034,7 @@ modeli ani migracji.
 
 [Mapa plików i zasady organizacji](REPOSITORY.md) opisują podział usług
 w `deploy/`, narzędzi w `scripts/` oraz źródeł, wyników budowania i danych
-lokalnych. Publiczne polecenia instalacji korzystają wyłącznie z `ancore.sh`;
+lokalnych. Publiczne polecenia instalacji korzystają wyłącznie z `ancore-install.sh`;
 na polecenie użytkownika usunięto główne skróty `install.sh` i `setup.sh`.
 Lokalny start ONLYOFFICE zachowuje swój skrót zgodności.
 Nieużywane archiwum starego środowiska
@@ -3023,7 +3063,11 @@ ani pełnej regresji aplikacji. Porządkowanie nie zmienia kodu interfejsu.
 
 ## Uporządkowanie instalacji produkcyjnej (21.10.2026)
 
-Wspólnym publicznym wejściem jest `ancore.sh`: `setup`, `configure`, `install`,
+Opis historyczny. Instalator został zastąpiony 13.11.2026 wersją HTTP
+z czterema kontenerami i bez backupu/odtwarzania. Bieżące polecenia:
+[Instalacja na serwerze](PRODUCTION.md).
+
+Wspólnym publicznym wejściem jest `ancore-install.sh`: `setup`, `configure`, `install`,
 `update`, `start`, `stop`, `restart`, `status`, `logs`, `backup`, `restore`,
 `unlock`, `reload`, `admin` i `doctor`. `configure` zapisuje ustawienia bez startu; `update` wymaga
 istniejącej konfiguracji. Obsługiwane są globalne `--env-file` i `--context`
@@ -3076,12 +3120,16 @@ interfejsu przeglądarkowego. Instrukcja użytkowa:
 
 ## Produkcja Docker Compose (20.10.2026)
 
+Opis historyczny. Instalator został zastąpiony 13.11.2026 wersją HTTP
+z czterema kontenerami i bez backupu/odtwarzania. Bieżące polecenia:
+[Instalacja na serwerze](PRODUCTION.md).
+
 Zapis historyczny pierwszego pakietu. Aktualne polecenia i układ plików opisano
 powyżej oraz w [instrukcji produkcji](PRODUCTION.md).
 
 Dodano [pakiet produkcyjny](PRODUCTION.md) z pięcioma usługami: Nginx,
 Django/Gunicorn, PostgreSQL 17, harmonogram backupów oraz ONLYOFFICE 10.0.0.1.
-Instalator `sh ancore.sh install` potrzebuje na hoście wyłącznie Dockera z Compose:
+Instalator `sh ancore-install.sh install` potrzebuje na hoście wyłącznie Dockera z Compose:
 konfigurator Pythona działa w tymczasowym kontenerze i automatycznie tworzy
 `deploy/.env` (0600) z losowymi sekretami. Domyślnie Ancore działa przez HTTP,
 bez domeny, na `0.0.0.0:8080`; `ALLOW_IP_HOSTS` sprawdza adresy IP i localhost.
@@ -3132,7 +3180,7 @@ korzystania z bazy ani uploadów lokalnej aplikacji:
 Dodatkowa weryfikacja domyślnego HTTP i instalatora Docker-only na osobnym
 projekcie `ancore-http-qa`:
 
-- instalację (obecnie `sh ancore.sh install`) uruchomiono z linuksowego środowiska Docker CLI bez Pythona
+- instalację (obecnie `sh ancore-install.sh install`) uruchomiono z linuksowego środowiska Docker CLI bez Pythona
   na hoście; wygenerował prywatny `deploy/.env` i pięć zdrowych usług na 8080;
 - sprawdzono HTTP przez IP i localhost, poprawny nagłówek IP Host, odmowę dla
   obcej nazwy DNS oraz publiczny skrypt ONLYOFFICE pod względnym prefiksem;
@@ -3342,7 +3390,7 @@ jak wcześniej. W zwykłym skrypcie Pythona ustaw `PYTHONPATH` na katalog `backe
 
 Szablony, migracje i testy pozostają wewnątrz swoich aplikacji, React w
 `frontend/`, wspólne zasoby w `static/`, a konfiguracja usług w `deploy/`.
-Podział wdrożenia na `cli/`, `backend/`, `web/`, `postgres/` i `backup/`,
+Podział wdrożenia na `cli/`, `backend/`, `web/` i `postgres/`,
 narzędzia w `scripts/assets/` i `scripts/office/` oraz zasady przechowywania
 plików opisuje [Organizacja repozytorium](REPOSITORY.md).
 Nieużywaną kopię poprzedniego środowiska Python usunięto na polecenie
@@ -4637,7 +4685,6 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 | `SECURE_REFERRER_POLICY` | Domyślnie same-origin |
 | `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT` | Opcjonalne ścieżki trwałych danych i zasobów; domyślnie katalogi repozytorium |
 | `FILE_UPLOAD_TEMP_DIR` | Opcjonalny katalog uploadów tymczasowych |
-| `BACKUP_CONTROL_ROOT` | Katalog blokad i znacznika przerwy backupu; pusty wyłącza mechanizm w developmencie |
 | `TRUST_PROXY_HEADERS` | Zaufanie do `X-Forwarded-Proto` wyłącznie za kontrolowanym proxy |
 | `MAX_PROFILE_PHOTO_SIZE` | Limit zdjęcia, domyślnie 5 MiB |
 | `MAX_ATTACHMENT_SIZE` | Limit załącznika, domyślnie 10 MiB |
@@ -4698,7 +4745,7 @@ schematu. Procedura i zakres resetu: [Baza danych](DATABASE.md).
 Pełne edytory Dokumentów wymagają dodatkowej konfiguracji opisanej w
 [OFFICE.md](OFFICE.md): lokalnego ONLYOFFICE oraz zbudowania zasobów tablicy.
 Starszy `./scripts/start_office.sh` wymaga lokalnego `deploy/office.compose.yml`,
-którego nie ma w repozytorium. Kompletny zestaw uruchamia `./ancore.sh setup`.
+którego nie ma w repozytorium. Kompletny zestaw uruchamia `./ancore-install.sh setup`.
 Przy ręcznym wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
@@ -5018,10 +5065,12 @@ lub workerów na podstawie samej konfiguracji modeli.
 
 ## 8. Wdrożenie
 
-Gotowy wariant jednego serwera z pięcioma usługami, instalatorem, trwałymi
-wolumenami i backupem opisuje [Produkcja Docker Compose](PRODUCTION.md).
-`deploy/compose.yaml` rozdziela Nginx, Django/Gunicorn, PostgreSQL, backup
-i ONLYOFFICE. Dane na dysku i archiwa nie są szyfrowane. Poniżej pozostają
+Gotowy wariant jednego serwera z czterema usługami i trwałymi wolumenami
+opisuje [Instalacja na serwerze](PRODUCTION.md). `./ancore-install.sh` pyta
+o IP i port HTTP, następnie buduje oraz uruchamia `web`, `backend`, `postgres`
+i `onlyoffice`. Po sprawdzeniu gotowości prosi o dane pierwszego administratora
+Django; pomija ten krok, jeśli aktywny administrator z ustawionym hasłem już
+istnieje. Nie ma backupu ani konfiguracji HTTPS. Poniżej pozostają
 zasady ścieżek dla wdrożeń ręcznych.
 
 Po przeniesieniu źródeł dodaj katalog `backend/` do ścieżki importów procesu
@@ -5038,8 +5087,8 @@ Alternatywnie użyj opcji serwera wskazującej katalog importów. Nie importuj
 repozytorium, więc nie trzeba przenosić `.env`, mediów, prywatnych dokumentów,
 zasobów ani plików zbieranych przez `collectstatic`.
 
-Projekt ma wejścia WSGI i ASGI. Pakiet Compose używa Gunicorna; rzeczywistą
-domenę, certyfikaty i katalog kopii ustala administrator przy instalacji.
+Projekt ma wejścia WSGI i ASGI. Pakiet Compose używa Gunicorna oraz Nginx
+przyjmującego HTTP na porcie wybranym podczas instalacji.
 Domyślnie `STATIC_ROOT` wskazuje `BASE_DIR / 'staticfiles'` (katalog ignorowany
 przez Git). `manage.py collectstatic --noinput` zbiera tam zasoby do serwowania
 przez serwer produkcyjny; `--dry-run` pozwala sprawdzić zbieranie bez zapisu.

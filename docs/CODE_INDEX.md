@@ -18,8 +18,8 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 41 | 0 | 27 | 263 |
-| [backend/accounts](../backend/accounts) | 26 | 4 | 10 | 100 |
+| [backend/core](../backend/core) | 39 | 0 | 27 | 241 |
+| [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 106 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
@@ -880,7 +880,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/health.py](../backend/core/health.py) — `readiness`
 - [backend/core/hosts.py](../backend/core/hosts.py) — `ServerAddressMiddleware`
 - [backend/core/list_window.py](../backend/core/list_window.py) — `WindowPage`, `window_page`, `window_url`, `window_payload`
-- [backend/core/maintenance.py](../backend/core/maintenance.py) — `BackupMaintenanceMiddleware`
 - [backend/core/media.py](../backend/core/media.py) — `public_media`
 - [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `page_styles`, `navigation_response`
 - [backend/core/task_files.py](../backend/core/task_files.py) — `delete_after_commit`
@@ -903,6 +902,9 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/accounts/context_processors.py](../backend/accounts/context_processors.py) — `current_account_avatar`
 - [backend/accounts/forms.py](../backend/accounts/forms.py) — `UserRegistrationForm`, `UserBannerForm`, `UserProfileForm`
 - [backend/accounts/frontend.py](../backend/accounts/frontend.py) — `login_page`, `register_page`, `register_workspace_page`, `select_workspace_page`, `profile_page`
+- [backend/accounts/management/__init__.py](../backend/accounts/management/__init__.py)
+- [backend/accounts/management/commands/__init__.py](../backend/accounts/management/commands/__init__.py)
+- [backend/accounts/management/commands/ensure_admin.py](../backend/accounts/management/commands/ensure_admin.py) — `Command`
 - [backend/accounts/middleware.py](../backend/accounts/middleware.py) — `SingleAccountSessionMiddleware`, `UserPresenceMiddleware`
 - [backend/accounts/models.py](../backend/accounts/models.py) — `User`, `normalize_public_username`, `default_public_username`, `unique_public_username`
 - [backend/accounts/presence.py](../backend/accounts/presence.py) — `idle_seconds`, `heartbeat_seconds`, `write_throttle_seconds`, `mark_user_seen`, `mark_user_inactive`, `sync_stale_presence_statuses`
@@ -1665,13 +1667,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 
 Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
-### backend/core/test_backup_recovery.py
-
-Źródło: [backend/core/test_backup_recovery.py](../backend/core/test_backup_recovery.py).
-
-- `StandaloneRecoveryTests`: 7 metod testowych.
-- `BackupArchiveTests`: 5 metod testowych.
-
 ### backend/core/test_comment_images.py
 
 Źródło: [backend/core/test_comment_images.py](../backend/core/test_comment_images.py).
@@ -1732,15 +1727,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_production.py](../backend/core/test_production.py).
 
-- `BackupMaintenanceTests`: 5 metod testowych.
-- `ProductionConfigurationTests`: 7 metod testowych.
+- `ProductionConfigurationTests`: 3 metod testowych.
 - `ServerAddressTests`: 2 metod testowych.
 
 ### backend/core/test_production_installer.py
 
 Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
 
-- `ProductionInstallerTests`: 21 metod testowych.
+- `ProductionInstallerTests`: 20 metod testowych.
 
 ### backend/core/test_project_layout.py
 
@@ -1818,6 +1812,12 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/accounts/test_email_identity.py](../backend/accounts/test_email_identity.py).
 
 - `EmailIdentityTests`: 9 metod testowych.
+
+### backend/accounts/test_ensure_admin.py
+
+Źródło: [backend/accounts/test_ensure_admin.py](../backend/accounts/test_ensure_admin.py).
+
+- `EnsureAdminTests`: 6 metod testowych.
 
 ### backend/accounts/test_frontend.py
 
@@ -2546,7 +2546,6 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [scripts/assets/flaticon-icon-map.json](../scripts/assets/flaticon-icon-map.json)
 - [scripts/office/configure.py](../scripts/office/configure.py)
 - [scripts/office/start.sh](../scripts/office/start.sh)
-- [scripts/production.py](../scripts/production.py)
 - [scripts/run_tests.py](../scripts/run_tests.py)
 - [scripts/start_office.sh](../scripts/start_office.sh)
 - [scripts/update_code_index.py](../scripts/update_code_index.py)
@@ -2557,14 +2556,8 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [deploy/backend/entrypoint.sh](../deploy/backend/entrypoint.sh)
 - [deploy/backend/gunicorn.conf.py](../deploy/backend/gunicorn.conf.py)
 - [deploy/backend/requirements.txt](../deploy/backend/requirements.txt)
-- [deploy/backup/backup.py](../deploy/backup/backup.py)
 - [deploy/cli/configure.py](../deploy/cli/configure.py)
 - [deploy/cli/runtime.sh](../deploy/cli/runtime.sh)
-- [deploy/cli/setup.sh](../deploy/cli/setup.sh)
-- [deploy/compose.restore.yaml](../deploy/compose.restore.yaml)
-- [deploy/compose.tls.yaml](../deploy/compose.tls.yaml)
 - [deploy/compose.yaml](../deploy/compose.yaml)
 - [deploy/postgres/init.sh](../deploy/postgres/init.sh)
 - [deploy/production.env.example](../deploy/production.env.example)
-- [deploy/web/entrypoint.sh](../deploy/web/entrypoint.sh)
-- [deploy/web/nginx.conf.template](../deploy/web/nginx.conf.template)

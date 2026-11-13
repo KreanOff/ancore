@@ -113,7 +113,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'core.maintenance.BackupMaintenanceMiddleware',
     'core.hosts.ServerAddressMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -219,7 +218,6 @@ STATIC_ROOT = Path(os.getenv('STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 PRIVATE_DOCUMENT_ROOT = Path(os.getenv('PRIVATE_DOCUMENT_ROOT', str(BASE_DIR / 'private_documents')))
-BACKUP_CONTROL_ROOT = os.getenv('BACKUP_CONTROL_ROOT', '')
 if os.getenv('FILE_UPLOAD_TEMP_DIR'):
     FILE_UPLOAD_TEMP_DIR = os.environ['FILE_UPLOAD_TEMP_DIR']
 MAX_PROFILE_PHOTO_SIZE = env_int('MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)

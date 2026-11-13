@@ -1,145 +1,230 @@
-# Ancore
+<p align="center">
+  <img src="static/img/logo.png" alt="Logo Ancore" width="112" height="112">
+</p>
 
-Nowe migracje początkowe wymagają pustej bazy PostgreSQL.
-[Zakres resetu i uruchomienie](docs/DATABASE.md).
+<h1 align="center">Ancore</h1>
 
-Aplikacja do pracy zespołowej: Workspace, Przestrzenie i zadania, kalendarz,
-pulpity, zasoby oraz Dysk i Dokumenty. Backend korzysta z Django i PostgreSQL,
-a interfejs z Reacta i TypeScriptu.
+<p align="center">
+  <strong>Zadania, dokumenty i codzienna praca zespołu.</strong><br>
+  Aplikacja z polskim interfejsem, uruchamiana na własnym serwerze.
+</p>
 
-## Instalacja na serwerze (Docker)
+<p align="center">
+  Django · React · TypeScript · PostgreSQL · ONLYOFFICE
+</p>
 
-Instalacja produkcyjna z konfiguracją w terminalu, pięcioma usługami Docker
-Compose, lokalnymi wolumenami i backupami: [Produkcja](docs/PRODUCTION.md).
-Po zainstalowaniu Dockera z Compose pobierz lub skopiuj projekt na serwer:
+<p align="center">
+  <a href="#instalacja-na-serwerze">Instalacja</a> ·
+  <a href="#codzienna-obsługa">Polecenia</a> ·
+  <a href="#rozwój-lokalny">Dla developerów</a> ·
+  <a href="docs/README.md">Dokumentacja</a>
+</p>
+
+---
+
+## Praca zespołu w jednym miejscu
+
+Ancore łączy organizację pracy w Workspace z Przestrzeniami, zadaniami,
+kalendarzem i dokumentami. Dostęp do wspólnych danych wynika z członkostwa
+oraz uprawnień użytkownika.
+
+| Obszar | Możliwości |
+| --- | --- |
+| **Workspace i zespoły** | Wspólna przestrzeń pracy, członkowie i role dostępu. |
+| **Przestrzenie i zadania** | Zadania, podzadania, sprinty, backlog, tablica i rejestrowanie czasu pracy. |
+| **Pulpity i filtry** | Konfigurowalne pulpity, gadżety i zapisane filtry zadań. |
+| **Kalendarz** | Wydarzenia i terminy zadań. |
+| **Dysk i Dokumenty** | Pliki, foldery, dokumenty biurowe w ONLYOFFICE i tablice Excalidraw. |
+| **Zasoby** | Ewidencja sprzętu, licencji i narzędzi, przekazania, zwroty i historia. |
+
+[Poznaj moduły aplikacji →](docs/MODULES.md)
+
+## Instalacja na serwerze
+
+**IP → port HTTP → przygotowanie aplikacji → administrator Django.**
+
+Potrzebujesz serwera Linux z **Docker Engine i Docker Compose**, źródeł projektu
+oraz internetu do pobrania obrazów i zależności. Użytkownik uruchamiający skrypt
+musi mieć dostęp do Dockera i możliwość zapisu w katalogu projektu.
+Instalator korzysta z lokalnego Dockera i wymaga obsługi `up --wait --wait-timeout`.
+Python, Node i baza danych działają w kontenerach.
+
+W terminalu serwera przejdź do katalogu Ancore:
 
 ```sh
 cd ancore
-./ancore.sh setup
+sh ancore-install.sh
 ```
 
-Konfigurator pyta o IP/domenę, port, HTTP/HTTPS, dostęp z sieci i katalog
-backupów. Generuje `deploy/.env` z losowymi sekretami i proponuje lokalne
-budowanie oraz uruchomienie. Domyślny adres to `http://IP_SERWERA:8080`;
-nasłuch `0.0.0.0` pozwala na połączenia z innych urządzeń, jeśli przepuszcza je
-sieć i zapora. Python, Node, Nginx i PostgreSQL działają w kontenerach.
-Pierwszy build pobiera obrazy bazowe i zależności z internetu; aplikacja, baza,
-pliki, ONLYOFFICE i nieszyfrowane backupy pozostają na tym serwerze.
-Do instalacji bez pytań służy `./ancore.sh install`, a do zapisania samych
-ustawień `./ancore.sh configure`.
+Możesz także uruchomić `./ancore-install.sh`. Polecenia `install` i `setup`
+uruchamiają ten sam proces.
+
+1. **Podaj IPv4 serwera**, np. `192.168.1.20`, bez protokołu i portu.
+2. **Podaj port HTTP** — Enter wybiera `8080`.
+3. **Poczekaj na przygotowanie aplikacji.** Instalator wygeneruje sekrety,
+   zbuduje obrazy i oba frontendy, wykona migracje oraz sprawdzi gotowość usług.
+4. **Utwórz administratora Django.** Podaj e-mail, nazwę użytkownika, imię,
+   nazwisko i dwukrotnie hasło. Podczas wpisywania hasła znaki są ukryte.
+5. **Otwórz pokazany adres i zaloguj się utworzonym kontem.** Dla powyższego
+   przykładu będzie to `http://192.168.1.20:8080`.
+
+Jeśli aktywny administrator z ustawionym hasłem już istnieje, instalator
+zachowa jego konto i pominie pytania o dane logowania. Po przerwaniu tworzenia
+konta możesz dokończyć ten etap przez `sh ancore-install.sh admin`.
+
+Instalator nie instaluje Dockera ani nie zmienia zapory. Wybrany port musi być
+dostępny z urządzeń, na których otwierasz aplikację.
+
+[Pełna instrukcja instalacji →](docs/PRODUCTION.md)
+
+### Cztery kontenery, jeden publiczny port
+
+| Kontener | Odpowiedzialność | Dostęp |
+| --- | --- | --- |
+| `web` | Nginx, zasoby statyczne i proxy aplikacji oraz edytora | Wybrany port HTTP |
+| `backend` | Django, Gunicorn, API i kontrolowane pobieranie plików | Wewnętrzna sieć Docker |
+| `postgres` | Baza danych PostgreSQL | Wewnętrzna sieć Docker |
+| `onlyoffice` | Edytor dokumentów biurowych | Przez `web`, pod `/onlyoffice/` |
+
+**Instalacja działa przez HTTP, bez HTTPS i bez systemu backupu.** Baza oraz
+pliki są przechowywane w trwałych wolumenach Docker.
+
+## Codzienna obsługa
+
+Wszystkie polecenia uruchamiaj w katalogu projektu:
+
+| Polecenie | Działanie |
+| --- | --- |
+| `sh ancore-install.sh` | Instalacja lub zmiana IP i portu |
+| `sh ancore-install.sh status` | Stan czterech usług |
+| `sh ancore-install.sh logs` | Logi wszystkich usług |
+| `sh ancore-install.sh logs backend` | Logi wybranej usługi; także `web`, `postgres` lub `onlyoffice` |
+| `sh ancore-install.sh stop` | Zatrzymanie kontenerów z zachowaniem danych |
+| `sh ancore-install.sh start` | Uruchomienie wcześniej zbudowanej aplikacji |
+| `sh ancore-install.sh restart` | Ponowny start usług |
+| `sh ancore-install.sh update` | Przebudowa i start z aktualnych źródeł |
+| `sh ancore-install.sh admin` | Utworzenie kolejnego administratora Django |
+| `sh ancore-install.sh --help` | Pomoc instalatora |
+
+Z podglądu logów wychodzisz przez **Ctrl+C**; usługi nadal działają.
+`start`, `restart` i `update` nie pytają o administratora.
+
+### Aktualizacja i dane
+
+Przed `update` pobierz lub skopiuj nowy kod do katalogu projektu. Polecenie
+przebudowuje lokalne źródła; nie pobiera zmian z Git.
+
+- **Konfiguracja:** `deploy/.env` zawiera losowe sekrety instalacji i ma uprawnienia
+  `0600`. Hasło administratora Django nie jest w nim zapisywane.
+- **Ponowna instalacja:** zachowuje sekrety, nazwę projektu Compose, konta
+  i wolumeny. Pozwala zmienić IP lub port.
+- **Dane:** `stop` nie usuwa bazy ani plików. `docker compose down --volumes`
+  usuwa wolumeny — nie używaj tego polecenia, jeśli chcesz zachować dane.
+
+## Rozwój lokalny
+
+Frontend głównej aplikacji znajduje się w `frontend/app`, a backend Django
+w `backend/`. Lokalny development korzysta z `.env` w katalogu głównym;
+konfiguracja serwerowa jest oddzielona w `deploy/.env`.
+
+<details>
+<summary><strong>Przygotowanie środowiska i uruchomienie aplikacji</strong></summary>
+
+Lokalna konfiguracja projektu wskazuje Python **3.15.0**, Django **6.1.2**,
+PostgreSQL **15+**, Node.js **22+** i pnpm **11**. Wersje kontenerów są określone
+osobno w [Dockerfile](deploy/Dockerfile). Zgodność i ograniczenia lokalnego
+Pythona opisuje [instrukcja developerska](docs/DEVELOPMENT.md#aktualizacja-do-pythona-315-17102026).
+
+Przygotuj własną bazę PostgreSQL. Jeśli nie masz `.env`, skopiuj
+[.env.example](.env.example) i uzupełnij parametry połączenia. Pierwsze
+uruchomienie nowego schematu wymaga pustej bazy; starsze schematy sprzed resetu
+nie są automatycznie migrowane. [Zasady bazy danych](docs/DATABASE.md).
 
 ```sh
-./ancore.sh start
-./ancore.sh status
-./ancore.sh logs
-./ancore.sh stop
+python3.15 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+
+pnpm --dir frontend/app install --frozen-lockfile
+pnpm --dir frontend/app build
+
+.venv/bin/python manage.py check
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
-Polecenie `start` uruchamia już zbudowaną aplikację bez pobierania obrazów.
-Aktualny kod przebudujesz przez `./ancore.sh update`; polecenie wymaga istniejącej
-konfiguracji i wykonuje backup działającej instalacji. Backup,
-przeładowanie Nginx i diagnostykę obsługuje to samo polecenie;
-listę operacji pokazuje `./ancore.sh --help`.
+Pełne edytory wymagają również buildu `frontend/board` i serwera ONLYOFFICE.
+Sposób konfiguracji opisuje [instrukcja Dokumentów](docs/OFFICE.md).
 
-Pełna kopia powstaje domyślnie co 24 godziny; zachowywanych jest 10 ostatnich kopii.
-Zawiera bazę, zapisane pliki, kod, konfigurację i certyfikaty HTTPS Ancore.
-Samodzielny skrypt odzyskiwania działa niezależnie od instalatora:
+`manage.py` ustawia ścieżkę do `backend/`. Dla bezpośrednio uruchamianych
+procesów WSGI/ASGI ustaw `PYTHONPATH` na ten katalog; wejścia pozostają
+`ancore.wsgi:application` i `ancore.asgi:application`.
 
-```sh
-./restore.sh
-```
+</details>
 
-Wybierz numer kopii z listy. Skrypt sprawdzi kopię, odbuduje zapisaną wersję,
-odtworzy dane na nowych wolumenach i zaczeka na gotowość aplikacji.
-Na nowym serwerze wystarczy Docker z Compose, plik `restore.sh` i katalog kopii:
-`sh restore.sh --backup-dir /srv/ancore-backups --target /srv/ancore-recovered`.
-Szczegóły i obsługa starszych archiwów: [Backup i odtwarzanie](docs/PRODUCTION.md#backup-i-odtwarzanie).
-
-## Struktura projektu
-
-```text
-backend/           konfiguracja Django i aplikacje domenowe z testami i szablonami
-frontend/app/      interfejs React i TypeScript
-frontend/board/    odizolowany edytor tablicy Excalidraw
-static/            wspólne style, skrypty, obrazy i lokalne biblioteki
-deploy/            produkcyjny Docker Compose: WWW, Django, PostgreSQL, backup, ONLYOFFICE
-ancore.sh          wspólne polecenia instalacji i utrzymania produkcji
-restore.sh         samodzielne odzyskiwanie wybranej wersji z listy 10 kopii
-scripts/           narzędzia do budowania i utrzymania projektu
-docs/              dokumentacja i generowany indeks kodu
-manage.py          główne wejście do poleceń Django
-requirements.txt   zależności Pythona
-.env.example       przykład lokalnej konfiguracji bez sekretów
-AGENTS.md          zasady pracy nad projektem
-```
-
-Dokładny podział katalogów oraz zasady dodawania plików:
-[Organizacja repozytorium](docs/REPOSITORY.md).
-`deploy/` grupuje pliki w `cli/`, `backend/`, `web/`, `postgres/` i `backup/`;
-`scripts/assets/` zawiera narzędzia ikon, a `scripts/office/` narzędzia ONLYOFFICE.
-
-`.venv/`, `node_modules/`, `.env`, `.env.office`, `media/`,
-`private_documents/`, `.cache/`, `.local/` oraz generowane bundle są lokalne
-i pomijane przez Git oraz kontekst budowania Dockera.
-Wspólne ustawienia VS Code ukrywają zależności, cache i pliki danych w Explorerze.
-Pliki nadal istnieją na dysku; reguły widoczności można zmienić w
-[ustawieniach edytora](.vscode/settings.json).
-
-## Uruchomienie lokalne
-
-Projekt jest skonfigurowany dla Pythona **3.15.0**. Pozostałe wymagania to Django 6.1.2,
-PostgreSQL 15+, Node.js 22+ i pnpm 11. Komendy wykonuj w katalogu głównym
-repozytorium. Przed utworzeniem środowiska sprawdź, czy `python3.15 --version`
-wskazuje wybraną wersję.
-Django 6.1 deklaruje oficjalne wsparcie dla Pythona 3.12–3.14; stan weryfikacji
-na 3.15 i ograniczenia opisuje [instrukcja developerska](docs/DEVELOPMENT.md#aktualizacja-do-pythona-315-17102026).
-
-1. Utwórz własną bazę PostgreSQL. Jeśli nie masz `.env`, skopiuj
-   [.env.example](.env.example) do `.env` i uzupełnij dane połączenia.
-2. Przygotuj zależności i zbuduj frontend:
-
-   ```sh
-   python3.15 -m venv .venv
-   .venv/bin/python -m pip install -r requirements.txt
-   pnpm --dir frontend/app install --frozen-lockfile
-   pnpm --dir frontend/app build
-   ```
-
-3. Sprawdź konfigurację, zastosuj migracje i uruchom aplikację:
-
-   ```sh
-   .venv/bin/python manage.py check
-   .venv/bin/python manage.py migrate
-   .venv/bin/python manage.py runserver 127.0.0.1:8000
-   ```
-
-Jeżeli `.venv` już istnieje, sprawdź `.venv/bin/python --version`.
-Zmianę interpretera opisuje [instrukcja developerska](docs/DEVELOPMENT.md#3-start-nowego-środowiska).
-Pełne edytory Dokumentów wymagają osobnego buildu tablicy i ONLYOFFICE;
-instrukcja znajduje się w [OFFICE.md](docs/OFFICE.md).
-
-## Sprawdzanie zmian
+<details>
+<summary><strong>Sprawdzanie zmian</strong></summary>
 
 ```sh
 .venv/bin/python manage.py check
-.venv/bin/python manage.py test
 .venv/bin/python scripts/update_code_index.py --check
+pnpm --dir frontend/app test
 pnpm --dir frontend/app build
 ```
 
-Testy Django wymagające bazy tworzą osobną bazę testową. Dobieraj zakres
-zgodnie z [instrukcją developerską](docs/DEVELOPMENT.md). Można wskazać moduł, np.
-`manage.py test spaces.test_navigation`.
+Testy backendu dobieraj do zmienianego modułu. Przykład z osobną bazą testową
+i tymczasowym storage:
 
-## Dokumentacja i wdrażanie
+```sh
+.venv/bin/python scripts/run_tests.py spaces.test_navigation
+```
 
-Zacznij od [mapy dokumentacji](docs/README.md),
-[architektury](docs/ARCHITECTURE.md) i [indeksu kodu](docs/CODE_INDEX.md).
-Zasady interfejsu opisują [UI](docs/UI.md) i [frontend React](docs/FRONTEND.md).
+Regresje instalatora i tworzenia administratora:
 
-`manage.py` dodaje `backend/` do ścieżki importów. Inne procesy Pythona,
-w tym serwer WSGI/ASGI, muszą otrzymać tę ścieżkę, np. przez
-`PYTHONPATH=/ścieżka/do/ancore/backend`. Nazwy wejść pozostają
-`ancore.wsgi:application` i `ancore.asgi:application`.
-Konfiguracja `.env`, zasoby i pliki użytkowników są rozwiązywane względem
-katalogu głównego repozytorium, niezależnie od katalogu roboczego procesu.
+```sh
+.venv/bin/python manage.py test core.test_production_installer core.test_production core.test_project_layout
+.venv/bin/python scripts/run_tests.py accounts.test_ensure_admin
+```
+
+Zakres sprawdzeń i wymagania środowiska: [Praca developerska](docs/DEVELOPMENT.md).
+
+</details>
+
+## Mapa projektu
+
+```text
+ancore/
+├── backend/           Django: konfiguracja, moduły, migracje i testy
+├── frontend/
+│   ├── app/           Główna aplikacja React / TypeScript
+│   └── board/         Edytor tablicy Excalidraw
+├── static/            Wspólne style, skrypty, logo i biblioteki
+├── deploy/            Obrazy, Compose, proxy i konfigurator instalacji
+├── scripts/           Narzędzia developerskie i utrzymanie dokumentacji
+├── docs/              Dokumentacja projektu
+├── ancore-install.sh  Instalacja i obsługa serwera
+├── manage.py          Polecenia Django
+└── requirements.txt   Zależności backendu
+```
+
+Konfiguracja z sekretami, pliki użytkowników, środowiska i wygenerowane bundle
+pozostają poza Git oraz kontekstem budowania Dockera.
+[Zasady organizacji repozytorium →](docs/REPOSITORY.md)
+
+## Dokumentacja
+
+| Chcesz… | Przejdź do |
+| --- | --- |
+| Uruchomić Ancore na serwerze | [Instalacja i obsługa](docs/PRODUCTION.md) |
+| Poznać funkcje aplikacji | [Moduły](docs/MODULES.md) |
+| Zrozumieć Workspace i uprawnienia | [Praca zespołowa](docs/TEAMWORK.md) |
+| Pracować z Przestrzeniami i zadaniami | [Przestrzenie](docs/SPACES.md) |
+| Skonfigurować edytory dokumentów | [ONLYOFFICE i tablice](docs/OFFICE.md) |
+| Rozwijać aplikację | [Architektura](docs/ARCHITECTURE.md) · [Frontend](docs/FRONTEND.md) · [Standard UI](docs/UI.md) |
+| Znaleźć właściwy plik lub mechanizm | [Mapa dokumentacji](docs/README.md) · [Indeks kodu](docs/CODE_INDEX.md) |
+
+---
+
+<p align="center">
+  <strong>Ancore</strong><br>
+  Praca zespołu na Twoim serwerze.
+</p>

@@ -97,7 +97,7 @@ Kod lokalnych narzędzi znajduje się w `scripts/office/`: `start.sh` uruchamia
 usługę, a `configure.py` tworzy `.env.office`. `scripts/start_office.sh`
 pozostaje skrótem zgodności do `scripts/office/start.sh`.
 
-Kompletną wersjonowaną instalację z ONLYOFFICE uruchamia `./ancore.sh setup`,
+Kompletną wersjonowaną instalację z ONLYOFFICE uruchamia `./ancore-install.sh setup`,
 według [instrukcji produkcji](PRODUCTION.md). Poniższy starszy wariant wymaga
 własnego `deploy/office.compose.yml`, którego nie ma w bieżącym repozytorium.
 Przy jego braku skrypt kończy pracę przed tworzeniem konfiguracji i startem Colimy.
@@ -196,9 +196,11 @@ dotyczą starszego skryptu `scripts/start_office.sh`.
 | `ONLYOFFICE_JWT_SECRET` | Wspólny losowy sekret, minimum 32 znaki, taki sam jak `JWT_SECRET` serwera |
 
 Starszy lokalny Compose jest konfiguracją dla jednego Maca. Produkcyjny
-`ancore.sh install` działa domyślnie przez HTTP i IP serwera na porcie 8080;
-HTTPS można włączyć opcjonalnie. Względny publiczny prefiks `/onlyoffice`
-działa pod adresem i protokołem użytym do otwarcia Ancore, także bez domeny.
+`ancore-install.sh install` pyta o IP serwera i port HTTP (domyślnie 8080), po czym
+uruchamia cztery kontenery i prosi o dane pierwszego administratora Django.
+Istniejące aktywne konto administratora z ustawionym hasłem jest zachowane.
+Względny publiczny prefiks `/onlyoffice`
+działa pod tym samym adresem HTTP i portem co Ancore.
 `ONLYOFFICE_INTERNAL_URL=http://onlyoffice` i `ONLYOFFICE_ANCORE_URL=http://web:8081`
 pozostają adresami wewnątrz sieci Docker; port callbacków nie jest publikowany.
 Nie używaj `127.0.0.1` jako adresu edytora dla klientów na innych komputerach.

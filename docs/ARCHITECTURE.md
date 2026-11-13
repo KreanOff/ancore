@@ -45,12 +45,11 @@ backend/                katalog źródeł Pythona, dodawany do ścieżki import�
   core/                 wspólna powłoka aplikacji, JSON API i walidacja uploadu
 frontend/board/         izolowany bundle Excalidraw/React i lockfile
 frontend/app/           frontend React/TypeScript aktywnych modułów
-deploy/                 produkcyjny Compose, obrazy, proxy, backup i ONLYOFFICE
+deploy/                 HTTP Compose, obrazy, proxy i ONLYOFFICE
   cli/                  wspólne operacje instalacji i konfigurator
   backend/              entrypoint Django, Gunicorn i zależności produkcji
-  web/                  entrypoint Nginx i szablon konfiguracji
+  web/                  stała konfiguracja HTTP Nginx
   postgres/             inicjalizacja roli aplikacji
-  backup/               archiwizacja, harmonogram i odtwarzanie
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
 static/js/              wspólne i modułowe skrypty przeglądarki
 static/frontend/        generowany bundle React z manifestem, poza Git
@@ -64,8 +63,7 @@ scripts/                narzędzia dokumentacji, utrzymania i lokalnego ONLYOFFI
   office/               konfiguracja i start lokalnego ONLYOFFICE
 .local/                 opcjonalne pliki lokalne, poza Git i buildem
 .cache/                 odtwarzalny cache narzędzi, poza Git i buildem
-ancore.sh               wspólne polecenia instalacji i utrzymania produkcji
-restore.sh              samodzielny wybór kopii i pełne odzyskiwanie aplikacji
+ancore-install.sh       wspólne polecenia instalacji i utrzymania produkcji
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
@@ -93,35 +91,27 @@ szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).
 `BASE_DIR` nadal oznacza katalog główny repozytorium, a `BACKEND_DIR` katalog
 źródeł Django. Domyślne lokalizacje `.env`, uploadów i zasobów pozostają takie same.
 Produkcja może wskazać `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT`
-i katalog uploadów tymczasowych przez środowisko. [Instalacja pięciu usług](PRODUCTION.md)
-rozdziela WWW, backend, PostgreSQL, backup i ONLYOFFICE; pliki mają trwałe lokalne
-wolumeny bez szyfrowania. Middleware `core.maintenance` synchronizuje żądania
-z backupem bazy i plików. `/health/ready/` sprawdza gotowość bazy bez ujawniania
-danych użytkowników. Healthchecki usług nie zastępują zewnętrznego monitoringu.
-`ancore.sh` jest wspólnym wejściem instalacji, konfiguracji i utrzymania.
-Budowanie obrazów i obu frontendów odbywa się na tym samym serwerze;
-obrazy bazowe i zależności są pobierane z internetu przy instalacji.
-`deploy/cli/runtime.sh` zawiera implementację operacji Compose i starszego odtwarzania danych,
-`deploy/cli/setup.sh` konfigurator terminalowy, a `deploy/cli/configure.py` walidację
-i zapis ustawień w kontenerze Pythona. `scripts/production.py` przekazuje starsze
-polecenia do tych samych implementacji. Domyślna instalacja używa HTTP na
-`0.0.0.0:8080`, bez stałej domeny. `core.hosts.ServerAddressMiddleware`
-przy `ALLOW_IP_HOSTS=true` ogranicza hosty do IP i localhost. Opcjonalne HTTPS
-z certyfikatem Nginx albo zewnętrznym proxy zachowuje sekrety i wolumeny przy
-`--reconfigure`. Publiczny prefiks ONLYOFFICE jest względny (`/onlyoffice`),
-więc edytor używa adresu wybranego przez przeglądarkę. Wyniki callbacków są
-pobierane ze stałego wewnętrznego serwera po walidacji ścieżki cache.
+i katalog uploadów tymczasowych przez środowisko. [Instalacja czterech usług](PRODUCTION.md)
+rozdziela `web`, `backend`, `postgres` i `onlyoffice`; pliki mają trwałe lokalne
+wolumeny. `/health/ready/` sprawdza gotowość bazy bez ujawniania danych użytkowników.
+Instalacja nie uruchamia backupu ani mechanizmu blokowania żądań na czas kopii.
 
-Backup domyślnie powstaje co 24 godziny z retencją 10 kopii. Format 2 dodaje
-do bazy i zapisanych plików snapshot źródeł z obrazu backupu, konfigurację
-produkcji i certyfikaty HTTPS Nginx Ancore. `restore.sh` jest niezależnym,
-samodzielnym skryptem: wyświetla 10 kopii, sprawdza wybraną, odbudowuje jej
-kod, odtwarza dane na nowych wolumenach i czeka na gotowość aplikacji.
-Nie uruchamia instalatora. Odtworzona instalacja działa z osobnego katalogu;
-`deploy/compose.recovery.yaml` utrwala nowe nazwy wolumenów także dla poleceń
-utrzymania. Stare wolumeny pozostają zachowane. Snapshot nie obejmuje
-niezapisanych edycji i cache ONLYOFFICE ani konfiguracji zewnętrznych usług hosta.
-Szczegóły i ograniczenia: [Backup i odtwarzanie](PRODUCTION.md#backup-i-odtwarzanie).
+`ancore-install.sh` jest wspólnym wejściem instalacji i utrzymania. Domyślne polecenie
+pyta o IP, następnie o port HTTP (domyślnie 8080), zapisuje konfigurację,
+buduje obrazy i uruchamia cztery usługi. Po migracjach i sprawdzeniu gotowości
+tworzy administratora Django przez standardowe pytania o dane konta i hasło.
+Jeśli aktywny administrator z ustawionym hasłem już istnieje, pomija ten krok.
+Hasło nie trafia do konfiguracji instalacji ani argumentów polecenia.
+Ponowne uruchomienie zachowuje sekrety, konta i wolumeny. Budowanie obrazów i obu
+frontendów odbywa się na tym samym serwerze; obrazy bazowe i zależności są
+pobierane z internetu przy instalacji.
+
+Nginx publikuje wybrany port na `0.0.0.0`. Backend, PostgreSQL i ONLYOFFICE
+pozostają w sieci Docker. Publiczny prefiks ONLYOFFICE jest względny
+(`/onlyoffice`), więc edytor używa adresu HTTP aplikacji. Podpisane pobrania
+oraz callbacki korzystają z wewnętrznego listenera `http://web:8081`.
+Wyniki callbacków są pobierane ze stałego wewnętrznego serwera po walidacji
+ścieżki cache. Szczegóły: [Instalacja](PRODUCTION.md).
 
 ## 3. Warstwy i odpowiedzialności
 
