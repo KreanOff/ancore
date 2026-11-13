@@ -50,6 +50,13 @@ def build(archive):
         transformed = TransformPen(pen, (scale, 0, 0, -scale, 0, font['hhea'].ascent * scale))
         glyphs[cmap[int(codepoints[name], 16)]].draw(transformed)
         icons[source] = pen.getCommands()
+        if source in {'sidebar', 'sidebar-flip'}:
+            # Keep the frame and panel divider, without the three menu marks.
+            # The pinned font has three layout contours followed by three marks.
+            contours = re.findall(r'M[^M]+', icons[source])
+            if len(contours) != 6 or any(not contour.endswith('Z') for contour in contours):
+                raise ValueError(f'Unexpected {source} contours in the pinned font.')
+            icons[source] = ''.join(contours[:3])
     output = ROOT / 'static/vendor/flaticon'
     output.mkdir(parents=True, exist_ok=True)
     data = {'aliases': aliases, 'icons': icons}

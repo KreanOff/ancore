@@ -3598,6 +3598,11 @@ Nazwy używane przez moduły pozostają stabilne; ich odpowiedniki Flaticon okre
 obejmuje również przekazany element główny i działa na `ancore:content-loaded`.
 Nieznane nazwy używają podanego fallbacku lub `circle`.
 
+Przełączniki paneli (`panel-left` i `panel-right`) pokazują prosty obrys okna
+z pionowym podziałem po odpowiedniej stronie, bez trzech kropek. Są to
+uproszczone glify `sidebar` i `sidebar-flip`, odtwarzane przez generator
+zestawu; React i pierwszy render Django korzystają z tych samych ikon.
+
 Kontury SVG dziedziczą `currentColor`, zachowując istniejącą geometrię kontrolek.
 Flaticon używa wypełnionych konturów, dlatego `.ancore-icon` wyłącza obrys `stroke`;
 nie stosuj do nich `stroke-width`. Checkboxy, strzałki selectów i wskaźniki statusu
