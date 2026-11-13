@@ -18,13 +18,13 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 41 | 0 | 27 | 257 |
+| [backend/core](../backend/core) | 41 | 0 | 27 | 263 |
 | [backend/accounts](../backend/accounts) | 26 | 4 | 10 | 100 |
 | [backend/workplaces](../backend/workplaces) | 32 | 5 | 15 | 155 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 43 | 316 |
-| [backend/planner](../backend/planner) | 12 | 1 | 1 | 17 |
-| [backend/documents](../backend/documents) | 41 | 3 | 30 | 217 |
+| [backend/planner](../backend/planner) | 12 | 2 | 1 | 40 |
+| [backend/documents](../backend/documents) | 41 | 3 | 30 | 215 |
 | [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
 | [backend/spaces](../backend/spaces) | 71 | 6 | 47 | 501 |
 
@@ -1444,6 +1444,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/accounts/types.ts](../frontend/app/src/accounts/types.ts)
 - [frontend/app/src/calendar/CalendarPage.tsx](../frontend/app/src/calendar/CalendarPage.tsx)
 - [frontend/app/src/calendar/EventEditor.tsx](../frontend/app/src/calendar/EventEditor.tsx)
+- [frontend/app/src/calendar/colors.ts](../frontend/app/src/calendar/colors.ts)
 - [frontend/app/src/calendar/dates.ts](../frontend/app/src/calendar/dates.ts)
 - [frontend/app/src/dashboard/ForYouPage.tsx](../frontend/app/src/dashboard/ForYouPage.tsx)
 - [frontend/app/src/dashboard/SettingsPage.tsx](../frontend/app/src/dashboard/SettingsPage.tsx)
@@ -1488,6 +1489,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/AccessEditor.tsx](../frontend/app/src/shared/AccessEditor.tsx)
 - [frontend/app/src/shared/Avatar.tsx](../frontend/app/src/shared/Avatar.tsx)
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
+- [frontend/app/src/shared/ColorControl.tsx](../frontend/app/src/shared/ColorControl.tsx)
 - [frontend/app/src/shared/DashboardCanvas.tsx](../frontend/app/src/shared/DashboardCanvas.tsx)
 - [frontend/app/src/shared/DirectoryColumns.tsx](../frontend/app/src/shared/DirectoryColumns.tsx)
 - [frontend/app/src/shared/DirectoryToolbar.tsx](../frontend/app/src/shared/DirectoryToolbar.tsx)
@@ -1596,12 +1598,16 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/workspaces/types.ts](../frontend/app/src/workspaces/types.ts)
 - [frontend/app/tests/banner-crop.test.mjs](../frontend/app/tests/banner-crop.test.mjs)
 - [frontend/app/tests/board-read-only.test.mjs](../frontend/app/tests/board-read-only.test.mjs)
+- [frontend/app/tests/calendar-colors.test.mjs](../frontend/app/tests/calendar-colors.test.mjs)
 - [frontend/app/tests/calendar-dates.test.mjs](../frontend/app/tests/calendar-dates.test.mjs)
 - [frontend/app/tests/calendar-save.test.mjs](../frontend/app/tests/calendar-save.test.mjs)
+- [frontend/app/tests/calendar-sidebar.test.mjs](../frontend/app/tests/calendar-sidebar.test.mjs)
 - [frontend/app/tests/confirmation.test.mjs](../frontend/app/tests/confirmation.test.mjs)
 - [frontend/app/tests/dashboard-canvas.test.mjs](../frontend/app/tests/dashboard-canvas.test.mjs)
 - [frontend/app/tests/directory-load-more.test.mjs](../frontend/app/tests/directory-load-more.test.mjs)
 - [frontend/app/tests/document-dialog-focus.test.mjs](../frontend/app/tests/document-dialog-focus.test.mjs)
+- [frontend/app/tests/documents-landing.test.mjs](../frontend/app/tests/documents-landing.test.mjs)
+- [frontend/app/tests/documents-sidebar.test.mjs](../frontend/app/tests/documents-sidebar.test.mjs)
 - [frontend/app/tests/dropdown-keyboard.test.mjs](../frontend/app/tests/dropdown-keyboard.test.mjs)
 - [frontend/app/tests/dropdown-layer.test.mjs](../frontend/app/tests/dropdown-layer.test.mjs)
 - [frontend/app/tests/field-control.test.mjs](../frontend/app/tests/field-control.test.mjs)
@@ -1637,6 +1643,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/task-workflow.test.mjs](../frontend/app/tests/task-workflow.test.mjs)
 - [frontend/app/tests/timeline-interactions.test.mjs](../frontend/app/tests/timeline-interactions.test.mjs)
 - [frontend/app/tests/timeline.test.mjs](../frontend/app/tests/timeline.test.mjs)
+- [frontend/app/tests/today-sidebar.test.mjs](../frontend/app/tests/today-sidebar.test.mjs)
 - [frontend/app/tests/workflow-board.test.mjs](../frontend/app/tests/workflow-board.test.mjs)
 - [frontend/app/tests/workflow-camera.test.mjs](../frontend/app/tests/workflow-camera.test.mjs)
 - [frontend/app/tests/workflow-minimap.test.mjs](../frontend/app/tests/workflow-minimap.test.mjs)
@@ -1675,7 +1682,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_document_frontend.py](../backend/core/test_document_frontend.py).
 
-- `ReactDocumentTests`: 15 metod testowych.
+- `ReactDocumentTests`: 21 metod testowych.
 
 ### backend/core/test_emoji.py
 
@@ -2100,7 +2107,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/planner/test_sidebar.py](../backend/planner/test_sidebar.py).
 
-- `TodaySidebarTests`: 7 metod testowych.
+- `TodaySidebarTests`: 24 metod testowych.
 
 ### backend/planner/test_task_calendar.py
 
@@ -2112,7 +2119,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/planner/tests.py](../backend/planner/tests.py).
 
-- `CalendarEventTests`: 6 metod testowych.
+- `CalendarEventTests`: 12 metod testowych.
 
 ### backend/documents/test_colors.py
 
@@ -2201,7 +2208,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/documents/test_query.py](../backend/documents/test_query.py).
 
-- `DocumentQueryTests`: 11 metod testowych.
+- `DocumentQueryTests`: 10 metod testowych.
 
 ### backend/documents/test_rename.py
 
@@ -2226,7 +2233,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/documents/tests.py](../backend/documents/tests.py).
 
-- `DocumentLibraryTests`: 39 metod testowych.
+- `DocumentLibraryTests`: 38 metod testowych.
 
 ### backend/resources/test_api.py
 
@@ -2505,6 +2512,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 ### planner
 
 - [backend/planner/migrations/0001_initial.py](../backend/planner/migrations/0001_initial.py)
+- [backend/planner/migrations/0002_custom_event_color.py](../backend/planner/migrations/0002_custom_event_color.py)
 
 ### documents
 

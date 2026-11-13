@@ -95,27 +95,34 @@ Grupa widoków ma szerokość `--calendar-views-width`: 280px, a do szerokości
 kontenera 1050px — 244px. Przyciski dzielą tę szerokość równo.
 Pasek i treść mają ten sam boczny padding `--app-page-padding-x`.
 Do szerokości kontenera 720px grupa zajmuje cały kolejny wiersz paska.
-Jej szerokość jest niezależna od panelu „Plan dnia”.
+Jej szerokość jest niezależna od prawego panelu.
 W Zasobach szybkie filtry z licznikami
 korzystają z tego samego paska zakładek i zachowują dotychczasowe filtrowanie.
 Pasek Kalendarza nie zawiera wyboru „Wszystkie pozycje” ani filtra „Kolory”.
 Pokazuje wszystkie dostępne wydarzenia i zadania w wybranym okresie;
 pozostają wyszukiwarka oraz licznik pozycji.
 Kolory wydarzeń i wybór koloru w formularzu pozostają dostępne.
+Pole „Kolor” w oknie wydarzenia zajmuje pełny wiersz i używa wspólnego
+`shared/ColorControl`, zgodnego z kolorem nazwy w konfiguracji Przestrzeni:
+próbka otwiera paletę, pole przyjmuje `#RRGGBB`, „Domyślny” przywraca
+czerwień, a podgląd pokazuje oznaczenie wydarzenia. Kontrolki korzystają
+z istniejących klas `documents-color-control` i `work-configuration-color`
+i zawijają się na wąskich ekranach. Style próbki i układu znajdują się
+w `components/shared-controls.css`, dostępnym również przy bezpośrednim
+wejściu do Kalendarza. `calendar-color-preview` jest wariantem
+etykiety wydarzenia o naturalnej szerokości, bez zachowania przycisku.
 
-Panel „Plan dnia” zajmuje prawy pasek wspólnej powłoki, obok nagłówka
-i siatki Kalendarza. `shared/RightSidebarContent` renderuje go do
-`#app-right-sidebar-content`; pierwszy render Django używa bloku
-`right_sidebar`. Plan wypełnia wysokość panelu, z osobno przewijaną listą
-i przyciskiem „Dodaj w tym dniu” w stopce. Obrys i promień należą do
-powłoki; plan nie dodaje wewnętrznej karty, cienia ani marginesu.
-Domyślna szerokość wynosi 272px; `--app-right-sidebar-width` uwzględnia
-zapamiętaną szerokość prawego paska, a do 1100px plan
-otwiera się jako wspólna szuflada. Przycisk `panel-right` na końcu górnego
-paska zwija i otwiera panel; pasek Kalendarza nie ma osobnego przełącznika.
-Zwijanie oddaje miejsce siatce i zachowuje wybrany dzień oraz tryb planu.
-„+N więcej” wybiera plan wskazanego dnia i otwiera panel przez
-`openRightSidebar`, bez zamykania już otwartego panelu. Wspólne reguły w
+Prawy pasek Kalendarza jest identyczny z panelem przy Przestrzeniach i liście
+zadań: wspólny `shell/TodaySidebar` pokazuje mini kalendarz i „Plan na dziś”.
+Pierwszy render dziedziczy `default_today_sidebar` z `core/base.html`.
+`CalendarPage` nie renderuje osobnego portalu ani „Planu dnia”. Wspólna
+powłoka zachowuje szerokość 272px, zapamiętane rozszerzenie i szufladę
+do 1100px. Kliknięcie dnia w mini kalendarzu otwiera odpowiednią datę
+w głównym Kalendarzu. Przycisk `panel-right` zwija i otwiera panel,
+oddając miejsce siatce bez zmiany jej widoku.
+„+N więcej” w miesiącu otwiera wskazany dzień w głównej siatce, pokazując
+wszystkie jego pozycje. Tworzenie wydarzeń pozostaje w nagłówku i komórkach.
+Wspólne reguły w
 [`calendar.css`](../static/css/calendar.css) obejmują React i pierwszy render Django.
 Pozycje w komórce miesiąca przewijają się, gdy brakuje wysokości, dzięki
 czemu nie zasłaniają następnego tygodnia i zachowują dostęp do „+N więcej”.
@@ -385,13 +392,24 @@ pierwszy render Django i skeleton nawigacji przez
 uwzględnia odstępy, zachowując wewnętrzne przewijanie stron.
 
 Prawy panel ma bazową szerokość `--app-right-sidebar-width` (272px). Na stronie
-zadania pokazuje jego właściwości i używa `--app-task-sidebar-width` (370px);
-w Kalendarzu pokazuje plan dnia. Na pozostałych stronach aplikacji zawiera
-sam miesięczny kalendarz, bez osobnego nagłówka i przycisku otwarcia.
+zadania pokazuje jego właściwości i używa `--app-task-sidebar-width` (370px).
+W Kalendarzu i na pozostałych stronach aplikacji poza Dyskiem zawiera ten sam
+miesięczny kalendarz, bez osobnego nagłówka i przycisku otwarcia.
 Kalendarz korzysta z poniedziałkowego początku tygodnia, wyróżnia dzisiejszy
 dzień, pozwala przełączać miesiące i wrócić przyciskiem „Dzisiaj”. Kliknięcie
-dnia otwiera go w pełnym Kalendarzu. Panel nie zawiera listy „Zadania na dziś”,
-licznika, podpisu daty ani komunikatu o braku zadań.
+dnia otwiera go w pełnym Kalendarzu. Pod kalendarzem znajduje się lista
+„Plan na dziś” z łącznym licznikiem: wydarzenia Kalendarza przypadające na dziś
+oraz widoczne, niezakończone zadania Przestrzeni z dzisiejszym terminem
+w aktywnym Workspace, bez ograniczenia do wykonawcy. Wydarzenia całodzienne
+są pierwsze, pozostałe pozycje mają wspólną kolejność chronologiczną.
+Wiersz zadania pokazuje tytuł, klucz, Przestrzeń i godzinę oraz otwiera szczegóły.
+Wiersz wydarzenia pokazuje tytuł, kropkę w zapisanym kolorze, „Kalendarz”
+i godzinę lub „Cały dzień”; otwiera wydarzenie w Kalendarzu. Wydarzenie
+rozpoczęte wcześniej pokazuje również datę rozpoczęcia.
+Lista przewija się w pozostałej wysokości panelu; „Pokaż więcej” odsłania
+kolejne wyniki po 20. Pusta lista pokazuje „Brak zadań i wydarzeń na dziś.”,
+a błąd odczytu pozwala ponowić żądanie. Wyłączenie modułu Przestrzeni
+pomija zadania, zachowując wydarzenia.
 Powłokę renderuje `shell/TodaySidebar.tsx`, a pierwszy render Django
 `core/includes/today_sidebar.html`; oba używają klas `today-sidebar`
 z `layout/panels.css`. Wyłączenie modułu Kalendarza ukrywa domyślną zawartość.
@@ -400,8 +418,8 @@ Na komputerze lewą krawędź prawego panelu można przeciągać. Uchwyt
 `right-sidebar-resizer` pozostaje przy krawędzi także podczas przewijania
 zawartości. Zakres wynosi 240–520px i dodatkowo zostawia co najmniej 360px
 na główną treść, uwzględniając szerokość lewego menu i skalę interfejsu.
-Szerokość zapisywana w `ancoreRightSidebarWidth` obowiązuje również w planie
-Kalendarza i właściwościach zadania. Zmniejszenie okna ogranicza bieżący
+Szerokość zapisywana w `ancoreRightSidebarWidth` obowiązuje również
+w Kalendarzu i właściwościach zadania. Zmniejszenie okna ogranicza bieżący
 rozmiar bez zmiany zapisanej preferencji. Dwuklik przywraca domyślny rozmiar
 (272px, a w zadaniu 370px). Uchwyt obsługuje klawiaturę: strzałka w lewo
 poszerza panel, w prawo zwęża, Shift zwiększa krok z 8 do 24px, Home/End
@@ -2772,26 +2790,25 @@ Przełącznik `documents-display-switch` używa dwóch linków `tasks-icon-butto
 z etykietami „Lista” i „Kafelki” i `aria-current` dla aktywnego układu.
 Serwer renderuje jeden układ, bez ukrytej kopii tabeli. Kafelki tworzą semantyczną
 listę w `documents-grid`, z ikoną, nazwą do dwóch linii i pełnym tekstem w linku,
-metadanymi oraz wspólnymi akcjami z tabeli. Kafelki dysków pokazują standardową ikonę,
-nazwę i datę, bez opisu oraz liczników plików i folderów. Wspólny komponent
+metadanymi oraz wspólnymi akcjami z tabeli. Układy dotyczą zawartości dysków
+i Dokumentów. Wspólny komponent
 `documents-card` zachowuje proporcje kwadratu (`aspect-ratio: 1`). Pole podglądu
 wypełnia dostępną wysokość, z minimum 100px, bez osobnego tła — ikony są
-na białej powierzchni kafelka. Ikony plików mają 115,5×115,5px,
-a dysków 139,755×139,755px. Ikony pustych i pełnych folderów mają
+na białej powierzchni kafelka. Ikony plików mają 115,5×115,5px.
+Ikony pustych i pełnych folderów mają
 149,68×149,68px — są powiększone o kolejne 5% względem poprzednich 142,55px,
 bez zmiany wymiarów kafelków ani pozostałych ikon.
-Wariant `documents-card--library` używa wyłącznie standardowej ikony dysku.
-Nazwa i data pozostają poniżej. W ciasnych kolumnach zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
+W ciasnych kolumnach zawartość kafelka można przewinąć bez zmiany jego proporcji. Rozmiar ikon kafelków nie zmienia ikon
 w tabeli ani panelu bocznym.
 Siatka dopasowuje liczbę kolumn do miejsca z minimalną szerokością kolumny
 248px (lub całą dostępną szerokością, gdy jest węższa), również na telefonie.
 Kafelek zajmuje całą szerokość kolumny, więc odstępy między kafelkami wynikają
 wyłącznie z `gap`: 16px w obu kierunkach, a na ekranach do 767px — 12px.
-Dotyczy Dysków, plików i Dokumentów. Kafelki pozostają kwadratowe;
+Dotyczy folderów, plików i Dokumentów. Kafelki pozostają kwadratowe;
 rozmiary tekstu, ikon oraz przycisków pozostają bez zmian.
 Stopka kafelka pokazuje datę, bez przycisku menu i jego akcji.
 Kafelki używają tokenów powierzchni, ramek i fontów Ancore. Pasek Dysków nie zawiera
-przycisku „Zarządzaj tabelą”; listy dysków i plików pokazują wszystkie kolumny,
+przycisku „Zarządzaj tabelą”; listy plików pokazują wszystkie kolumny,
 także przy zapisanych wcześniej preferencjach ich ukrywania. „Nowy folder” używa
 istniejącego drugorzędnego przycisku w pasku, obok „Prześlij pliki”. Wyszukiwanie ma widoczny
 opis zakresu obejmującego podfoldery i akcję czyszczenia pustych wyników.
@@ -2802,7 +2819,7 @@ delikatne podziały poziome i pionowe z tokenu `--tasks-directory-column-separat
 podświetlenie hover/focus. Wiersze plików mogą być wyższe, aby pomieścić
 drugą linię z lokalizacją. Lista nie wyświetla pod nazwą etykiety „Folder” ani
 typu pliku (np. „PDF”, „JPEG”); bez lokalizacji nie tworzy drugiej linii.
-Lista plików i folderów Dysku (`documents-layout`) zachowuje wspólne odstępy
+Lista plików i folderów Dysku (`documents-main`) zachowuje wspólne odstępy
 tabeli. Komórka nazwy zaczyna się od ikony pliku lub folderu, bez menu działań.
 Nie ma osobnej kolumny akcji. Usunięto także menu na kafelkach; nie dodano
 zastępczych przycisków przenoszenia, edycji metadanych, gwiazdki, pobrania
@@ -2837,15 +2854,11 @@ i zastępczym widoku podglądu. Są dekoracyjne, bez fokusu, zachowują kolory
 po inicjalizacji `AncoreIcons` i podmianie treści. Nie zmieniają obsługi formatów
 ani ikon załączników w innych modułach.
 Ikony plików w tabelach Dysku i Dokumentów oraz folderów Dysku mają 32×32px w polu 32×32px.
-Wszystkie dyski używają płaskiej, poziomej obudowy z include'a
-`documents/includes/drive_icon.html` na liście, w kafelkach i panelu bocznym.
-SVG używa zapisanego koloru dysku (domyślnie `#4285d4`) i białych detali,
-nie ma obrysu ani fokusu i jest dekoracyjne.
-Nawigacja, pusty stan, filtry, sortowanie i globalne wyszukiwanie zachowują
-ikonę Flaticon `hard-drive`. Ikona w wierszu listy dysków ma rozmiar
-32×32px w polu 32×32px, a w panelu bocznym 30×30px, również na telefonie.
-Wiersze dysków mają 35px wysokości, a odstęp między ikoną i nazwą
-wynosi 8px, także w zwężonej liście.
+Dyski w prawym panelu używają płaskiej, poziomej obudowy z include'a
+`documents/includes/drive_icon.html`. SVG korzysta z zapisanego koloru
+(domyślnie `#4285d4`) i białych detali; jest dekoracyjne, bez obrysu ani fokusu.
+Ikona w panelu ma 30×30px również na telefonie. Nawigacja, formularze
+i globalne wyszukiwanie zachowują ikonę Flaticon `hard-drive`.
 
 Formularz tworzenia i ustawień dysku zawiera nazwę, kolor ikony i opis.
 Tworzenie oraz edycja folderów Dysku zawierają nazwę i kolor.
@@ -2853,83 +2866,62 @@ Przycisk ołówka ma etykietę „Edytuj folder”. Wspólny include
 `documents/includes/color_field.html` używa natywnego pola `type="color"`
 z własną klasą `documents-color-input`, podglądu SVG 64×64px
 i przycisku „Domyślny”. Wybrany kolor widać od razu w podglądzie; zapis
-aktualizuje listę, kafelki oraz panel dysków. Formularz zachowuje kolor
+aktualizuje listy i kafelki folderów oraz panel dysków. Formularz zachowuje kolor
 przy błędzie nazwy. `documents.js` obsługuje pole przez delegację zdarzeń
 i `AbortController`, także po `ancore:content-loaded` i otwarciu modala.
 Nazwy pozostają widoczne niezależnie od koloru.
 Nie udostępnia wyboru zdjęcia ani kadrowania. Wcześniej zapisane zdjęcia
-nie są wyświetlane; lista, kafelki i panel boczny zawsze używają wspólnej ikony.
+nie są wyświetlane; panel dysków zawsze używa wspólnej ikony.
 
-Lista dysków zajmuje całą szerokość treści. Pod tytułem jest pasek narzędzi
-z przełącznikiem widoku, filtrami, sortowaniem i wyszukiwaniem.
-Pasek „Pokaż więcej” znajduje się pod wynikami wewnątrz scrolleru.
-Za sortowaniem przycisk `documents-view-selector` pokazuje nazwę bieżącego
-widoku: „Dyski” na indeksie, nazwę otwartego dysku lub nazwę zbiorczego widoku.
-Otwiera `documents-views-menu`: Dyski, Wszystkie pliki, Ostatnio zmienione,
-Oznaczone gwiazdką i Kosz. Skróty i liczniki obejmują cały Workspace,
-także przy otwarciu menu wewnątrz dysku lub folderu.
-Menu zastępuje zakładki oraz skróty z panelu bocznego. Korzysta ze wspólnych
-`tasks-filter-button`, `tasks-project-query-trigger`,
-`tasks-project-menu-button` i istniejącej obsługi `data-document-actions`
-w `row-actions.js`: natywny popover, pozycjonowanie w granicach ekranu,
-strzałki, Home/End, Escape i powrót fokusu. Aktywny widok ma `aria-current`;
-liczniki zachowują zakres Workspace i nie zależą od filtrów.
-Indeks nie powtarza listy dysków w panelu bocznym.
-Pasek narzędzi i siatka dysków mają wspólny
-odstęp boczny `--documents-index-padding-x: var(--app-page-padding-x)` (15px),
-zgodny z paskiem narzędzi katalogów. Lista używa
-`tasks-directory-sheet tasks-project-sheet` z „Wszystkich
-projektów” oraz wariantu `documents-library-sheet` w `documents.css`.
-Tekst 13px/400, wiersze 35px, nagłówki z ikonami, separatory oraz czerwone
-podświetlenie z paskiem po lewej pochodzą ze wspólnego komponentu.
+Indeks „Dyski” jest ekranem wyboru. Lista dysków występuje wyłącznie
+w prawym panelu; środek nie pokazuje tabeli ani kafelków dysków, ich
+checkboxów, filtrów, wyszukiwania ani przełącznika układu. Zachowuje nagłówek
+z „Nowy dysk” oraz wspólny `EmptyState`: „Wybierz dysk” z opisem
+„Otwórz dysk z prawego panelu, aby zobaczyć foldery i pliki.”.
+Przycisk „Wybierz dysk” otwiera prawy panel przez `openRightSidebar`, również
+na telefonie i po zwinięciu panelu. Pierwszy render używa tego samego wzorca
+oraz `data-document-open-sidebar` w adapterze JS.
+Jeżeli Workspace nie ma dysków, pozostaje istniejący stan „Utwórz pierwszy dysk”.
+Stare parametry indeksu, np. `display=grid` i `q`, nie przywracają centralnej listy.
 
-Lista dysków ma trzy kolumny danych: „Nazwa”, „Zmodyfikowano”, „Rozmiar”,
-poprzedzone kolumną wyboru 40px. Checkboxy korzystają
-z `tasks-project-sheet--selectable` i wspólnego stylu projektów, są stale
-widoczne i podświetlają zaznaczone wiersze. Checkbox w nagłówku wybiera całą
-wczytaną listę i pokazuje stan częściowego zaznaczenia. Cała kolumna wyboru
-jest klikalna. React zachowuje zaznaczenie podczas doładowywania; zmiana
-filtrów lub sortowania rozpoczyna nowe okno i czyści wybór.
-Adapter `documents.js` obsługuje także `ancore:content-loaded`.
-Lista i kafelki dysków nie mają menu wiersza. Nazwa otwiera dysk
-i wypełnia wolne miejsce, data ma 176px,
-a rozmiar 120px. Wariant ma semantykę ARIA tabeli, wierszy i komórek oraz
-`data-directory-resize="false"`. Atrybuty celu przeciągania pozostają na wierszu.
-Lista folderów i plików Dysku pokazuje
-te same trzy kolumny danych, bez kolumny „Tagi” i menu w nazwie.
-Minimalna szerokość tabeli plików wynosi 690px;
-węższy obszar zachowuje wszystkie kolumny dzięki przewijaniu poziomemu.
-Rozmiar dysku i folderu sumuje aktywne pliki, również w podfolderach,
-w zakresie właściciela i Workspace. Puste elementy pokazują 0 bajtów.
-Dysk nie pokazuje tagów w formularzach, filtrach ani kafelkach.
-W koszu kolumna pokazuje datę modyfikacji, a data usunięcia jest
-dostępna w `title` komórki.
-Foldery nadal używają daty utworzenia, ponieważ model nie zapisuje daty modyfikacji.
-Data i rozmiar pozostają widoczne w trybie listy.
+Po wybraniu dysku środek pokazuje foldery i pliki z dotychczasowym paskiem
+narzędzi, listą/kafelkami, filtrami i „Pokaż więcej”. Przycisk
+`documents-view-selector` za sortowaniem pokazuje otwarty dysk lub nazwę
+zbiorczego widoku. Menu zawiera Dyski, Wszystkie pliki, Ostatnio zmienione,
+Oznaczone gwiazdką i Kosz; liczniki obejmują cały Workspace.
+Zachowuje wspólne kontrolki, natywny popover, obsługę klawiatury i powrót fokusu.
+Lista folderów i plików pokazuje „Nazwa”, „Zmodyfikowano” i „Rozmiar”,
+bez kolumny tagów i menu w nazwie. Minimalna szerokość tabeli wynosi 690px;
+węższy obszar zachowuje kolumny przez przewijanie poziome.
+Rozmiar folderu sumuje aktywne pliki w podfolderach w zakresie właściciela
+oraz Workspace. W koszu data usunięcia pozostaje w `title` komórki daty.
+Foldery pokazują datę utworzenia, ponieważ model nie zapisuje daty modyfikacji.
 
-`documents-library-entry` jest linkiem obejmującym miniaturę i nazwę (13px).
-Lista dysków nie wyświetla opisu pod nazwą ani opcji „Opis” w wyborze kolumn.
-Rozmiar jest wyrównany do prawej. Długie nazwy mają wielokropek oraz pełny
-tekst w `title`.
-Na wąskich ekranach tabela przewija się poziomo, zachowując wszystkie
-kolumny (minimalna szerokość 616px).
-Pusty wynik pomija nagłówki, mieści się w szerokości ekranu i ma bezpośrednią
-akcję wyczyszczenia wyszukiwania i filtrów.
-
-Panel dysków ma białe tło `--bg-main`, takie samo jak lista dysków,
-również w wariancie wysuwanym na wąskich ekranach.
-Panel jest dostępny w widokach plików i wewnątrz dysku.
-Zawiera nagłówek „Dyski”, dodawanie dysku oraz listę dysków;
-przełączanie widoków plików jest na pasku narzędzi za sortowaniem.
-Linki poszczególnych dysków używają wariantu `documents-sidebar-library-link`:
-minimum 40px wysokości, pole ikony 30×30px, zdjęcie 28×28px i odstęp 10px od nazwy.
-Zastępczy SVG z `drive_icon.html` jest wyśrodkowany w tym samym polu.
-Pełna nazwa pozostaje w `title`, a długie nazwy skracają się przez ellipsis.
-Przycisk z ikoną `panel-right` na końcu paska filtrów zwija i rozwija cały
-prawy panel Dysku. Na szerokich ekranach zwinięcie
-poszerza tabelę i jest zapamiętywane lokalnie w przeglądarce. Do 1100px
-przycisk otwiera dotychczasowy panel wysuwany z tłem, obsługą Escape i fokusu;
-otwarcie tego panelu nie zmienia preferencji szerokiego ekranu.
+W module Dysk listę dysków renderuje wspólny prawy panel aplikacji.
+Jest dostępna na stronie wszystkich dysków, w listach/kafelkach plików,
+wewnątrz dysku i folderu oraz w widokach ostatnich plików, gwiazdek i kosza.
+Zastępuje tam kalendarz i „Plan na dziś”; nie tworzy drugiego panelu w treści.
+Moduł Dokumenty zachowuje dotychczasowy panel z kalendarzem.
+Panel ma białe tło `--bg-main`, nagłówek „Dyski”, dodawanie dysku (zgodnie
+z uprawnieniami) oraz autoryzowaną listę Workspace. Nie zawiera skrótu „Wszystkie dyski”.
+Przełączanie widoków plików pozostaje na pasku narzędzi za sortowaniem.
+Aktywny dysk jest wyróżniony także w podfolderze. Lista doładowuje się po 20
+przez „Pokaż więcej”, niezależnie od tabeli i jej zaznaczeń; wejście do
+późniejszego dysku odsłania część listy obejmującą jego aktywny wiersz.
+Pusty panel pokazuje „Brak dysków w tym Workspace.”, a błąd doładowania
+zachowuje dotychczasowe wyniki i umożliwia ponowienie.
+Linki dysków używają wariantu `documents-sidebar-library-link`:
+minimum 40px wysokości, pole ikony 30×30px i odstęp 10px od nazwy.
+W polu jest wspólna ikona dysku w zapisanym kolorze; nazwa ma ellipsis
+oraz pełny tekst w `title`.
+`documents/Sidebar.tsx` korzysta z `shared/RightSidebarContent`, a szablony
+Django wypełniają blok `right_sidebar` przez `documents/sidebar.html`.
+Wariant `.documents-sidebar--global` ma stały nagłówek i przewijaną nawigację.
+Zwijanie, zapamiętana szerokość i szuflada do 1100px korzystają ze wspólnej
+powłoki i przycisku w topbarze. Lokalny przełącznik w toolbarze, własne tło
+szuflady i preferencja `ancore:documents:sidebar-collapsed:v1` nie są używane.
+Przeciąganie plików/folderów na dysk zachowuje istniejący mechanizm
+przenoszenia i kontrolę uprawnień również po przeniesieniu panelu.
 Panel dysków używa `tasks-rail-link`, a akcje ikonowe `tasks-icon-button`.
 Formularze korzystają z `form-input`, `tasks-inline-input`,
 `form-select`/`tasks-inline-select` oraz

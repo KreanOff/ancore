@@ -82,6 +82,20 @@ Wydarzenia całodzienne zachowują daty kalendarzowe z API niezależnie od stref
 przeglądarki; ich zapis nadal normalizuje granice w Django. Te same zasady
 obowiązują w React i adapterze `calendar.js`.
 
+Edytor wydarzenia używa `shared/ColorControl`: natywnej palety, pola HEX,
+przycisku „Domyślny” i podglądu. Ten sam komponent obsługuje kolor nazwy
+w `ConfigurationColor` Przestrzeni, z dotychczasowymi klasami Dokumentów.
+`calendar/colors.ts` rozwiązuje pięć starszych nazw i sześciocyfrowy HEX,
+udostępniając zmienne CSS dla siatki. Starsze odcienie tła
+pozostają identyczne, także po zapisaniu odpowiadającego im HEX; własne
+kolory otrzymują jasne tło i standardowy ciemny tekst. Adapter `calendar.js`
+oraz pierwszy render formularza Django zachowują ten sam wybór i podgląd.
+Backend waliduje kolor; puste pole przywraca `#e04f63`. Migracja
+`planner.0002_custom_event_color` zmienia domyślną wartość i walidację
+bez przepisywania istniejących rekordów.
+Po zapisie edytor przekazuje zwrócone wydarzenie do stanu Kalendarza przed
+ponownym odczytem listy, więc natychmiastowe otwarcie pokazuje już nowy kolor.
+
 ## Proces Kanban i blokady Przestrzeni
 
 Sekcja `statuses` ma podzakładki „Stany” i „Mapa” na wspólnym pasku
@@ -800,33 +814,52 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   do 1100px zmiana rozmiaru jest wyłączona. `layout/panels.css` ustala
   geometrię obu boków, treści i skeletona; [kontrakt UI](UI.md#wspólna-powłoka-react).
   Host `#app-right-sidebar-content` znajduje się poza oboma korzeniami React.
-  `shared/RightSidebarContent` przekazuje do niego właściwości zadania oraz
-  plan Kalendarza bez utraty stanu przy montowaniu Shell. Pierwszy render
+  `shared/RightSidebarContent` przekazuje do niego właściwości zadania
+  bez utraty stanu przy montowaniu Shell. Pierwszy render
   Django umieszcza tę zawartość w bloku `right_sidebar`; montowanie strony
   usuwa `[data-right-sidebar-fallback]`. `TaskPage` używa natywnego
   `form="space-task-form"`; `useTaskSave` odbiera zdarzenia tylko kontrolek
   tego formularza, również spoza głównej treści. Opuszczenie strony usuwa portal.
-  `CalendarPage` utrzymuje wybór dnia i tryb planu niezależnie od widoczności
-  panelu. Zwijaniem steruje wyłącznie powłoka; dawny przełącznik w pasku
-  Kalendarza został usunięty. „+N więcej” wybiera plan wskazanego dnia
-  i wywołuje `openRightSidebar`, które otwiera panel tylko, gdy jest zamknięty.
-  Na pozostałych stronach `shell/TodaySidebar.tsx` w tym samym hoście renderuje
-  sam mini kalendarz, bez nagłówka i listy zadań. `shell.sidebar_url`
+  `CalendarPage` utrzymuje wybór dnia i widoku niezależnie od widoczności
+  panelu. Zwijaniem steruje wyłącznie powłoka. „+N więcej” otwiera dany dzień
+  w głównym kalendarzu, udostępniając wszystkie pozycje; adapter `calendar.js`
+  zachowuje to samo działanie. Na stronie Kalendarza, Przestrzeni i pozostałych
+  stronach poza Dyskiem `shell/TodaySidebar.tsx` renderuje identyczny mini kalendarz oraz
+  listę „Plan na dziś”. Kalendarz nie tworzy własnego portalu „Plan dnia”;
+  jego szablon dziedziczy domyślny blok prawego paska. `shell.sidebar_url`
   wskazuje scoped `calendar/sidebar/`, odczytywany przez istniejące API stron;
-  jest pusty dla szczegółów zadania, Kalendarza, edytora Pulpitu i przy
-  wyłączonym module Kalendarza. `planner/sidebar.py` zwraca wyłącznie `today`
-  i `time_zone` z potwierdzeniem `status`, bez odczytu zadań i paginacji.
+  jest pusty dla szczegółów zadania, katalogów Dysku, edytora Pulpitu i przy
+  wyłączonym module Kalendarza. `planner/sidebar.py` zwraca `today`,
+  `time_zone`, `tasks_enabled`, `entries` i `pagination`. Wspólna lista obejmuje
+  `CalendarEvent` zachodzące na dzisiejszy lokalny dzień oraz niezakończone
+  `SpaceTask` z dzisiejszym terminem. Dane są ograniczone do właściciela
+  i aktywnego Workspace, a zadania także przez `spaces.access.visible_to`.
+  Przypisanie wykonawcy nie zmienia zakresu dostępu. Przedział dnia jest
+  lewostronnie domknięty; wydarzenie kończące się o jego początku jest pomijane,
+  a punktowe wydarzenie w tym dniu jest uwzględnione. Całodzienne są pierwsze,
+  następnie obowiązuje czas rozpoczęcia/terminu i stabilny identyfikator.
+  Każdy wpis ma `id` z prefiksem źródła, `source`, `title`, `url`, `subtitle`,
+  `starts_at`, `time_label` oraz `color` (bezpieczny HEX dla wydarzeń).
+  Zadania opisuje klucz `WorkItem` i nazwa Przestrzeni, wydarzenia „Kalendarz”.
+  `sidebar_task_limit`
+  steruje wspólnym oknem `core.list_window` po 20 wyników bez kolizji
+  z listą głównej strony. React używa `shared/LoadMore`, a pierwszy render
+  Django zachowuje parametry strony w linku kolejnej porcji.
   Pierwszy render korzysta z tagu `default_today_sidebar` tylko w domyślnym
-  bloku. React anuluje odczyt po opuszczeniu strony i odświeża datę otwartego
-  kalendarza co minutę oraz po powrocie fokusu okna; błąd odczytu nie blokuje
-  nawigacji po kalendarzu. Kliknięcie dnia używa istniejącego
+  bloku. React anuluje odczyt po opuszczeniu strony i odświeża listę oraz datę
+  otwartego panelu co minutę i po powrocie fokusu okna, zachowując doładowane
+  okno. Błąd odczytu zachowuje wyniki i pozwala ponowić żądanie; odmowa dostępu
+  usuwa poprzednie wiersze. `ancore:calendar-changed` po zapisie/usunięciu
+  wydarzenia odświeża panel i anuluje odczyt rozpoczęty przed zmianą.
+  Wyłączenie Przestrzeni pomija zadania, ale pozostawia wydarzenia.
+  Błąd nie blokuje nawigacji po kalendarzu. Kliknięcie dnia używa istniejącego
   `calendar/?date=YYYY-MM-DD`.
-  Plan wypełnia wysokość prawego paska, z przewijaną listą i osobną stopką;
+  Mini kalendarz i przewijany plan dnia wypełniają wysokość prawego paska;
   wygląd i szerokość określa wspólna powłoka, bez wewnętrznej pływającej karty.
   Mobilna szuflada blokuje zawartość strony z pominięciem `#app-page-modals`.
   `shared/inert.ts` liczy aktywne blokady tła wspólne dla `useShellLayout`
   i `Modal`; przywraca wcześniejszy stan dopiero po zwolnieniu ostatniej.
-  Formularz otwarty z planu pozostaje dostępny, również przy zmianie
+  Otwarty formularz pozostaje dostępny, również przy zmianie
   szerokości, a zamknięcie okna nie odblokowuje tła nadal otwartej szuflady.
 - `PageApp.tsx` ładuje osobne chunki ekranów z `src/calendar/`, `src/dashboard/`,
   `src/spaces/`, `src/tasks/`, `src/tags/`, `src/filters/`, `src/pulpits/`, `src/documents/`, `src/workspaces/`, `src/accounts/` i `src/forms/`.
@@ -1160,7 +1193,29 @@ nadpisują rewizji ani treści pełnego edytora.
 Przeciąganie aktywnych plików/folderów korzysta z dotychczasowego `move/` i
 walidacji celu; animacja kończy się po potwierdzonym zapisie. Zrzut plików z
 systemu otwiera ten sam formularz uploadu. Stan listy/kafelków pozostaje w sesji,
-filtry w URL, a zwinięcie panelu dysków pod istniejącym kluczem localStorage.
+filtry w URL. Dysk używa wspólnego prawego panelu aplikacji poprzez
+`documents/Sidebar.tsx` i `shared/RightSidebarContent`, także na indeksie dysków.
+Indeks zachowuje `libraries: true`, ale ma puste `rows` i główne okno wyników.
+`_library_index` nie filtruje ani nie agreguje centralnej tabeli dysków.
+React i Django pokazują wspólny stan wyboru oraz przycisk otwarcia panelu;
+przy braku dysków korzystają ze stanu tworzenia pierwszego dysku.
+Decyduje licznik `sidebar_window`, niezależnie od historycznych parametrów URL.
+Kontrolki układu, filtrów i wyszukiwania dotyczą wyłącznie zawartości dysków
+oraz widoków plików. Link dysku otwiera dotychczasową zawartość `library=...`.
+Powłoka odpowiada za szerokość, zwijanie, szufladę mobilną i fokus; moduł
+nie tworzy osobnej szuflady ani przełącznika w toolbarze. `planner.sidebar_url`
+wyłącza domyślny kalendarz dla katalogów Dysku i ich formularzy osadzanych
+w tle. Office/Dokumenty zachowują dotychczasowy panel.
+`documents._sidebar` zwraca autoryzowane `sidebar_libraries` oraz niezależne
+okno `sidebar_window`; API przekazuje `sidebar` i `sidebar_window`.
+Parametry `sidebar_library_limit`/`sidebar_library_page` korzystają z
+`core.list_window`, zachowując główne filtry w URL kolejnej porcji. Otwarty
+późniejszy dysk rozszerza początkowe okno tak, aby był widoczny na liście.
+React doładowuje wyłącznie dane panelu przez API stron, bez zmiany głównej
+tabeli, jej zaznaczeń ani filtrów. Błąd zachowuje wcześniejsze dyski;
+zmiana danych strony i odmontowanie anuluje spóźniony odczyt.
+Przenoszenie przez portal zachowuje propagację zdarzeń React do katalogu;
+adapter HTML obejmuje tylko cele globalnego panelu aktywnego modułu Dysk.
 Podglądy renderują tekst jako tekst, ograniczone dane arkusza/archiwum oraz
 kontrolowany obraz/PDF. Poprawiono zgodność rodzaju podglądu ZIP (`archive`)
 także w szablonie HTML.

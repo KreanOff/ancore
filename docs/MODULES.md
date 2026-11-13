@@ -209,6 +209,12 @@ początek, koniec, cały dzień, kolor, użytkownik i Workspace.
 Ekran pozwala nawigować po datach i zmieniać widok; wydarzenia pobierane są
 przez endpoint zakresu dat. Tworzenie, edycja i usuwanie używają POST.
 
+Kolor wydarzenia można wybrać z natywnej palety lub wpisać jako `#RRGGBB`.
+Formularz pokazuje podgląd, a „Domyślny” przywraca dotychczasową czerwień
+`#e04f63`. Django waliduje kolor i zapisuje HEX małymi literami; wcześniej
+zapisane nazwy pięciu kolorów nadal są obsługiwane bez zmiany ich wyglądu.
+Własny kolor obejmuje wydarzenie w siatce miesiąca, tygodnia i dnia.
+
 Formularz sprawdza kolejność dat. Dla wydarzenia całodniowego normalizuje
 godziny do początku i końca dnia. Parametry `date`/`event` pozwalają wejść
 na wybraną datę lub wydarzenie, np. z wyszukiwarki.
@@ -221,6 +227,18 @@ Wyszukiwanie zawęża pozycje w wybranym okresie. Kliknięcie terminu otwiera sz
 Własne wydarzenia nadal otwierają modal edycji. Termin jest punktem w czasie,
 nie blokiem zaplanowanej pracy. API ogranicza zakres do 370 dni. Brak
 synchronizacji z Google Calendar/Outlook.
+
+W Kalendarzu i na stronach Przestrzeni wspólny prawy panel pokazuje ten sam mini kalendarz i
+„Plan na dziś”: wydarzenia Kalendarza obejmujące dzisiejszy dzień oraz otwarte
+zadania Przestrzeni z dzisiejszym terminem w aktywnym Workspace, zgodnie
+z dostępem użytkownika. Lista nie ogranicza się do zadań przypisanych
+zalogowanej osobie. Całodzienne wydarzenia są pierwsze, a następnie pozycje
+obu źródeł według czasu rozpoczęcia/terminu. Wydarzenia zachowują własny kolor
+i prowadzą do okna w Kalendarzu; zadania do swoich szczegółów. „Pokaż więcej”
+doładowuje wspólną listę po 20 pozycji. Zapis i usunięcie wydarzenia odświeża panel.
+Wyłączenie Przestrzeni nie ukrywa wydarzeń Kalendarza.
+Szczegóły zadania zachowują panel właściwości. Pełny Kalendarz używa tego samego
+panelu co lista zadań; „+N więcej” w miesiącu otwiera główny widok dnia.
 
 ## 8. Dysk — Documents
 
@@ -252,9 +270,10 @@ wyłącznie oznaczenia zalogowanego konta w dostępnym Workspace.
 
 **Ekrany i funkcje:**
 
-- Katalog dysków z tworzeniem, zmianą nazwy, koloru ikony i opisu oraz usunięciem pustego dysku.
-- Dyski zawsze używają wspólnej płaskiej ikony z `drive_icon.html` na liście,
-  w kafelkach i panelu bocznym, w zapisanym kolorze (domyślnie niebieskim).
+- Ekran wyboru dysku z listą wyłącznie w prawym panelu. Tworzenie, zmiana nazwy,
+  koloru ikony i opisu oraz usunięcie pustego dysku zachowują istniejące formularze.
+- Dyski zawsze używają wspólnej płaskiej ikony z `drive_icon.html`
+  w panelu bocznym, w zapisanym kolorze (domyślnie niebieskim).
   Formularze zawierają nazwę, kolor ikony i opis;
   dodawanie własnego zdjęcia jest wyłączone, a stare zdjęcia nie są wyświetlane.
 - Foldery Dysku i Dokumentów mają własny kolor ikony, wybierany przy tworzeniu
@@ -263,41 +282,39 @@ wyłącznie oznaczenia zalogowanego konta w dostępnym Workspace.
   przywraca pierwotny kolor. Kolory są zapisywane jako walidowane `#RRGGBB`,
   w zakresie właściciela i Workspace, bez dziedziczenia przez podfoldery.
 - Zawartość dysku/folderu i ścieżka nawigacyjna.
-- Przełącznik „Lista / Kafelki” na indeksie dysków i w widokach plików.
+- Wspólny prawy panel modułu Dysk pokazuje listę dostępnych dysków Workspace
+  na indeksie i w widokach plików/folderów. Zawiera kolory ikon, zaznaczenie
+  aktywnego dysku i „Pokaż więcej” po 20 wyników; kliknięcie otwiera zawartość.
+  Zwijaniem i mobilną szufladą steruje przycisk w górnym pasku aplikacji.
+  Kalendarz z planem dnia pozostaje w pozostałych modułach.
+- Przełącznik „Lista / Kafelki” w widokach plików.
   Kafelki pokazują typ, rozmiar, datę i lokalizację pliku oraz te same
-  akcje co lista; dyski pokazują ikonę, nazwę i datę, bez opisu i liczników.
-  Układ jest zapamiętywany w sesji oddzielnie dla konta, Workspace oraz katalogu
-  dysków i plików. Zmiana układu zachowuje wyszukiwanie, filtry i wczytany zakres.
+  akcje co lista. Układ jest zapamiętywany w sesji dla konta i Workspace. Zmiana układu zachowuje wyszukiwanie, filtry i wczytany zakres.
   „Nowy folder” jest bezpośrednią akcją w pasku dysku.
 - Widoki całego Workspace: wszystkie, ostatnio zmienione, oznaczone i kosz.
-- Listy dysków, folderów i plików pokazują „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
+- Listy folderów i plików pokazują „Nazwa”, „Zmodyfikowano” i „Rozmiar”.
   Lista folderów i plików nie powtarza pod nazwą etykiety „Folder” ani rozszerzenia
   pliku; dodatkowa linia pokazuje jedynie lokalizację, gdy jest dostępna.
-  Dyski i foldery sumują rozmiary aktywnych plików także w podfolderach,
+  Foldery sumują rozmiary aktywnych plików także w podfolderach,
   wyłącznie w zakresie właściciela i Workspace; pliki w koszu są pomijane.
   Data folderu pozostaje datą utworzenia (model nie zapisuje modyfikacji).
   Dysk rozróżnia ikoną folder bez plików oraz folder z plikami.
   Liczą się aktywne pliki także w podfolderach i dokumenty 0 B; kosz i obce dane
   są pomijane. Same puste podfoldery zachowują ikonę pustego folderu.
-  Liczniki plików i folderów pozostają dostępne w filtrach/sortowaniu dysków.
-- Indeks, zawartość dysku i zbiorcze widoki plików mają za sortowaniem przycisk
-  z nazwą bieżącego widoku lub otwartego dysku. Menu zachowuje skróty i liczniki
-  plików całego Workspace, przeniesione z panelu bocznego.
-  Lista pokazuje nazwy bez opisów.
-  Panel przełączania dysków jest dostępny
-  wewnątrz dysków i w widokach plików; zawiera listę dysków i ich dodawanie,
-  nie powtarza listy na indeksie.
-- Wyszukiwanie, sortowanie, filtry i doładowywanie po 20 pozycji. Listy dysków i plików
-  pokazują wszystkie kolumny; pasek nie zawiera przycisku „Zarządzaj tabelą”.
-- Panele filtrów i sortowania zgodne z Wszystkimi projektami. Dyski można
-  filtrować po nazwie, opisie, obecności plików/folderów i ostatniej zmianie;
-  pliki po nazwie, oryginalnej nazwie pliku, opisie, dysku (widok Workspace),
-  rozszerzeniu, rozmiarze, gwiazdce i dacie zmiany/usunięcia.
-  Warunki tekstowe obsługują zawieranie, wykluczenie i pustą/niepustą wartość.
-  Sortowanie ma oba kierunki dla pól tekstowych, liczników dysków, lokalizacji,
-  rozmiaru i dat; dostępne pola zależą od listy.
+- Indeks „Dyski” pokazuje wskazówkę „Wybierz dysk” i przycisk otwarcia
+  prawego panelu, a pusty Workspace — „Utwórz pierwszy dysk”. Nie powtarza
+  centralnej tabeli/kafelków ani kontrolek filtrowania dysków.
+- Zawartość dysku i zbiorcze widoki plików mają za sortowaniem przycisk
+  z nazwą widoku lub otwartego dysku. Menu zachowuje skróty i liczniki
+  plików całego Workspace. Lista pokazuje nazwy bez opisów.
+- Wyszukiwanie, sortowanie, filtry i doładowywanie plików po 20 pozycji.
+  Listy pokazują wszystkie kolumny; brak przycisku „Zarządzaj tabelą”.
+  Filtry plików obejmują nazwę, nazwę oryginalną, opis, dysk (widok Workspace),
+  rozszerzenie, rozmiar, gwiazdkę i datę zmiany/usunięcia. Sortowanie zachowuje
+  oba kierunki dla dostępnych pól. Dawne parametry filtrów indeksu dysków
+  nie zmieniają ekranu wyboru ani zakresu listy w prawym panelu.
 - Upload wielu plików, pobieranie po autoryzacji i edycja metadanych.
-  Pliki z komputera można upuszczać na kafelek/wiersz dysku, folder,
+  Pliki z komputera można upuszczać na folder,
   bieżący katalog lub link dysku w panelu bocznym. Upuszczenie w katalogu
   uruchamia przesyłanie przez wspólny modal z dotychczasową walidacją.
   Upuszczenie w już otwartym oknie przesyłania wybiera pliki do zatwierdzenia.
