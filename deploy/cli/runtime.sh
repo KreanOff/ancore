@@ -8,7 +8,7 @@ ancore_fail() {
 ancore_help() {
     cat <<'HELP'
 Instalacja: sh ancore-install.sh
-Podaj IP serwera i port HTTP. Po przygotowaniu usług utworzysz administratora Django.
+Podaj IP serwera, port HTTP i dane administratora. Potem instalacja przebiega automatycznie.
 
   install / setup  Instalacja i pierwszy administrator; zachowuje dane i hasła.
   update           Przebuduj i uruchom z aktualnych źródeł.

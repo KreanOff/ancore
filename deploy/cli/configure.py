@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ask for the server IPv4 and HTTP port; keep all other settings automatic."""
+"""Save the IPv4 and HTTP port collected by the host-side installer."""
 import ipaddress
 import os
 from pathlib import Path
@@ -46,18 +46,6 @@ def http_port(value):
     return str(int(value))
 
 
-def ask(label, default, validate):
-    while True:
-        try:
-            value = input(f'{label}' + (f' [{default}]' if default else '') + ': ').strip()
-        except EOFError as error:
-            raise ValueError('Przerwano instalację: brak odpowiedzi. Konfiguracja nie została zmieniona.') from error
-        try:
-            return validate(value or default)
-        except ValueError as error:
-            print(error, flush=True)
-
-
 def write_config(path, config):
     content = '# Ancore — HTTP, cztery kontenery. Plik zawiera prywatne sekrety.\n'
     content += ''.join(f"{key}='{value}'\n" for key, value in config.items())
@@ -70,7 +58,9 @@ def write_config(path, config):
         Path(temporary).unlink(missing_ok=True)
 
 
-def configure():
+def configure(host, port):
+    host = server_ip(host)
+    port = http_port(port)
     path = DEPLOY / '.env'
     previous = path if path.exists() else DEPLOY / '.env.production'
     existing = read_config(previous) if previous.exists() else {}
@@ -79,13 +69,6 @@ def configure():
     project = existing.get('ANCORE_PROJECT', 'ancore-prod')
     if not re.fullmatch(r'[a-z0-9][a-z0-9_-]*', project):
         raise ValueError('Nieprawidłowa nazwa projektu w deploy/.env.')
-    default_ip = existing.get('ANCORE_HOST', '')
-    try:
-        default_ip = server_ip(default_ip)
-    except ValueError:
-        default_ip = ''
-    host = ask('Adres IP serwera', default_ip, server_ip)
-    port = ask('Port HTTP', existing.get('ANCORE_HTTP_PORT', '8080'), http_port)
     config = {
         'ANCORE_PROJECT': project,
         'ANCORE_HOST': host,
@@ -105,8 +88,8 @@ def configure():
 
 if __name__ == '__main__':
     try:
-        if len(sys.argv) != 1:
-            raise ValueError('Uruchom instalację przez sh ancore-install.sh, bez dodatkowych opcji.')
-        configure()
+        if len(sys.argv) != 3:
+            raise ValueError('Uruchom instalację przez sh ancore-install.sh.')
+        configure(*sys.argv[1:])
     except (OSError, ValueError, KeyboardInterrupt) as error:
         sys.exit(f'Błąd: {error or "Przerwano instalację."}')

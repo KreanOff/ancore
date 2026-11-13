@@ -1,5 +1,6 @@
 #!/bin/sh
 # One entry point for HTTP setup and the first Django administrator.
+set +ax
 set -eu
 umask 077
 ANCORE_ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
@@ -21,21 +22,30 @@ if [ "$ANCORE_ACTION" = logs ]; then
 else
     [ "$#" -eq 0 ] || ancore_fail 'To polecenie nie przyjmuje opcji. Użyj sh ancore-install.sh --help.'
 fi
+case "$ANCORE_ACTION" in
+    install|setup)
+        . "$ANCORE_ROOT/deploy/cli/setup.sh"
+        ancore_banner ;;
+esac
 ancore_require_docker
 case "$ANCORE_ACTION" in
     install|setup)
-        echo 'Ancore — HTTP, cztery kontenery: web, backend, postgres, onlyoffice.'
-        docker run --rm -i --user "$(id -u):$(id -g)" -e PYTHONDONTWRITEBYTECODE=1 \
+        ancore_collect_setup
+        printf '\n[1/3] Przygotowanie konfiguracji instalacji...\n'
+        docker run --rm --user "$(id -u):$(id -g)" -e PYTHONDONTWRITEBYTECODE=1 \
             --volume "$ANCORE_ROOT:$ANCORE_ROOT" --workdir "$ANCORE_ROOT" \
-            python:3.14.8-slim-bookworm python deploy/cli/configure.py ;;
+            python:3.14.8-slim-bookworm python deploy/cli/configure.py \
+            "$ANCORE_INPUT_HOST" "$ANCORE_INPUT_PORT" ;;
 esac
 ancore_load_config
 ancore_compose config --quiet
 case "$ANCORE_ACTION" in
     install|setup)
+        printf '\n[2/3] Instalacja i uruchomienie usług...\n'
         ancore_build
         ancore_start
-        if ! ancore_compose exec backend python manage.py ensure_admin; then
+        printf '\n[3/3] Przygotowanie administratora...\n'
+        if ! ancore_finish_admin; then
             ancore_fail 'Tworzenie administratora Django nie powiodło się. Ponów: sh ancore-install.sh admin'
         fi
         ancore_show_ready ;;

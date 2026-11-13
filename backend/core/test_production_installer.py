@@ -1,19 +1,28 @@
 """Exercise installation prompts and lifecycle with a controlled Docker CLI."""
+import hashlib
 import json
 import os
+import pty
 from pathlib import Path
+import select
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import termios
+import time
 
 from django.conf import settings
 from django.test import SimpleTestCase
 
 
 FAKE_DOCKER = r'''
-import json, os, pathlib, subprocess, sys
+import hashlib, json, os, pathlib, subprocess, sys
 args = sys.argv[1:]
+secret_digest = os.getenv('INSTALLER_PASSWORD_DIGEST')
+if secret_digest and any(hashlib.sha256(value.encode()).hexdigest() == secret_digest for value in os.environ.values()):
+    sys.exit('Hasło administratora trafiło do środowiska procesu.')
 with open(os.environ['INSTALLER_CALLS'], 'a') as output:
     output.write(json.dumps([pathlib.Path(sys.argv[0]).name, *args]) + '\n')
 if pathlib.Path(sys.argv[0]).name == 'ss':
@@ -28,6 +37,7 @@ elif args[0] == 'info':
         sys.exit(1)
     print('linux')
 elif args[0] == 'run':
+    print('TEST: konfigurator Docker.', flush=True)
     index = next(index for index, argument in enumerate(args) if argument.endswith('deploy/cli/configure.py'))
     sys.exit(subprocess.call([sys.executable, 'deploy/cli/configure.py', *args[index + 1:]]))
 elif args[0] == 'port':
@@ -47,6 +57,8 @@ elif args[0] == 'compose':
     elif args[0] == 'ps':
         if args[-1] == 'web':
             print(os.getenv('INSTALLER_WEB_ID', ''))
+        elif args[-1] == 'backend':
+            print(os.getenv('INSTALLER_BACKEND_ID', ''))
         else:
             print('backend web postgres onlyoffice')
     elif args[0] == 'build':
@@ -56,7 +68,11 @@ elif args[0] == 'compose':
     elif args[0] == 'config':
         sys.exit(1 if os.getenv('INSTALLER_CONFIG_ERROR') else 0)
     elif args[0] == 'exec':
-        if args[-1] == 'ensure_admin':
+        if 'ensure_admin' in args:
+            if '--check-only' in args:
+                sys.exit(0 if os.getenv('INSTALLER_EXISTING_ADMIN') else 1)
+            if '--from-stdin' in args:
+                pathlib.Path(os.environ['INSTALLER_ADMIN_INPUT']).write_text(sys.stdin.read())
             if os.getenv('INSTALLER_ADMIN_ERROR'):
                 sys.exit(1)
             print('TEST: administrator jest gotowy.')
@@ -70,12 +86,19 @@ else:
 
 
 class ProductionInstallerTests(SimpleTestCase):
+    password = 'Ancore-install!57-private-credential'
+    admin_fields = 'admin@example.test\nancore-admin\nAnna\nNowak\n'
+
+    def admin_answers(self, password=None):
+        password = self.password if password is None else password
+        return self.admin_fields + password + '\n' + password + '\n'
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix='ancore-installer-')
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name) / 'repo with spaces'
         self.root.mkdir()
-        for name in ('ancore-install.sh', 'deploy/cli/runtime.sh', 'deploy/cli/configure.py',
+        for name in ('ancore-install.sh', 'deploy/cli/runtime.sh', 'deploy/cli/setup.sh', 'deploy/cli/configure.py',
                      'deploy/compose.yaml', 'scripts/start_office.sh', 'scripts/office/start.sh'):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -87,15 +110,65 @@ class ProductionInstallerTests(SimpleTestCase):
             script.write_text(f'#!{sys.executable}\n' + FAKE_DOCKER)
             script.chmod(0o700)
         self.calls = Path(temporary.name) / 'calls.jsonl'
+        self.admin_input = Path(temporary.name) / 'admin-input.txt'
         self.environment = {key: value for key, value in os.environ.items()
                             if not key.startswith(('DOCKER_', 'INSTALLER_', 'ANCORE_'))}
         self.environment.update(PATH=str(self.bin) + os.pathsep + os.environ['PATH'],
-                                INSTALLER_CALLS=str(self.calls))
+                                INSTALLER_CALLS=str(self.calls), INSTALLER_ADMIN_INPUT=str(self.admin_input))
 
     def run_script(self, *arguments, answers='', **environment):
         return subprocess.run(['sh', str(self.root / 'ancore-install.sh'), *arguments],
                               input=answers, capture_output=True, text=True,
                               env={**self.environment, **environment}, cwd=self.bin, timeout=30)
+
+    def start_terminal(self):
+        master, slave = pty.openpty()
+        self.addCleanup(os.close, slave)
+        self.addCleanup(os.close, master)
+        process = subprocess.Popen(
+            ['sh', str(self.root / 'ancore-install.sh')], stdin=slave, stdout=slave, stderr=slave,
+            env=self.environment, cwd=self.bin,
+        )
+
+        def cleanup():
+            if process.poll() is None:
+                process.kill()
+            self.terminal_exit(process)
+
+        self.addCleanup(cleanup)
+        self.terminal_output = b''
+        self.terminal_master = master
+        return process, master, slave
+
+    def terminal_exit(self, process):
+        deadline = time.monotonic() + 10
+        while process.poll() is None and time.monotonic() < deadline:
+            # Drain final output while waiting: closing a PTY can wait for it.
+            if select.select([self.terminal_master], [], [], 0.01)[0]:
+                try:
+                    self.terminal_output += os.read(self.terminal_master, 65536)
+                except OSError:
+                    pass
+        self.assertIsNotNone(process.returncode, 'Instalator nie zakończył pracy w terminalu.')
+        return process.returncode
+
+    def terminal_until(self, master, text):
+        expected = text.encode()
+        deadline = time.monotonic() + 10
+        while expected not in self.terminal_output:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or not select.select([master], [], [], max(remaining, 0))[0]:
+                self.fail(f'Brak komunikatu {text!r}: {self.terminal_output.decode(errors="replace")}')
+            self.terminal_output += os.read(master, 65536)
+
+    def terminal_password_prompt(self, master, slave):
+        self.terminal_until(master, 'Adres IP serwera')
+        os.write(master, ('192.0.2.10\n\n' + self.admin_fields).encode())
+        self.terminal_until(master, 'Hasło administratora')
+        deadline = time.monotonic() + 3
+        while termios.tcgetattr(slave)[3] & termios.ECHO and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(termios.tcgetattr(slave)[3] & termios.ECHO)
 
     def config(self):
         path = self.root / 'deploy/.env'
@@ -108,12 +181,14 @@ class ProductionInstallerTests(SimpleTestCase):
         return [call for call in self.recorded_calls() if action in call and '--help' not in call]
 
     def prepare(self):
-        result = self.run_script('install', answers='192.0.2.10\n\n')
+        result = self.run_script('install', answers='192.0.2.10\n\n' + self.admin_answers())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.environment.update(INSTALLER_BACKEND_ID='own-backend', INSTALLER_EXISTING_ADMIN='1')
         self.calls.write_text('')
+        self.admin_input.unlink()
 
     def test_default_installation_configures_ip_port_and_prepares_admin_after_start(self):
-        result = self.run_script(answers='192.0.2.10\n8087\n')
+        result = self.run_script(answers='192.0.2.10\n8087\n' + self.admin_answers())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.config()['ANCORE_PUBLIC_URL'], "'http://192.0.2.10:8087'")
         self.assertEqual(self.config()['ANCORE_HOST'], "'192.0.2.10'")
@@ -129,7 +204,13 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertIn('http://192.0.2.10:8087', result.stdout)
         self.assertEqual(len(self.commands('exec')), 1)
         admin = self.commands('exec')[0]
-        self.assertEqual(admin[-4:], ['backend', 'python', 'manage.py', 'ensure_admin'])
+        self.assertEqual(admin[-5:], ['backend', 'python', 'manage.py', 'ensure_admin', '--from-stdin'])
+        self.assertIn('-T', admin)
+        self.assertEqual(self.admin_input.read_text(), self.admin_fields + self.password + '\n')
+        self.assertLess(result.stdout.index('ANCORE'), result.stdout.index('Adres IP serwera'))
+        self.assertLess(result.stdout.index('Powtórz hasło'), result.stdout.index('TEST: konfigurator Docker.'))
+        self.assertNotIn(self.password, result.stdout + result.stderr + self.calls.read_text()
+                         + (self.root / 'deploy/.env').read_text())
         calls = self.recorded_calls()
         self.assertLess(calls.index(build), calls.index(self.commands('up')[0]))
         self.assertLess(calls.index(self.commands('up')[0]), calls.index(admin))
@@ -140,14 +221,13 @@ class ProductionInstallerTests(SimpleTestCase):
         for key in ('SECRET_KEY', 'POSTGRES_PASSWORD', 'POSTGRES_ADMIN_PASSWORD', 'ONLYOFFICE_JWT_SECRET'):
             self.assertNotIn(self.config()[key].strip("'"), result.stdout + result.stderr)
 
-    def test_setup_alias_uses_two_answers_and_pulls_missing_office(self):
-        result = self.run_script('setup', answers='192.0.2.10\n\n', INSTALLER_OFFICE_MISSING='1')
+    def test_setup_alias_collects_answers_upfront_and_pulls_missing_office(self):
+        result = self.run_script('setup', answers='192.0.2.10\n\n' + self.admin_answers(), INSTALLER_OFFICE_MISSING='1')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8080'")
         self.assertEqual(self.commands('pull')[0][-1], 'onlyoffice')
         self.assertIn('--rm', self.commands('run')[0])
-        self.assertIn('-i', self.commands('run')[0])
-        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+        self.assertEqual(self.commands('exec')[0][-1], '--from-stdin')
 
     def test_repeated_install_preserves_secrets_project_and_saved_defaults(self):
         self.prepare()
@@ -156,7 +236,87 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
         self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
         self.assertEqual(len(self.commands('build')), 1)
-        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+        self.assertEqual(self.commands('exec')[0][-1], '--check-only')
+        self.assertNotIn('Hasło administratora', repeated.stdout)
+        self.assertFalse(self.admin_input.exists())
+
+    def test_stopped_or_missing_administrator_is_collected_before_reinstallation(self):
+        self.prepare()
+        before = (self.root / 'deploy/.env').read_bytes()
+        for environment in ({'INSTALLER_BACKEND_ID': ''}, {'INSTALLER_EXISTING_ADMIN': ''}):
+            with self.subTest(environment=environment):
+                self.calls.write_text('')
+                result = self.run_script('install', answers='\n\n' + self.admin_answers(), **environment)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
+                self.assertEqual(self.admin_input.read_text(), self.admin_fields + self.password + '\n')
+                self.assertLess(result.stdout.index('Powtórz hasło'),
+                                result.stdout.index('TEST: konfigurator Docker.'))
+
+    def test_password_mismatch_reprompts_and_preserves_literal_special_characters(self):
+        password = '  S3cure!$(touch should-not-exist)`false`\\quoted\'"  '
+        answers = ('192.0.2.10\n\n' + self.admin_fields + self.password + '\nwrong-confirmation\n'
+                   + password + '\n' + password + '\n')
+        result = self.run_script('install', answers=answers,
+                                 INSTALLER_PASSWORD_DIGEST=hashlib.sha256(password.encode()).hexdigest())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.admin_input.read_text(), self.admin_fields + password + '\n')
+        self.assertEqual(result.stdout.count('Hasło administratora'), 2)
+        self.assertFalse((self.root / 'should-not-exist').exists())
+        self.assertNotIn(password, result.stdout + result.stderr + self.calls.read_text())
+        for path in self.root.rglob('*'):
+            if path.is_file():
+                self.assertNotIn(password.encode(), path.read_bytes())
+
+    def test_eof_during_credentials_never_downloads_builds_or_writes_configuration(self):
+        for suffix in ('', 'admin@example.test\n', self.admin_fields,
+                       self.admin_fields + self.password + '\n'):
+            with self.subTest(suffix=suffix):
+                self.calls.unlink(missing_ok=True)
+                result = self.run_script('install', answers='192.0.2.10\n\n' + suffix)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(self.commands('run'))
+                self.assertFalse(self.commands('build'))
+                self.assertFalse(self.commands('up'))
+                self.assertFalse((self.root / 'deploy/.env').exists())
+                self.assertNotIn(self.password, result.stdout + result.stderr)
+
+    def test_invalid_name_and_blank_profile_fields_reprompt_before_downloading(self):
+        answers = (' 192.0.2.10 \n 8080 \n admin@example.test \ninvalid name\nancore-admin\n'
+                   '   \n Anna \n\t\n Nowak \n' + self.password + '\n' + self.password + '\n')
+        result = self.run_script('install', answers=answers)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.admin_input.read_text(), self.admin_fields + self.password + '\n')
+        for label in ('Nazwa administratora', 'Imię administratora', 'Nazwisko administratora'):
+            self.assertEqual(result.stdout.count(label), 2)
+        self.assertLess(result.stdout.index('Powtórz hasło'), result.stdout.index('TEST: konfigurator Docker.'))
+
+    def test_terminal_hides_password_and_restores_echo_after_success(self):
+        process, master, slave = self.start_terminal()
+        original = termios.tcgetattr(slave)
+        self.terminal_password_prompt(master, slave)
+        os.write(master, (self.password + '\n').encode())
+        self.terminal_until(master, 'Powtórz hasło')
+        deadline = time.monotonic() + 3
+        while termios.tcgetattr(slave)[3] & termios.ECHO and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertFalse(termios.tcgetattr(slave)[3] & termios.ECHO)
+        os.write(master, (self.password + '\n').encode())
+        self.terminal_until(master, 'Usługi Ancore są gotowe.')
+        self.assertEqual(self.terminal_exit(process), 0)
+        self.assertEqual(termios.tcgetattr(slave), original)
+        self.assertNotIn(self.password.encode(), self.terminal_output)
+        self.assertEqual(self.admin_input.read_text(), self.admin_fields + self.password + '\n')
+
+    def test_terminal_restores_echo_after_interruption_during_password(self):
+        process, master, slave = self.start_terminal()
+        original = termios.tcgetattr(slave)
+        self.terminal_password_prompt(master, slave)
+        process.send_signal(signal.SIGTERM)
+        self.assertNotEqual(self.terminal_exit(process), 0)
+        self.assertEqual(termios.tcgetattr(slave), original)
+        self.assertFalse(self.commands('run'))
+        self.assertFalse((self.root / 'deploy/.env').exists())
 
     def test_changed_address_preserves_existing_credentials_and_volume_project(self):
         self.prepare()
@@ -170,7 +330,7 @@ class ProductionInstallerTests(SimpleTestCase):
             self.assertEqual(after[key], before[key])
 
     def test_invalid_address_and_port_reprompt_without_extra_configuration_questions(self):
-        result = self.run_script('install', answers='http://192.0.2.10\nexample.test\n999.1.1.1\n192.0.2.10\nwrong\n0\n65536\n999999999999999999999\n8087\n')
+        result = self.run_script('install', answers='http://192.0.2.10\nexample.test\n999.1.1.1\n192.0.2.10\nwrong\n0\n65536\n999999999999999999999\n8087\n' + self.admin_answers())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(self.config()['ANCORE_HTTP_PORT'], "'8087'")
         self.assertEqual(self.config()['ANCORE_HOST'], "'192.0.2.10'")
@@ -210,10 +370,10 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertEqual(migrated.returncode, 0, migrated.stdout + migrated.stderr)
         self.assertEqual(self.config(), original)
         self.assertFalse((self.root / 'deploy/backups').exists())
-        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+        self.assertEqual(self.commands('exec')[0][-1], '--check-only')
 
     def test_occupied_host_port_aborts_before_build_or_start(self):
-        result = self.run_script('install', answers='192.0.2.10\n\n',
+        result = self.run_script('install', answers='192.0.2.10\n\n' + self.admin_answers(),
                                  INSTALLER_LISTENERS='LISTEN 0 511 0.0.0.0:8080')
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('8080', result.stderr)
@@ -247,14 +407,14 @@ class ProductionInstallerTests(SimpleTestCase):
                     result = self.run_script(action, answers='\n\n', **environment)
                     self.assertNotEqual(result.returncode, 0)
                     self.assertNotIn('są gotowe', result.stdout)
-        self.assertFalse(self.commands('exec'))
+        self.assertFalse([call for call in self.commands('exec') if '--check-only' not in call])
 
     def test_failed_admin_creation_never_reports_installation_ready(self):
-        result = self.run_script('install', answers='192.0.2.10\n\n', INSTALLER_ADMIN_ERROR='1')
+        result = self.run_script('install', answers='192.0.2.10\n\n' + self.admin_answers(), INSTALLER_ADMIN_ERROR='1')
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(len(self.commands('up')), 1)
         self.assertEqual(len(self.commands('exec')), 1)
-        self.assertEqual(self.commands('exec')[0][-1], 'ensure_admin')
+        self.assertEqual(self.commands('exec')[0][-1], '--from-stdin')
         self.assertNotIn('Usługi Ancore są gotowe.', result.stdout)
         self.assertNotIn('Adres Ancore:', result.stdout)
         self.assertFalse(self.commands('down'))
