@@ -108,7 +108,9 @@ Wszystkie polecenia uruchamiaj w katalogu projektu:
 | `sh ancore-install.sh stop` | Zatrzymanie kontenerów z zachowaniem danych |
 | `sh ancore-install.sh start` | Uruchomienie wcześniej zbudowanej aplikacji |
 | `sh ancore-install.sh restart` | Ponowny start usług |
-| `sh ancore-install.sh update` | Przebudowa i start z aktualnych źródeł |
+| `sh ancore-install.sh update` | Pytanie o link GitHub, pobranie kodu, przebudowa i start |
+| `sh ancore-install.sh update URL [GAŁĄŹ]` | Aktualizacja z podanego repozytorium bez pytania o link |
+| `sh ancore-install.sh update --local` | Przebudowa i start z obecnych plików bez pobierania kodu |
 | `sh ancore-install.sh admin` | Utworzenie kolejnego administratora Django |
 | `sh ancore-install.sh --help` | Pomoc instalatora |
 
@@ -117,8 +119,25 @@ Z podglądu logów wychodzisz przez **Ctrl+C**; usługi nadal działają.
 
 ### Aktualizacja i dane
 
-Przed `update` pobierz lub skopiuj nowy kod do katalogu projektu. Polecenie
-przebudowuje lokalne źródła; nie pobiera zmian z Git.
+W instalacji pobranej przez `git clone` uruchom aktualizację:
+
+```sh
+sh ancore-install.sh update
+```
+
+Skrypt poprosi o link. Wpisz adres swojego repozytorium GitHub i naciśnij Enter:
+
+```text
+Podaj link do repozytorium GitHub: https://github.com/WLASCICIEL/ancore
+```
+
+Polecenie pobierze bieżącą gałąź, zaktualizuje kod, przebuduje aplikację
+i uruchomi usługi z zapisanej konfiguracji. Inną gałąź można podać na końcu,
+np. `sh ancore-install.sh update https://github.com/WLASCICIEL/ancore main`.
+Wymaga Git na serwerze i czystego repozytorium; lokalne zmiany lub rozbieżna
+historia zatrzymują aktualizację. Do przebudowy obecnych plików bez pobierania
+kodu użyj `sh ancore-install.sh update --local`.
+[Szczegóły aktualizacji i dostępu do prywatnego repozytorium](docs/PRODUCTION.md#aktualizacja-z-github).
 
 - **Konfiguracja:** `deploy/.env` zawiera losowe sekrety instalacji i ma uprawnienia
   `0600`. Hasło administratora Django nie jest w nim zapisywane.

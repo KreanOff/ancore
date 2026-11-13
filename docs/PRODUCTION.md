@@ -30,6 +30,7 @@ HTTPS. Baza i pliki pozostają w trwałych wolumenach Docker.
   `up --wait --wait-timeout` (polecenie `docker compose` lub `docker-compose`).
 - Dostęp użytkownika do Dockera i zapisu w katalogu projektu.
 - Źródła projektu na serwerze i internet do pobrania obrazów oraz zależności.
+- Do aktualizacji z GitHub: Git na hoście oraz projekt pobrany przez `git clone`.
 - Dostęp do wybranego portu HTTP z urządzeń użytkowników.
 
 Python, Node, Nginx i PostgreSQL działają w kontenerach. Nie trzeba instalować
@@ -96,15 +97,71 @@ Nie importuje lokalnej bazy developerskiej ani uploadów z repozytorium.
 | `./ancore-install.sh restart` | Ponowne uruchomienie usług |
 | `./ancore-install.sh status` | Stan kontenerów |
 | `./ancore-install.sh logs [USŁUGA]` | Logi wszystkich usług albo wskazanego kontenera |
-| `./ancore-install.sh update` | Przebudowa i start z obecnego kodu oraz zapisanej konfiguracji |
+| `./ancore-install.sh update` | Pytanie o link GitHub, pobranie kodu, przebudowa i start |
+| `./ancore-install.sh update URL [GAŁĄŹ]` | Aktualizacja z podanego repozytorium bez pytania o link |
+| `./ancore-install.sh update --local` | Przebudowa i start z obecnych plików bez pobierania kodu |
 | `./ancore-install.sh admin` | Utworzenie dodatkowego administratora Django |
 | `./ancore-install.sh --help` | Lista poleceń |
 
-`update` nie pobiera kodu z Git: najpierw pobierz lub skopiuj nowe źródła.
 `start` wymaga wcześniejszego zbudowania obrazów przez instalator.
 `start`, `restart` i `update` nie pytają o administratora. Polecenie `admin`
 pozwala dodać następne konto administracyjne. Zwykłe konta użytkowników można
 tworzyć przez rejestrację w aplikacji.
+
+## Aktualizacja z GitHub
+
+W katalogu istniejącej instalacji pobranej przez `git clone` uruchom:
+
+```sh
+sh ancore-install.sh update
+```
+
+Skrypt zapyta o link przed wywołaniem Dockera. Wpisz adres repozytorium
+i naciśnij Enter:
+
+```text
+Podaj link do repozytorium GitHub: https://github.com/WLASCICIEL/ancore
+```
+
+Spacje na początku i końcu odpowiedzi są pomijane. Pusta odpowiedź lub błędny
+adres powodują ponowienie pytania; przerwanie wejścia kończy polecenie bez
+zmiany kodu, konfiguracji i usług.
+
+Skrypt pobiera z podanego repozytorium gałąź o tej samej nazwie co bieżąca
+lokalna gałąź. Możesz też podać URL od razu jako argument i opcjonalnie wskazać
+gałąź — wtedy skrypt nie pyta o link:
+
+```sh
+sh ancore-install.sh update https://github.com/WLASCICIEL/ancore main
+```
+
+Link może mieć końcówkę `.git` lub `/`. Obsługiwany jest także adres SSH,
+np. `git@github.com:WLASCICIEL/ancore.git`. Podaj adres repozytorium,
+bez `/tree/` ani `/blob/`; nazwę gałęzi wpisz jako osobny argument.
+Dostęp do prywatnego repozytorium skonfiguruj w Git przez menedżer poświadczeń
+lub klucz SSH. Link nie może zawierać tokenu ani hasła.
+
+Aktualizacja wymaga Git na hoście, zapisanej konfiguracji `deploy/.env`
+i czystego repozytorium: bez lokalnych zmian oraz nieśledzonych plików,
+których nie obejmuje `.gitignore`. Katalog projektu musi być katalogiem
+głównym repozytorium z aktywną gałęzią; kopia ZIP i odłączony HEAD nie są
+obsługiwane w tym wariancie. Aktualizacja dopuszcza wyłącznie fast-forward:
+pobrana rewizja musi być kontynuacją lokalnej historii. Lokalne commity,
+których nie ma w pobranej gałęzi, zatrzymują proces. Wybrana zdalna gałąź
+aktualizuje obecną lokalną gałąź, zachowując jej nazwę i ustawienie `origin`.
+
+Po pobraniu skrypt sprawdza podstawowe pliki Ancore oraz brak konfiguracji
+i danych lokalnych w chronionych ścieżkach pobranej wersji. Zachowuje
+`deploy/.env`, mapowanie `deploy/compose.recovery.yaml` i wolumeny danych;
+kolizja z lokalnym ignorowanym plikiem również zatrzymuje aktualizację.
+Błąd pobrania lub zastosowania zmian nie uruchamia budowania ani zatrzymania
+usług. Po aktualizacji kodu skrypt uruchamia nową wersję instalatora
+z `update --local`, bez ponownego pytania o link, przebudowuje obrazy
+i uruchamia usługi ze sprawdzeniem gotowości.
+
+`sh ancore-install.sh update --local` przebudowuje obecne źródła bez pytań
+i pobierania kodu. Możesz go użyć do ponowienia budowania po błędzie:
+kod został już zaktualizowany, a instalator nie cofa go automatycznie.
 
 ## Konfiguracja i dane
 

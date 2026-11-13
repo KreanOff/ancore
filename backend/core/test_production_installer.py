@@ -98,7 +98,7 @@ class ProductionInstallerTests(SimpleTestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name) / 'repo with spaces'
         self.root.mkdir()
-        for name in ('ancore-install.sh', 'deploy/cli/runtime.sh', 'deploy/cli/setup.sh', 'deploy/cli/configure.py',
+        for name in ('ancore-install.sh', 'deploy/cli/runtime.sh', 'deploy/cli/setup.sh', 'deploy/cli/update.sh', 'deploy/cli/configure.py',
                      'deploy/compose.yaml', 'scripts/start_office.sh', 'scripts/office/start.sh'):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -112,9 +112,10 @@ class ProductionInstallerTests(SimpleTestCase):
         self.calls = Path(temporary.name) / 'calls.jsonl'
         self.admin_input = Path(temporary.name) / 'admin-input.txt'
         self.environment = {key: value for key, value in os.environ.items()
-                            if not key.startswith(('DOCKER_', 'INSTALLER_', 'ANCORE_'))}
+                            if not key.startswith(('DOCKER_', 'INSTALLER_', 'ANCORE_', 'GIT_'))}
         self.environment.update(PATH=str(self.bin) + os.pathsep + os.environ['PATH'],
-                                INSTALLER_CALLS=str(self.calls), INSTALLER_ADMIN_INPUT=str(self.admin_input))
+                                INSTALLER_CALLS=str(self.calls), INSTALLER_ADMIN_INPUT=str(self.admin_input),
+                                GIT_CONFIG_GLOBAL=str(self.bin / 'gitconfig'), GIT_CONFIG_NOSYSTEM='1')
 
     def run_script(self, *arguments, answers='', **environment):
         return subprocess.run(['sh', str(self.root / 'ancore-install.sh'), *arguments],
@@ -186,6 +187,61 @@ class ProductionInstallerTests(SimpleTestCase):
         self.environment.update(INSTALLER_BACKEND_ID='own-backend', INSTALLER_EXISTING_ADMIN='1')
         self.calls.write_text('')
         self.admin_input.unlink()
+
+    def git(self, *arguments, cwd=None):
+        result = subprocess.run(['git', *arguments], cwd=cwd or self.root,
+                                env=self.environment, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return result.stdout.strip()
+
+    def prepare_git_update(self):
+        self.prepare()
+        # All Git configuration and repositories belong to this temporary fixture.
+        # URL rewriting exercises the public GitHub syntax without network access.
+        self.environment = {key: value for key, value in self.environment.items()
+                            if not key.startswith('GIT_')}
+        self.environment.update(GIT_CONFIG_GLOBAL=str(self.bin / 'gitconfig'),
+                                GIT_CONFIG_NOSYSTEM='1', GIT_TERMINAL_PROMPT='0',
+                                GIT_ALLOW_PROTOCOL='file')
+        self.git('config', '--global', 'user.name', 'Installer Test')
+        self.git('config', '--global', 'user.email', 'installer@example.test')
+        self.git('config', '--global', 'commit.gpgsign', 'false')
+        shutil.copyfile(settings.BASE_DIR / '.gitignore', self.root / '.gitignore')
+        for name in ('deploy/Dockerfile', 'manage.py', 'backend/ancore/settings.py'):
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('# Installer Git fixture\n')
+        (self.root / 'version.txt').write_text('original\n')
+        (self.root / 'obsolete.txt').write_text('Remove in the next release.\n')
+        self.git('init', '--initial-branch=main')
+        self.git('add', '.')
+        self.git('commit', '-m', 'Initial installation')
+        self.initial_revision = self.git('rev-parse', 'HEAD')
+        self.original_origin = 'https://github.com/original/ancore.git'
+        self.git('remote', 'add', 'origin', self.original_origin)
+        self.source = self.root.parent / 'source with spaces'
+        self.git('clone', str(self.root), str(self.source))
+        self.github_url = 'https://github.com/installer-test/ancore.git'
+        for address in (self.github_url, 'git@github.com:installer-test/ancore.git'):
+            self.git('config', '--global', '--add', f'url.{self.source}.insteadOf', address)
+
+    def commit_source(self, message='Next release'):
+        self.git('add', '--all', cwd=self.source)
+        self.git('commit', '-m', message, cwd=self.source)
+        return self.git('rev-parse', 'HEAD', cwd=self.source)
+
+    def assert_update_rejected(self, *arguments):
+        before = self.git('rev-parse', 'HEAD')
+        configuration = (self.root / 'deploy/.env').read_bytes()
+        self.calls.write_text('')
+        result = self.run_script('update', *arguments)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), before)
+        self.assertEqual((self.root / 'deploy/.env').read_bytes(), configuration)
+        for action in ('build', 'up', 'stop', 'down', 'volume', 'exec'):
+            self.assertFalse(self.commands(action), action)
+        self.assertNotIn('Usługi Ancore są gotowe.', result.stdout)
+        return result
 
     def test_default_installation_configures_ip_port_and_prepares_admin_after_start(self):
         result = self.run_script(answers='192.0.2.10\n8087\n' + self.admin_answers())
@@ -400,11 +456,11 @@ class ProductionInstallerTests(SimpleTestCase):
 
     def test_failed_build_configuration_or_start_never_creates_admin_or_reports_ready(self):
         self.prepare()
-        for action in ('install', 'update'):
+        for arguments in (('install',), ('update', '--local')):
             for environment in ({'INSTALLER_BUILD_ERROR': '1'}, {'INSTALLER_START_ERROR': '1'},
                                 {'INSTALLER_CONFIG_ERROR': '1'}):
-                with self.subTest(action=action, environment=environment):
-                    result = self.run_script(action, answers='\n\n', **environment)
+                with self.subTest(arguments=arguments, environment=environment):
+                    result = self.run_script(*arguments, answers='\n\n', **environment)
                     self.assertNotEqual(result.returncode, 0)
                     self.assertNotIn('są gotowe', result.stdout)
         self.assertFalse([call for call in self.commands('exec') if '--check-only' not in call])
@@ -445,19 +501,293 @@ class ProductionInstallerTests(SimpleTestCase):
                 self.assertNotEqual(self.run_script(*arguments).returncode, 0)
         self.assertFalse(self.calls.exists())
 
-    def test_update_requires_configuration_then_builds_without_prompting(self):
-        missing = self.run_script('update')
+    def test_local_update_requires_configuration_then_builds_without_prompting(self):
+        missing = self.run_script('update', '--local')
         self.assertNotEqual(missing.returncode, 0)
         self.assertFalse((self.root / 'deploy/.env').exists())
         self.prepare()
         before = (self.root / 'deploy/.env').read_bytes()
-        update = self.run_script('update')
+        update = self.run_script('update', '--local')
         self.assertEqual(update.returncode, 0, update.stdout + update.stderr)
+        self.assertNotIn('Podaj link do repozytorium GitHub:', update.stdout)
         self.assertEqual((self.root / 'deploy/.env').read_bytes(), before)
         self.assertEqual(len(self.commands('build')), 1)
         self.assertEqual(len(self.commands('up')), 1)
         self.assertFalse(self.commands('run'))
         self.assertFalse(self.commands('exec'))
+
+        no_git = self.root.parent / 'path without git'
+        no_git.mkdir()
+        for command in ('docker', 'ss', 'sh', 'dirname', 'sed', 'grep', 'cat'):
+            executable = shutil.which(command, path=self.environment['PATH'])
+            self.assertIsNotNone(executable, command)
+            (no_git / command).symlink_to(executable)
+        self.calls.write_text('')
+        local = self.run_script('update', '--local', PATH=str(no_git))
+        self.assertEqual(local.returncode, 0, local.stdout + local.stderr)
+        self.assertEqual(len(self.commands('build')), 1)
+        help_result = self.run_script('update', '--help', PATH=str(no_git), INSTALLER_NO_ACCESS='1')
+        self.assertEqual(help_result.returncode, 0, help_result.stdout + help_result.stderr)
+        self.assertNotIn('Podaj link do repozytorium GitHub:', help_result.stdout)
+        self.calls.write_text('')
+        remote = self.run_script('update', 'https://github.com/installer-test/ancore', PATH=str(no_git))
+        self.assertNotEqual(remote.returncode, 0)
+        self.assertIn('git', remote.stderr)
+        self.assertFalse(self.commands('build'))
+        self.assertFalse(self.commands('up'))
+
+    def test_git_update_prompt_downloads_sources_and_reexecutes_new_installer_before_building(self):
+        self.prepare_git_update()
+        preserved = {}
+        for name in ('deploy/.env', 'deploy/compose.recovery.yaml', 'media/private-upload.txt'):
+            path = self.root / name
+            if name != 'deploy/.env':
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('Local installation data.\n')
+            preserved[name] = path.read_bytes()
+        (self.source / 'version.txt').write_text('updated\n')
+        (self.source / 'new-source.txt').write_text('New application source.\n')
+        (self.source / 'obsolete.txt').unlink()
+        installer = self.source / 'ancore-install.sh'
+        installer.write_text(installer.read_text().replace(
+            'set -eu\n', "set -eu\necho 'TEST: nowy instalator.'\n", 1))
+        runtime = self.source / 'deploy/cli/runtime.sh'
+        runtime.write_text(runtime.read_text().replace(
+            'ancore_build() {\n',
+            'ancore_build() {\n'
+            '    [ "$(cat version.txt)" = updated ] || exit 23\n'
+            '    [ -f new-source.txt ] && [ ! -e obsolete.txt ] || exit 24\n'
+            "    echo 'TEST: nowy runtime przed budowaniem.'\n", 1))
+        revision = self.commit_source()
+
+        result = self.run_script('update', answers=f' \t{self.github_url}/\t  \n')
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.count('Podaj link do repozytorium GitHub:'), 1)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+        self.assertEqual(self.git('config', '--get', 'remote.origin.url'), self.original_origin)
+        self.assertEqual(self.git('symbolic-ref', '--short', 'HEAD'), 'main')
+        self.assertEqual(result.stdout.count('TEST: nowy instalator.'), 1)
+        self.assertEqual(result.stdout.count('TEST: nowy runtime przed budowaniem.'), 1)
+        self.assertLess(result.stdout.index('TEST: nowy runtime przed budowaniem.'),
+                        result.stdout.index('Usługi Ancore są gotowe.'))
+        self.assertEqual(len(self.commands('build')), 1)
+        self.assertEqual(len(self.commands('up')), 1)
+        self.assertIn(str((self.root / 'deploy/compose.recovery.yaml').resolve()), self.commands('up')[0])
+        self.assertFalse(self.commands('exec'))
+        self.assertFalse(self.commands('stop'))
+        self.assertFalse(self.commands('volume'))
+        for name, content in preserved.items():
+            self.assertEqual((self.root / name).read_bytes(), content)
+
+    def test_git_update_prompt_retries_blank_and_invalid_links_until_valid_input(self):
+        self.prepare_git_update()
+        (self.source / 'version.txt').write_text('Corrected link release.\n')
+        revision = self.commit_source()
+        answers = '\nnot a GitHub link\nhttps://github.com/installer-test/ancore\\repo\n'
+
+        result = self.run_script('update', answers=answers + self.github_url + '\n')
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.count('Podaj link do repozytorium GitHub:'), 4)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+        self.assertEqual(len(self.commands('build')), 1)
+        self.assertEqual(len(self.commands('up')), 1)
+        self.assertFalse(self.commands('exec'))
+
+    def test_git_update_prompt_eof_after_blank_or_invalid_input_never_calls_git_or_docker(self):
+        self.prepare_git_update()
+        configuration = (self.root / 'deploy/.env').read_bytes()
+        git_calls = self.root.parent / 'unexpected-git-call.txt'
+        git_stub = self.bin / 'git'
+        git_stub.write_text(
+            f'#!{sys.executable}\nfrom pathlib import Path\n'
+            f'Path({str(git_calls)!r}).write_text("Git must wait for a valid link.")\n'
+            'raise SystemExit(1)\n'
+        )
+        git_stub.chmod(0o700)
+        for answers in ('', '\n', ' \t \n', 'not a GitHub link\n',
+                        '\nhttps://github.com/installer-test/$(touch should-not-exist)\n'):
+            with self.subTest(answers=answers):
+                self.calls.write_text('')
+                result = self.run_script('update', answers=answers)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(result.stdout.count('Podaj link do repozytorium GitHub:'),
+                                 len(answers.splitlines()) + 1)
+                self.assertFalse(self.recorded_calls())
+                self.assertFalse(git_calls.exists())
+                self.assertFalse((self.root / '.git/FETCH_HEAD').exists())
+                self.assertFalse((self.root / 'should-not-exist').exists())
+                self.assertEqual((self.root / 'deploy/.env').read_bytes(), configuration)
+                self.assertNotIn('Usługi Ancore są gotowe.', result.stdout)
+        git_stub.unlink()
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.initial_revision)
+
+    def test_git_update_accepts_repository_links_and_uses_current_branch(self):
+        self.prepare_git_update()
+        self.git('branch', '-m', 'production')
+        self.git('tag', 'production')
+        self.git('checkout', '-b', 'production', cwd=self.source)
+        (self.source / 'version.txt').write_text('production release\n')
+        revision = self.commit_source()
+        for url in ('https://github.com/installer-test/ancore',
+                    'https://github.com/installer-test/ancore/',
+                    'https://github.com/installer-test/ancore.git/',
+                    'git@github.com:installer-test/ancore',
+                    'git@github.com:installer-test/ancore.git'):
+            with self.subTest(url=url):
+                self.calls.write_text('')
+                result = self.run_script('update', url)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn('Podaj link do repozytorium GitHub:', result.stdout)
+                self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+                self.assertEqual(self.git('symbolic-ref', 'HEAD'), 'refs/heads/production')
+                self.assertEqual(len(self.commands('build')), 1)
+                self.assertEqual(len(self.commands('up')), 1)
+
+    def test_git_update_accepts_an_explicit_branch_without_changing_origin(self):
+        self.prepare_git_update()
+        self.git('checkout', '-b', 'release/next', cwd=self.source)
+        (self.source / 'version.txt').write_text('selected release\n')
+        revision = self.commit_source()
+
+        result = self.run_script('update', self.github_url, 'release/next')
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('Podaj link do repozytorium GitHub:', result.stdout)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+        self.assertEqual(self.git('config', '--get', 'remote.origin.url'), self.original_origin)
+        self.assertEqual(self.git('symbolic-ref', '--short', 'HEAD'), 'main')
+
+    def test_git_update_rejects_local_changes_including_staged_and_untracked_files(self):
+        self.prepare_git_update()
+        (self.source / 'version.txt').write_text('remote release\n')
+        self.commit_source()
+        for kind in ('modified', 'staged', 'untracked'):
+            with self.subTest(kind=kind):
+                path = self.root / ('local-notes.txt' if kind == 'untracked' else 'version.txt')
+                path.write_text('Do not overwrite this local change.\n')
+                if kind == 'staged':
+                    self.git('add', 'version.txt')
+                status = self.git('status', '--porcelain')
+                self.assert_update_rejected(self.github_url)
+                self.assertEqual(self.git('status', '--porcelain'), status)
+                self.assertEqual(path.read_text(), 'Do not overwrite this local change.\n')
+                if kind == 'untracked':
+                    path.unlink()
+                else:
+                    self.git('restore', '--staged', '--worktree', 'version.txt')
+
+    def test_git_update_rejects_divergent_history_and_detached_head(self):
+        self.prepare_git_update()
+        (self.root / 'local-source.txt').write_text('Local commit.\n')
+        self.git('add', 'local-source.txt')
+        self.git('commit', '-m', 'Local source change')
+        self.assert_update_rejected(self.github_url)
+        (self.source / 'version.txt').write_text('Remote commit.\n')
+        self.commit_source()
+        self.assert_update_rejected(self.github_url)
+        self.git('checkout', '--detach', self.initial_revision)
+        self.assert_update_rejected(self.github_url)
+
+    def test_git_update_rejects_missing_branch_and_fetch_failure_before_building(self):
+        self.prepare_git_update()
+        self.assert_update_rejected(self.github_url, 'missing-branch')
+        self.source.rename(self.source.with_name('temporarily unavailable source'))
+        self.assert_update_rejected(self.github_url)
+
+    def test_git_update_rejects_incomplete_or_symlinked_application_sources(self):
+        self.prepare_git_update()
+        for index, (name, symlink) in enumerate((('manage.py', False), ('deploy/compose.yaml', True))):
+            with self.subTest(name=name, symlink=symlink):
+                branch = f'invalid-layout-{index}'
+                self.git('checkout', '-b', branch, self.initial_revision, cwd=self.source)
+                path = self.source / name
+                path.unlink()
+                if symlink:
+                    path.symlink_to('Dockerfile')
+                self.commit_source()
+                self.assert_update_rejected(self.github_url, branch)
+
+    def test_git_update_rejects_sources_that_track_configuration_or_local_data(self):
+        self.prepare_git_update()
+        for index, name in enumerate(('deploy/.env', 'deploy/compose.recovery.yaml', '.env',
+                                      'media/upload.txt', 'private_documents/file.txt',
+                                      'deploy/backups/archive.txt')):
+            with self.subTest(name=name):
+                local = self.root / name
+                if name != 'deploy/.env':
+                    local.parent.mkdir(parents=True, exist_ok=True)
+                    local.write_text('Private local data.\n')
+                original = local.read_bytes()
+                branch = f'protected-path-{index}'
+                self.git('checkout', '-b', branch, self.initial_revision, cwd=self.source)
+                remote = self.source / name
+                remote.parent.mkdir(parents=True, exist_ok=True)
+                remote.write_text('Must never replace local data.\n')
+                self.git('add', '--force', name, cwd=self.source)
+                self.commit_source()
+                self.assert_update_rejected(self.github_url, branch)
+                self.assertEqual(local.read_bytes(), original)
+
+    def test_git_update_does_not_overwrite_other_ignored_files(self):
+        self.prepare_git_update()
+        (self.root / '.git/info/exclude').write_text('local-cache.txt\n')
+        (self.root / 'local-cache.txt').write_text('Keep local content.\n')
+        (self.source / 'local-cache.txt').write_text('Incoming tracked content.\n')
+        self.commit_source()
+        self.assertEqual(self.git('status', '--porcelain'), '')
+
+        self.assert_update_rejected(self.github_url)
+
+        self.assertEqual((self.root / 'local-cache.txt').read_text(), 'Keep local content.\n')
+
+    def test_git_update_rejects_invalid_urls_branches_and_extra_arguments(self):
+        self.prepare_git_update()
+        for arguments in (('http://github.com/installer-test/ancore',),
+                          ('https://github.com.example.test/installer-test/ancore',),
+                          ('https://token@github.com/installer-test/ancore',),
+                          ('https://github.com/installer-test/ancore/tree/main',),
+                          ('https://github.com/installer-test/ancore?token=private',),
+                          ('https://github.com/installer-test/ancore#main',),
+                          ('https://github.com/installer-test/$(touch should-not-exist)',),
+                          ('--upload-pack=touch should-not-exist',),
+                          ('--local', 'main'),
+                          (self.github_url, '--upload-pack=false'),
+                          (self.github_url, 'main', 'extra')):
+            with self.subTest(arguments=arguments):
+                self.assert_update_rejected(*arguments)
+        self.assertFalse((self.root / 'should-not-exist').exists())
+        self.assertFalse((self.root / '.git/FETCH_HEAD').exists())
+
+    def test_git_update_requires_checkout_at_the_installer_root(self):
+        self.prepare()
+        result = self.run_script('update', 'https://github.com/installer-test/ancore')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse((self.root / '.git').exists())
+        self.assertFalse(self.commands('build'))
+        # A parent repository must not accidentally become the deployment target.
+        self.git('init', '--initial-branch=main', cwd=self.root.parent)
+        result = self.run_script('update', 'https://github.com/installer-test/ancore')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.commands('build'))
+        self.assertFalse(self.commands('up'))
+        self.assertFalse((self.root.parent / '.git/FETCH_HEAD').exists())
+
+    def test_git_update_build_failure_keeps_services_running_without_success_message(self):
+        self.prepare_git_update()
+        (self.source / 'version.txt').write_text('Next release.\n')
+        revision = self.commit_source()
+
+        result = self.run_script('update', self.github_url, INSTALLER_BUILD_ERROR='1')
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+        self.assertEqual(len(self.commands('build')), 1)
+        self.assertFalse(self.commands('up'))
+        self.assertFalse(self.commands('stop'))
+        self.assertFalse(self.commands('down'))
+        self.assertNotIn('Usługi Ancore są gotowe.', result.stdout)
 
     def test_start_restart_and_stop_preserve_data_without_rebuilding_or_admin_prompts(self):
         self.prepare()
@@ -480,10 +810,10 @@ class ProductionInstallerTests(SimpleTestCase):
         override = self.root / 'deploy/compose.recovery.yaml'
         content = 'volumes:\n  postgres:\n    name: previous-recovery-postgres\n'
         override.write_text(content)
-        for action, answers in (('start', ''), ('update', ''), ('install', '\n\n')):
-            with self.subTest(action=action):
+        for arguments, answers in ((('start',), ''), (('update', '--local'), ''), (('install',), '\n\n')):
+            with self.subTest(arguments=arguments):
                 self.calls.write_text('')
-                result = self.run_script(action, answers=answers)
+                result = self.run_script(*arguments, answers=answers)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertIn(str(override.resolve()), self.commands('up')[0])
                 self.assertEqual(override.read_text(), content)

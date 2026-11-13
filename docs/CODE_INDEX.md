@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 39 | 0 | 29 | 249 |
+| [backend/core](../backend/core) | 39 | 0 | 29 | 263 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 112 |
 | [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
@@ -1742,7 +1742,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
 
-- `ProductionInstallerTests`: 26 metod testowych.
+- `ProductionInstallerTests`: 40 metod testowych.
 
 ### backend/core/test_project_layout.py
 
@@ -2580,6 +2580,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [deploy/cli/configure.py](../deploy/cli/configure.py)
 - [deploy/cli/runtime.sh](../deploy/cli/runtime.sh)
 - [deploy/cli/setup.sh](../deploy/cli/setup.sh)
+- [deploy/cli/update.sh](../deploy/cli/update.sh)
 - [deploy/compose.yaml](../deploy/compose.yaml)
 - [deploy/postgres/init.sh](../deploy/postgres/init.sh)
 - [deploy/production.env.example](../deploy/production.env.example)

@@ -1,5 +1,35 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Aktualizacja kodu z GitHub (13.11.2026)
+
+`sh ancore-install.sh update` pyta o link do repozytorium GitHub przed
+wywołaniem Dockera, pobiera kod przez Git na hoście, aktualizuje istniejący
+klon metodą fast-forward, a następnie uruchamia nową wersję instalatora
+z `update --local` do przebudowy i startu usług bez kolejnego pytania.
+Wariant `update URL [GAŁĄŹ]` przyjmuje link bez pytania. Domyślnie
+pobiera gałąź o nazwie bieżącej lokalnej gałęzi. `deploy/cli/update.sh`
+sprawdza adres, czystość repozytorium, ciągłość historii, podstawowe pliki
+Ancore i chronione ścieżki konfiguracji oraz danych. Nie zmienia `origin`
+ani nazwy lokalnej gałęzi. `update --local` buduje obecne źródła bez pytań
+i pobierania kodu. Pusta lub błędna odpowiedź ponawia pytanie; EOF kończy
+polecenie bez zmian. Białe znaki wokół wpisanego linku są pomijane.
+[Wymagania, przykłady i zachowanie po błędzie](PRODUCTION.md#aktualizacja-z-github).
+
+Weryfikacja: **51/51 testów** — 40 w `core.test_production_installer`
+oraz 11 w `core.test_production` i `core.test_project_layout`. Testy Git
+używają rzeczywistych, tymczasowych repozytoriów i lokalnego przekierowania
+adresów GitHub; Docker CLI jest zastępczy. Sprawdzono pojedyncze pytanie o link,
+pomijanie otaczających białych znaków, ponowienie błędnej lub pustej odpowiedzi,
+EOF bez wywołania Git ani Dockera, pobranie, dodanie i usunięcie
+źródeł przed budowaniem, uruchomienie nowego instalatora, wybór gałęzi,
+zachowanie konfiguracji i danych, odmowę dla lokalnych zmian i rozbieżnej
+historii, kolizje z ignorowanymi plikami oraz błędy pobierania i budowania.
+Sprawdzono także `update --local` i pomoc bez Git oraz brak ponownego pytania
+po pobraniu kodu. Przeszły kontrola składni
+czterech skryptów `sh`, indeks kodu, nowe lokalne odnośniki dokumentacji
+i `git diff --check`. Nie łączono się z GitHub ani nie budowano pełnego
+zestawu kontenerów; zmiana nie dotyczy ekranów przeglądarki.
+
 ## Prosta instalacja HTTP (13.11.2026)
 
 `./ancore-install.sh` pokazuje terminalowe logo i napis ANCORE. Powłoka hosta

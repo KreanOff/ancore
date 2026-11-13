@@ -11,13 +11,19 @@ Instalacja: sh ancore-install.sh
 Podaj IP serwera, port HTTP i dane administratora. Potem instalacja przebiega automatycznie.
 
   install / setup  Instalacja i pierwszy administrator; zachowuje dane i hasła.
-  update           Przebuduj i uruchom z aktualnych źródeł.
+  update [URL [GAŁĄŹ]]  Pobierz kod z GitHub, przebuduj i uruchom.
+                       Bez URL: zapytaj o link. Bez gałęzi: użyj bieżącej.
+  update --local   Przebuduj obecne pliki bez pobierania kodu i pytań.
   start            Uruchom przygotowaną instalację.
   stop             Zatrzymaj kontenery, zachowując dane.
   restart          Uruchom kontenery ponownie.
   status           Pokaż stan czterech usług.
   logs [USŁUGA]    Pokaż logi: web, backend, postgres lub onlyoffice.
   admin            Utwórz administratora Django.
+
+Przykład: sh ancore-install.sh update
+Następnie podaj link, np. https://github.com/WLASCICIEL/ancore
+Aktualizacja z GitHub wymaga Git i czystego repozytorium pobranego przez git clone.
 HELP
 }
 

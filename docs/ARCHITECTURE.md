@@ -113,6 +113,17 @@ Ponowne uruchomienie zachowuje sekrety, konta i wolumeny. Budowanie obrazów i o
 frontendów odbywa się na tym samym serwerze; obrazy bazowe i zależności są
 pobierane z internetu przy instalacji.
 
+`update` pyta o link do repozytorium GitHub przed wywołaniem Dockera.
+Wariant `update URL [GAŁĄŹ]` przyjmuje adres bez pytania. Skrypt korzysta
+z `deploy/cli/update.sh` i Git na hoście, aby pobrać kod do istniejącego klonu.
+Bez jawnej gałęzi wybiera nazwę bieżącej lokalnej gałęzi.
+Wymaga czystego repozytorium i aktualizacji
+fast-forward; chroni konfigurację, dane oraz ignorowane pliki przed
+nadpisaniem. Następnie uruchamia nową wersję instalatora, która buduje
+i uruchamia usługi ze starej konfiguracji przez `update --local`, bez kolejnego
+pytania. `update --local` służy także do jawnej przebudowy lokalnych źródeł
+bez pobierania kodu. [Kontrakt aktualizacji](PRODUCTION.md#aktualizacja-z-github).
+
 Nginx publikuje wybrany port na `0.0.0.0`. Backend, PostgreSQL i ONLYOFFICE
 pozostają w sieci Docker. Publiczny prefiks ONLYOFFICE jest względny
 (`/onlyoffice`), więc edytor używa adresu HTTP aplikacji. Podpisane pobrania
