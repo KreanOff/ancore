@@ -580,6 +580,48 @@ class ProductionInstallerTests(SimpleTestCase):
         for name, content in preserved.items():
             self.assertEqual((self.root / name).read_bytes(), content)
 
+    def test_git_update_keeps_sources_readable_and_local_data_private(self):
+        self.prepare_git_update()
+        private_upload = self.root / 'media/private-upload.txt'
+        private_upload.parent.mkdir()
+        private_upload.write_text('Private installation data.\n')
+        private_upload.chmod(0o600)
+        preserved = {path: path.read_bytes() for path in
+                     (self.root / 'deploy/.env', private_upload)}
+        (self.root / 'backend/ancore/settings.py').chmod(0o600)
+        (self.source / 'backend/ancore/settings.py').write_text('# Updated settings.\n')
+        template = self.source / 'backend/new_component/templates/view.html'
+        template.parent.mkdir(parents=True)
+        template.write_text('New application template.\n')
+        executable = self.source / 'scripts/new-command.sh'
+        executable.write_text('#!/bin/sh\nexit 0\n')
+        executable.chmod(0o755)
+        runtime = self.source / 'deploy/cli/runtime.sh'
+        runtime.write_text(runtime.read_text().replace(
+            'ancore_build() {\n',
+            'ancore_build() {\n    : > media/update-private.txt\n', 1))
+        revision = self.commit_source()
+
+        result = self.run_script('update', self.github_url)
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+        for name, mode in (
+            ('backend/ancore/settings.py', 0o644),
+            ('backend/new_component/templates/view.html', 0o644),
+            ('backend/new_component', 0o755),
+            ('backend/new_component/templates', 0o755),
+            ('scripts/new-command.sh', 0o755),
+            ('media/update-private.txt', 0o600),
+        ):
+            with self.subTest(path=name):
+                self.assertEqual((self.root / name).stat().st_mode & 0o777, mode)
+        for path, content in preserved.items():
+            with self.subTest(path=path.relative_to(self.root)):
+                self.assertEqual(path.read_bytes(), content)
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(self.git('status', '--porcelain'), '')
+
     def test_git_update_prompt_retries_blank_and_invalid_links_until_valid_input(self):
         self.prepare_git_update()
         (self.source / 'version.txt').write_text('Corrected link release.\n')

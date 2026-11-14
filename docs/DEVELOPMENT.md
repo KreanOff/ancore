@@ -1,5 +1,25 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Uprawnienia źródeł po aktualizacji (14.11.2026)
+
+Instalator ogranicza `umask 022` do zastosowania zmian Git; pozostałe kroki
+zachowują prywatne `077`. Obraz backendu normalizuje odczyt kodu przed
+przejściem na UID 10001, również dla źródeł pobranych starszym instalatorem.
+Nginx i skrypt inicjalizacji PostgreSQL mają jawne tryby kopiowania.
+[Przyczyna błędu i ponowienie aktualizacji](PRODUCTION.md#uprawnienia-źródeł-po-aktualizacji).
+
+Przeszły **52/52 testy** `core.test_production_installer`,
+`core.test_production` i `core.test_project_layout`. Nowa regresja z rzeczywistym
+lokalnym Git najpierw odtworzyła `0600/0700`, a po poprawce potwierdziła
+`0644/0755` źródeł oraz zachowanie treści i prywatnych praw konfiguracji
+i uploadu. Nowy runtime nadal tworzy prywatne pliki jako `0600`.
+Docker CLI w tych testach jest zastępczy. Osobna próba `chmod` na tymczasowym
+drzewie sprawdziła siedem trybów plików i katalogów oraz brak zmiany danych
+poza katalogiem źródeł. Sprawdzono składnię czterech skryptów `sh`, indeks,
+lokalne odnośniki dokumentacji i `git diff --check`.
+Silnik Docker był niedostępny; nie wykonano budowania obrazów ani startu usług
+na serwerze. Zmiana nie dotyczy UI ani schematu bazy.
+
 ## Aktualizacja kodu z GitHub (13.11.2026)
 
 `sh ancore-install.sh update` pyta o link do repozytorium GitHub przed

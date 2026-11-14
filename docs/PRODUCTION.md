@@ -163,6 +163,25 @@ i uruchamia usługi ze sprawdzeniem gotowości.
 i pobierania kodu. Możesz go użyć do ponowienia budowania po błędzie:
 kod został już zaktualizowany, a instalator nie cofa go automatycznie.
 
+### Uprawnienia źródeł po aktualizacji
+
+Zastosowanie zmian Git używa lokalnie `umask 022`: nowe i zastępowane pliki
+źródeł mają uprawnienia `0644`, a katalogi i wykonywalne skrypty `0755`.
+Pozostałe kroki instalatora zachowują `umask 077`; konfiguracja i istniejące
+prywatne pliki nie zmieniają uprawnień.
+
+Podczas budowania Docker normalizuje prawa odczytu źródeł w obrazie backendu,
+także dla checkoutu utworzonego starszym instalatorem. Kod pozostaje własnością
+roota, bez prawa zapisu dla UID 10001. Konfiguracja Nginx i skrypt inicjalizacji
+PostgreSQL również otrzymują jawne uprawnienia w swoich obrazach.
+
+Jeżeli backend po aktualizacji zgłasza `PermissionError: [Errno 13]` przy
+odczycie `/app/backend/ancore/settings.py`, pobierz wersję zawierającą tę
+poprawkę przez zwykłe `sh ancore-install.sh update`. Jeśli poprawiony kod
+jest już na serwerze, wystarczy `sh ancore-install.sh update --local`.
+Sam `restart` nie zmienia uprawnień zapisanych w obrazie. Naprawa odbywa się
+w nowym obrazie; nie wymaga zmiany praw konfiguracji ani wolumenów danych.
+
 ## Konfiguracja i dane
 
 Plik `deploy/.env` ma uprawnienia `0600` i zawiera losowy klucz Django,

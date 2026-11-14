@@ -22,7 +22,10 @@ COPY static ./static
 COPY --from=frontend /build/static/frontend ./static/frontend
 COPY --from=frontend /build/static/vendor/board ./static/vendor/board
 COPY deploy/backend/entrypoint.sh deploy/backend/gunicorn.conf.py ./deploy/backend/
-RUN mkdir -p /data/private /data/media /data/tmp /app/staticfiles \
+# Older installers checked out sources with umask 077. Normalize only image
+# sources, keeping them root-owned and read-only for the runtime user.
+RUN chmod -R a=rX,u+w /app \
+    && mkdir -p /data/private /data/media /data/tmp /app/staticfiles \
     && chown -R ancore:ancore /data /app/staticfiles && chmod 750 /data/*
 USER 10001:10001
 EXPOSE 8000
@@ -31,7 +34,7 @@ CMD ["gunicorn", "--config", "/app/deploy/backend/gunicorn.conf.py", "ancore.wsg
 
 FROM nginx:1.30.6-alpine AS web
 RUN addgroup -g 10001 ancore && addgroup nginx ancore && rm /etc/nginx/conf.d/default.conf
-COPY deploy/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=0644 deploy/web/nginx.conf /etc/nginx/conf.d/default.conf
 
 FROM postgres:17-alpine AS database
-COPY deploy/postgres/init.sh /docker-entrypoint-initdb.d/10-ancore.sh
+COPY --chmod=0755 deploy/postgres/init.sh /docker-entrypoint-initdb.d/10-ancore.sh

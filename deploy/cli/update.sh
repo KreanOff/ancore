@@ -87,7 +87,9 @@ ancore_update_sources() {
     git merge-base --is-ancestor HEAD "$ANCORE_UPDATE_COMMIT" || \
         ancore_fail 'Pobrana wersja nie jest kontynuacją lokalnej historii. Aktualizacja wymaga fast-forward; źródła i usługi pozostają bez zmian.'
     ancore_update_tree
-    if ! git -c core.hooksPath=/dev/null merge --ff-only --no-autostash --no-overwrite-ignore "$ANCORE_UPDATE_COMMIT"; then
+    # The installer keeps secrets private with umask 077. Source files must also
+    # be readable by the container user; keep the relaxed mask in this subshell.
+    if ! (umask 022; git -c core.hooksPath=/dev/null merge --ff-only --no-autostash --no-overwrite-ignore "$ANCORE_UPDATE_COMMIT"); then
         ancore_fail 'Nie udało się zastosować aktualizacji bez nadpisania lokalnych plików. Sprawdź git status; usługi nie zostały przebudowane.'
     fi
     printf 'Kod zaktualizowany do %s. Przebudowa i uruchomienie usług...\n' "$ANCORE_UPDATE_COMMIT"

@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 39 | 0 | 29 | 263 |
+| [backend/core](../backend/core) | 39 | 0 | 29 | 264 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 115 |
 | [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
@@ -1744,7 +1744,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
 
-- `ProductionInstallerTests`: 40 metod testowych.
+- `ProductionInstallerTests`: 41 metod testowych.
 
 ### backend/core/test_project_layout.py
 
