@@ -2281,9 +2281,9 @@ Wariant kompaktowy, tak jak pełny katalog, nie zawiera komórek menu
 ani ich toru siatki, także bez JavaScriptu.
 `hide_selection=True` usuwa checkboxy wierszy,
 checkbox nagłówka i kolumnę wyboru z siatki. Nagłówek kolumn „PRZESTRZEŃ”,
-„KLUCZ” i „OPIS” jest ukryty w `for-you-space-sheet`; jego metadane nadal
-służą wspólnemu mechanizmowi szerokości kolumn. Katalog Przestrzeni
-korzysta z pełnego wariantu z widocznym nagłówkiem. `spaces.services.decorate_directory_spaces` wspólnie przygotowuje
+„KLUCZ” i „OPIS” jest ukryty w `for-you-space-sheet`. Katalog Przestrzeni
+zachowuje pełny wariant tabeli z widocznym nagłówkiem.
+`spaces.services.decorate_directory_spaces` wspólnie przygotowuje
 dane tabel w katalogu i „Dla ciebie”; licznik obejmuje tylko widoczne
 zadania przestrzeni. Nazwa otwiera przestrzeń. W każdej grupie dat tabela
 znajduje się w sekcji
@@ -2296,21 +2296,20 @@ W React obie sekcje renderuje wspólny `shared/StatusGroup`: sekcja Przestrzeni
 używa neutralnego wariantu z ikoną warstw, licznikiem po prawej i tym samym
 przyciskiem zwijania oraz kontenerem `tasks-issue-list` co zadania. Nie używa
 osobnego nagłówka `h3`, który pomijał styl i obsługę wspólnej grupy.
-Wiersze mają 40px wysokości jak zadania, poziome podziały i brak pionowych linii
-między kolumnami. Wszystkie komórki, również pierwsza po usunięciu menu, mają
-0,75rem odstępu wewnętrznego z obu boków i zawartość wyśrodkowaną pionowo.
-Kolumna Klucz ma dodatkowe 100px odstępu z lewej strony, oddzielające ją od nazwy
-przestrzeni. Lokalny token `--work-space-key-gap` powiększa także tor klucza
-ze 150px do 250px, zachowując miejsce na jego tekst. Kolumna nazwy ma minimum
-320px i rozszerza się do najdłuższej pełnej nazwy w danej tabeli, bez wielokropka.
-Siatka `subgrid` wyrównuje klucze i opisy wszystkich wierszy. Wspólny mechanizm
-szerokości kolumn pomija ten wariant, również na telefonie, aby nie przywracać
-stałej szerokości nazwy. Długie nazwy pozostają w jednym wierszu i są dostępne
-przez poziome przewijanie tabeli na wąskich ekranach.
-Awatar i nazwa zachowują odstęp 8px. Wariant `for-you-space-sheet` zachowuje wysokość tabeli według liczby
-wierszy i osobny schemat trzech kolumn danych bez odtwarzania stałych preferencji
-szerokości. Układ jest wspólny dla zwykłego i scoped URL. Kolumna Opis wypełnia
-pozostałą szerokość tabeli; na telefonie tabela przewija się poziomo.
+Wiersze mają wspólne 35px wysokości i tekst 13px, zgodnie z `app-data-table`
+i tokenami `--data-table-*`. Wariant `for-you-space-sheet` zachowuje wyłącznie
+poziome separatory między wierszami, bez pionowych linii między kolumnami.
+Komórki danych mają 0,75rem odstępu z obu boków i zawartość wyśrodkowaną
+pionowo. Lokalna siatka `320px 150px minmax(320px, 1fr)` wyrównuje wszystkie
+wiersze: nazwa zajmuje 320px, klucz 150px, a opis minimum 320px
+i pozostałą szerokość tabeli. Długie nazwy mają wielokropek, a pełny tekst
+pozostaje w linku i jego `title`. Awatar i nazwa zachowują odstęp 8px.
+Wariant `for-you-space-sheet` wyłącza warstwę `::before` przeznaczoną dla
+kolumny wyboru, dzięki czemu nie zasłania ona awatara w tabeli bez checkboxów.
+Zachowuje wysokość tabeli według liczby wierszy oraz lokalny schemat kolumn,
+bez odtwarzania zapisanych preferencji szerokości. Układ jest wspólny dla Reacta,
+pierwszego renderu Django oraz zwykłego i scoped URL. Na telefonie tabela
+przewija się poziomo we własnym kontenerze.
 Grupy nadal używają wierszy Dashboardu, a górne rekomendowane przestrzenie — kart.
 Zadania bieżącej strony są grupowane według kategorii i własnej nazwy statusu,
 w kolejności konfiguracji przestrzeni. Wewnątrz statusu pozostaje kolejność
