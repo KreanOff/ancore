@@ -5,21 +5,40 @@ import { LoadMore } from '../shared/LoadMore';
 import { errorMessage } from '../shared/api';
 import { PageError, pageRequest } from '../shared/page';
 import { RightSidebarContent } from '../shared/RightSidebarContent';
+import { TaskPriority } from '../shared/TaskPriority';
+import { statusColorStyle } from '../shared/status-color';
+import { StatusGroup } from '../shared/StatusGroup';
+
+interface TodayEntry {
+  id: string;
+  title: string;
+  url: string;
+  subtitle: string;
+  starts_at: string;
+  time_label: string;
+  color: string;
+}
 
 interface TodayData {
   today: string;
   time_zone: string;
   tasks_enabled: boolean;
-  entries: {
-    id: string;
-    source: 'events' | 'tasks';
-    title: string;
-    url: string;
-    subtitle: string;
-    starts_at: string;
-    time_label: string;
-    color: string;
-  }[];
+  entries: (TodayEntry &
+    (
+      | { source: 'events' }
+      | {
+          source: 'tasks';
+          key: string;
+          space_id: number;
+          space_name: string;
+          priority: string;
+          priority_label: string;
+          status: string;
+          status_label: string;
+          status_color: string;
+        }
+    ))[];
+  groups: { id: string; label: string; entries: TodayData['entries'] }[];
   pagination: {
     count: number;
     has_next: boolean;
@@ -181,28 +200,57 @@ export default function TodaySidebar({
           </button>
         </section>
         <section className="today-sidebar__tasks" aria-label="Plan na dziś" aria-busy={loading}>
-          <header className="today-sidebar__heading">
-            <h3>Plan na dziś</h3>
-            {data ? <span className="today-sidebar__count">{data.pagination.count}</span> : null}
-          </header>
           <div className="today-sidebar__list">
-            {data?.entries.map((entry) => (
-              <a className="today-sidebar__task" href={entry.url} key={entry.id}>
-                <span className="today-sidebar__task-title">
-                  {entry.source === 'events' ? (
-                    <span
-                      className="today-sidebar__event-color"
-                      aria-hidden="true"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                  ) : null}
-                  {entry.title}
-                </span>
-                <span className="today-sidebar__task-meta">
-                  <span>{entry.subtitle}</span>
-                  <time dateTime={entry.starts_at}>{entry.time_label}</time>
-                </span>
-              </a>
+            {data?.groups.map((group) => (
+              <StatusGroup
+                key={`${url}:${group.id}`}
+                label={group.label}
+                count={group.entries.length}
+                icon={null}
+                className="today-sidebar__group"
+                headerClassName={
+                  group.id === 'events'
+                    ? 'tasks-status-block-header--in_progress'
+                    : 'tasks-status-block-header--new'
+                }
+              >
+                <div className="tasks-issue-list">
+                  {group.entries.map((entry) => (
+                    <a
+                      className="today-sidebar__task"
+                      href={entry.url}
+                      key={entry.id}
+                      title={`${entry.title} · ${entry.subtitle} · ${entry.time_label}`}
+                    >
+                      {entry.source === 'tasks' ? (
+                        <span className="today-sidebar__task-heading">
+                          <TaskPriority value={entry.priority} label={entry.priority_label} />
+                          <span className="today-sidebar__task-key">{entry.key}</span>
+                          <span
+                            className={`status-indicator status-${entry.status}`}
+                            style={statusColorStyle(entry.status_color)}
+                            title={entry.status_label}
+                            aria-label={entry.status_label}
+                          />
+                          <span className="today-sidebar__task-title">{entry.title}</span>
+                        </span>
+                      ) : (
+                        <span className="today-sidebar__event-heading">
+                          <span
+                            className="today-sidebar__event-color"
+                            aria-hidden="true"
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <span className="today-sidebar__task-title">{entry.title}</span>
+                        </span>
+                      )}
+                      <time className="today-sidebar__task-time" dateTime={entry.starts_at}>
+                        {entry.time_label}
+                      </time>
+                    </a>
+                  ))}
+                </div>
+              </StatusGroup>
             ))}
             {loading && !data ? (
               <p className="today-sidebar__empty" role="status">

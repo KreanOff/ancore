@@ -23,7 +23,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 44 | 323 |
-| [backend/planner](../backend/planner) | 12 | 2 | 1 | 40 |
+| [backend/planner](../backend/planner) | 12 | 2 | 1 | 43 |
 | [backend/documents](../backend/documents) | 41 | 3 | 30 | 215 |
 | [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
 | [backend/spaces](../backend/spaces) | 72 | 6 | 47 | 513 |
@@ -1522,6 +1522,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/Select.tsx](../frontend/app/src/shared/Select.tsx)
 - [frontend/app/src/shared/SharingDialog.tsx](../frontend/app/src/shared/SharingDialog.tsx)
 - [frontend/app/src/shared/StatusGroup.tsx](../frontend/app/src/shared/StatusGroup.tsx)
+- [frontend/app/src/shared/TaskPriority.tsx](../frontend/app/src/shared/TaskPriority.tsx)
 - [frontend/app/src/shared/WidgetCatalog.tsx](../frontend/app/src/shared/WidgetCatalog.tsx)
 - [frontend/app/src/shared/api.ts](../frontend/app/src/shared/api.ts)
 - [frontend/app/src/shared/clipboard.ts](../frontend/app/src/shared/clipboard.ts)
@@ -2124,7 +2125,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/planner/test_sidebar.py](../backend/planner/test_sidebar.py).
 
-- `TodaySidebarTests`: 24 metod testowych.
+- `TodaySidebarTests`: 27 metod testowych.
 
 ### backend/planner/test_task_calendar.py
 

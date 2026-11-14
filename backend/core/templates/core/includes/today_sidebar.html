@@ -1,3 +1,4 @@
+{% load space_ui %}
 {% if sidebar %}
 <div class="today-sidebar" data-today-sidebar>
     <section class="today-sidebar__calendar" aria-label="Kalendarz">
@@ -13,19 +14,32 @@
         <a class="tasks-filter-button today-sidebar__today" href="{{ sidebar_today_url }}">Dzisiaj</a>
     </section>
     <section class="today-sidebar__tasks" aria-label="Plan na dziś">
-        <header class="today-sidebar__heading">
-            <h3>Plan na dziś</h3>
-            <span class="today-sidebar__count">{{ sidebar.pagination.count }}</span>
-        </header>
         <div class="today-sidebar__list">
-            {% for entry in sidebar.entries %}
-            <a class="today-sidebar__task" href="{{ entry.url }}">
-                <span class="today-sidebar__task-title">{% if entry.source == 'events' %}<span class="today-sidebar__event-color" aria-hidden="true" style="background-color: {{ entry.color }}"></span>{% endif %}{{ entry.title }}</span>
-                <span class="today-sidebar__task-meta">
-                    <span>{{ entry.subtitle }}</span>
-                    {% if entry.time_label %}<time datetime="{{ entry.starts_at }}">{{ entry.time_label }}</time>{% endif %}
+            {% for group in sidebar.groups %}
+            <section class="tasks-issue-group tasks-status-block today-sidebar__group" aria-label="{{ group.label }}">
+                {% if group.id == 'events' %}
+                    {% include 'tasks/includes/issue_group_header.html' with label=group.label count=group.entries|length header_class='tasks-status-block-header--in_progress' only %}
+                {% else %}
+                    {% include 'tasks/includes/issue_group_header.html' with label=group.label count=group.entries|length header_class='tasks-status-block-header--new' only %}
+                {% endif %}
+                <div class="tasks-issue-list">
+            {% for entry in group.entries %}
+            <a class="today-sidebar__task" href="{{ entry.url }}" title="{{ entry.title }} · {{ entry.subtitle }} · {{ entry.time_label }}">
+                {% if entry.source == 'tasks' %}
+                <span class="today-sidebar__task-heading">
+                    <span class="tasks-row-priority priority-{{ entry.priority }}" title="Priorytet: {{ entry.priority_label }}" aria-label="Priorytet: {{ entry.priority_label }}">{% include 'core/includes/priority_icon.html' with priority=entry.priority only %}</span>
+                    <span class="today-sidebar__task-key">{{ entry.key }}</span>
+                    <span class="status-indicator status-{{ entry.status }}" style="{{ entry.status_color|status_style }}" title="{{ entry.status_label }}" aria-label="{{ entry.status_label }}"></span>
+                    <span class="today-sidebar__task-title">{{ entry.title }}</span>
                 </span>
+                {% else %}
+                <span class="today-sidebar__event-heading"><span class="today-sidebar__event-color" aria-hidden="true" style="background-color: {{ entry.color }}"></span><span class="today-sidebar__task-title">{{ entry.title }}</span></span>
+                {% endif %}
+                {% if entry.time_label %}<time class="today-sidebar__task-time" datetime="{{ entry.starts_at }}">{{ entry.time_label }}</time>{% endif %}
             </a>
+            {% endfor %}
+                </div>
+            </section>
             {% empty %}
             <p class="today-sidebar__empty">Brak zadań i wydarzeń na dziś.</p>
             {% endfor %}

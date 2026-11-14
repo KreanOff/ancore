@@ -11,6 +11,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
+from spaces.defaults import configuration_name_color
 from spaces.models import SpaceMembership, SpaceTask, SpaceTaskMembership
 from spaces.testing import make_space
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
@@ -70,6 +71,7 @@ class TodaySidebarTests(TestCase):
         self.assertEqual(payload['time_zone'], 'Europe/Warsaw')
         self.assertTrue(payload['tasks_enabled'])
         self.assertEqual(payload['entries'], [])
+        self.assertEqual(payload['groups'], [])
         self.assertEqual(payload['pagination']['count'], 0)
         self.assertFalse(payload['pagination']['has_next'])
 
@@ -82,6 +84,12 @@ class TodaySidebarTests(TestCase):
         self.assertEqual([item['id'] for item in payload['entries']], [f'tasks:{task.pk}' for task in (unassigned, assigned, child)])
         row = payload['entries'][0]
         self.assertEqual(row['subtitle'], f'{unassigned.work_item.key} · {self.space.name}')
+        self.assertEqual(row['key'], unassigned.work_item.key)
+        self.assertEqual(row['space_id'], self.space.pk)
+        self.assertEqual(row['space_name'], self.space.name)
+        self.assertEqual(row['priority'], unassigned.priority)
+        self.assertEqual(row['priority_label'], unassigned.get_priority_display())
+        self.assertEqual(row['status'], unassigned.status)
         self.assertEqual(row['source'], 'tasks')
         self.assertEqual(row['color'], '')
         self.assertEqual(row['time_label'], '09:00')
@@ -91,6 +99,30 @@ class TodaySidebarTests(TestCase):
         self.assertEqual(child_response.status_code, 200)
         self.assertEqual(child_response.context['task'].pk, parent.pk)
         self.assertEqual(child_response.context['task_tab'], 'subtasks')
+
+    def test_task_appearance_uses_configured_status_without_changing_category(self):
+        task = self.task(priority='high', status='in_progress')
+        item = task.work_item
+        config = self.space.configuration
+        definition = next(row for row in config.settings['statuses'] if row['key'] == item.status)
+        definition.update(label='Weryfikacja', color='#A153CC')
+        config.save(update_fields=['settings'])
+
+        row, = self.api().json()['entries']
+        self.assertEqual(row['priority'], 'high')
+        self.assertEqual(row['priority_label'], task.get_priority_display())
+        self.assertEqual(row['status'], 'in_progress')
+        self.assertEqual(row['status_label'], 'Weryfikacja')
+        self.assertEqual(row['status_color'], '#a153cc')
+
+        definition['color'] = ''
+        config.save(update_fields=['settings'])
+        row, = self.api().json()['entries']
+        self.assertEqual(row['status_color'], configuration_name_color('statuses', definition))
+        task.refresh_from_db()
+        item.refresh_from_db()
+        self.assertEqual(task.status, 'in_progress')
+        self.assertEqual(item.status, definition['key'])
 
     def test_list_respects_workspace_private_space_task_and_parent_access(self):
         visible = self.task()
@@ -102,7 +134,11 @@ class TodaySidebarTests(TestCase):
         hidden_task = self.task(visibility='private', private_owner=self.owner, assignee=self.member)
         child = self.task(parent=hidden_task)
         SpaceTaskMembership.objects.create(task=child, user=self.member)
-        self.assertEqual([item['id'] for item in self.api().json()['entries']], [f'tasks:{visible.pk}'])
+        payload = self.api().json()
+        self.assertEqual([item['id'] for item in payload['entries']], [f'tasks:{visible.pk}'])
+        self.assertEqual(payload['groups'], [{
+            'id': f'space:{self.space.pk}', 'label': self.space.name, 'entries': payload['entries'],
+        }])
 
         SpaceMembership.objects.create(space=private_space, user=self.member, role='observer')
         SpaceTaskMembership.objects.create(task=hidden_task, user=self.member, role='observer')
@@ -169,6 +205,9 @@ class TodaySidebarTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()['tasks_enabled'])
         self.assertEqual([item['id'] for item in response.json()['entries']], [f'events:{event.pk}'])
+        self.assertEqual(response.json()['groups'], [{
+            'id': 'events', 'label': 'Kalendarz', 'entries': response.json()['entries'],
+        }])
         self.workspace.disabled_modules = ['calendar']
         self.workspace.save(update_fields=['disabled_modules'])
         self.assertEqual(self.api().status_code, 404)
@@ -329,6 +368,8 @@ class TodaySidebarTests(TestCase):
             first = self.api().json()
         self.assertEqual([entry['id'] for entry in first['entries']], expected[:20])
         self.assertEqual(first['pagination']['count'], 24)
+        self.assertEqual([group['id'] for group in first['groups']], [f'space:{self.space.pk}', 'events'])
+        self.assertEqual([len(group['entries']) for group in first['groups']], [10, 10])
         for table in ('planner_calendarevent', 'spaces_workitem'):
             reads = [query['sql'] for query in queries if f'FROM "{table}"' in query['sql']
                      and 'COUNT(' not in query['sql']]
@@ -338,6 +379,48 @@ class TodaySidebarTests(TestCase):
         ids = [entry['id'] for entry in last['entries']]
         self.assertEqual(ids, expected)
         self.assertEqual(len(set(ids)), 24)
+        self.assertFalse(last['pagination']['has_next'])
+        self.assertEqual([len(group['entries']) for group in last['groups']], [12, 12])
+        for before, after in zip(first['groups'], last['groups']):
+            self.assertEqual(before['id'], after['id'])
+            self.assertEqual(before['entries'], after['entries'][:len(before['entries'])])
+
+    def test_groups_keep_space_identity_and_first_task_order_with_calendar_last(self):
+        duplicate = make_space(user=self.owner, workplace=self.workspace, name=self.space.name)
+        calendar_space = make_space(user=self.owner, workplace=self.workspace, name='Kalendarz')
+        make_space(user=self.owner, workplace=self.workspace, name='Bez dzisiejszych zadań')
+        midnight = timezone.make_aware(datetime.combine(self.today, time.min))
+        event = self.event(start=midnight, end=midnight + timedelta(days=1), all_day=True)
+        second_space_first = self.task(space=duplicate, due_at=midnight + timedelta(hours=8))
+        first_space_task = self.task(due_at=midnight + timedelta(hours=9))
+        second_space_later = self.task(space=duplicate, due_at=midnight + timedelta(hours=10))
+        calendar_task = self.task(space=calendar_space, due_at=midnight + timedelta(hours=11))
+        payload = self.api().json()
+        groups = payload['groups']
+        self.assertEqual([group['id'] for group in groups], [
+            f'space:{duplicate.pk}', f'space:{self.space.pk}', f'space:{calendar_space.pk}', 'events',
+        ])
+        self.assertEqual([group['label'] for group in groups], [self.space.name, self.space.name, 'Kalendarz', 'Kalendarz'])
+        self.assertEqual([[entry['id'] for entry in group['entries']] for group in groups], [
+            [f'tasks:{second_space_first.pk}', f'tasks:{second_space_later.pk}'],
+            [f'tasks:{first_space_task.pk}'], [f'tasks:{calendar_task.pk}'], [f'events:{event.pk}'],
+        ])
+        self.assertCountEqual([entry for group in groups for entry in group['entries']], payload['entries'])
+
+    def test_groups_do_not_expose_tasks_outside_the_loaded_shared_window(self):
+        midnight = timezone.make_aware(datetime.combine(self.today, time.min))
+        for index in range(20):
+            self.event(start=midnight + timedelta(minutes=index), end=midnight + timedelta(minutes=index + 1))
+        task = self.task(due_at=midnight + timedelta(hours=9))
+        first = self.api().json()
+        self.assertEqual(first['pagination']['count'], 21)
+        self.assertEqual(first['groups'], [{'id': 'events', 'label': 'Kalendarz', 'entries': first['entries']}])
+        self.assertEqual(len(first['groups'][0]['entries']), 20)
+
+        last = self.api(first['pagination']['next_url']).json()
+        self.assertEqual([group['id'] for group in last['groups']], [f'space:{self.space.pk}', 'events'])
+        self.assertEqual([entry['id'] for entry in last['groups'][0]['entries']], [f'tasks:{task.pk}'])
+        self.assertEqual(last['groups'][1], first['groups'][0])
         self.assertFalse(last['pagination']['has_next'])
 
     def test_first_render_combines_events_and_tasks_in_the_same_plan(self):

@@ -52,9 +52,41 @@ function payload(count = 20, extra = {}) {
       starts_at: '2026-11-12T09:00:00+01:00',
       time_label: '09:00',
       color: index % 2 ? '#8b25c7' : '',
+      ...(index % 2
+        ? {}
+        : {
+            key: `PRZ-${index + 1}`,
+            space_id: 1,
+            space_name: 'Przestrzeń zespołu',
+            priority: 'medium',
+            priority_label: 'Średni',
+            status: 'in_progress',
+            status_label: 'Wstrzymane',
+            status_color: '#ff00d4',
+          }),
     })),
     pagination: { count: 24, has_next: count < 24, next_url: count < 24 ? moreUrl : '' },
     ...extra,
+  };
+}
+
+function withGroups(data) {
+  const groups = new Map();
+  for (const entry of data.entries) {
+    const id = entry.source === 'events' ? 'events' : `space:${entry.space_id}`;
+    if (!groups.has(id))
+      groups.set(id, {
+        id,
+        label: entry.source === 'events' ? 'Kalendarz' : entry.space_name,
+        entries: [],
+      });
+    groups.get(id).entries.push(entry);
+  }
+  return {
+    ...data,
+    groups: [...groups.values()]
+      .filter((group) => group.id !== 'events')
+      .concat(groups.has('events') ? [groups.get('events')] : []),
   };
 }
 
@@ -182,7 +214,7 @@ function harness() {
       return writesAfterUnmount;
     },
     async succeed(index, data = payload()) {
-      requests[index].resolve(data);
+      requests[index].resolve(withGroups(data));
       await nextTurn();
       if (mounted) render();
     },
@@ -196,6 +228,7 @@ function harness() {
     tick: () => [...timers.values()].forEach((callback) => callback()),
     byClass: (name) =>
       nodes(tree).filter((node) => (node.props.className || '').split(' ').includes(name)),
+    groups: () => nodes(tree).filter((node) => node.type?.name === 'StatusGroup'),
     button(label) {
       const button = nodes(tree).find(
         (node) =>
@@ -215,7 +248,7 @@ function harness() {
   };
 }
 
-test('today sidebar shows interleaved event and task links, colors and calendar day links', async () => {
+test('today sidebar shows space groups followed by calendar, with task appearance and day links', async () => {
   const app = harness();
   app.render();
   assert.equal(app.requests.length, 1, 'mount and expanded refresh share one pending request');
@@ -225,15 +258,26 @@ test('today sidebar shows interleaved event and task links, colors and calendar 
   assert.equal(rows.length, 20);
   assert.equal(rows[0].props.href, payload().entries[0].url);
   assert.match(text(rows[0]), /Zadanie na dziś 1/);
-  assert.match(text(rows[0]), /PRZ-1 · Przestrzeń zespołu/);
+  assert.equal(text(app.byClass('today-sidebar__task-key')[0]), 'PRZ-1');
+  assert.match(rows[0].props.title, /Przestrzeń zespołu/);
+  assert.equal(app.byClass('status-indicator')[0].props['aria-label'], 'Wstrzymane');
+  assert.equal(app.byClass('status-indicator')[0].props.style['--tasks-status-color'], '#ff00d4');
   assert.match(text(rows[0]), /09:00/);
   assert.equal(rows[0].key, 'tasks:1');
-  assert.equal(rows[1].key, 'events:1');
-  assert.equal(rows[1].props.href, '/workplaces/w_test/calendar/?event=1');
-  assert.match(text(rows[1]), /Wydarzenie na dziś 2Kalendarz09:00/);
+  assert.equal(rows[10].key, 'events:1');
+  assert.equal(rows[10].props.href, '/workplaces/w_test/calendar/?event=1');
+  assert.match(text(rows[10]), /Wydarzenie na dziś 209:00/);
   assert.equal(app.byClass('today-sidebar__event-color').length, 10);
   assert.equal(app.byClass('today-sidebar__event-color')[0].props.style.backgroundColor, '#8b25c7');
-  assert.equal(text(app.byClass('today-sidebar__count')[0]), '24');
+  assert.deepEqual(
+    app.groups().map((group) => group.props.label),
+    ['Przestrzeń zespołu', 'Kalendarz'],
+  );
+  assert.deepEqual(
+    app.groups().map((group) => group.props.count),
+    [10, 10],
+  );
+  assert.ok(app.groups().every((group) => group.props.icon === null));
   assert.equal(app.byClass('today-sidebar__tasks')[0].props['aria-busy'], false);
   const today = app
     .byClass('today-sidebar__day')
@@ -242,11 +286,16 @@ test('today sidebar shows interleaved event and task links, colors and calendar 
   app.unmount();
 });
 
-test('load more preserves the prefix, blocks duplicate requests and stops at all results', async () => {
+test('load more preserves each group prefix and keys, blocks duplicate requests and stops at all results', async () => {
   const app = harness();
   app.render();
   await app.succeed(0);
-  const firstLinks = app.byClass('today-sidebar__task').map((node) => node.props.href);
+  const firstGroups = app.groups().map((group) => ({
+    key: group.key,
+    links: nodes(group)
+      .filter((node) => node.type === 'a')
+      .map((node) => node.props.href),
+  }));
   const more = app.button(/^Pokaż więcej:/);
   more.props.onClick();
   more.props.onClick();
@@ -257,7 +306,16 @@ test('load more preserves the prefix, blocks duplicate requests and stops at all
   assert.equal(app.button(/^Wczytywanie…:/).props['aria-disabled'], true);
   await app.succeed(1, payload(24));
   const links = app.byClass('today-sidebar__task').map((node) => node.props.href);
-  assert.deepEqual(links.slice(0, 20), firstLinks);
+  app.groups().forEach((group, index) => {
+    assert.equal(group.key, firstGroups[index].key);
+    const groupLinks = nodes(group)
+      .filter((node) => node.type === 'a')
+      .map((node) => node.props.href);
+    assert.deepEqual(
+      groupLinks.slice(0, firstGroups[index].links.length),
+      firstGroups[index].links,
+    );
+  });
   assert.equal(new Set(links).size, 24);
   const complete = app.button(/^Wszystkie wyniki:/);
   assert.equal(complete.props['aria-disabled'], true);
@@ -370,7 +428,7 @@ test('permission failure removes stale task rows instead of retaining protected 
   app.focus();
   await app.fail(1, new PageError('Brak dostępu.', 403));
   assert.equal(app.byClass('today-sidebar__task').length, 0);
-  assert.equal(app.byClass('today-sidebar__count').length, 0);
+  assert.equal(app.groups().length, 0);
   assert.match(app.allText(), /Brak dostępu/);
   assert.equal(app.byClass('today-sidebar__calendar').length, 1);
   app.unmount();
@@ -388,7 +446,11 @@ test('disabled spaces still shows calendar events and empty results show the sha
     }),
   );
   assert.equal(app.byClass('today-sidebar__tasks').length, 1);
-  assert.match(app.allText(), /Wydarzenie na dziś 2KalendarzCały dzień/);
+  assert.match(app.allText(), /Wydarzenie na dziś 2Cały dzień/);
+  assert.deepEqual(
+    app.groups().map((group) => group.props.label),
+    ['Kalendarz'],
+  );
   assert.equal(app.byClass('today-sidebar__calendar').length, 1);
   app.focus();
   await app.succeed(1, payload(0, { pagination: { count: 0, has_next: false, next_url: '' } }));

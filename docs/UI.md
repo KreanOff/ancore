@@ -408,13 +408,33 @@ W Kalendarzu i na pozostałych stronach aplikacji poza Dyskiem zawiera ten sam
 miesięczny kalendarz, bez osobnego nagłówka i przycisku otwarcia.
 Kalendarz korzysta z poniedziałkowego początku tygodnia, wyróżnia dzisiejszy
 dzień, pozwala przełączać miesiące i wrócić przyciskiem „Dzisiaj”. Kliknięcie
-dnia otwiera go w pełnym Kalendarzu. Pod kalendarzem znajduje się lista
-„Plan na dziś” z łącznym licznikiem: wydarzenia Kalendarza przypadające na dziś
-oraz widoczne, niezakończone zadania Przestrzeni z dzisiejszym terminem
-w aktywnym Workspace, bez ograniczenia do wykonawcy. Wydarzenia całodzienne
-są pierwsze, pozostałe pozycje mają wspólną kolejność chronologiczną.
-Wiersz zadania pokazuje tytuł, klucz, Przestrzeń i godzinę oraz otwiera szczegóły.
-Wiersz wydarzenia pokazuje tytuł, kropkę w zapisanym kolorze, „Kalendarz”
+dnia otwiera go w pełnym Kalendarzu. Pod kalendarzem plan dnia ma zwijane
+grupy nazwane według Przestrzeni oraz końcową grupę „Kalendarz” dla wydarzeń.
+Nie ma osobnego widocznego nagłówka „Plan na dziś”. Zakres nadal obejmuje
+wydarzenia przypadające na dziś oraz widoczne, niezakończone zadania
+z dzisiejszym terminem w aktywnym Workspace, bez ograniczenia do wykonawcy.
+Grupy powstają z aktualnie doładowanego wspólnego okna; licznik grupy pokazuje
+liczbę jej doładowanych pozycji. Przestrzenie są w kolejności pierwszego
+zadania w tym oknie, a wpisy wewnątrz grup pozostają chronologiczne
+(wydarzenia całodzienne przed godzinowymi). Tożsamość grupy wynika z ID
+Przestrzeni, więc powtarzające się nazwy nie łączą ich zadań.
+`shared/StatusGroup` oraz include `issue_group_header.html` zapewniają
+wspólne obramowanie, licznik i przycisk zwijania. Wszystkie Przestrzenie
+mają jednakowy jasnoniebieski nagłówek jak grupa „Nowe”, a grupa wydarzeń
+„Kalendarz” — jasnobeżowy jak „W toku”. Kolor zależy od ID grupy `events`,
+nie od jej nazwy. Wariant używa `headerClassName` / `header_class`
+oraz `icon={null}` / pominiętego `icon`: etykieta jest nazwą Przestrzeni,
+bez ikony statusu. Długie nagłówki mają wielokropek i pełne `title`.
+Zwinięcie w React pozostaje po odświeżeniu danych i doładowaniu tej samej grupy.
+Wiersz zadania używa kompaktowej tożsamości z listy Przestrzeni: ikona
+priorytetu, trwały klucz, kolorowa ikona statusu, tytuł i godzina po prawej.
+Nazwa Przestrzeni jest w nagłówku grupy. Priorytet współdzieli `shared/TaskPriority`
+z listą Przestrzeni, a status korzysta z tej samej kategorii, etykiety i koloru
+konfiguracji. Długi tytuł lub klucz ma wielokropek; pełny tekst jest w linku i jego
+`title`. Wiersze używają tokenów tekstu, separatora i podświetlenia tabeli,
+z akcentem po lewej przy wskazaniu lub fokusie, jak lista Przestrzeni.
+Cały wiersz otwiera szczegóły zadania.
+Wiersz wydarzenia pokazuje tytuł, kwadratowy znacznik 12×12px z narożnikami 3px w zapisanym kolorze
 i godzinę lub „Cały dzień”; otwiera wydarzenie w Kalendarzu. Wydarzenie
 rozpoczęte wcześniej pokazuje również datę rozpoczęcia.
 Lista przewija się w pozostałej wysokości panelu; „Pokaż więcej” odsłania

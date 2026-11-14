@@ -5,25 +5,8 @@ import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { dateLabel, type DetailData, type Item } from './types';
 import { flowAge } from './kanban';
-export function Priority({ value, label = value }: { value: string; label?: string }) {
-  const icons: Record<string, string> = {
-    urgent: 'circle-alert',
-    high: 'arrow-up',
-    medium: 'equal',
-    low: 'arrow-down',
-  };
-  return (
-    <span
-      className={`tasks-row-priority priority-${value}`}
-      title={`Priorytet: ${label}`}
-      aria-label={`Priorytet: ${label}`}
-    >
-      <span className="tasks-priority-icon">
-        <Icon name={icons[value] || 'circle'} />
-      </span>
-    </span>
-  );
-}
+import { TaskPriority as Priority } from '../shared/TaskPriority';
+export { Priority };
 export function ItemType({ item }: { item: Item }) {
   return (
     <span

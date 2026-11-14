@@ -9,6 +9,7 @@ export function StatusGroup({
   count,
   children,
   className = '',
+  headerClassName = '',
   details,
   labelSuffix,
   onDragOver,
@@ -18,10 +19,11 @@ export function StatusGroup({
   label: string;
   category?: string;
   color?: string;
-  icon?: string;
+  icon?: string | null;
   count: number;
   children: ReactNode;
   className?: string;
+  headerClassName?: string;
   details?: ReactNode;
   labelSuffix?: string;
   onDragOver?: DragEventHandler<HTMLElement>;
@@ -39,7 +41,7 @@ export function StatusGroup({
     >
       <header
         style={statusHeaderStyle(color)}
-        className={`tasks-issue-group-header ${category ? `tasks-status-block-header tasks-status-block-header--${category}` : ''}`}
+        className={`tasks-issue-group-header ${category ? `tasks-status-block-header tasks-status-block-header--${category}` : ''}${headerClassName ? ` ${headerClassName}` : ''}`}
       >
         <button
           type="button"
@@ -56,8 +58,8 @@ export function StatusGroup({
             {labelSuffix ? ` · ${labelSuffix}` : ''}
           </span>
         ) : (
-          <span className="tasks-issue-group-label">
-            <Icon name={icon} />
+          <span className="tasks-issue-group-label" title={label}>
+            {icon ? <Icon name={icon} /> : null}
             {label}
             {labelSuffix ? ` · ${labelSuffix}` : ''}
           </span>

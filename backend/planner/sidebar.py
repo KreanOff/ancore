@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 
 from core.list_window import window_page, window_payload
+from spaces.defaults import configuration_name_color
 from workplaces.policy import module_enabled
 from workplaces.services import scoped_workplace_app_path, workspace_owner
 
@@ -83,12 +84,35 @@ def today_sidebar_payload(request):
         }))
     for item in items[:page.limit]:
         due = timezone.localtime(item.task.due_at)
+        status = next((row for row in item.space.statuses if row['key'] == item.status), {
+            'category': item.task.status, 'label': item.task.get_status_display(),
+        })
         entries.append(((True, item.task.due_at.timestamp(), 'tasks', item.task_id), {
             'id': f'tasks:{item.task_id}', 'source': 'tasks', 'title': item.task.title,
             'url': task_url(request, item.task), 'subtitle': f'{item.key} · {item.space.name}',
+            'key': item.key, 'space_id': item.space_id, 'space_name': item.space.name,
+            'priority': item.task.priority, 'priority_label': item.task.get_priority_display(),
+            'status': item.task.status, 'status_label': status['label'],
+            'status_color': configuration_name_color('statuses', status),
             'time_label': due.strftime('%H:%M'), 'starts_at': due.isoformat(), 'color': '',
         }))
     entries = [entry for _, entry in sorted(entries, key=lambda row: row[0])[:page.limit]]
+    # Group only the loaded shared window. Space identity, not its editable
+    # name, keeps equal labels distinct; calendar entries always appear last.
+    space_groups = {}
+    event_entries = []
+    for entry in entries:
+        if entry['source'] == 'events':
+            event_entries.append(entry)
+            continue
+        group_id = f"space:{entry['space_id']}"
+        group = space_groups.setdefault(group_id, {
+            'id': group_id, 'label': entry['space_name'], 'entries': [],
+        })
+        group['entries'].append(entry)
+    groups = list(space_groups.values())
+    if event_entries:
+        groups.append({'id': 'events', 'label': 'Kalendarz', 'entries': event_entries})
     pagination = window_payload(
         request, page, base=scoped_workplace_app_path(workplace, 'calendar', 'sidebar/'),
         parameters={'sidebar_task_limit': page.limit},
@@ -96,7 +120,7 @@ def today_sidebar_payload(request):
     return {
         'status': 'success', 'today': today.isoformat(),
         'time_zone': timezone.get_current_timezone_name(),
-        'tasks_enabled': tasks_enabled, 'entries': entries, 'pagination': pagination,
+        'tasks_enabled': tasks_enabled, 'entries': entries, 'groups': groups, 'pagination': pagination,
     }
 
 

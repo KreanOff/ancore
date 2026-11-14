@@ -263,45 +263,59 @@ body.right-sidebar-resizing .sidebar {
     border-top: 1px solid var(--border-color);
 }
 
-.today-sidebar__heading {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 12px var(--app-page-padding-x);
-}
-
-.today-sidebar__heading h3 {
-    margin: 0;
-    font: inherit;
-}
-
-.today-sidebar__count {
-    flex: 0 0 auto;
-    padding: 2px 6px;
-    border-radius: var(--dropdown-menu-item-radius);
-    background: var(--system-interaction-soft);
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-}
-
 .today-sidebar__list {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
+    padding: 8px;
+}
+
+.today-sidebar__group + .today-sidebar__group {
+    margin-top: 8px;
+}
+
+.today-sidebar__group > .tasks-issue-group-header {
+    padding-inline: 8px;
+    gap: 6px;
+}
+
+.today-sidebar__group .tasks-issue-group-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.today-sidebar__group .tasks-rail-count {
+    flex-shrink: 0;
 }
 
 .today-sidebar__task {
-    display: grid;
+    position: relative;
+    display: flex;
+    align-items: center;
     gap: 6px;
     min-width: 0;
-    padding: 12px var(--app-page-padding-x);
-    border-bottom: 1px solid var(--border-color);
+    min-height: 40px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--data-table-separator);
     color: inherit;
+    font-size: var(--data-table-font-size);
     text-decoration: none;
+    transition: background-color 0.12s ease;
+}
+
+.today-sidebar__task::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--system-accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
 }
 
 .today-sidebar__task:last-child {
@@ -310,42 +324,63 @@ body.right-sidebar-resizing .sidebar {
 
 .today-sidebar__task:hover,
 .today-sidebar__task:focus-visible {
-    background: var(--sidebar-interaction-bg);
+    background: var(--data-table-highlight);
     color: inherit;
     text-decoration: none;
 }
 
+.today-sidebar__task:is(:hover, :focus-visible)::after {
+    opacity: 1;
+}
+
+.today-sidebar__task-heading {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 18px fit-content(40%) 18.4px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.today-sidebar__task-heading .status-indicator {
+    --tasks-status-icon-size: 18.4px;
+}
+
+.today-sidebar__task-key {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
 .today-sidebar__task-title {
-    overflow-wrap: anywhere;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     line-height: 1.5;
 }
 
-.today-sidebar__event-color {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    margin-right: 6px;
-    border-radius: 50%;
-    vertical-align: middle;
+.today-sidebar__event-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 
-.today-sidebar__task-meta {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    min-width: 0;
+.today-sidebar__event-color {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.today-sidebar__task-time {
+    flex: 0 0 auto;
     font-size: 11px;
     opacity: .65;
-}
-
-.today-sidebar__task-meta > span {
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-
-.today-sidebar__task-meta time {
-    flex: 0 0 auto;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }

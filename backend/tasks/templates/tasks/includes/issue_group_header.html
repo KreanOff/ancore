@@ -1,7 +1,7 @@
 {% load space_ui %}
-<header{% if status %} style="{{ status|status_style }} border-color: var(--tasks-status-border);"{% endif %} class="tasks-issue-group-header{% if category %} tasks-status-block-header tasks-status-block-header--{{ category }}{% endif %}">
+<header{% if status %} style="{{ status|status_style }} border-color: var(--tasks-status-border);"{% endif %} class="tasks-issue-group-header{% if category %} tasks-status-block-header tasks-status-block-header--{{ category }}{% endif %}{% if header_class %} {{ header_class }}{% endif %}">
     <button type="button" class="tasks-group-caret" aria-label="Zwiń {% if category %}status {{ label }}{% else %}{{ label|lower }}{% endif %}" data-group-label="{% if category %}status {{ label }}{% else %}{{ label|lower }}{% endif %}" aria-expanded="true"><i data-icon="chevron-down" aria-hidden="true"></i></button>
-    {% if category %}<span class="status-indicator status-{{ category }}">{{ label }}{% if label_suffix %} · {{ label_suffix }}{% endif %}</span>{% else %}<span class="tasks-issue-group-label"><i data-icon="{{ icon }}" aria-hidden="true"></i>{{ label }}{% if label_suffix %} · {{ label_suffix }}{% endif %}</span>{% endif %}
+    {% if category %}<span class="status-indicator status-{{ category }}">{{ label }}{% if label_suffix %} · {{ label_suffix }}{% endif %}</span>{% else %}<span class="tasks-issue-group-label" title="{{ label }}">{% if icon %}<i data-icon="{{ icon }}" aria-hidden="true"></i>{% endif %}{{ label }}{% if label_suffix %} · {{ label_suffix }}{% endif %}</span>{% endif %}
     {% if details_template %}{% include details_template %}{% endif %}
     <span class="tasks-rail-count">{{ count }}</span>
 </header>

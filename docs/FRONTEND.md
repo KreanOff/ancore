@@ -898,7 +898,7 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   wskazuje scoped `calendar/sidebar/`, odczytywany przez istniejące API stron;
   jest pusty dla szczegółów zadania, katalogów Dysku, edytora Pulpitu i przy
   wyłączonym module Kalendarza. `planner/sidebar.py` zwraca `today`,
-  `time_zone`, `tasks_enabled`, `entries` i `pagination`. Wspólna lista obejmuje
+  `time_zone`, `tasks_enabled`, `entries`, `groups` i `pagination`. Wspólna lista obejmuje
   `CalendarEvent` zachodzące na dzisiejszy lokalny dzień oraz niezakończone
   `SpaceTask` z dzisiejszym terminem. Dane są ograniczone do właściciela
   i aktywnego Workspace, a zadania także przez `spaces.access.visible_to`.
@@ -908,7 +908,20 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   następnie obowiązuje czas rozpoczęcia/terminu i stabilny identyfikator.
   Każdy wpis ma `id` z prefiksem źródła, `source`, `title`, `url`, `subtitle`,
   `starts_at`, `time_label` oraz `color` (bezpieczny HEX dla wydarzeń).
-  Zadania opisuje klucz `WorkItem` i nazwa Przestrzeni, wydarzenia „Kalendarz”.
+  Zadania dodatkowo przekazują `key`, `space_id`, `space_name`, `priority`, `priority_label`,
+  `status`, `status_label` i `status_color` dla kompaktowego wiersza zgodnego
+  z listą Przestrzeni. `status` określa kategorię ikony; etykieta i kolor
+  pochodzą z konfiguracji etapu `WorkItem.status`. Te same dane i wspólny
+  styl ikon wykorzystuje pierwszy render Django. Dotychczasowe `subtitle`
+  zachowuje klucz i nazwę Przestrzeni, a dla wydarzeń „Kalendarz”.
+  Po zastosowaniu wspólnego okna `groups` układa te same wpisy w obiekty
+  `{id, label, entries}`: `space:<pk>` w kolejności pierwszego wystąpienia
+  zadania, a `events` („Kalendarz”) na końcu. Puste grupy są pomijane,
+  identyczne nazwy Przestrzeni pozostają osobne. `entries` zachowuje płaski
+  kontrakt chronologiczny i służy do licznika doładowania; licznik grupy
+  określa liczbę jej doładowanych wpisów. React i SSR używają tych samych grup.
+  `StatusGroup` ma stabilny klucz z adresu panelu i ID grupy, zachowując
+  zwinięcie podczas odświeżenia lub rozszerzenia okna.
   `sidebar_task_limit`
   steruje wspólnym oknem `core.list_window` po 20 wyników bez kolizji
   z listą głównej strony. React używa `shared/LoadMore`, a pierwszy render
