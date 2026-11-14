@@ -1543,6 +1543,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shell/Search.tsx](../frontend/app/src/shell/Search.tsx)
 - [frontend/app/src/shell/Shell.tsx](../frontend/app/src/shell/Shell.tsx)
 - [frontend/app/src/shell/Sidebar.tsx](../frontend/app/src/shell/Sidebar.tsx)
+- [frontend/app/src/shell/SidebarEdgeToggle.tsx](../frontend/app/src/shell/SidebarEdgeToggle.tsx)
 - [frontend/app/src/shell/States.tsx](../frontend/app/src/shell/States.tsx)
 - [frontend/app/src/shell/Sticker.tsx](../frontend/app/src/shell/Sticker.tsx)
 - [frontend/app/src/shell/Toasts.tsx](../frontend/app/src/shell/Toasts.tsx)

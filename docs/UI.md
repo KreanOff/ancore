@@ -14,7 +14,7 @@ kontekst historyczny. Nie kopiuj ich dawnych ekranów.
 (`menu`) ani kolumn przeznaczonych wyłącznie na te przyciski.** Usunięto całe
 menu wraz z jego wejściami do akcji, bez zastępowania innym przyciskiem.
 Pozostają istniejące kontrolki edycji, informacji, notatek, wyboru, przełączania
-Workspace, menu z wielokropkiem i zwijania nawigacji (`panel-left`).
+Workspace, menu z wielokropkiem i uchwyty zwijania nawigacji przy krawędziach.
 Historyczna nazwa klasy `tasks-directory-menu-sheet` nadal występuje
 w układach tabel; nie oznacza widocznego menu ani dodatkowej kolumny.
 Te same zasady obowiązują w React i pierwszym renderze Django.
@@ -118,7 +118,7 @@ Pierwszy render dziedziczy `default_today_sidebar` z `core/base.html`.
 `CalendarPage` nie renderuje osobnego portalu ani „Planu dnia”. Wspólna
 powłoka zachowuje szerokość 272px, zapamiętane rozszerzenie i szufladę
 do 1100px. Kliknięcie dnia w mini kalendarzu otwiera odpowiednią datę
-w głównym Kalendarzu. Przycisk `panel-right` zwija i otwiera panel,
+w głównym Kalendarzu. Uchwyt `right-sidebar-edge-toggle` zwija i otwiera panel,
 oddając miejsce siatce bez zmiany jej widoku.
 „+N więcej” w miesiącu otwiera wskazany dzień w głównej siatce, pokazując
 wszystkie jego pozycje. Tworzenie wydarzeń pozostaje w nagłówku i komórkach.
@@ -456,12 +456,36 @@ rozmiar bez zmiany zapisanej preferencji. Dwuklik przywraca domyślny rozmiar
 poszerza panel, w prawo zwęża, Shift zwiększa krok z 8 do 24px, Home/End
 wybierają granice zakresu. Do 1100px i po zwinięciu panelu uchwyt jest
 ukryty; mobilna szuflada zachowuje ograniczenie do szerokości ekranu.
-Przycisk `panel-right` na końcu górnego paska zwija go, oddając miejsce
-treści. Desktop zapamiętuje wybór w `ancoreRightSidebarCollapsed`; bootstrap
+Oba panele używają wspólnego `shell/SidebarEdgeToggle` i stylu
+`sidebar-edge-toggle`. Lewy wariant `left-sidebar-edge-toggle` znajduje się
+przy prawej krawędzi nawigacji; przy rozwinięciu wskazuje w lewo, a po
+zwinięciu w prawo. Na komputerze pozostaje przy pasku ikon o szerokości
+64px, podążając za animacją i zmianą szerokości menu. Do 767px zamknięty
+uchwyt jest przy lewej krawędzi okna i otwiera istniejącą szufladę.
+Górny pasek nie zawiera przycisków zwijania paneli; dostęp zapewniają
+uchwyty krawędziowe. Escape i tło szuflady przywracają fokus uchwytowi.
+Nawigacja i otwarcie innych paneli zamykają menu bez przejmowania fokusu.
+
+Pionowy przycisk `right-sidebar-edge-toggle` przy górnej części lewej krawędzi
+prawego panelu zwija go, oddając miejsce treści. Po zwinięciu pozostaje przy
+prawej krawędzi okna i ponownie rozwija panel. Ma szarą linię 3×56px w polu
+kliknięcia 24×88px, polską etykietę, `aria-expanded` i widoczny fokus klawiatury.
+Pośrodku linii jest jasnoszara zakładka 18×28px z zaokrągleniem `--radius`,
+wyraźnym neutralnym obrysem i cieniem `--shadow-sm`. Linia używa pełnego
+`--system-interaction`, obrys 65% tego koloru, a tło 5% na bieli `--card-bg`.
+Wspólna ikona `chevron-right` ma ciemny kolor `--text-primary`,
+rozmiar 12px i wskazuje w prawo przy otwartym panelu, a po zwinięciu obraca
+się w lewo. Zakładka i linia mają wspólny środek, ograniczony przy krawędzi
+ekranu tak, aby cały przycisk mieścił się również w mobilnej szufladzie.
+Hover delikatnie przyciemnia kontrolkę bez jej przesuwania. Fokus klawiatury
+ma czerwony obrys wewnątrz zakładki; tryb wymuszonych kolorów zachowuje
+systemowy obrys. Ograniczenie ruchu wyłącza przejścia kolorów.
+Jest niezależny od uchwytu zmiany szerokości i ma nad nim pierwszeństwo
+w swoim obszarze. Desktop zapamiętuje wybór w `ancoreRightSidebarCollapsed`; bootstrap
 odtwarza klasę przed załadowaniem CSS. Przy szerokości okna do 1100px panel
 jest początkowo zamkniętą szufladą, bez zmiany preferencji desktopowej.
 Escape, kliknięcie tła, nawigacja i zmiana szerokości zamykają szufladę.
-Zamknięcie przez Escape lub tło przywraca fokus przycisku. Otwarcie na telefonie
+Zamknięcie przez Escape lub tło przywraca fokus uchwytowi przy krawędzi. Otwarcie na telefonie
 zamyka lewe menu; treść pod szufladą jest `inert`. Host okien pozostaje
 dostępny, aby formularz otwarty z panelu przyjmował wpisywanie i fokus.
 Szuflada i `Modal` współdzielą blokowanie tła, zachowując je także po
@@ -2429,14 +2453,11 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
   Odsunięcie treści i menu oraz wysokość panelu wyszukiwania uwzględniają wysokość paska.
   Wysokość pola wyszukiwania obejmuje ramkę; wewnętrzny input wypełnia jej wnętrze.
   Także aktywna wyszukiwarka na telefonie zachowuje tę wysokość i pionowe wyśrodkowanie.
-  Przycisk zwijania i rozwijania menu znajduje się przy lewej krawędzi
-  górnego paska, przed przełącznikiem Workspace. Korzysta z `tasks-icon-button`
-  i wariantu `app-topbar__action`: ma 36px, standardowe zaokrąglenie oraz
-  ikonę `panel-left` ze wspólnego zestawu. Rozwinięcie menu nie nadaje mu
-  stałego tła; szare podświetlenie pojawia się tylko przy hover/fokusie klawiatury.
-  Na telefonie otwiera i zamyka boczne menu, zastępując osobny przycisk
-  pod paskiem. Zmiana stanu aktualizuje etykietę i `aria-expanded`;
-  użycie przycisku zamyka otwarte panele wyszukiwania i powiadomień.
+  Zwijanie i rozwijanie paneli obsługują wyłącznie wspólne uchwyty
+  `SidebarEdgeToggle` przy ich krawędziach, również na telefonie.
+  Górny pasek zaczyna się od przełącznika Workspace i kończy profilem.
+  Zmiana stanu aktualizuje etykietę uchwytu i `aria-expanded`;
+  użycie uchwytu zamyka otwarte panele wyszukiwania i powiadomień.
   Pole używa istniejącego `global-search-form`; wpisywanie, strzałki i skrót
   Ctrl/Cmd+K otwierają panel szybkiego wyszukiwania. Na telefonie nazwy Workspace
   i profilu oraz podpowiedź skrótu są ukryte; wszystkie kontrolki pozostają
@@ -3018,7 +3039,7 @@ oraz pełny tekst w `title`.
 Django wypełniają blok `right_sidebar` przez `documents/sidebar.html`.
 Wariant `.documents-sidebar--global` ma stały nagłówek i przewijaną nawigację.
 Zwijanie, zapamiętana szerokość i szuflada do 1100px korzystają ze wspólnej
-powłoki i przycisku w topbarze. Lokalny przełącznik w toolbarze, własne tło
+powłoki i uchwytu przy krawędzi panelu. Lokalny przełącznik w toolbarze, własne tło
 szuflady i preferencja `ancore:documents:sidebar-collapsed:v1` nie są używane.
 Przeciąganie plików/folderów na dysk zachowuje istniejący mechanizm
 przenoszenia i kontrolę uprawnień również po przeniesieniu panelu.
@@ -3698,10 +3719,10 @@ Nazwy używane przez moduły pozostają stabilne; ich odpowiedniki Flaticon okre
 obejmuje również przekazany element główny i działa na `ancore:content-loaded`.
 Nieznane nazwy używają podanego fallbacku lub `circle`.
 
-Przełączniki paneli (`panel-left` i `panel-right`) pokazują prosty obrys okna
-z pionowym podziałem po odpowiedniej stronie, bez trzech kropek. Są to
-uproszczone glify `sidebar` i `sidebar-flip`, odtwarzane przez generator
-zestawu; React i pierwszy render Django korzystają z tych samych ikon.
+Uchwyty paneli używają wspólnej ikony `chevron-right`, obracanej zgodnie
+z kierunkiem zwinięcia lub rozwinięcia. Dawne glify `panel-left` i `panel-right`
+pozostają w zestawie ikon, ale przyciski z nimi usunięto z górnego paska.
+React i pierwszy render Django zachowują te same uchwyty krawędziowe.
 
 Kontury SVG dziedziczą `currentColor`, zachowując istniejącą geometrię kontrolek.
 Flaticon używa wypełnionych konturów, dlatego `.ancore-icon` wyłącza obrys `stroke`;

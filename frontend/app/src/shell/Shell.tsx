@@ -11,6 +11,7 @@ import { startNavigation } from './navigation';
 import { useShellLayout } from './useShellLayout';
 import GlobalPanels from './GlobalPanels';
 import Sidebar from './Sidebar';
+import SidebarEdgeToggle from './SidebarEdgeToggle';
 import WorkspaceMenu from './WorkspaceMenu';
 import Toasts from './Toasts';
 import TodaySidebar from './TodaySidebar';
@@ -278,27 +279,12 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
     <>
       <header className="app-topbar" aria-label="Narzędzia aplikacji" data-app-topbar>
         <div className="app-topbar__start">
-          <button
-            type="button"
-            className="tasks-icon-button app-topbar__action app-topbar__collapse"
-            aria-label={layout.label}
-            title={layout.label}
-            aria-controls="app-sidebar"
-            aria-expanded={layout.mobile ? layout.opened : !layout.collapsed}
-            data-sidebar-collapse-toggle
-            onClick={layout.toggle}
-          >
-            <Icon name="panel-left" />
-          </button>
           <div className="app-topbar__workspace">
             <WorkspaceMenu data={data} token={token} />
           </div>
         </div>
         <div id="app-global-search-host" style={{ display: 'contents' }} />
-        <nav
-          className="app-topbar__actions"
-          aria-label="Notatka, powiadomienia, konto i panel boczny"
-        >
+        <nav className="app-topbar__actions" aria-label="Notatka, powiadomienia i konto">
           <span id="app-global-actions-host" style={{ display: 'contents' }} />
           <a
             href={data.settings_url}
@@ -317,18 +303,6 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
             <Avatar data={data.profile.avatar} className="app-topbar__avatar" />
             <span className="app-topbar__username">{data.profile.name}</span>
           </a>
-          <button
-            type="button"
-            className="tasks-icon-button app-topbar__action app-topbar__right-sidebar-toggle"
-            aria-label={layout.rightLabel}
-            title={layout.rightLabel}
-            aria-controls="app-right-sidebar"
-            aria-expanded={layout.rightExpanded}
-            data-right-sidebar-toggle
-            onClick={layout.toggleRight}
-          >
-            <Icon name="panel-right" />
-          </button>
         </nav>
       </header>
       <Sidebar
@@ -346,6 +320,12 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
           setPicker({ group, anchor });
         }}
       />
+      <SidebarEdgeToggle
+        side="left"
+        label={layout.label}
+        expanded={layout.mobile ? layout.opened : !layout.collapsed}
+        onClick={layout.toggle}
+      />
       <div
         id="right-sidebar-backdrop"
         className="right-sidebar-backdrop"
@@ -358,6 +338,12 @@ export default function Shell({ config, token }: { config: PanelsConfig; token: 
         hidden={!layout.rightResizable}
         title="Przeciągnij, aby zmienić szerokość. Kliknij dwukrotnie, aby przywrócić domyślną."
         {...layout.rightResizer}
+      />
+      <SidebarEdgeToggle
+        side="right"
+        label={layout.rightLabel}
+        expanded={layout.rightExpanded}
+        onClick={layout.toggleRight}
       />
       {ready ? <GlobalPanels config={config} token={token} /> : null}
       {data.sidebar_url ? (

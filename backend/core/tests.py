@@ -168,7 +168,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         topbar = html[html.index('<header class="app-topbar"'):html.index('<aside class="sidebar"')]
         sidebar = html[html.index('<aside class="sidebar"'):html.index('id="sidebar-collapsed-flyout"')]
 
-        for marker in ('data-global-search-input', 'data-notifications-toggle', 'data-sidebar-collapse-toggle',
+        for marker in ('data-global-search-input', 'data-notifications-toggle',
                        'data-sticky-note-toggle', 'aria-label="Ustawienia Ancore"', 'title="Profil użytkownika"'):
             with self.subTest(control=marker):
                 self.assertIn(marker, topbar)
@@ -176,7 +176,12 @@ class SidebarActiveStateTests(SimpleTestCase):
                 self.assertEqual(html.count(marker), 1)
         self.assertNotIn('data-sidebar-default-view', html)
         self.assertNotIn('class="sidebar-view-controls"', sidebar)
-        self.assertLess(topbar.index('data-sidebar-collapse-toggle'), topbar.index('data-global-search-input'))
+        for side, marker in (('left', 'data-sidebar-collapse-toggle'), ('right', 'data-right-sidebar-toggle')):
+            with self.subTest(panel=side):
+                self.assertNotIn(marker, topbar)
+                self.assertEqual(html.count(marker), 1)
+                self.assertIn(f'class="sidebar-edge-toggle {side}-sidebar-edge-toggle"', html)
+                self.assertNotIn(f'data-icon="panel-{side}"', html)
         self.assertNotIn('class="mobile-sidebar-toggle"', html)
         self.assertIn('data-sticky-note-toggle', topbar.split('class="app-topbar__actions"', 1)[1])
         self.assertIn('aria-controls="app-sticky-note"', topbar)
@@ -204,7 +209,7 @@ class SidebarActiveStateTests(SimpleTestCase):
         self.assertIn('Szukaj zadań, przestrzeni, dokumentów…', html)
         self.assertNotIn('id="sidebar-quick-search"', html)
         self.assertIn('data-sidebar-collapse-toggle', html)
-        self.assertIn('data-icon="panel-left"', html)
+        self.assertIn('class="sidebar-edge-toggle left-sidebar-edge-toggle"', html)
         self.assertNotIn('class="sidebar-collapse-icon', html)
 
     def test_collapsed_sidebar_keeps_current_navigation_actions_available(self):

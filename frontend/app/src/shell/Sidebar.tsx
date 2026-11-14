@@ -320,7 +320,7 @@ export default function Sidebar({
         id="sidebar-backdrop"
         className="sidebar-backdrop"
         aria-hidden="true"
-        onClick={() => layout.close()}
+        onClick={() => layout.close(true)}
       />
       <aside
         id="app-sidebar"
@@ -337,8 +337,8 @@ export default function Sidebar({
         onKeyDown={(event) => {
           favorites.handlers.onKeyDown(event);
           if (!event.defaultPrevented && event.key === 'Escape') {
-            layout.close();
-            document.querySelector<HTMLElement>('[data-sidebar-collapse-toggle]')?.focus();
+            event.preventDefault();
+            layout.close(true);
           }
         }}
       >

@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from 'react';
 import { read, write } from './storage';
 import { acquireInert } from '../shared/inert';
 import {
@@ -59,6 +66,8 @@ export function useShellLayout(mode: string) {
   const rightResizable = !rightNarrow && rightExpanded;
   const resize = useRef<PanelResize>();
   const rightResize = useRef<PanelResize>();
+  const rightTrigger = useRef<HTMLButtonElement | null>(null);
+  const leftTrigger = useRef<HTMLButtonElement | null>(null);
   const transition = useRef<ReturnType<typeof setTimeout>>();
   const {
     left: clamped,
@@ -222,9 +231,10 @@ export function useShellLayout(mode: string) {
     if (rightDrawer) document.getElementById('app-right-sidebar')?.focus({ preventScroll: true });
     const trap = (event: KeyboardEvent) => {
       if (event.defaultPrevented || document.querySelector('.tasks-modal.is-open')) return;
-      if (rightDrawer && event.key === 'Escape') {
+      if (event.key === 'Escape') {
         event.preventDefault();
-        closeRight();
+        if (rightDrawer) closeRight();
+        else close(true);
         return;
       }
       if (event.key !== 'Tab') return;
@@ -260,11 +270,13 @@ export function useShellLayout(mode: string) {
   }, [opened, mobile, rightOpened, rightNarrow]);
   function closeRight() {
     setRightOpened(false);
-    document
-      .querySelector<HTMLElement>('[data-right-sidebar-toggle]')
-      ?.focus({ preventScroll: true });
+    const trigger = rightTrigger.current?.isConnected
+      ? rightTrigger.current
+      : document.querySelector<HTMLElement>('[data-right-sidebar-toggle]');
+    trigger?.focus({ preventScroll: true });
   }
-  function toggleRight() {
+  function toggleRight(event: MouseEvent<HTMLButtonElement>) {
+    if (!rightExpanded) rightTrigger.current = event.currentTarget;
     window.dispatchEvent(new CustomEvent('ancore:sidebar-toggle'));
     setOpened(false);
     if (rightNarrow) {
@@ -279,7 +291,17 @@ export function useShellLayout(mode: string) {
     setRightCollapsed(next);
     write('ancoreRightSidebarCollapsed', next);
   }
-  function toggle() {
+  function close(returnFocus = false) {
+    setOpened(false);
+    if (returnFocus) {
+      const trigger = leftTrigger.current?.isConnected
+        ? leftTrigger.current
+        : document.querySelector<HTMLElement>('[data-sidebar-collapse-toggle]');
+      trigger?.focus({ preventScroll: true });
+    }
+  }
+  function toggle(event: MouseEvent<HTMLButtonElement>) {
+    if (mobile && !opened) leftTrigger.current = event.currentTarget;
     window.dispatchEvent(new CustomEvent('ancore:sidebar-toggle'));
     setRightOpened(false);
     if (mobile) {
@@ -378,7 +400,7 @@ export function useShellLayout(mode: string) {
       : rightCollapsed
         ? 'Rozwiń prawy panel boczny'
         : 'Zwiń prawy panel boczny',
-    close: () => setOpened(false),
+    close,
     resizer: {
       role: 'separator',
       'aria-orientation': 'vertical' as const,

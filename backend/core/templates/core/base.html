@@ -68,7 +68,7 @@
 
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261114-creation-loading">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261114-sidebar-edge-both">
     <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
     <script>
         (function () {
@@ -118,9 +118,6 @@
     {% if global_panels %}<div data-react-global-panels data-csrf-token="{{ csrf_token }}" style="display: contents">{% endif %}
     <header class="app-topbar" aria-label="Narzędzia aplikacji" data-app-topbar>
         <div class="app-topbar__start">
-            <button type="button" class="tasks-icon-button app-topbar__action app-topbar__collapse" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
-                <i data-icon="panel-left" aria-hidden="true"></i>
-            </button>
             <div class="app-topbar__workspace">
                 {% if request.user.is_authenticated and current_workplace %}
                 <div class="sidebar-workspace-switcher" data-sidebar-workspace-switcher>
@@ -206,7 +203,7 @@
             </aside>
         </form>
         {% if global_panels %}</div>{% endif %}
-        <nav class="app-topbar__actions" aria-label="Notatka, powiadomienia, konto i panel boczny">
+        <nav class="app-topbar__actions" aria-label="Notatka, powiadomienia i konto">
             {% if global_panels %}<span id="app-global-actions-host" style="display: contents">{% endif %}
             <button type="button" class="tasks-icon-button app-topbar__action" aria-label="Sticker" title="Sticker" aria-controls="app-sticky-note" aria-expanded="false" data-sticky-note-toggle>
                 <i data-icon="sticky-note" aria-hidden="true"></i>
@@ -224,9 +221,6 @@
                 {% include 'accounts/includes/user_avatar.html' with avatar=current_account_avatar avatar_class='app-topbar__avatar' only %}
                 <span class="app-topbar__username">{{ request.user.get_full_name|default:request.user.username }}</span>
             </a>
-            <button type="button" class="tasks-icon-button app-topbar__action app-topbar__right-sidebar-toggle" aria-label="Zwiń prawy panel boczny" title="Zwiń prawy panel boczny" aria-controls="app-right-sidebar" aria-expanded="true" data-right-sidebar-toggle>
-                <i data-icon="panel-right" aria-hidden="true"></i>
-            </button>
         </nav>
     </header>
     <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
@@ -322,6 +316,9 @@
         {% include 'core/includes/pulpit_settings_sidebar.html' %}
         <div class="sidebar-resizer" role="separator" aria-orientation="vertical" aria-label="Zmień szerokość menu bocznego" aria-valuemin="220" aria-valuemax="420" aria-valuenow="272" tabindex="0" data-sidebar-resizer></div>
     </aside>
+    <button type="button" class="sidebar-edge-toggle left-sidebar-edge-toggle" aria-label="Zwiń menu boczne" title="Zwiń menu boczne" aria-controls="app-sidebar" aria-expanded="true" data-sidebar-collapse-toggle>
+        <i class="sidebar-edge-toggle__arrow" data-icon="chevron-right" aria-hidden="true"></i>
+    </button>
     {% include 'spaces/sidebar_picker.html' %}
     {% include 'dashboard/pulpits/sidebar_picker.html' %}
     {% include 'dashboard/filters/sidebar_picker.html' %}
@@ -335,6 +332,9 @@
         <nav class="sidebar-collapsed-flyout__links" aria-label="Podmenu" data-sidebar-collapsed-flyout-links></nav>
     </div>
     <div id="right-sidebar-backdrop" class="right-sidebar-backdrop" aria-hidden="true"></div>
+    <button type="button" class="sidebar-edge-toggle right-sidebar-edge-toggle" aria-label="Zwiń prawy panel boczny" title="Zwiń prawy panel boczny" aria-controls="app-right-sidebar" aria-expanded="true" data-right-sidebar-toggle>
+        <i class="sidebar-edge-toggle__arrow" data-icon="chevron-right" aria-hidden="true"></i>
+    </button>
     {% if global_panels %}
     {{ global_panels|json_script:'ancore-global-panels-data' }}
     {% endif %}

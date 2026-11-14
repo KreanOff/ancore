@@ -866,9 +866,21 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   React tworzy hosty wyszukiwania, przycisków, powiadomień, komunikatów i Stickera.
   `dispose()` odłącza także ten korzeń po zmianie bundla. Szablon udostępnia
   konfigurację przez `global_panels_bootstrap` i bezpieczny `json_script`.
+  `shell/SidebarEdgeToggle` renderuje wspólne uchwyty obu krawędzi,
+  korzystające z istniejących akcji `useShellLayout`, etykiet i stanu ARIA.
+  Lewy uchwyt zachowuje pasek ikon na desktopie i szufladę do 767px,
+  a jego animacja podąża za szerokością nawigacji. `close(true)` przy Escape
+  lub kliknięciu tła przywraca fokus przyciskowi, który otworzył lewe menu;
+  pozostałe zamknięcia przy nawigacji nie przejmują fokusu.
   `useShellLayout` utrzymuje też prawy panel: preferencję desktopową
   `ancoreRightSidebarCollapsed` oraz niezależne, tymczasowe otwarcie szuflady
-  do 1100px. Bootstrap odtwarza klasę przed CSS. Wspólny `layout/panels.css`
+  do 1100px. Przycisk `right-sidebar-edge-toggle` używa `toggleRight`,
+  etykiety i `aria-expanded`. Oba panele są sterowane uchwytami krawędziowymi;
+  górny pasek nie renderuje już przełączników `panel-left` i `panel-right`.
+  Uchwyt krawędzi
+  pozostaje poza ukrywanym panelem, a po zwinięciu jest przy prawej krawędzi
+  okna. Escape i tło szuflady przywracają fokus rzeczywistemu przyciskowi
+  otwierającemu. Bootstrap odtwarza klasę przed CSS. Wspólny `layout/panels.css`
   oraz `useShellLayout` obsługują też stały uchwyt lewej krawędzi prawego
   panelu, renderowany przez Shell poza przewijaną zawartością. Preferencja
   `ancoreRightSidebarWidth` jest wspólna dla zwykłego panelu, planu Kalendarza

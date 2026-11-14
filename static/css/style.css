@@ -34,7 +34,7 @@
 @import 'components/data-table.css?v=20261105-common-data-tables';
 @import 'components/load-more.css?v=20261105-load-more';
 @import 'components/app-toolbar.css?v=20261108-toolbar-views';
-@import 'layout/panels.css?v=20261114-panel-resizers';
+@import 'layout/panels.css?v=20261114-sidebar-edge-both';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(
@@ -370,7 +370,7 @@ body :focus-visible {
 }
 
 /* Text entry and confirmation buttons keep their regular borders.
-   Panel resizers indicate keyboard focus with their shared line.
+   Panel resizers indicate focus with their line; the edge toggle uses its tab.
    Keep the system focus indicator available in high-contrast mode. */
 @media not (forced-colors: active) {
     body :is(
@@ -381,7 +381,7 @@ body :focus-visible {
         textarea
     ):focus-visible,
     body :is(.confirm-modal, .app-confirmation-modal) button:focus-visible,
-    body :is(.sidebar-resizer, .right-sidebar-resizer):focus-visible {
+    body :is(.sidebar-resizer, .right-sidebar-resizer, .sidebar-edge-toggle):focus-visible {
         outline: none !important;
     }
 }
