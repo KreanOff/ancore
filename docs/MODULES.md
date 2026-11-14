@@ -120,8 +120,9 @@ widoczną listę lokalnie o kolejne 20. Wyszukiwanie resetuje okno. Zaznaczenie
 pozostaje przy doładowaniu. Katalog nie zawiera hamburgera ani jego kolumny.
 Usunięte menu było wejściem do ustawiania domyślnego Workspace; nie dodano zastępczej kontrolki. Zapisana
 preferencja nadal działa: etykieta „Domyślny” wskazuje osobisty wybór, niezależny
-od „Bieżącego”, a po zalogowaniu otwiera się jego „Dla ciebie”, jeśli osoba nadal
-ma dostęp. Endpoint preferencji zachowuje dotychczasowe uprawnienia.
+od „Bieżącego”. Służy do ustalenia kontekstu przy braku dostępnego aktywnego
+Workspace w sesji. Po zalogowaniu pojawia się ekran wyboru Workspace;
+preferencja go nie pomija. Endpoint zachowuje dotychczasowe uprawnienia.
 `Workplace.avatar` zapisuje identyfikator jednej z 30 ilustracji współdzielonych
 z Przestrzeniami; pusta wartość oznacza wybór automatyczny według ID z pierwotnej
 puli 24 motywów, zachowujący wcześniejsze przypisania.

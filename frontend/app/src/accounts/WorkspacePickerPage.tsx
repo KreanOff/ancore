@@ -1,9 +1,13 @@
+import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import { LoadingOverlay } from '../shared/LoadingOverlay';
+import { useNativeSubmitLoading } from '../shared/useNativeSubmitLoading';
 import type { PageProps } from '../shared/page';
 import type { WorkspacePickerData } from './types';
 
 export default function WorkspacePickerPage({ initial, csrfToken }: PageProps) {
   const data = initial.data as WorkspacePickerData;
+  const switching = useNativeSubmitLoading();
   return (
     <main className="auth-shell" data-react-screen="account-workspace-picker">
       <header className="auth-topbar">
@@ -24,11 +28,24 @@ export default function WorkspacePickerPage({ initial, csrfToken }: PageProps) {
               <ul className="auth-workspace-list">
                 {data.workspaces.map((item) => (
                   <li key={item.id}>
-                    <form method="post" action={item.switch_url}>
+                    <form
+                      method="post"
+                      action={item.switch_url}
+                      onSubmit={switching.onSubmit}
+                      aria-busy={switching.pending}
+                    >
                       <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-                      <button type="submit" className="auth-workspace-option">
-                        <Icon name="folder" />
-                        <span>{item.name}</span>
+                      <button
+                        type="submit"
+                        className="auth-workspace-option"
+                        disabled={switching.pending}
+                      >
+                        <Avatar
+                          space
+                          data={item.avatar}
+                          className="profile-avatar--workplace workplace-row__avatar"
+                        />
+                        <span className="auth-workspace-name">{item.name}</span>
                         <Icon name="arrow-right" />
                       </button>
                     </form>
@@ -53,6 +70,7 @@ export default function WorkspacePickerPage({ initial, csrfToken }: PageProps) {
           </div>
         </section>
       </div>
+      <LoadingOverlay active={switching.pending} label="Przełączanie Workspace…" />
     </main>
   );
 }

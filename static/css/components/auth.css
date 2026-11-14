@@ -424,7 +424,7 @@ body.auth-page .auth-workspace-option {
     width: 100%;
     min-height: var(--auth-control-height);
     padding: 12px;
-    border: 1px solid var(--auth-border);
+    border: 0;
     border-radius: var(--auth-radius);
     background: var(--auth-input-bg);
     color: var(--auth-ink);
@@ -434,7 +434,7 @@ body.auth-page .auth-workspace-option {
     cursor: pointer;
 }
 
-body.auth-page .auth-workspace-option > span {
+body.auth-page .auth-workspace-option > .auth-workspace-name {
     flex: 1;
     min-width: 0;
     overflow-wrap: anywhere;
@@ -448,7 +448,6 @@ body.auth-page .auth-workspace-option > :is(svg, i) {
 
 body.auth-page .auth-workspace-option:hover {
     background: var(--system-interaction-soft);
-    border-color: var(--system-interaction);
 }
 
 body.auth-page .auth-workspace-option:focus-visible {

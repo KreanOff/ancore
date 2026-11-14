@@ -95,16 +95,24 @@ body:has([data-app-topbar]) .app-topbar {
     display: none;
 }
 
-/* The fixed handle remains reachable while the panel content scrolls. */
+/* Fixed handles stay outside clipped panels, centered in the shell gaps. */
+.sidebar-resizer,
 .right-sidebar-resizer {
     position: fixed;
     top: var(--app-shell-top);
     bottom: var(--app-shell-gap);
-    right: calc(var(--app-right-sidebar-width) + var(--app-shell-gap) - 4px);
     z-index: 202;
     width: 9px;
     cursor: col-resize;
     touch-action: none;
+}
+
+.sidebar-resizer {
+    left: calc(var(--sidebar-width) + 1.5 * var(--app-shell-gap) - 4.5px);
+}
+
+.right-sidebar-resizer {
+    right: calc(var(--app-right-sidebar-width) + 1.5 * var(--app-shell-gap) - 4.5px);
 }
 
 .right-sidebar-resizer[hidden],
@@ -112,6 +120,7 @@ html.right-sidebar-collapsed .right-sidebar-resizer {
     display: none;
 }
 
+.sidebar-resizer::after,
 .right-sidebar-resizer::after {
     content: "";
     position: absolute;
@@ -122,12 +131,16 @@ html.right-sidebar-collapsed .right-sidebar-resizer {
     transition: background-color .1s ease;
 }
 
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+body.sidebar-resizing .sidebar-resizer::after,
 .right-sidebar-resizer:hover::after,
 .right-sidebar-resizer:focus-visible::after,
 body.right-sidebar-resizing .right-sidebar-resizer::after {
     background: var(--system-interaction);
 }
 
+.sidebar-resizer:focus-visible,
 .right-sidebar-resizer:focus-visible {
     outline: none;
 }

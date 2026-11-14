@@ -59,19 +59,22 @@ wyłącznie w Django. Zmiana tożsamości przez wylogowanie i ponowne logowanie
 wymaga pełnego odświeżenia powłoki, aby nie zachować danych poprzedniego
 konta w interfejsie.
 
-Logowanie otwiera „Dla ciebie” w dostępnym Workspace. Konto bez Workspace
-przechodzi do `/accounts/register/workspace/`; oczekujące dołączenie przez link
+Logowanie otwiera wybór Workspace pod `/accounts/workspaces/`, również przy
+jednym dostępnym Workspace, zapisanej preferencji domyślnej lub pustej liście.
+Konto bez Workspace widzi link „Utwórz Workspace”; wybranie pozycji wysyła
+POST przełącznika i otwiera scoped „Dla ciebie”. Oczekujące dołączenie przez link
 wraca do potwierdzenia zaproszenia. Dowolny parametr `next` nadal nie zmienia
 celu logowania. Rejestracja tworzy i uwierzytelnia konto, bez tworzenia Workspace.
 
-`User.default_workplace` zapisuje osobisty wybór startowego Workspace. Menu
-katalogu pozwala ustawić jeden dostępny Workspace albo usunąć wybór przez
-POST `/workplaces/<pk>/default/` (`action=set/remove`, CSRF). Zmiana dotyczy
-wyłącznie zalogowanej osoby i nie przełącza aktywnej sesji. Przy logowaniu
-`default_workplace_for_user()` ponawia kontrolę dostępu; poprawny wybór ustawia
-sesję i prowadzi do scoped „Dla ciebie”, również gdy poprzednio używano innego
-Workspace. Oczekujące zaproszenie zachowuje pierwszeństwo. Bez poprawnego wyboru
-obowiązuje dotychczasowe zachowanie. Usunięcie Workspace ustawia preferencję
+`User.default_workplace` zapisuje osobisty wybór domyślnego Workspace.
+Endpoint POST `/workplaces/<pk>/default/` (`action=set/remove`, CSRF) zachowuje
+obsługę preferencji; katalog pokazuje jej etykietę, a dawne menu ustawiania
+zostało usunięte. Zmiana dotyczy
+wyłącznie zalogowanej osoby i nie przełącza aktywnej sesji.
+`default_workplace_for_user()` ponawia kontrolę dostępu przy ustalaniu kontekstu,
+gdy sesja nie wskazuje dostępnego Workspace. Preferencja nie pomija ekranu
+wyboru po logowaniu ani nie zastępuje nadal dostępnego aktywnego Workspace.
+Oczekujące zaproszenie zachowuje pierwszeństwo. Usunięcie Workspace ustawia preferencję
 na NULL; nieaktywne/usunięte członkostwo nie daje dostępu przez tę relację.
 
 Rejestracja i tworzenie Workspace:
@@ -81,7 +84,7 @@ pulpit domyślny i gadżet „Postęp pracy” w jednej transakcji. Blokada wier
 użytkownika chroni pierwszy Workspace przed podwójnym zapisem. Błąd inicjalizacji
 wycofuje Workspace; konto pozostaje gotowe do ponowienia. Utworzenie ustawia
 sesję i prowadzi do scoped „Dla ciebie”. Istniejące dane i nazwy pozostają zachowane.
-GET tego kroku pokazuje również listę dostępnych Workspace. Wybór używa
+GET tego kroku pokazuje link do osobnej listy dostępnych Workspace. Wybór używa
 istniejącego POST przełącznika, z ponowną kontrolą członkostwa i CSRF.
 Formularz osoby z istniejącym Workspace jawnie oznacza tworzenie kolejnego
 przez `create_another=1`; pierwszy POST bez tej flagi zachowuje ochronę
@@ -107,7 +110,7 @@ Sesja przeglądarki uwierzytelnia jedno konto i przechowuje m.in.
 POST `/accounts/logout/` z CSRF, a następnie logowania danymi kolejnej osoby.
 Wylogowanie kończy bieżącą sesję; nie wylogowuje innych urządzeń.
 `AccountLoginView.redirect_authenticated_user = True` przekierowuje
-zalogowaną osobę do jej strony startowej bez zmiany konta, a widok `register`
+zalogowaną osobę do wyboru Workspace (lub oczekującego zaproszenia) bez zmiany konta, a widok `register`
 kieruje ją do profilu, również przy POST.
 
 `SingleAccountSessionMiddleware`, uruchamiany po `AuthenticationMiddleware`,

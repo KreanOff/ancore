@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import { LoadingOverlay } from '../shared/LoadingOverlay';
+import { useNativeSubmitLoading } from '../shared/useNativeSubmitLoading';
 import type { ShellData } from './navigation-types';
 import { normalize } from './storage';
 export default function WorkspaceMenu({ data, token }: { data: ShellData; token: string }) {
@@ -9,6 +11,7 @@ export default function WorkspaceMenu({ data, token }: { data: ShellData; token:
   const root = useRef<HTMLDivElement>(null),
     input = useRef<HTMLInputElement>(null),
     toggle = useRef<HTMLButtonElement>(null);
+  const switching = useNativeSubmitLoading(() => toggle.current);
   const current = data.workplaces.find((item) => item.id === data.workplace_id);
   useEffect(() => {
     const controller = new AbortController(),
@@ -126,12 +129,19 @@ export default function WorkspaceMenu({ data, token }: { data: ShellData; token:
         </div>
         <div className="sidebar-workspace-menu__list">
           {matches.map((item) => (
-            <form key={item.id} method="post" action={item.switch_url}>
+            <form
+              key={item.id}
+              method="post"
+              action={item.switch_url}
+              onSubmit={switching.onSubmit}
+              aria-busy={switching.pending}
+            >
               <input type="hidden" name="csrfmiddlewaretoken" value={token} />
               <button
                 type="submit"
                 className={`sidebar-workspace-option${item.id === data.workplace_id ? ' is-active' : ''}`}
                 role="menuitem"
+                disabled={switching.pending}
                 aria-current={item.id === data.workplace_id ? 'true' : undefined}
               >
                 <Avatar
@@ -152,6 +162,7 @@ export default function WorkspaceMenu({ data, token }: { data: ShellData; token:
           <span>Zarządzaj Workspace</span>
         </a>
       </div>
+      <LoadingOverlay active={switching.pending} label="Przełączanie Workspace…" />
     </div>
   );
 }

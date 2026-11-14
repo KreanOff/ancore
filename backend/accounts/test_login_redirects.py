@@ -25,20 +25,22 @@ class LoginRedirectTests(TestCase):
             'username': self.user.email, 'password': self.password, **extra,
         }, follow=True)
 
-    def assert_for_you(self, response, expected_url=None):
+    def assert_workspace_picker(self, response):
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'dashboard/for_you.html')
-        self.assertEqual(response.redirect_chain[-1], (expected_url or reverse('for_you'), 302))
+        self.assertTemplateUsed(response, 'accounts/select_workspace.html')
+        self.assertEqual(response.redirect_chain, [(reverse('select_workspace'), 302)])
         self.assertNotIn((reverse('workplaces:workplaces'), 302), response.redirect_chain)
         self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
 
-    def test_first_login_without_workspace_opens_setup(self):
+    def test_first_login_without_workspace_opens_empty_picker(self):
         Workplace.objects.filter(owner=self.user).delete()
         response = self.login()
-        self.assertTemplateUsed(response, 'accounts/register_workspace.html')
+        self.assert_workspace_picker(response)
+        self.assertContains(response, 'Brak dostępnych Workspace.')
+        self.assertContains(response, reverse('register_workspace'))
         self.assertFalse(Workplace.objects.filter(owner=self.user).exists())
 
-    def test_registration_setup_enters_workspace_and_relogin_opens_for_you(self):
+    def test_registration_setup_enters_workspace_and_relogin_opens_picker(self):
         response = self.client.post(reverse('register'), {
             'first_name': 'Anna', 'last_name': 'Nowak', 'email': 'registered-login@example.test',
             'password1': self.password, 'password2': self.password,
@@ -49,7 +51,7 @@ class LoginRedirectTests(TestCase):
         workplace = Workplace.objects.get(owner=self.user)
         self.assertEqual(response.url, scoped_workplace_app_path(workplace, 'for-you'))
         self.client.post(reverse('logout'))
-        self.assert_for_you(self.login())
+        self.assert_workspace_picker(self.login())
         self.assertEqual(Workplace.objects.filter(owner=self.user).count(), 1)
 
     def test_get_and_post_next_cannot_change_login_destination(self):
@@ -64,7 +66,7 @@ class LoginRedirectTests(TestCase):
                         response = self.login(f'{reverse("login")}?next={next_url}')
                     else:
                         response = self.login(next=next_url)
-                    self.assert_for_you(response)
+                    self.assert_workspace_picker(response)
 
     def test_login_page_does_not_keep_next_in_form(self):
         response = self.client.get(reverse('login'), {'next': reverse('workplaces:workplaces')})
@@ -72,7 +74,7 @@ class LoginRedirectTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'name="next"')
 
-    def test_login_keeps_active_workspace_and_scoped_destination(self):
+    def test_login_keeps_active_workspace_but_opens_picker(self):
         create_workplace_for_user(self.user, 'A pierwszy Workspace')
         selected = create_workplace_for_user(self.user, 'Z wybrany Workspace')
         session = self.client.session
@@ -82,11 +84,12 @@ class LoginRedirectTests(TestCase):
 
         response = self.login(next=reverse('workplaces:workplaces'))
 
-        self.assert_for_you(response, scoped_workplace_app_path(selected, 'for-you'))
+        self.assert_workspace_picker(response)
+        self.assertContains(response, selected.name)
         self.assertEqual(response.wsgi_request.workplace, selected)
         self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], selected.pk)
 
-    def test_member_login_opens_for_you_in_shared_workspace(self):
+    def test_member_login_shows_shared_workspace_in_picker(self):
         Workplace.objects.filter(owner=self.user).delete()
         owner = get_user_model().objects.create_user(username='shared-login-owner', email='shared-login@example.test')
         workplace = create_workplace_for_user(owner, 'Wspólny Workspace')
@@ -94,7 +97,8 @@ class LoginRedirectTests(TestCase):
 
         response = self.login()
 
-        self.assert_for_you(response)
+        self.assert_workspace_picker(response)
+        self.assertContains(response, workplace.name)
         self.assertEqual(response.wsgi_request.workplace, workplace)
         self.assertFalse(Workplace.objects.filter(owner=self.user).exists())
 
@@ -110,9 +114,32 @@ class LoginRedirectTests(TestCase):
 
         response = self.login(next=scoped_workplace_app_path(foreign, 'for-you'))
 
-        self.assert_for_you(response, scoped_workplace_app_path(own, 'for-you'))
+        self.assert_workspace_picker(response)
+        self.assertContains(response, own.name)
+        self.assertNotContains(response, foreign.name)
         self.assertEqual(response.wsgi_request.workplace, own)
         self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], own.pk)
+
+    def test_explicit_choice_opens_selected_workspace_without_changing_default(self):
+        first = Workplace.objects.get(owner=self.user)
+        selected = create_workplace_for_user(self.user, 'Drugi Workspace')
+        self.user.default_workplace = first
+        self.user.save(update_fields=['default_workplace'])
+
+        self.assert_workspace_picker(self.login())
+        response = self.client.post(reverse('workplaces:switch', args=[selected.pk]), follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.redirect_chain[-1], (scoped_workplace_app_path(selected, 'for-you'), 302))
+        self.assertTemplateUsed(response, 'dashboard/for_you.html')
+        self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], selected.pk)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.default_workplace_id, first.pk)
+
+    def test_authenticated_login_request_returns_to_picker_without_changing_identity(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('login'), follow=True)
+        self.assert_workspace_picker(response)
 
     def test_wrong_password_keeps_login_form_and_anonymous_session(self):
         response = self.client.post(reverse('login'), {

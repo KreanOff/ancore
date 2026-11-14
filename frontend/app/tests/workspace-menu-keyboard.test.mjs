@@ -10,7 +10,7 @@ const bundle = await build({
   platform: 'node',
   format: 'cjs',
   jsx: 'automatic',
-  external: ['react', 'react/jsx-runtime'],
+  external: ['react', 'react/jsx-runtime', 'react-dom'],
   write: false,
 });
 const require = createRequire(import.meta.url);
@@ -48,6 +48,7 @@ test('workspace picker enters its first or last item from search and keeps Home/
             return ref;
           },
           useEffect() {},
+          useCallback: (callback) => callback,
         };
       if (name === 'react/jsx-runtime')
         return {

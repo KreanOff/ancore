@@ -19,7 +19,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
 | [backend/core](../backend/core) | 39 | 0 | 29 | 263 |
-| [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 112 |
+| [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 115 |
 | [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 44 | 323 |
@@ -1510,6 +1510,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/FieldLabel.tsx](../frontend/app/src/shared/FieldLabel.tsx)
 - [frontend/app/src/shared/Icon.tsx](../frontend/app/src/shared/Icon.tsx)
 - [frontend/app/src/shared/LoadMore.tsx](../frontend/app/src/shared/LoadMore.tsx)
+- [frontend/app/src/shared/LoadingOverlay.tsx](../frontend/app/src/shared/LoadingOverlay.tsx)
 - [frontend/app/src/shared/LocalDirectoryTable.tsx](../frontend/app/src/shared/LocalDirectoryTable.tsx)
 - [frontend/app/src/shared/MemberDirectory.tsx](../frontend/app/src/shared/MemberDirectory.tsx)
 - [frontend/app/src/shared/Members.tsx](../frontend/app/src/shared/Members.tsx)
@@ -1532,6 +1533,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/table.tsx](../frontend/app/src/shared/table.tsx)
 - [frontend/app/src/shared/useDirtyGuard.ts](../frontend/app/src/shared/useDirtyGuard.ts)
 - [frontend/app/src/shared/useLoadMorePage.ts](../frontend/app/src/shared/useLoadMorePage.ts)
+- [frontend/app/src/shared/useNativeSubmitLoading.ts](../frontend/app/src/shared/useNativeSubmitLoading.ts)
 - [frontend/app/src/shared/usePageActions.ts](../frontend/app/src/shared/usePageActions.ts)
 - [frontend/app/src/shell/CollectionPicker.tsx](../frontend/app/src/shell/CollectionPicker.tsx)
 - [frontend/app/src/shell/Collections.tsx](../frontend/app/src/shell/Collections.tsx)
@@ -1831,13 +1833,13 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/accounts/test_frontend.py](../backend/accounts/test_frontend.py).
 
-- `AccountFrontendTests`: 17 metod testowych.
+- `AccountFrontendTests`: 18 metod testowych.
 
 ### backend/accounts/test_login_redirects.py
 
 Źródło: [backend/accounts/test_login_redirects.py](../backend/accounts/test_login_redirects.py).
 
-- `LoginRedirectTests`: 9 metod testowych.
+- `LoginRedirectTests`: 11 metod testowych.
 
 ### backend/accounts/test_registration_races.py
 

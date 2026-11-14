@@ -9,7 +9,8 @@
     <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{% static 'vendor/atlassian-sans/AtlassianSans-latin-ext.woff2' %}" as="font" type="font/woff2" crossorigin>
     {% include 'core/includes/bootstrap.html' %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261112-login-wallpaper">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20261114-workspace-avatars">
+    <link rel="stylesheet" href="{% static 'css/components/space-avatars.css' %}?v=20261023-sidebar-subnav-icons">
     {% if frontend_bootstrap %}<link rel="stylesheet" href="{% static 'css/components/react.css' %}?v=20261017-layout-parity">{% react_bundle %}{% endif %}
 </head>
 <body class="auth-page {% block auth_page_class %}auth-page--login{% endblock %}">
@@ -41,6 +42,10 @@
             </section>
         </div>
     </main>
+    <div class="app-loading-overlay" data-auth-loading-overlay data-loading-active="false" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true">
+        {% include 'core/includes/loading_indicator.html' %}
+        <span class="u-sr-only" data-auth-loading-status></span>
+    </div>
     {% if frontend_bootstrap %}</div>{% endif %}
 
     {% if messages %}
@@ -54,6 +59,6 @@
     <script src="{% static 'vendor/flaticon/uicons.js' %}?v=20261113-sidebar-icons-v2"></script>
     <script src="{% static 'js/flaticon-icons.js' %}?v=20260918-flaticon-v1"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
-    <script src="{% static 'js/auth.js' %}?v=20261016-react-accounts"></script>
+    <script src="{% static 'js/auth.js' %}?v=20261114-creation-loading"></script>
 </body>
 </html>

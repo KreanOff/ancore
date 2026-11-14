@@ -2,9 +2,9 @@
 @import 'base/fonts.css?v=20261003-atlassian-sans';
 @import 'base/variables.css?v=20261112-right-sidebar-resize';
 @import 'base/reset.css?v=20261003-atlassian-sans';
-@import 'layout/sidebar.css?v=20261112-red-brand';
-@import 'layout/main.css?v=20261113-square-loader';
-@import 'layout/responsive.css?v=20261003-sidebar-content-width';
+@import 'layout/sidebar.css?v=20261114-panel-resizers';
+@import 'layout/main.css?v=20261114-creation-loading';
+@import 'layout/responsive.css?v=20261114-panel-resizers';
 @import 'components/cards.css?v=20261017-border-visibility-3pct';
 @import 'components/buttons.css?v=20261017-collection-favorite-stars';
 @import 'components/toolbar.css?v=20260918-flaticon-v1';
@@ -18,7 +18,7 @@
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
 @import 'components/file-upload.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/auth.css?v=20261112-login-wallpaper';
+@import 'components/auth.css?v=20261114-workspace-avatars';
 @import 'components/workplaces.css?v=20261112-red-brand';
 @import 'calendar.css?v=20261112-event-color';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
@@ -34,7 +34,7 @@
 @import 'components/data-table.css?v=20261105-common-data-tables';
 @import 'components/load-more.css?v=20261105-load-more';
 @import 'components/app-toolbar.css?v=20261108-toolbar-views';
-@import 'layout/panels.css?v=20261113-sidebar-entries';
+@import 'layout/panels.css?v=20261114-panel-resizers';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
 body :where(
@@ -370,6 +370,7 @@ body :focus-visible {
 }
 
 /* Text entry and confirmation buttons keep their regular borders.
+   Panel resizers indicate keyboard focus with their shared line.
    Keep the system focus indicator available in high-contrast mode. */
 @media not (forced-colors: active) {
     body :is(
@@ -379,7 +380,8 @@ body :focus-visible {
             [type="time"], [type="datetime-local"], [type="month"], [type="week"]),
         textarea
     ):focus-visible,
-    body :is(.confirm-modal, .app-confirmation-modal) button:focus-visible {
+    body :is(.confirm-modal, .app-confirmation-modal) button:focus-visible,
+    body :is(.sidebar-resizer, .right-sidebar-resizer):focus-visible {
         outline: none !important;
     }
 }

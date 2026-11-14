@@ -15,6 +15,7 @@ import { Icon } from '../shared/Icon';
 import { FieldLabel } from '../shared/FieldLabel';
 import EmojiPicker, { type EmojiPickerConfig } from '../shared/EmojiPicker';
 import { Modal } from '../shared/Modal';
+import { LoadingOverlay } from '../shared/LoadingOverlay';
 import { type PageProps, navigate, PageError, pageRequest } from '../shared/page';
 import { errorMessage } from '../shared/api';
 import AvatarControl, { type AvatarForm } from '../shared/AvatarControl';
@@ -683,6 +684,7 @@ export function EmbeddedForm({
       encType="multipart/form-data"
       aria-busy={pending}
     >
+      {schema.templates ? <LoadingOverlay active={pending} label="Tworzenie przestrzeni…" /> : null}
       {Object.entries(data.values || {}).map(([name, value]) => (
         <input type="hidden" key={name} name={name} value={value} />
       ))}
@@ -838,6 +840,7 @@ export function EmbeddedForm({
                     type="button"
                     className="work-space-card work-template-card"
                     aria-label={`Wybierz szablon: ${option.label}`}
+                    disabled={pending}
                     onClick={() => {
                       setTemplate(option);
                       setDirty(true);
@@ -879,6 +882,7 @@ export function EmbeddedForm({
                 <button
                   type="button"
                   className="btn btn-secondary"
+                  disabled={pending}
                   onClick={() => setTemplate(undefined)}
                 >
                   Zmień szablon

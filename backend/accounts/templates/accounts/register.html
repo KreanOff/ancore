@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block auth_content %}
-<form method="post" class="auth-form auth-form--register" novalidate>
+<form method="post" class="auth-form auth-form--register" data-auth-loading="Tworzenie konta…" novalidate>
     {% csrf_token %}
 
     {% if form.errors %}

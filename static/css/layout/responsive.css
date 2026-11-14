@@ -32,7 +32,7 @@ body.sidebar-open .sidebar-backdrop {
     }
 
     .sidebar {
-        transform: translateX(0);
+        transform: none;
     }
 
     .secondary-menu {

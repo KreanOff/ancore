@@ -87,10 +87,28 @@ class AccountFrontendTests(TestCase):
                                       'next': 'https://example.test/'})
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('example.test', response.json()['redirect'])
-        self.assertIn('/for-you/', response.json()['redirect'])
+        self.assertEqual(response.json()['redirect'], reverse('select_workspace'))
         self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
         self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], self.workspace.pk)
         self.assertNotEqual(old_csrf, self.client.cookies['csrftoken'].value)
+
+    def test_login_api_opens_picker_with_no_workspace_or_saved_default(self):
+        for has_workspace in (True, False):
+            with self.subTest(has_workspace=has_workspace):
+                if has_workspace:
+                    self.user.default_workplace = self.workspace
+                    self.user.save(update_fields=['default_workplace'])
+                else:
+                    self.workspace.delete()
+                self.client.logout()
+
+                response = self.api('login', {'username': self.user.email, 'password': self.password})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json(), {'redirect': reverse('select_workspace')})
+                page = self.api('select_workspace').json()
+                self.assertEqual(page['type'], 'account-workspace-picker')
+                self.assertEqual(len(page['data']['workspaces']), int(has_workspace))
 
     def test_wrong_and_inactive_login_do_not_echo_passwords(self):
         for inactive in (False, True):
@@ -253,6 +271,6 @@ class AccountFrontendTests(TestCase):
         self.assertNotIn('switch_account_auth_hashes', self.client.session)
         self.assertEqual(self.api('profile').status_code, 401)
         response = self.api('login', {'username': self.other.email, 'password': self.password})
-        self.assertEqual(response.json(), {'redirect': reverse('register_workspace')})
+        self.assertEqual(response.json(), {'redirect': reverse('select_workspace')})
         self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
         self.assertNotIn(ACTIVE_WORKPLACE_SESSION_KEY, self.client.session)

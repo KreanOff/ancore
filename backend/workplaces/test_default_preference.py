@@ -1,4 +1,4 @@
-"""Personal Workspace defaults affect login without changing access or active work."""
+"""Personal Workspace defaults preserve access and never skip the login picker."""
 import json
 from unittest.mock import patch
 from urllib.parse import urlencode
@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from .models import Workplace, WorkplaceMembership, create_workplace_for_user
 from .services import (
-    ACTIVE_WORKPLACE_SESSION_KEY, WORKPLACE_URL_SCOPE_SESSION_KEY,
+    ACTIVE_WORKPLACE_SESSION_KEY,
     default_workplace_for_user, ensure_default_workplace, scoped_workplace_app_path,
 )
 
@@ -79,13 +79,13 @@ class DefaultWorkplacePreferenceTests(TestCase):
                 self.assertTrue(all(row['default_url'] for row in rows))
                 self.assertEqual(self.choose(self.second, 'remove', api=True, scoped=scoped).json(), {'default_workplace_id': None})
 
-    def test_html_badge_and_actions_follow_persisted_preference(self):
+    def test_html_badge_follows_persisted_preference_without_retired_actions(self):
         self.choose(self.second)
         response = self.client.get(reverse('workplaces:workplaces'))
-        self.assertContains(response, 'Otwierany po zalogowaniu')
+        self.assertContains(response, 'Domyślny Workspace')
         self.assertContains(response, '>Domyślny</span>')
-        self.assertContains(response, 'Ustaw jako domyślny')
-        self.assertContains(response, 'Usuń ustawienie domyślne')
+        self.assertNotContains(response, 'Ustaw jako domyślny')
+        self.assertNotContains(response, 'Usuń ustawienie domyślne')
 
     def test_foreign_workspace_missing_auth_bad_action_and_csrf_are_rejected(self):
         for api in (False, True):
@@ -109,26 +109,29 @@ class DefaultWorkplacePreferenceTests(TestCase):
                 self.assertEqual(self.saved(), self.shared.pk)
                 self.assertIsNone(get_user_model().objects.get(pk=self.other.pk).default_workplace_id)
 
-    def test_login_uses_saved_default_across_sessions_and_overrides_active_session(self):
+    def test_login_shows_picker_with_saved_default_and_preserves_active_session(self):
         self.choose(self.second)
         for api in (False, True):
             for fresh_session in (False, True):
                 with self.subTest(api=api, fresh=fresh_session):
                     client = Client() if fresh_session else self.client
                     response = self.login(client, api)
-                    target = scoped_workplace_app_path(self.second, 'for-you')
+                    target = reverse('select_workspace')
                     self.assertEqual(response.json()['redirect'] if api else response.url, target)
                     self.assertEqual(client.session[SESSION_KEY], str(self.user.pk))
-                    self.assertEqual(client.session[ACTIVE_WORKPLACE_SESSION_KEY], self.second.pk)
-                    self.assertTrue(client.session[WORKPLACE_URL_SCOPE_SESSION_KEY])
-                    self.assertContains(client.get(target), self.second.name)
+                    page = client.get(target)
+                    self.assertContains(page, self.first.name)
+                    self.assertContains(page, self.second.name)
+                    self.assertTemplateUsed(page, 'accounts/select_workspace.html')
+                    self.assertEqual(client.session[ACTIVE_WORKPLACE_SESSION_KEY], self.second.pk if fresh_session else self.first.pk)
         self.client.post(reverse('workplaces:switch', args=[self.first.pk]))
         self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], self.first.pk)
         self.assertEqual(self.saved(), self.second.pk)
-        self.assertEqual(self.login().url, scoped_workplace_app_path(self.second, 'for-you'))
+        self.assertEqual(self.login().url, reverse('select_workspace'))
+        self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], self.first.pk)
 
     def test_no_preference_preserves_existing_login_and_active_session_behavior(self):
-        self.assertEqual(self.login().url, reverse('for_you'))
+        self.assertEqual(self.login().url, reverse('select_workspace'))
         self.assertEqual(self.client.session[ACTIVE_WORKPLACE_SESSION_KEY], self.first.pk)
         self.assertEqual(ensure_default_workplace(self.user), self.first)
 
@@ -148,7 +151,7 @@ class DefaultWorkplacePreferenceTests(TestCase):
                 self.assertEqual(ensure_default_workplace(self.user), self.first)
                 fresh = Client()
                 response = self.login(fresh)
-                self.assertEqual(response.url, reverse('for_you'))
+                self.assertEqual(response.url, reverse('select_workspace'))
                 self.assertNotContains(fresh.get(response.url), self.foreign.name)
                 self.assertEqual(fresh.session[ACTIVE_WORKPLACE_SESSION_KEY], self.first.pk)
 
@@ -157,7 +160,7 @@ class DefaultWorkplacePreferenceTests(TestCase):
         self.second.delete()
         self.assertIsNone(self.saved())
         self.assertTrue(get_user_model().objects.filter(pk=self.user.pk).exists())
-        self.assertEqual(self.login().url, reverse('for_you'))
+        self.assertEqual(self.login().url, reverse('select_workspace'))
 
     def test_missing_active_session_uses_preference_but_manual_switch_is_preserved(self):
         self.choose(self.second)
@@ -171,7 +174,10 @@ class DefaultWorkplacePreferenceTests(TestCase):
         self.choose(self.second)
         target = '/workplaces/join/00000000-0000-0000-0000-000000000001/'
         with patch('workplaces.invitations.pending_join_url', return_value=target):
-            self.assertEqual(self.login().url, target)
+            for api in (False, True):
+                with self.subTest(api=api):
+                    response = self.login(Client(), api=api)
+                    self.assertEqual(response.json()['redirect'] if api else response.url, target)
 
     def test_profile_form_cannot_change_preference_as_extra_field(self):
         self.choose(self.second)

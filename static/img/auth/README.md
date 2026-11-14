@@ -3,8 +3,8 @@
 ## Tapeta aplikacji: biel, czerwień i czerń
 
 `wallpaper-red-black-white.png` jest tapetą wspólnej powłoki aplikacji
-i stron logowania oraz rejestracji, podłączoną przez `--app-shell-wallpaper-image`.
-Logowanie i rejestracja korzystają z lokalnego aliasu `--app-wallpaper-image` na
+i stron logowania, rejestracji, tworzenia oraz wyboru Workspace, podłączoną przez
+`--app-shell-wallpaper-image`. Te ekrany korzystają z lokalnego aliasu `--app-wallpaper-image` na
 `body.auth-page--wallpaper`, dodawanym przez ich szablony.
 Tapeta zachowuje abstrakcyjne fałdy
 poprzedniej tapety, z przewagą bieli, czerwonymi wstęgami i czarnymi akcentami.
@@ -14,7 +14,7 @@ przez `cover` i jest wyrównany do lewej i środka. Panele pozostają białe.
 Wariant utworzono wbudowanym Image Gen na podstawie
 `wallpaper-fluent-bloom-light-4k.webp`. Zachowano natywny wynik PNG
 o wymiarach **1672 × 941 pikseli**, bez zmiany rozdzielczości.
-Poprzedni obraz pozostaje domyślnym banerem profilu. Wybór i tworzenie
+Poprzedni obraz pozostaje domyślnym banerem profilu. Dołączanie do
 Workspace oraz karty zespołów bez zdjęcia zachowują
 jednolite tło, bez tapety i matowego szkła.
 

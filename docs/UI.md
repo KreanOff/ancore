@@ -368,7 +368,7 @@ Powłoka aplikacji używa biało-czerwono-czarnej tapety
 `--app-shell-wallpaper-image`. Obraz pokrywa viewport przez `cover`,
 z wyrównaniem do lewej i środka. Jasna górna część tapety zapewnia czytelne
 tło kontrolek górnego paska. Ogólny token `--app-wallpaper-image`
-pozostaje domyślnie `none`. Ekrany logowania, rejestracji i tworzenia Workspace lokalnie ustawiają go na
+pozostaje domyślnie `none`. Ekrany logowania, rejestracji, tworzenia i wyboru Workspace lokalnie ustawiają go na
 `var(--app-shell-wallpaper-image)`; karty zespołów zachowują jednolite tło.
 Zachowane wspólne tokeny
 `--glass-surface-bg: var(--card-bg)` i `--glass-surface-filter: none`
@@ -390,6 +390,17 @@ dolny padding paska 2px, taki sam jak u góry. Geometrię współdzielą React,
 pierwszy render Django i zasłona ładowania nawigacji przez
 [`layout/panels.css`](../static/css/layout/panels.css). Wysokość treści
 uwzględnia odstępy, zachowując wewnętrzne przewijanie stron.
+
+Uchwyty zmiany szerokości lewego i prawego panelu współdzielą reguły
+w `layout/panels.css`. Oba mają pole chwytania 9px oraz linię 3px,
+wyśrodkowaną w odstępie między panelem bocznym a główną treścią.
+Linia jest odsunięta o 12px od góry i dołu paneli; wskazanie kursorem,
+fokus klawiatury i przeciąganie pokazują ten sam `--system-interaction`.
+Linia jest wskaźnikiem fokusu bez dodatkowej ramki; tryb wymuszonych kolorów
+zachowuje systemowy obrys.
+Pozycjonowanie `fixed` utrzymuje uchwyty poza przycinaną zawartością paneli.
+Dotychczasowe zasady ukrywania po zwinięciu oraz na ekranach mobilnych
+pozostają wspólne z mechanizmem zmiany szerokości.
 
 Prawy panel ma bazową szerokość `--app-right-sidebar-width` (272px). Na stronie
 zadania pokazuje jego właściwości i używa `--app-task-sidebar-width` (370px).
@@ -414,8 +425,8 @@ Powłokę renderuje `shell/TodaySidebar.tsx`, a pierwszy render Django
 `core/includes/today_sidebar.html`; oba używają klas `today-sidebar`
 z `layout/panels.css`. Wyłączenie modułu Kalendarza ukrywa domyślną zawartość.
 Edytor Pulpitu zachowuje własny układ bez tej zawartości.
-Na komputerze lewą krawędź prawego panelu można przeciągać. Uchwyt
-`right-sidebar-resizer` pozostaje przy krawędzi także podczas przewijania
+Na komputerze szerokość prawego panelu można zmieniać uchwytem po jego lewej
+stronie. `right-sidebar-resizer` pozostaje w szczelinie także podczas przewijania
 zawartości. Zakres wynosi 240–520px i dodatkowo zostawia co najmniej 360px
 na główną treść, uwzględniając szerokość lewego menu i skalę interfejsu.
 Szerokość zapisywana w `ancoreRightSidebarWidth` obowiązuje również
@@ -498,8 +509,9 @@ w powłoce `accounts/auth_base.html`. Wszystkie trzy ekrany dodają wariant
 `body.auth-page--wallpaper`, który
 wyświetla tę samą biało-czerwono-czarną tapetę co aplikacja, przez lokalny
 alias `--app-wallpaper-image: var(--app-shell-wallpaper-image)`. Tło
-`.auth-shell` używa `left center / cover`. Wybór i dołączanie do Workspace zachowują jednolite białe tło
-`--bg-main`. Jasny panel formularza
+`.auth-shell` używa `left center / cover`. Ekran wyboru Workspace włącza ten sam
+wariant tapety w swoim szablonie, zarówno dla Reacta, jak i pierwszego renderu
+Django. Dołączanie do Workspace zachowuje jednolite białe tło `--bg-main`. Jasny panel formularza
 ma szerokość 520px, wysokość dopasowaną do treści i jest wyśrodkowany pionowo
 po prawej stronie. Korzysta z `--card-bg`, `--border-color` i `--shadow-lg`.
 Panel jest w pełni kryjący i nie rozmywa tła. Pola mają pełne białe wypełnienie `--card-bg`
@@ -539,6 +551,9 @@ ma limit 140 znaków; przycisk
 „Utwórz Workspace” pokazuje rzeczywisty stan zapisu „Przygotowywanie Workspace…”.
 Sukces otwiera nowe środowisko. Pod przyciskiem wiersz „Masz już Workspace?” z linkiem „Wybierz Workspace”
 otwiera osobną stronę `/accounts/workspaces/` w tej samej powłoce kont.
+Ta strona pojawia się również po logowaniu, niezależnie od liczby dostępnych
+Workspace i zapisanej preferencji domyślnej. Wyjątkiem jest powrót do
+potwierdzenia oczekującego zaproszenia.
 Strona zawiera listę miejsc pracy dostępnych dla konta, bez formularza tworzenia,
 oraz dwa zwarte wiersze: „Chcesz utworzyć kolejny Workspace? Utwórz Workspace”
 i „Nie widzisz swojego Workspace? Wyloguj się i zmień konto”. Druga akcja
@@ -547,8 +562,9 @@ otwiera ekran logowania. Sesja przeglądarki obsługuje jedno konto.
 Wariant `auth-footer--workspace` ma tekst 13px, interlinię 1.4, bez dodatkowych
 odstępów między wierszami. Opisy są przygaszone; linki mają kolor głównego tekstu
 i podkreślenie dopiero przy najechaniu. Zachowują wspólny fokus klawiatury.
-Wiersze korzystają z ikon folderu
-i strzałki oraz neutralnego hover/fokusu; dłuższa lista ma własne przewijanie.
+Wiersze nie mają obramowań i pokazują wspólny awatar Workspace (własne zdjęcie,
+wybraną ilustrację albo stabilny motyw automatyczny) w rozmiarze katalogu Workspace.
+Nazwa i strzałka zachowują neutralny hover/fokus; dłuższa lista ma własne przewijanie.
 Pusta lista wyświetla „Brak dostępnych Workspace.”. Wybór wysyła standardowy
 POST z CSRF do przełącznika Workspace i otwiera jego „Dla ciebie”. Ten sam
 układ i działanie zachowuje pierwszy render Django bez JavaScriptu.
@@ -2493,6 +2509,27 @@ treść ma tymczasowe `inert` przez wspólny mechanizm blokad, a czytnik ekranu
 otrzymuje „Wczytywanie widoku…”. Kolejne żądanie zachowuje tę samą blokadę;
 błąd usuwa zasłonę i przywraca dostęp oraz wcześniejszy fokus treści,
 o ile inny panel nadal jej nie blokuje.
+
+Logowanie, rejestracja oraz tworzenie Workspace po rejestracji pokazują ten sam
+pełnoekranowy wskaźnik od wysłania formularza do przekierowania.
+`shared/LoadingOverlay.tsx` używa `data-loading-active`, wspólnej animacji
+i tekstu statusu dla czytników ekranu. Portal do `body` utrzymuje zasłonę
+poza transformacjami okna oraz formularzem z `aria-busy`; współdzielony
+`acquireInert` tymczasowo blokuje pozostałą treść. Formularz blokuje ponowne
+wysłanie. Błąd usuwa zasłonę, zachowuje dane
+i pozwala ponowić zapis. Powrót z pamięci historii przeglądarki resetuje
+stan oczekiwania. Pierwszy render Django korzysta z tego samego include'u
+i adaptera `auth.js`; bez JavaScriptu pozostaje zwykły POST.
+Wybór Workspace po logowaniu, przełącznik w górnym menu i przełączanie
+w katalogu Workspace również używają `LoadingOverlay`. Wspólny hook
+`useNativeSubmitLoading` zachowuje natywny POST menu i wyboru, blokuje
+ponowne wysłanie oraz usuwa zasłonę po powrocie z historii lub anulowaniu
+wyjścia z niezapisanymi zmianami. W katalogu stan zasłony jest niezależny
+od blokady zapisu, więc obejmuje również przekierowanie do nowego Workspace.
+Kreator Przestrzeni używa tego komponentu podczas zapisu wybranego szablonu;
+po sukcesie przekazuje sterowanie istniejącej nawigacji. Inne formularze
+zachowują swój dotychczasowy stan zapisu. Nie dodajemy sztucznego czasu oczekiwania.
+
 Logowanie, wylogowanie, zmiana Workspace, edytory i adresy spoza listy ekranów
 zachowują pełną nawigację. Szczegóły zadania przestrzeni czekają na automatyczny
 zapis przed podmianą i zatrzymują nawigację przy błędzie. Pełne wyjście z
@@ -2541,8 +2578,8 @@ definiują bloki `secondary_menu`/`page_header`, których aktualny base nie
 wywołuje. Sprawdź rzeczywiste dziedziczenie, zanim skopiujesz cały szablon.
 
 Ekrany logowania/rejestracji mają oddzielny
-[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z jednolitym białym tłem
-i prawym panelem formularza. Zachowują wspólny Atlassian Sans; szczegóły
+[auth_base.html](../backend/accounts/templates/accounts/auth_base.html), z tapetą aplikacji
+i białym prawym panelem formularza. Zachowują wspólny Atlassian Sans; szczegóły
 wariantu opisuje rozdział [Konta w React](#konta-w-react).
 
 ## 3. Skąd bierze się końcowy styl
@@ -3744,7 +3781,7 @@ Strzałka nagłówka i „Anuluj” wracają do katalogu `/workplaces/`;
 historia przeglądarki zachowuje adresy odwiedzanych sekcji.
 Oglądanie lub edycja wybranego Workspace nie przełącza aktywnego kontekstu pracy.
 
-Etykieta „Domyślny” z opisem „Otwierany po zalogowaniu” wskazuje zapisaną
+Etykieta „Domyślny” z opisem „Domyślny Workspace” wskazuje zapisaną
 osobistą preferencję Workspace; „Bieżący” nadal oznacza aktualny kontekst.
 Menu ustawienia i usunięcia tej preferencji zostało usunięte z wiersza
 katalogu bez zastępczego wejścia. Zapisane preferencje pozostają w bazie.

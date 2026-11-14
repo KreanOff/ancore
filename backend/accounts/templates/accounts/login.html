@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block auth_content %}
-<form method="post" class="auth-form" novalidate>
+<form method="post" class="auth-form" data-auth-loading="Logowanie…" novalidate>
     {% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 

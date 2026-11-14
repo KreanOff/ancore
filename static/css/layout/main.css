@@ -321,6 +321,7 @@ html.app-shell-booting .secondary-menu-panel {
 .app-loading-indicator > span:nth-child(4) { animation-delay: -0.8s; }
 
 .app-content-loading:not([hidden]) .app-loading-indicator > span,
+.app-loading-overlay[data-loading-active="true"] .app-loading-indicator > span,
 html.app-page-loading .app-loading-overlay .app-loading-indicator > span,
 body.app-page-loading .app-loading-overlay .app-loading-indicator > span {
     animation-play-state: running;
@@ -353,6 +354,7 @@ body.app-page-loading .app-loading-overlay .app-loading-indicator > span {
     transition: opacity 0.12s ease, visibility 0.12s ease;
 }
 
+.app-loading-overlay[data-loading-active="true"],
 html.app-page-loading .app-loading-overlay,
 body.app-page-loading .app-loading-overlay {
     opacity: 1;

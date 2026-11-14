@@ -1,6 +1,8 @@
 {% extends 'accounts/auth_base.html' %}
+{% load workplace_avatar %}
 
 {% block title %}Wybierz Workspace | ancore{% endblock %}
+{% block auth_page_class %}auth-page--login auth-page--wallpaper{% endblock %}
 {% block auth_form_header %}
 <header class="auth-form-header">
     <h1 id="auth-form-title" tabindex="-1">Wybierz Workspace</h1>
@@ -12,11 +14,14 @@
 <ul class="auth-workspace-list">
     {% for workspace in workspaces %}
     <li>
-        <form method="post" action="{% url 'workplaces:switch' workspace.pk %}">
+        <form method="post" action="{% url 'workplaces:switch' workspace.pk %}" data-auth-loading="Przełączanie Workspace…">
             {% csrf_token %}
             <button type="submit" class="auth-workspace-option">
-                <i data-icon="folder" aria-hidden="true"></i>
-                <span>{{ workspace.name }}</span>
+                {% workplace_avatar workspace as workspace_logo %}
+                <span class="profile-avatar space-avatar profile-avatar--workplace workplace-row__avatar {{ workspace_logo.color_class }}{% if workspace_logo.photo_url %} has-photo{% else %} space-avatar-art {{ workspace_logo.preset_class }}{% endif %}" style="{{ workspace_logo.color_style }}" aria-hidden="true">
+                    {% if workspace_logo.photo_url %}<img src="{{ workspace_logo.photo_url }}" alt="" draggable="false">{% endif %}
+                </span>
+                <span class="auth-workspace-name">{{ workspace.name }}</span>
                 <i data-icon="arrow-right" aria-hidden="true"></i>
             </button>
         </form>

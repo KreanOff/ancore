@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from core.frontend import form_payload
+from workplaces.templatetags.workplace_avatar import workplace_avatar
 from .avatar import account_avatar
 from .forms import PROFILE_BANNER_MAX_SIZE
 
@@ -49,6 +50,7 @@ def select_workspace_page(request, context):
             'api_url': reverse('accounts-api'), 'data': {
         'workspaces': [{
             'id': str(workplace.pk), 'name': workplace.name,
+            'avatar': workplace_avatar(workplace),
             'switch_url': reverse('workplaces:switch', args=[workplace.pk]),
         } for workplace in context['workspaces']],
         'urls': {'home': reverse('home'), 'create': reverse('register_workspace'), 'logout': reverse('logout')},

@@ -5,6 +5,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
+import { LoadingOverlay } from '../shared/LoadingOverlay';
+import { useNativeSubmitLoading } from '../shared/useNativeSubmitLoading';
 import { LoadMore } from '../shared/LoadMore';
 import { navigate, pageRequest, type Page, type PageProps } from '../shared/page';
 import { errorMessage } from '../shared/api';
@@ -35,6 +37,7 @@ export default function DirectoryPage(props: PageProps) {
     all = useRef<HTMLInputElement>(null),
     search = useRef<HTMLInputElement>(null),
     deleteReturnFocus = useRef<HTMLElement | null>(null);
+  const switching = useNativeSubmitLoading();
   useEffect(() => () => life.current.abort(), []);
   useDirtyGuard(false, busy);
   const filtered = data.rows.filter((row) =>
@@ -92,7 +95,7 @@ export default function DirectoryPage(props: PageProps) {
     });
   }
   async function switchTo(row: Workspace) {
-    if (sending.current) return;
+    if (sending.current || !switching.start()) return;
     sending.current = true;
     setBusy(true);
     setError('');
@@ -106,8 +109,9 @@ export default function DirectoryPage(props: PageProps) {
       );
       if (life.current.signal.aborted) return;
       flushSync(() => setBusy(false));
-      await navigate(result.redirect);
+      if ((await navigate(result.redirect)) === false) switching.reset();
     } catch (e) {
+      switching.reset();
       if (!life.current.signal.aborted) setError(errorMessage(e));
     } finally {
       sending.current = false;
@@ -161,6 +165,7 @@ export default function DirectoryPage(props: PageProps) {
       data-react-screen="workspace-directory"
       aria-busy={busy}
     >
+      <LoadingOverlay active={switching.pending} label="Przełączanie Workspace…" />
       <a className="workplaces-skip-link" href="#workplaces-page-title">
         Przejdź do listy miejsc pracy
       </a>
@@ -419,7 +424,7 @@ export default function DirectoryPage(props: PageProps) {
                               {row.is_default ? (
                                 <span
                                   className="workplace-row__current-badge"
-                                  title="Otwierany po zalogowaniu"
+                                  title="Domyślny Workspace"
                                 >
                                   Domyślny
                                 </span>

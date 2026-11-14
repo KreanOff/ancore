@@ -1348,13 +1348,13 @@ Zmiany nazw nie zmieniają stałego kodu. Usunięcie członka zachowuje istniej�
 czyszczenie dostępów Przestrzeni i unieważnienie sesji Office.
 Favorites i globalny picker Workspace renderuje trwała powłoka `src/shell`.
 
-Wiersze katalogu zawierają osobiste `is_default` i `default_url`. Menu używa
-POST `default_url` z `action=set/remove`; JSON zwraca `default_workplace_id`
-(tekst lub null). React aktualizuje etykiety bez przeładowania i bez zmiany
-aktywnego Workspace. Stan błędu zachowuje poprzedni wybór; zapis blokuje
-równoległe operacje. HTML zachowuje natywny formularz POST z CSRF.
-Po logowaniu zapisany, nadal dostępny domyślny Workspace ma pierwszeństwo
-przed aktywną sesją, z zachowaniem przepływu oczekującego zaproszenia.
+Wiersze katalogu zawierają osobiste `is_default` i `default_url`. Katalog
+pokazuje etykietę „Domyślny”; dawne menu ustawiania preferencji zostało usunięte.
+Endpoint POST `default_url` z `action=set/remove` zachowuje kontrolę dostępu
+i CSRF; JSON zwraca `default_workplace_id` (tekst lub null). Zapis preferencji
+nie przełącza aktywnego Workspace.
+Zapisany, nadal dostępny domyślny Workspace służy do ustalenia kontekstu,
+gdy sesja nie wskazuje dostępnego Workspace. Nie pomija wyboru po logowaniu.
 
 ## API i interfejs kont
 
@@ -1374,17 +1374,20 @@ edycji podsumowanie profilu pokazuje dane z bazy, a szkic pozostaje w formularzu
 `backend/accounts/api.py` deleguje do dotychczasowych widoków i formularzy Django.
 Zachowuje rotację sesji i cookie CSRF także wtedy, gdy `LoginView` już zapisał
 cookie do odpowiedzi przekierowania. Parametr `next` nadal nie zastępuje
-strony „Dla ciebie” po logowaniu. Konto bez Workspace przechodzi do tworzenia,
-a sesja z linkiem zaproszenia wraca do jego potwierdzenia. Zalogowana osoba
-otwierająca logowanie pozostaje na swoim koncie i przechodzi do jego strony
-startowej; rejestracja przekierowuje ją do profilu. Zmiana konta wymaga
+ekranu wyboru Workspace po logowaniu. Wybór pojawia się także przy jednym
+Workspace, zapisanej preferencji domyślnej oraz pustej liście z linkiem do
+tworzenia. Sesja z linkiem zaproszenia wraca do jego potwierdzenia. Zalogowana
+osoba otwierająca logowanie pozostaje na swoim koncie i przechodzi do wyboru
+Workspace; rejestracja przekierowuje ją do profilu. Zmiana konta wymaga
 POST wylogowania z CSRF i ponownego logowania. Middleware usuwa stare klucze
 przełącznika bez wylogowania bieżącej osoby; nie ogranicza sesji na innych
 urządzeniach. `account-auth`
 z `mode: workspace` zawiera wymagane pole `name`, flagę `has_workspaces` i link
 `select_workspace` do `/accounts/workspaces/`. Osobny ekran
-`account-workspace-picker` zawiera listę `workspaces` (id, nazwa, `switch_url`)
+`account-workspace-picker` zawiera listę `workspaces` (id, nazwa, `avatar`, `switch_url`)
 ograniczoną przez `workplaces_for_user`; nie zawiera formularza tworzenia.
+`avatar` pochodzi ze wspólnego `workplace_avatar` i zachowuje zdjęcie, wybraną
+ilustrację lub automatyczny motyw również na pierwszym renderze Django.
 Wybór używa istniejącego natywnego POST przełącznika Workspace z CSRF.
 Akcja „Wyloguj się i zmień konto” wysyła osobny POST do `urls.logout`
 z CSRF, a następnie otwiera logowanie. Formularz
@@ -1392,6 +1395,16 @@ tworzenia osoby z dostępnym Workspace wysyła `create_another=1`, aby jawnie
 utworzyć kolejne środowisko; ponowiony pierwszy POST bez tej flagi zachowuje
 dotychczasowe przekierowanie do istniejącego Workspace. `account-join` obsługuje
 potwierdzenie dołączenia w React. Tożsamość i CSRF zachowują pełne przeładowanie.
+Logowanie, rejestracja i krok utworzenia Workspace wyświetlają wspólny `LoadingOverlay`
+podczas POST oraz oczekiwania na pełną nawigację. Błąd przywraca aktywny
+formularz bez utraty danych; `pageshow` z pamięci historii resetuje blokadę.
+Zgodne formularze Django korzystają z adaptera `static/js/auth.js`.
+Wybór Workspace po logowaniu i menu powłoki używają wspólnego
+`useNativeSubmitLoading` oraz tego samego `LoadingOverlay`, zachowując
+natywny POST i ochronę niezapisanych zmian. Katalog Workspace utrzymuje
+osobny stan ładowania od POST API do przekierowania; stan blokady zapisu
+jest zwalniany przed nawigacją. Powrót z historii i anulowane opuszczenie
+strony przywracają kontrolki, a błąd API katalogu pozwala ponowić operację.
 Kontrakt strony zawiera `read_only`; gość nie otrzymuje uprawnień/URL edycji.
 Ustawienia Workspace zawierają moduły oraz formularz i listę linków zaproszeń.
 

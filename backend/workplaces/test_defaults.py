@@ -11,10 +11,11 @@ class DefaultWorkplaceTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username='setup', email='setup@example.test', password='testpass123')
 
-    def test_first_login_requires_explicit_setup_and_does_not_create_workspace(self):
+    def test_first_login_opens_empty_picker_and_does_not_create_workspace(self):
         response = self.client.post(reverse('login'), {'username': self.user.email, 'password': 'testpass123'}, follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'accounts/register_workspace.html')
+        self.assertTemplateUsed(response, 'accounts/select_workspace.html')
+        self.assertContains(response, 'Brak dostępnych Workspace.')
         self.assertFalse(Workplace.objects.exists())
         self.client.get(reverse('for_you'))
         self.assertFalse(Workplace.objects.exists())

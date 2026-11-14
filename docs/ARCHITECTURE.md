@@ -183,7 +183,7 @@ słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym
 ## 5. Główne zależności
 
 - `accounts.User` jest wspólnym modelem konta, `workplaces.Workplace` granicą danych.
-  `User.default_workplace` przechowuje osobisty Workspace otwierany po logowaniu;
+  `User.default_workplace` przechowuje osobisty domyślny kontekst Workspace;
   relacja nie nadaje dostępu i jest sprawdzana przez `workplaces.services`.
 - `spaces.Space` organizuje `SpaceTask`, planowanie `WorkItem`, sprinty i zespoły.
   Dostęp wyznacza `spaces.access` oraz role przestrzeni i zadań.

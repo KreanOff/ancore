@@ -431,12 +431,12 @@ class SingleAccountSessionTests(TestCase):
                 response = getattr(self.client, method)(reverse('login'), {
                     'username': self.other.email, 'password': self.password,
                 })
-                self.assertEqual(response.status_code, 302)
+                self.assertRedirects(response, reverse('select_workspace'), fetch_redirect_response=False)
                 self.assertEqual(self.client.session[SESSION_KEY], str(self.user.pk))
         self.client.post(reverse('logout'))
         self.assertNotIn(SESSION_KEY, self.client.session)
         response = self.client.post(reverse('login'), {'username': self.other.email, 'password': self.password})
-        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('select_workspace'), fetch_redirect_response=False)
         self.assertEqual(self.client.session[SESSION_KEY], str(self.other.pk))
 
     def test_authenticated_registration_does_not_create_or_log_in_another_account(self):

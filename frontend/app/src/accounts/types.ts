@@ -10,7 +10,7 @@ export interface AuthData {
   has_workspaces?: boolean;
 }
 export interface WorkspacePickerData {
-  workspaces: { id: string; name: string; switch_url: string }[];
+  workspaces: { id: string; name: string; avatar: AvatarData; switch_url: string }[];
   urls: { home: string; create: string; logout: string };
 }
 export interface ProfileData {
