@@ -67,6 +67,38 @@ class ProductionConfigurationTests(SimpleTestCase):
         result = subprocess.run([sys.executable, '-c', code], env=environment, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_production_file_fields_use_internal_storage(self):
+        environment = {**os.environ, 'DEBUG': 'false', 'SECRET_KEY': 'test-secret-' * 8,
+                       'ALLOWED_HOSTS': 'example.test', 'DJANGO_SETTINGS_MODULE': 'ancore.settings',
+                       'FILE_STORAGE_ADDRESS': 'storage:8000', 'PYTHONPATH': str(settings.BACKEND_DIR)}
+        code = '''
+import django
+django.setup()
+from django.contrib.auth import get_user_model
+from django.contrib.staticfiles.storage import StaticFilesStorage, staticfiles_storage
+from django.core.files.storage import default_storage
+from core.file_storage import RemoteFileStorage
+from documents.models import Document, DocumentLibrary, DocumentVersion, WorkspaceDocument
+from spaces.models import Space, SpaceTaskFile
+from workplaces.models import Workplace
+
+private_fields = ((Space, 'avatar_photo'), (SpaceTaskFile, 'file'), (Document, 'file'),
+                  (WorkspaceDocument, 'file'), (DocumentVersion, 'file'), (DocumentLibrary, 'photo'))
+for model, field in private_fields:
+    storage = model._meta.get_field(field).storage
+    assert isinstance(storage, RemoteFileStorage), (model, field)
+    assert (storage.address, storage.scope) == ('storage:8000', 'private'), (model, field)
+
+user = get_user_model()
+for model, field in ((user, 'profile_photo'), (user, 'profile_banner'), (Workplace, 'workplace_photo')):
+    assert model._meta.get_field(field).storage is default_storage, (model, field)
+assert isinstance(default_storage, RemoteFileStorage)
+assert (default_storage.address, default_storage.scope) == ('storage:8000', 'media')
+assert isinstance(staticfiles_storage, StaticFilesStorage)
+'''
+        result = subprocess.run([sys.executable, '-c', code], env=environment, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_readiness_failure_hides_database_details(self):
         with patch('core.health.connection') as connection:
             connection.cursor.side_effect = DatabaseError('private connection details')

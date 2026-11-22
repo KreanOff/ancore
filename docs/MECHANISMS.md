@@ -318,15 +318,20 @@ Szczegóły walidacji i wspólnej konfiguracji opisuje [SPACES.md](SPACES.md).
 - Kadrowanie obrazu po stronie klienta współpracuje z walidacją formularzy
   zdjęć po stronie Django.
 - Pobieranie używa `FileResponse(as_attachment=True)`, `nosniff` oraz
-  `Cache-Control: private, no-store`;
-  widok musi wcześniej zweryfikować właściciela/kontekst.
+  `Cache-Control: private, no-store`. Widok wcześniej weryfikuje właściciela
+  i kontekst.
+
+W środowisku lokalnym Django zapisuje pliki przez `FileSystemStorage`.
+W [produkcyjnym Compose](PRODUCTION.md#magazyn-plików) Django odczytuje,
+zapisuje i usuwa pliki przez wewnętrzną usługę `storage`. Ścieżki względne
+pozostają takie same w obu środowiskach.
 
 | Rodzaj danych | Przechowywanie |
 | --- | --- |
-| Pliki zadań Przestrzeni | `PRIVATE_DOCUMENT_ROOT/space_task_files/`, kontrolowane pobieranie |
+| Pliki zadań Przestrzeni | `space_task_files/` w prywatnym magazynie |
 | Pliki i zdjęcia komentarzy Przestrzeni | Prywatny `SpaceTaskFile`, powiązanie z aktywnością |
-| Historyczne zdjęcia dysków (upload wyłączony) | `PRIVATE_DOCUMENT_ROOT/library_photos/<workplace_id>/`, losowa nazwa; kontrolowany widok obrazu |
-| Pliki Documents | `FileSystemStorage` w `PRIVATE_DOCUMENT_ROOT`; losowa nazwa pod katalogiem Workspace |
+| Historyczne zdjęcia dysków (upload wyłączony) | `library_photos/<workplace_id>/` w prywatnym magazynie, losowa nazwa |
+| Pliki Dysku i Dokumentów | Prywatny magazyn, losowa nazwa pod katalogiem Workspace |
 | Metadane, foldery, gwiazdki, kosz | PostgreSQL |
 
 Documents pobiera pliki tylko przez widok właściciela/Workspace,

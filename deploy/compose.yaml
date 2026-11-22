@@ -46,8 +46,7 @@ services:
       DB_NAME: ancore
       DB_USER: ancore
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Wygeneruj hasło bazy}
-      MEDIA_ROOT: /data/media
-      PRIVATE_DOCUMENT_ROOT: /data/private
+      FILE_STORAGE_ADDRESS: storage:8000
       STATIC_ROOT: /app/staticfiles
       FILE_UPLOAD_TEMP_DIR: /data/tmp
       ONLYOFFICE_URL: /onlyoffice
@@ -57,17 +56,33 @@ services:
       WEB_WORKERS: ${WEB_WORKERS:-2}
       WEB_THREADS: ${WEB_THREADS:-4}
     volumes:
-      - private:/data/private
-      - media:/data/media
       - temporary:/data/tmp
       - static:/app/staticfiles
+    networks: [default, files]
     depends_on:
       postgres: {condition: service_healthy}
+      storage: {condition: service_healthy}
     healthcheck:
       test: [CMD, python, -c, 'import urllib.request; r=urllib.request.Request("http://127.0.0.1:8000/health/ready/",headers={"Host": "localhost"}); urllib.request.urlopen(r,timeout=5).read()']
       start_period: 180s
       interval: 30s
       timeout: 10s
+      retries: 5
+    logging: *logging
+
+  storage:
+    image: ${ANCORE_PROJECT:-ancore-prod}-storage:${ANCORE_RELEASE:-local}
+    build: {context: .., dockerfile: deploy/Dockerfile, target: storage}
+    restart: unless-stopped
+    stop_grace_period: 130s
+    networks: [files]
+    volumes:
+      - private:/data/private
+      - media:/data/media
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/health/ready/",timeout=5).close()']
+      interval: 10s
+      timeout: 6s
       retries: 5
     logging: *logging
 
@@ -117,6 +132,10 @@ services:
       timeout: 10s
       retries: 10
     logging: *logging
+
+networks:
+  files:
+    internal: true
 
 volumes:
   postgres:

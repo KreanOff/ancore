@@ -18,10 +18,11 @@ ancore/
 ├── deploy/
 │   ├── cli/                 instalacja, konfigurator i operacje Compose
 │   ├── backend/             entrypoint Django, Gunicorn, zależności produkcji
+│   ├── storage/             wewnętrzny magazyn plików
 │   ├── web/                 stała konfiguracja HTTP Nginx
 │   ├── postgres/            inicjalizacja roli aplikacji w bazie
 │   ├── Dockerfile           wspólny build obrazów usług i obu frontendów
-│   ├── compose.yaml         cztery usługi HTTP
+│   ├── compose.yaml         usługi produkcyjne i ich wolumeny
 │   └── production.env.example
 ├── scripts/
 │   ├── assets/              generator ikon i jego mapowanie
@@ -59,7 +60,7 @@ Szablony, testy i migracje pozostają przy swoich aplikacjach.
 | Cache narzędzi | `.cache/`, `__pycache__/` | Lokalne pliki odtwarzalne |
 | Ustawienia VS Code | `.vscode/` | Lokalne, poza Git |
 | Konfiguracja z sekretami | `.env`, `.env.office`, `deploy/.env` | Prywatne pliki lokalne; nie nadpisywać przy porządkowaniu |
-| Uploady | `media/`, `private_documents/` lub skonfigurowane ścieżki | Trwałe dane; w produkcji zapisane w wolumenach |
+| Uploady | `media/`, `private_documents/` lub skonfigurowane ścieżki | Trwałe dane. W produkcji kontener `storage` zapisuje je w wolumenach `media` i `private` |
 | Archiwa i certyfikaty starszych instalacji | `deploy/backups/`, `deploy/certs/` | Prywatne dane poza Git/buildem; nowy instalator ich nie tworzy |
 | Pozostałości starszego odzyskiwania | `.recovery/`, `deploy/compose.recovery.yaml` | Prywatne dane poza Git/buildem; nie usuwać przy porządkowaniu |
 

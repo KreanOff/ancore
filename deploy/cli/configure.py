@@ -47,7 +47,7 @@ def http_port(value):
 
 
 def write_config(path, config):
-    content = '# Ancore — HTTP, cztery kontenery. Plik zawiera prywatne sekrety.\n'
+    content = '# Ancore — wdrożenie HTTP. Plik zawiera prywatne sekrety.\n'
     content += ''.join(f"{key}='{value}'\n" for key, value in config.items())
     descriptor, temporary = tempfile.mkstemp(prefix='.env.', dir=path.parent)
     try:

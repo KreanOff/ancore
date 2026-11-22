@@ -4837,7 +4837,8 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 | `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE` | Ciasteczko sesji |
 | `CSRF_COOKIE_SECURE`, `CSRF_COOKIE_HTTPONLY`, `CSRF_COOKIE_SAMESITE` | Ciasteczko CSRF |
 | `SECURE_REFERRER_POLICY` | Domyślnie same-origin |
-| `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT` | Opcjonalne ścieżki trwałych danych i zasobów; domyślnie katalogi repozytorium |
+| `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT` | Opcjonalne ścieżki lokalnych danych i zasobów. Domyślnie katalogi repozytorium |
+| `FILE_STORAGE_ADDRESS` | Adres `host:port` wewnętrznego magazynu plików. Produkcyjny Compose ustawia `storage:8000`, a domyślna pusta wartość używa lokalnych katalogów |
 | `FILE_UPLOAD_TEMP_DIR` | Opcjonalny katalog uploadów tymczasowych |
 | `TRUST_PROXY_HEADERS` | Zaufanie do `X-Forwarded-Proto` wyłącznie za kontrolowanym proxy |
 | `MAX_PROFILE_PHOTO_SIZE` | Limit zdjęcia, domyślnie 5 MiB |
@@ -4847,8 +4848,9 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 
 `TIME_ZONE` to `Europe/Warsaw`, język `pl-pl`, `USE_TZ=True`.
 `MEDIA_ROOT` domyślnie wskazuje `media/`, a `PRIVATE_DOCUMENT_ROOT` wskazuje
-`private_documents/`. Produkcja może nadpisać te ścieżki zmiennymi
-środowiskowymi o tych samych nazwach.
+`private_documents/`. Zmienne środowiskowe o tych samych nazwach pozwalają
+ustawić inne katalogi przy lokalnym zapisie. Produkcyjny Compose obsługuje
+uploady przez [magazyn plików](PRODUCTION.md#magazyn-plików).
 
 Nie nadpisuj istniejącego `.env` podczas wykonywania zwykłego zadania.
 W nowym środowisku utwórz plik `.env` w katalogu głównym. Ustaw `DEBUG=true`
@@ -5238,13 +5240,12 @@ lub workerów na podstawie samej konfiguracji modeli.
 
 ## 8. Wdrożenie
 
-Gotowy wariant jednego serwera z czterema usługami i trwałymi wolumenami
-opisuje [Instalacja na serwerze](PRODUCTION.md). `./ancore-install.sh` pyta
-o IP i port HTTP, następnie buduje oraz uruchamia `web`, `backend`, `postgres`
-i `onlyoffice`. Po sprawdzeniu gotowości prosi o dane pierwszego administratora
-Django; pomija ten krok, jeśli aktywny administrator z ustawionym hasłem już
-istnieje. Nie ma backupu ani konfiguracji HTTPS. Poniżej pozostają
-zasady ścieżek dla wdrożeń ręcznych.
+Wariant jednego serwera z trwałymi wolumenami opisuje
+[Instalacja na serwerze](PRODUCTION.md). `./ancore-install.sh` pyta o IP,
+port HTTP i dane administratora Django, następnie buduje i uruchamia
+`web`, `backend`, `storage`, `postgres` i `onlyoffice`. Działający backend
+pozwala pominąć pytania o konto po potwierdzeniu, że aktywny administrator
+z ustawionym hasłem już istnieje.
 
 Po przeniesieniu źródeł dodaj katalog `backend/` do ścieżki importów procesu
 serwera. Przykład zmiennej środowiskowej (podstaw rzeczywistą ścieżkę):

@@ -82,12 +82,13 @@ dostępny z urządzeń, na których otwierasz aplikację.
 
 [Pełna instrukcja instalacji →](docs/PRODUCTION.md)
 
-### Cztery kontenery, jeden publiczny port
+### Pięć kontenerów, jeden publiczny port
 
 | Kontener | Odpowiedzialność | Dostęp |
 | --- | --- | --- |
 | `web` | Nginx, zasoby statyczne i proxy aplikacji oraz edytora | Wybrany port HTTP |
 | `backend` | Django, Gunicorn, API i kontrolowane pobieranie plików | Wewnętrzna sieć Docker |
+| `storage` | Przechowywanie załączników, plików Dysku i Dokumentów oraz przesłanych obrazów | Osobna sieć Docker z backendem |
 | `postgres` | Baza danych PostgreSQL | Wewnętrzna sieć Docker |
 | `onlyoffice` | Edytor dokumentów biurowych | Przez `web`, pod `/onlyoffice/` |
 
@@ -101,9 +102,9 @@ Wszystkie polecenia uruchamiaj w katalogu projektu:
 | Polecenie | Działanie |
 | --- | --- |
 | `sh ancore-install.sh` | Instalacja lub zmiana IP i portu |
-| `sh ancore-install.sh status` | Stan czterech usług |
+| `sh ancore-install.sh status` | Stan usług |
 | `sh ancore-install.sh logs` | Logi wszystkich usług |
-| `sh ancore-install.sh logs backend` | Logi wybranej usługi; także `web`, `postgres` lub `onlyoffice` |
+| `sh ancore-install.sh logs storage` | Logi magazynu plików |
 | `sh ancore-install.sh stop` | Zatrzymanie kontenerów z zachowaniem danych |
 | `sh ancore-install.sh start` | Uruchomienie wcześniej zbudowanej aplikacji |
 | `sh ancore-install.sh restart` | Ponowny start usług |

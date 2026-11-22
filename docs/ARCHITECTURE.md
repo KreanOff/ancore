@@ -44,9 +44,10 @@ backend/                katalog źródeł Pythona, dodawany do ścieżki import�
   core/                 wspólna powłoka aplikacji, JSON API i walidacja uploadu
 frontend/board/         izolowany bundle Excalidraw/React i lockfile
 frontend/app/           frontend React/TypeScript aktywnych modułów
-deploy/                 HTTP Compose, obrazy, proxy i ONLYOFFICE
+deploy/                 produkcyjny Docker Compose i obrazy usług
   cli/                  wspólne operacje instalacji i konfigurator
   backend/              entrypoint Django, Gunicorn i zależności produkcji
+  storage/              wewnętrzna usługa odczytu, zapisu i usuwania plików
   web/                  stała konfiguracja HTTP Nginx
   postgres/             inicjalizacja roli aplikacji
 static/css/             tokeny, reset, układ, komponenty, theme, reguły globalne
@@ -93,17 +94,19 @@ WSGI/ASGI i inne bezpośrednie procesy wymagają dodania `backend/` do `PYTHONPA
 szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).
 `BASE_DIR` nadal oznacza katalog główny repozytorium, a `BACKEND_DIR` katalog
 źródeł Django. Domyślne lokalizacje `.env`, uploadów i zasobów pozostają takie same.
-Produkcja może wskazać `MEDIA_ROOT`, `PRIVATE_DOCUMENT_ROOT`, `STATIC_ROOT`
-i katalog uploadów tymczasowych przez środowisko. [Instalacja czterech usług](PRODUCTION.md)
-rozdziela `web`, `backend`, `postgres` i `onlyoffice`; pliki mają trwałe lokalne
-wolumeny. `/health/ready/` sprawdza gotowość bazy bez ujawniania danych użytkowników.
+W środowisku lokalnym Django zapisuje pliki w `MEDIA_ROOT` i `PRIVATE_DOCUMENT_ROOT`.
+[Instalacja produkcyjna](PRODUCTION.md) uruchamia `web`, `backend`, `postgres`,
+`storage` i `onlyoffice`. Django korzysta z usługi `storage` w osobnej sieci
+Docker. Magazyn zapisuje pliki w trwałych wolumenach i sprawdza ich dostępność
+przed startem backendu. Walidacja uploadu i kontrola dostępu do plików pozostają
+w Django. Osobny endpoint `/health/ready/` backendu sprawdza gotowość bazy.
 Instalacja nie uruchamia backupu ani mechanizmu blokowania żądań na czas kopii.
 
 `ancore-install.sh` jest wspólnym wejściem instalacji i utrzymania. Domyślne
 polecenie wyświetla terminalowe logo i napis ANCORE, a następnie w powłoce
 `sh` pyta o IP, port HTTP (domyślnie 8080) oraz dane administratora: e-mail,
 nazwę użytkownika, imię, nazwisko i hasło z potwierdzeniem. Pytania poprzedzają
-pobieranie obrazów, zapis konfiguracji, budowanie i start czterech usług.
+pobieranie obrazów, zapis konfiguracji, budowanie i start usług.
 Po migracjach i sprawdzeniu gotowości `ensure_admin --from-stdin` tworzy konto
 z wcześniej podanych danych, zachowując walidację Django. Hasło jest ukryte
 podczas wpisywania w terminalu i przekazywane przez standardowe wejście;
@@ -128,9 +131,9 @@ i uruchamia usługi ze starej konfiguracji przez `update --local`, bez kolejnego
 pytania. `update --local` służy także do jawnej przebudowy lokalnych źródeł
 bez pobierania kodu. [Kontrakt aktualizacji](PRODUCTION.md#aktualizacja-z-github).
 
-Nginx publikuje wybrany port na `0.0.0.0`. Backend, PostgreSQL i ONLYOFFICE
-pozostają w sieci Docker. Publiczny prefiks ONLYOFFICE jest względny
-(`/onlyoffice`), więc edytor używa adresu HTTP aplikacji. Podpisane pobrania
+Nginx publikuje wybrany port na `0.0.0.0`. Backend, PostgreSQL, magazyn plików
+i ONLYOFFICE komunikują się przez sieci Docker. Publiczny prefiks ONLYOFFICE
+to `/onlyoffice`, więc edytor używa adresu HTTP aplikacji. Podpisane pobrania
 oraz callbacki korzystają z wewnętrznego listenera `http://web:8081`.
 Wyniki callbacków są pobierane ze stałego wewnętrznego serwera po walidacji
 ścieżki cache. Szczegóły: [Instalacja](PRODUCTION.md).

@@ -60,7 +60,7 @@ elif args[0] == 'compose':
         elif args[-1] == 'backend':
             print(os.getenv('INSTALLER_BACKEND_ID', ''))
         else:
-            print('backend web postgres onlyoffice')
+            print('backend web storage postgres onlyoffice')
     elif args[0] == 'build':
         sys.exit(1 if os.getenv('INSTALLER_BUILD_ERROR') else 0)
     elif args[0] == 'up':
@@ -252,7 +252,7 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertEqual(len(self.commands('build')), 1)
         build = self.commands('build')[0]
         self.assertEqual({value for value in build[build.index('build') + 1:] if not value.startswith('-')},
-                         {'web', 'backend', 'postgres'})
+                         {'web', 'backend', 'storage', 'postgres'})
         self.assertEqual(len(self.commands('up')), 1)
         self.assertIn('--wait', self.commands('up')[0])
         self.assertIn('--no-build', self.commands('up')[0])
@@ -491,6 +491,13 @@ class ProductionInstallerTests(SimpleTestCase):
         self.assertTrue(any(call[0] == 'docker-compose' for call in self.commands('ps')))
         self.assertFalse(self.commands('build'))
         self.assertFalse(self.commands('up'))
+
+    def test_storage_logs_can_be_selected(self):
+        self.prepare()
+        result = self.run_script('logs', 'storage')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        logs, = self.commands('logs')
+        self.assertEqual(logs[-3:], ['--tail=100', '--follow', 'storage'])
 
     def test_unknown_retired_commands_and_help_need_no_daemon(self):
         result = self.run_script('--help', INSTALLER_NO_ACCESS='1')
@@ -867,7 +874,9 @@ class ProductionInstallerTests(SimpleTestCase):
     def test_recovered_installation_keeps_its_existing_volume_mapping(self):
         self.prepare()
         override = self.root / 'deploy/compose.recovery.yaml'
-        content = 'volumes:\n  postgres:\n    name: previous-recovery-postgres\n'
+        content = ('volumes:\n  postgres:\n    name: previous-recovery-postgres\n'
+                   '  private:\n    name: previous-recovery-private\n'
+                   '  media:\n    name: previous-recovery-media\n')
         override.write_text(content)
         for arguments, answers in ((('start',), ''), (('update', '--local'), ''), (('install',), '\n\n')):
             with self.subTest(arguments=arguments):

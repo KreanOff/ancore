@@ -196,13 +196,14 @@ dotyczą starszego skryptu `scripts/start_office.sh`.
 | `ONLYOFFICE_JWT_SECRET` | Wspólny losowy sekret, minimum 32 znaki, taki sam jak `JWT_SECRET` serwera |
 
 Starszy lokalny Compose jest konfiguracją dla jednego Maca. Produkcyjny
-`ancore-install.sh install` pyta o IP serwera i port HTTP (domyślnie 8080), po czym
-uruchamia cztery kontenery i prosi o dane pierwszego administratora Django.
+`ancore-install.sh install` pyta o IP serwera, port HTTP (domyślnie 8080)
+i dane pierwszego administratora Django przed uruchomieniem usług.
 Istniejące aktywne konto administratora z ustawionym hasłem jest zachowane.
 Względny publiczny prefiks `/onlyoffice`
 działa pod tym samym adresem HTTP i portem co Ancore.
 `ONLYOFFICE_INTERNAL_URL=http://onlyoffice` i `ONLYOFFICE_ANCORE_URL=http://web:8081`
-pozostają adresami wewnątrz sieci Docker; port callbacków nie jest publikowany.
+pozostają adresami w wewnętrznej sieci Docker. Django obsługuje podpisane
+pobrania i callbacki edytora i przekazuje dane plików do kontenera `storage`.
 Nie używaj `127.0.0.1` jako adresu edytora dla klientów na innych komputerach.
 Nie publikuj prywatnego storage przez serwer WWW. Nie włączaj publicznego
 serwera demonstracyjnego ONLYOFFICE ani wyłączania JWT.

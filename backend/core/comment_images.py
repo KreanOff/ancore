@@ -1,14 +1,12 @@
 """Private storage and presentation shared by Space task attachments."""
 from pathlib import Path
 
-from django.conf import settings
-from django.core.files.storage import FileSystemStorage
-
+from core.file_storage import private_storage
 from core.upload_validation import COMMENT_IMAGE_EXTENSIONS
 
 
 def comment_image_storage():
-    return FileSystemStorage(location=settings.PRIVATE_DOCUMENT_ROOT)
+    return private_storage()
 
 
 class AttachmentPresentation:

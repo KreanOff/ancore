@@ -2,11 +2,12 @@ from pathlib import Path
 import uuid
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+
+from core.file_storage import private_storage
 
 
 icon_color_validator = RegexValidator(r'^#[0-9a-fA-F]{6}\Z', 'Podaj kolor w formacie #RRGGBB.')
@@ -14,7 +15,7 @@ icon_color_validator = RegexValidator(r'^#[0-9a-fA-F]{6}\Z', 'Podaj kolor w form
 
 def document_storage():
     # Document files and library photos use authenticated views, outside MEDIA_ROOT.
-    return FileSystemStorage(location=settings.PRIVATE_DOCUMENT_ROOT)
+    return private_storage()
 
 
 def document_upload_path(instance, filename):

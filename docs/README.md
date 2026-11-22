@@ -26,9 +26,9 @@ w `static/`. Główne instrukcje startu i mapa repozytorium są w
 7. [Indeks kodu](CODE_INDEX.md) — generowany katalog modeli, relacji,
    formularzy, tras URL, szablonów, zasobów i testów.
 8. [Instalacja na serwerze](PRODUCTION.md) — konfiguracja IP i portu HTTP,
-   uruchomienie czterech kontenerów (`web`, `backend`, `postgres`, `onlyoffice`)
-   i utworzenie administratora; lokalne budowanie i trwałe wolumeny,
-   bez backupu i konfiguracji HTTPS.
+   uruchomienie usług `web`, `backend`, `storage`, `postgres` i `onlyoffice`
+   oraz utworzenie administratora. Obrazy są budowane na serwerze, a dane
+   trafiają do trwałych wolumenów.
 
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.

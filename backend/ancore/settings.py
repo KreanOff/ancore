@@ -221,6 +221,15 @@ STATIC_ROOT = Path(os.getenv('STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 PRIVATE_DOCUMENT_ROOT = Path(os.getenv('PRIVATE_DOCUMENT_ROOT', str(BASE_DIR / 'private_documents')))
+FILE_STORAGE_ADDRESS = os.getenv('FILE_STORAGE_ADDRESS', '').strip()
+if FILE_STORAGE_ADDRESS:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'core.file_storage.RemoteFileStorage',
+            'OPTIONS': {'address': FILE_STORAGE_ADDRESS, 'scope': 'media', 'base_url': MEDIA_URL},
+        },
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    }
 if os.getenv('FILE_UPLOAD_TEMP_DIR'):
     FILE_UPLOAD_TEMP_DIR = os.environ['FILE_UPLOAD_TEMP_DIR']
 MAX_PROFILE_PHOTO_SIZE = env_int('MAX_PROFILE_PHOTO_SIZE', 5 * 1024 * 1024)

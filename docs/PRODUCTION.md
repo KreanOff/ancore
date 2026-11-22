@@ -12,12 +12,13 @@ lub jasnej czerwieni ANSI odpowiednio do zgłaszanych możliwości terminala.
 wymaga programu graficznego na serwerze. Następnie instalator pyta o **adres IPv4 serwera**,
 **port HTTP** i **dane administratora Django**. Dopiero po zebraniu odpowiedzi
 pobiera potrzebne obrazy, generuje konfigurację, buduje aplikację
-i uruchamia dokładnie cztery kontenery:
+i uruchamia pięć kontenerów.
 
 | Kontener | Rola |
 | --- | --- |
 | `web` | Nginx: HTTP, zasoby aplikacji i proxy ONLYOFFICE |
 | `backend` | Django/Gunicorn: aplikacja, API i kontrolowane pobieranie plików |
+| `storage` | Odczyt, zapis i usuwanie plików w trwałych wolumenach |
 | `postgres` | PostgreSQL 17: baza danych |
 | `onlyoffice` | Edytor dokumentów |
 
@@ -59,9 +60,10 @@ Można również użyć `sh ancore-install.sh`.
 Pytania obsługuje powłoka `sh` na hoście, zanim Docker pobierze obraz Pythona;
 Python nie jest wymagany na serwerze poza kontenerami. Po zebraniu odpowiedzi
 instalator automatycznie zapisuje `deploy/.env`, buduje obrazy i oba frontendy,
-wykonuje migracje oraz `collectstatic`, a następnie czeka na gotowość czterech
-usług. Dopiero wtedy tworzy konto z wcześniej podanych danych, stosując
-walidację pól i hasła Django. Hasło wpisujesz w ukrytym polu terminala.
+uruchamia usługi i czeka na ich gotowość. Backend startuje po sprawdzeniu
+gotowości bazy oraz magazynu plików, wykonuje migracje i `collectstatic`.
+Gdy wszystkie usługi są gotowe, instalator tworzy konto z wcześniej podanych
+danych, stosując walidację pól i hasła Django. Hasło wpisujesz w ukrytym polu terminala.
 Pozostaje tylko w pamięci procesu do przekazania przez standardowe wejście
 polecenia `ensure_admin --from-stdin`. Nie jest zapisywane w `deploy/.env`
 ani przekazywane w argumentach polecenia lub zmiennych środowiska.
@@ -74,7 +76,7 @@ instalatora.
 
 Nginx publikuje wybrany port na `0.0.0.0`. Na innym komputerze użyj podanego
 IP serwera; sieć i zapora muszą dopuszczać połączenia na wybrany port.
-Portów bazy, backendu i ONLYOFFICE nie publikuje się osobno.
+Tylko kontener `web` publikuje port na hoście.
 
 Ponowne uruchomienie instalatora podpowiada zapisany IPv4 i port. Zachowuje
 sekrety, nazwę projektu oraz wolumeny, więc służy także do zmiany adresu
@@ -97,6 +99,7 @@ Nie importuje lokalnej bazy developerskiej ani uploadów z repozytorium.
 | `./ancore-install.sh restart` | Ponowne uruchomienie usług |
 | `./ancore-install.sh status` | Stan kontenerów |
 | `./ancore-install.sh logs [USŁUGA]` | Logi wszystkich usług albo wskazanego kontenera |
+| `./ancore-install.sh logs storage` | Logi magazynu plików |
 | `./ancore-install.sh update` | Wybór repozytorium GitHub, pobranie kodu, przebudowa i start |
 | `./ancore-install.sh update URL [GAŁĄŹ]` | Aktualizacja z podanego repozytorium bez pytania o link |
 | `./ancore-install.sh update --local` | Przebudowa i start z obecnych plików bez pobierania kodu |
@@ -165,6 +168,11 @@ i uruchamia usługi ze sprawdzeniem gotowości.
 i pobierania kodu. Możesz go użyć do ponowienia budowania po błędzie:
 kod został już zaktualizowany, a instalator nie cofa go automatycznie.
 
+Po aktualizacji instalacji bez osobnego magazynu kontener `storage` przejmuje
+zapis w dotychczasowych wolumenach `private` i `media`. Zachowuje ich zawartość
+i ścieżki plików zapisane w bazie, także przy użyciu `compose.recovery.yaml`.
+Aktualizacja uruchamia usługę automatycznie.
+
 ### Uprawnienia źródeł po aktualizacji
 
 Zastosowanie zmian Git używa lokalnie `umask 022`: nowe i zastępowane pliki
@@ -202,17 +210,34 @@ pliki tymczasowe oraz dane robocze ONLYOFFICE. Nazwa projektu domyślnie wynosi
 `ancore-prod`; przy istniejącej konfiguracji pozostaje zachowana. `stop`
 nie usuwa danych. Nie używaj `docker compose down --volumes`, jeśli mają pozostać.
 
-Backend działa jako UID/GID 10001. Rola aplikacji `ancore` nie jest superuserem
-PostgreSQL. Nginx udostępnia zasoby statyczne i dozwolone obrazy profilu oraz
-Workspace. Prywatne dokumenty i załączniki wydaje Django po kontroli dostępu;
-nie ma publicznego aliasu całego katalogu mediów ani dokumentów.
-Publiczny limit żądania wynosi 225 MiB, a aplikacja nadal waliduje każdy plik.
+Backend i magazyn plików działają jako UID/GID 10001. Rola aplikacji `ancore`
+ma ograniczone uprawnienia w PostgreSQL.
 
 Publiczne proxy aplikacji pokazuje strony błędów 502, 503 i 504, gdy samo
 zwraca któryś z tych kodów. Strony i ich zasoby są częścią obrazu `web`,
 dzięki czemu działają także podczas awarii Django. Dla API i żądań z nagłówkiem
 `Accept: application/json` proxy zwraca błąd w JSON. Odpowiedzi otrzymane
 od Django przechodzą przez proxy bez zastępowania treści.
+
+### Magazyn plików
+
+| Wolumen | Montowanie w `storage` | Zawartość |
+| --- | --- | --- |
+| `private` | `/data/private` | Załączniki zadań i komentarzy, pliki Dysku i Dokumentów, prywatne obrazy |
+| `media` | `/data/media` | Zdjęcia i banery profili oraz zdjęcia Workspace |
+
+Dla domyślnego projektu Docker nazywa te wolumeny `ancore-prod_private`
+i `ancore-prod_media`. Django łączy się z `storage:8000` przez sieć Docker
+wspólną tylko dla `backend` i `storage`. Sprawdza dostęp i waliduje każdy
+upload. Prywatne pliki pobiera się przez dotychczasowe adresy Ancore.
+Nginx czyta z wolumenu `media` zamontowanego tylko do odczytu i udostępnia
+obrazy przez istniejące dozwolone ścieżki. Publiczny limit żądania wynosi
+225 MiB.
+
+Metadane plików, treść dokumentów tekstowych Ancore i tablic pozostają
+w PostgreSQL. Backend korzysta z własnego wolumenu `temporary` na pliki
+tymczasowe. Dane robocze ONLYOFFICE mają własne wolumeny, a po zapisie
+edytowanego pliku Django przekazuje jego zawartość do magazynu.
 
 ## ONLYOFFICE
 
@@ -225,18 +250,18 @@ cache po walidacji ścieżki. Szczegóły: [Dokumenty](OFFICE.md).
 
 ## Weryfikacja
 
-Testy instalatora i konfiguracji:
+Testy instalatora, konfiguracji i magazynu plików.
 
 ```sh
-.venv/bin/python manage.py test core.test_production_installer core.test_production core.test_project_layout
+.venv/bin/python manage.py test core.test_production_installer core.test_production core.test_project_layout core.test_file_storage
 .venv/bin/python scripts/run_tests.py accounts.test_ensure_admin
 .venv/bin/python scripts/update_code_index.py --check
 ```
 
-Po instalacji sprawdź `./ancore-install.sh status`, otwarcie podanego adresu,
-logowanie utworzonym kontem administratora, upload i pobranie oraz zapis
-dokumentu w ONLYOFFICE. Ponowna instalacja powinna zachować konto i hasło
-administratora; przy działającym backendzie powinna też pominąć pytania
-o jego dane. Ponowny start powinien zachować dane.
+Po instalacji sprawdź `./ancore-install.sh status`, w tym gotowość `storage`,
+oraz logowanie, upload, pobranie i zapis dokumentu w ONLYOFFICE. Przy aktualizacji
+sprawdź także pobranie pliku zapisanego przed zmianą. Ponowna instalacja powinna
+zachować konto i hasło administratora, a przy działającym backendzie pominąć
+pytania o jego dane. Ponowny start powinien zachować dane.
 Testy skryptów z zastępczym Docker CLI nie zastępują
 uruchomienia pełnego zestawu na docelowym serwerze.

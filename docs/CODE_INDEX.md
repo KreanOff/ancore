@@ -18,7 +18,7 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 44 | 0 | 31 | 299 |
+| [backend/core](../backend/core) | 46 | 0 | 31 | 306 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 115 |
 | [backend/workplaces](../backend/workplaces) | 33 | 6 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
@@ -796,6 +796,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/dev_frontend.py](../backend/core/dev_frontend.py) — `FrontendBuildError`, `FrontendBuilder`, `FrontendBuildHandler`
 - [backend/core/emoji.py](../backend/core/emoji.py) — `emoji_catalog`, `emoji_index`, `find_emoji`, `validate_emoji`, `emoji_art`, `emoji_payload`, `emoji_picker_config`
 - [backend/core/error_pages.py](../backend/core/error_pages.py) — `render_error`, `bad_request`, `permission_denied`, `page_not_found`, `server_error`, `csrf_failure`
+- [backend/core/file_storage.py](../backend/core/file_storage.py) — `RemoteFileStorage`, `private_storage`
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
 - [backend/core/health.py](../backend/core/health.py) — `readiness`
 - [backend/core/hosts.py](../backend/core/hosts.py) — `ServerAddressMiddleware`
@@ -1611,6 +1612,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 - `FileLifecycleTests`: 6 metod testowych.
 - `PublicMediaTests`: 1 metod testowych.
 
+### backend/core/test_file_storage.py
+
+Źródło: [backend/core/test_file_storage.py](../backend/core/test_file_storage.py).
+
+- `ThreadedServer`: 0 metod testowych.
+- `QuietRequestHandler`: 0 metod testowych.
+- `FileStorageTests`: 5 metod testowych.
+
 ### backend/core/test_filter_frontend.py
 
 Źródło: [backend/core/test_filter_frontend.py](../backend/core/test_filter_frontend.py).
@@ -1646,14 +1655,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_production.py](../backend/core/test_production.py).
 
-- `ProductionConfigurationTests`: 3 metod testowych.
+- `ProductionConfigurationTests`: 4 metod testowych.
 - `ServerAddressTests`: 2 metod testowych.
 
 ### backend/core/test_production_installer.py
 
 Źródło: [backend/core/test_production_installer.py](../backend/core/test_production_installer.py).
 
-- `ProductionInstallerTests`: 42 metod testowych.
+- `ProductionInstallerTests`: 43 metod testowych.
 
 ### backend/core/test_project_layout.py
 
@@ -2472,6 +2481,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [deploy/compose.yaml](../deploy/compose.yaml)
 - [deploy/postgres/init.sh](../deploy/postgres/init.sh)
 - [deploy/production.env.example](../deploy/production.env.example)
+- [deploy/storage/file_service.py](../deploy/storage/file_service.py)
 - [deploy/web/errors/502.json](../deploy/web/errors/502.json)
 - [deploy/web/errors/503.json](../deploy/web/errors/503.json)
 - [deploy/web/errors/504.json](../deploy/web/errors/504.json)

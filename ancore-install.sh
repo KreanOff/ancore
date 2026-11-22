@@ -37,8 +37,8 @@ ancore_main() {
             fi
         fi
     elif [ "$ANCORE_ACTION" = logs ]; then
-        [ "$#" -le 1 ] || ancore_fail 'Użyj: sh ancore-install.sh logs [web|backend|postgres|onlyoffice].'
-        case "${1:-}" in ''|web|backend|postgres|onlyoffice) ;; *) ancore_fail 'Nieznana usługa.' ;; esac
+        [ "$#" -le 1 ] || ancore_fail 'Użyj: sh ancore-install.sh logs [web|backend|storage|postgres|onlyoffice].'
+        case "${1:-}" in ''|web|backend|storage|postgres|onlyoffice) ;; *) ancore_fail 'Nieznana usługa.' ;; esac
     else
         [ "$#" -eq 0 ] || ancore_fail 'To polecenie nie przyjmuje opcji. Użyj sh ancore-install.sh --help.'
     fi

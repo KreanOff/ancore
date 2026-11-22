@@ -18,8 +18,8 @@ Podaj IP serwera, port HTTP i dane administratora. Potem instalacja przebiega au
   start            Uruchom przygotowaną instalację.
   stop             Zatrzymaj kontenery, zachowując dane.
   restart          Uruchom kontenery ponownie.
-  status           Pokaż stan czterech usług.
-  logs [USŁUGA]    Pokaż logi: web, backend, postgres lub onlyoffice.
+  status           Pokaż stan usług Ancore.
+  logs [USŁUGA]    Pokaż logi: web, backend, storage, postgres lub onlyoffice.
   admin            Utwórz administratora Django.
 
 Przykład: sh ancore-install.sh update
@@ -108,7 +108,7 @@ ancore_check_port() {
 ancore_build() {
     ancore_check_port
     echo 'Budowanie aplikacji i pobieranie potrzebnych obrazów...'
-    BUILDX_BUILDER=default ancore_compose build --pull backend web postgres
+    BUILDX_BUILDER=default ancore_compose build --pull backend web storage postgres
     if ! docker image inspect "$(ancore_config_value ONLYOFFICE_IMAGE)" >/dev/null 2>&1; then
         ancore_compose pull onlyoffice
     fi
