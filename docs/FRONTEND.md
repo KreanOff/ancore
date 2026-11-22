@@ -684,14 +684,41 @@ React 18.3.1 jest zgodny z wersją używaną przez odizolowany edytor tablicy.
 ```sh
 cd frontend/app
 pnpm install --frozen-lockfile
-pnpm build
 cd ../..
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
-Podczas pracy można uruchomić `pnpm --dir frontend/app dev` w drugim terminalu.
-Polecenie obserwuje źródła i przebudowuje bundle; po zmianie odśwież przeglądarkę.
-Nie uruchamia osobnego serwera HTTP ani HMR. Sprawdzanie typów wykonuje
+Przy `DEBUG=true` własne polecenie [`runserver`](../backend/core/management/commands/runserver.py)
+buduje frontend przed startem HTTP i automatycznie przed pierwszym żądaniem
+po zmianie kodu. [`core.dev_frontend`](../backend/core/dev_frontend.py) porównuje
+zawartość źródeł, konfiguracji budowania, lockfile i metadanych zależności.
+Wykrywa także cofnięcie treści przez Git, brak manifestu i podmianę bundla.
+Uruchamia pełny skrypt `pnpm build` z kontrolą TypeScript (z wyłączoną automatyczną
+instalacją zależności przez pnpm), a równoległe żądania czekają
+na tę samą kompilację. Zmiana źródeł w jej trakcie powoduje ponowienie przed
+obsługą żądania. Nie buduje przy każdym odczycie bez zmian.
+
+Jeśli edytor uruchamia Django bez Node/pnpm w `PATH`, opcjonalne
+`FRONTEND_BUILD_PATH` w lokalnym `.env` dodaje katalogi narzędzi wyłącznie do
+środowiska kompilatora. Rozdziel je separatorem `PATH` systemu (`:` na macOS/Linux,
+`;` na Windows) i uruchom ponownie serwer po zmianie tej konfiguracji.
+Bez tego ustawienia kompilator dziedziczy zwykły `PATH` procesu Django.
+
+Nieudana kompilacja blokuje obsługę stron i API odpowiedzią HTTP 503 z opisem;
+szczegóły kompilatora pozostają w terminalu. Serwer nadal działa. Popraw kod
+i odśwież stronę — nowe źródła są sprawdzane od razu. Ponowienie tej samej
+nieudanej kompilacji ma odstęp co najmniej 5 sekund. Pliki statyczne i healthchecki
+nie uruchamiają buildu. Mechanizm działa też z `--noreload`, bez osobnego procesu
+watchera, ale nie przeładowuje otwartych kart ani nie zapewnia HMR. Po zmianie
+odśwież przeglądarkę, aby pobrać nowy JavaScript.
+
+Opcjonalnie można uruchomić `pnpm --dir frontend/app dev` w drugim terminalu,
+a Django przez `manage.py runserver --no-frontend-build`. Ten wariant obserwuje
+źródła przez esbuild; nie sprawdza typów i wymaga odświeżenia przeglądarki.
+Nie łącz obu mechanizmów budowania. Automatyczna kompilacja dotyczy wyłącznie
+developerskiego `runserver` z `DEBUG=true`; WSGI/ASGI, migracje, testy i produkcja
+zachowują jawny build. Nie obejmuje osobnego `frontend/board`.
+Sprawdzanie typów wykonuje
 `pnpm --dir frontend/app typecheck`; produkcyjny `build` też je uruchamia.
 `pnpm --dir frontend/app test` uruchamia testy kontrolera nawigacji w Node.js,
 z rzeczywistym kodem TypeScript bundlowanym przez esbuild i zastąpionymi
@@ -720,6 +747,13 @@ w ignorowanym katalogu `static/frontend/`. `manifest.json` wskazuje bieżący
 plik wejściowy, a tag `backend/core/templatetags/frontend.py` buduje jego URL przez
 mechanizm Django `static`. Brak buildu daje jawny błąd konfiguracji.
 Zbuduj frontend także przed testami renderującymi przeniesione ekrany.
+
+Git nie cofa ignorowanego `static/frontend/manifest.json` ani bundli.
+Automatyczny build w `runserver` zapobiega użyciu plików z innej wersji źródeł.
+Przy wyłączonym mechanizmie po zmianie gałęzi lub przywróceniu kodu wykonaj
+`pnpm --dir frontend/app build` i odśwież otwarte karty. Niezgodny bundle może
+oczekiwać pól nieobecnych w API i wyświetlić „Nie udało się wyświetlić ekranu.”
+mimo poprawnej odpowiedzi serwera.
 
 Wdrożenie wymaga `pnpm install --frozen-lockfile`, `pnpm build`, a następnie
 `manage.py collectstatic` i standardowego wdrożenia Django. Zachowaj poprzednie

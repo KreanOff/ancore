@@ -170,12 +170,16 @@ python3.15 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 
 pnpm --dir frontend/app install --frozen-lockfile
-pnpm --dir frontend/app build
 
 .venv/bin/python manage.py check
 .venv/bin/python manage.py migrate
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
+
+Przy `DEBUG=true` polecenie `runserver` samo buduje frontend przy starcie
+i przed pierwszym żądaniem po zmianie źródeł, również po przywróceniu wersji
+z Git. Otwartą kartę odśwież, aby wczytać nowy interfejs. Szczegóły i tryb
+osobnego watchera: [Frontend React](docs/FRONTEND.md#budowanie-i-uruchamianie).
 
 Pełne edytory wymagają również buildu `frontend/board` i serwera ONLYOFFICE.
 Sposób konfiguracji opisuje [instrukcja Dokumentów](docs/OFFICE.md).

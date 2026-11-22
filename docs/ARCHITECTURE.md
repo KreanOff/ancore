@@ -85,6 +85,12 @@ Historyczne modele pracy oraz pakiety `legacy` i `kanban` usunięto.
 [Zasady uruchomienia](DATABASE.md).
 
 Główny `manage.py` ustawia ścieżkę importów niezależnie od katalogu roboczego.
+Developerskie `runserver` z `core.management.commands.runserver` zachowuje
+serwowanie plików przez Django staticfiles i przy `DEBUG=true` buduje frontend
+przy starcie oraz przed pierwszym żądaniem po zmianie źródeł. Wspólny lokalny
+kontroler `core.dev_frontend` sprawdza zgodność bundla i blokuje strony/API
+przy błędzie kompilacji. Produkcyjne WSGI/ASGI nie uruchamia kompilatora;
+[cykl budowania](FRONTEND.md#budowanie-i-uruchamianie).
 `BackendDiscoverRunner` zachowuje pełne wykrywanie testów bez podawania etykiet.
 WSGI/ASGI i inne bezpośrednie procesy wymagają dodania `backend/` do `PYTHONPATH`;
 szczegóły są w [instrukcji developerskiej](DEVELOPMENT.md#8-wdrożenie).

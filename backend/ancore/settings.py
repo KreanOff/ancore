@@ -50,6 +50,9 @@ def env_int(name, default):
 # SECURITY WARNING: don't run with debug turned on in production.
 DEBUG = env_bool('DEBUG', default=False)
 
+# Optional PATH prefix for the local runserver compiler (e.g. an editor's runtime).
+FRONTEND_BUILD_PATH = os.getenv('FRONTEND_BUILD_PATH', '')
+
 # SECURITY WARNING: keep the secret key used in production secret.
 SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
@@ -99,9 +102,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'core',  # Override runserver while retaining Django's staticfiles handler.
     'django.contrib.staticfiles',
     'django.contrib.postgres',
-    'core',
     'accounts',
     'workplaces',
     'tasks',

@@ -4786,6 +4786,16 @@ python3.15 -m venv .venv
 .venv/bin/python manage.py runserver 127.0.0.1:8000
 ```
 
+Frontend wymaga zainstalowanych Node.js 22+, pnpm 11 i zależności
+(`pnpm --dir frontend/app install --frozen-lockfile`). Przy `DEBUG=true`
+`runserver` wykonuje pełny build przy starcie oraz przed pierwszym żądaniem
+po zmianie źródeł lub konfiguracji frontendu. Dotyczy to również zmian wersji
+Git i `--noreload`. Nieudany build daje HTTP 503, zachowując możliwość poprawy
+kodu i ponowienia przez odświeżenie strony. Żądania bez zmian nie przebudowują
+frontendu. Otwarta karta wymaga odświeżenia, aby pobrać nowy bundle.
+Osobne `pnpm dev` łącz z `runserver --no-frontend-build`, aby nie uruchamiać
+dwóch kompilatorów. [Szczegóły działania i granice](FRONTEND.md#budowanie-i-uruchamianie).
+
 Jeśli `.venv` już istnieje, sprawdź `.venv/bin/python --version`.
 Po zmianie interpretera odtwórz `.venv` i zainstaluj zależności ponownie;
 wcześniej zachowaj kopię środowiska i listę lokalnych pakietów z
@@ -4816,6 +4826,13 @@ którego nie ma w repozytorium. Kompletny zestaw uruchamia `./ancore-install.sh 
 Przy ręcznym wdrożeniu buduj `frontend/board` przed `collectstatic`.
 
 ## 4. Testy
+
+Automatyczne budowanie frontendu sprawdza
+`.venv/bin/python manage.py test core.test_dev_frontend` (bez bazy danych).
+Regresje obejmują zmiany i cofnięcia treści, konfigurację, współbieżne żądania,
+błędy i ponowienie, środowisko kompilatora, timeout oraz integrację `runserver`.
+Przy zmianie tego mechanizmu sprawdź też rzeczywisty build i odświeżenie strony
+po edycji/poprawie TypeScript, zwykły start oraz `--noreload`.
 
 Regresje poprawek czasu pracy, konfiguracji i nawigacji między Workspace:
 
