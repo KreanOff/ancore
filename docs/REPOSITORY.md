@@ -30,7 +30,6 @@ ancore/
 │   ├── update_code_index.py generator indeksu dokumentacji
 │   └── start_office.sh      zgodność starszego polecenia ONLYOFFICE
 ├── docs/                    dokumentacja i generowany CODE_INDEX.md
-├── .vscode/settings.json    wspólne ustawienia edytora
 ├── .env.example             przykład konfiguracji lokalnej
 ├── .editorconfig            format plików
 ├── .gitignore               wykluczenia z repozytorium
@@ -59,6 +58,7 @@ Szablony, testy i migracje pozostają przy swoich aplikacjach.
 | Wynik `collectstatic` | `staticfiles/` lub `STATIC_ROOT` | Generowany; poza Git |
 | Bieżące środowisko i zależności | `.venv/`, `node_modules/` | Lokalne; odtwarzane z zależności i lockfile |
 | Cache narzędzi | `.cache/`, `__pycache__/` | Lokalne pliki odtwarzalne |
+| Ustawienia VS Code | `.vscode/` | Lokalne, poza Git |
 | Konfiguracja z sekretami | `.env`, `.env.office`, `deploy/.env` | Prywatne pliki lokalne; nie nadpisywać przy porządkowaniu |
 | Uploady | `media/`, `private_documents/` lub skonfigurowane ścieżki | Trwałe dane; w produkcji zapisane w wolumenach |
 | Archiwa i certyfikaty starszych instalacji | `deploy/backups/`, `deploy/certs/` | Prywatne dane poza Git/buildem; nowy instalator ich nie tworzy |
@@ -71,10 +71,6 @@ Nieużywaną kopię poprzedniego środowiska Python (`venv.bak/`, następnie
 `.local/venv-backups/`) usunięto 22.10.2026 na polecenie użytkownika.
 Bieżące środowisko aplikacji znajduje się w `.venv/`. Puste katalogi `.local/`
 i `.cache/` również usunięto; nie są wymagane do uruchomienia aplikacji.
-
-Explorer VS Code ukrywa cache, archiwa lokalne, zależności, uploady i bundle.
-Pliki nadal są na dysku; widoczność reguluje
-[settings.json](../.vscode/settings.json). Konfiguracja i przykłady pozostają widoczne.
 
 ## Zasady dalszego porządkowania
 

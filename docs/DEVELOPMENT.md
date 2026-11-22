@@ -3551,13 +3551,11 @@ plików opisuje [Organizacja repozytorium](REPOSITORY.md).
 Nieużywaną kopię poprzedniego środowiska Python usunięto na polecenie
 użytkownika; bieżące `.venv/` pozostaje w dotychczasowym miejscu. Opcjonalne
 `.local/` przechowuje pliki lokalne, a `.cache/` pliki odtwarzalne.
-Oba katalogi są wyłączone z Git i builda oraz ukryte w Explorerze.
+Oba katalogi są wyłączone z Git i builda.
 Nie umieszczaj nowych aplikacji Django w katalogu głównym.
 Katalog `files/` zawierał wyłącznie nieużywany cache Pythona i został usunięty;
 nie jest modułem aplikacji. Usunięto też puste `deploy/chat/` i `deploy/cypht/`.
-Zasady formatu plików zapisuje `.editorconfig`. Wersjonowane
-`.vscode/settings.json` ustawia katalog importów i ukrywa cache, zależności,
-bundle oraz lokalne dane w Explorerze, bez usuwania ich z dysku.
+Zasady formatu plików zapisuje `.editorconfig`.
 
 ## Odłączenie dawnych Kontaktów (18.10.2026)
 
@@ -4855,9 +4853,9 @@ Nie nadpisuj istniejącego `.env` podczas wykonywania zwykłego zadania.
 Nowe środowisko skonfiguruj na podstawie [.env.example](../.env.example).
 `.gitignore` pomija `.env` i jego lokalne warianty, zachowując ten przykład.
 Pomija również zależności i cache pnpm, cache kompilacji TypeScript,
-generowane bundle Reacta i tablicy, raporty coverage/Playwright oraz lokalne
-dane aplikacji i pliki pomocnicze SQLite. Źródła, migracje, lockfile pnpm
-i wspólne `.vscode/settings.json` pozostają wersjonowane.
+generowane bundle Reacta i tablicy, raporty coverage/Playwright, lokalne
+dane aplikacji, pliki pomocnicze SQLite i ustawienia VS Code (`.vscode/`).
+Źródła, migracje i lockfile pnpm pozostają wersjonowane.
 
 ## 3. Start nowego środowiska
 

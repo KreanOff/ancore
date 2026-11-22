@@ -68,7 +68,6 @@ requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
 .env.example            przykład lokalnej konfiguracji bez sekretów
 .editorconfig           wspólne reguły zapisu i wcięć plików
-.vscode/settings.json   importy Pythona i widoczność plików technicznych
 ```
 
 `.env` zawiera lokalną konfigurację; `.venv` lokalne środowisko Python.

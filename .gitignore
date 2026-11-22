@@ -79,8 +79,7 @@ Thumbs.db
 *.swp
 *.swo
 .idea/
-/.vscode/*
-!/.vscode/settings.json
+/.vscode/
 .spyderproject
 .spyproject
 .ropeproject/
