@@ -23,7 +23,7 @@
 .documents-breadcrumbs svg { width: 13px; height: 13px; }
 .documents-icon-button { flex-shrink: 0; padding: 0; border: 0; background: transparent; color: inherit; }
 .documents-icon-button.is-starred svg { color: var(--system-accent); }
-:is(.documents-page, .documents-sidebar--global) :is(a, button, summary):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
+.documents-page :is(a, button, summary):focus-visible { outline: 2px solid var(--system-interaction); outline-offset: 2px; }
 .documents-table-scroll { width: 100%; min-height: 0; overflow: auto; flex: 1; }
 /* The drive index uses the project directory's compact rows and action cells. */
 .tasks-directory-board.documents-library-sheet {
@@ -310,22 +310,6 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
     .documents-library-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }
     .documents-library-open { display: none; }
 }
-
-/* Drive navigation fills the common right panel; the shell owns its drawer. */
-#app-right-sidebar-content:has(.documents-sidebar--global),
-[data-right-sidebar-fallback]:has(> .documents-sidebar--global) { height: 100%; }
-.documents-sidebar--global { display: flex; flex-direction: column; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; padding: 18px 12px; background: var(--bg-main); color: var(--text-main); font-size: var(--font-size-sm); }
-.documents-sidebar svg { width: 17px; height: 17px; flex: 0 0 auto; }
-.documents-sidebar .documents-library-icon { width: 30px; height: 30px; flex: 0 0 30px; }
-.documents-sidebar .documents-library-icon svg { width: 30px; height: 30px; }
-.documents-sidebar-library-link { min-height: 40px; gap: 10px; }
-.documents-sidebar-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; padding: 0 10px 14px; }
-.documents-sidebar h2 { margin: 0; font-size: var(--font-size-sm); font-weight: 400; line-height: 1.5; }
-.documents-sidebar-nav { display: flex; flex: 1; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-.documents-sidebar-nav > .tasks-rail-link { flex: 0 0 auto; }
-.documents-sidebar-nav a span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.documents-sidebar-nav a small { flex: 0 0 auto; font-size: 12px; font-variant-numeric: tabular-nums; }
-.documents-sidebar-empty { margin: 4px 10px; font-size: 13px; line-height: 1.6; }
 
 /* Use the shared application modal shell for every document form. */
 .documents-modal .tasks-modal__header::before { content: none; }

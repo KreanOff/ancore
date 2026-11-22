@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../shared/Icon';
 import { LoadMore } from '../shared/LoadMore';
-import { RightSidebarContent } from '../shared/RightSidebarContent';
+import { RightSidebarContent, RightSidebarNavigation } from '../shared/RightSidebarContent';
 import { errorMessage } from '../shared/api';
 import { type Page, PageError, pageRequest } from '../shared/page';
 import { DriveIcon } from './Icons';
@@ -70,47 +70,30 @@ export default function Sidebar({
 
   return (
     <RightSidebarContent>
-      <aside
-        className="documents-sidebar documents-sidebar--global"
+      <RightSidebarNavigation
+        title="Dyski"
+        className="documents-sidebar--global"
         id="documents-sidebar"
         aria-label="Panel dysków"
-        aria-busy={loading}
-      >
-        <header className="documents-sidebar-header">
-          <h2>Dyski</h2>
-          {!readOnly ? (
+        data-documents-sidebar
+        busy={loading}
+        action={
+          !readOnly ? (
             <button
               type="button"
-              className="tasks-icon-button documents-icon-button"
+              className="tasks-icon-button"
               aria-label="Dodaj dysk"
+              title="Dodaj dysk"
+              aria-haspopup="dialog"
               disabled={busy}
               onClick={() => openModal(data.base_url + 'libraries/create/')}
             >
               <Icon name="plus" />
             </button>
-          ) : null}
-        </header>
-        <nav className="documents-sidebar-nav" aria-label="Dyski">
-          {items.map((item) => (
-            <a
-              key={item.id}
-              className={`tasks-rail-link documents-sidebar-library-link ${data.library?.id === item.id ? 'is-active' : ''} ${drop === item.target ? 'is-document-drop-target' : ''}`}
-              href={item.url}
-              title={item.name}
-              aria-current={data.library?.id === item.id ? 'page' : undefined}
-              data-doc-target={readOnly ? undefined : item.target}
-              data-doc-label={item.name}
-            >
-              <span className="documents-library-icon">
-                <DriveIcon color={item.color} />
-              </span>
-              <span>{item.name}</span>
-            </a>
-          ))}
-          {!items.length && !error ? (
-            <p className="documents-sidebar-empty">Brak dysków w tym Workspace.</p>
-          ) : null}
-          {pagination ? (
+          ) : null
+        }
+        footer={
+          pagination ? (
             <LoadMore
               label="Dyski w panelu"
               loaded={items.length}
@@ -121,9 +104,30 @@ export default function Sidebar({
               error={error}
               onLoad={() => void more()}
             />
-          ) : null}
-        </nav>
-      </aside>
+          ) : null
+        }
+      >
+        {items.map((item) => (
+          <li className="app-sidebar-navigation__row" key={item.id}>
+            <a
+              className={`tasks-rail-link app-sidebar-navigation__link documents-sidebar-library-link${data.library?.id === item.id ? ' is-active' : ''}${drop === item.target ? ' is-document-drop-target' : ''}`}
+              href={item.url}
+              title={item.name}
+              aria-current={data.library?.id === item.id ? 'page' : undefined}
+              data-doc-target={readOnly ? undefined : item.target}
+              data-doc-label={item.name}
+            >
+              <span className="app-sidebar-navigation__icon app-sidebar-navigation__icon--large">
+                <DriveIcon color={item.color} />
+              </span>
+              <span className="app-sidebar-navigation__label">{item.name}</span>
+            </a>
+          </li>
+        ))}
+        {!items.length && !error ? (
+          <li className="app-sidebar-navigation__empty">Brak dysków w tym Workspace.</li>
+        ) : null}
+      </RightSidebarNavigation>
     </RightSidebarContent>
   );
 }

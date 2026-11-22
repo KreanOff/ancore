@@ -2995,13 +2995,14 @@ przez „Pokaż więcej”, niezależnie od tabeli i jej zaznaczeń; wejście do
 późniejszego dysku odsłania część listy obejmującą jego aktywny wiersz.
 Pusty panel pokazuje „Brak dysków w tym Workspace.”, a błąd doładowania
 zachowuje dotychczasowe wyniki i umożliwia ponowienie.
-Linki dysków używają wariantu `documents-sidebar-library-link`:
-minimum 40px wysokości, pole ikony 30×30px i odstęp 10px od nazwy.
-W polu jest wspólna ikona dysku w zapisanym kolorze; nazwa ma ellipsis
-oraz pełny tekst w `title`.
-`documents/Sidebar.tsx` korzysta z `shared/RightSidebarContent`, a szablony
-Django wypełniają blok `right_sidebar` przez `documents/sidebar.html`.
-Wariant `.documents-sidebar--global` ma stały nagłówek i przewijaną nawigację.
+Panel Dysków używa `RightSidebarNavigation`
+z `shared/RightSidebarContent`. Pierwszy render korzysta ze wspólnego
+szablonu [`right_sidebar_navigation.html`](../backend/core/templates/core/includes/right_sidebar_navigation.html).
+Reguły `.app-sidebar-navigation` w `layout/panels.css` zapewniają stały
+nagłówek, przewijaną listę i wiersze o minimalnej wysokości 40px.
+Pole ikony ma 30×30px i odstęp 10px od nazwy. W panelu Dysków wariant
+`app-sidebar-navigation__icon--large` wypełnia pole ikoną dysku w zapisanym
+kolorze. Długie nazwy mają wielokropek i pełny tekst w `title`.
 Zwijanie, zapamiętana szerokość i szuflada do 1100px korzystają ze wspólnej
 powłoki i uchwytu przy krawędzi panelu. Lokalny przełącznik w toolbarze, własne tło
 szuflady i preferencja `ancore:documents:sidebar-collapsed:v1` nie są używane.

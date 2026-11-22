@@ -64,6 +64,7 @@ function nodes(element) {
   if (!element || typeof element !== 'object') return [];
   if (Array.isArray(element)) return element.flatMap(nodes);
   if (!element.props) return [];
+  if (element.type?.name === 'RightSidebarNavigation') return nodes(element.type(element.props));
   const children = Object.values(element.props).flatMap(nodes);
   if (['LoadMore', 'DriveIcon'].includes(element.type?.name))
     children.push(...nodes(element.type(element.props)));
@@ -215,6 +216,8 @@ test('drive sidebar renders in the common portal with only scoped drive links an
   assert.ok(app.portals.length);
   assert.ok(app.portals.every((target) => target === app.host));
   assert.equal(app.byClass('documents-sidebar--global').length, 1);
+  assert.equal(app.byClass('app-sidebar-navigation__nav')[0].props['aria-label'], 'Dyski');
+  assert.equal(app.byClass('app-sidebar-navigation__row').length, 20);
   assert.equal(app.requests.length, 0, 'the first render uses the existing page payload');
   const drives = app.links();
   assert.ok(
@@ -253,7 +256,10 @@ test('open drive selection and drop feedback survive the portal; read-only retai
 test('empty and optional pagination payloads remain usable without an extra request', () => {
   const app = harness({ data: data(0, { sidebar_window: undefined }) });
   app.render();
-  assert.match(text(app.byClass('documents-sidebar-empty')[0]), /Brak dysków w tym Workspace/);
+  assert.match(
+    text(app.byClass('app-sidebar-navigation__empty')[0]),
+    /Brak dysków w tym Workspace/,
+  );
   assert.equal(app.links().length, 0);
   assert.equal(app.byClass('app-load-more').length, 0);
   assert.equal(app.requests.length, 0);

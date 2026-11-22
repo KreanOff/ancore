@@ -283,12 +283,117 @@ body.right-sidebar-resizing .sidebar {
     transition: none;
 }
 
-/* Compact calendar and today's plan in the default right panel. */
-#app-right-sidebar-content:has(.today-sidebar),
-[data-right-sidebar-fallback]:has(> .today-sidebar) {
+#app-right-sidebar-content:has(.today-sidebar, .app-sidebar-navigation),
+[data-right-sidebar-fallback]:has(> :is(.today-sidebar, .app-sidebar-navigation)) {
     height: 100%;
 }
 
+.app-sidebar-navigation {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding: 18px 12px;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.app-sidebar-navigation__header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--app-toolbar-gap);
+    min-height: var(--control-height);
+    padding: 0 10px 14px;
+}
+
+.app-sidebar-navigation__header h2 {
+    min-width: 0;
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.app-sidebar-navigation__nav {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.app-sidebar-navigation__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.app-sidebar-navigation__row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+}
+
+.app-sidebar-navigation__link.tasks-rail-link {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    gap: 10px;
+}
+
+.app-sidebar-navigation__link[aria-disabled="true"] { cursor: wait; }
+
+.app-sidebar-navigation__icon {
+    --sidebar-item-icon-size: 17px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 30px;
+    height: 30px;
+}
+
+.app-sidebar-navigation__icon--large { --sidebar-item-icon-size: 30px; }
+
+.app-sidebar-navigation__icon > :is(svg, [data-icon]) {
+    width: var(--sidebar-item-icon-size);
+    height: var(--sidebar-item-icon-size);
+}
+
+.app-sidebar-navigation__label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-sidebar-navigation__count,
+.app-sidebar-navigation__actions { flex: 0 0 auto; }
+
+.app-sidebar-navigation__count {
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.app-sidebar-navigation__empty {
+    margin: 4px 10px;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+/* Compact calendar and today's plan in the default right panel. */
 .today-sidebar {
     display: flex;
     flex-direction: column;

@@ -1,0 +1,12 @@
+<section class="app-sidebar-navigation{% block sidebar_class %}{% endblock %}" {% block sidebar_attributes %}{% endblock %}>
+    <header class="app-sidebar-navigation__header">
+        <h2 id="app-sidebar-navigation-title">{% block sidebar_title %}{% endblock %}</h2>
+        {% block sidebar_action %}{% endblock %}
+    </header>
+    <nav class="app-sidebar-navigation__nav" aria-labelledby="app-sidebar-navigation-title">
+        <ul class="app-sidebar-navigation__list">
+            {% block sidebar_rows %}{% endblock %}
+        </ul>
+        {% block sidebar_footer %}{% endblock %}
+    </nav>
+</section>
