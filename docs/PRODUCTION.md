@@ -241,6 +241,13 @@ edytowanego pliku Django przekazuje jego zawartość do magazynu.
 
 ## ONLYOFFICE
 
+Nowa instalacja używa obrazu ONLYOFFICE Docs Community
+`onlyoffice/documentserver:10.0`. Tag `10.0` wskazuje serię wydań 10.0.
+Na działającym serwerze aktualizacja zachowuje wartość `ONLYOFFICE_IMAGE`
+z `deploy/.env`. Aby przejść na tag `10.0`, wpisz tam
+`ONLYOFFICE_IMAGE=onlyoffice/documentserver:10.0` i uruchom
+`sh ancore-install.sh update --local`.
+
 Przeglądarka używa `/onlyoffice/` pod tym samym adresem HTTP i portem co Ancore.
 Django łączy się z `http://onlyoffice`, a podpisane pobrania i callbacki wracają
 przez wewnętrzny listener `http://web:8081`. Ten port nie jest publikowany i

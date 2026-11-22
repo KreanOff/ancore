@@ -78,7 +78,7 @@ def configure(host, port):
     for key in SECRET_KEYS:
         config[key] = existing.get(key) or secrets.token_hex(48)
     config['ANCORE_RELEASE'] = existing.get('ANCORE_RELEASE', 'local')
-    config['ONLYOFFICE_IMAGE'] = existing.get('ONLYOFFICE_IMAGE', 'onlyoffice/documentserver:10.0.0.1')
+    config['ONLYOFFICE_IMAGE'] = existing.get('ONLYOFFICE_IMAGE', 'onlyoffice/documentserver:10.0')
     for key in ('WEB_WORKERS', 'WEB_THREADS'):
         if key in existing:
             config[key] = existing[key]
