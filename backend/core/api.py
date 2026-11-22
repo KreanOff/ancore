@@ -4,7 +4,6 @@ from functools import wraps
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
-from django.views.csrf import csrf_failure as django_csrf_failure
 
 
 def is_api_request(request):
@@ -49,9 +48,3 @@ def json_object(request):
     if not isinstance(data, dict) or any(isinstance(value, (dict, list)) for value in data.values()):
         raise ValueError('Oczekiwano obiektu z wartościami pól formularza.')
     return {key: '' if value is None else value for key, value in data.items()}
-
-
-def csrf_failure(request, reason=''):
-    if is_api_request(request):
-        return api_error('Sesja formularza wygasła. Odśwież stronę i spróbuj ponownie.', 403)
-    return django_csrf_failure(request, reason=reason)

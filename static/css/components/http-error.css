@@ -1,0 +1,71 @@
+@import '../base/variables.css';
+@import '../base/fonts.css';
+@import './buttons.css';
+
+.http-error {
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 16px;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    background: var(--panel-bg);
+    color: var(--text-primary);
+    font: var(--font-size-base) / 1.5 var(--font-family-ui);
+}
+
+.http-error__main {
+    width: min(100%, 520px);
+    box-sizing: border-box;
+    padding: clamp(24px, 6vw, 40px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--app-shell-radius);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+}
+
+.http-error__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-radius: var(--radius);
+    color: inherit;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+}
+
+.http-error__code {
+    margin: 0 0 4px;
+    color: var(--system-interaction);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.http-error__main h1 {
+    margin: 0;
+    font-size: var(--page-title-font-size);
+    font-weight: var(--page-title-font-weight);
+    line-height: 1.45;
+}
+
+.http-error__description {
+    margin: 8px 0 24px;
+}
+
+.http-error__action.btn {
+    min-height: var(--app-toolbar-control-height);
+    max-width: 100%;
+    box-sizing: border-box;
+    line-height: 1.4;
+    font-weight: 400;
+    text-align: center;
+    white-space: normal;
+}
+
+.http-error a:focus-visible {
+    outline: 2px solid var(--system-interaction);
+    outline-offset: 3px;
+}

@@ -13,7 +13,9 @@ from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.core.handlers.wsgi import WSGIRequest
-from django.http import HttpResponse, JsonResponse
+
+from core.api import api_error
+from core.error_pages import render_error
 
 
 class FrontendBuildError(Exception):
@@ -162,10 +164,9 @@ class FrontendBuildHandler:
             except FrontendBuildError as error:
                 request = WSGIRequest(environ)
                 if '/api/' in path or 'application/json' in request.headers.get('Accept', ''):
-                    response = JsonResponse({'message': str(error)}, status=503)
+                    response = api_error(str(error), 503)
                 else:
-                    response = HttpResponse(str(error), status=503, content_type='text/plain; charset=utf-8')
-                response['Cache-Control'] = 'no-store'
+                    response = render_error(503, description=str(error))
                 start_response(f'{response.status_code} {response.reason_phrase}', list(response.items()))
-                return [response.content]
+                return [] if request.method == 'HEAD' else [response.content]
         return self.application(environ, start_response)

@@ -35,6 +35,11 @@ CMD ["gunicorn", "--config", "/app/deploy/backend/gunicorn.conf.py", "ancore.wsg
 FROM nginx:1.30.6-alpine AS web
 RUN addgroup -g 10001 ancore && addgroup nginx ancore && rm /etc/nginx/conf.d/default.conf
 COPY --chmod=0644 deploy/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=0644 deploy/web/errors/* /usr/share/nginx/html/ancore-errors/
+COPY --chmod=0644 static/css/base/variables.css static/css/base/fonts.css /usr/share/nginx/html/ancore-error-assets/css/base/
+COPY --chmod=0644 static/css/components/http-error.css static/css/components/buttons.css /usr/share/nginx/html/ancore-error-assets/css/components/
+COPY --chmod=0644 static/img/logo.png /usr/share/nginx/html/ancore-error-assets/img/
+COPY --chmod=0644 static/vendor/atlassian-sans/*.woff2 static/vendor/atlassian-sans/OFL.txt /usr/share/nginx/html/ancore-error-assets/vendor/atlassian-sans/
 
 FROM postgres:17-alpine AS database
 COPY --chmod=0755 deploy/postgres/init.sh /docker-entrypoint-initdb.d/10-ancore.sh

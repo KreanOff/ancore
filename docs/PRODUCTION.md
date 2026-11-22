@@ -206,6 +206,12 @@ Workspace. Prywatne dokumenty i załączniki wydaje Django po kontroli dostępu;
 nie ma publicznego aliasu całego katalogu mediów ani dokumentów.
 Publiczny limit żądania wynosi 225 MiB, a aplikacja nadal waliduje każdy plik.
 
+Publiczne proxy aplikacji pokazuje strony błędów 502, 503 i 504, gdy samo
+zwraca któryś z tych kodów. Strony i ich zasoby są częścią obrazu `web`,
+dzięki czemu działają także podczas awarii Django. Dla API i żądań z nagłówkiem
+`Accept: application/json` proxy zwraca błąd w JSON. Odpowiedzi otrzymane
+od Django przechodzą przez proxy bez zastępowania treści.
+
 ## ONLYOFFICE
 
 Przeglądarka używa `/onlyoffice/` pod tym samym adresem HTTP i portem co Ancore.

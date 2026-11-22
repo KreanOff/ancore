@@ -185,6 +185,17 @@ GET może mieć uboczne efekty techniczne: obecność, sesja aktywnego Workspace
 uzupełnienie starych rekordów bez Workspace oraz inicjalizacja domyślnych
 słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym kodzie.
 
+### Błędy HTTP
+
+Globalne handlery Django pokazują strony 400, 403, 404 i 500. Odrzucenie
+formularza przez CSRF ma własny komunikat 403. Odpowiedzi dla zwykłych
+i scoped adresów `/api/v1/` zachowują format JSON z polem `message`.
+Strony i odpowiedzi błędów tych handlerów mają `Cache-Control: no-store`.
+Przy `DEBUG=true` Django nadal pokazuje widoki techniczne tam, gdzie przewiduje
+je jego obsługa wyjątków. Lokalny `runserver` pokazuje stronę 503 z opisem
+błędu budowania frontendu. W produkcji [proxy Nginx](PRODUCTION.md)
+obsługuje własne 502, 503 i 504, również gdy backend jest niedostępny.
+
 ## 5. Główne zależności
 
 - `accounts.User` jest wspólnym modelem konta, `workplaces.Workplace` granicą danych.

@@ -8,9 +8,15 @@ from documents import workspace_urls as office_urls
 from documents import suite_views
 from spaces import urls as spaces_urls
 from dashboard import filter_urls, pulpit_urls
+from core import error_pages
 from core.media import public_media
 from core.frontend import page_api, navigation_api, shell_api
 from core.health import readiness
+
+handler400 = error_pages.bad_request
+handler403 = error_pages.permission_denied
+handler404 = error_pages.page_not_found
+handler500 = error_pages.server_error
 
 urlpatterns = [
     path('health/ready/', readiness, name='health-ready'),

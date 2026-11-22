@@ -680,8 +680,9 @@ Jeśli edytor uruchamia Django bez Node/pnpm w `PATH`, opcjonalne
 `;` na Windows) i uruchom ponownie serwer po zmianie tej konfiguracji.
 Bez tego ustawienia kompilator dziedziczy zwykły `PATH` procesu Django.
 
-Nieudana kompilacja blokuje obsługę stron i API odpowiedzią HTTP 503 z opisem;
-szczegóły kompilatora pozostają w terminalu. Serwer nadal działa. Popraw kod
+Nieudana kompilacja blokuje obsługę stron i API. `runserver` zwraca stronę
+błędu 503 albo JSON dla API. Obie odpowiedzi zawierają opis problemu,
+a szczegóły kompilatora pozostają w terminalu. Serwer nadal działa. Popraw kod
 i odśwież stronę — nowe źródła są sprawdzane od razu. Ponowienie tej samej
 nieudanej kompilacji ma odstęp co najmniej 5 sekund. Pliki statyczne i healthchecki
 nie uruchamiają buildu. Mechanizm działa też z `--noreload`, bez osobnego procesu

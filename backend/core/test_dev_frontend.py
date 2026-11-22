@@ -348,10 +348,11 @@ class FrontendBuildHandlerTests(SimpleTestCase):
     def test_failure_returns_explanation_for_html_without_serving_old_page(self):
         self.builder.ensure_current.side_effect = FrontendBuildError('Popraw kod i odśwież stronę.')
         content, start = self.invoke('/spaces/')
-        self.assertIn('Popraw kod'.encode(), content)
+        self.assertIn(b'Popraw kod', content)
+        self.assertIn('Usługa jest chwilowo niedostępna'.encode(), content)
         self.assertTrue(start.call_args.args[0].startswith('503 '))
         headers = dict(start.call_args.args[1])
-        self.assertEqual(headers['Content-Type'], 'text/plain; charset=utf-8')
+        self.assertEqual(headers['Content-Type'], 'text/html; charset=utf-8')
         self.assertEqual(headers['Cache-Control'], 'no-store')
         self.application.assert_not_called()
 

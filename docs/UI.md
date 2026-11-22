@@ -137,6 +137,16 @@ wspólny pasek „Pokaż więcej” pod listą. Wspólne komponenty określają 
 kontrolek, stanów błędu i działania okna. Każdą zmianę porównaj z ekranem
 referencyjnym przy tej samej szerokości, również po ponownym wejściu.
 
+## Strony błędów HTTP
+
+Strony błędów używają uproszczonej powłoki z logo Ancore, kodem HTTP, krótkim
+komunikatem po polsku i odnośnikiem „Wróć do strony głównej”. Styl
+[`http-error.css`](../static/css/components/http-error.css) współdzielą Django
+i Nginx. Korzysta z tokenów aplikacji, Atlassian Sans i wspólnego przycisku
+głównego. Powłoka działa bez JavaScriptu. Szablon Django jest renderowany
+bez kontekstu sesji i Workspace, dzięki czemu również awaria bazy może
+zakończyć się czytelną stroną. [Obsługa błędów HTTP](ARCHITECTURE.md#błędy-http).
+
 ## Klawiatura i błędy formularzy
 
 Fokus klawiatury kontrolek jest widoczny także w przewijanych listach,
