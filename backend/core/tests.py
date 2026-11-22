@@ -120,10 +120,10 @@ class SidebarActiveStateTests(SimpleTestCase):
             GET={},
         )
         html = render_to_string('core/base.html', {'request': request})
-        for label in ('Kontakty', 'Firmy', 'Użytkownicy', 'Goście'):
+        for label in ('Kontakty', 'Firmy', 'Użytkownicy', 'Goście', 'Zasoby', 'Zespoły'):
             self.assertNotIn(f'>{label}</span>', html)
         self.assertNotIn('/contacts/', html)
-        for label in ('Przestrzenie', 'Wyszukaj zadania', 'Zespoły'):
+        for label in ('Przestrzenie', 'Wyszukaj zadania'):
             self.assertIn(f'>{label}</span>', html)
 
     def test_sidebar_has_favorites_and_workspace_sections(self):
@@ -215,7 +215,7 @@ class SidebarActiveStateTests(SimpleTestCase):
     def test_collapsed_sidebar_keeps_current_navigation_actions_available(self):
         request = SimpleNamespace(resolver_match=SimpleNamespace(app_name='', view_name='', url_name=''), user=AnonymousUser())
         html = render_to_string('core/base.html', {'request': request})
-        for label in ('Kalendarz', 'Dysk', 'Dokumenty', 'Zasoby'):
+        for label in ('Kalendarz', 'Dysk', 'Dokumenty'):
             with self.subTest(label=label):
                 link_html = self._sidebar_link_html(html, label)
                 self.assertIn(f'aria-label="{label}"', link_html)

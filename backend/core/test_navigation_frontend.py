@@ -1,4 +1,5 @@
 import json
+import re
 from urllib.parse import urlencode
 
 from django.contrib.auth import get_user_model
@@ -6,7 +7,6 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from dashboard.models import Dashboard, SavedTaskFilter
-from resources.models import Resource
 from spaces.models import SpaceTask
 from spaces.testing import make_space
 from workplaces.models import SidebarFavorite, WorkplaceMembership, create_workplace_for_user
@@ -32,7 +32,6 @@ class ReactNavigationTests(TestCase):
         cls.filter = SavedTaskFilter.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Widoczny filtr', visibility='workspace')
         cls.secret_dashboard = Dashboard.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Poufny pulpit', visibility='private')
         cls.secret_filter = SavedTaskFilter.objects.create(owner=cls.owner, workplace=cls.workspace, created_by=cls.owner, name='Poufny filtr', visibility='private')
-        cls.resource = Resource.objects.create(owner=cls.owner, workplace=cls.workspace, name='Zasób nawigacji')
 
     def setUp(self):
         self.client.force_login(self.member)
@@ -73,10 +72,10 @@ class ReactNavigationTests(TestCase):
     def test_business_screens_return_data_and_shell_without_html(self):
         targets = [(reverse('profile'), 'account-profile'), (reverse('settings'), 'settings'),
                    (reverse('for_you'), 'for-you'), (reverse('planner:index'), 'calendar'),
-                   (reverse('spaces:index'), 'space-directory'), (reverse('teams:index'), 'teams'),
+                   (reverse('spaces:index'), 'space-directory'),
                    (reverse('filters:index'), 'filter-directory'), (reverse('pulpits:index'), 'pulpit-directory'),
                    (reverse('documents:library'), 'document-directory'), (reverse('office:index'), 'document-directory'),
-                   (reverse('workplaces:workplaces'), 'workspace-directory'), (reverse('resources:index'), 'resources')]
+                   (reverse('workplaces:workplaces'), 'workspace-directory')]
         for target, kind in targets:
             with self.subTest(target=target):
                 response = self.nav(target)
@@ -88,6 +87,17 @@ class ReactNavigationTests(TestCase):
                 self.assertNotIn('html', payload)
                 self.assertNotIn('<!DOCTYPE', response.content.decode())
                 self.assertTrue(payload['page']['styles'])
+                initial = self.client.get(target, follow=True)
+                self.assertEqual(initial.status_code, 200)
+                self.assertEqual(
+                    re.findall(
+                        r'<link rel="stylesheet" href="([^"]+)" data-screen-stylesheet>',
+                        initial.content.decode(),
+                    ),
+                    payload['page']['styles'],
+                )
+                for href in payload['page']['styles']:
+                    self.assertContains(initial, href.split('?')[0], count=1)
 
     def test_private_task_and_foreign_context_stay_inaccessible(self):
         visible = scoped_workplace_app_path(self.workspace, 'space', f'{self.space.slug}/tasks/{self.task.work_item.key}/')
@@ -109,6 +119,25 @@ class ReactNavigationTests(TestCase):
         for target in ('https://example.test/', '//example.test/', '/\\example.test/', '/admin/', reverse('logout')):
             with self.subTest(target=target):
                 self.assertIn(self.nav(target).status_code, (400, 404))
+
+    def test_retired_modules_are_absent_from_routes_search_and_navigation(self):
+        shell = self.nav(reverse('spaces:index')).json()['shell']
+        favorites_url = reverse('workplaces:toggle-sidebar-favorite', args=[self.workspace.pk])
+        for module, label, suffixes in (
+            ('resources', 'Zasoby', ('', 'api/v1/', '1/edit/')),
+            ('teams', 'Zespoły', ('', 'create/', '1/')),
+        ):
+            self.assertNotIn(module, shell['links'])
+            self.assertEqual(self.api(favorites_url, {'item_key': module, 'favorite_action': 'add'}).status_code, 400)
+            search = self.client.get(reverse('global_search'), {'q': label})
+            self.assertNotContains(search, f'/{module}/')
+            for prefix in ('', f'/workplaces/{self.workspace.slug}'):
+                for suffix in suffixes:
+                    target = f'{prefix}/{module}/{suffix}'
+                    with self.subTest(target=target):
+                        self.assertEqual(self.client.get(target).status_code, 404)
+                        self.assertEqual(self.nav(target).status_code, 404)
+                        self.assertEqual(self.api(target).status_code, 404)
 
     def test_sidebar_collections_and_refresh_recheck_current_acl(self):
         self.space.favorited_by.add(self.member)
@@ -155,19 +184,19 @@ class ReactNavigationTests(TestCase):
     def test_favorites_are_personal_typed_and_keep_order(self):
         target = reverse('workplaces:toggle-sidebar-favorite', args=[self.workspace.pk])
         owner_before = list(SidebarFavorite.objects.filter(user=self.owner).values_list('item_key', 'position'))
-        for key in ('calendar', 'resources'):
+        for key in ('calendar', 'office'):
             response = self.api(target, {'item_key': key, 'favorite_action': 'add'})
             self.assertEqual(response.status_code, 200)
             self.assertNotIn('html', response.json())
         reorder = reverse('workplaces:reorder-sidebar-favorites', args=[self.workspace.pk])
-        response = self.api(reorder, {'item_order': json.dumps(['resources', 'calendar'])})
-        self.assertEqual([item['key'] for item in response.json()['favorites']], ['resources', 'calendar'])
+        response = self.api(reorder, {'item_order': json.dumps(['office', 'calendar'])})
+        self.assertEqual([item['key'] for item in response.json()['favorites']], ['office', 'calendar'])
         self.assertEqual(list(SidebarFavorite.objects.filter(user=self.owner).values_list('item_key', 'position')), owner_before)
         response = self.api(target, {'item_key': 'calendar', 'favorite_action': 'remove'})
-        self.assertEqual([item['key'] for item in response.json()['favorites']], ['resources'])
+        self.assertEqual([item['key'] for item in response.json()['favorites']], ['office'])
         self.assertEqual(self.api(target, {'item_key': 'tasks-all', 'favorite_action': 'add'}).status_code, 400)
         self.assertEqual(self.api(reorder, {'item_order': '["calendar"]'}).status_code, 400)
-        self.assertEqual(list(SidebarFavorite.objects.filter(user=self.member, workplace=self.workspace).values_list('item_key', flat=True)), ['resources'])
+        self.assertEqual(list(SidebarFavorite.objects.filter(user=self.member, workplace=self.workspace).values_list('item_key', flat=True)), ['office'])
 
     def test_favorites_require_csrf_and_membership(self):
         client = Client(enforce_csrf_checks=True); client.force_login(self.member)
@@ -176,14 +205,8 @@ class ReactNavigationTests(TestCase):
         foreign = reverse('workplaces:toggle-sidebar-favorite', args=[self.foreign.pk])
         self.assertEqual(self.api(foreign, {'item_key': 'calendar', 'favorite_action': 'add'}).status_code, 404)
 
-    def test_resource_direct_editor_navigation_keeps_scoped_form(self):
-        target = scoped_workplace_app_path(self.workspace, 'resources', f'{self.resource.pk}/edit/')
-        payload = self.nav(target).json()['page']
-        self.assertEqual(payload['data']['editor']['id'], self.resource.pk)
-        self.assertIn(self.workspace.slug, payload['data']['api_url'])
-
-    def test_refresh_can_update_sidebar_from_resources_without_loading_page(self):
-        response = self.client.get(self.endpoint('shell'), {'url': scoped_workplace_app_path(self.workspace, 'resources', '?q=test')})
+    def test_refresh_can_update_sidebar_from_filters_without_loading_page(self):
+        response = self.client.get(self.endpoint('shell'), {'url': scoped_workplace_app_path(self.workspace, 'filters', query_string='q=test')})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['account_id'], str(self.member.pk))
         self.assertNotIn('page', response.json())

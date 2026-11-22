@@ -33,8 +33,6 @@ SCREENS = {
     'spaces/detail.html': ('spaces.frontend', 'detail_page'),
     'spaces/configuration.html': ('spaces.frontend', 'configuration_page'),
     'spaces/task_detail.html': ('spaces.frontend', 'task_page'),
-    'spaces/teams.html': ('spaces.frontend', 'teams_page'),
-    'spaces/team.html': ('spaces.frontend', 'team_page'),
     'spaces/tags.html': ('spaces.tag_frontend', 'tags_page'),
     'dashboard/filters/index.html': ('dashboard.filter_frontend', 'catalog_page'),
     'dashboard/filters/search.html': ('dashboard.filter_frontend', 'search_page'),
@@ -68,7 +66,6 @@ VIEWS = {
     'spaces.space_team': {'team', 'candidates'},
     'spaces.dashboard': {'save_layout'},
     'spaces.timeline': {'update_dates'},
-    'spaces.teams': {'index', 'detail', 'edit', 'delete', 'members', 'remove_member'},
     'documents.views': {'library', 'library_create', 'library_edit', 'library_delete', 'upload', 'folder_create', 'folder_edit', 'folder_delete', 'folder_star', 'detail', 'preview', 'star', 'trash', 'restore'},
     'documents.editor_views': {'index', 'upload', 'edit', 'preview', 'import_text', 'action'},
     'documents.move_views': {'move'},
@@ -100,11 +97,11 @@ def render(request, template_name, context=None, *args, **kwargs):
     page.update(url=request.get_full_path())
     page.setdefault('api_url', api_url(request))
     if getattr(request, '_react_api', False):
-        from .shell import page_styles
-        page['styles'] = page_styles(page)
         if getattr(request, '_react_navigation', False):
             from .shell import navigation_response
             return navigation_response(request, page, context, status=kwargs.get('status', 200))
+        from .shell import page_styles
+        page['styles'] = page_styles(page['type'])
         return JsonResponse(page, status=kwargs.get('status', 200))
     context['frontend_bootstrap'] = page
     return django_render(request, template_name, context, *args, **kwargs)
@@ -151,8 +148,6 @@ def form_payload(form):
                         choice['type_color'] = visual['context']['type_color']
                     if visual.get('preserve_only'):
                         choice['preserve_only'] = True
-                    if visual.get('context', {}).get('photo_url'):
-                        choice['photo_url'] = visual['context']['photo_url']
                     if visual.get('context', {}).get('space'):
                         from spaces.avatars import space_avatar
                         choice['space_avatar'] = space_avatar(visual['context']['space'])
@@ -230,7 +225,7 @@ def target_request(request):
         raise ValueError('Nieprawidłowy adres ekranu.')
     match = resolve(parsed.path)
     module, name = match.func.__module__, match.func.__name__
-    if name not in VIEWS.get(module, set()) and not (getattr(request, '_react_navigation', False) and module == 'resources.views' and name in {'index', 'edit', 'overview'}):
+    if name not in VIEWS.get(module, set()):
         raise Http404
     segments = parsed.path.strip('/').split('/')
     if len(segments) >= 3 and segments[0] == 'workplaces' and segments[2] in SCOPED_WORKPLACE_APPS:
@@ -244,7 +239,7 @@ def target_request(request):
     delegated.GET = QueryDict(parsed.query)
     delegated.resolver_match = match
     delegated._react_api = True
-    for key in ('HTTP_X_WORK_MODAL', 'HTTP_X_RESOURCE_MODAL', 'HTTP_X_REQUESTED_WITH',
+    for key in ('HTTP_X_WORK_MODAL', 'HTTP_X_REQUESTED_WITH',
                 'HTTP_X_FILTER_MODAL', 'HTTP_X_FILTER_NAVIGATION', 'HTTP_X_PULPIT_MODAL', 'HTTP_X_PULPIT_NAVIGATION',
                 'HTTP_X_DOCUMENT_MODAL', 'HTTP_X_DOCUMENT_MOVE', 'HTTP_X_OFFICE_EDITOR'):
         delegated.META.pop(key, None)

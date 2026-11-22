@@ -6,9 +6,9 @@ from .services import workplace_role
 
 
 MODULES = (
-    ('spaces', 'Przestrzenie i zadania'), ('teams', 'Zespoły'),
+    ('spaces', 'Przestrzenie i zadania'),
     ('calendar', 'Kalendarz'), ('documents', 'Dysk'), ('office', 'Dokumenty'),
-    ('resources', 'Zasoby'), ('dashboards', 'Pulpity'), ('filters', 'Filtry'),
+    ('dashboards', 'Pulpity'), ('filters', 'Filtry'),
 )
 
 

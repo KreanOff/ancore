@@ -7051,16 +7051,6 @@ function initTasksPage() {
             related_tags: 220,
             task_count: 250
         };
-        const resourceColumnDefaultWidths = {
-            inventory_number: 190,
-            name: 250,
-            kind: 130,
-            status: 140,
-            assigned_to: 245,
-            location: 180,
-            expires_on: 200,
-            return_due_on: 170
-        };
         const workplaceColumnDefaultWidths = {
             name: 300,
             code: 180,
@@ -7376,12 +7366,6 @@ function initTasksPage() {
                 return;
             }
 
-            if (header && board.classList.contains('resources-sheet') && !resizeMediaQuery.matches) {
-                const cells = getDirectoryHeaderCells(board, header);
-                setDirectoryGrid(board, cells, getDefaultDirectoryTrackWidths(cells));
-                return;
-            }
-
             if (header && board.classList.contains('tasks-directory-menu-sheet') && !resizeMediaQuery.matches) {
                 // Build the compact grid from visible columns, retaining CSS breakpoint widths.
                 const widthTokens = {
@@ -7512,9 +7496,6 @@ function initTasksPage() {
                     if (isProjectDirectoryCell(cell)) return projectColumnDefaultWidths.select;
                     return getDirectorySelectColumnWidth(cell);
                 }
-                if (cell.closest('.resources-sheet') && Object.prototype.hasOwnProperty.call(resourceColumnDefaultWidths, column)) {
-                    return resourceColumnDefaultWidths[column];
-                }
                 if (isTagDirectoryCell(cell) && Object.prototype.hasOwnProperty.call(tagColumnDefaultWidths, column)) {
                     return tagColumnDefaultWidths[column];
                 }
@@ -7586,7 +7567,6 @@ function initTasksPage() {
             if (document.querySelector('.task-filter-directory')) return 'task-filters-directory';
             if (document.querySelector('.pulpit-directory-sheet')) return 'pulpits-directory';
             if (document.querySelector('.for-you-space-sheet')) return 'for-you-spaces';
-            if (document.querySelector('[data-resources-page]')) return 'resources';
             const pathSegment = window.location.pathname.split('/').filter(Boolean)[0] || '';
 
             if (pathSegment === 'contacts') return 'contacts';
@@ -7609,7 +7589,7 @@ function initTasksPage() {
         }
 
         function getFormerMenuStorageKey(board, columns, kind) {
-            if (!board?.matches('.work-space-sheet, .resources-sheet, .workplaces-project-sheet')
+            if (!board?.matches('.work-space-sheet, .workplaces-project-sheet')
                 || board.classList.contains('for-you-space-sheet') || columns.includes('menu')) return '';
             const previous = [...columns];
             const preceding = board.classList.contains('workplaces-project-sheet') ? 'action' : 'select';

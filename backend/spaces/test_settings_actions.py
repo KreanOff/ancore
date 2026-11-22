@@ -15,7 +15,7 @@ from tasks.models import TaskTag
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .forms import SpaceDeleteForm
-from .models import Space, SpaceConfiguration, SpaceMembership, SpaceTask, SpaceTaskFile, Sprint, Team, WorkItem
+from .models import Space, SpaceConfiguration, SpaceMembership, SpaceTask, SpaceTaskFile, Sprint, WorkItem
 from .testing import make_space, make_task
 
 
@@ -102,7 +102,7 @@ class SpaceSettingsActionTests(TestCase):
             self.assertFalse(Space.objects.filter(pk=space.pk).exists())
         self.assertEqual(self.client.session['active_workplace_id'], self.workspace.pk)
 
-    def test_delete_cascades_content_but_preserves_other_spaces_configuration_teams_and_dashboards(self):
+    def test_delete_cascades_content_but_preserves_other_spaces_configuration_and_dashboards(self):
         configuration = self.space.configuration
         configuration.shared = True
         configuration.save(update_fields=['shared'])
@@ -113,8 +113,6 @@ class SpaceSettingsActionTests(TestCase):
         sprint = Sprint.objects.create(space=self.space, name='Sprint', start_on=date(2026, 11, 1), end_on=date(2026, 11, 14))
         tag = TaskTag.objects.create(space=self.space, user=self.owner, workplace=self.workspace, name='Tag')
         grant = SpaceMembership.objects.create(space=self.space, user=self.member)
-        team = Team.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.owner, name='Zespół')
-        team.spaces.add(self.space, sibling)
         dashboard = Dashboard.objects.create(owner=self.owner, workplace=self.workspace, created_by=self.owner, name='Pulpit')
         dashboard.scope_spaces.add(self.space, sibling)
         gadget = DashboardGadget.objects.create(dashboard=dashboard, space=self.space)
@@ -125,7 +123,6 @@ class SpaceSettingsActionTests(TestCase):
         self.assertFalse(WorkItem.objects.filter(space_id=self.space.pk).exists())
         self.assertTrue(SpaceConfiguration.objects.filter(pk=configuration.pk).exists())
         self.assertTrue(SpaceTask.objects.filter(pk=preserved_task.pk).exists())
-        self.assertEqual(list(team.spaces.values_list('pk', flat=True)), [sibling.pk])
         self.assertEqual(list(dashboard.scope_spaces.values_list('pk', flat=True)), [sibling.pk])
         self.assertTrue(WorkplaceMembership.objects.filter(pk=self.member_access.pk).exists())
 

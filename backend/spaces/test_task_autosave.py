@@ -15,7 +15,7 @@ from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from tasks.models import TaskTag
 from . import test_independent_tasks as fixtures
-from .models import SpaceTask, SpaceTaskFile, SpaceTaskMembership, Sprint, Team
+from .models import SpaceTask, SpaceTaskFile, SpaceTaskMembership, Sprint
 
 
 class TaskAutosaveTests(TestCase):
@@ -328,19 +328,6 @@ class TaskAutosaveTests(TestCase):
         self.assertEqual(self.save(['epic'], epic='').status_code, 200)
         item.refresh_from_db()
         self.assertIsNone(item.epic_id)
-
-    def test_unlinked_team_is_preserved_but_new_assignments_remain_scoped(self):
-        team = Team.objects.create(workplace=self.workspace, owner=self.owner, created_by=self.owner, name='Odłączony zespół')
-        item = self.task.work_item
-        item.team = team
-        item.save()
-        response = self.save(['description'], description='Zmieniony opis')
-        self.assertEqual(response.status_code, 200, response.content)
-        item.refresh_from_db()
-        self.assertEqual(item.team_id, team.pk)
-        response = self.save(['team'], team=team.pk)
-        self.assertEqual(response.status_code, 400)
-        self.assertIn('team', response.json()['errors'])
 
     def test_preserved_relations_still_participate_in_cross_field_validation(self):
         epic = SpaceTask.objects.create(space=self.space, title='Epik', created_by=self.owner)

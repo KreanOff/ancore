@@ -17,10 +17,10 @@ from .models import SpaceTask, SpaceTaskWorkLog
 from workplaces.services import can_manage_team, workplace_people, workspace_owner
 from .defaults import FLOW_STAGES, KINDS, MANAGEMENT, TEMPLATES, ISSUE_TYPE_ICON_CHOICES, STATUS_ICON_CHOICES, classification_options, configuration_name_color, issue_type_icon, status_flow_stage, status_icon
 from .avatars import AVATARS, AVATAR_CHOICES, preset_avatar, space_avatar
-from .models import Space, SpaceConfiguration, Sprint, Team, WorkItem
-from .services import teams_for, transition_allowed, visible_items, visible_spaces
+from .models import Space, SpaceConfiguration, Sprint, WorkItem
+from .services import transition_allowed, visible_items
 from .schedule import ScheduleDateTimeField, validate_range
-from .widgets import IssueTypeSelect, TaskVisibilitySelect, TeamSelect
+from .widgets import IssueTypeSelect, TaskVisibilitySelect
 
 
 class StyledForm(forms.Form):
@@ -168,7 +168,6 @@ class ItemForm(StyledForm):
         'data-ancore-custom-select-search': 'true', 'data-ancore-custom-select-search-placeholder': 'Szukaj tagów',
     }))
     assignee = UserChoiceField(label='Wykonawca', queryset=None, required=False, empty_label='Brak osoby')
-    team = forms.ModelChoiceField(label='Zespół', queryset=Team.objects.none(), required=False, widget=TeamSelect)
     in_backlog = forms.BooleanField(label='Umieść w backlogu', required=False)
     sprint = forms.ModelChoiceField(label='Sprint', queryset=Sprint.objects.none(), required=False)
     epic = forms.ModelChoiceField(label='Epik', queryset=WorkItem.objects.none(), required=False)
@@ -182,7 +181,7 @@ class ItemForm(StyledForm):
     def __init__(self, *args, request, space, item=None, initial_status=None, **kwargs):
         self.request, self.space, self.item = request, space, item
         if item:
-            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'team', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'task_group', 'reminder_at')}}
+            kwargs['initial'] = {**{key: getattr(item, key) for key in ('work_type', 'sprint', 'epic', 'points', 'in_backlog', 'start_at')}, **{key: getattr(item.task, key) for key in ('title', 'description', 'priority', 'assignee', 'due_at', 'task_type', 'task_group', 'reminder_at')}}
             if item.task.parent_id:
                 kwargs.setdefault('auto_id', f'subtask-{item.pk}-%s')
         super().__init__(*args, **kwargs)
@@ -222,7 +221,6 @@ class ItemForm(StyledForm):
         self.fields['work_type'].widget.type_icons = {t['key']: t.get('icon') for t in config['types']}
         self.fields['work_type'].widget.type_colors = {t['key']: configuration_name_color('types', t) for t in config['types']}
         self.fields['assignee'].queryset = workplace_people(request.workplace)
-        self.fields['team'].queryset = teams_for(request).filter(spaces=space).select_related('workplace')
         self.fields['sprint'].queryset = Sprint.objects.filter(space=space).filter(~Q(state='closed') | Q(pk=getattr(item, 'sprint_id', None)))
         self.fields['epic'].queryset = visible_items(request).filter(space=space, work_type='epic').exclude(pk=getattr(item, 'pk', None))
         self.fields['epic'].label_from_instance = lambda epic: f'{epic.key} · {epic.task.title}'
@@ -385,70 +383,14 @@ class SprintCloseForm(StyledForm):
         self.fields['destination'].help_text = 'Zakończone zadania pozostaną w tym sprincie. Statusy zadań nie zmienią się.'
 
 
-class TeamForm(StyledForm):
-    name = forms.CharField(label='Nazwa zespołu', max_length=120)
-    description = forms.CharField(label='Opis', required=False, widget=forms.Textarea(attrs={'rows': 3}))
-    photo = forms.FileField(label='Zdjęcie zespołu', required=False)
-    remove_photo = forms.BooleanField(label='Usuń zdjęcie zespołu', required=False)
-    spaces = forms.ModelMultipleChoiceField(label='Powiązane przestrzenie', queryset=Space.objects.none(), required=False, widget=forms.CheckboxSelectMultiple)
-
-    def __init__(self, *args, request, team=None, **kwargs):
-        self.request, self.team = request, team
-        if team:
-            kwargs['initial'] = {'name': team.name, 'description': team.description, 'spaces': team.spaces.filter(pk__in=visible_spaces(request))}
-        super().__init__(*args, **kwargs)
-        self.fields['spaces'].queryset = visible_spaces(request)
-        self.fields['spaces'].help_text = 'Powiązanie przestrzeni nie zmienia uprawnień jej członków.'
-        self.fields['photo'].widget.attrs['accept'] = 'image/png,image/jpeg,image/webp'
-        if not team or not team.photo:
-            self.fields.pop('remove_photo')
-
-    def clean_name(self):
-        name = self.cleaned_data['name'].strip()
-        if teams_for(self.request).filter(name__iexact=name).exclude(pk=getattr(self.team, 'pk', None)).exists():
-            raise ValidationError('Zespół o tej nazwie już istnieje.')
-        return name
-
-    def clean_photo(self):
-        photo = self.cleaned_data.get('photo')
-        if photo:
-            validate_image_upload(photo)
-        return photo
-
-    def clean(self):
-        data = super().clean()
-        if data.get('photo') and data.get('remove_photo'):
-            self.add_error('remove_photo', 'Wybierz nowe zdjęcie albo usuń obecne.')
-        return data
-
-
-class TeamDeleteForm(StyledForm):
-    name = forms.CharField(label='Nazwa zespołu', max_length=120)
-    compact = True
-    submit_label = 'Usuń zespół'
-
-    def __init__(self, *args, team, **kwargs):
-        self.team = team
-        super().__init__(*args, **kwargs)
-        self.fields['name'].help_text = f'Wpisz „{team.name}”, aby potwierdzić. Zadania i przestrzenie pozostaną; usunięte zostanie ich powiązanie z zespołem.'
-
-    def clean_name(self):
-        if self.cleaned_data['name'] != self.team.name:
-            raise ValidationError('Wpisz dokładną nazwę zespołu.')
-        return self.cleaned_data['name']
-
-
 class MemberForm(StyledForm):
     person = forms.ModelChoiceField(label='Osoba', queryset=None)
     role = forms.ChoiceField(label='Rola', choices=[('member', 'Członek'), ('admin', 'Administrator'), ('observer', 'Obserwator')])
 
-    def __init__(self, *args, request, team=False, **kwargs):
+    def __init__(self, *args, request, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['person'].queryset = workplace_people(request.workplace)
         self.fields['person'].label_from_instance = lambda user: user.get_full_name() or user.email
-        if team:
-            self.fields['role'].choices = self.fields['role'].choices[:2]
-            self.fields['person'].empty_label = 'Wybierz osobę'
 
 
 class ConfigurationColorField(forms.CharField):

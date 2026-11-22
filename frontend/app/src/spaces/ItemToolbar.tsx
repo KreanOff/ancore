@@ -11,7 +11,6 @@ const FILTERS = [
   { key: 'assignee', label: 'Wykonawca', icon: 'user-round' },
   { key: 'status', label: 'Status', icon: 'list' },
   { key: 'priority', label: 'Priorytet', icon: 'flag' },
-  { key: 'team', label: 'Zespół', icon: 'users' },
   { key: 'blocked', label: 'Blokada', icon: 'circle-alert' },
 ];
 const matches = (text: string, query: string) =>

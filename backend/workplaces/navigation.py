@@ -9,14 +9,12 @@ SIDEBAR_FAVORITE_DEFINITIONS = (
     {'key': 'pulpits', 'label': 'Pulpity', 'icon': 'layout-dashboard', 'app': 'dashboards'},
     {'key': 'filters', 'label': 'Filtry', 'icon': 'filter', 'app': 'filters'},
     {'key': 'spaces', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
-    {'key': 'teams', 'label': 'Zespoły', 'icon': 'users', 'app': 'teams'},
     {'key': 'tasks-projects', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'kanban-spaces', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'kanban-boards', 'label': 'Przestrzenie', 'icon': 'layers', 'app': 'spaces'},
     {'key': 'calendar', 'label': 'Kalendarz', 'icon': 'calendar-days', 'app': 'calendar'},
     {'key': 'documents', 'label': 'Dysk', 'icon': 'hard-drive', 'app': 'documents'},
     {'key': 'office', 'label': 'Dokumenty', 'icon': 'file-text', 'app': 'office'},
-    {'key': 'resources', 'label': 'Zasoby', 'icon': 'package', 'app': 'resources'},
 )
 
 SIDEBAR_FAVORITE_KEYS = frozenset(item['key'] for item in SIDEBAR_FAVORITE_DEFINITIONS)
@@ -49,8 +47,6 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
 
     if item_key in {'spaces', 'tasks-projects', 'kanban-spaces', 'kanban-boards'}:
         return app_name in {'spaces', 'workplace_spaces'} and view_name not in {'items', 'manage', 'manage_create', 'manage_edit'}
-    if item_key == 'teams':
-        return app_name in {'teams', 'workplace_teams'}
     if item_key == 'filters':
         return app_name in {'filters', 'workplace_filters'}
 
@@ -68,9 +64,6 @@ def sidebar_favorite_is_active(item_key, request, active_view=''):
 
     if item_key == 'office':
         return app_name in {'office', 'workplace_office'}
-
-    if item_key == 'resources':
-        return app_name in {'resources', 'workplace_resources'}
 
     return item_key == 'calendar' and app_name in {'planner', 'workplace_planner'}
 

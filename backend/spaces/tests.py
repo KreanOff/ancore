@@ -9,7 +9,7 @@ from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from .defaults import TEMPLATES, template_settings
-from .models import Space, SpaceTaskMembership, Sprint, Team, TeamMembership, WorkItem
+from .models import Space, SpaceTaskMembership, Sprint, WorkItem
 
 
 class SpaceTests(TestCase):
@@ -59,7 +59,7 @@ class SpaceTests(TestCase):
             self.assertContains(response, 'Produkt')
             self.assertNotContains(response, 'Poufna przestrzeń')
             self.assertNotContains(response, 'Obca przestrzeń')
-            self.assertContains(response, 'Zespoły')
+            self.assertNotContains(response, 'Zespoły')
 
     def test_all_space_views_render(self):
         for view in ('overview', 'list', 'board', 'backlog', 'timeline', 'reports', 'settings'):
@@ -235,21 +235,17 @@ class SpaceTests(TestCase):
         self.assertEqual(self.client.post(self.url(f'items/{self.item.pk}/action/'), {'action': 'status', 'status': 'closed'}).status_code, 403)
         self.assertEqual(self.client.get(self.space_url('configuration/')).status_code, 403)
 
-    def test_hidden_groups_and_teams_never_grant_access(self):
-        task = SpaceTask.objects.create(created_by=self.owner, space=self.space, title='Ukryte zadanie', visibility='private', private_owner=self.owner)
-        team = Team.objects.create(workplace=self.workspace, owner=self.owner, name='Zespół')
-        TeamMembership.objects.create(team=team, user=self.member)
-        team.spaces.add(self.space)
-        WorkItem.objects.filter(task=task).update(team=team)
+    def test_workspace_membership_and_assignee_do_not_grant_private_task_access(self):
+        task = SpaceTask.objects.create(
+            created_by=self.owner, space=self.space, title='Ukryte zadanie',
+            visibility='private', private_owner=self.owner, assignee=self.member,
+        )
         self.client.force_login(self.member)
-        response = self.client.get(self.url(f'{team.pk}/', 'teams'))
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'Ukryte zadanie')
+        self.assertNotContains(self.client.get(self.space_url('?view=list')), 'Ukryte zadanie')
         self.assertEqual(self.client.get(self.url(f'items/{task.work_item.pk}/edit/')).status_code, 404)
 
-    def test_foreign_relations_are_rejected(self):
-        team = Team.objects.create(workplace=self.foreign, owner=self.other, name='Obcy zespół')
-        response = self.client.post(self.space_url('items/create/'), {'title': 'Nie', 'work_type': 'task', 'priority': 'medium', 'team': team.pk, 'assignee': self.other.pk}, HTTP_X_WORK_MODAL='true')
+    def test_foreign_assignee_is_rejected(self):
+        response = self.client.post(self.space_url('items/create/'), {'title': 'Nie', 'work_type': 'task', 'priority': 'medium', 'assignee': self.other.pk}, HTTP_X_WORK_MODAL='true')
         self.assertEqual(response.status_code, 400)
         self.assertFalse(SpaceTask.objects.filter(title='Nie').exists())
 
@@ -275,20 +271,6 @@ class SpaceTests(TestCase):
         self.assertEqual(sprint.state, 'closed')
         self.assertIsNone(self.item.sprint_id)
         self.assertTrue(self.item.in_backlog)
-
-    def test_team_lifecycle_and_last_admin(self):
-        response = self.client.post(self.url('create/', 'teams'), {'name': 'Programiści', 'spaces': [self.space.pk]}, HTTP_X_WORK_MODAL='true')
-        self.assertTrue(response.json()['saved'])
-        team = Team.objects.get(name='Programiści')
-        self.assertTrue(team.spaces.filter(pk=self.space.pk).exists())
-        owner_membership = team.memberships.get(user=self.owner)
-        self.client.post(self.url(f'{team.pk}/members/{owner_membership.pk}/remove/', 'teams'))
-        self.assertTrue(team.memberships.filter(pk=owner_membership.pk).exists())
-        response = self.client.post(self.url(f'{team.pk}/members/', 'teams'), {'person': self.member.pk, 'role': 'member'}, HTTP_X_WORK_MODAL='true')
-        self.assertTrue(response.json()['saved'])
-        self.assertEqual(self.client.get(self.url(f'{team.pk}/', 'teams')).status_code, 200)
-        self.client.force_login(self.member)
-        self.assertEqual(self.client.get(self.url(f'{team.pk}/edit/', 'teams')).status_code, 403)
 
     def test_membership_revocation_removes_all_access(self):
         self.client.force_login(self.member)
@@ -368,35 +350,3 @@ class SpaceTests(TestCase):
         response = self.client.get(self.url(f'items/{self.item.pk}/edit/'), HTTP_X_WORK_MODAL='true')
         self.assertIn('value="2026-10-03T00:00"', response.json()['html'])
         self.assertIn('Zamknięty', response.json()['html'])
-
-    def test_team_photo_is_private_and_cleans_up_on_rollback_and_delete(self):
-        import tempfile
-        from pathlib import Path
-        from unittest.mock import patch
-        from django.core.files.storage import FileSystemStorage
-        from core.test_comment_images import photo
-        directory = tempfile.TemporaryDirectory()
-        self.addCleanup(directory.cleanup)
-        field = Team._meta.get_field('photo')
-        self.addCleanup(setattr, field, 'storage', field.storage)
-        field.storage = FileSystemStorage(directory.name)
-        url = self.url('create/', 'teams')
-        bad = self.client.post(url, {'name': 'Zespół ze zdjęciem', 'photo': photo(content=b'not an image')}, HTTP_X_WORK_MODAL='true')
-        self.assertEqual(bad.status_code, 400)
-        with patch('spaces.teams.TeamMembership.objects.create', side_effect=RuntimeError('rollback')):
-            with self.assertRaises(RuntimeError):
-                self.client.post(url, {'name': 'Rollback', 'photo': photo()}, HTTP_X_WORK_MODAL='true')
-        self.assertFalse(list(Path(directory.name).rglob('*.png')))
-        self.assertFalse(Team.objects.filter(name='Rollback').exists())
-        result = self.client.post(url, {'name': 'Zespół ze zdjęciem', 'photo': photo()}, HTTP_X_WORK_MODAL='true')
-        self.assertTrue(result.json()['saved'])
-        team = Team.objects.get(name='Zespół ze zdjęciem')
-        name = team.photo.name
-        response = self.client.get(self.url(f'{team.pk}/photo/', 'teams'))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response['Cache-Control'], 'private, no-store')
-        self.assertTrue(b''.join(response.streaming_content))
-        self.assertEqual(Client().get(self.url(f'{team.pk}/photo/', 'teams')).status_code, 302)
-        with self.captureOnCommitCallbacks(execute=True):
-            team.delete()
-        self.assertFalse(field.storage.exists(name))

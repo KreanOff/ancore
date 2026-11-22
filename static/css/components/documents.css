@@ -119,6 +119,14 @@ svg.documents-type-icon--text { --documents-file-color: #7da2bf; }
 .documents-file-summary { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 24px; overflow-wrap: anywhere; }
 .documents-file-summary > div { min-width: 0; }
 .documents-form { display: grid; gap: 16px; }
+.resources-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.resources-form-wide { grid-column: 1 / -1; }
+.resources-form .tasks-form-field { min-width: 0; }
+.resources-form small { font-size: var(--font-size-sm); line-height: 1.5; }
+.resources-form [hidden] { display: none; }
+@media (max-width: 767px) {
+    .resources-form { grid-template-columns: minmax(0, 1fr); }
+}
 .documents-field { display: grid; gap: 8px; }
 .documents-field > label { font-size: var(--font-size-sm); font-weight: 400; }
 .documents-field :is(input, textarea, select) { width: 100%; }

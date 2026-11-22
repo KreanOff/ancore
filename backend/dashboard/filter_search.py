@@ -19,7 +19,7 @@ class QueryError(ValueError):
 ALIASES = {'project': 'space', 'issuetype': 'type', 'work_type': 'type', 'labels': 'tag',
            'tags': 'tag', 'summary': 'text', 'duedate': 'due', 'statuscategory': 'category'}
 FIELDS = {'space', 'status', 'priority', 'type', 'assignee', 'reporter', 'tag', 'key',
-          'text', 'due', 'created', 'team', 'sprint', 'category'}
+          'text', 'due', 'created', 'sprint', 'category'}
 SORT_FIELDS = {'created': 'task__created_at', 'due': 'task__due_at', 'key': 'key',
                'priority': '_filter_priority', 'summary': 'task__title', 'status': 'status'}
 TOKEN = re.compile(r'\s*(?:"((?:\\.|[^"\\])*)"|\'((?:\\.|[^\'\\])*)\'|(!=|!~|>=|<=|[=~><(),])|([^\s(),=!<>~"\']+))')
@@ -55,7 +55,7 @@ class SearchQuery:
                 return False
             _, field, operator, operands = node
             basic_field = 'q' if field == 'text' else field
-            if field not in {'space', 'status', 'priority', 'type', 'assignee', 'tag', 'team', 'text'} or basic_field in values:
+            if field not in {'space', 'status', 'priority', 'type', 'assignee', 'tag', 'text'} or basic_field in values:
                 return False
             if field == 'text':
                 if operator != '~':
@@ -153,6 +153,8 @@ class Parser:
             if not isinstance(field, str):
                 raise QueryError('Podaj nazwę pola.')
             field = ALIASES.get(field.lower(), field.lower())
+            if field == 'team':
+                raise QueryError('Pole „team” zostało wycofane. Usuń warunek dotyczący zespołu i uruchom wyszukiwanie ponownie.')
             if field not in FIELDS:
                 raise QueryError(f'Nieobsługiwane pole: {field}.')
             if self.take('IS'):
@@ -272,13 +274,12 @@ class Compiler:
             if value.isdecimal() and len(value) < 19:
                 return Q(**{path + '_id': int(value)})
             return Q(**{path + '__email__iexact': value}) | Q(**{path + '__username__iexact': value})
-        if field in {'team', 'sprint', 'tag'}:
-            path = 'task__tags' if field == 'tag' else field
-            if field == 'tag':
-                lookup = {'tags__pk': int(value)} if value.isdecimal() and len(value) < 19 else {'tags__name__iexact': value}
-                # Each tag clause has its own subquery: tag=A AND tag=B means both tags.
-                return Q(task_id__in=SpaceTask.objects.filter(**lookup).values('pk'))
-            return Q(**{path + '__pk': int(value)}) if value.isdecimal() and len(value) < 19 else Q(**{path + '__name__iexact': value})
+        if field == 'tag':
+            lookup = {'tags__pk': int(value)} if value.isdecimal() and len(value) < 19 else {'tags__name__iexact': value}
+            # Each tag clause has its own subquery: tag=A AND tag=B means both tags.
+            return Q(task_id__in=SpaceTask.objects.filter(**lookup).values('pk'))
+        if field == 'sprint':
+            return Q(sprint_id=int(value)) if value.isdecimal() and len(value) < 19 else Q(sprint__name__iexact=value)
         if field == 'key':
             return Q(key__iexact=value)
         if field == 'text':
@@ -287,10 +288,10 @@ class Compiler:
 
     def clause(self, field, operator, operands):
         paths = {'assignee': 'task__assignee', 'reporter': 'task__created_by', 'due': 'task__due_at',
-                 'created': 'task__created_at', 'team': 'team', 'sprint': 'sprint', 'tag': 'task__tags'}
+                 'created': 'task__created_at', 'sprint': 'sprint', 'tag': 'task__tags'}
         if operator.startswith('IS '):
             if field not in paths:
-                raise QueryError('IS EMPTY jest dostępne dla wykonawcy, autora, dat, zespołu, sprintu i tagów.')
+                raise QueryError('IS EMPTY jest dostępne dla wykonawcy, autora, dat, sprintu i tagów.')
             return Q(**{paths[field] + '__isnull': operator == 'IS EMPTY'})
         if field in {'due', 'created'}:
             if operator not in {'=', '!=', '>', '>=', '<', '<='}:
@@ -316,7 +317,7 @@ class Compiler:
         condition = reduce(lambda left, right: left | right, (self.equal(field, value) for value in operands))
         if operator in {'!=', 'NOT IN'}:
             condition = ~condition
-            if field in {'assignee', 'reporter', 'team', 'sprint', 'tag'}:
+            if field in {'assignee', 'reporter', 'sprint', 'tag'}:
                 condition &= Q(**{paths[field] + '__isnull': False})
         return condition
 
@@ -350,7 +351,7 @@ def basic_query(data):
     clauses = []
     if data.get('q'):
         clauses.append('text ~ ' + quote(data['q']))
-    for field in ('space', 'status', 'priority', 'type', 'assignee', 'tag', 'team'):
+    for field in ('space', 'status', 'priority', 'type', 'assignee', 'tag'):
         values = data.get(field, [])
         if not values:
             continue

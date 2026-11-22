@@ -1,30 +1,9 @@
 # Frontend React i backend Django
 
-## Katalog i karta Zespołu
-
-`TeamsPage.tsx` obsługuje typy `teams` i `team`. API katalogu przekazuje
-`tabs`, `sort`, członkostwo użytkownika i liczniki dla widocznych danych.
-Karta ma `view`, `tabs`, `counts`, `progress`, `workload`, `member_rows`
-(serializowane jako `members`), `spaces`, `items` i metadane okna aktywnej zakładki.
-Wyszukiwanie, filtry i limit wyników są parametrami URL; zmiana filtra usuwa
-limit. „Pokaż więcej” rozszerza widoczną listę o 20 pozycji. Dane po zapisach ponownie pobiera wspólny mechanizm nawigacji.
-
-Formularze używają `FormDialog`, listy wspólnych klas, `Avatar`, `Select`,
-`Dropdown`, `StatusGroup` i `LoadMore`. Błędy zachowują szkic, Escape przywraca
-fokus, a potwierdzenie usuwa członka przez istniejący POST. Osobna trasa
-`members/<member_pk>/edit/` unieruchamia pole osoby i zmienia tylko jej rolę.
-`delete/` wymaga wpisania nazwy zespołu. Obie trasy mają zwykły/scoped wariant
-oraz delegowane JSON API; API sprawdza aktualny Workspace, role, CSRF i stan
-włączenia modułu. Pierwszy render i formularze Django pozostają działające.
-`page_styles` dołącza CSS tabel członków także po nawigacji do `team`/`teams`.
-[Zakres funkcji i parametrów](SPACES.md#system-zespołów-04112026).
-
 ## Zakres migracji
 
 Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekrany:
 
-- **Zasoby:** katalog, karta i historia, przekazania/zwroty, operacje zbiorcze,
-  filtry terminów, eksport, sortowanie, doładowywanie po 20, kolumny i pełne CRUD.
 - **Kalendarz:** miesiąc/tydzień/dzień/rok, plan, wyszukiwanie, wydarzenia i terminy zadań.
 - **Dla ciebie** oraz centrum **Ustawień**.
 - **Przestrzenie:** katalog, kreator szablonu, formularze, awatary,
@@ -33,7 +12,6 @@ Interfejs aktywnej aplikacji korzysta z Reacta i TypeScriptu. Przeniesione ekran
 - **Szczegóły zadania Przestrzeni:** właściwości z automatycznym zapisem,
   komentarze ze wzmiankami i plikami, załączniki, podzadania, dziennik pracy,
   członkowie/role oraz historia.
-- **Zespoły:** katalog, szczegóły, formularz i członkostwa.
 - **Tagi Przestrzeni:** katalog, wyszukiwanie, filtry, sortowanie, doładowywanie po 20,
   układ/szerokości kolumn, tworzenie/edycja, informacje i notatki.
 - **Filtry zadań:** wyszukiwanie podstawowe i zaawansowane, katalog,
@@ -246,9 +224,8 @@ Przycisk znajduje się bezpośrednio po wynikach wewnątrz ich kontenera
 przewijania, a nie w stałej stopce. Doładowanie zachowuje ten sam kontener.
 Po końcu większej listy pozostaje nieaktywny „Wszystkie wyniki”; przy najwyżej
 20 wynikach dodatkowy przycisk nie jest potrzebny. Obejmuje to katalogi
-Przestrzeni, Zespołów, Filtrów, Pulpitów, Dysków, Dokumentów, Zasobów i Workspace,
-wyniki Filtrów, listy w profilu Zespołu, ostatnio oglądane, powiadomienia,
-dziennik pracy zadania i historię zasobu. Nawigacja dat kalendarza i stron
+Przestrzeni, Filtrów, Pulpitów, Dysków, Dokumentów i Workspace, wyniki
+Filtrów, ostatnio oglądane, powiadomienia i dziennik pracy zadania. Nawigacja dat kalendarza i stron
 wewnątrz edytorów dokumentów pozostaje osobnym mechanizmem.
 
 `backend/core/list_window.py` oblicza kumulatywny prefiks po ACL, filtrach
@@ -256,16 +233,16 @@ i sortowaniu. Parametr `limit` rozszerza go 20 → 40 → 60; odpowiedź zawiera
 cały nowy prefiks. React podmienia dane okna bez ponownego montowania strony,
 więc wcześniejsze wiersze pozostają widoczne i nie są dublowane. Katalogi
 z kontraktem `pagination` zachowują `count`, `start`, `end`, `next`; `previous`
-jest pusty, a `pages` puste. Dyski, Dokumenty i Zasoby przekazują analogiczne
+jest pusty, a `pages` puste. Dyski i Dokumenty przekazują analogiczne
 `count`, `start`, `end`, `has_next`, `next_url` w swoim obiekcie okna.
-Dziennik pracy używa `work_log_limit`, a historia Zasobów `history_limit`.
+Dziennik pracy używa `work_log_limit`.
 Starszy `page=2` oznacza prefiks 40 wyników; rozmiar partii pozostaje 20.
 
 `shared/useLoadMorePage.ts` obsługuje katalogi korzystające z Page API.
 Blokuje powtórne kliknięcie podczas odczytu, anuluje żądanie po wyjściu
 i zachowuje listę przy błędzie, umożliwiając powtórzenie tego samego odczytu.
-Dokumenty i Zasoby zachowują własne wyszukiwanie z opóźnieniem i anulowaniem;
-nie przyjmują starego wyniku po zmianie zapytania. Dopiero sukces zapisuje
+Dokumenty zachowują własne wyszukiwanie z opóźnieniem i anulowaniem.
+Po zmianie zapytania wcześniejsza odpowiedź jest pomijana. Dopiero sukces zapisuje
 limit w URL. Zmiana filtra lub sortowania zaczyna od pierwszych 20 pozycji.
 Workspace rozszerza prefiks lokalnie, bo API przekazuje już dostępną listę.
 Dziennik pracy podmienia tylko `work_log`, zachowując szkic zadania i aktywną
@@ -362,9 +339,8 @@ a kolumny, przejścia, statusy podsumowania i raportów — rozwiązane `color`.
 Opcje formularza przekazują `status_color` obok `status_category`. Wspólny
 helper React `shared/status-color.ts` i filtr Django `status_style` nadpisują
 kolory kategorii na konkretnych elementach. Optymistyczne przeniesienie karty
-na Tablicy aktualizuje również jej kolor. Grupy zadań w Filtrach i Zespołach
-uwzględniają kolor w kluczu, aby nie łączyć różnie oznaczonych etapów.
-Ikony statusu w `ForYouTaskRow`, używanym przez Dla ciebie, Filtry i Zespoły,
+na Tablicy aktualizuje również jej kolor. Grupy zadań w Filtrach uwzględniają kolor w kluczu, aby nie łączyć różnie oznaczonych etapów.
+Ikony statusu w `ForYouTaskRow`, używanym przez Dla ciebie i Filtry,
 nadal korzystają z koloru kategorii; komponent nie odczytuje `status_color`.
 
 Odczytowa właściwość `WorkItem.type_color` rozwiązuje kolor typu w konfiguracji
@@ -452,7 +428,7 @@ dodawania pośredniego wpisu historii.
 Wybrany Workspace otwiera pełną stronę ustawień przez dotychczasowe parametry
 `?workspace=<pk>&tab=main`, `?workspace=<pk>&view=members` lub
 `?workspace=<pk>&view=links`. Kontrakt `workspace-directory` zachowuje dane
-formularza i zespołu; `edit_open` wybiera stronę ustawień zamiast katalogu.
+formularza i członkostw; `edit_open` wybiera stronę ustawień zamiast katalogu.
 Powłoka używa trybu `workspace-settings` i obiektu `workspace_settings`
 z nazwą, aktywnym `tab` oraz autoryzowanymi adresami w `links` (`main`,
 `members`, opcjonalnie `links`). `shell/Sidebar` pokazuje „Ustawienia”,
@@ -673,7 +649,7 @@ API i cofa po odrzuceniu zapisu. Autoryzacja, status/zakończenie i historia
 nadal należą do Django. Kopie wizualne nie mają ID ani hooków aplikacji,
 a `data-icon*` zachowuje właściwy wygląd ikon. Hook sprząta kopie, listenery,
 klatki przewijania i animacje przy odmontowaniu. `prefers-reduced-motion`
-wyłącza ruch. Nie dodano zależności; szczegóły interakcji: [UI](UI.md#przestrzenie-i-zespoły).
+wyłącza ruch. Nie dodano zależności; szczegóły interakcji: [UI](UI.md#przestrzenie).
 
 ## Budowanie i uruchamianie
 
@@ -789,7 +765,7 @@ wiążą tytuł, odstępy oraz aktywne zakładki z jednym wzorcem, także
 w pierwszym renderze Django.
 
 Dolne paski narzędzi współdzielą `shared/DirectoryToolbar.tsx` i
-`components/app-toolbar.css`, według wzorca Zasobów. `Toolbar` renderuje `div`,
+`components/app-toolbar.css`, zgodnie z listą zadań Przestrzeni. `Toolbar` renderuje `div`,
 a `DirectoryToolbar` formularz. Oba przyjmują `filters`, `actions`, `search`,
 `children` i `className`: kontrolki widoku, filtry, sortowanie i wyszukiwarka
 są po lewej, a działania po prawej, poza przewijaną listą. „Zapisz”, „Edytuj”,
@@ -852,7 +828,7 @@ W tabelach usunięte są także ich nagłówki, komórki i tory siatki.
 Pozostałe istniejące skróty (np. ołówek, informacje, notatki i przełączanie
 Workspace) zachowują swoje funkcje. `tasks-directory-menu-sheet` pozostaje
 historyczną nazwą wariantu sterującego siatką i zmianą szerokości; nie tworzy
-przycisku menu. `useTableWidths`, migracja Zasobów oraz `tasks.js` odczytują
+przycisku menu. `useTableWidths` i `tasks.js` odczytują
 preferencje dawnych schematów kolumn i pomijają usuniętą kolumnę.
 Usunięcie kontrolek nie usuwa endpointów ani zasad uprawnień backendu.
 
@@ -864,7 +840,7 @@ render Django; host `react-field-control` zajmuje jedną komórkę siatki pola.
 `FormFields` włącza ten układ przez `layout`; domyślny wariant pozostaje
 bez kontenera dla konfiguracji i osadzonych kontrolek. `PulpitFields` oraz
 zakładki Filtrów zachowują warunkową widoczność swoich pól we wspólnym układzie.
-Osobne edytory Kalendarza, Zasobów, Dysku, Workspace i profilu stosują klasy
+Osobne edytory Kalendarza, Dysku, Workspace i profilu stosują klasy
 `app-form-*` z `modal-system.css`. Zmiana kolejności jest częścią renderowania,
 bez przenoszenia kontrolek przez JS i bez zmiany zapisu lub ACL.
 Szczegóły i responsywność: [standard modali](UI.md#6-modale).
@@ -992,9 +968,6 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   `src/spaces/`, `src/tasks/`, `src/tags/`, `src/filters/`, `src/pulpits/`, `src/documents/`, `src/workspaces/`, `src/accounts/` i `src/forms/`.
   `backend/core/frontend.py` jawnie rejestruje
   wspierane szablony oraz serializery; pozostałe ekrany zachowują dotychczasowy tryb.
-- `src/resources/` zawiera stan katalogu, tabelę, ustawienia kolumn i formularz.
-  Początkowe dane pochodzą z bezpiecznego `json_script`; kolejne operacje używają API.
-  Bezpośrednie adresy tworzenia/edycji otwierają ten sam moduł i modal.
 - `src/shared/` zawiera klienta API oraz adaptery istniejących ikon,
   dropdownów i custom selectów. Zmiany DOM wykonywane przez wspólne helpery
   są zamknięte w osobnych kontenerach, których wnętrza nie renderuje React.
@@ -1019,24 +992,17 @@ i nie zmienia jego szkicu. Escape zamyka dymek przed oknem formularza.
   Selecty z ukrytą etykietą zachowują geometrię `tasks-inline-select` przez
   `react-select-inline`; adapter formularzy uwzględnia techniczne fieldsety
   oraz kontenery kontrolek. [Szczegóły układu](UI.md#ekrany-react-podczas-migracji).
-  `DirectoryColumns.tsx` współdzieli zarządzanie kolumnami Zasobów i Tagów,
-  zachowując dotychczasowe klucze localStorage. Tagi zachowują również dawny
-  podział kluczy zwykłego/scoped adresu (`tasks`/`workplaces`).
+  `DirectoryColumns.tsx` obsługuje zarządzanie kolumnami Tagów z osobnymi
+  kluczami localStorage dla zwykłego i scoped adresu (`tasks`/`workplaces`).
 - Powłokę zapewnia `core/base.html`, a modal używa `AncoreTaskModals`,
   obsługi Escape, fokusu, `inert` i potwierdzenia porzucenia zmian.
   Wspólny kontrakt okna jest w `static/js/task-modals.js`; `tasks.js` korzysta
   z niego także na starszych ekranach. Styl pochodzi z istniejącego CSS. Nie wprowadzono nowego systemu UI.
-- Stary `resources.js` obsługuje wyłącznie zgodne formularze HTML. Pomija
-  kontener React, także przy ponownym wejściu po częściowej nawigacji.
-  `tasks.js`, `spaces.js`, `calendar.js`, `for-you.js`, `settings.js`,
+- `tasks.js`, `spaces.js`, `calendar.js`, `for-you.js`, `settings.js`,
   `task-filters.js`, `pulpits.js`, `documents.js`, `office.js`, `office-suite.js`, `workplace-team.js`
   i `task-work-log.js` pomijają interakcje strony
   z `[data-react-root="page"]`.
   Nie mogą przestawiać ani podmieniać DOM należącego do Reacta.
-- Katalog i zapis używają anulowania żądań, limitu czasu i komunikatów błędu.
-  Nowszy tekst wyszukiwania nie jest zastępowany starszą odpowiedzią.
-  Parametry filtrów pozostają w URL, a ustawienia kolumn zachowują istniejące
-  klucze `resources:directoryColumnLayout:v2` i `resources:directoryColumnWidths:v4`.
 
 Szablon zawiera podstawową listę przed zamontowaniem Reacta. Interakcje Reacta
 wymagają JavaScriptu. Dotychczasowe endpointy formularzy HTML i POST pozostają
@@ -1386,7 +1352,7 @@ Zarządzanie innym dostępnym Workspace może korzystać z API aktywnego konteks
 nie udostępnia obcych Workspace ani nie rozszerza ACL Przestrzeni.
 
 Dane obejmują ograniczone schematy formularzy, awatary i dozwolone akcje.
-Członek otrzymuje ustawienia tylko do odczytu i skład zespołu, bez formularza
+Członek otrzymuje ustawienia tylko do odczytu i listę członków, bez formularza
 dodawania i tokenów linków. Administrator dodaje wyłącznie członków i gości;
 nie zarządza właścicielem ani administratorami, także nieaktywnymi.
 `add_form`, `add_url` i `add_open` opisują ręczne dodawanie przez POST `user_id`
@@ -1580,68 +1546,6 @@ i kontrakty pozostają fallbackiem zgodności. Krótkie komunikaty renderuje `To
 `hideNotification`, deduplikację, czas wyświetlania i bezpieczny tekst.
 Heartbeat obecności pozostaje oddzielną usługą.
 
-## API Zasobów v1
-
-Poniższe końcówki dotyczą zarówno `/resources/api/v1/`, jak i
-`/workplaces/<slug>/resources/api/v1/`. Frontend otrzymuje i wykorzystuje scoped URL,
-aby zmiana aktywnego Workspace w innej karcie nie zmieniała celu zapisu.
-
-| Końcówka | Metoda | Wynik |
-| --- | --- | --- |
-| `/` | GET | Lista, filtry, sortowanie, scoped URL i kumulatywne okno `limit` |
-| `/` | POST | Utworzenie zasobu; HTTP 201 |
-| `/new/` | GET | Puste pola formularza i dozwolone opcje |
-| `/<pk>/` | GET | Pola formularza istniejącego zasobu |
-| `/<pk>/` | PUT | Pełny zapis edytowalnych pól zasobu |
-| `/<pk>/delete/` | POST | Usunięcie zasobu |
-| `/<pk>/overview/` | GET | Dane i historia zasobu; `history_limit`, doładowywanie po 20 wpisów |
-| `/operate/` | POST | Atomowa operacja na 1–100 zasobach |
-| `/export/` | GET | CSV wszystkich wyników filtrów, niezależnie od wczytanego okna |
-
-GET listy obsługuje `q`, `kind`, `status`, `assignee`, `deadline`, `sort` i `limit`.
-Katalog zwraca pierwsze 20 wyników; kolejne `next_url` zwiększają okno o 20.
-`pagination.count` opisuje pełny wynik po filtrach, a `summary` nadal obejmuje
-cały Workspace. Historia zwraca `history_total`, `history_end` i `history_next`.
-Starsze `page`/`history_page` oznaczają odpowiedni prefiks po 20, a `page_size`
-nie zmienia wielkości partii. Zapis przyjmuje płaski
-obiekt `application/json` i nagłówek `X-CSRFToken`. Brak sesji zwraca JSON 401,
-brak dostępu 403 lub 404, błędna metoda 405, a walidacja JSON 400 z `message`,
-`errors` oraz aktualną definicją pól. Odpowiedzi nie zawierają HTML i mają
-`Cache-Control: no-store`. Dla API odrzucony CSRF także zwraca JSON;
-pozostałe formularze zachowują standardową odpowiedź Django.
-
-`backend/resources/services.py` współdzieli zakres danych, katalog i zapis między
-widokami HTML a API. Każdy obiekt jest ograniczony jednocześnie przez
-`workspace_owner(request)` i `request.workplace`. `ResourceForm` nadal
-waliduje osobę, typ, status, daty i unikalny numer ewidencyjny. Pola właściciela,
-Workspace i autora nie są edytowalne przez klienta; autorem pozostaje faktyczny
-`request.user`. Migracja `resources.0002_resourceactivity_resource_return_due_on_and_more`
-dodaje opcjonalny `return_due_on`, ograniczenie jego statusu i historię `ResourceActivity`.
-Katalog zwraca również `summary` (liczniki całego Workspace) i `export_url`.
-Formularz zwraca `revision`; PUT przesyła ją do ochrony przed równoczesną zmianą.
-Starsze wywołania bez wersji zachowują dotychczasową zgodność.
-
-`operate/` przyjmuje płaski JSON: `ids` jako ciąg identyfikatorów oddzielonych
-przecinkami, `revisions` jako serializowany JSON mapy ID → `updated_at`,
-`action` (`handover`, `return`, `status`, `location`, `note`) i odpowiednie pola
-`assigned_to`, `return_due_on`, `status`, `location`, `note`.
-Wersje są obowiązkowe; HTTP 409 oznacza konflikt, 404 niedostępny element,
-400 błędne dane/stany. Zapis i historia całej grupy są w jednej transakcji.
-Operacje nie obchodzą polityki gościa, wyłączonego modułu, sesji ani CSRF.
-CSV jest strumieniowane, ma `no-store`, BOM UTF-8 i ochronę przed formułami.
-
-`src/resources/Detail.tsx` renderuje kartę i historię pod `/resources/<pk>/`
-oraz odpowiednikiem scoped. Nazwa w tabeli i globalne wyszukiwanie prowadzą do
-karty; stary `/<pk>/edit/` nadal działa. `Operation.tsx` używa wspólnego `Modal`
-w istniejącym wariancie kompaktowym. Katalog przechowuje zaznaczenie widocznych
-wierszy i zachowuje je przy doładowywaniu. Zmiana filtra lub sortowania resetuje
-okno i zaznaczenie. Powrót z karty zachowuje filtry i limit listy. Operacja zbiorcza
-nadal obejmuje najwyżej 100 zasobów; większe zaznaczenie pokazuje komunikat
-i blokuje przyciski operacji do zmniejszenia wyboru.
-Formularz Zasobów używa wspólnego `app-page-modals`, obecnego zarówno przy
-pierwszym renderze Django, jak i po nawigacji JSON. Kontener starego formularza
-HTML pozostaje wyłącznie fallbackiem pierwszego renderu.
-
 ## Powłoka i nawigacja JSON
 
 `backend/core/shell.py` jawnie serializuje kontekst powłoki: konto, aktywny Workspace,
@@ -1664,13 +1568,17 @@ HTML ani nie wykonuje skryptów z odpowiedzi. Błąd pozostawia aktualny ekran
 z komunikatem i możliwością ponowienia. Konto, Workspace lub inny hash bundla
 w odpowiedzi wymagają pełnego przeładowania. Logowanie, przełączanie tożsamości,
 pliki, nowe karty i pełne edytory zachowują własne przepływy.
+Rejestr `core.shell.page_styles` podaje te same adresy i kolejność arkuszy
+dla HTML Django i nawigacji JSON. `src/main.tsx` pobiera arkusz z nieaktywnym
+`media` i włącza go dopiero podczas zatwierdzonej nawigacji. Przy zmianie ekranu
+wyłącza arkusze spoza listy celu i ponownie wykorzystuje pobrane pliki.
 Adres z innym segmentem Workspace (również z globalnych powiadomień)
 otwiera się w pełni już przed żądaniem API bieżącego Workspace. Nadal czeka
 na zapis i respektuje odrzucenie wyjścia; tę samą kontrolę stosuje do przekierowań.
 Backend docelowej strony ponownie sprawdza członkostwo i dostęp do obiektu.
 
 Wstecz/Dalej odtwarza ekran oraz przewinięcie. `setPageLocation()` łączy lokalne
-zmiany query/hash (np. Zasoby, Dokumenty, zakładki zadania i zarządzanie Workspace)
+zmiany query/hash (np. Dokumenty, zakładki zadania i zarządzanie Workspace)
 z tą samą historią. Minimalne menu zarządzania zachowuje zagnieżdżony powrót,
 query/hash, przewinięcie oraz klucze `ancoreManagementReturn` w historii
 i `sessionStorage`, w zakresie konta i Workspace. Usunięty cel jest unieważniany,

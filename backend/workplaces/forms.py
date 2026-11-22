@@ -16,11 +16,9 @@ WORKPLACE_PHOTO_MAX_SIZE = getattr(settings, 'MAX_WORKPLACE_PHOTO_SIZE', 5 * 102
 
 MODULE_DETAILS = {
     'spaces': {'icon': 'layers', 'description': 'Organizuj pracę w przestrzeniach i zarządzaj zadaniami.'},
-    'teams': {'icon': 'users', 'description': 'Twórz zespoły i zarządzaj ich członkami.'},
     'calendar': {'icon': 'calendar', 'description': 'Planuj wydarzenia i przeglądaj terminy zadań.'},
     'documents': {'icon': 'hard-drive', 'description': 'Przechowuj pliki i porządkuj je w folderach.'},
     'office': {'icon': 'file-text', 'description': 'Twórz i edytuj dokumenty, arkusze oraz prezentacje.'},
-    'resources': {'icon': 'package', 'description': 'Prowadź ewidencję sprzętu, licencji i narzędzi.'},
     'dashboards': {'icon': 'layout-dashboard', 'description': 'Śledź postęp pracy i przeglądaj dane na pulpitach.'},
     'filters': {'icon': 'filter', 'description': 'Wyszukuj zadania i zapisuj własne zestawy filtrów.'},
 }
@@ -69,7 +67,7 @@ class WorkplaceDeleteForm(forms.Form):
         self.confirmation_message = (
             f'Usunięcie Workspace „{workplace.name}” trwale usunie wszystkie jego dane, '
             'w tym przestrzenie, zadania, podzadania, historię, załączniki, dokumenty, '
-            'zespoły, kalendarze, zasoby, pulpity, filtry i udostępnienia. '
+            'kalendarze, pulpity, filtry i udostępnienia. '
             'Tej operacji nie można cofnąć.'
         )
 

@@ -517,9 +517,6 @@ export default function Sidebar({
                 ))}
                 {['calendar', 'documents', 'office'].map(mainLink)}
               </section>
-              <div className="sidebar-menu-section sidebar-menu-section--bottom">
-                {['resources', 'teams'].map(mainLink)}
-              </div>
             </>
           ) : (
             <section className="sidebar-menu-section sidebar-menu-section--workspace">

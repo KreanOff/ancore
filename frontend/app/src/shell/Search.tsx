@@ -14,7 +14,6 @@ const searchFilters = [
   { key: 'documents', label: 'Pliki' },
   { key: 'tags', label: 'Tagi' },
   { key: 'calendar', label: 'Kalendarz' },
-  { key: 'resources', label: 'Zasoby' },
   { key: 'document-libraries', label: 'Dyski' },
   { key: 'document-folders', label: 'Foldery' },
   { key: 'workplaces', label: 'Workspace' },

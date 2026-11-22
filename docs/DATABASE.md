@@ -5,18 +5,29 @@ z aktualnych modeli. Zastępuje on całą poprzednią historię migracji aplikac
 Migracje wbudowanych aplikacji Django pozostają standardowe.
 
 Kolejne zmiany rozwijają ten schemat zwykłymi migracjami przyrostowymi.
-`resources.0002_resourceactivity_resource_return_due_on_and_more` (04.11.2026)
-dodaje opcjonalny `Resource.return_due_on` i tabelę historii `ResourceActivity`.
-Istniejące zasoby zachowują identyfikatory, dane i przypisania; termin zwrotu
-pozostaje pusty, a wcześniejsze zdarzenia nie są odtwarzane. Ograniczenie
-`resource_return_in_use` dopuszcza datę zwrotu tylko przy statusie `in_use`.
-Zastosuj `manage.py migrate resources` po sprawdzeniu planu. Historia jest
-usuwana wraz z zasobem; usunięcie autora zeruje FK, zachowując jego zapisaną nazwę.
-Cofnięcie migracji usuwa historię i daty zwrotów. Test
-`resources.test_migrations` sprawdza zachowanie istniejącej ewidencji podczas
-przejścia z migracji początkowej.
-`resources.0003_alter_resourceactivity_actor_name` poszerza nazwę autora
-do 500 znaków, obejmując pełne limity trzech członów nazwy konta.
+
+## Wycofanie Zasobów i Zespołów
+
+- `resources.0009_remove_resources` usuwa ewidencję, kategorie i historię
+  operacji Zasobów. Usuwa też tabelę `resources_resourcecategory`, jeśli
+  pozostała po wcześniejszej lokalnej wersji modułu. Pakiet `resources`
+  zachowuje historię migracji potrzebną do aktualizacji istniejącej bazy.
+- `spaces.0007_remove_work_teams` usuwa tabele Zespołów i ich członkostw,
+  powiązania z Przestrzeniami oraz pole przypisania zespołu do zadania.
+  Przestrzenie, zadania, przypisania do osób oraz uprawnienia Workspace,
+  Przestrzeni i zadań pozostają zachowane. Migracja nie usuwa plików
+  dawnych zdjęć Zespołów ze storage.
+- `workplaces.0006_remove_retired_modules` czyści wpisy wycofanych modułów
+  w ulubionych menu i na liście wyłączonych modułów Workspace.
+
+Uprawnienia panelu Django do wycofanych modeli są usuwane. Ich typy
+treści pozostają dostępne dla historycznych wpisów dziennika administracji.
+
+Do aktualizacji bieżącego schematu służy `manage.py migrate`. Plan można
+sprawdzić przez `manage.py migrate --plan`. Odzyskanie usuniętych rekordów
+wymaga kopii bazy sprzed migracji.
+
+## Pozostałe migracje przyrostowe
 
 `accounts.0004_user_profile_banner_crop` (04.11.2026) dodaje do `User` pola
 `profile_banner_x`, `profile_banner_y` i `profile_banner_zoom`. Istniejące konta
@@ -126,7 +137,7 @@ wykonaj backup i sprawdź `manage.py migrate --plan`, następnie
 `manage.py migrate`. Testy `documents.test_personal_stars` sprawdzają
 migrację istniejących danych i izolację osobistych oznaczeń.
 
-## Zakres
+## Zakres resetu z 18.10.2026
 
 Usunięto pakiety `backend/legacy` i `backend/kanban`, historyczne modele
 pracy z `tasks`, ich członkostwa, zaproszenia, szablony, pliki i historię,
@@ -149,7 +160,7 @@ Pozostałe aplikacje zachowują swój aktualny schemat. Ten reset nie dodaje
 nowych funkcji ani nie zmienia wyglądu interfejsu. Pliki uploadów nie należą
 do resetu PostgreSQL i nie są kasowane przez zastosowanie migracji.
 
-## Uruchomienie
+## Uruchomienie na pustej bazie
 
 Utwórz pustą, dedykowaną bazę PostgreSQL i ustaw jej nazwę w `DB_NAME`
 w lokalnym `.env` (pozostałe zmienne: `DB_HOST`, `DB_PORT`, `DB_USER`,
@@ -166,8 +177,9 @@ Nowa baza ma puste katalogi biznesowe i nie zawiera kont. Pierwsze konto
 utwórz przez rejestrację; administratora opcjonalnie przez
 `.venv/bin/python manage.py createsuperuser`.
 
-Nowych migracji nie stosuj do poprzedniej bazy z dawną historią
-`django_migrations` ani przez `--fake`. Przejście wymaga pustej bazy;
+Migracje początkowe z resetu z 18.10.2026 wymagają pustej bazy. Bieżące
+migracje przyrostowe działają na schemacie po tym resecie. Nie stosuj
+resetu do poprzedniej bazy przez `--fake`;
 przed resetem zachowaj kopię PostgreSQL i potrzebnych uploadów.
 Odtworzenie kopii starej bazy wymaga również kodu sprzed zmiany schematu.
 Kopie lokalne trzymaj poza Git, np. w `.cache/database-backups/`.

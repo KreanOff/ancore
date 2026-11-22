@@ -103,7 +103,6 @@ function data(filters = {}) {
       assignee: '',
       status: '',
       priority: '',
-      team: '',
       summary: '',
       ...filters,
     },
@@ -131,15 +130,11 @@ function data(filters = {}) {
         ['high', 'Wysoki'],
         ['low', 'Niski'],
       ],
-      team: [
-        ['', 'Wszystkie zespoły'],
-        ['42', 'Zespół produktu'],
-      ],
     },
   });
 }
 
-test('filter-only component exposes all five fields without sorting controls or a sort contract', () => {
+test('filter-only component exposes its fields without sorting controls or a sort contract', () => {
   const { dropdown, menu } = harness(data()).render();
   assert.equal(dropdown.props.label, 'Filtrowanie zadań');
   assert.equal(dropdown.props.role, 'dialog');
@@ -149,13 +144,7 @@ test('filter-only component exposes all five fields without sorting controls or 
     nodes(menu)
       .filter((node) => node.type === 'button')
       .map((node) => node.props['aria-label']),
-    [
-      'Filtr: Typ zgłoszenia',
-      'Filtr: Wykonawca',
-      'Filtr: Status',
-      'Filtr: Priorytet',
-      'Filtr: Zespół',
-    ],
+    ['Filtr: Typ zgłoszenia', 'Filtr: Wykonawca', 'Filtr: Status', 'Filtr: Priorytet'],
   );
   assert.equal(search(menu).props['aria-label'], 'Szukaj pola');
   assert.doesNotMatch(text(menu) + text(dropdown.props.trigger), /Sortowanie|Domyślnie|Wyczyść/);
@@ -168,21 +157,19 @@ test('active count and selected field labels include the summary drill-down and 
       assignee: '17',
       status: 'closed',
       priority: 'high',
-      team: '42',
       summary: 'open',
     }),
   ).render();
   const count = nodes(dropdown.props.trigger).find(
-    (node) => node.props?.['aria-label'] === 'Aktywne filtry: 6',
+    (node) => node.props?.['aria-label'] === 'Aktywne filtry: 5',
   );
-  assert.equal(text(count), '6');
+  assert.equal(text(count), '5');
   assert.equal(dropdown.props.triggerClassName.includes('is-active'), true);
   for (const [field, selected] of [
     ['Typ zgłoszenia', 'Błąd'],
     ['Wykonawca', 'Żaneta Śliwa'],
     ['Status', 'Gotowe'],
     ['Priorytet', 'Wysoki'],
-    ['Zespół', 'Zespół produktu'],
   ]) {
     assert.equal(text(button(menu, `Filtr: ${field}`)), field + selected);
   }
@@ -226,7 +213,7 @@ test('field and option search, empty states, back and reopening use the same fil
 
 test('each filter option preserves a scoped overview URL and combined parameters while resetting page', () => {
   const path = '/workplaces/w_0123456789abcdefghijklmnop/space/produkt/';
-  const existing = { work_type: 'task', assignee: 'me', status: 'new', priority: 'low', team: '8' };
+  const existing = { work_type: 'task', assignee: 'me', status: 'new', priority: 'low' };
   const url =
     path +
     '?view=overview&q=Projekt&summary=open&sort=title_desc&other=keep&page=4&' +
@@ -236,7 +223,6 @@ test('each filter option preserves a scoped overview URL and combined parameters
     ['Wykonawca', 'Żaneta Śliwa', 'assignee', '17'],
     ['Status', 'W toku', 'status', 'in_progress'],
     ['Priorytet', 'Wysoki', 'priority', 'high'],
-    ['Zespół', 'Zespół produktu', 'team', '42'],
   ]) {
     const app = harness(data({ ...existing, summary: 'open' }), url);
     button(app.render().menu, `Filtr: ${field}`).props.onClick();
@@ -263,7 +249,6 @@ test('all-options clears only the chosen filter and clear-all retains search, vi
     assignee: '17',
     status: 'closed',
     priority: 'high',
-    team: '42',
     summary: 'open',
   };
   const url =

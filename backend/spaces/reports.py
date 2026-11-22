@@ -21,7 +21,7 @@ from .summary import materialized_summary_items
 
 
 REPORT_PERIODS = (7, 30, 90)
-REPORT_FILTERS = ('q', 'work_type', 'team', 'assignee', 'status', 'priority', 'summary', 'blocked')
+REPORT_FILTERS = ('q', 'work_type', 'assignee', 'status', 'priority', 'summary', 'blocked')
 
 
 def report_scope(request, space, items):
@@ -187,13 +187,13 @@ def report_csv(request, space, items):
 
     def rows():
         yield '\ufeff'
-        yield writer.writerow(['Klucz', 'Tytuł', 'Status', 'Priorytet', 'Wykonawca', 'Zespół', 'Sprint', 'Punkty',
+        yield writer.writerow(['Klucz', 'Tytuł', 'Status', 'Priorytet', 'Wykonawca', 'Sprint', 'Punkty',
                                'Utworzono', 'Termin', 'Ostatnie zakończenie'])
-        for item in items.select_related('task__assignee', 'team', 'sprint').order_by('number', 'pk').iterator(chunk_size=1000):
+        for item in items.select_related('task__assignee', 'sprint').order_by('number', 'pk').iterator(chunk_size=1000):
             task = item.task
             values = [item.key, task.title, statuses.get(item.status, item.status), task.get_priority_display(),
                       (task.assignee.get_full_name() or task.assignee.email or task.assignee.username) if task.assignee_id else '',
-                      item.team.name if item.team_id else '', item.sprint.name if item.sprint_id else '', item.points,
+                      item.sprint.name if item.sprint_id else '', item.points,
                       timezone.localtime(task.created_at).isoformat(), timezone.localtime(task.due_at).isoformat() if task.due_at else '',
                       timezone.localtime(task.completion_date).isoformat() if task.status == 'closed' and task.completion_date else '']
             yield writer.writerow([safe_csv_cell(value) for value in values])

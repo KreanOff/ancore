@@ -9,7 +9,7 @@ w nagłówku nadal służy do wyszukiwania różnych rodzajów obiektów.
 
 „Wyszukaj zadania” w menu Filtrów otwiera widok o tej samej nazwie
 z podstawowym formularzem: Przestrzeń, typ, status, priorytet,
-wykonawca, tekst, tagi, zespół i sortowanie. Wiele wartości jednego pola łączy
+wykonawca, tekst, tagi i sortowanie. Wiele wartości jednego pola łączy
 się alternatywą, a różne pola koniunkcją. Wykonawca ma dodatkowe wartości
 „Przypisane do mnie” i „Nieprzypisane”.
 
@@ -144,8 +144,11 @@ z kolejnością NOT, AND, OR.
 | key | trwały klucz zadania, np. PRO-12 |
 | text (summary) | fragment tytułu, opisu lub klucza (operator ~) |
 | due (duedate), created | dzień ISO, względny czas albo startOfDay() |
-| team, sprint | identyfikator lub nazwa |
+| sprint | identyfikator lub nazwa |
 | category (statuscategory) | new, in_progress, resolved, closed, reopened |
+
+Zapisany filtr z warunkiem `team` zachowuje definicję. Silnik wyświetla
+błąd i zwraca pusty wynik do czasu usunięcia tego warunku z zapytania.
 
 Pola wyboru i klucz obsługują =, !=, IN i NOT IN. Tekst używa ~ oraz !~,
 a daty także <, <=, > i >=. IS EMPTY oraz IS NOT EMPTY są dostępne

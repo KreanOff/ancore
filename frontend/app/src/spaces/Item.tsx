@@ -214,11 +214,6 @@ export function ItemCard(
         <Planning item={item} scrum={scrum} />
         <Counts item={item} />
       </div>
-      {item.team ? (
-        <div className="work-kanban-context work-sprint-card-context">
-          <span>{item.team}</span>
-        </div>
-      ) : null}
       {item.blocked ? (
         <div className="work-card-blocked" aria-label="Blokada zadania">
           <span>

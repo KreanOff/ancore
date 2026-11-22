@@ -45,7 +45,6 @@ export interface Field {
     icon?: string;
     preserve_only?: boolean;
     description?: string;
-    photo_url?: string;
     space_avatar?: AvatarData;
     status_category?: string;
     status_color?: string;
@@ -252,15 +251,13 @@ export function FieldControl({
           root.append(template);
           option.dataset.ancoreOptionPreview = template.id;
         }
-        if (choice.photo_url || choice.space_avatar) {
+        if (choice.space_avatar) {
           const template = document.createElement('template');
           template.id = `${field.id}_visual_${choice.value}`;
           const avatar = document.createElement('span');
           const data = choice.space_avatar;
-          const url = choice.photo_url || data?.photo_url;
-          avatar.className = data
-            ? `profile-avatar space-avatar ${url ? 'has-photo' : `space-avatar-art ${data.preset_class || ''}`}`
-            : 'work-team-avatar';
+          const url = data.photo_url;
+          avatar.className = `profile-avatar space-avatar ${url ? 'has-photo' : `space-avatar-art ${data.preset_class || ''}`}`;
           avatar.setAttribute('aria-hidden', 'true');
           if (url) {
             const image = document.createElement('img');

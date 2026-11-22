@@ -10,10 +10,14 @@ class CleanMigrationGraphTests(SimpleTestCase):
     def test_retired_apps_and_models_are_absent(self):
         self.assertFalse(apps.is_installed('kanban'))
         self.assertFalse(apps.is_installed('legacy.contacts'))
+        self.assertEqual(list(apps.get_app_config('resources').get_models()), [])
+        self.assertFalse({'team', 'teammembership'} & apps.get_app_config('spaces').models.keys())
         self.assertEqual({model.__name__ for model in apps.get_app_config('tasks').get_models()},
                          {'TaskTag', 'TaskTagNote'})
         for model, field in [('Space', 'project'), ('WorkItem', 'legacy_task'), ('SpaceTaskFile', 'legacy_storage')]:
             self.assertNotIn(field, {f.name for f in apps.get_model('spaces', model)._meta.fields})
+        for model, field in [('Space', 'teams'), ('WorkItem', 'team')]:
+            self.assertNotIn(field, {f.name for f in apps.get_model('spaces', model)._meta.get_fields()})
 
     def test_project_migrations_start_from_the_current_schema(self):
         loader = MigrationLoader(None)
@@ -39,6 +43,7 @@ class CleanDatabaseSchemaTests(TestCase):
     def test_fresh_database_has_current_tables_and_no_retired_tables(self):
         tables = set(connection.introspection.table_names())
         self.assertTrue({'spaces_space', 'spaces_spacetask', 'spaces_workitem', 'tasks_tasktag'} <= tables)
-        self.assertFalse({table for table in tables if table.startswith(('contacts_', 'kanban_'))})
+        self.assertFalse({table for table in tables if table.startswith(('contacts_', 'kanban_', 'resources_'))})
         self.assertFalse({'tasks_task', 'tasks_taskproject', 'tasks_tasksection', 'spaces_legacykanbanlink',
+                          'spaces_team', 'spaces_teammembership', 'spaces_team_spaces',
                           'dashboard_objectfollow', 'dashboard_activityinterest', 'dashboard_taskreminder'} & tables)

@@ -33,7 +33,7 @@ class ActiveWorkplaceMiddleware:
             return None
         domain = view_func.__module__.split('.')[0]
         personal = domain == 'dashboard' and view_func.__name__ in {'notifications', 'notification_action'}
-        if request.workplace is None and not personal and (module_for_request(request) or domain in {'spaces', 'planner', 'resources', 'documents', 'dashboard'}):
+        if request.workplace is None and not personal and (module_for_request(request) or domain in {'spaces', 'planner', 'documents', 'dashboard'}):
             if is_api_request(request) or view_func.__name__ == 'global_search':
                 return api_error('Utwórz Workspace lub przyjmij zaproszenie.', 409, redirect=reverse('register_workspace'))
             return redirect('register_workspace')

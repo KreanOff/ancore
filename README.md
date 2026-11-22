@@ -30,12 +30,11 @@ oraz uprawnień użytkownika.
 
 | Obszar | Możliwości |
 | --- | --- |
-| **Workspace i zespoły** | Wspólna przestrzeń pracy, członkowie i role dostępu. |
+| **Workspace** | Wspólna przestrzeń pracy, członkowie i role dostępu. |
 | **Przestrzenie i zadania** | Zadania, podzadania, sprinty, backlog, tablica i rejestrowanie czasu pracy. |
 | **Pulpity i filtry** | Konfigurowalne pulpity, gadżety i zapisane filtry zadań. |
 | **Kalendarz** | Wydarzenia i terminy zadań. |
 | **Dysk i Dokumenty** | Pliki, foldery, dokumenty biurowe w ONLYOFFICE i tablice Excalidraw. |
-| **Zasoby** | Ewidencja sprzętu, licencji i narzędzi, przekazania, zwroty i historia. |
 
 [Poznaj moduły aplikacji →](docs/MODULES.md)
 

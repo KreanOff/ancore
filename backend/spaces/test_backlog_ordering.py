@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils.html import escape
 
-from .models import SpaceTask, Space, SpaceMembership, Team
+from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 
@@ -59,16 +59,6 @@ class BacklogOrderingTests(TestCase):
         self.assert_visible_swapped()
         params = parse_qs(urlsplit(response.json()['url']).query)
         self.assertEqual(params, {'q': ['Visible'], 'view': ['backlog']})
-
-    def test_backlog_reorder_respects_team_filter(self):
-        team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Widoczny zespół')
-        team.spaces.add(self.space)
-        for item in (self.first, self.last):
-            item.team = team
-            item.save(update_fields=['team'])
-        self.assertEqual(self.action(self.first, f'?team={team.pk}').status_code, 200)
-        self.assert_visible_swapped()
-
 
     def test_filtered_out_item_returns_error_without_changing_order(self):
         response = self.action(self.first, '?q=missing')

@@ -17,7 +17,6 @@ from workplaces.services import workspace_owner
 from accounts.avatar import account_avatar
 from documents.models import Document, DocumentLibrary, Folder, WorkspaceDocument
 from planner.models import CalendarEvent
-from resources.models import Resource
 from spaces.avatars import space_avatar
 from workplaces.services import scoped_workplace_app_path, workplaces_for_user
 from workplaces.templatetags.workplace_avatar import workplace_avatar
@@ -51,7 +50,6 @@ def _workspace_app_url(workplace, app_label, suffix=''):
         'calendar': reverse('planner:index'),
         'documents': reverse('documents:library'),
         'office': reverse('office:index'),
-        'resources': reverse('resources:index'),
         'dashboards': reverse('pulpits:index'),
         'spaces': reverse('spaces:index'),
         'space': '/space/',
@@ -120,11 +118,9 @@ def _navigation_search_results(query, workplace):
         ('Moje zadania', 'Zadania przypisane do Ciebie', _search_url(tasks_url, basic='1', sort='created_desc', assignee='me'), 'user-round-check', 'tasks moje zadania'),
         ('Wyszukaj zadania', 'Wyszukiwanie zadań w Filtrach', tasks_url, 'search', 'tasks lista wszystkie zadania'),
         ('Przestrzenie', 'Przestrzenie w bieżącym Workspace', _workspace_app_url(workplace, 'spaces'), 'folders', 'przestrzenie projekty kanban scrum'),
-        ('Zespoły', 'Osoby i ich zespoły', _workspace_app_url(workplace, 'teams'), 'users', 'zespoly osoby teams'),
         ('Kalendarz', 'Wydarzenia i terminy', calendar_url, 'calendar-days', 'wydarzenia terminy'),
         ('Dysk', 'Dyski, foldery i pliki', _workspace_app_url(workplace, 'documents'), 'hard-drive', 'dysk dyski pliki foldery dokumenty biblioteka'),
         ('Dokumenty', 'Tworzenie, edycja i przechowywanie dokumentów', _workspace_app_url(workplace, 'office'), 'file-text', 'dokumenty edytor tekst pisanie'),
-        ('Zasoby', 'Sprzęt, licencje i narzędzia', _workspace_app_url(workplace, 'resources'), 'package', 'ewidencja wyposażenie zasoby'),
         ('Workspace', 'Miejsca pracy i ich ustawienia', reverse('workplaces:workplaces'), 'briefcase', 'miejsca pracy'),
         ('Ustawienia Ancore', 'Konfiguracja aplikacji', reverse('settings'), 'settings', 'preferencje konfiguracja'),
         ('Profil użytkownika', 'Dane konta i status', reverse('profile'), 'circle-user-round', 'konto użytkownik'),
@@ -277,16 +273,6 @@ def global_search(request):
     ))
 
     documents_url = _workspace_app_url(workplace, 'documents')
-    resources_url = _workspace_app_url(workplace, 'resources')
-    groups.append(_global_search_group(
-        'resources', 'Zasoby', 'package',
-        _ranked_search_queryset(Resource.objects.filter(owner=user, workplace=workplace).filter(
-            Q(name__icontains=query) | Q(inventory_number__icontains=query)
-            | Q(serial_number__icontains=query) | Q(location__icontains=query) | Q(notes__icontains=query)
-        ), 'name', query).order_by('_global_search_rank', 'name', 'pk'),
-        lambda item: _global_search_result(item.name, 'Zasób', f'{resources_url}{item.pk}/', item.icon,
-            ' · '.join(part for part in (item.inventory_number, item.get_kind_display(), item.get_status_display()) if part)),
-    ))
     office_url = _workspace_app_url(workplace, 'office')
     groups.extend((
         _global_search_group(

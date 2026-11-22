@@ -15,7 +15,7 @@
             {% for item in sprint.visible_items %}
             {% include 'spaces/row.html' %}
             {% empty %}
-            <div class="tasks-empty-section" role="status">{% if query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Brak zadań pasujących do filtrów.{% elif sprint.finished_count %}Wszystkie zadania w tym sprincie są ukończone.{% elif can_edit %}Przeciągnij zadania lub zaznacz je i wybierz ten sprint.{% else %}Brak zadań do zaplanowania w tym sprincie.{% endif %}</div>
+            <div class="tasks-empty-section" role="status">{% if query or assignee_filter or type_filter or status_filter or priority_filter or summary_filter %}Brak zadań pasujących do filtrów.{% elif sprint.finished_count %}Wszystkie zadania w tym sprincie są ukończone.{% elif can_edit %}Przeciągnij zadania lub zaznacz je i wybierz ten sprint.{% else %}Brak zadań do zaplanowania w tym sprincie.{% endif %}</div>
             {% endfor %}
             {% if can_edit %}<a href="{{ sprint.create_item_url }}" class="work-backlog-create tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie w sprincie</a>{% endif %}
         </div>
@@ -30,7 +30,7 @@
             {% for item in backlog_items %}
             {% include 'spaces/row.html' %}
             {% empty %}
-            <div class="tasks-empty-section" role="status">{% if query or assignee_filter or team_filter or type_filter or status_filter or priority_filter or summary_filter %}Nie znaleziono zadań do zaplanowania. <a href="{{ space_url }}?view=backlog">Wyczyść filtry</a>.{% else %}Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.{% endif %}</div>
+            <div class="tasks-empty-section" role="status">{% if query or assignee_filter or type_filter or status_filter or priority_filter or summary_filter %}Nie znaleziono zadań do zaplanowania. <a href="{{ space_url }}?view=backlog">Wyczyść filtry</a>.{% else %}Backlog jest pusty. Dodaj zadanie, aby zaplanować kolejne prace.{% endif %}</div>
             {% endfor %}
             {% if can_edit %}<a href="{{ backlog_create_url }}" class="work-backlog-create tasks-project-menu-button" data-work-open aria-haspopup="dialog"><i data-icon="plus" aria-hidden="true"></i>Utwórz zadanie w backlogu</a>{% endif %}
         </div>

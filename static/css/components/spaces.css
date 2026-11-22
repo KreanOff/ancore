@@ -1,53 +1,4 @@
 /* Spaces reuse Ancore's directory, tab, form, modal and status components. */
-/* Team profiles extend the existing directory and summary components. */
-.teams-page .tasks-topbar-title { overflow-wrap: anywhere; }
-.teams-page .work-panel { min-width: 0; }
-.teams-page .team-card { padding: 0; gap: 0; overflow: hidden; }
-.team-card-link { display: flex; flex: 1; flex-direction: column; min-width: 0; color: inherit; text-decoration: none; }
-.team-card-link:hover .work-card-title { text-decoration: underline; }
-.team-card-link:focus-visible { outline-offset: -3px; }
-.team-card-banner { width: 100%; aspect-ratio: 3 / 1; overflow: hidden; background: var(--panel-bg) var(--app-wallpaper-image) center / cover no-repeat; }
-.team-card-banner img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.team-card-body { display: flex; flex: 1; flex-direction: column; gap: 10px; min-width: 0; padding: 20px; }
-.team-card-body .work-card-title { margin: 0; }
-.team-profile { display: flex; align-items: flex-start; gap: 16px; }
-.team-profile > div { min-width: 0; flex: 1; }
-.team-profile p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 12px; }
-.team-profile-links { display: flex; gap: 12px 24px; flex-wrap: wrap; font-size: var(--font-size-sm); }
-.team-profile-links a { text-decoration: none; }
-.team-profile-links a:hover { text-decoration: underline; }
-.team-progress-label { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; margin: 20px 0 12px; }
-.team-progress-label strong { font-size: 28px; }
-.team-progress { display: block; width: 100%; height: 8px; margin-bottom: 20px; border: 0; border-radius: var(--radius); overflow: hidden; appearance: none; background: var(--panel-bg); }
-.team-progress::-webkit-progress-bar { background: var(--panel-bg); }
-.team-progress::-webkit-progress-value { background: var(--system-accent); }
-.team-progress::-moz-progress-bar { background: var(--system-accent); }
-.team-workload { display: grid; }
-.team-workload a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); text-decoration: none; }
-.team-workload a:last-child { border-bottom: 0; }
-.team-workload a:hover { background: var(--system-interaction-soft); }
-.team-workload a > span:first-child { min-width: 0; overflow-wrap: anywhere; }
-.team-workload a > span:last-child { flex-shrink: 0; }
-.team-workload small { font-size: inherit; }
-.teams-page .tasks-filterbar.team-toolbar { padding-inline: var(--app-page-padding-x); border-bottom: 0; }
-.team-toolbar-action [data-icon] { width: 18px; height: 18px; }
-.teams-page .tasks-directory-board.team-members-sheet { --tasks-directory-grid: minmax(220px, 1fr) minmax(240px, 1fr) 150px; }
-.teams-page .tasks-directory-board.team-members-sheet .tasks-directory-header,
-.teams-page .tasks-directory-board.team-members-sheet .tasks-directory-list .tasks-directory-row { min-width: 610px; }
-.team-members-sheet [data-column="email"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.teams-page .work-issue-row--unselectable { grid-template-columns: 22px max-content 24px minmax(120px, 1fr) max-content max-content max-content max-content; }
-@media (max-width: 800px) {
-    .teams-page .work-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .teams-page .work-summary-grid { grid-template-columns: minmax(0, 1fr); }
-    .teams-page .work-panel-heading { flex-wrap: wrap; }
-}
-@media (max-width: 480px) {
-    .teams-page .work-content { padding-inline: var(--app-page-padding-x); }
-    .teams-page .work-panel { padding: 14px; }
-    .teams-page .work-metrics { gap: 10px; }
-    .team-profile { gap: 10px; }
-    .team-progress-label { flex-wrap: wrap; }
-}
 .work-task-page .tasks-issue-title-field .form-input { font-size: 20px; }
 .work-task-page .work-task-visibility { text-decoration: none; }
 .work-task-visibility > [data-icon] { flex-shrink: 0; }
@@ -451,8 +402,6 @@
 .work-kanban-card .tasks-kanban-card__title:hover { text-decoration: underline; }
 .work-kanban-card > .tasks-kanban-card__header > .work-item-actions { position: absolute; top: 4px; right: 4px; }
 .work-kanban-card[draggable=true] { cursor: grab; }
-.work-kanban-context { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--text-secondary); font-size: var(--font-size-sm); }
-.work-kanban-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .work-page [data-work-column] { position: relative; cursor: default; }
 .work-board-drop-marker { position: absolute; left: 0.55rem; right: 0.55rem; z-index: 4; height: 0; border-top: calc(2px / var(--app-ui-scale, 1)) dashed var(--system-accent); pointer-events: none; }
 .work-page [data-work-column] .tasks-kanban-column__header > .tasks-rail-count { margin-left: auto; }
@@ -490,7 +439,6 @@
 .work-sprint-card[draggable=true] { cursor: grab; }
 .work-sprint-card > .tasks-row-title { display: block; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
 .work-sprint-card-meta { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.work-sprint-card-context { grid-column: 1 / -1; }
 .work-board-policy { flex: 0 0 auto; display: grid; gap: 6px; padding-inline: 6px; font-size: var(--font-size-sm); color: var(--text-secondary); }
 .work-board-wip, .work-card-age, .work-card-blocked > span:first-child { display: flex; align-items: center; gap: 6px; }
 .work-board-wip > svg, .work-card-age > svg, .work-card-blocked svg, .work-blocked-indicator > svg { flex: 0 0 14px; width: 14px; height: 14px; }
@@ -582,7 +530,6 @@
 .work-member { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 12px 0; border-top: 1px solid var(--border-color); }
 .work-member > :first-child { flex: 1; min-width: 180px; }
 .work-member form { margin: 0; }
-.work-team-spaces { display: flex; flex-wrap: wrap; gap: 10px; }
 .work-report-row { display: grid; grid-template-columns: minmax(120px,1fr) 2fr 40px; align-items: center; gap: 18px; padding: 12px 0; }
 .work-report-row progress { width: 100%; accent-color: var(--system-accent); height: 8px; }
 .work-page .work-pagination {

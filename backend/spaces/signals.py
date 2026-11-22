@@ -14,8 +14,7 @@ def task_metadata(sender, instance, created=False, raw=False, **kwargs):
 
 @receiver(post_delete, sender='workplaces.WorkplaceMembership')
 def removed_workspace_member(sender, instance, **kwargs):
-    from .models import TeamMembership, SpaceMembership, SpaceTaskMembership
-    TeamMembership.objects.filter(team__workplace_id=instance.workplace_id, user_id=instance.user_id).delete()
+    from .models import SpaceMembership, SpaceTaskMembership
     SpaceMembership.objects.filter(space__workplace_id=instance.workplace_id, user_id=instance.user_id).delete()
     SpaceTaskMembership.objects.filter(task__space__workplace_id=instance.workplace_id, user_id=instance.user_id).delete()
 
@@ -41,14 +40,6 @@ def removed_task_member(sender, instance, **kwargs):
     if SpaceTask.objects.filter(pk=instance.task_id, visibility='private').exclude(private_owner_id=instance.user_id).exists():
         descendants = tree_ids(SpaceTask.objects.filter(parent_id=instance.task_id))
         SpaceTaskMembership.objects.filter(task_id__in=descendants, user_id=instance.user_id).delete()
-
-
-@receiver(post_delete, sender='spaces.Team')
-def deleted_team_photo(sender, instance, using, **kwargs):
-    if instance.photo:
-        from django.db import transaction
-        storage, name = instance.photo.storage, instance.photo.name
-        transaction.on_commit(lambda: storage.delete(name), using=using, robust=True)
 
 
 @receiver(post_delete, sender='spaces.Space')

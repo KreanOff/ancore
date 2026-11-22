@@ -1,5 +1,96 @@
 # Uruchamianie, weryfikacja i utrzymanie projektu
 
+## Wycofanie Zasobów i Zespołów
+
+Z menu, wyszukiwania i konfiguracji Workspace usunięto oba moduły. Stare
+adresy, również w obrębie Workspace, zwracają 404. Dostęp do członkostw
+Workspace, Przestrzeni i zadań nadal obsługują ich własne endpointy.
+[Migracje wycofania](DATABASE.md#wycofanie-zasobów-i-zespołów).
+
+Na tymczasowym PostgreSQL sprawdzono zarówno pusty schemat, jak i aktualizację
+bazy z przykładowymi Zasobami, Zespołami, przypisaniami i uprawnieniami.
+Przeszły 253 ukierunkowane testy Django, 515 testów frontendu i kompilacja.
+W Chrome z Playwright sprawdzono nawigację, udostępnianie i odpowiedzi 404
+przy szerokościach 1440 i 390 px, również podczas pierwszego renderowania
+bez JavaScriptu.
+
+Pełny przebieg Django objął 1660 testów i zgłosił 36 nieudanych asercji
+oraz 3 błędy. Wybrane problemy, w tym obsługę przejść statusu i starszą
+migrację zaproszeń, odtworzono na kodzie sprzed zmiany. Test podsumowania,
+który przekroczył limit czasu, przeszedł w przebiegu ukierunkowanym.
+
+Poniższe wpisy z wcześniejszych wdrożeń dokumentują stan w podanej dacie.
+Polecenia z tych wpisów dotyczą ówczesnego kodu.
+
+## Usunięcie paska szybkich filtrów Zasobów (19.11.2026)
+
+Na prośbę użytkownika usunięto poziomy pasek „Wszystkie / Moje zasoby /
+Dostępne / W użyciu / W serwisie / Ważność / Zwroty” wraz z licznikami.
+React i pierwszy render Django mają teraz nagłówek bez wiersza zakładek,
+a pod nim dotychczasowe kontrolki filtrowania, sortowania i wyszukiwania.
+Usunięto nieużywaną obsługę szybkich widoków i generowanie ich adresów;
+kontrakt API `summary`, filtracja danych oraz panel kategorii pozostają.
+
+Przeszły TypeScript/build, **24 testy frontendu** (doładowywanie i panel
+kategorii), **20 testów `resources.test_operations`** na jednorazowej bazie
+PostgreSQL, indeks kodu, lokalne linki dokumentacji oraz `git diff --check`.
+Chrome/Playwright: **9/9 prób** przy 1440 i 390 px, również bez JavaScriptu.
+Potwierdzono brak paska i pustego odstępu, działanie filtrowania/wyszukiwania,
+stan pusty i ponowne wejście z Tagów; brak błędów konsoli i przepełnienia strony.
+Nie sprawdzano innych przeglądarek; Browser plugin był niedostępny.
+
+## Codzienna obsługa Zasobów (19.11.2026)
+
+Rozwinięto istniejącą ewidencję bez zmiany języka wizualnego i bez naruszania
+wcześniejszych zmian kategorii. Katalog filtruje po aktywnej osobie i dokładnej
+lokalizacji, wyszukuje pełne imię/nazwisko oraz e-mail. Szybkie widoki
+„Moje zasoby” i „Zwrot do 7 dni” oraz pozostałe liczniki zachowują kontekst
+kategorii, lokalizacji i wyszukiwania. Zmiana zakresu resetuje okno wyników;
+jawny filtr anuluje oczekujący debounce wyszukiwania, również przy wolnym API.
+
+Dodano atomowe operacje zmiany kategorii, przedłużenia zwrotu i odnowienia
+ważności z rewizjami, walidacją każdego zasobu i osobnymi zdarzeniami historii.
+Operacje są dostępne na karcie i zbiorczo w „Więcej działań”. Zapisy ponownie
+sprawdzają autora i nowe przypisanie po blokadzie Workspace, wspólnej ze
+zmianami członkostwa. Migracja `resources.0008_resource_activity_operations`
+aktualizuje jedynie wybory rodzaju historii; nie przepisuje danych.
+
+Edytor korzysta z `shared/Modal`; szkic oparty na faktycznym FormData reaguje
+na natywne `input`/`change` także przy samym wyborze custom selecta. Nowe okna
+zachowują fokus, błędy powiązane z polami i możliwość ponowienia.
+Migracje tej funkcji pozostały w historii aplikacji `resources`.
+
+Weryfikacja końcowa:
+
+- **108/108 testów Zasobów** przez `.venv/bin/python scripts/run_tests.py resources`
+  na jednorazowej bazie PostgreSQL, w tym migracje, kategorie, współbieżność,
+  nowe operacje, rollback, rewizje, granice dat, ACL, CSV i zwykłe/scoped adresy.
+- **540/540 testów frontendu**, TypeScript i `pnpm build`; formatowanie
+  zmienionych plików React, kontrola Django, brak brakujących migracji,
+  indeks kodu, 279 lokalnych linków dokumentacji i `git diff --check`.
+- Chrome przez lokalny Playwright na osobnej bazie z fikcyjnymi danymi,
+  `127.0.0.1:8079`, szerokości **1440, 1024 i 390 px**. Browser plugin był
+  niedostępny. Sprawdzono katalog, referencyjne Tagi, doładowanie z zaznaczeniem,
+  kategorię zbiorczą i jej liczniki, historię, przedłużenie zwrotu, odnowienie,
+  pełne nazwisko, filtry, gościa, stan pusty, błąd HTTP i ponowienie, powrót
+  przez nawigację aplikacji, tworzenie/edycję i walidację numeru ewidencyjnego.
+  Końcowa regresja sprawdziła API opóźnione o 800 ms, ochronę szkicu po samej
+  zmianie selecta, Escape i powrót fokusu oraz pierwszy render bez JS
+  przy 1440/390 px. Brak wyjątków JS i przepełnienia strony; HTTP 400/500
+  wystąpiły wyłącznie w celowych próbach walidacji i błędu.
+
+Dodatkowe **83/85 testów integracji** (`core.test_frontend`,
+`dashboard.test_search_regressions`, `workplaces.test_team`, `planner.test_sidebar`)
+przeszły. Dwa znane niepowodzenia w `workplaces.test_team.TeamAccessTests`:
+`test_comments_and_status_keep_actor_completion_and_history` i
+`test_scoped_status_records_actor_and_cannot_target_another_workspace`
+oczekują HTTP 200 dla niedozwolonego `new → closed`, otrzymując 400.
+Ich wcześniejsze odtworzenie na czystym HEAD opisano w sekcji
+[Jedno konto w sesji](#jedno-konto-w-sesji-przeglądarki-04112026).
+Nie zmieniano procesu zadań. Nie uruchamiano całego zestawu Django,
+Safari/Firefox ani wdrożenia produkcyjnego; lokalne dane użytkownika pozostają
+bez zmian. Baza QA i zrzuty są poza repozytorium; serwer QA został zatrzymany.
+
 ## Uprawnienia źródeł po aktualizacji (14.11.2026)
 
 Instalator ogranicza `umask 022` do zastosowania zmian Git; pozostałe kroki
@@ -168,7 +259,7 @@ prawej. Dotyczy to katalogów, widoków Przestrzeni, Kalendarza, zadania,
 powiadomień i tabel w oknach. Akcje zaznaczenia Zasobów mieszczą się w tym
 samym pasku. Usunięto osobną geometrię kontrolek Przestrzeni i podwójne
 odstępy w osadzonych tabelach. Wariant osadzony zeruje tylko boczny padding.
-[Wzorzec i kontrakt](UI.md#wspólny-dolny-pasek-narzędzi--wzorzec-zasobów).
+[Wzorzec i kontrakt](UI.md#wspólny-dolny-pasek-narzędzi).
 
 Zachowano formularze, nazwy pól, zastosowanie filtrów, zaznaczenia,
 uprawnienia i istniejące potwierdzenia. Menu „Filtruj” zachowuje pola
@@ -450,9 +541,7 @@ z danymi użytkownika ani wdrożenia.
 ## System Zespołów (04.11.2026)
 
 Zespoły mają katalog z wyszukiwaniem i sortowaniem oraz profil z podsumowaniem,
-zadaniami, członkami i przestrzeniami. [Funkcje i parametry](SPACES.md#system-zespołów-04112026),
-[uprawnienia](TEAMWORK.md), [kontrakt React](FRONTEND.md#katalog-i-karta-zespołu)
-i [warianty UI](UI.md#katalog-i-profile-zespołów).
+zadaniami, członkami i przestrzeniami.
 Nie zmieniono modeli ani migracji.
 
 Wykonane sprawdzenia:
@@ -487,8 +576,7 @@ CSV. Nowe akcje korzystają z sesji, CSRF i dotychczasowej polityki Workspace;
 gość ma tylko odczyt. Operacje blokują rekordy, sprawdzają cały zestaw i jego
 wersje przed zapisem. Historia oraz zmiana danych należą do jednej transakcji.
 Formularze React/HTML przekazują rewizję; historyczni klienci edycji bez niej
-zachowują zgodność. Ograniczenia i kontrakt: [Zasoby](MODULES.md#12-zasoby--resources),
-[API React](FRONTEND.md) i [migracje](DATABASE.md).
+zachowują zgodność.
 
 Migracje `resources.0002_resourceactivity_resource_return_due_on_and_more`
 i `0003_alter_resourceactivity_actor_name` dodają historię, opcjonalny termin
@@ -1202,7 +1290,7 @@ Formularz etapu generuje klucz z nazwy; istniejący klucz i połączenia
 zostają zachowane przy zmianie nazwy. Automatyczne rozmieszczenie uwzględnia
 własne gałęzie i cykle. Zapis nadal korzysta z pełnego formsetu oraz rewizji.
 [Zachowanie](SPACES.md#tablica-procesu-i-etapowe-przejścia),
-[UI](UI.md#przestrzenie-i-zespoły), [frontend](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
+[UI](UI.md#przestrzenie), [frontend](FRONTEND.md#proces-kanban-i-blokady-przestrzeni).
 
 Weryfikacja: 370 testów frontendu oraz 44 testy Django
 (`spaces.test_kanban_configuration`, `spaces.test_configuration_writes`,
@@ -1304,7 +1392,7 @@ i limity WIP. Wspólny backend egzekwuje pojemność kolumn, kontroluje
 nieaktualne operacje oraz zapisuje blokady i zaobserwowane czasy przepływu.
 [Zachowanie](SPACES.md#kanban-proces-pracy-wip-i-blokady),
 [kontrakt API](FRONTEND.md#proces-kanban-i-blokady-przestrzeni)
-i [elementy UI](UI.md#przestrzenie-i-zespoły).
+i [elementy UI](UI.md#przestrzenie).
 
 Końcowy przebieg obejmował **472 testy Django**: `spaces`,
 `core.test_space_settings_frontend` oraz `planner.test_task_calendar`,
@@ -3327,7 +3415,7 @@ i dolot do nowej sekcji. `DetailPage` pokazuje przeniesienie od razu i cofa je
 po odrzuconym zapisie. Akcje `position`/`plan`, autoryzacja i historia nadal
 korzystają z istniejącego backendu. Początek gestu na kontrolce jest wykluczony
 na podstawie `pointerdown`, ponieważ natywne `dragstart` wskazuje cały artykuł.
-Nie zmieniono modeli, migracji ani zależności. [Zachowanie i styl](UI.md#przestrzenie-i-zespoły).
+Nie zmieniono modeli, migracji ani zależności. [Zachowanie i styl](UI.md#przestrzenie).
 
 Przeszło **55 testów** `spaces.test_board_order`, `spaces.test_backlog_drag`
 i `core.test_frontend` na osobnej, usuniętej po przebiegu bazie PostgreSQL.

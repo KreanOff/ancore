@@ -11,7 +11,7 @@ from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
 from . import test_independent_tasks as fixtures
 from .defaults import TEMPLATES
-from .models import SpaceTask, SpaceTaskMembership, Sprint, Team
+from .models import SpaceTask, SpaceTaskMembership, Sprint
 from .testing import make_space
 
 
@@ -149,14 +149,13 @@ class SubtaskFieldsTests(TestCase):
         self.child.visibility, self.child.private_owner = 'private', self.owner
         self.child.save()
         membership = SpaceTaskMembership.objects.create(task=self.child, user=self.member, role='observer')
-        team = Team.objects.create(workplace=self.workspace, owner=self.owner, created_by=self.owner, name='Odłączony zespół')
         sprint = Sprint.objects.create(space=self.space, name='Zamknięty sprint', state='closed',
                                        start_on='2026-09-01', end_on='2026-09-14')
         epic = SpaceTask.objects.create(space=self.space, title='Epik', created_by=self.owner).work_item
         epic.work_type = 'epic'
         epic.save()
         item = self.child.work_item
-        item.team, item.sprint, item.epic, item.in_backlog = team, sprint, epic, True
+        item.sprint, item.epic, item.in_backlog = sprint, epic, True
         item.custom_values = {'existing': 'Zachowana wartość', 'legacy': 'Dawna wartość'}
         item.save()
         original_key = item.key
@@ -171,7 +170,7 @@ class SubtaskFieldsTests(TestCase):
                     # Even manually supplied hidden-away properties are not part of this editor.
                     values = self.values(title=f'Edycja {scoped} {use_api}')
                     response = self.client.post(self.api(target, scoped) if use_api else target, {
-                        **values, 'tags': [], 'team': '', 'sprint': '', 'epic': '', 'in_backlog': '',
+                        **values, 'tags': [], 'sprint': '', 'epic': '', 'in_backlog': '',
                         'task_type': 'general', 'reminder_at': '', 'visibility': 'public', 'custom_existing': 'Podmiana',
                     })
                     self.assertEqual(response.status_code, 200 if use_api else 302)
@@ -181,8 +180,8 @@ class SubtaskFieldsTests(TestCase):
                     self.assertEqual((self.child.visibility, self.child.private_owner_id), ('private', self.owner.pk))
                     self.assertTrue(self.child.memberships.filter(pk=membership.pk).exists())
                     item = self.child.work_item
-                    self.assertEqual((item.team_id, item.sprint_id, item.epic_id, item.in_backlog),
-                                     (team.pk, sprint.pk, epic.pk, True))
+                    self.assertEqual((item.sprint_id, item.epic_id, item.in_backlog),
+                                     (sprint.pk, epic.pk, True))
                     self.assertEqual(item.custom_values, {'existing': 'Zachowana wartość', 'legacy': 'Dawna wartość'})
                     self.assertEqual((item.key, self.child.parent_id), (original_key, self.task.pk))
 

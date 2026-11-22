@@ -12,7 +12,7 @@ from tasks.models import TaskTag
 from .models import SpaceTask, Space, SpaceMembership
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import ACTIVE_WORKPLACE_SESSION_KEY, scoped_workplace_app_path
-from .models import Space, Team
+from .models import Space
 
 
 class SpaceUrlTests(TestCase):
@@ -68,13 +68,10 @@ class SpaceUrlTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['space_url'], self.url())
 
-    def test_catalog_search_team_and_personal_links_use_names(self):
+    def test_catalog_search_and_personal_links_use_names(self):
         self.project.favorited_by.add(self.owner)
-        team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Zespół')
-        team.spaces.add(self.space)
         for path in [scoped_workplace_app_path(self.workspace, 'spaces'),
                      scoped_workplace_app_path(self.workspace, 'spaces', 'manage/'),
-                     scoped_workplace_app_path(self.workspace, 'teams', f'{team.pk}/'),
                      scoped_workplace_app_path(self.workspace, 'for-you', '?tab=starred')]:
             response = self.client.get(path, follow=True)
             self.assertEqual(response.status_code, 200)

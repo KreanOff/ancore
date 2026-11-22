@@ -308,23 +308,23 @@ test('page actions remember the opener before the loading state disables and blu
     fetch: () => response,
   });
   const props = {
-    initial: { api_url: '/api/v1/page/', url: '/teams/' },
+    initial: { api_url: '/api/v1/page/', url: '/spaces/' },
     csrfToken: 'csrf',
   };
   const render = () => {
     cursor = 0;
     return module.exports.usePageActions(props);
   };
-  const opening = render().open('/teams/create/');
+  const opening = render().open('/spaces/create/');
   assert.equal(document.activeElement, document.body);
   respond({
     ok: true,
     headers: { get: () => 'application/json' },
-    json: async () => ({ type: 'form', data: { title: 'Utwórz zespół' } }),
+    json: async () => ({ type: 'form', data: { title: 'Utwórz Przestrzeń' } }),
   });
   await opening;
   const actions = render();
-  assert.equal(actions.modal.title, 'Utwórz zespół');
+  assert.equal(actions.modal.title, 'Utwórz Przestrzeń');
   assert.equal(actions.returnFocus, trigger);
   assert.equal(actions.busy, false);
 });

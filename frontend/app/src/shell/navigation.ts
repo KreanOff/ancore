@@ -51,7 +51,7 @@ export function canNavigate(href: string) {
   const url = urlFor(href);
   if (!url || url.origin !== location.origin) return false;
   const path = url.pathname.replace(
-    /^\/workplaces\/[^/]+\/(?=(spaces|space|teams|filters|dashboards|resources|for-you|calendar|documents|office)(\/|$))/,
+    /^\/workplaces\/[^/]+\/(?=(spaces|space|filters|dashboards|for-you|calendar|documents|office)(\/|$))/,
     '/',
   );
   return [
@@ -60,10 +60,8 @@ export function canNavigate(href: string) {
     /^\/accounts\/profile\/?$/,
     /^\/workplaces\/?$/,
     /^\/(calendar|for-you|documents|office)\/?$/,
-    /^\/resources\/(?:create\/|\d+\/(?:edit\/)?)?$/,
     /^\/spaces\/(?:create\/|manage\/(?:create\/|\d+\/edit\/)?)?$/,
     /^\/space\/[-a-zA-Z0-9_]+\/(?:configuration\/|tasks\/[^/]+\/)?$/,
-    /^\/teams\/(?:\d+\/)?$/,
     /^\/filters\/(?:search\/|new\/|\d+\/(?:edit\/)?|manage\/(?:new\/|\d+\/edit\/)?)?$/,
     /^\/dashboards\/(?:[-a-zA-Z0-9_]+\/)?(?:create\/|edit\/|access\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
     /^\/dashboards\/manage\/(?:create\/|[-a-zA-Z0-9_]+\/(?:(?:edit|access)\/|gadgets\/(?:add\/|\d+\/edit\/)?))?$/,

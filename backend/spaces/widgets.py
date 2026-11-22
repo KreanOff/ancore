@@ -1,7 +1,6 @@
 from django import forms
 
 from core.widgets import VisualSelect
-from workplaces.services import scoped_workplace_app_path
 from .defaults import configuration_name_color, issue_type_icon
 
 
@@ -37,13 +36,3 @@ class SpaceSelect(VisualSelect):
 
 class SpaceSelectMultiple(SpaceSelect, forms.SelectMultiple):
     """Use the same space avatars for multiple and single selection."""
-
-
-class TeamSelect(VisualSelect):
-    def option_visual(self, value):
-        team = getattr(value, 'instance', None)
-        if team is None:
-            return {'icon': 'users'}
-        return {'template': 'spaces/team_avatar.html', 'context': {
-            'photo_url': scoped_workplace_app_path(team.workplace, 'teams', f'{team.pk}/photo/') if team.photo else '',
-        }}

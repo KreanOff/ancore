@@ -5,8 +5,8 @@
 Ancore ma jeden interfejs. Nowy ekran składaj z aktualnych komponentów
 i poniższych układów. Nazwa modułu nie uzasadnia osobnego nagłówka, przycisku,
 formularza ani okna. Wzorcami są nagłówek **otwartej Przestrzeni** (nazwa, akcje
-i zakładki), dolny pasek narzędzi **Zasobów**, tabela **Tagów** oraz wspólne
-`Modal` i `FormDialog`. Opisy
+i zakładki), dolny pasek narzędzi **listy zadań Przestrzeni**, tabela
+**Tagów** oraz wspólne `Modal` i `FormDialog`. Opisy
 wycofanych Projektów, Grup i Kanbana dalej w tym pliku stanowią wyłącznie
 kontekst historyczny. Nie kopiuj ich dawnych ekranów.
 
@@ -64,12 +64,12 @@ Schemat formularza:
 | Formularz ze schematu | [`forms/FormDialog.tsx`](../frontend/app/src/forms/FormDialog.tsx): `FormLayout`, `FormFields`, `FormDialog`; rozmiar z `schema.compact` |
 | Wygląd | [`base/variables.css`](../static/css/base/variables.css), [`components/page-header.css`](../static/css/components/page-header.css), [`components/app-toolbar.css`](../static/css/components/app-toolbar.css), [`components/tasks.css`](../static/css/components/tasks.css), [`components/modal-system.css`](../static/css/components/modal-system.css); uwzględnij kolejność nadpisań opisaną w rozdziale 3 |
 
-`PageHeader` jest wspólny dla katalogów i szczegółów Przestrzeni, Zespołów,
-Filtrów, Pulpitów, Zasobów, Dysków/Dokumentów, Workspace, zadania, Kalendarza,
+`PageHeader` jest wspólny dla katalogów i szczegółów Przestrzeni,
+Filtrów, Pulpitów, Dysków/Dokumentów, Workspace, zadania, Kalendarza,
 Dla ciebie, profilu i ustawień. `SpaceHeader` układa w nim awatar Przestrzeni.
 Górny wiersz zawiera tytuł i działania. **Ikona lub zdjęcie przy tytule
 występuje wyłącznie w otwartej Przestrzeni**; katalog Przestrzeni, pozostałe
-katalogi, Pulpity, Zespoły i ich profile oraz edytory mają sam tytuł.
+katalogi, Pulpity oraz edytory mają sam tytuł.
 Gwiazdkę ulubionych zapisanego filtra umieszczaj w działaniach po prawej.
 Ikony przycisków powrotu, działań i zakładek pozostają. Drugi wiersz,
 jeśli występuje, zawiera dotychczasowe widoki strony. Nie dodawaj fikcyjnych
@@ -96,8 +96,6 @@ kontenera 1050px — 244px. Przyciski dzielą tę szerokość równo.
 Pasek i treść mają ten sam boczny padding `--app-page-padding-x`.
 Do szerokości kontenera 720px grupa zajmuje cały kolejny wiersz paska.
 Jej szerokość jest niezależna od prawego panelu.
-W Zasobach szybkie filtry z licznikami
-korzystają z tego samego paska zakładek i zachowują dotychczasowe filtrowanie.
 Pasek Kalendarza nie zawiera wyboru „Wszystkie pozycje” ani filtra „Kolory”.
 Pokazuje wszystkie dostępne wydarzenia i zadania w wybranym okresie;
 pozostają wyszukiwarka oraz licznik pozycji.
@@ -127,7 +125,7 @@ Wspólne reguły w
 Pozycje w komórce miesiąca przewijają się, gdy brakuje wysokości, dzięki
 czemu nie zasłaniają następnego tygodnia i zachowują dostęp do „+N więcej”.
 
-Specjalistyczne treści, np. kalendarz, tablica, karty zespołów, edytor pliku
+Specjalistyczne treści, np. kalendarz, tablica, edytor pliku
 i kadrowanie obrazu, zachowują swój układ. Kolejne wyniki odsłania
 wspólny pasek „Pokaż więcej” pod listą. Wspólne komponenty określają wygląd
 kontrolek, stanów błędu i działania okna. Każdą zmianę porównaj z ekranem
@@ -276,7 +274,7 @@ Serwerowe okna z [`core/list_window.py`](../backend/core/list_window.py)
 operują wyłącznie na wcześniej ograniczonych uprawnieniami i posortowanych
 danych. Kolejne żądanie zwraca pełny prefiks 20 → 40 → 60; React podmienia
 okno w stanie, zachowując tożsamość wierszy. Parametr `limit` utrwala wielkość
-okna w URL; dziennik pracy ma `work_log_limit`, historia Zasobu `history_limit`.
+okna w URL. Dziennik pracy używa `work_log_limit`.
 Stare adresy `page=2` oznaczają teraz pierwsze 40 wyników.
 [`core/includes/load_more.html`](../backend/core/templates/core/includes/load_more.html)
 zapewnia ten sam wygląd i kumulatywny wynik również bez JavaScriptu.
@@ -288,7 +286,7 @@ oraz wspólny pasek „Pokaż więcej”.
 Wszystkie tabele danych aplikacji, również w oknach, używają `app-data-table`
 i tokenów `--data-table-*` z `base/variables.css`. Wzorzec obejmuje katalogi
 Przestrzeni, Filtrów, Pulpitów i Workspace, tabelę „Dla ciebie”, członków
-Zespołów, udostępnienia, konfigurację Przestrzeni, Zasoby, Dyski/Dokumenty,
+Workspace, udostępnienia, konfigurację Przestrzeni, Dyski/Dokumenty,
 dziennik pracy, raporty i listę plików archiwum. Zawartość importowanych
 arkuszy, grupowane listy zadań bez nagłówków kolumn oraz specjalistyczne
 osie czasu, kalendarze, tablice i karty zachowują własną strukturę.
@@ -325,34 +323,6 @@ Wiersze plików pokazują lokalizację obok nazwy.
 Na telefonie przewijaj tabelę w jej kontenerze, bez rozszerzania całej strony.
 Pierwszy render Django stosuje te same oznaczenia.
 
-## Katalog i profile Zespołów
-
-Zespoły zachowują wspólny nagłówek, zakładki `work-tabs`, wyszukiwarkę,
-karty `work-space-card`, formularze i pasek „Pokaż więcej”. Karta katalogu
-ma kolejno baner, nazwę i opis; cała powierzchnia prowadzi do profilu zespołu.
-Baner `.team-card-banner` ma proporcje 3:1 i kadruje istniejące zdjęcie przez
-`object-fit: cover`. Bez zdjęcia ma jednolite neutralne tło `--panel-bg`.
-Nazwa i opis znajdują się w `.team-card-body`; brak opisu ma tekst zastępczy.
-Katalog nie pokazuje roli ani liczników na karcie. React i pierwszy render
-Django używają tych samych klas. Profil rozdziela
-„Podsumowanie”, „Zadania”, „Członkowie” i „Przestrzenie”. Podsumowanie rozszerza
-istniejące `work-panel`, `work-summary-metrics` i `work-summary-grid`;
-procent zamkniętych zadań ma natywny, opisany pasek `progress` w kolorze akcentu.
-
-Wariant `.teams-page` dodaje wyłącznie lokalny układ profilu, banery kart,
-listę wykonawców i kontrolki filtrów. Do 800px metryki mają dwie kolumny,
-a dolne panele jedną. Lista członków używa wspólnych komórek bez menu wiersza,
-z lokalnym wariantem `.team-members-sheet` bez zaznaczania zbiorczego i daty
-członkostwa, której model nie przechowuje. Na wąskim ekranie tabela przewija
-się poziomo. Lista zadań zachowuje układ bez pól zaznaczenia.
-
-Dodawanie osoby korzysta ze wspólnego kompaktowego `FormDialog`.
-Menu zmiany roli, usuwania osoby i zespołu z trzema paskami zostały usunięte
-z aktywnego interfejsu. Nie dodano zastępczych kontrolek. Backend nadal
-weryfikuje role oraz ochronę ostatniego administratora. Puste wyniki mają
-istniejące ilustracje i tekst zależny od kontekstu.
-[Funkcje Zespołów](SPACES.md#system-zespołów-04112026).
-
 ## Wspólna powłoka React
 
 `frontend/app/src/shell/Shell.tsx` renderuje nagłówek, menu Workspace,
@@ -369,7 +339,7 @@ Powłoka aplikacji używa biało-czerwono-czarnej tapety
 z wyrównaniem do lewej i środka. Jasna górna część tapety zapewnia czytelne
 tło kontrolek górnego paska. Ogólny token `--app-wallpaper-image`
 pozostaje domyślnie `none`. Ekrany logowania, rejestracji, tworzenia i wyboru Workspace lokalnie ustawiają go na
-`var(--app-shell-wallpaper-image)`; karty zespołów zachowują jednolite tło.
+`var(--app-shell-wallpaper-image)`.
 Zachowane wspólne tokeny
 `--glass-surface-bg: var(--card-bg)` i `--glass-surface-filter: none`
 zapewniają białe powierzchnie paneli bez rozmycia. Tło strony używa osobnego
@@ -404,7 +374,7 @@ pozostają wspólne z mechanizmem zmiany szerokości.
 
 Prawy panel ma bazową szerokość `--app-right-sidebar-width` (272px). Na stronie
 zadania pokazuje jego właściwości i używa `--app-task-sidebar-width` (370px).
-W Kalendarzu i na pozostałych stronach aplikacji poza Dyskiem zawiera ten sam
+W Kalendarzu i pozostałych widokach korzystających z domyślnej zawartości panelu jest ten sam
 miesięczny kalendarz, bez osobnego nagłówka i przycisku otwarcia.
 Kalendarz korzysta z poniedziałkowego początku tygodnia, wyróżnia dzisiejszy
 dzień, pozwala przełączać miesiące i wrócić przyciskiem „Dzisiaj”. Kliknięcie
@@ -719,8 +689,7 @@ jako zwykłe linki.
 
 Wariant `work-pagination` rozszerza wspólne klasy `tasks-project-pagination`
 w `spaces.css`. Na wąskim ekranie zakres i przyciski mogą przejść do dwóch
-wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami,
-Zespoły oraz katalog/wyniki Filtrów.
+wierszy. Korzystają z niego katalog/zarządzanie Przestrzeniami oraz katalog/wyniki Filtrów.
 Podsumowanie, oś czasu, raporty, ustawienia i szczegóły zadania nie pokazują tego paska.
 Tagi przestrzeni korzystają z paska „Pokaż więcej” pod tabelą.
 
@@ -775,7 +744,7 @@ resetują zakres. Backlog nie pokazuje dolnego paska numerów stron ani tekstu
 
 Wiersze i karty zadań zachowują kolejność: priorytet → klucz (np. `HELP-24`)
 → stan → tytuł. Dotyczy to Listy zadań, Backlogu, Tablicy, Osi czasu,
-„Dla ciebie”, wyników Filtrów, zadań Zespołu i Podzadań. Klucz ma osobny
+„Dla ciebie”, wyników Filtrów i Podzadań. Klucz ma osobny
 tor siatki o szerokości treści i pozostaje klikalny tak jak tytuł; w Podzadaniach
 otwiera dotychczasowy modal edycji, z zachowaniem uprawnień.
 React i wspólne szablony Django `spaces/row.html` oraz `spaces/card.html`
@@ -787,7 +756,7 @@ Podsumowanie, Lista zadań, Tablica, Backlog, Oś czasu, Raporty i Tagi
 korzystają z `spaces/ViewToolbar.tsx`, adaptera wspólnego `Toolbar`.
 Pierwszy render Django używa tych samych klas `app-toolbar` i slotów.
 Wymiary oraz odstępy określają `--app-toolbar-*` i `components/app-toolbar.css`,
-zgodnie z [dolnym paskiem Zasobów](#wspólny-dolny-pasek-narzędzi--wzorzec-zasobów).
+zgodnie z [wspólnym dolnym paskiem narzędzi](#wspólny-dolny-pasek-narzędzi).
 
 Po lewej znajdują się „Filtruj” i „Sortuj” (jeśli dany widok je obsługuje),
 dodatkowe kontrolki widoku oraz wyszukiwanie; działania znajdują się po prawej.
@@ -1034,7 +1003,7 @@ szablonów i wspólnych komponentów są referencją historyczną; nie oznaczaj�
 aktywnych ekranów ani endpointów. Obecne tablice Przestrzeni używają `spaces.SpaceTask`.
 [Szczegóły wycofania](MODULES.md#4-wycofany-moduł-tablice-kanban).
 
-## Przestrzenie i zespoły
+## Przestrzenie
 
 Nazwy typów i etapów w tabelach ustawień oraz nazwy etapów na mapie używają
 `tasks-project-value-badge--tag-visual`: pastelowego tła o 16% udziału
@@ -1342,9 +1311,9 @@ wewnętrznego paddingu. Pasek nie ma osobnej ramki ani separatora;
 ramki przycisków i separator pod nagłówkiem Przestrzeni pozostają zachowane.
 Ten sam układ obejmuje Tablicę i Oś czasu oraz pierwszy render Django.
 `spaces/ItemToolbar.tsx` używa wspólnego `Dropdown` oraz klas
-`tasks-project-query-*`, tak jak Dysk i Zasoby. Sortowanie ma wybór pola,
+`tasks-project-query-*`, tak jak Dysk. Sortowanie ma wybór pola,
 kierunku i powrót do domyślnej kolejności. Filtrowanie zawiera typ zgłoszenia,
-wykonawcę, status, priorytet i zespół, wyszukiwanie opcji, licznik aktywnych
+wykonawcę, status, priorytet i blokadę, wyszukiwanie opcji, licznik aktywnych
 warunków oraz czyszczenie. Wybór od razu odświeża wyniki, zachowuje pozostałe
 warunki i usuwa numer strony. Escape zamyka panel i przywraca fokus.
 Pierwszy render Django używa dwóch `details` i tych samych klas;
@@ -1485,11 +1454,10 @@ Cały pusty stan jest wyśrodkowany poziomo i pionowo w dostępnej treści pod
 nagłówkiem, zakładkami i filtrami. Na wąskim ekranie obraz proporcjonalnie
 maleje, a zbyt niska treść pozostaje przewijana bez ucinania opisu i akcji.
 Przyciski zachowują wspólny styl bez podkreślenia tekstu.
-Katalog zespołów używa kart.
 Przestrzeń ma kontekstowe zakładki
 Podsumowanie, Backlog (Kanban/Scrum), Lista, Tablica/Aktywny sprint, Oś czasu,
 Raporty, Tagi, Ustawienia. Główna nawigacja pokazuje katalog, ulubione/ostatnie
-przestrzenie, Filtry z wyszukiwaniem zadań i Zespoły.
+przestrzenie i Filtry z wyszukiwaniem zadań.
 
 Wiersze Backlogu i jego sprintów nie mają przycisku menu ani dodatkowej
 kolumny działań. Pozostały linki do zadania oraz przeciąganie zgodne
@@ -1501,7 +1469,7 @@ oraz, w Scrum, małą etykietę punktów. Zero wyświetla się jako `0`, a brak
 estymacji jako `—`. Wariant `work-issue-row--planning` rezerwuje kolumny
 punktów i awatara na liście/backlogu. `show_work_metadata` włącza metadane
 dla listy otwartej przestrzeni;
-pozostali odbiorcy `row.html` (Filtry, Dla ciebie, Zespoły i podzadania)
+pozostali odbiorcy `row.html` (Filtry, Dla ciebie i podzadania)
 zachowują dotychczasowy wariant.
 Nie ma osobnego nagłówka „Planowanie sprintów” ani stałego paska zaznaczania.
 Grupa `app-toolbar__selection` w działaniach istniejącego paska pojawia się
@@ -1568,7 +1536,7 @@ typ, wykonawcę, tagi, załączniki i oznaczenie terminu. Karty nie pokazują
 przycisku trzech kresek ani menu działań, również w pierwszym renderze Django.
 Siatka ma cztery kolumny; klucz ma własny tor o szerokości treści, a tytuł wykorzystuje pozostałe miejsce.
 Punkty są widoczne tylko w Scrum, zgodnie z formularzami planowania.
-Opcjonalny zespół pozostaje opisem. Każdy kafelek ma białą powierzchnię, pełne obramowanie
+Każdy kafelek ma białą powierzchnię, pełne obramowanie
 `--border-color` i zaokrąglenie nagłówka Kanbana. Odstęp kart wynosi `0.55rem`,
 a odstęp nagłówka od listy `0.65rem`. Karty mają `flex: 0 0 auto`, dzięki
 czemu długa lista przewija się bez ściskania metadanych. Pusty stan ma własną
@@ -1745,7 +1713,7 @@ odstępu z lewej i prawej strony, również na telefonie. Wspólna zmienna
 zakładki i filtry. Tabele katalogów w `work-content--directory`
 mają po bokach odstęp 15px, jak Udostępnienia, również
 na telefonie. Lista zadań i tablica wewnątrz przestrzeni nadal korzystają
-z pełnej szerokości; katalog Zespołów używa wspólnego odstępu 15px.
+z pełnej szerokości.
 Awatar ma 32px w nagłówku, 24px w katalogu, 20px w codziennym menu bocznym
 i 21px w panelu zwiniętego paska.
 Przycisk zmiany awatara (`space-avatar-trigger`) nie dodaje natywnej ramki,
@@ -1778,7 +1746,7 @@ Zachowują stabilne identyfikatory wcześniejszych ikon. W pickerze mają 56px
 (40px na telefonie); pozostałe rozmiary awatarów pozostają bez zmian.
 Zestaw jest współdzielony z Workspace, a ikony kontrolek nadal używają
 `AncoreIcons`. Wybór ilustracji czyści niezapisany plik, a zamknięcie zwalnia jego podgląd.
-Zakładki katalogów przestrzeni i zespołów oraz widoków przestrzeni używają
+Zakładki katalogu i widoków przestrzeni używają
 wspólnego `work-tabs`: tekst 13,5px/400 również na telefonie, tę samą wysokość
 i odstępy z `notifications-tabs`. Dekoracyjne ikony z `AncoreIcons` mają we
 wspólnym pasku 18px i odstęp 8px od etykiety. Katalog przestrzeni używa `layers`
@@ -1788,7 +1756,7 @@ wspólne podkreślenie aktywnej zakładki i przewijanie poziome na wąskim ekran
 Najechanie na nieaktywną zakładkę pokazuje szare
 podkreślenie (`--system-interaction`), tak jak w katalogu Zadań; po odsunięciu
 kursora podkreślenie znika. Aktywna zakładka zachowuje czerwone podkreślenie
-także pod kursorem. Katalog zespołów ma zakładki bez ikon.
+także pod kursorem.
 
 Nagłówek „Przestrzenie” zwija i rozwija podmenu przez wspólny
 `data-sidebar-group="spaces"` w `layout.js`. Stan zapisuje istniejąca
@@ -1912,12 +1880,12 @@ fokus do wybranego kafelka. Błędy zapisu zachowują drugi krok, wybór i szkic
 nieznany szablon wraca do pierwszego kroku z błędem. Edycja istniejącej
 przestrzeni oraz inne formularze nadal używają dotychczasowego układu.
 Kreator przestrzeni otwierany bezpośrednio przez URL pokazuje modal nad pełnym
-katalogiem (`spaces/index.html`), tak jak formularze Zasobów. Po zamknięciu
+katalogiem (`spaces/index.html`). Po zamknięciu
 `data-work-directory-url` przywraca adres katalogu bez przeładowania i bez
 dodatkowego wpisu w historii. Plus w menu bocznym oraz w panelu zwiniętego
-sidebaru używa `data-work-open`; na ekranach Przestrzeni i Zespołów działa nad
+sidebaru używa `data-work-open`; na ekranach Przestrzeni działa nad
 bieżącą treścią. W innych modułach otwiera kreator nad katalogiem.
-Listy zadań w przestrzeni, „Wyszukaj zadania” w Filtrach oraz zadania zespołu zachowują
+Listy zadań w przestrzeni i „Wyszukaj zadania” w Filtrach zachowują
 wygląd Zadań: `tasks-status-block` z kolorowym nagłówkiem i zwijaniem oraz
 wiersze `tasks-issue-row` z priorytetem, stanem, tagami, załącznikami i terminem.
 Wspólny `work-issue-row` w `spaces.css` podświetla cały wiersz przy najechaniu
@@ -2042,7 +2010,7 @@ tak jak pomiędzy paskiem a listą zadań.
 
 Pasek Podsumowania zawiera to samo menu „Filtrowanie” co w zadaniach
 (`ItemFiltering` w `ItemToolbar.tsx`): typ zgłoszenia, wykonawca, status,
-priorytet i zespół, wyszukiwanie pól/opcji, licznik aktywnych warunków i „Wyczyść”.
+priorytet i blokada, wyszukiwanie pól/opcji, licznik aktywnych warunków i „Wyczyść”.
 Wybór aktualizuje URL i dane wszystkich gadżetów, zachowując zapisany układ.
 Warunki można łączyć, a linki wykresów zachowują pozostałe filtry. Podsumowanie
 nie pokazuje menu sortowania zadań. Pierwszy render Django wykorzystuje
@@ -2234,7 +2202,7 @@ od razu przez „Udostępnienia” → „Udostępnij”, bez wysłanych zaprosz
 
 Domyślny odstęp poziomy treści stron wynosi **15px z obu stron**. Wspólny
 token `--app-page-padding-x` w `base/variables.css` określa padding nagłówków,
-pasków narzędzi oraz treści Przestrzeni, Zespołów, Filtrów,
+pasków narzędzi oraz treści Przestrzeni, Filtrów,
 Pulpitów, Dla ciebie, Ustawień i siatek Dysku/Dokumentów. Zmienne modułów
 `--work-space-inline-padding`, `--dashboard-inline-padding` i
 `--documents-index-padding-x` odwołują się do tego tokenu. Reguła obowiązuje
@@ -2513,11 +2481,7 @@ brak elementów kategorii, brak ulubionych i brak wyników wyszukiwania.
 - Stała nawigacja z modułami i ulubionymi.
   Menu zaczyna się od Favorites, bez osobnego przycisku domu.
   Do strony głównej prowadzi istniejący link Dashboard.
-  „Zasoby” i „Zespoły”, w tej kolejności, znajdują się przy dolnej krawędzi
-  menu Workspace we wspólnym wariancie `sidebar-menu-section--bottom`.
-  Pionowy układ nawigacji i automatyczny margines oddzielają je od głównej
-  listy, także po zwinięciu menu i na telefonie. Przy braku wysokości menu
-  przewija się razem ze wszystkimi pozycjami, bez nakładania linków.
+  Przy braku wysokości menu przewija się razem ze wszystkimi pozycjami.
 - Stan zwinięty/rozwinięty i regulowana szerokość sidebaru. Odsunięcie i szerokość
   treści korzystają z `--app-sidebar-total-width`, także przy szerokości
   768–1024px; zwinięcie menu do ikon zwalnia miejsce dla treści. Na telefonie
@@ -2747,7 +2711,7 @@ sprawdź wszystkie jego zmienne oraz miejsca wywołania.
 
 ### Tabele katalogów według Udostępnień
 
-Pełne listy Przestrzeni, Pulpitów, Filtrów, Tagów, Zasobów, Workspace,
+Pełne listy Przestrzeni, Pulpitów, Filtrów, Tagów, Workspace,
 Dysków i Dokumentów oraz lista plików na Dysku zachowują wspólny boczny
 odstęp `--app-page-padding-x` (15px), jak tabela Udostępnień. Pasek filtrów
 tych katalogów nie dodaje dolnej linii nad nagłówkiem tabeli.
@@ -2786,7 +2750,7 @@ Domyślnie mają przezroczyste tło i kolor `--text-primary`; hover oraz fokus
 klawiatury dodają szare tło `--system-interaction-soft`, bez obrysu.
 Powrót zachowuje strzałkę Flaticon, a zamknięcie używa maski `x-mask.svg`
 z tego samego lokalnego zestawu, generowanej przez `build_flaticon_icons.py`.
-Nagłówki przestrzeni, zespołu i konfiguracji przestrzeni używają tego samego
+Nagłówki przestrzeni i konfiguracji przestrzeni używają tego samego
 `tasks-issue-close`; lokalne style fokusu Przestrzeni nie nadpisują tego przycisku.
 Wspólna reguła obejmuje także puste przyciski zamknięcia doładowywanych
 formularzy Dysku i Dokumentów. Pozycja przycisków, etykiety, Escape,
@@ -3458,7 +3422,7 @@ Formularze tworzenia i edycji korzystają ze wspólnego układu `app-form-layout
 w `modal-system.css`. Pierwszy wiersz `app-form-heading` zawiera nazwę/tytuł
 oraz widoczność po prawej, jeżeli formularz udostępnia to pole. Bez widoczności
 nazwa wypełnia wiersz. Opis zajmuje pełną szerokość bezpośrednio pod nazwą;
-dotyczy to także celu sprintu, notatek Zasobu i Bio profilu. Pozostałe pola
+dotyczy to także celu sprintu i Bio profilu. Pozostałe pola
 tworzą dwie równe kolumny z odstępem `--app-modal-field-gap`. Etykiety są
 po lewej stronie kontrolek, także na telefonie; ich kolumna zajmuje do 32%
 szerokości pola, maksymalnie 180px, a długie nazwy mogą się zawijać.
@@ -3483,7 +3447,7 @@ pozostałych pól; osobna strona ustawień przestrzeni używa wariantu 100px.
 Profil zachowuje grupę imienia, drugiego imienia i nazwiska.
 
 Układ obejmuje zadania i podzadania, sprinty, tagi, Przestrzenie, Pulpity,
-Filtry, Zespoły, Zasoby, Kalendarz, formularze Dysku/Dokumentów, Workspace
+Filtry, Kalendarz, formularze Dysku/Dokumentów, Workspace
 i profil. `app-form-wide` oznacza treści wymagające pełnego wiersza, np.
 upload lub wybór modułów. W React wspólny `FormLayout` porządkuje pola schematu;
 rozpoznaje ich bazową nazwę (`field_name`), również w formularzach z prefiksem
@@ -3624,16 +3588,15 @@ tekstowo, pomijając również wcześniejsze metadane wyglądu.
 Wspólna warstwa uzupełnia ikony prostych filtrów i sortowania.
 `core.widgets.VisualSelect/VisualSelectMultiple` przekazują serwerowe ikony
 lub podglądy przez lokalne szablony, bez zmiany wartości opcji i walidacji.
-Filtry zadań pokazują awatary/zdjęcia widocznych przestrzeni, wykonawców
-i zespołów, kolorowe typy zgłoszeń, statusy i priorytety. Podglądy korzystają
+Filtry zadań pokazują awatary/zdjęcia widocznych przestrzeni i wykonawców,
+kolorowe typy zgłoszeń, statusy i priorytety. Podglądy korzystają
 z tych samych include'ów co szczegóły i zachowują kontrolowane adresy obrazów.
 „Brak priorytetu” (`none`) ma neutralną ikonę pustego okręgu `circle` z tej
 samej rodziny UIcons co statusy. Wspólny select używa jej w menu oraz przy
 wybranej wartości, zgodnie z listami zadań i podglądami z szablonów.
 `UserSelectMultiple` rozszerza podglądy kont o wybór osób w dostępie Pulpitów
-i Filtrów. `SpaceSelect` i `TeamSelect` zachowują queryset formularza;
-formularz Zasobów używa istniejącego `UserSelect`. Brak zdjęcia pokazuje
-obecny awatar lub ikonę. Miniatury kont/przestrzeni/zespołów mają 24px.
+i Filtrów. `SpaceSelect` zachowuje queryset formularza. Brak zdjęcia pokazuje
+obecny awatar lub ikonę. Miniatury kont i przestrzeni mają 24 px.
 Warstwa obejmuje `AncoreCustomSelect`, priorytety/statusy/tagi oraz wybór projektu
 i grupy w zadaniach, listy firm/osób, Kontaktów, Kalendarza i Profilu,
 również w szczegółach zadań/Kanbana. Ta sama zasada obowiązuje w listach
@@ -4091,66 +4054,6 @@ wstawiane jako tekst. Dane osób są przekazywane przez bezpieczne `json_script`
 stare listenery przez `AbortController`. Centrum używa istniejących zakładek
 z dodatkowymi filtrami „Wzmianki” i „Obserwowane”, w tym stanami pustymi.
 
-## 14. Katalog Zasobów
-
-Od 16.10.2026 interaktywny katalog i formularz renderuje React/TypeScript
-z `frontend/app/src/resources/`. Powłoka, CSS, polskie etykiety i geometria
-pozostają wspólne. Komponenty React zarządzają filtrami, kolumnami, zaznaczeniem
-i tabelą bez równoczesnego modyfikowania ich DOM przez `tasks.js`.
-Adaptery ikon i custom selectów mają osobne kontenery; modal nadal używa
-`AncoreTaskModals`. Szczegóły: [Frontend React](FRONTEND.md).
-
-Zasoby rozszerzają `core/base.html`, `tasks-topbar`, `tasks-filterbar`, wspólne
-menu filtrów/sortowania oraz wspólny pasek „Pokaż więcej”. Lista używa
-wspólnej tabeli Projektów (`tasks-directory-sheet tasks-project-sheet`) z wariantem
-`resources-sheet`: wiersze 35px, separatory, nagłówki z ikonami, checkboxy
-z podświetleniem zaznaczenia. Dalej są numer ewidencyjny,
-nazwa z ikoną typu, typ, status, osoba, lokalizacja, ważność/gwarancja i planowany zwrot.
-Miniony termin korzysta ze wspólnego oznaczenia `tasks-project-value-badge--due-overdue`.
-Nazwa otwiera kartę zasobu, która zachowuje istniejący przycisk edycji.
-Menu wiersza i jego kolumna są usunięte; nie dodano zastępczego wejścia do usuwania.
-
-Pasek zachowuje wygląd zarządzania kolumnami, agregatu „Filtruj”
-i sortowania z widoczną bieżącą opcją. Komponent `columns.tsx` obsługuje szerokości,
-kolejność i widoczność kolumn; Zasoby mają oddzielny klucz ustawień `resources`,
-wspólny dla zwykłego i scoped URL. Checkbox nagłówka zaznacza wczytane wiersze,
-a częściowy wybór pokazuje stan pośredni. Po zaznaczeniu wspólny pasek
-pokazuje w `actions` przekazanie, zwrot, zmianę statusu i lokalizacji;
-akcje niedostępne dla wybranego
-zestawu są wyłączone. Zaznaczenie ponad 100 pozycji pokazuje komunikat
-i blokuje operacje zbiorcze zgodnie z limitem API.
-Gość nie zaznacza ani nie edytuje zasobów.
-Kolumny przewijają się poziomo także na telefonie, a pasek narzędzi zawija.
-Pusty katalog i brak wyników mają osobne komunikaty, a działania pozostają w pasku.
-
-Zwarty `resources-summary` nad filtrami pokazuje liczniki całego Workspace.
-Przyciski używają `tasks-filter-button`, ikon i istniejących tokenów; kliknięcie
-resetuje filtry do wskazanego zakresu. Aktywne filtry i ich usuwanie są
-w `app-toolbar__summary` przy kontrolkach tego samego paska.
-„Eksport CSV” pozostaje w nagłówku, a odświeżanie w działaniach paska po prawej.
-Nazwa otwiera kartę z danymi i historią. Minimalne warianty
-`resources-detail-panel`, `resources-properties` i `resources-history`
-w `resources.css` zachowują ramki, odstępy i font wspólnej aplikacji;
-poniżej 1100px panele układają się pionowo, przewijane we wspólnej treści.
-Historia pokazuje autora, czas, wartości przed/po i notatkę; długie wartości mają
-własne przewijanie. Terminy wymagające uwagi mają opis tekstowy w karcie.
-Przekazanie, zwrot, status, lokalizacja i notatka korzystają ze wspólnego `Modal`
-z istniejącym `app-modal-panel--compact`, custom selectów i ochrony szkicu.
-Walidacja zachowuje pola i ogłasza błąd. Konflikt blokuje zapis i udostępnia
-„Odrzuć szkic i odśwież”. Karta jest dostępna również dla gościa i w pierwszym
-renderze Django; operacje wymagają Reacta. Dodanie kolumny zwrotu kopiuje
-wcześniejsze preferencje układu i szerokości do rozszerzonego schematu.
-
-`resources.css` ustala wariant siatki oraz dwukolumnowy układ formularza,
-który przechodzi w jedną kolumnę na telefonie. Powłoka, pola i przyciski
-pozostają wspólne (`tasks-modal app-modal-panel`, `documents-field`, `form-input`).
-Zgodne formularze HTML nadal używają `resources.js`, który pomija kontener React.
-Skrypt korzysta z `AncoreTaskModals`, ikon, custom selectów,
-`showConfirmModal` oraz `AncoreApp.navigate`. Inicjalizuje się na pierwszym
-wejściu i `ancore:content-loaded`, anulując poprzednie listenery i żądania.
-Modal blokuje tło przez `inert`, zachowuje fokus, Escape i potwierdzenie
-porzucenia zmian. Pobranie/zapis/usunięcie pokazują błędy umożliwiające ponowienie.
-
 ## 15. Pulpity
 
 System „Pulpity” rozszerza Dashboard przez `dashboard/pulpits/base.html`,
@@ -4462,8 +4365,6 @@ Strzałkę grupy obraca istniejący CSS według `aria-expanded`.
 kontenery nie dodają marginesów ani własnych pól do układu flex. Filtry
 Przestrzeni zachowują nazwy pól, ikony i zawijanie jak w szablonie.
 
-Pola formularzy wewnątrz `resources-react-fieldset` zachowują na szerokim
-ekranie wiersze z etykietą 180px, odstępem 24px i elastyczną kontrolką.
 `react-field-control` jest przezroczysty dla układu; pomoc i błędy należą
 do kolumny kontrolki. Kompaktowe modale zachowują układ pionowy.
 Backlog i kolumny aktywnego sprintu renderują `StatusGroup` bez dodatkowej

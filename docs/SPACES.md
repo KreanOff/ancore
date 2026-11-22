@@ -1,60 +1,4 @@
-# Przestrzenie i zespoły
-
-## System Zespołów (04.11.2026)
-
-`/teams/` oraz scoped odpowiednik udostępniają katalog z wyszukiwaniem nazwy
-lub opisu, zakładkami „Wszystkie zespoły”, „Moje zespoły” i „Zarządzane przeze
-mnie”, sortowaniem po nazwie, dacie utworzenia lub liczbie aktywnych członków
-oraz doładowywaniem po 20 rekordów przyciskiem „Pokaż więcej”. Karta pokazuje
-baner z istniejącego zdjęcia zespołu (lub wspólną tapetę), nazwę i opis.
-Kliknięcie karty otwiera profil. Informacje o osobach, pracy i przestrzeniach
-są dostępne w jego zakładkach. API zachowuje liczniki z zakresu widoczności
-osoby oglądającej; zapytania są grupowane dla wczytanego okna katalogu.
-
-Profil zespołu ma cztery zakładki (`view`):
-
-- `overview` — opis i zdjęcie, otwarte zadania, zadania po terminie, z terminem
-  w najbliższych 7 dniach i zablokowane; postęp zamkniętych zadań, otwarte bez
-  wykonawcy, ośmiu wykonawców z największą liczbą otwartych zadań oraz do ośmiu
-  najbliższych zadań. Liczniki i wykonawcy prowadzą do odpowiednich wyników.
-- `work` — zadania przypisane do zespołu, wyszukiwanie tytułu/klucza, zakres
-  `scope` (`all`, `open`, `closed`, `overdue`, `due`, `blocked`, `unassigned`)
-  i filtr `assignee` (`me`, `unassigned` lub ID); doładowywanie po 20 wyników.
-  Otwarte oznacza status zadania inny niż `closed`; liczniki terminów i blokad
-  pomijają zamknięte zadania. Filtr wykonawcy nadal korzysta z pełnego ACL.
-- `members` — aktywne osoby Workspace, wyszukiwanie imienia, nazwiska, e-maila
-  lub ID konta, filtr roli i doładowywanie po 20 osób. Dodawanie używa wspólnego
-  formularza. Menu zmiany roli i usuwania osoby wraz z osobną kolumną zostało
-  usunięte bez zastępczych wejść; backend zachowuje formularze i walidację.
-- `spaces` — wyłącznie dostępne powiązane przestrzenie, wyszukiwanie nazwy
-  lub klucza i doładowywanie po 20 przestrzeni. Powiązania zmienia formularz profilu.
-
-Zespół tworzy właściciel, administrator lub członek Workspace. Twórca staje się
-administratorem zespołu. Profil, skład oraz usuwanie obsługują administratorzy
-zespołu i zarządzający Workspace. Gość pozostaje w odczycie nawet ze starszą
-rolą administratora zespołu; nie można mu jej nadać w formularzu. Nie można
-obniżyć roli ani usunąć ostatniego aktywnego administratora z prawem zapisu.
-Zmiany blokują kolejno Workspace i zespół oraz ponawiają kontrolę uprawnień;
-równoczesne usuwanie dwóch administratorów pozostawia jednego.
-
-Dodawanie osoby nie zmienia dostępu do przestrzeni, prywatnych rodziców ani
-zadań. Usunięcie osoby zachowuje jej dostęp do Workspace, niezależne
-udostępnienia i przypisania zadań. Usunięcie/wyłączenie członkostwa Workspace
-nadal czyści role zespołów. Zarządzający Workspace może uzupełnić skład zespołu,
-który stracił administratorów wskutek takiego odebrania dostępu.
-
-Formularz profilu zachowuje niedostępne powiązania i nie ujawnia ich ID.
-Przed zapisem ponownie sprawdza widoczność wybranych przestrzeni. Zdjęcie
-korzysta z istniejącej walidacji i prywatnego endpointu; usunięcie lub wymiana
-czyści plik dopiero po zatwierdzeniu transakcji.
-
-`<pk>/delete/` pokazuje formularz, a POST wymaga przepisania aktualnej nazwy.
-Usunięcie zespołu kasuje jego skład i powiązania, pozostawiając zadania,
-przestrzenie, niezależne dostępy, statusy, historię i trwałe klucze.
-`WorkItem.team` przechodzi na `NULL` przez istniejące `SET_NULL`.
-Nie dodano modeli ani migracji. Zapytania i podsumowania:
-`backend/spaces/team_queries.py`; operacje: `teams.py`; interfejs:
-`frontend/app/src/spaces/TeamsPage.tsx`. [Zasady dostępu](TEAMWORK.md).
+# Przestrzenie
 
 ## Tablica procesu i etapowe przejścia
 
@@ -247,7 +191,7 @@ podsumowania oraz raportów. Etapy z tą samą kategorią stanu mogą mieć ró�
 kolory. Zapis konfiguracji jest odczytywany przy następnym pobraniu widoku;
 nie wymaga aktualizacji rekordów zadań.
 Kolor typu również pochodzi z konfiguracji Przestrzeni: etykiety w wierszach,
-kartach, backlogu, podzadaniach, Filtrach, Zespołach i Dla ciebie mają to samo
+kartach, backlogu, podzadaniach, Filtrach i Dla ciebie mają to samo
 pastelowe tło co w ustawieniach. Ikony opcji formularzy oraz podsumowania
 używają pełnego koloru typu, niezależnie od wybranego symbolu.
 Typ zapisuje się przy zatwierdzeniu formularza; etap pozostaje częścią szkicu
@@ -280,8 +224,8 @@ i rekordu przestrzeni. Gość nie może odczytać formularza ani go zatwierdzić
 Potwierdzenie nazwy jest sprawdzane ponownie pod blokadą, więc zmiana nazwy
 po otwarciu okna zatrzymuje usunięcie. Kaskady obejmują zadania, podzadania,
 historię, załączniki, sprinty, tagi, udostępnienia i gadżety oparte na tej
-przestrzeni; usuwane są także jej powiązania z zespołami i pulpitami.
-Pozostałe przestrzenie, zespoły, pulpity i konfiguracje pozostają.
+przestrzeni; usuwane są także jej powiązania z pulpitami.
+Pozostałe przestrzenie, pulpity i konfiguracje pozostają.
 Istniejące sygnały sprzątają awatar i pliki zadań po zatwierdzeniu transakcji.
 Wejścia z zakładki
 Przestrzeni oraz zachowanego menu bocznego również prowadzą na tę stronę.
@@ -371,7 +315,7 @@ a baza wymusza unikalność `(workplace, slug)`. Zmiana nazwy zachowuje adres.
 Migracja `spaces.0005_space_slugs` nadaje adresy istniejącym przestrzeniom,
 nie zmieniając ich pozostałych danych ani relacji.
 
-Menu, katalog, wyszukiwanie, podsumowanie, zespoły, zakładki i powroty po zapisie
+Menu, katalog, wyszukiwanie, podsumowanie, zakładki i powroty po zapisie
 używają nazwy w adresie. Akcje przestrzeni mają ten sam prefiks `space/<slug>/`.
 Katalog i zarządzanie pozostają pod `/spaces/`. Szczegóły zadania i jego akcje
 są pod `/space/<slug>/tasks/<klucz>/`, również w adresie scoped.
@@ -548,7 +492,7 @@ opis konfiguracji i licznik typów nie są wyświetlane.
 
 Listy, backlog i karty tablicy pokazują ikonę i nazwę typu. Filtr „Typ zgłoszenia”
 na liście, tablicy, backlogu, osi czasu i we Wszystkich zadaniach działa na
-serwerze przed ograniczeniem okna, razem z wyszukiwaniem, wykonawcą i zespołem.
+serwerze przed ograniczeniem okna, razem z wyszukiwaniem i wykonawcą.
 Zakres danych i dostęp do edycji wyznaczają `spaces.access` oraz aktywny
 Workspace. Zmiana typu zapisuje w `SpaceTaskActivity` faktycznego autora
 i poprzednią wartość. Formularze przestrzeni
@@ -559,14 +503,14 @@ blokują zmianę epika z przypisanymi zadaniami oraz zagnieżdżenie epika w epi
 `Space` ma własną nazwę, opis, właściciela, widoczność, ulubione i role
 `SpaceMembership`. `SpaceTask` przechowuje treść, terminy, wykonawcę,
 hierarchię i stan zakończenia. `WorkItem` przechowuje trwały klucz oraz
-planowanie: status przestrzeni, typ zgłoszenia, sprint, epik, zespół, punkty i kolejność.
+planowanie: status przestrzeni, typ zgłoszenia, sprint, epik, punkty i kolejność.
 Historia, pliki, czas i dostęp mają modele `SpaceTaskActivity`, `SpaceTaskFile`,
 `SpaceTaskWorkLog` i `SpaceTaskMembership`. Nie ma mapowań do dawnych systemów.
 
 Wspólne konto, Workspace, tagi `TaskTag`, walidatory plików i komponenty UI
 pozostają mechanizmami aplikacji. Punkty wejścia: `backend/spaces/views.py`,
-`task_views.py`, `access.py`, `services.py`, `forms.py`, `teams.py`, `signals.py`.
-Trasy `/spaces/` i `/teams/` mają scoped odpowiedniki. Dawne `/spaces/items/`
+`task_views.py`, `access.py`, `services.py`, `forms.py`, `signals.py`.
+Trasy `/spaces/` i `/space/<slug>/` mają scoped odpowiedniki. Dawne `/spaces/items/`
 przekierowuje do „Filtry → Wyszukaj zadania”. [Schemat i migracje](DATABASE.md).
 
 ## Dostępne funkcje
@@ -638,7 +582,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   modal nad pełnym katalogiem przestrzeni. Zamknięcie, anulowanie lub Escape
   pozostawia katalog i przywraca jego adres; nie ma pustej strony „Utwórz
   przestrzeń” z przyciskiem „Wróć”. Błąd walidacji zachowuje formularz nad listą.
-  Plus w menu bocznym na ekranach Przestrzeni i Zespołów otwiera modal nad
+  Plus w menu bocznym na ekranach Przestrzeni otwiera modal nad
   bieżącą treścią; z innych modułów prowadzi do kreatora nad katalogiem.
 - Rodzaje: programistyczny, biznesowy, obsługowy.
 - Szablony: Kanban, Scrum, zarządzanie zadaniami, marketing, rekrutacja,
@@ -660,7 +604,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   Efekty respektują ustawienie ograniczonego ruchu.
   Usunięte menu działań nie otrzymało zastępczych kontrolek.
   Pasek ma dwa istniejące menu: „Sortowanie” i „Filtrowanie”,
-  bez osobnej wyszukiwarki. Filtry obejmują typ, wykonawcę, status, priorytet i zespół;
+  bez osobnej wyszukiwarki. Filtry obejmują typ, wykonawcę, status, priorytet i blokadę;
   można je łączyć, przeszukiwać opcje i wyczyścić warunki.
   `spaces/item_query.py` sortuje dostępne wyniki przed ograniczeniem okna po kolejności
   ręcznej, numerze klucza, tytule, priorytecie, terminie, dacie utworzenia,
@@ -683,7 +627,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   grup w URL, zaznaczenia i zwinięcia sekcji; ignoruje stary `page`.
   Oś czasu wczytuje początkowo 20 zadań i rozszerza zakres o kolejne 20 przez
   ten sam pasek „Pokaż więcej”, bez dolnego paska numerów stron.
-  Katalogi Przestrzeni, Zespoły i Filtry korzystają z tego samego komponentu;
+  Katalogi Przestrzeni i Filtrów korzystają z tego samego komponentu;
   podsumowanie, raporty i ustawienia nie pokazują stron wyników.
 - Podsumowanie jest konfigurowalnym, osobistym pulpitem Przestrzeni.
   Można dodawać gadżety, przeciągać je na siatce 12 kolumn oraz zmieniać
@@ -698,7 +642,7 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
   ekranie kafelki układają się pionowo, a strzałki góra/dół na uchwycie
   zmieniają kolejność o jedną pozycję. Rozmiary dotyczą widoku na komputerze.
   Menu „Filtrowanie” jest wspólne z zadaniami: typ zgłoszenia, wykonawca,
-  status, priorytet i zespół. Filtry łączą się, obejmują wszystkie liczniki,
+  status, priorytet i blokadę. Filtry łączą się, obejmują wszystkie liczniki,
   wykresy i aktywność oraz zachowują warunki w odnośnikach do zadań.
   Licznik pokazuje liczbę aktywnych filtrów; „Wyczyść” przywraca pełny dostępny
   zakres. Zmiana filtrów nie zmienia osobistego układu gadżetów.
@@ -783,9 +727,6 @@ numeryczne warianty adresów. Nie wymagają nowych modeli ani migracji.
 - Konfiguracja: typy, pola tekst/liczba/data, wymagane pola, statusy i dozwolone
   przejścia. Każdy status ma jeden z pięciu stanów `SpaceTask`.
   Stan `closed` nadal odpowiada za zakończenie i datę wykonania.
-- Zespoły: katalog, moje zespoły, wyszukiwanie, profil, prywatnie serwowane zdjęcie,
-  członkowie i administratorzy, powiązane przestrzenie i przypisane zadania.
-  Zadanie może równocześnie mieć zespół oraz konkretnego wykonawcę.
 
 W backlogu „Przesuń wyżej/niżej” działa w zakresie widocznych zadań i tej samej grupy
 sprintu. Pomija zadania na tablicy Kanbana, zadania zamknięte i wykluczone przez
@@ -840,7 +781,7 @@ Punkty są opcjonalne (0–10000) i dostępne we wszystkich szablonach przestrze
 Typy i statusy pochodzą z konfiguracji przestrzeni, a wykonawcy z aktywnego
 Workspace. Przypisanie wykonawcy samo nie nadaje dostępu. Nowe podzadanie
 z okna zachowuje domyślną prywatność; widoczność nie jest osobną kontrolką.
-Edycja nie zmienia istniejących tagów, zespołu, sprintu, epika, backlogu,
+Edycja nie zmienia istniejących tagów, sprintu, epika, backlogu,
 kategorii, przypomnienia, pól dodatkowych ani uprawnień. Zmiana statusu
 zachowuje datę zakończenia i historię. Obserwator ma listę bez linku edycji.
 Lista obejmuje wszystkich dostępnych potomków, więc istniejące głębsze
@@ -936,8 +877,7 @@ Zakres pochodzi z `workspace_owner(request)` i `request.workplace`.
 `spaces.access.visible_to` i `editable_to` wyznaczają dostęp do przestrzeni,
 zadania oraz całego drzewa rodziców. Prywatne zadanie dodatkowo zawęża
 dostęp do wybranych osób. Obserwatorzy zachowują tylko odczyt. Listy, liczniki i raporty liczą tylko
-zadania dostępne osobie oglądającej ekran. Przydział zespołu lub wykonawcy
-ani powiązanie zespołu z przestrzenią nie nadają dodatkowego dostępu.
+zadania dostępne osobie oglądającej ekran. Przypisanie wykonawcy nie nadaje dodatkowego dostępu.
 
 Prywatną przestrzenią zarządza jej właściciel i administratorzy przestrzeni;
 wyłącznie właściciel zmienia widoczność i role administratorów. Przestrzenią
@@ -973,8 +913,8 @@ odebranie dostępu do prywatnej przestrzeni albo rodzica usuwa odpowiednie
 udostępnienia zadań. Ponowne dołączenie ich nie przywraca. Operacje przez
 `QuerySet.update()` wymagają jawnego czyszczenia, ponieważ pomijają sygnały.
 
-Zarządzanie przez zespół oznacza niezależną konfigurację przestrzeni.
-Zarządzanie przez organizację pozwala administratorowi Workspace utworzyć lub
+Opcja „Zarządzana przez zespół” oznacza niezależną konfigurację Przestrzeni.
+Opcja zarządzania przez organizację pozwala administratorowi Workspace utworzyć lub
 wybrać `SpaceConfiguration.shared`. Zmiana wspólnej konfiguracji obejmuje
 wszystkie powiązane przestrzenie; edycja wymaga uprawnień administratora
 Workspace. Formularz chroni przed zapisem nieaktualnej wersji. Nie można usunąć
@@ -984,12 +924,6 @@ Zapis blokuje kolejno Workspace, wszystkie przestrzenie używające konfiguracji
 dostępu. Walidacja użycia oraz zapis współdzielą blokady z operacjami zadań.
 Szczegóły zadania po uzyskaniu blokady pobierają aktualną konfigurację,
 aby rozpoczęty wcześniej formularz nie zapisał usuniętego statusu lub typu.
-
-Zespół może utworzyć aktywny członek Workspace; staje się jego administratorem.
-Członków wybiera się tylko z aktywnych osób Workspace. Zwykły członek zespołu
-nie edytuje profilu ani członkostw. Usunięcie/wyłączenie członkostwa Workspace
-usuwa członkostwa zespołów; ich przywrócenie wymaga ponownego dodania.
-Formularz nie pozwala odebrać ostatniej aktywnej roli administratora zespołu.
 
 ## Oddzielenie od starszych Zadań (10.10.2026)
 
@@ -1031,7 +965,7 @@ systemu; sam komentarz nie wysyła powiadomienia. Dawne tabele i dostawy usunię
   stare linki, pliki, migrowaną historię, trwałe klucze, dozwolone przejścia,
   operacje zbiorcze, sprinty, prywatne zdjęcia i rollback.
 - Przeglądarka na izolowanej bazie: pusty katalog, Scrum i Marketing,
-  zespół/powiązanie, zadanie/lista/backlog/sprint, zmiana statusu z listy
+  zadanie/lista/backlog/sprint, zmiana statusu z listy
   i przeciągnięciem, zakończenie sprintu, oś czasu, zapis konfiguracji,
   zduplikowany klucz z zachowaniem formularza, Escape, ponowne wejście,
   ekran referencyjny oraz rozmiary desktopowe i 390 px.
@@ -1060,7 +994,7 @@ indeksu kodu i `git diff --check` przeszły.
 
 „Kategoria” rozwija dotychczasowe `SpaceTask.task_type`, zachowując istniejące
 klucze i przypisania. „Grupa” jest opcjonalną klasyfikacją `SpaceTask.task_group`;
-nie nadaje uprawnień i jest niezależna od Zespołu. Oba wybory są dostępne
+nie nadaje uprawnień. Oba wybory są dostępne
 w formularzu zadania i bocznym panelu szczegółów, z automatycznym zapisem
 oraz historią zmian. Ustawienia Przestrzeni udostępniają osobne listy
 „Kategorie” i „Grupy”, z nazwą, kluczem i opisem. Nazwy na listach i w polach
@@ -1097,7 +1031,7 @@ bieżącego dostępu do zadania i pojawiają się w istniejącej skrzynce.
 ## Migracja React (16.10.2026)
 
 Katalog Przestrzeni, formularze, podsumowanie/lista/tablica/backlog/sprinty,
-oś czasu/raporty/ustawienia, konfiguracja, Tagi, szczegóły zadania i Zespoły
+oś czasu/raporty/ustawienia, konfiguracja, Tagi i szczegóły zadania
 są renderowane przez `frontend/app`.
 Serializery `backend/spaces/frontend.py` i `backend/spaces/tag_frontend.py` otrzymują zakres już ograniczony przez
 istniejące widoki, a API deleguje zapisy do tych samych formularzy i operacji.

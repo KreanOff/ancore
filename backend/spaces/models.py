@@ -234,34 +234,6 @@ class SpaceTaskWorkLog(models.Model):
         return int((self.ended_at.astimezone(UTC) - self.started_at.astimezone(UTC)).total_seconds() // 60)
 
 
-class Team(models.Model):
-    workplace = models.ForeignKey('workplaces.Workplace', on_delete=models.CASCADE, related_name='teams')
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_work_teams')
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_work_teams')
-    name = models.CharField(max_length=120)
-    description = models.TextField(blank=True)
-    photo = models.FileField(upload_to='teams/', storage=comment_image_storage, blank=True)
-    members = models.ManyToManyField(settings.AUTH_USER_MODEL, through='TeamMembership', related_name='work_teams')
-    spaces = models.ManyToManyField(Space, blank=True, related_name='teams')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['name', 'pk']
-        constraints = [models.UniqueConstraint(fields=['workplace', 'name'], name='space_team_name_unique')]
-
-    def __str__(self):
-        return self.name
-
-
-class TeamMembership(models.Model):
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='memberships')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    role = models.CharField(max_length=10, choices=[('admin', 'Administrator'), ('member', 'Członek')], default='member')
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=['team', 'user'], name='space_team_member_unique')]
-
-
 class Sprint(models.Model):
     space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name='sprints')
     name = models.CharField(max_length=120)
@@ -293,7 +265,6 @@ class WorkItem(models.Model):
     work_type = models.CharField(max_length=40, default='task')
     rank = models.PositiveIntegerField(default=0)
     in_backlog = models.BooleanField(default=False)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
     sprint = models.ForeignKey(Sprint, on_delete=models.SET_NULL, null=True, blank=True, related_name='items')
     epic = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='epic_items')
     points = models.PositiveIntegerField(null=True, blank=True)

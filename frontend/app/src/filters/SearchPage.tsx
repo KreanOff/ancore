@@ -282,8 +282,8 @@ function QueryHelp() {
       <p>
         Pola: <code>space</code> (alias <code>project</code>), <code>status</code>,{' '}
         <code>type</code>, <code>priority</code>, <code>assignee</code>, <code>reporter</code>,{' '}
-        <code>tag</code>, <code>team</code>, <code>sprint</code>, <code>key</code>,{' '}
-        <code>text</code>, <code>created</code>, <code>due</code>, <code>category</code>.
+        <code>tag</code>, <code>sprint</code>, <code>key</code>, <code>text</code>,{' '}
+        <code>created</code>, <code>due</code>, <code>category</code>.
       </p>
       <p>
         Łącz warunki przez <code>AND</code>, <code>OR</code>, <code>NOT</code> i nawiasy. Użyj{' '}

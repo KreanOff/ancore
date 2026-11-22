@@ -52,7 +52,7 @@ class GlobalPanelsApiTests(TestCase):
         return self.api('notification_action', body={'action': action, 'key': key or f'spaces:{self.comment.pk}', **extra})
 
     def test_shared_shell_bootstrap_uses_scoped_api_and_legacy_handlers_are_not_loaded(self):
-        for route in (reverse('profile'), scoped_workplace_app_path(self.workspace, 'spaces'), scoped_workplace_app_path(self.workspace, 'resources')):
+        for route in (reverse('profile'), scoped_workplace_app_path(self.workspace, 'spaces'), scoped_workplace_app_path(self.workspace, 'calendar')):
             with self.subTest(route=route):
                 response = self.client.get(route)
                 self.assertEqual(response.status_code, 200)

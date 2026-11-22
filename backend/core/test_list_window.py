@@ -83,6 +83,6 @@ class ListWindowTests(SimpleTestCase):
         self.assertEqual(window_url(request, page), '/resource/overview/?history_limit=45')
 
     def test_module_can_preserve_only_its_validated_query_parameters(self):
-        request = self.factory.get('/resources/', {'q': 'x', 'page': '1', 'next': 'https://example.test'})
+        request = self.factory.get('/spaces/', {'q': 'x', 'page': '1', 'next': 'https://example.test'})
         page = window_page(self.items, request)
-        self.assertEqual(window_url(request, page, parameters={'q': 'x'}), '/resources/?q=x&limit=40')
+        self.assertEqual(window_url(request, page, parameters={'q': 'x'}), '/spaces/?q=x&limit=40')

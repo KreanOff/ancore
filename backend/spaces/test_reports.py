@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
-from .models import SpaceMembership, SpaceTask, SpaceTaskMembership, SpaceTaskWorkLog, Sprint, Team, WorkItem
+from .models import SpaceMembership, SpaceTask, SpaceTaskMembership, SpaceTaskWorkLog, Sprint, WorkItem
 from .reports import safe_csv_cell
 from .testing import make_space
 
@@ -31,8 +31,6 @@ class SpaceReportsTests(TestCase):
         cls.other_space = make_space(user=cls.owner, workplace=cls.other_workspace, name='Inna przestrzeń')
         cls.sprint = Sprint.objects.create(space=cls.space, name='Sprint jeden', start_on=date(2026, 10, 20), end_on=date(2026, 11, 3), state='active')
         cls.foreign_sprint = Sprint.objects.create(space=cls.other_space, name='Prywatna nazwa sprintu', start_on=date(2026, 10, 20), end_on=date(2026, 11, 3))
-        cls.team = Team.objects.create(workplace=cls.workspace, owner=cls.owner, name='Zespół raportów')
-        cls.team.spaces.add(cls.space)
 
     def setUp(self):
         self.client.force_login(self.member)
@@ -57,7 +55,7 @@ class SpaceReportsTests(TestCase):
         return self.page(**query)['reports']
 
     def task(self, title='Zadanie', created=None, **values):
-        planning = {key: values.pop(key) for key in ('points', 'sprint', 'team', 'work_type') if key in values}
+        planning = {key: values.pop(key) for key in ('points', 'sprint', 'work_type') if key in values}
         task = SpaceTask.objects.create(space=values.pop('space', self.space), created_by=self.owner, title=title, **values)
         if created:
             SpaceTask.objects.filter(pk=task.pk).update(created_at=created)
@@ -114,15 +112,19 @@ class SpaceReportsTests(TestCase):
         self.assertEqual(self.report()['snapshot']['total'], 1)
 
     def test_combined_filters_and_csv_have_same_scope(self):
-        selected = self.task('Wybrane zadanie', priority='high', assignee=self.member, sprint=self.sprint, team=self.team, points=8)
-        self.task('Inny priorytet', priority='low', assignee=self.member, sprint=self.sprint, team=self.team)
-        self.task('Bez sprintu', priority='high', assignee=self.member, team=self.team)
-        self.task('Bez wykonawcy', priority='high', sprint=self.sprint, team=self.team)
-        filters = {'report_sprint':str(self.sprint.pk), 'assignee':'me', 'priority':'high', 'team':str(self.team.pk), 'q':'Wybrane', 'work_type':'task', 'status':selected.work_item.status}
+        selected = self.task('Wybrane zadanie', priority='high', assignee=self.member, sprint=self.sprint, points=8)
+        self.task('Inny priorytet', priority='low', assignee=self.member, sprint=self.sprint)
+        self.task('Bez sprintu', priority='high', assignee=self.member)
+        self.task('Bez wykonawcy', priority='high', sprint=self.sprint)
+        filters = {'report_sprint':str(self.sprint.pk), 'assignee':'me', 'priority':'high', 'q':'Wybrane', 'work_type':'task', 'status':selected.work_item.status}
         report = self.report(**filters)
         self.assertEqual(report['snapshot']['total'], 1)
         _, rows = self.export(**filters)
         self.assertEqual([row[0] for row in rows[1:]], [selected.work_item.key])
+        columns = dict(zip(rows[0], rows[1], strict=True))
+        self.assertNotIn('Zespół', columns)
+        self.assertEqual(columns['Sprint'], self.sprint.name)
+        self.assertEqual(columns['Punkty'], '8')
         for section in ('statuses', 'priorities', 'workload', 'sprints'):
             parsed = parse_qs(urlsplit(report[section][0]['url']).query)
             self.assertEqual(parsed['view'], ['reports'])

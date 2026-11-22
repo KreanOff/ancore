@@ -8,7 +8,7 @@ lub całemu Workspace. Twórca zarządza definicją, a każdy odbiorca widzi
 wyłącznie zadania dostępne dla swojego konta. Filtry obsługują bieżące
 zadania Przestrzeni. [Przepływ, składnia i źródła](FILTERS.md).
 
-## Przestrzenie i zespoły — aktualna nawigacja
+## Przestrzenie — aktualna nawigacja
 
 Przestrzenie mają własne modele `Space`, `SpaceTask`, członkostwa, historię,
 pliki i dziennik pracy. Szczegóły zadań są pod `/space/<slug>/tasks/<klucz>/`,
@@ -18,21 +18,13 @@ Szczegóły automatycznie zapisują pola i załączniki bez przeładowania;
 błąd zachowuje szkic i udostępnia ponowienie. Komentarze są wysyłane osobno.
 [Zasady zapisu](SPACES.md#pozostałe-funkcje).
 
-Główne menu używa Przestrzeni, Wszystkich zadań i Zespołów. Starsze systemy
+Główne menu używa Przestrzeni i Wszystkich zadań. Starsze systemy
 projektów, grup, zadań, ulubionych projektów i szablonów są wycofane.
-Nowy przepływ pracy, katalog, kreator, sprinty i profile zespołów opisuje [SPACES.md](SPACES.md).
-Zespoły mają katalog „Wszystkie / Moje / Zarządzane”, podsumowanie terminów i postępu,
-filtry zadań, zarządzanie członkami i powiązania przestrzeni. Usunięcie zespołu
-z potwierdzeniem nazwy zachowuje zadania i przestrzenie. [Szczegóły](SPACES.md#system-zespołów-04112026).
+Katalog, kreator i sprinty opisuje [SPACES.md](SPACES.md).
 
-Backlog udostępnia indywidualne i zbiorcze planowanie, estymacje, wykonawców,
-tworzenie w sekcji, edycję sprintu oraz zamknięcie z przeniesieniem pracy
-do backlogu lub następnego sprintu. [Funkcje i zasady dostępu](SPACES.md#planowanie-w-backlogu).
-
-
-Ten dokument opisuje aktywny kod lokalny. Szczegółowe modele, relacje,
-formularze, endpointy i szablony są w [indeksie kodu](CODE_INDEX.md).
-Zasady wspólne znajdują się w [MECHANISMS.md](MECHANISMS.md).
+Dawne moduły Zasoby i Zespoły zostały wycofane. Role Workspace, dostęp do
+Przestrzeni i zadań oraz przypisanie zadań do osób nadal działają.
+[Schemat wycofania](DATABASE.md#wycofanie-zasobów-i-zespołów).
 
 ## 1. Konta i profil — Accounts
 
@@ -63,7 +55,7 @@ rozszerzenie katalogu nie zmienia wcześniejszych przypisań. Istniejące zdjęc
 Zmiana na ilustrację lub wybór automatyczny usuwa powiązanie ze zdjęciem;
 poprzedni plik jest sprzątany dopiero po zatwierdzeniu transakcji.
 Wspólny helper `accounts.avatar.account_avatar` i include avatara udostępniają
-wybór w profilu, pasku konta, zespołach, komentarzach i powiadomieniach.
+wybór w profilu, pasku konta, tabelach członków, komentarzach i powiadomieniach.
 Profil zapisuje wyłącznie konto aktualnie zalogowanej osoby.
 Nagłówek udostępnia „Edytuj profil”, a formularz zachowuje wpisane dane
 po błędzie. Jawny wybór „Aktywny” przywraca aktywność także po ręcznych
@@ -656,89 +648,9 @@ Pozostałe lokalne preferencje UI opisuje [MECHANISMS.md](MECHANISMS.md).
 
 Przed rozwinięciem tych obszarów sprawdź ich aktualne wywołania i testy.
 
-## 12. Zasoby — Resources
-
-Źródła: [modele](../backend/resources/models.py), [formularz](../backend/resources/forms.py),
-[widoki](../backend/resources/views.py), [API](../backend/resources/api.py),
-[frontend React](../frontend/app/src/resources/App.tsx),
-[powłoka](../backend/resources/templates/resources/react.html).
-
-Katalog, karta zasobu i formularze korzystają z Reacta z TypeScriptem.
-Django udostępnia JSON API v1 i odpowiada za sesję, CSRF, zakres danych,
-walidację oraz historię. Budowanie: [Frontend React](FRONTEND.md).
-
-Katalog „Zasoby” jest dostępny w menu Workspace pod `/resources/` oraz
-`/workplaces/<slug>/resources/`. Przechowuje sprzęt, licencje i narzędzia:
-nazwę, opcjonalny numer ewidencyjny i seryjny, status (Dostępny, W użyciu,
-W serwisie, Wycofany), osobę odpowiedzialną, lokalizację, datę zakupu,
-termin ważności/gwarancji, planowany zwrot i notatki. Numer ewidencyjny jest unikalny w Workspace
-bez rozróżniania wielkości liter; puste numery mogą się powtarzać.
-Termin ważności nie może poprzedzać daty zakupu. Planowany zwrot jest opcjonalny
-i występuje wyłącznie przy statusie „W użyciu”; zapis innego statusu usuwa datę.
-Ograniczenie jest również w bazie. Minione terminy i ważność do 30 dni mają
-oznaczenia w tabeli i karcie. Nie zmieniają automatycznie statusu ani nie wysyłają
-przypomnienia. Wycofane zasoby nie wchodzą do alertów ważności.
-
-Lista udostępnia wyszukiwanie nazwy, numerów, lokalizacji i notatek,
-łączone filtry typu, statusu, przypisania (do mnie / nieprzypisane) i terminów:
-ważność po terminie, najbliższe 30 dni, oba zakresy, zwrot po terminie,
-zwrot w najbliższych 7 dniach oraz brak daty ważności. Sortowanie obejmuje nazwę,
-datę utworzenia, ostatnią zmianę, ważność i zwrot; brakujące daty są na końcu.
-Lista wczytuje 20 pozycji; „Pokaż więcej” dodaje kolejne 20, zachowując
-widoczne wiersze i zaznaczenie. Liczniki nad katalogiem dotyczą całego Workspace;
-kliknięcie otwiera wskazany zakres i resetuje pozostałe filtry.
-Układ listy korzysta ze wspólnej tabeli: zarządzanie kolumnami, zbiorcze
-menu filtrów i checkboxy z podświetleniem zaznaczenia. Hamburger i jego kolumna
-zostały usunięte bez zastępczych kontrolek. Nazwa nadal otwiera kartę zasobu,
-która zachowuje przycisk edycji. Ustawienia kolumn są zapisywane lokalnie dla Zasobów;
-nowa kolumna zwrotu zachowuje wcześniejsze preferencje.
-Globalne wyszukiwanie ma osobną kategorię Zasoby z limitem 20 wyników i linkami
-do karty. Moduł można dodać do osobistych ulubionych menu.
-
-Karta pod `/<pk>/` ma dane, notatki ewidencyjne i historię `ResourceActivity`
-doładowywaną po 20 wpisów wspólnym przyciskiem „Pokaż więcej”. Zapisuje faktycznego autora, czas, rodzaj operacji,
-zmienione pola przed/po oraz opcjonalną notatkę do operacji (do 2000 znaków).
-Nazwa autora pozostaje po usunięciu konta. Historia zaczyna się od wdrożenia
-mechanizmu; migracja nie odtwarza wcześniejszych zdarzeń. Notatka do historii
-nie nadpisuje ogólnych notatek zasobu. Nazwy i tekst są renderowane bez interpretacji HTML.
-
-„Przekaż” wybiera aktywną osobę Workspace, ustawia „W użyciu” i opcjonalną datę
-zwrotu (dzisiaj lub później). Dotyczy zasobów dostępnych lub w użyciu; pozwala
-również przekazać zasób kolejnej osobie. „Przyjmij zwrot” wymaga „W użyciu”,
-ustawia „Dostępny” i usuwa przypisanie oraz termin. Zmiana samego statusu
-zachowuje osobę odpowiedzialną. Karta udostępnia też notatkę do historii.
-Zaznaczenie obejmuje widoczne wiersze i pozwala zbiorczo przekazać, przyjąć
-zwrot, zmienić status lub lokalizację. Operacja nadal obejmuje najwyżej 100
-zasobów; większe zaznaczenie pokazuje komunikat i blokuje przyciski operacji. Walidacja całego zestawu,
-zapis i historia są atomowe, z blokadą rekordów. Niedostępny zasób, błędny stan
-lub nieaktualna wersja zatrzymuje całą operację. Dialog konfliktu pozwala odrzucić
-szkic i pobrać bieżące dane. Zmiana filtra lub sortowania czyści zaznaczenie
-i resetuje okno; doładowanie zachowuje zaznaczone dostępne wiersze.
-
-„Eksport CSV” pobiera wszystkie wyniki bieżących filtrów i sortowania, niezależnie
-od wczytanego zakresu. Plik ma UTF-8 z BOM, separator średnik i neutralizację komórek mogących
-uruchomić formułę w arkuszu. Zachowuje ten sam zakres Workspace co katalog.
-
-Dodawanie i edycja używają standardowego modala nad katalogiem; błędy walidacji
-zachowują pola, błędy sieci pozwalają ponowić zapis. Zamknięcie niezapisanego
-formularza wymaga potwierdzenia. Backend zachowuje trwałe usuwanie przez POST;
-wejście do tej operacji z menu wiersza zostało usunięte.
-Po zapisie/usunięciu lista zachowuje filtry, sortowanie i wczytany limit
-(z ograniczeniem do liczby dostępnych wyników).
-
-Dane należą do właściciela i aktywnego Workspace; rzeczywisty autor utworzenia
-oraz ostatniej zmiany jest zapisany osobno. Formularz przypisania ogranicza
-osoby do aktywnego zespołu. Gość odczytuje katalog, kartę, historię i eksport,
-ale nie zapisuje zmian. Formularze interfejsu przekazują wersję `updated_at`,
-chroniąc przed nadpisaniem równoczesnej zmiany. Starsze wywołania edycji bez wersji
-pozostają zgodne; nowe operacje wymagają wersji wszystkich wskazanych zasobów.
-Usunięcie zasobu usuwa również jego historię; wycofanie przez status zachowuje ją.
-Model nie zawiera kluczy licencyjnych, załączników,
-rezerwacji, amortyzacji ani automatycznego śledzenia dostępności.
-
 ## Zakres frontendu React
 
-Zasoby, Kalendarz, Dla ciebie, centrum Ustawień, Przestrzenie z Tagami,
-szczegóły ich zadań, Zespoły, Filtry, Pulpity, Dysk, Dokumenty i zarządzanie Workspace korzystają z Reacta i JSON API Django.
+Kalendarz, Dla ciebie, centrum Ustawień, Przestrzenie z Tagami,
+szczegóły ich zadań, Filtry, Pulpity, Dysk, Dokumenty i zarządzanie Workspace korzystają z Reacta i JSON API Django.
 Pozostałe aktywne moduły nadal działają w dotychczasowej architekturze;
 lista i ograniczenia migracji: [FRONTEND.md](FRONTEND.md).

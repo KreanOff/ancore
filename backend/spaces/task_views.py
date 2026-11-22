@@ -179,7 +179,7 @@ def detail(request, space_pk, key):
                         data = form.cleaned_data
                         old = property_snapshot(task, item)
                         old_relations_dates = (task.assignee_id, task.due_at, task.reminder_at)
-                        planning_fields = ('work_type', 'team_id', 'sprint_id', 'epic_id', 'points', 'start_at', 'in_backlog', 'custom_values')
+                        planning_fields = ('work_type', 'sprint_id', 'epic_id', 'points', 'start_at', 'in_backlog', 'custom_values')
                         old_planning = [getattr(item, name) for name in planning_fields]
                         previous = {'title': task.title, 'priority': task.priority, 'work_type': item.work_type}
                         target = form.data.get('status', item.status)
@@ -204,7 +204,7 @@ def detail(request, space_pk, key):
                         if 'tags' in changed_fields:
                             task.tags.set(data['tags'])
                         item.refresh_from_db()
-                        for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
+                        for name in ('work_type', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
                             if name in data and (name in changed_fields or name == 'in_backlog' and 'sprint' in changed_fields):
                                 setattr(item, name, data[name])
                         custom_values = {f['key']: str(data['custom_' + f['key']]) if data.get('custom_' + f['key']) is not None else ''

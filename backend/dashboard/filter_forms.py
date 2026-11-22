@@ -5,7 +5,7 @@ from accounts.widgets import UserSelectMultiple
 from core.widgets import VisualSelectMultiple
 from spaces.defaults import configuration_name_color, issue_type_icon
 from spaces.models import SpaceTask
-from spaces.services import app_url, teams_for, visible_spaces
+from spaces.services import visible_spaces
 from tasks.models import TaskTag
 from workplaces.services import workplace_people
 from .filter_search import BASIC_SORTS, Compiler, QueryError, parse_query
@@ -22,7 +22,6 @@ class BasicTaskSearchForm(forms.Form):
     priority = forms.MultipleChoiceField(label='Priorytet', required=False, choices=SpaceTask.PRIORITY_CHOICES)
     assignee = forms.MultipleChoiceField(label='Wykonawca', required=False)
     tag = forms.MultipleChoiceField(label='Tagi', required=False)
-    team = forms.MultipleChoiceField(label='Zespół', required=False)
     sort = forms.ChoiceField(label='Sortowanie', choices=list(BASIC_SORTS.items()), initial='created_desc')
 
     def __init__(self, *args, request, **kwargs):
@@ -62,12 +61,6 @@ class BasicTaskSearchForm(forms.Form):
         self.fields['tag'].choices = [(str(tag.pk), f'{tag.name} ({tag.space.key})') for tag in TaskTag.objects.filter(
             user=request.workplace.owner, workplace=request.workplace, space_id__in=[space.pk for space in spaces],
         ).select_related('space').order_by('name', 'pk')]
-        teams = list(teams_for(request).order_by('name', 'pk'))
-        self.fields['team'].choices = [(str(team.pk), team.name) for team in teams]
-        visuals['team'] = {str(team.pk): {
-            'template': 'spaces/team_avatar.html',
-            'context': {'photo_url': app_url(request, f'{team.pk}/photo/', 'teams') if team.photo else ''},
-        } for team in teams}
         for name, options in visuals.items():
             self.fields[name].widget = VisualSelectMultiple(choices=self.fields[name].choices, visuals=options)
         style_fields(self)

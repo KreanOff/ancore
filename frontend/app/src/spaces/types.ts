@@ -47,7 +47,6 @@ export interface Item {
   points: number | null;
   in_backlog: boolean;
   assignee: { label: string; avatar: AvatarData } | null;
-  team: string;
   tags_count: number;
   attachments_count: number;
   due_at: string | null;

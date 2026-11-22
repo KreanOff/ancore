@@ -1,7 +1,6 @@
 import { Component, type ComponentType, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
-import type { Directory } from './resources/types';
 import type { Page } from './shared/page';
 import type { PageProps } from './shared/page';
 import type { NavigationEnvelope } from './shell/navigation-types';
@@ -15,63 +14,77 @@ const pending = new WeakSet<HTMLElement>();
 let panelsRoot: Root | undefined;
 let mountingPanels = false;
 let PageComponent: ComponentType<PageProps>;
-let ResourcesComponent: ComponentType<{ initial: Directory; csrfToken: string }>;
-const styles = new Map<string, Promise<void>>();
-async function preparePage(envelope: NavigationEnvelope) {
-  const loads = (envelope.page.styles || []).map((href) => {
-    const url = new URL(href, location.origin).href;
-    if (styles.has(url)) return styles.get(url)!;
-    if (
-      [...document.querySelectorAll<HTMLLinkElement>('link[rel=stylesheet]')].some(
-        (link) => link.href === url,
-      )
-    )
-      return Promise.resolve();
-    const pending = new Promise<void>((resolve, reject) => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = url;
-      const failed = () => {
-        clearTimeout(timer);
-        link.remove();
-        styles.delete(url);
-        reject(new Error('Nie udało się wczytać stylów ekranu.'));
-      };
-      const timer = setTimeout(failed, 15000);
-      link.onload = () => {
-        clearTimeout(timer);
-        resolve();
-      };
-      link.onerror = failed;
-      document.head.append(link);
-    });
-    styles.set(url, pending);
-    return pending;
+const stylesEnd = document.querySelector('meta[name="ancore-screen-styles"]');
+const styles = new Map(
+  Array.from(document.querySelectorAll<HTMLLinkElement>('link[data-screen-stylesheet]'), (link) => [
+    link.href,
+    { link, ready: Promise.resolve() },
+  ]),
+);
+
+function screenStyle(href: string) {
+  const url = new URL(href, location.origin).href;
+  const existing = styles.get(url);
+  if (existing) return existing;
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = url;
+  link.dataset.screenStylesheet = '';
+  // Fetch now, but keep the current screen's cascade until navigation commits.
+  link.media = 'not all';
+  const ready = new Promise<void>((resolve, reject) => {
+    const failed = () => {
+      clearTimeout(timer);
+      link.remove();
+      styles.delete(url);
+      reject(new Error('Nie udało się wczytać stylów ekranu.'));
+    };
+    const timer = setTimeout(failed, 15000);
+    link.onload = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+    link.onerror = failed;
+    document.head.insertBefore(link, stylesEnd);
   });
-  if (envelope.page.type === 'resources') {
-    loads.push(
-      import('./resources/App').then((module) => {
-        ResourcesComponent = module.default;
-      }),
-    );
-  } else {
-    loads.push(
-      import('./PageApp').then(async (module) => {
-        PageComponent = module.default;
-        await module.preloadPage(envelope.page.type);
-      }),
-    );
+  const entry = { link, ready };
+  styles.set(url, entry);
+  return entry;
+}
+
+function applyScreenStyles(urls: string[]) {
+  const active = new Set(urls.map((href) => screenStyle(href).link));
+  for (const { link } of styles.values()) {
+    if (!active.has(link)) link.media = 'not all';
   }
+  let before = stylesEnd;
+  for (const link of [...active].reverse()) {
+    if (link.nextElementSibling !== before) document.head.insertBefore(link, before);
+    link.removeAttribute('media');
+    before = link;
+  }
+}
+
+async function preparePage(envelope: NavigationEnvelope) {
+  const loads = (envelope.page.styles || []).map((href) => screenStyle(href).ready);
+  loads.push(
+    import('./PageApp').then(async (module) => {
+      PageComponent = module.default;
+      await module.preloadPage(envelope.page.type);
+    }),
+  );
   await Promise.all(loads);
 }
 function renderPage(envelope: NavigationEnvelope) {
   unmount();
+  applyScreenStyles(envelope.page.styles || []);
   document.querySelector('[data-right-sidebar-fallback]')?.remove();
   const container = document.querySelector<HTMLElement>('.main-content .page-container')!;
   container.className = 'page-container full-width';
   const host = document.createElement('div'),
     modals = document.createElement('div');
-  host.dataset.reactRoot = envelope.page.type === 'resources' ? 'resources' : 'page';
+  host.dataset.reactRoot = 'page';
   host.dataset.csrfToken = envelope.csrf_token;
   host.style.display = 'contents';
   modals.id = 'app-page-modals';
@@ -87,14 +100,7 @@ function renderPage(envelope: NavigationEnvelope) {
   flushSync(() =>
     root.render(
       <FrontendBoundary>
-        {envelope.page.type === 'resources' ? (
-          <ResourcesComponent
-            initial={envelope.page.data as Directory}
-            csrfToken={envelope.csrf_token}
-          />
-        ) : (
-          <PageComponent initial={envelope.page} csrfToken={envelope.csrf_token} />
-        )}
+        <PageComponent initial={envelope.page} csrfToken={envelope.csrf_token} />
       </FrontendBoundary>,
     ),
   );
@@ -122,32 +128,24 @@ class FrontendBoundary extends Component<{ children: ReactNode }, { failed: bool
 async function mount() {
   if (disposed) return;
   void mountPanels();
-  const host = document.querySelector<HTMLElement>('[data-react-root]');
+  const host = document.querySelector<HTMLElement>('[data-react-root="page"]');
   if (!host || roots.has(host) || pending.has(host)) return;
   pending.add(host);
   try {
     const data = document.getElementById(host.dataset.bootstrapId || '')?.textContent;
     if (!data) throw new Error('Missing frontend data');
-    const initial = JSON.parse(data);
-    let content: ReactNode;
-    if (host.dataset.reactRoot === 'resources') {
-      const ResourcesApp = (await import('./resources/App')).default;
-      content = (
-        <ResourcesApp initial={initial as Directory} csrfToken={host.dataset.csrfToken || ''} />
-      );
-    } else {
-      const PageApp = (await import('./PageApp')).default;
-      content = <PageApp initial={initial as Page} csrfToken={host.dataset.csrfToken || ''} />;
-    }
+    const initial: Page = JSON.parse(data);
+    const PageApp = (await import('./PageApp')).default;
     if (disposed || !host.isConnected) return;
-    // Replace the server fallback modal with the React portal on direct editor URLs.
-    document.querySelector('[data-resource-modal-host]')?.replaceChildren();
-    if (host.dataset.reactRoot === 'page')
-      document.getElementById('app-page-modals')?.replaceChildren();
+    document.getElementById('app-page-modals')?.replaceChildren();
     document.querySelector('[data-right-sidebar-fallback]')?.remove();
     const root = createRoot(host);
     roots.set(host, root);
-    root.render(<FrontendBoundary>{content}</FrontendBoundary>);
+    root.render(
+      <FrontendBoundary>
+        <PageApp initial={initial} csrfToken={host.dataset.csrfToken || ''} />
+      </FrontendBoundary>,
+    );
   } catch (error) {
     window.showNotification?.(
       'Nie udało się wczytać interfejsu aplikacji. Odśwież stronę.',

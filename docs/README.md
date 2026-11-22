@@ -33,7 +33,7 @@ w `static/`. Główne instrukcje startu i mapa repozytorium są w
 Instrukcje agenta znajdują się w [AGENTS.md](../AGENTS.md). Ten plik kieruje
 do szczegółowych opisów i wymaga zachowania istniejących wzorców.
 
-Przestrzenie, niezależne zadania `SpaceTask`, sprinty i zespoły: [Przestrzenie](SPACES.md).
+Przestrzenie, niezależne zadania `SpaceTask` i sprinty: [Przestrzenie](SPACES.md).
 
 Praca zespołowa i role: [Workspace zespołu](TEAMWORK.md).
 
@@ -50,12 +50,10 @@ Podział plików, zasady dodawania źródeł i rozróżnienie danych lokalnych:
 | --- | --- |
 | Nowe pole zadania | [Przestrzenie](SPACES.md); `backend/spaces/models.py`, `backend/spaces/forms.py`, `backend/spaces/task_views.py` |
 | Wycofane Projekty, Grupy, Zadania, Ulubione projekty i Szablony | Moduły: historyczne Tasks; `backend/tasks/models.py`, `backend/core/test_schema_baseline.py` |
-| Przestrzenie, własne zadania, zespoły, sprinty | [Przestrzenie](SPACES.md); `backend/spaces/`, `static/js/spaces.js` |
-| Zespoły, skład, role i przegląd pracy | [System Zespołów](SPACES.md#system-zespołów-04112026); `backend/spaces/teams.py`, `team_queries.py`, `frontend/app/src/spaces/TeamsPage.tsx` |
+| Przestrzenie, własne zadania i sprinty | [Przestrzenie](SPACES.md); `backend/spaces/`, `static/js/spaces.js` |
 | Wycofany Kanban i stare linki | Moduły: wycofany Kanban; Przestrzenie: migracja; `backend/core/test_schema_baseline.py`, [Baza danych](DATABASE.md) |
 | Toolbar, tabela, modal, kolory | Cały standard UI; szablon referencyjny, wspólny CSS i odbiorcy wspólnego JS |
 | Logowanie i profil | Moduły: Accounts; Mechanizmy: tożsamość, dostęp, obrazy; [API kont React](FRONTEND.md#api-i-interfejs-kont) |
-| Zasoby, przekazania, zwroty i historia | Moduły: Zasoby; `backend/resources/`, `frontend/app/src/resources/`; zgodne formularze HTML w `static/js/resources.js` |
 | Nawigacja lub nowy moduł | Architektura; Mechanizmy: Workspace, URL i podmiana treści |
 | React, JSON API i migracja frontendu | [Frontend React](FRONTEND.md); `frontend/app/`, `backend/core/frontend.py`, `backend/core/api.py`, domenowe `frontend.py` |
 | Dysk i upload | Moduły: Dysk; Mechanizmy: pliki; `backend/documents/`, `backend/core/upload_validation.py` |

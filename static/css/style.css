@@ -13,7 +13,7 @@
 @import 'components/dialogs.css?v=20260822-confirm-modal-white-no-footer-border';
 @import 'components/modals.css?v=20260829-pc-tablet-layout-v4';
 @import 'components/tables.css?v=20260829-pc-tablet-layout-v4';
-@import 'components/tasks.css?v=20261112-red-brand';
+@import 'components/tasks.css?v=20261122-retired-modules';
 @import 'components/shared-controls.css?v=20261112-event-color';
 @import 'components/notifications.css?v=20260919-unified-notifications';
 @import 'components/attachments.css?v=20260822-monochrome-borderless-icons';
@@ -33,7 +33,7 @@
 @import 'components/page-header.css?v=20261105-text-page-titles';
 @import 'components/data-table.css?v=20261105-common-data-tables';
 @import 'components/load-more.css?v=20261105-load-more';
-@import 'components/app-toolbar.css?v=20261108-toolbar-views';
+@import 'components/app-toolbar.css?v=20261122-retired-modules';
 @import 'layout/panels.css?v=20261114-sidebar-edge-both';
 
 /* App-wide text palette: #40444C and #FFFFFF. */
@@ -1053,11 +1053,6 @@ body:has(#sidebar-filters-picker:popover-open) .sidebar .sidebar-spaces-more[ari
 
 .sidebar-navigation[data-sidebar-navigation="workspace"] > .sidebar-menu-section {
     flex-shrink: 0;
-}
-
-.sidebar-menu-section--bottom {
-    margin-top: auto;
-    padding-top: 1.05rem;
 }
 
 .sidebar-menu-section-title {

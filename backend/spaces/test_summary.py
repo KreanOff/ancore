@@ -11,7 +11,7 @@ from django.db import connection
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
-from .models import SpaceDashboardLayout, SpaceTask, SpaceTaskActivity, SpaceTaskMembership, Space, SpaceMembership, Team
+from .models import SpaceDashboardLayout, SpaceTask, SpaceTaskActivity, SpaceTaskMembership, Space, SpaceMembership
 from .summary import status_arc_path
 from workplaces.models import WorkplaceMembership, create_workplace_for_user
 from workplaces.services import scoped_workplace_app_path
@@ -115,10 +115,6 @@ class SpaceSummaryTests(TestCase):
         return response.json()['data']
 
     def filter_fixture(self):
-        first_team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Pierwszy zespół')
-        second_team = Team.objects.create(owner=self.owner, workplace=self.workspace, name='Drugi zespół')
-        first_team.spaces.add(self.space)
-        second_team.spaces.add(self.space)
         selected = self.task(status='in_progress', priority='urgent', assignee=self.member, due_at=self.now + timedelta(days=1))
         other = self.task(status='closed', priority='low')
         hidden = self.task(status='in_progress', priority='urgent', assignee=self.member,
@@ -126,19 +122,18 @@ class SpaceSummaryTests(TestCase):
         self.task(assignee=self.other, visibility='private', private_owner=self.owner)
         for task in (selected, hidden):
             SpaceTask.objects.filter(pk=task.pk).update(title='Zadanie wybrane', created_at=self.now - timedelta(days=1))
-            type(task.work_item).objects.filter(pk=task.work_item.pk).update(work_type='bug', status='review', team=first_team)
+            type(task.work_item).objects.filter(pk=task.work_item.pk).update(work_type='bug', status='review')
             activity = SpaceTaskActivity.objects.create(task=task, actor=self.member, action='updated')
             SpaceTaskActivity.objects.filter(pk=activity.pk).update(created_at=self.now - timedelta(hours=1))
         SpaceTask.objects.filter(pk=other.pk).update(title='Zadanie pozostałe', completion_date=self.now - timedelta(days=1))
-        type(other.work_item).objects.filter(pk=other.work_item.pk).update(team=second_team)
-        return selected, first_team, second_team
+        return selected
 
     def test_common_overview_filters_scope_counters_charts_and_activity(self):
-        selected, team, _ = self.filter_fixture()
+        selected = self.filter_fixture()
         filters = [
             {'work_type': 'bug'}, {'assignee': 'me'}, {'assignee': str(self.member.pk)},
-            {'status': 'review'}, {'priority': 'urgent'}, {'team': str(team.pk)}, {'q': 'wybrane'},
-            {'work_type': 'bug', 'assignee': 'me', 'status': 'review', 'priority': 'urgent', 'team': str(team.pk)},
+            {'status': 'review'}, {'priority': 'urgent'}, {'q': 'wybrane'},
+            {'work_type': 'bug', 'assignee': 'me', 'status': 'review', 'priority': 'urgent'},
         ]
         for scoped in (False, True):
             for values in filters:
@@ -157,10 +152,9 @@ class SpaceSummaryTests(TestCase):
             self.assertEqual({row['key']: row['count'] for row in unassigned['metrics']}['completed'], 1)
 
     def test_overview_filter_menu_matches_task_list_with_visible_options(self):
-        _, first_team, second_team = self.filter_fixture()
-        foreign_team = Team.objects.create(owner=self.owner, workplace=self.second, name='Inny Workspace')
+        self.filter_fixture()
         for scoped in (False, True):
-            for filters in ({}, {'work_type': 'bug', 'assignee': 'me', 'status': 'review', 'priority': 'urgent', 'team': str(first_team.pk)}):
+            for filters in ({}, {'work_type': 'bug', 'assignee': 'me', 'status': 'review', 'priority': 'urgent'}):
                 with self.subTest(scoped=scoped, filters=filters):
                     overview = self.page_data(filters, scoped)
                     task_list = self.page_data({**filters, 'view': 'list'}, scoped)
@@ -172,22 +166,21 @@ class SpaceSummaryTests(TestCase):
                     self.assertNotIn(str(self.other.pk), {value for value, _ in options['assignee']})
                     self.assertIn(['review', 'Weryfikacja'], options['status'])
                     self.assertEqual(len(options['priority']), len(SpaceTask.PRIORITY_CHOICES) + 1)
-                    self.assertEqual({value for value, _ in options['team']}, {'', str(first_team.pk), str(second_team.pk)})
-                    self.assertNotIn(str(foreign_team.pk), {value for value, _ in options['team']})
+                    self.assertNotIn('team', options)
                     html = self.response(self.overview_url(filters, scoped))
                     self.assertContains(html, '<span>Filtruj</span>')
                     self.assertContains(html, 'name="work_type"')
                     self.assertContains(html, 'name="assignee"')
                     self.assertContains(html, 'name="status"')
                     self.assertContains(html, 'name="priority"')
-                    self.assertContains(html, 'name="team"')
+                    self.assertNotContains(html, 'name="team"')
                     self.assertNotContains(html, 'tasks-project-sort-builder')
                     self.assertEqual(html.context['item_filter_count'], len(filters))
 
     def test_filtered_drilldowns_and_clear_keep_other_filters_and_access_scope(self):
-        selected, team, _ = self.filter_fixture()
+        selected = self.filter_fixture()
         filters = {'view': 'overview', 'q': 'Zadanie', 'work_type': 'bug', 'assignee': 'me',
-                   'status': 'review', 'priority': 'urgent', 'team': str(team.pk), 'summary': 'due', 'page': '2'}
+                   'status': 'review', 'priority': 'urgent', 'summary': 'due', 'page': '2'}
         for scoped in (False, True):
             response = self.response(self.overview_url(filters, scoped))
             summary = response.context['summary']
@@ -200,7 +193,7 @@ class SpaceSummaryTests(TestCase):
                     self.assertEqual(sum(column['count'] for column in result.context['columns']), row['count'])
                     self.assertTrue(all(item.task_id == selected.pk for item in result.context['items']))
                     params = parse_qs(urlsplit(row['url']).query)
-                    for key in ('q', 'work_type', 'team', 'status', 'priority'):
+                    for key in ('q', 'work_type', 'status', 'priority'):
                         self.assertEqual(params[key], [filters[key]])
                     self.assertIn(params['assignee'][0], ('me', str(self.member.pk)))
                     self.assertNotIn('page', params)
@@ -216,7 +209,7 @@ class SpaceSummaryTests(TestCase):
         self.filter_fixture()
         widgets = [{'id': 'statuses', 'x': 4, 'y': 7, 'w': 8, 'h': 6}]
         layout = SpaceDashboardLayout.objects.create(space=self.space, user=self.member, widgets=widgets, revision=7)
-        for filters, total in (({'status': 'review', 'assignee': 'unassigned'}, 0), ({'team': '9999999'}, 0), ({}, 2)):
+        for filters, total in (({'status': 'review', 'assignee': 'unassigned'}, 0), ({}, 2)):
             data = self.page_data(filters)
             self.assertEqual(data['summary']['total'], total)
             self.assertEqual(data['summary']['dashboard']['widgets'], widgets)

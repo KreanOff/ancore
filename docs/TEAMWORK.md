@@ -3,27 +3,10 @@
 Dostęp dotyczy aktualnych Przestrzeni i modułów Workspace.
 [Dawne systemy usunięto ze schematu](DATABASE.md).
 
-## Zespoły pracy a członkostwo Workspace
-
-Moduł `/teams/` grupuje aktywnych członków Workspace w zespoły z własnymi
-administratorami i profilami. Katalog, podsumowanie pracy oraz zakładki zadań,
-członków i przestrzeni opisuje [System Zespołów](SPACES.md#system-zespołów-04112026).
-Profilem i składem zarządzają administratorzy zespołu oraz właściciel i administrator
-Workspace. Zwykły członek Workspace może utworzyć własny zespół. Gość nie
-zarządza zespołem również wtedy, gdy zachował dawną rolę administratora.
-Ochrona ostatniego administratora liczy wyłącznie aktywne osoby z prawem zapisu
-w tym Workspace. Usunięcie zespołu wymaga jego aktualnej nazwy i pozostawia
-zadania, przestrzenie oraz ich niezależne dostępy; usuwa powiązanie z zespołem.
-Powiązanie z przestrzenią i przypisanie zadania
-do zespołu nie nadaje dostępu do danych. Obowiązują role Workspace oraz niezależne członkostwa Przestrzeni i ich zadań. „Zarządzana przez zespół” w kreatorze
-przestrzeni oznacza niezależną konfigurację, nie automatyczne udostępnienie
-członkom zespołu. [Pełny opis](SPACES.md).
-
-
-## Zakres pierwszej wersji
+## Zakres dostępu
 
 Workspace obejmuje Przestrzenie i ich zadania, Kalendarz, Dysk,
-Dokumenty oraz Zasoby. Dawne katalogi Kontaktów, Firm, Użytkowników i Gości
+Dokumenty, Pulpity i Filtry. Dawne katalogi Kontaktów, Firm, Użytkowników i Gości
 są wycofane; nie zmienia to kont ani członkostw Workspace. Dołączenie udostępnia wspólne dane Workspace.
 Przestrzenie i ich zadania mają własną widoczność oraz role.
 Rola „Obserwator” zapewnia wyłącznie odczyt w swoim zakresie; rola Workspace
@@ -33,11 +16,11 @@ nie omija prywatności Przestrzeni ani zadania. Gość Workspace ma wyłącznie 
 | --- | --- |
 | Właściciel | Wspólne dane i własne i udostępnione prywatne przestrzenie; ustawienia Workspace; dodawanie istniejących kont oraz linki do dołączenia; zmiana ról i odbieranie dostępu; usunięcie Workspace zgodnie z dotychczasowym ograniczeniem ostatniej własnej przestrzeni |
 | Administrator | Wspólne dane i własne i udostępnione prywatne przestrzenie; ustawienia Workspace; dodawanie istniejących kont jako członków lub gości, odbieranie im dostępu i zarządzanie linkami. Nie zmienia ról ani nie zarządza dostępem administratorów i właściciela |
-| Członek | Tworzenie, odczyt, edycja i usuwanie wspólnych danych oraz własnych i udostępnionych prywatnych przestrzeni; lista zespołu. Bez zarządzania zespołem i ustawieniami Workspace |
-| Gość | Wyłącznie odczyt wspólnych i udostępnionych prywatnych danych; konto i osobiste gwiazdki; bez zapisu danych zespołu |
+| Członek | Tworzenie, odczyt, edycja i usuwanie wspólnych danych oraz własnych i udostępnionych prywatnych przestrzeni; lista członków. Bez zarządzania członkostwami i ustawieniami Workspace |
+| Gość | Wyłącznie odczyt wspólnych i udostępnionych prywatnych danych; konto i osobiste gwiazdki; bez zapisu wspólnych danych |
 
-Właściciel wynika z `Workplace.owner`; nie można go usunąć z zespołu ani
-zmienić tą ścieżką. Przenoszenie własności i usuwanie kont właścicieli nie
+Właściciela wyznacza `Workplace.owner`. Formularz członkostw chroni jego
+pozycję i rolę. Przenoszenie własności i usuwanie kont właścicieli nie
 wchodzą w zakres tej wersji.
 Usunięcie Workspace blokuje w bazie wiersz właściciela przed wyborem zastępczego
 miejsca pracy. Ochrona ostatniego własnego Workspace obejmuje równoczesne żądania.
@@ -50,17 +33,6 @@ możliwość pozostawienia innego własnego Workspace. Usunięcie aktywnego
 środowiska przełącza na inne własne, a pozostałego nie zmienia aktywnego.
 Zarządzanie wybraną pozycją nie jest ograniczane przez rolę gościa w innym,
 aktualnie aktywnym Workspace.
-
-Zasoby są wspólne dla właściciela i aktywnych członków Workspace. Obowiązuje
-ten sam zakres tworzenia, edycji i usuwania co dla innych wspólnych danych.
-Osobą odpowiedzialną może być aktywne konto właściciela lub członka tego Workspace;
-samo przypisanie nie nadaje dostępu. Odebranie członkostwa odbiera dostęp także
-do przypisanych zasobów. Dawne przypisanie pozostaje w ewidencji do edycji,
-podczas której formularz wymaga wyboru aktywnej osoby lub wyczyszczenia przypisania.
-Karta, historia i eksport mają ten sam zakres. Gość może je czytać, lecz nie
-przekazuje, nie zwraca ani nie zmienia zasobów. Każdy wpis historii zapisuje
-faktycznego autora; operacje zbiorcze sprawdzają dostęp do wszystkich zasobów
-przed zapisem. Historia nie nadaje dodatkowych uprawnień.
 
 ## Role Pulpitów
 
@@ -152,7 +124,7 @@ katalogu, a POST dodaje osobę; sukces wraca do „Członkowie”, błąd zachow
 formularz. Menu wiersza oraz jego osobna kolumna zostały usunięte. Nie dodano
 zastępczych wejść do zmiany roli i odebrania dostępu; opisane uprawnienia
 i istniejące endpointy tych operacji pozostają aktywne.
-Operacje wymagają sesji i CSRF. Odebranie dostępu zachowuje treści zespołu,
+Operacje wymagają sesji i CSRF. Odebranie dostępu zachowuje treści Workspace,
 czyści osobne udostępnienia i unieważnia sesje Office w całym Workspace;
 pozostali użytkownicy ponownie otwierają pliki. Zmiana aktywnego administratora
 lub członka na gościa także unieważnia sesje Dysku i Dokumentów, w tym podpisane
@@ -293,12 +265,12 @@ Osoba z istniejącym Workspace może też jawnie utworzyć kolejny przez ten
 formularz. Bez dostępnych środowisk widoczny jest komunikat pustej listy.
 
 Sekcja „Ustawienia” Workspace pozwala wybrać włączone moduły: Przestrzenie i zadania,
-Zespoły, Kalendarz, Dysk, Dokumenty, Zasoby, Pulpity i Filtry. Wyłączenie ukrywa
+Kalendarz, Dysk, Dokumenty, Pulpity i Filtry. Wyłączenie ukrywa
 nawigację i blokuje bezpośrednie adresy oraz API modułu; dane pozostają w bazie.
 Włączenie przywraca dostęp. Polityka działa też dla już otwartych ekranów.
 
 Gość (`guest`) odczytuje wspólne oraz udostępnione mu prywatne dane. Nie tworzy,
-nie edytuje i nie usuwa danych zespołu, niezależnie od ról Przestrzeni. Może
+nie edytuje i nie usuwa danych Workspace, niezależnie od ról Przestrzeni. Może
 korzystać z konta, nawigacji i osobistych gwiazdek. Serwer blokuje także surowe
 POST/PUT/PATCH/DELETE i delegowane API. ONLYOFFICE działa w trybie view,
 callback starej sesji edycji sprawdza aktualną rolę oraz włączony moduł.

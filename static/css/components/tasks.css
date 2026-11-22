@@ -14839,7 +14839,6 @@ body.is-resizing-directory-columns {
 
 .tasks-workspace:has(> .work-content--directory) > .tasks-filterbar,
 .tasks-workspace:has(> .work-content--tasks > .tasks-tag-sheet) > .tasks-filterbar,
-.resources-page > .tasks-workspace > .resources-filterbar,
 .workplaces-console > .workplaces-management__toolbar,
 .documents-page > .documents-filterbar {
     border-bottom: 0;

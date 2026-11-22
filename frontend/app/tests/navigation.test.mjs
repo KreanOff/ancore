@@ -292,7 +292,7 @@ function deferred() {
 test('a fast navigation renders without showing a loader or locking the previous page', async () => {
   const app = controller();
   try {
-    const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/teams/');
+    const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/dashboards/');
     assert.equal(app.content.attributes.get('aria-busy'), 'true');
     assert.equal(app.skeleton.hidden, true);
     assert.equal(app.page.inert, false);
@@ -312,7 +312,7 @@ test('a delayed failure restores the existing screen and its focus after hiding 
   const app = controller(() => response.promise);
   app.document.activeElement = app.focused;
   try {
-    const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/teams/');
+    const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/dashboards/');
     app.advance(179);
     assert.equal(app.skeleton.hidden, true);
     assert.equal(app.page.inert, false);
@@ -344,7 +344,7 @@ test('replacing an active request keeps one loader lock until the latest request
   });
   app.document.activeElement = app.focused;
   try {
-    const previous = app.window.AncoreApp.navigate('/workplaces/workspace-a/teams/');
+    const previous = app.window.AncoreApp.navigate('/workplaces/workspace-a/dashboards/');
     app.advance(180);
     app.document.activeElement = app.document.body;
     const current = app.window.AncoreApp.navigate('/workplaces/workspace-a/calendar/');
@@ -375,7 +375,7 @@ for (const closeModalFirst of [true, false]) {
     const app = controller(() => response.promise);
     const closeModal = app.acquireInert([app.page]);
     try {
-      const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/teams/');
+      const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/dashboards/');
       app.advance(180);
       if (closeModalFirst) closeModal();
       assert.equal(app.page.inert, true);
@@ -397,7 +397,7 @@ test('finishing a loader preserves a page that was already inert', async () => {
   const app = controller(() => response.promise);
   app.page.inert = true;
   try {
-    const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/teams/');
+    const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/dashboards/');
     app.advance(180);
     response.reject(new Error('Brak połączenia.'));
     assert.equal(await navigation, false);
@@ -416,7 +416,7 @@ for (const reason of ['detached', 'another-control', 'modal']) {
     app.document.activeElement = app.focused;
     let closeModal;
     try {
-      const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/teams/');
+      const navigation = app.window.AncoreApp.navigate('/workplaces/workspace-a/dashboards/');
       app.advance(180);
       app.document.activeElement = app.document.body;
       if (reason === 'detached') app.focused.isConnected = false;

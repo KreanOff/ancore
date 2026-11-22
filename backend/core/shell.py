@@ -118,24 +118,30 @@ def messages_payload(request):
     return [{'message': str(item), 'type': item.tags or 'info'} for item in get_messages(request)]
 
 
-def page_styles(page):
-    # Keep the existing cascade order; no legacy module controller is loaded on navigation.
-    names = ['components/documents.css', 'components/resources.css', 'components/spaces.css']
-    kind = page['type']
+def stylesheet_url(name):
+    path = settings.BASE_DIR / 'static/css' / name
+    return f"{static('css/' + name)}?v={path.stat().st_mtime_ns}"
+
+
+def page_styles(kind):
+    if not kind:
+        return []
+    # Shared by the initial HTML and JSON navigation.
+    names = ['components/documents.css', 'components/spaces.css']
     if kind.startswith('pulpit') or kind == 'for-you':
         names += ['components/dashboard.css', 'components/pulpits.css']
     if kind.startswith('filter') or kind in {'form', 'workspace-form'}:
         names += ['components/task-filters.css', 'components/pulpits.css']
     if kind == 'settings':
         names += ['components/settings.css']
-    if kind in {'workspace-directory', 'workspace-form', 'teams', 'team', 'form'} or kind.startswith(('space-', 'pulpit', 'filter')):
+    if kind in {'workspace-directory', 'workspace-form', 'form'} or kind.startswith(('space-', 'pulpit', 'filter')):
         names += ['components/workplace-team.css']
     if kind.startswith(('document', 'office')):
         names += ['components/office.css']
-    return [static('css/' + name) + '?v=' + str((settings.BASE_DIR / 'static/css' / name).stat().st_mtime_ns) for name in names]
+    return [stylesheet_url(name) for name in names]
 
 
 def navigation_response(request, page, context=None, status=200):
-    page['styles'] = page_styles(page)
+    page['styles'] = page_styles(page['type'])
     return JsonResponse({'page': page, 'shell': shell_payload(request, context),
                          'csrf_token': get_token(request), 'messages': messages_payload(request)}, status=status)

@@ -29,7 +29,7 @@ Zapis, status, historia i pliki pozostają jedną transakcją; autor to
 `request.user`. Odpowiedź JSON aktualizuje otwarty widok bez zastępowania
 edytowanych pól. Niepowodzenie zachowuje szkic; dopiero powodzenie przesuwa
 snapshot zapisu. Żądanie bez `autosave_fields` zachowuje pełny formularz.
-Niezmieniane relacje (wykonawca, zespół, sprint, epik) zachowują bieżące
+Niezmieniane relacje (wykonawca, sprint, epik) zachowują bieżące
 wartości także po utracie możliwości ich wyboru. Nie są ponownie walidowane
 jako nowe przypisania; nadal uczestniczą w walidacji zależności pól.
 Jawna zmiana lub wyczyszczenie relacji przechodzi zwykłą walidację,
@@ -142,8 +142,9 @@ od aktywnego Workspace. `render_workplaces()` sprawdza wybór w `workplaces_for_
 `team_context()` buduje skład i akcje według roli w wybranej przestrzeni.
 `management_view` rozdziela katalog, członków i linki do dołączenia.
 `workplace_management_url()` zachowuje wybór po zapisie i dopuszcza wyłącznie
-znane wartości `view`; ustawienia odtwarzają zakładkę z formularza. Oglądanie i edycja zespołu
-nie wywołują `set_active_workplace()`; utworzenie nowego Workspace, jawne przełączenie,
+znane wartości `view`; ustawienia odtwarzają zakładkę z formularza. Oglądanie
+i edycja członkostw nie wywołują `set_active_workplace()`. Utworzenie nowego
+Workspace, jawne przełączenie,
 scoped URL modułu i potwierdzenie linku do dołączenia zmieniają aktywny kontekst.
 
 Źródło: [workplaces/services.py](../backend/workplaces/services.py).
@@ -191,12 +192,12 @@ sprawdź oczekiwany kontekst i zachowanie aktywnego middleware.
 ## 3. Routing zwykły i scoped
 
 `scoped_workplace_app_path()` buduje adresy modułów. Zestaw obsługiwanych
-segmentów to `tasks`, `kanban`, `calendar`, `documents`, `office`,
-`resources`, `for-you`, `spaces`, `teams` i `dashboards`. Dawne adresy Kontaktów zwracają 404
-i nie są przepisywane przez middleware do aktywnego Workspace.
-Wariant scoped ma namespace `workplace_tasks`, `workplace_kanban`,
-`workplace_planner`, `workplace_documents`, `workplace_office`,
-`workplace_resources`, `workplace_spaces`, `workplace_teams` albo `workplace_pulpits`. „Dla ciebie” ma nazwy tras `for_you` i
+segmentów obejmuje `calendar`, `documents`, `office`, `for-you`, `spaces`,
+`space`, `filters`, `dashboards` i `api`. Dawne adresy Kontaktów, Zasobów i Zespołów
+zwracają 404.
+Wariant scoped ma namespace `workplace_planner`, `workplace_documents`,
+`workplace_office`, `workplace_spaces`, `workplace_filters` albo `workplace_pulpits`.
+„Dla ciebie” ma nazwy tras `for_you` i
 `workplace_for_you` bez osobnego namespace.
 
 Po włączeniu zakresu URL middleware przekierowuje bazowe GET/HEAD do
@@ -221,9 +222,9 @@ użyteczności danego ekranu, a nie przypadkowym dodatkiem URL.
 Przestrzenie, zadania, historię, pliki i dzienniki ogranicza `spaces.access`.
 Właściciel danych pochodzi z `workspace_owner(request)`, kontekst z `request.workplace`.
 `SpaceMembership` i `SpaceTaskMembership` wyznaczają niezależne role,
-z uwzględnieniem prywatnych rodziców. Wykonawca i zespół nie nadają dostępu.
+z uwzględnieniem prywatnych rodziców. Przypisanie wykonawcy nie nadaje dostępu.
 Formularze relacji stosują ten sam zakres. Usunięcie lub dezaktywacja członka
-Workspace czyści powiązane członkostwa Przestrzeni, zadań i zespołów.
+Workspace czyści powiązane członkostwa Przestrzeni i zadań.
 Dawne modele udostępniania i ich sygnały usunięto. [Role](TEAMWORK.md).
 
 ## 5. Identyfikatory i numeracja
@@ -480,7 +481,7 @@ i Firm oraz historyczne projekty/grupy/zadania Tasks nie są przeszukiwane.
 Zakres konkretnych querysetów uwzględnia właściciela i tam, gdzie przewidziano,
 aktywny Workspace; lista Workspace obejmuje własne przestrzenie i aktywne
 członkostwa faktycznie zalogowanej osoby (`request.user`), niezależnie od
-właściciela danych bieżącego zespołu. Nie ujawnia nazw, kodów ani opisów
+właściciela danych bieżącego Workspace. Nie ujawnia nazw, kodów ani opisów
 prywatnych Workspace tego właściciela.
 
 Wyszukiwanie traktuje również znaki Unicode i długie ciągi cyfr jako tekst.
@@ -698,35 +699,6 @@ Usuwanie Workspace blokuje wiersz właściciela przed sprawdzeniem zastępstwa
 i kaskadą, w jednej transakcji. Równoczesne żądania zachowują co najmniej jeden
 własny Workspace wraz z jego danymi.
 Ograniczenia `RESTRICT` chronią m.in. używane konfiguracje i lokalizacje Dokumentów.
-
-## 15. Ewidencja zasobów
-
-Główny katalog oraz GET tworzenia/edycji montują teraz moduł React.
-JSON API v1 w `backend/resources/api.py` współdzieli z widokami HTML zakres,
-katalog i zapis z `backend/resources/services.py`; walidacja pozostaje w `ResourceForm`.
-Sesja i CSRF nadal pochodzą z Django. Szczegóły kontraktu, cyklu życia
-i zgodności: [Frontend React](FRONTEND.md).
-
-`resources.views` ogranicza każdy odczyt i zapis jednocześnie przez
-`workspace_owner(request)` i `request.workplace`, w obu wariantach adresów.
-`ResourceForm` dopuszcza przypisanie wyłącznie aktywnych osób z
-`workplace_people`; nie przyjmuje właściciela, Workspace ani autora z POST.
-`created_by` i `updated_by` wskazują faktyczne konto wykonujące operację.
-Usunięcie Workspace usuwa zasoby; usunięcie przypisanej osoby lub autora
-zeruje odpowiednią relację, zachowując zasób.
-
-Opcjonalny numer ewidencyjny ma częściowe ograniczenie unikalności
-`Lower(inventory_number)` + Workspace. Formularz usuwa otaczające spacje,
-wyjaśnia duplikat, a zapis obsługuje także konflikt równoczesnych żądań.
-Status, typ i kolejność dat mają ograniczenia bazodanowe.
-Terminy i przypisanie są informacją ewidencyjną, bez automatycznych zmian statusu.
-
-GET katalogu łączy filtry i paginację. Formularze używają scoped adresów,
-więc zmiana Workspace w drugiej karcie nie zmienia celu zapisu. Nagłówek
-`X-Resource-Modal: true` wybiera JSON z HTML formularza (400 dla walidacji)
-lub potwierdzenie zapisu; zwykły GET otwiera katalog i okno w React.
-Usuwanie wymaga POST i CSRF. Query string przekazuje wyłącznie znane parametry
-katalogu; klient nie może wskazać dowolnego adresu przekierowania.
 
 ## 16. Pulpity i gadżety
 

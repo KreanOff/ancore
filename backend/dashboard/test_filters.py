@@ -6,7 +6,7 @@ from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from spaces.models import SpaceMembership, SpaceTask, Team
+from spaces.models import SpaceMembership, SpaceTask
 from spaces.services import visible_items
 from spaces.testing import make_space
 from tasks.models import TaskTag
@@ -45,7 +45,6 @@ class TaskFilterTests(TestCase):
         cls.tag1 = TaskTag.objects.create(user=cls.owner, workplace=cls.workplace, space=cls.space, name='Frontend')
         cls.tag2 = TaskTag.objects.create(user=cls.owner, workplace=cls.workplace, space=cls.space, name='Pilne')
         cls.high.tags.add(cls.tag1, cls.tag2)
-        cls.team = Team.objects.create(owner=cls.owner, workplace=cls.workplace, name='Produkt')
         cls.saved = SavedTaskFilter.objects.create(owner=cls.owner, workplace=cls.workplace, created_by=cls.owner,
                                                   name='Moje otwarte', query='assignee = currentUser()')
 
@@ -472,8 +471,6 @@ class TaskFilterTests(TestCase):
         self.member.save(update_fields=['profile_photo'])
         self.private.avatar_photo = 'space_avatars/private-dropdown.png'
         self.private.save(update_fields=['avatar_photo'])
-        self.team.photo = 'teams/dropdown-team.png'
-        self.team.save(update_fields=['photo'])
         self.private.configuration.settings['types'].append({'key': 'secret-type', 'label': 'Poufny typ'})
         self.private.configuration.save(update_fields=['settings'])
         self.space.configuration.settings['types'].append({'key': 'custom-type', 'label': '<script>Własny typ</script>'})
@@ -487,11 +484,29 @@ class TaskFilterTests(TestCase):
         self.assertIn('data-ancore-option-icon="shapes"', html)
         self.assertIn('&lt;script&gt;Własny typ&lt;/script&gt;', html)
         self.assertIn('/media/profile_photos/dropdown-member.png', html)
-        self.assertIn(scoped_workplace_app_path(self.workplace, 'teams', f'{self.team.pk}/photo/'), html)
         self.assertNotIn('private-dropdown.png', html)
         self.assertNotIn('Poufny typ', html)
         self.assertNotIn(self.private.name, str(form['space']))
         self.assertNotIn(self.other.email, str(form['assignee']))
+
+    def test_saved_query_with_retired_team_condition_can_be_edited(self):
+        source = 'NOT (team IS EMPTY OR priority = high)'
+        self.saved.query = source
+        self.saved.save(update_fields=['query'])
+        target = self.url(f'{self.saved.pk}/')
+
+        result = self.client.get(target)
+        self.assertContains(result, 'Pole „team” zostało wycofane')
+        self.assertEqual(result.context['mode'], 'advanced')
+        self.assertEqual(result.context['jql'], source)
+        self.assertFalse(result.context['items'])
+        self.assertFalse(result.context['can_save'])
+        self.saved.refresh_from_db()
+        self.assertEqual(self.saved.query, source)
+
+        result = self.client.get(target, {'jql': 'priority = high'})
+        self.assertEqual([item.task_id for item in result.context['items']], [self.high.pk])
+        self.assertTrue(result.context['can_save'])
 
     def test_clear_and_modal_close_preserve_saved_definition(self):
         response = self.client.get(self.url(f'{self.saved.pk}/'))

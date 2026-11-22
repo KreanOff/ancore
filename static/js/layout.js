@@ -69,10 +69,10 @@
 
     function isPartialNavigationPath(pathname) {
         // Scoped module URLs use the same views and shell as their base URLs.
-        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|resources|for-you|spaces|space|teams|dashboards|filters)(\/|$))/, '/');
+        pathname = pathname.replace(/^\/workplaces\/[^/]+\/(?=(tasks|calendar|documents|office|for-you|spaces|space|dashboards|filters)(\/|$))/, '/');
         const appShellPaths = [
             /^\/filters\/(?:search\/|new\/|\d+\/(?:edit\/)?|manage\/(?:new\/|\d+\/edit\/)?)?$/,
-            /^\/(spaces|space|teams)(\/.*)?$/,
+            /^\/(spaces|space)(\/.*)?$/,
             /^\/for-you\/?$/,
             /^\/dashboards\/default\/$/,
             /^\/dashboards\/(?:[-a-zA-Z0-9_]+\/)?(?:create\/|edit\/|access\/|copy\/|gadgets\/(?:add\/|\d+\/edit\/)?)?$/,
@@ -88,9 +88,6 @@
             /^\/calendar\/?$/,
             /^\/documents\/?$/,
             /^\/office\/?$/,
-            /^\/resources\/?$/,
-            /^\/resources\/create\/?$/,
-            /^\/resources\/\d+\/edit\/?$/,
         ];
 
         if (

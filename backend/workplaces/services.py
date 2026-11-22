@@ -8,7 +8,7 @@ from .models import Workplace, WorkplaceMembership
 
 ACTIVE_WORKPLACE_SESSION_KEY = 'active_workplace_id'
 WORKPLACE_URL_SCOPE_SESSION_KEY = 'workspace_url_scope_enabled'
-SCOPED_WORKPLACE_APPS = {'calendar', 'documents', 'office', 'resources', 'for-you', 'spaces', 'space', 'teams', 'dashboards', 'filters', 'api'}
+SCOPED_WORKPLACE_APPS = {'calendar', 'documents', 'office', 'for-you', 'spaces', 'space', 'dashboards', 'filters', 'api'}
 
 
 def workplace_management_url(workplace, view='members'):

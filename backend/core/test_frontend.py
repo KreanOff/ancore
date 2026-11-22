@@ -295,27 +295,6 @@ class ReactPageApiTests(TestCase):
         self.assertEqual(stale.status_code, 400)
         self.assertTrue(stale.json()['data']['errors'])
 
-    def test_teams_api_uses_visible_space_choices_and_protects_last_admin(self):
-        from spaces.models import Team, TeamMembership
-        target = self.path('teams', 'create/')
-        schema = self.client.get(self.api(), {'url': target}).json()['data']['form']
-        choices = next(field for field in schema['fields'] if field['name'] == 'spaces')['choices']
-        self.assertNotIn(str(self.private.pk), [choice['value'] for choice in choices])
-        invalid = self.client.post(self.api(), {'name':'Zespół React', 'spaces':[self.private.pk]}, QUERY_STRING='url=' + target)
-        self.assertEqual(invalid.status_code, 400)
-        response = self.client.post(self.api(), {'name':'Zespół React', 'spaces':[self.space.pk]}, QUERY_STRING='url=' + target)
-        self.assertEqual(response.status_code, 200)
-        team = Team.objects.get(name='Zespół React', workplace=self.workspace)
-        self.assertEqual(team.owner, self.owner)
-        self.assertEqual(team.created_by, self.member)
-        self.assertEqual(self.client.get(self.api(), {'url': self.path('teams')}).json()['type'], 'teams')
-        detail = self.client.get(self.api(), {'url': self.path('teams', f'{team.pk}/')})
-        self.assertEqual(detail.json()['type'], 'team')
-        member = TeamMembership.objects.get(team=team, user=self.member)
-        remove = self.path('teams', f'{team.pk}/members/{member.pk}/remove/')
-        self.assertEqual(self.client.post(self.api(), QUERY_STRING='url=' + remove).status_code, 400)
-        self.assertTrue(TeamMembership.objects.filter(pk=member.pk).exists())
-
     def test_legacy_ajax_headers_cannot_switch_api_back_to_html_fragments(self):
         target = self.task_path()
         response = self.client.post(self.api(), {'action':'save','title':'Zapis JSON','autosave_fields':'["title"]'}, QUERY_STRING='url=' + target, HTTP_X_REQUESTED_WITH='XMLHttpRequest', HTTP_X_WORK_MODAL='true')

@@ -282,7 +282,7 @@ class TodaySidebarTests(TestCase):
         self.workspace.save(update_fields=['disabled_modules'])
         event = self.event(title='Wydarzenie bez modułu Przestrzeni', color='#A153CC')
         self.task(title='Zadanie wyłączonego modułu')
-        response = self.client.get(self.url('resources', ''))
+        response = self.client.get(self.url('calendar', ''))
         self.assertContains(response, 'data-today-sidebar')
         self.assertContains(response, 'Plan na dziś')
         self.assertContains(response, event.title)

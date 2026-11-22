@@ -6,8 +6,8 @@ from django.http import QueryDict
 
 from .access import editable_to, visible_to
 from .models import SpaceTask, SpaceTaskActivity
-from workplaces.services import can_manage_team, scoped_workplace_app_path, workplace_role, workspace_owner
-from .models import Space, Sprint, Team, WorkItem
+from workplaces.services import can_manage_team, scoped_workplace_app_path, workspace_owner
+from .models import Space, Sprint, WorkItem
 
 
 def app_url(request, suffix='', app='spaces'):
@@ -42,7 +42,7 @@ def can_manage_spaces(request):
 
 def visible_items(request):
     tasks = visible_to(SpaceTask.objects.filter(space__user=workspace_owner(request), space__workplace=request.workplace), request.user)
-    return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'task__blocked_by', 'task__blocked_responsible', 'space', 'space__configuration', 'team', 'sprint')
+    return WorkItem.objects.filter(task__in=tasks).select_related('task', 'task__assignee', 'task__blocked_by', 'task__blocked_responsible', 'space', 'space__configuration', 'sprint')
 
 
 def decorate_directory_spaces(request, spaces):
@@ -67,10 +67,6 @@ def decorate_directory_spaces(request, spaces):
     return spaces
 
 
-def teams_for(request):
-    return Team.objects.filter(owner=workspace_owner(request), workplace=request.workplace)
-
-
 def manage_space(request, space):
     project = space
     if project.visibility == 'private':
@@ -80,11 +76,6 @@ def manage_space(request, space):
 
 def manage_configuration(request, space):
     return can_manage_team(request.user, request.workplace) if space.configuration.shared else manage_space(request, space)
-
-
-def manage_team(request, team):
-    role = workplace_role(request.user, request.workplace)
-    return role in {'owner', 'admin'} or (role == 'member' and team.memberships.filter(user=request.user, role='admin').exists())
 
 
 def task_url(request, task):

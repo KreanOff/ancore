@@ -1,4 +1,4 @@
-/* The lower toolbar follows Resources on every page and in embedded lists. */
+/* Shared lower toolbar for pages and embedded lists. */
 body .app-toolbar.tasks-filterbar {
     display: flex;
     flex: 0 0 auto;
@@ -24,7 +24,7 @@ body .app-toolbar.tasks-filterbar.app-toolbar--embedded { padding-inline: 0; }
 /* Only the toolbar supplies vertical spacing at the content boundary. */
 body .work-page .work-content:has(> .app-toolbar, > .work-timeline, > .work-reports, > .work-summary-dashboard),
 body .work-page .work-content:has(> .work-summary > .work-summary-dashboard > .app-toolbar),
-body .app-toolbar + :is(.work-content, .resources-detail-content, .calendar-shell, .office-quick-create),
+body .app-toolbar + :is(.work-content, .calendar-shell, .office-quick-create),
 body .app-toolbar + .calendar-status.u-hidden + .calendar-shell { padding-top: 0; }
 
 /* Keep spacing between content sections, without adding a second gap below the toolbar. */

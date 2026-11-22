@@ -12,6 +12,7 @@
 [data-react-screen="space-directory"] .resources-react-filter { margin: 0; }
 [data-react-screen="space-directory"] .tasks-directory-header svg.ancore-icon { width: 0.875rem; height: 0.875rem; order: -1; }
 .resources-react-fieldset { display: contents; }
+.resources-react-filter { margin: 8px; }
 
 .react-task-form, .react-field-slot { display: contents; }
 [data-react-screen="space-task"] .tasks-issue-chat-message { white-space: pre-wrap; }

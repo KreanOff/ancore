@@ -111,7 +111,7 @@ INSTALLED_APPS = [
     'dashboard',
     'planner',
     'documents',
-    'resources',
+    'resources',  # Migrations for the retired module.
     'spaces.apps.SpacesConfig',
 ]
 

@@ -56,9 +56,9 @@ class WorkspaceSystemTests(TestCase):
 
     def test_disabled_module_hides_navigation_and_blocks_html_and_both_api_routes(self):
         self.client.get(self.url('space', self.space.slug + '/'))
-        self.workspace.disabled_modules = ['spaces', 'resources']
+        self.workspace.disabled_modules = ['spaces', 'calendar']
         self.workspace.save(update_fields=['disabled_modules'])
-        for path in (self.url(), '/spaces/', self.url('resources', 'api/v1/')):
+        for path in (self.url(), '/spaces/', self.url('calendar', 'events/')):
             self.assertIn(self.client.get(path).status_code, (302, 404))
         for scoped in (False, True):
             self.assertEqual(self.api(self.url(), scoped=scoped).status_code, 404)
@@ -99,13 +99,13 @@ class WorkspaceSystemTests(TestCase):
     def test_guest_cannot_write_through_direct_base_scoped_or_delegated_routes(self):
         self.client.force_login(self.guest)
         targets = [self.url('space', self.space.slug + '/items/create/'), self.url('calendar', 'events/create/'),
-                   self.url('resources', 'api/v1/'), self.url('office', 'create/')]
+                   self.url('documents', 'upload/'), self.url('office', 'create/')]
         for target in targets:
             with self.subTest(target=target):
                 self.assertEqual(self.client.post(target, {'name': 'Nie', 'title': 'Nie'}).status_code, 403)
         for scoped in (False, True):
             self.assertEqual(self.api(self.url('space', self.space.slug + '/items/create/'), {'title': 'Nie'}, scoped).status_code, 403)
-        self.assertEqual(self.client.post('/resources/api/v1/', '{}', content_type='application/json').status_code, 403)
+        self.assertEqual(self.client.post('/calendar/events/create/', '{}', content_type='application/json').status_code, 403)
 
     def test_old_office_callback_cannot_write_after_demotion_or_module_disable(self):
         document = WorkspaceDocument.objects.create(owner=self.owner, workplace=self.workspace, title='Plik', kind='file', filename='test.docx')

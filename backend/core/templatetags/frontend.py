@@ -9,6 +9,19 @@ from django.utils.html import format_html
 register = template.Library()
 
 
+@register.simple_tag
+def versioned_css(name):
+    from core.shell import stylesheet_url
+    return stylesheet_url(name)
+
+
+@register.simple_tag(takes_context=True)
+def application_screen_styles(context):
+    from core.shell import page_styles
+    page = context.get('frontend_bootstrap') or {}
+    return page_styles(page.get('type') or context.get('screen_style_kind'))
+
+
 @register.simple_tag(takes_context=True)
 def global_panels_bootstrap(context):
     from django.urls import reverse

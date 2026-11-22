@@ -36,7 +36,7 @@ from .defaults import TEMPLATES, classification_options, configuration_name_colo
 from .dashboard import dashboard_payload
 from .forms import CategoryForm, CustomFieldForm, GroupForm, ItemForm, MemberForm, SpaceAvatarForm, SpaceDeleteForm, SpaceForm, SprintCloseForm, SprintForm, StatusForm, SubtaskForm, TypeForm
 from .models import Space, SpaceConfiguration, Sprint, WorkItem
-from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, teams_for, transition_allowed, update_sprint, visible_items, visible_spaces
+from .services import app_url, can_manage_spaces, decorate_directory_spaces, manage_configuration, manage_space, record, set_status, space_url, task_subtasks_url, task_url, transition_allowed, update_sprint, visible_items, visible_spaces
 from .summary import filter_summary_items, materialized_summary_items, space_summary
 from .item_query import item_sort, order_items
 from .list_window import group_limit, list_url, list_window, more_url, timeline_more_url
@@ -49,7 +49,7 @@ def space_object(request, pk):
 
 
 def base_context(request):
-    return {'spaces_url': app_url(request), 'teams_url': app_url(request, app='teams')}
+    return {'spaces_url': app_url(request)}
 
 
 def settings_context(request, space, tab='main'):
@@ -183,10 +183,6 @@ def filtered_space_items(request, space, items, now):
         items = items.filter(work_type=work_type)
     if request.GET.get('blocked') in {'yes', 'no'}:
         items = items.filter(task__blocked_at__isnull=request.GET['blocked'] == 'no')
-    for parameter, lookup in (('team', 'team_id'),):
-        value = request.GET.get(parameter, '')
-        if value.isdecimal() and len(value) < 19:
-            items = items.filter(**{lookup: int(value)})
     return filter_summary_items(request, space, items, now)
 
 
@@ -254,11 +250,7 @@ def detail_context(request, space, view):
     # Keep the live ACL scope separate from the outer person lookup, as for
     # summaries: stale PostgreSQL estimates must not multiply permission joins.
     assignee_options = get_user_model().objects.filter(pk__in=materialized_summary_items(items).order_by().values('task__assignee_id')).order_by('first_name', 'last_name', 'pk')
-    space_teams = list(teams_for(request).filter(spaces=space))
-    for team_option in space_teams:
-        team_option.select_photo_url = app_url(request, f'{team_option.pk}/photo/', 'teams') if team_option.photo else ''
     type_options, type_filter = issue_type_filters(request, space)
-    team = request.GET.get('team', '')
     now = timezone.now()
     items, summary_filters = filtered_space_items(request, space, items, now)
     item_query_params = request.GET.copy()
@@ -268,10 +260,10 @@ def detail_context(request, space, view):
     filter_context = {
         **summary_filters, 'query': query, 'assignee_options': assignee_options,
         'item_query_params': item_query_params,
-        'priority_options': SpaceTask.PRIORITY_CHOICES, 'space_teams': space_teams,
-        'team_filter': team, 'type_options': type_options, 'type_filter': type_filter,
+        'priority_options': SpaceTask.PRIORITY_CHOICES,
+        'type_options': type_options, 'type_filter': type_filter,
         'item_filter_count': sum(bool(value) for value in (
-            type_filter, team, request.GET.get('blocked') in {'yes', 'no'}, *[summary_filters[key] for key in ('assignee_filter', 'status_filter', 'priority_filter', 'summary_filter')],
+            type_filter, request.GET.get('blocked') in {'yes', 'no'}, *[summary_filters[key] for key in ('assignee_filter', 'status_filter', 'priority_filter', 'summary_filter')],
         )),
     }
     if view in {'overview', 'tags', 'reports'}:
@@ -715,7 +707,7 @@ def item_edit(request, pk=None, space_pk=None, key=None):
                 if initial_status:
                     item.status = initial_status['key']
                 old_type, old_type_label = item.work_type, item.get_work_type_display()
-                for name in ('work_type', 'team', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
+                for name in ('work_type', 'sprint', 'epic', 'points', 'start_at', 'in_backlog'):
                     if name in data:
                         setattr(item, name, data[name])
                 if not isinstance(form, SubtaskForm):

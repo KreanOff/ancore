@@ -9,9 +9,8 @@ przez istniejący zakres widoczności Przestrzeni.
 
 Ancore jest aplikacją Django podzieloną na moduły domenowe we wspólnym procesie.
 Serwer pobiera dane przez ORM i waliduje je formularzami. Frontend aktywnej aplikacji korzysta
-z Reacta i TypeScriptu. Zasoby, Kalendarz, Dla ciebie,
-centrum Ustawień, Przestrzenie z Tagami,
-zadania Przestrzeni, Zespoły, Filtry, Pulpity, Dysk, Dokumenty, zarządzanie Workspace
+z Reacta i TypeScriptu. Kalendarz, Dla ciebie, centrum Ustawień, Przestrzenie z Tagami,
+zadania Przestrzeni, Filtry, Pulpity, Dysk, Dokumenty, zarządzanie Workspace
 oraz konta i profil korzystają z `frontend/app` i JSON API v1.
 Menu, nagłówek, Favorites, pickery, wyszukiwanie, centrum powiadomień, Sticker
 i komunikaty mają trwały korzeń Reacta. Nawigacja pobiera dane JSON i montuje
@@ -36,10 +35,10 @@ backend/                katalog źródeł Pythona, dodawany do ścieżki import�
   ancore/               konfiguracja, główny routing, WSGI/ASGI i test runner
   accounts/             użytkownik, logowanie, profil, sesja i obecność
   workplaces/           Workspace, aktywny kontekst, nawigacja, ulubione
-  spaces/               przestrzenie, zadania, historia, pliki, planowanie i zespoły
+  spaces/               przestrzenie, zadania, historia, pliki i planowanie
   tasks/                słownik tagów Przestrzeni i wspólne komponenty
   planner/              wydarzenia i kalendarz
-  resources/            ewidencja sprzętu, licencji i narzędzi Workspace
+  resources/            historia migracji wycofanej ewidencji Zasobów
   documents/            Dysk, Dokumenty i bezpieczna integracja edytorów
   dashboard/            pulpity, ustawienia, wyszukiwanie i powiadomienia
   core/                 wspólna powłoka aplikacji, JSON API i walidacja uploadu
@@ -144,7 +143,7 @@ Wyniki callbacków są pobierane ze stałego wewnętrznego serwera po walidacji
 | Routing | Wybór modułu, endpointu i nazwy URL | `backend/ancore/urls.py`, modułowe `urls.py` |
 | Middleware | Sesja, uwierzytelnienie, obecność, Workspace, CSRF | `backend/ancore/settings.py`, middleware Accounts/Workplaces |
 | Widoki | Zakres dostępu, akcja, wybór formularza, odpowiedź | modułowe `views.py`, `backend/spaces/task_views.py` |
-| JSON API | Kontrakt Reacta, sesja, błędy i zakres danych | `backend/core/api.py`, `backend/core/frontend.py`, `backend/core/shell.py`, domenowe `frontend.py`, `backend/resources/api.py` |
+| JSON API | Kontrakt Reacta, sesja, błędy i zakres danych | `backend/core/api.py`, `backend/core/frontend.py`, `backend/core/shell.py` i domenowe `frontend.py` |
 | Formularze | Walidacja i wybór dostępnych powiązań | modułowe `forms.py` |
 | Modele | Dane, relacje, unikalność, zapis i sygnały | modułowe `models.py`, `migrations/` |
 | Szablony | Układ strony, pola, listy i kontrakt `data-*` | modułowe `templates/` |
@@ -191,14 +190,14 @@ słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym
 - `accounts.User` jest wspólnym modelem konta, `workplaces.Workplace` granicą danych.
   `User.default_workplace` przechowuje osobisty domyślny kontekst Workspace;
   relacja nie nadaje dostępu i jest sprawdzana przez `workplaces.services`.
-- `spaces.Space` organizuje `SpaceTask`, planowanie `WorkItem`, sprinty i zespoły.
+- `spaces.Space` organizuje `SpaceTask`, planowanie `WorkItem` i sprinty.
   Dostęp wyznacza `spaces.access` oraz role przestrzeni i zadań.
 - `tasks.TaskTag` i `TaskTagNote` obsługują katalogi tagów Przestrzeni.
 - `planner` łączy wydarzenia z terminami bieżących zadań, bez kopiowania rekordów.
 - `dashboard` integruje pulpity, filtry, wyszukiwanie, komentarze Przestrzeni,
   osobiste przypomnienia `SpaceTaskReminder`.
   `NotificationState` zapisuje osobisty stan komentarzy i przypomnień.
-- `documents` i `resources` zachowują niezależne modele oraz wspólny kontekst Workspace.
+- `documents` przechowuje osobne modele Dysku i Dokumentów w kontekście Workspace.
 - `core` dostarcza powłokę, JSON API, walidację i obsługę plików.
 
 ## 6. Hierarchie danych
@@ -206,14 +205,12 @@ słowników. Nie utożsamiaj samej metody GET z całkowitym brakiem zapisu w tym
 ```text
 Użytkownik → Workspace
   ├─ Space → SpaceTask → podzadanie
-  │           ├─ WorkItem → planowanie, sprint, zespół, trwały klucz
+  │           ├─ WorkItem → planowanie, sprint i trwały klucz
   │           ├─ SpaceTaskActivity → SpaceTaskFile
   │           ├─ SpaceTaskMembership
   │           ├─ SpaceTaskReminder
   │           └─ SpaceTaskWorkLog
-  ├─ Team → TeamMembership
   ├─ CalendarEvent + terminy SpaceTask
-  ├─ Resource → ResourceActivity (historia, przekazania i zwroty)
   ├─ DocumentLibrary → Folder / Document
   └─ WorkspaceDocument
 
@@ -290,15 +287,17 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
   Osobne ekrany zarządzania Przestrzeniami, Pulpitami i Filtrami są wycofane.
   Ich dawne adresy prowadzą do zwykłych katalogów. Zarządzanie Workspace
   otwiera katalog `/workplaces/` bezpośrednio w kategorii „Workspace” wspólnego
-  menu Ustawień; edycja ustawień i zespołu nie zmienia aktywnego Workspace.
+  menu Ustawień; edycja ustawień i członkostw nie zmienia aktywnego Workspace.
   Wybrany Workspace ma pełną stronę z sekcjami ustawień, członków i linków
   do dołączenia oraz osobnym trybem menu `workspace-settings`, zgodnie
   z ustawieniami Przestrzeni. Dotychczasowe parametry wyboru i endpointy
   zapisu pozostają aktywne.
   Utworzenie otwiera nowe „Dla ciebie”.
 - Moduły mają adresy bazowe `/calendar/`,
-  `/documents/` (Dysk), `/office/` (Dokumenty), `/resources/` (Zasoby) oraz warianty
+  `/documents/` (Dysk) i `/office/` (Dokumenty) oraz warianty
   `/workplaces/<slug>/<moduł>/...`.
+- Dawne moduły pod `/resources/` i `/teams/`, wraz z odpowiednikami scoped,
+  zostały wycofane. [Migracje](DATABASE.md#wycofanie-zasobów-i-zespołów).
 - Kalendarz ma etykietę aplikacji `planner`, lecz segment URL `calendar`.
 - `/spaces/` jest katalogiem Przestrzeni. Osobny ekran zarządzania usunięto;
   `/spaces/manage/` i scoped odpowiednik przekierowują do katalogu, zachowując
@@ -336,11 +335,6 @@ oraz `DocumentVersion`. Ich ekrany pozostają wyłączone; [opis modułu](MODULE
 Przy rozbudowie modułu trzeba uwzględnić także nawigację Workspace,
 context processor, wyszukiwarkę i ograniczenia częściowej nawigacji.
 
-Zasoby korzystają z osobnego modelu `resources.Resource` i `backend/resources/urls.py`;
-scoped namespace to `workplace_resources`. Współdzielą właściciela i aktywny
-Workspace, nawigację, ulubione, globalne wyszukiwanie, filtry i paginację Zadań
-oraz powłokę modali. Nie są powiązane z prywatnymi projektami ani plikami Dysku.
-
 `DocumentVersion` zachowuje dawne archiwa powiązane z dokładnie jednym rekordem
 Dysku albo Dokumentów. Historia wersji nie ma aktywnych ekranów ani endpointów;
 nowe zapisy nie tworzą archiwów. `WorkspaceDocument.is_template` oznacza wzorzec w
@@ -367,12 +361,7 @@ Przypomnienia Przestrzeni materializuje `backend/dashboard/reminders.py` podczas
 odpytywania centrum powiadomień; nie wymagają workera. Aktualne ograniczenia i pozostałości historyczne są zebrane w
 [MODULES.md](MODULES.md) i [DEVELOPMENT.md](DEVELOPMENT.md).
 
-## Przestrzenie i zespoły (10.10.2026)
-
-`spaces.teams` obsługuje katalog, profil i operacje Zespołów, a
-`spaces.team_queries` grupuje liczniki i zapytania w zakresie widoczności
-użytkownika. Zespół organizuje pracę; nie stanowi dodatkowego źródła ACL.
-[Zakres bieżącego systemu](SPACES.md#system-zespołów-04112026).
+## Przestrzenie i ich zadania
 
 `Space` → `SpaceTask` → podzadanie ma własne członkostwa, historię, pliki
 i dziennik pracy. `WorkItem` przechowuje planowanie i trwały klucz, np. `PRO-1`.

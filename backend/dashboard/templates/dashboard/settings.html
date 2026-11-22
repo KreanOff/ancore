@@ -4,12 +4,6 @@
 {% block title %}{{ settings_title }} | ancore{% endblock %}
 {% block page_container_class %}full-width{% endblock %}
 {% block extra_head %}
-{% if settings_category == 'spaces' %}
-<link rel="stylesheet" href="{% static 'css/components/documents.css' %}?v=20261105-no-hamburger">
-<link rel="stylesheet" href="{% static 'css/components/resources.css' %}?v=20261105-no-hamburger">
-<link rel="stylesheet" href="{% static 'css/components/spaces.css' %}?v=20261113-settings-spaces">
-{% endif %}
-<link rel="stylesheet" href="{% static 'css/components/settings.css' %}?v=20261113-spaces-table">
 <script src="{% static 'js/settings.js' %}?v=20261113-spaces-actions" defer></script>
 {% endblock %}
 

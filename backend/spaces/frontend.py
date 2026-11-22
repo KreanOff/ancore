@@ -62,7 +62,7 @@ def item_payload(item):
         'work_type': item.work_type, 'type_label': item.type_label, 'type_icon': item.type_icon, 'type_color': item.type_color,
         'points': item.points, 'in_backlog': item.in_backlog,
         'assignee': {'label': task.assignee.get_full_name() or task.assignee.email, 'avatar': account_avatar(task.assignee)} if task.assignee else None,
-        'team': item.team.name if item.team_id else '', 'tags_count': item.tags_count,
+        'tags_count': item.tags_count,
         'attachments_count': item.attachments_count, 'due_at': task.due_at, 'due_urgency': task.due_urgency,
         'start_at': item.start_at,
         'blocked': {
@@ -112,7 +112,7 @@ def detail_page(request, context):
         'backlog_totals': context.get('backlog_totals'), 'timeline': context.get('timeline'),
         'backlog_loaded_count': context.get('backlog_loaded_count', 0), 'backlog_more_url': context.get('backlog_more_url', ''),
         'pagination': pagination_payload(request, context.get('page')),
-        'filters': {key: request.GET.get(key, '') for key in ('q', 'work_type', 'assignee', 'team', 'status', 'priority', 'summary', 'blocked')},
+        'filters': {key: request.GET.get(key, '') for key in ('q', 'work_type', 'assignee', 'status', 'priority', 'summary', 'blocked')},
         'summary_filter_label': context.get('summary_filter_label', ''),
         'sort': item_sort(request, context['view']),
         'type_icons': {row['key']: row['icon'] for row in context.get('type_options', [])},
@@ -122,7 +122,6 @@ def detail_page(request, context):
             'assignee': [['', 'Wszyscy wykonawcy'], ['me', 'Przypisane do mnie'], ['unassigned', 'Nieprzypisane']] + [[str(person.pk), person.get_full_name() or person.email] for person in context.get('assignee_options', [])],
             'status': [['', 'Wszystkie statusy']] + [[row['key'], row['label']] for row in space.statuses],
             'priority': [['', 'Wszystkie priorytety']] + [list(row) for row in context.get('priority_options', [])],
-            'team': [['', 'Wszystkie zespoły']] + [[str(team.pk), team.name] for team in context.get('space_teams', [])],
             'blocked': [['', 'Wszystkie zadania'], ['yes', 'Zablokowane'], ['no', 'Bez blokady']],
         },
         'members': [{'id': member.pk, 'name': member.user.get_full_name() or member.user.email,
@@ -211,31 +210,4 @@ def task_page(request, context):
         'team': task_members_payload(context), 'mentions': context['mention_people'],
         'attachment_accept': context['comment_attachment_accept'], 'attachment_limit': context['comment_image_limit'],
         'attachment_max_size': context['comment_image_max_size'], 'comment_draft': context['comment_draft'],
-    }}
-
-
-def teams_page(request, context):
-    return {'type': 'teams', 'title': 'Zespoły', 'data': {
-        'url': context['teams_url'], 'query': context['query'], 'tab': context['tab'],
-        'sort': context['sort'], 'tabs': context['tabs'], 'create_url': context['create_url'],
-        'pagination': pagination_payload(request, context['page']),
-        'teams': [{'id': team.pk, 'name': team.name, 'description': team.description, 'photo_url': team.photo_url,
-                   'url': team.url, 'member_count': team.member_count, 'open_count': team.open_count,
-                   'space_count': team.space_count, 'is_member': team.is_member, 'is_admin': team.is_admin}
-                  for team in context['page']],
-    }}
-
-
-def team_page(request, context):
-    team = context['team']
-    return {'type': 'team', 'title': team.name, 'data': {
-        'id': team.pk, 'name': team.name, 'description': team.description, 'url': context['team_url'],
-        'directory_url': context['teams_url'], 'created_at': team.created_at,
-        **{key: context[key] for key in ('photo_url', 'edit_url', 'member_url', 'delete_url', 'can_manage',
-            'view', 'query', 'scope', 'role_filter', 'assignee_filter', 'member_count', 'space_count',
-            'counts', 'workload', 'progress', 'tabs')},
-        'spaces': [space_payload(space) for space in context['spaces']],
-        'members': context['member_rows'],
-        'items': [dict(item_payload(item), space_name=item.space.name) for item in context['items']],
-        'pagination': pagination_payload(request, context['page']),
     }}
