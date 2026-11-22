@@ -149,14 +149,19 @@ w dół na pierwszej widocznej kontrolce. Strzałki, Home i End nie przejmują
 edycji tekstu ani obsługi natywnego selecta. Panel osadzony w formularzu
 zamyka się po przeniesieniu fokusu poza niego, zachowując wartości pól.
 Escape przywraca fokus przycisku; już obsłużone zdarzenie nie zamyka rodzica.
+Po aktualizacji wartości wspólny `Select` przywraca fokus przycisku, jeśli
+kontrolka miała fokus przed zmianą i jest nadal aktywna.
 
 Błędy muszą być powiązane z polami przez `aria-invalid` i `aria-describedby`.
 Dotyczy to również każdego checkboxa w grupie, pól Workspace, wydarzenia
-Kalendarza oraz obu dat nieprawidłowego zakresu na osi czasu. Wspólny
-`FieldControl` utrzymuje opis pomocy również w wariancie `bare`.
-Po nieudanym zapisie `FormDialog` przenosi fokus do pierwszego widocznego,
-aktywnego błędnego pola lub do komunikatu ogólnego (`role="alert"`,
-`tabIndex={-1}`). Nie gub szkicu ani możliwości ponowienia zapisu.
+Kalendarza, pliku i koloru w Dokumentach oraz obu dat nieprawidłowego zakresu
+na osi czasu. Wspólny `FieldControl` utrzymuje opis pomocy również w wariancie
+`bare`. `Select` przekazuje `required`, `disabled`, `invalid` i `describedBy`
+na widoczny przycisk kontrolki. Po nieudanym zapisie `focusFormError`
+w `FormDialog` i oknach Dokumentów przenosi fokus na pierwsze widoczne,
+aktywne pole z błędem lub do
+komunikatu ogólnego (`role="alert"`, `tabIndex={-1}`). Formularz zachowuje szkic
+i możliwość ponowienia zapisu. Adapter HTML Dokumentów stosuje tę samą kolejność.
 Pierwszy render Django nadaje komunikatowi pola jeden identyfikator
 `<id_pola>_error`; nie dubluj ID generowanego przez listę błędów Django.
 

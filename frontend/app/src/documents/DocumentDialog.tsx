@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import { FieldControl, type FormSchema } from '../forms/FormDialog';
+import { FieldControl, focusFormError, type FormSchema } from '../forms/FormDialog';
 import { FieldLabel } from '../shared/FieldLabel';
 import { Modal } from '../shared/Modal';
 import { Icon } from '../shared/Icon';
@@ -37,6 +37,7 @@ export default function DocumentDialog({
     [imageState, setImageState] = useState('loading');
   const form = useRef<HTMLFormElement>(null),
     input = useRef<HTMLInputElement>(null),
+    errorTarget = useRef<HTMLDivElement>(null),
     life = useRef(new AbortController()),
     sending = useRef(false);
   const item = data.document,
@@ -61,6 +62,9 @@ export default function DocumentDialog({
       form.current?.requestSubmit();
     }
   }, []);
+  useEffect(() => {
+    if (error && !pending) focusFormError(form.current, errorTarget.current);
+  }, [error, pending]);
   function close() {
     const element =
       form.current?.closest<HTMLElement>('.tasks-modal') ||
@@ -135,15 +139,15 @@ export default function DocumentDialog({
       if (life.current.signal.aborted) return;
       if (e instanceof PageError) {
         const corrected = (e.data as unknown as Page).data as DocumentModal | undefined;
-        if (corrected?.form) setSchema(corrected.form);
+        if (corrected?.form) {
+          setSchema(corrected.form);
+          if (corrected.form.fields.some((field) => field.errors.length)) {
+            setError('Popraw zaznaczone pola.');
+            return;
+          }
+        }
       }
       setError(errorMessage(e));
-      requestAnimationFrame(() => {
-        const invalid = form.current?.querySelector<HTMLElement>('[aria-invalid=true]');
-        (
-          invalid?.closest('.ancore-custom-select')?.querySelector<HTMLElement>('button') || invalid
-        )?.focus();
-      });
     } finally {
       if (tab && !tab.closed) tab.close();
       sending.current = false;
@@ -189,7 +193,12 @@ export default function DocumentDialog({
   const errors = (schema: FormSchema | null) => (
     <>
       {error ? (
-        <div className="tasks-modal__errors app-form-wide" role="alert">
+        <div
+          className="tasks-modal__errors app-form-wide"
+          role="alert"
+          tabIndex={-1}
+          ref={errorTarget}
+        >
           {error}
         </div>
       ) : null}
@@ -526,7 +535,8 @@ export default function DocumentDialog({
                             type="color"
                             className="documents-color-input"
                             name={field.name}
-                            aria-describedby={`${field.id}_help`}
+                            aria-invalid={!!field.errors.length}
+                            aria-describedby={`${field.id}_help${field.errors.length ? ` ${field.id}_error` : ''}`}
                             value={/^#[0-9a-f]{6}$/i.test(color) ? color : data.default_color}
                             onChange={(event) => {
                               setColor(event.target.value);
@@ -545,7 +555,11 @@ export default function DocumentDialog({
                           </button>
                         </div>
                         {field.errors.length ? (
-                          <div className="tasks-modal__errors" role="alert">
+                          <div
+                            className="tasks-modal__errors"
+                            role="alert"
+                            id={`${field.id}_error`}
+                          >
                             {field.errors.join(' ')}
                           </div>
                         ) : null}
@@ -561,7 +575,7 @@ export default function DocumentDialog({
                         </label>
                         <div className={data.upload ? 'documents-upload-control' : undefined}>
                           {data.upload ? (
-                            <p className="documents-upload-hint">
+                            <p className="documents-upload-hint" id={`${field.id}_help`}>
                               <Icon name="cloud-upload" />
                               <span>
                                 Przeciągnij pliki tutaj lub wybierz je z komputera
@@ -584,6 +598,14 @@ export default function DocumentDialog({
                             accept={field.attrs.accept}
                             required={field.required}
                             aria-invalid={!!field.errors.length}
+                            aria-describedby={
+                              [
+                                data.upload && `${field.id}_help`,
+                                field.errors.length && `${field.id}_error`,
+                              ]
+                                .filter(Boolean)
+                                .join(' ') || undefined
+                            }
                             onChange={(e) => {
                               setSelected(Array.from(e.target.files || []));
                               setDirty(true);
@@ -608,7 +630,11 @@ export default function DocumentDialog({
                           </ul>
                         ) : null}
                         {field.errors.length ? (
-                          <div className="tasks-modal__errors" role="alert">
+                          <div
+                            className="tasks-modal__errors"
+                            role="alert"
+                            id={`${field.id}_error`}
+                          >
                             {field.errors.join(' ')}
                           </div>
                         ) : null}

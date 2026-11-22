@@ -18,15 +18,15 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 39 | 0 | 29 | 264 |
+| [backend/core](../backend/core) | 42 | 0 | 30 | 293 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 115 |
-| [backend/workplaces](../backend/workplaces) | 33 | 5 | 16 | 170 |
+| [backend/workplaces](../backend/workplaces) | 33 | 6 | 16 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
-| [backend/dashboard](../backend/dashboard) | 55 | 8 | 44 | 323 |
+| [backend/dashboard](../backend/dashboard) | 55 | 8 | 44 | 324 |
 | [backend/planner](../backend/planner) | 12 | 2 | 1 | 43 |
 | [backend/documents](../backend/documents) | 41 | 3 | 30 | 215 |
-| [backend/resources](../backend/resources) | 12 | 3 | 5 | 52 |
-| [backend/spaces](../backend/spaces) | 72 | 6 | 47 | 513 |
+| [backend/resources](../backend/resources) | 3 | 9 | 0 | 0 |
+| [backend/spaces](../backend/spaces) | 68 | 7 | 44 | 488 |
 
 ## 2. Modele i relacje
 
@@ -346,32 +346,7 @@ Pola zadeklarowane tutaj: `document` (ForeignKey), `drive_document` (ForeignKey)
 
 ## Modele: resources
 
-### `Resource`
-
-Źródło: [backend/resources/models.py](../backend/resources/models.py).
-
-Pola zadeklarowane tutaj: `owner` (ForeignKey), `workplace` (ForeignKey), `name` (CharField), `kind` (CharField), `inventory_number` (CharField), `serial_number` (CharField), `status` (CharField), `assigned_to` (ForeignKey), `location` (CharField), `purchased_on` (DateField), `expires_on` (DateField), `return_due_on` (DateField), `notes` (TextField), `created_by` (ForeignKey), `updated_by` (ForeignKey), `created_at` (DateTimeField), `updated_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_resources' |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='resources' |
-| `assigned_to` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='assigned_resources'; null=True |
-| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='created_resources'; null=True |
-| `updated_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='updated_resources'; null=True |
-
-Metody/properties: `icon`, `__str__`.
-
-### `ResourceActivity`
-
-Źródło: [backend/resources/models.py](../backend/resources/models.py).
-
-Pola zadeklarowane tutaj: `resource` (ForeignKey), `actor` (ForeignKey), `actor_name` (CharField), `action` (CharField), `changes` (JSONField), `note` (TextField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `resource` | `Resource` | on_delete=models.CASCADE; related_name='activities' |
-| `actor` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='resource_activities'; null=True |
+Brak zadeklarowanych modeli domenowych w tym pliku.
 
 ## Modele: spaces
 
@@ -507,33 +482,6 @@ Pola zadeklarowane tutaj: `task` (ForeignKey), `author` (ForeignKey), `started_a
 
 Metody/properties: `duration_minutes`.
 
-### `Team`
-
-Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
-
-Pola zadeklarowane tutaj: `workplace` (ForeignKey), `owner` (ForeignKey), `created_by` (ForeignKey), `name` (CharField), `description` (TextField), `photo` (FileField), `members` (ManyToManyField), `spaces` (ManyToManyField), `created_at` (DateTimeField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `workplace` | `'workplaces.Workplace'` | on_delete=models.CASCADE; related_name='teams' |
-| `owner` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE; related_name='owned_work_teams' |
-| `created_by` | `settings.AUTH_USER_MODEL` | on_delete=models.SET_NULL; related_name='created_work_teams'; null=True |
-| `members` | `settings.AUTH_USER_MODEL` | related_name='work_teams'; through='TeamMembership' |
-| `spaces` | `Space` | related_name='teams' |
-
-Metody/properties: `__str__`.
-
-### `TeamMembership`
-
-Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
-
-Pola zadeklarowane tutaj: `team` (ForeignKey), `user` (ForeignKey), `role` (CharField).
-
-| Relacja | Cel | Ustawienia |
-| --- | --- | --- |
-| `team` | `Team` | on_delete=models.CASCADE; related_name='memberships' |
-| `user` | `settings.AUTH_USER_MODEL` | on_delete=models.CASCADE |
-
 ### `Sprint`
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
@@ -550,13 +498,12 @@ Metody/properties: `__str__`.
 
 Źródło: [backend/spaces/models.py](../backend/spaces/models.py).
 
-Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `team` (ForeignKey), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_at` (DateTimeField), `custom_values` (JSONField), `status_entered_at` (DateTimeField), `flow_started_at` (DateTimeField), `flow_finished_at` (DateTimeField).
+Pola zadeklarowane tutaj: `task` (OneToOneField), `space` (ForeignKey), `key` (CharField), `number` (PositiveIntegerField), `status` (CharField), `work_type` (CharField), `rank` (PositiveIntegerField), `in_backlog` (BooleanField), `sprint` (ForeignKey), `epic` (ForeignKey), `points` (PositiveIntegerField), `start_at` (DateTimeField), `custom_values` (JSONField), `status_entered_at` (DateTimeField), `flow_started_at` (DateTimeField), `flow_finished_at` (DateTimeField).
 
 | Relacja | Cel | Ustawienia |
 | --- | --- | --- |
 | `task` | `SpaceTask` | on_delete=models.CASCADE; related_name='work_item'; null=True |
 | `space` | `Space` | on_delete=models.CASCADE; related_name='items'; null=True |
-| `team` | `Team` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `sprint` | `Sprint` | on_delete=models.SET_NULL; related_name='items'; null=True |
 | `epic` | `'self'` | on_delete=models.SET_NULL; related_name='epic_items'; null=True |
 
@@ -607,13 +554,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `FolderForm` — Meta.fields: `['name', 'color']`
 - `DocumentForm` — Meta.fields: `['title', 'description', 'folder']`
 
-### resources
-
-Źródło: [backend/resources/forms.py](../backend/resources/forms.py).
-
-- `ResourceForm` — Meta.fields: `['name', 'kind', 'inventory_number', 'serial_number', 'status', 'assigned_to', 'location', 'purchased_on', 'expires_on', 'return_due_on', 'notes']`
-- `ResourceOperationForm`
-
 ### spaces
 
 Źródło: [backend/spaces/forms.py](../backend/spaces/forms.py).
@@ -628,8 +568,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 - `WorkLogForm`
 - `SprintForm`
 - `SprintCloseForm`
-- `TeamForm`
-- `TeamDeleteForm`
 - `MemberForm`
 - `ConfigurationColorField`
 - `StatusForm`
@@ -662,9 +600,7 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'^workplaces/[-a-zA-Z0-9_]+/dashboards/'` | `include((pulpit_urls.urlpatterns, 'workplace_pulpits'), namespace='workplace_pulpits')` | — |
 | `'dashboards/'` | `include('dashboard.pulpit_urls')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/'` | `include((spaces_urls.urlpatterns, 'workplace_spaces'), namespace='workplace_spaces')` | — |
-| `'^workplaces/[-a-zA-Z0-9_]+/teams/'` | `include((team_urls.urlpatterns, 'workplace_teams'), namespace='workplace_teams')` | — |
 | `''` | `include('spaces.urls')` | — |
-| `'teams/'` | `include('spaces.team_urls')` | — |
 | `'drive-office-service/<uuid:pk>/source/'` | `suite_views.source` | 'drive-office-service-source' |
 | `'drive-office-service/<uuid:pk>/callback/'` | `suite_views.callback` | 'drive-office-service-callback' |
 | `'office-service/<uuid:pk>/source/'` | `suite_views.source` | 'office-service-source' |
@@ -676,8 +612,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'^workplaces/[-a-zA-Z0-9_]+/documents/'` | `include((documents_urls.urlpatterns, 'workplace_documents'), namespace='workplace_documents')` | — |
 | `'^workplaces/[-a-zA-Z0-9_]+/office/'` | `include((office_urls.urlpatterns, 'workplace_office'), namespace='workplace_office')` | — |
 | `'workplaces/'` | `include('workplaces.urls')` | — |
-| `'^workplaces/[-a-zA-Z0-9_]+/resources/'` | `include((resources_urls.urlpatterns, 'workplace_resources'), namespace='workplace_resources')` | — |
-| `'resources/'` | `include('resources.urls')` | — |
 | `'documents/'` | `include('documents.urls')` | — |
 | `'office/'` | `include('documents.workspace_urls')` | — |
 | `'calendar/'` | `include('planner.urls')` | — |
@@ -779,25 +713,6 @@ Wypisane są deklaracje klas, także bazowe klasy i widgety.
 | `'<uuid:pk>/trash/'` | `views.trash` | 'trash' |
 | `'<uuid:pk>/restore/'` | `views.restore` | 'restore' |
 
-### backend/resources/urls.py
-
-Źródło: [backend/resources/urls.py](../backend/resources/urls.py).
-
-| Ścieżka / regex | Widok / include | Nazwa |
-| --- | --- | --- |
-| `'api/v1/'` | `api.collection` | 'api-list' |
-| `'api/v1/new/'` | `api.new` | 'api-new' |
-| `'api/v1/operate/'` | `api.operate` | 'api-operate' |
-| `'api/v1/export/'` | `api.export` | 'api-export' |
-| `'api/v1/<int:pk>/overview/'` | `api.overview` | 'api-overview' |
-| `'api/v1/<int:pk>/'` | `api.detail` | 'api-detail' |
-| `'api/v1/<int:pk>/delete/'` | `api.delete` | 'api-delete' |
-| `''` | `views.index` | 'index' |
-| `'create/'` | `views.edit` | 'create' |
-| `'<int:pk>/'` | `views.overview` | 'detail' |
-| `'<int:pk>/edit/'` | `views.edit` | 'edit' |
-| `'<int:pk>/delete/'` | `views.delete` | 'delete' |
-
 ### backend/spaces/urls.py
 
 Źródło: [backend/spaces/urls.py](../backend/spaces/urls.py).
@@ -878,16 +793,18 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/apps.py](../backend/core/apps.py) — `CoreConfig`
 - [backend/core/avatars.py](../backend/core/avatars.py) — `preset_avatar`
 - [backend/core/comment_images.py](../backend/core/comment_images.py) — `comment_image_storage`, `AttachmentPresentation`
+- [backend/core/dev_frontend.py](../backend/core/dev_frontend.py) — `FrontendBuildError`, `FrontendBuilder`, `FrontendBuildHandler`
 - [backend/core/emoji.py](../backend/core/emoji.py) — `emoji_catalog`, `emoji_index`, `find_emoji`, `validate_emoji`, `emoji_art`, `emoji_payload`, `emoji_picker_config`
 - [backend/core/frontend.py](../backend/core/frontend.py) — `api_url`, `render`, `form_payload`, `pagination_payload`, `page_api`, `target_request`, `dispatch`, `navigation_api`, `shell_api`
 - [backend/core/health.py](../backend/core/health.py) — `readiness`
 - [backend/core/hosts.py](../backend/core/hosts.py) — `ServerAddressMiddleware`
 - [backend/core/list_window.py](../backend/core/list_window.py) — `WindowPage`, `window_page`, `window_url`, `window_payload`
+- [backend/core/management/commands/runserver.py](../backend/core/management/commands/runserver.py) — `Command`
 - [backend/core/media.py](../backend/core/media.py) — `public_media`
-- [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `page_styles`, `navigation_response`
+- [backend/core/shell.py](../backend/core/shell.py) — `build_id`, `favorite_items`, `shell_payload`, `messages_payload`, `stylesheet_url`, `page_styles`, `navigation_response`
 - [backend/core/task_files.py](../backend/core/task_files.py) — `delete_after_commit`
 - [backend/core/templatetags/__init__.py](../backend/core/templatetags/__init__.py)
-- [backend/core/templatetags/frontend.py](../backend/core/templatetags/frontend.py) — `global_panels_bootstrap`, `react_bundle`, `default_today_sidebar`
+- [backend/core/templatetags/frontend.py](../backend/core/templatetags/frontend.py) — `versioned_css`, `application_screen_styles`, `global_panels_bootstrap`, `react_bundle`, `default_today_sidebar`
 - [backend/core/templatetags/list_window.py](../backend/core/templatetags/list_window.py) — `load_more_url`
 - [backend/core/upload_validation.py](../backend/core/upload_validation.py) — `validate_image_bytes`, `validate_image_crop`, `validate_image_upload`, `validate_attachment_upload`, `validate_comment_attachments`, `attachment_download_response`
 - [backend/core/widgets.py](../backend/core/widgets.py) — `EmojiPickerInput`, `VisualSelect`, `VisualSelectMultiple`
@@ -1022,13 +939,8 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 ### resources
 
 - [backend/resources/__init__.py](../backend/resources/__init__.py)
-- [backend/resources/api.py](../backend/resources/api.py) — `resource_payload`, `editor_payload`, `directory_payload`, `collection`, `new`, `detail`, `delete`, `overview_payload`, `overview`, `operate`, `csv_cell`, `export`
 - [backend/resources/apps.py](../backend/resources/apps.py) — `ResourcesConfig`
-- [backend/resources/forms.py](../backend/resources/forms.py) — `ResourceForm`, `ResourceOperationForm`
-- [backend/resources/models.py](../backend/resources/models.py) — `Resource`, `ResourceActivity`
-- [backend/resources/services.py](../backend/resources/services.py) — `resource_scope`, `resource_base_url`, `resource_params`, `directory_url`, `filtered_resources`, `resource_summary`, `directory_context`, `resource_snapshot`, `record_activity`, `save_resource_form`
-- [backend/resources/urls.py](../backend/resources/urls.py)
-- [backend/resources/views.py](../backend/resources/views.py) — `index`, `edit`, `overview`, `delete`
+- [backend/resources/models.py](../backend/resources/models.py) — `resource_category_key`
 
 ### spaces
 
@@ -1041,32 +953,29 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/board.py](../backend/spaces/board.py) — `move_board_item`
 - [backend/spaces/dashboard.py](../backend/spaces/dashboard.py) — `widget_catalog`, `default_widgets`, `dashboard_payload`, `validate_widgets`, `save_layout`
 - [backend/spaces/defaults.py](../backend/spaces/defaults.py) — `classification_options`, `classification_label`, `issue_type_icon`, `configuration_name_color`, `status_appearance`, `status_icon`, `status_flow_stage`, `template_settings`
-- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `SpaceDeleteForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `TeamForm`, `TeamDeleteForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
-- [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`, `teams_page`, `team_page`
+- [backend/spaces/forms.py](../backend/spaces/forms.py) — `StyledForm`, `SpaceAvatarForm`, `SpaceForm`, `SpaceDeleteForm`, `ItemForm`, `DetailForm`, `SubtaskForm`, `WorkLogForm`, `SprintForm`, `SprintCloseForm`, `MemberForm`, `ConfigurationColorField`, `StatusForm`, `ConfigurationLabelForm`, `TypeForm`, `ClassificationForm`, `CategoryForm`, `GroupForm`, `CustomFieldForm`
+- [backend/spaces/frontend.py](../backend/spaces/frontend.py) — `space_payload`, `modal_payload`, `form_page`, `directory_page`, `item_payload`, `sprint_payload`, `detail_page`, `configuration_page`, `task_members_payload`, `file_payload`, `activity_payload`, `task_page`
 - [backend/spaces/identifiers.py](../backend/spaces/identifiers.py) — `unique_space_slug`
 - [backend/spaces/item_query.py](../backend/spaces/item_query.py) — `item_sort`, `order_items`
 - [backend/spaces/list_window.py](../backend/spaces/list_window.py) — `status_limit`, `group_limit`, `list_window`, `more_url`, `timeline_more_url`, `list_url`
-- [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Team`, `TeamMembership`, `Sprint`, `WorkItem`
+- [backend/spaces/models.py](../backend/spaces/models.py) — `SpaceConfiguration`, `Space`, `SpaceMembership`, `SpaceDashboardLayout`, `SpaceTask`, `SpaceTaskMembership`, `SpaceTaskActivity`, `SpaceTaskFile`, `SpaceTaskReminder`, `SpaceTaskWorkLog`, `Sprint`, `WorkItem`
 - [backend/spaces/navigation.py](../backend/spaces/navigation.py) — `sidebar_spaces`
 - [backend/spaces/reports.py](../backend/spaces/reports.py) — `report_scope`, `period_window`, `minutes_label`, `percent`, `report_url`, `space_reports`, `safe_csv_cell`, `report_csv`
 - [backend/spaces/schedule.py](../backend/spaces/schedule.py) — `ScheduleDateTimeField`, `local_date`, `validate_range`, `move_to_date`
-- [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `teams_for`, `manage_space`, `manage_configuration`, `manage_team`, `task_url`, `task_subtasks_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
-- [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_team_photo`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
+- [backend/spaces/services.py](../backend/spaces/services.py) — `app_url`, `space_url`, `visible_spaces`, `manageable_spaces`, `can_manage_spaces`, `visible_items`, `decorate_directory_spaces`, `manage_space`, `manage_configuration`, `task_url`, `task_subtasks_url`, `create_work_item`, `record`, `transition_allowed`, `set_status`, `update_sprint`
+- [backend/spaces/signals.py](../backend/spaces/signals.py) — `task_metadata`, `removed_workspace_member`, `disabled_workspace_member`, `removed_space_member`, `removed_task_member`, `deleted_space_avatar`, `scoped_related_tags`, `deleted_task_file`, `scoped_space_task_tags`
 - [backend/spaces/space_team.py](../backend/spaces/space_team.py) — `ShareForm`, `team_context`, `access_revision`, `payload`, `apply_access_draft`, `team`, `candidates`
 - [backend/spaces/summary.py](../backend/spaces/summary.py) — `status_arc_path`, `summary_scope`, `filter_summary_items`, `materialized_summary_items`, `space_summary`
 - [backend/spaces/tag_frontend.py](../backend/spaces/tag_frontend.py) — `tag_form_payload`, `tags_page`
 - [backend/spaces/task_team.py](../backend/spaces/task_team.py) — `ShareForm`, `team_context`, `payload`, `team`, `candidates`
 - [backend/spaces/task_views.py](../backend/spaces/task_views.py) — `task_item`, `return_url`, `manages_task`, `attach_files`, `posted_id`, `property_snapshot`, `property_changes`, `detail_post_data`, `work_log_context`, `detail`, `members`, `download`
-- [backend/spaces/team_queries.py](../backend/spaces/team_queries.py) — `administrators`, `directory_context`, `detail_context`
-- [backend/spaces/team_urls.py](../backend/spaces/team_urls.py)
-- [backend/spaces/teams.py](../backend/spaces/teams.py) — `index`, `detail`, `edit`, `members`, `remove_member`, `delete`, `photo`
 - [backend/spaces/templatetags/__init__.py](../backend/spaces/templatetags/__init__.py)
 - [backend/spaces/templatetags/space_ui.py](../backend/spaces/templatetags/space_ui.py) — `type_badge_style`, `status_style`, `pagination_pages`, `space_avatar`, `status_groups`
 - [backend/spaces/testing.py](../backend/spaces/testing.py) — `make_space`, `make_task`
 - [backend/spaces/timeline.py](../backend/spaces/timeline.py) — `local_end`, `posted_date`, `posted_source`, `serialized_precision`, `posted_datetime`, `datetime_label`, `error_response`, `update_dates`
 - [backend/spaces/urls.py](../backend/spaces/urls.py)
 - [backend/spaces/views.py](../backend/spaces/views.py) — `space_object`, `base_context`, `settings_context`, `decorate_items`, `issue_type_filters`, `index_context`, `directory_url`, `index`, `manage`, `search`, `filtered_space_items`, `items_for_view`, `backlog_url`, `board_url`, `planning_totals`, `detail_context`, `detail`, `retired_all_items`, `dialog_response`, `edit`, `delete`, `avatar_edit`, `avatar_photo`, `favorite`, `item_edit`, `backlog_plan`, `item_action`, `sprint_create`, `sprint_plan`, `sprint_action`, `members`, `remove_member`, `configuration`
-- [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`, `TeamSelect`
+- [backend/spaces/widgets.py](../backend/spaces/widgets.py) — `IssueTypeSelect`, `TaskVisibilitySelect`, `SpaceSelect`, `SpaceSelectMultiple`
 - [backend/spaces/workflow.py](../backend/spaces/workflow.py) — `initial_status`, `assert_snapshot`, `validate_placement`, `update_flow_times`, `flow_snapshot`, `board_wip`, `block_responsible_people`, `set_block`
 
 ## 6. Szablony
@@ -1090,6 +999,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/priority_icon.html](../backend/core/templates/core/includes/priority_icon.html)
 - [backend/core/templates/core/includes/pulpit_editor_sidebar.html](../backend/core/templates/core/includes/pulpit_editor_sidebar.html)
 - [backend/core/templates/core/includes/pulpit_settings_sidebar.html](../backend/core/templates/core/includes/pulpit_settings_sidebar.html)
+- [backend/core/templates/core/includes/right_sidebar_navigation.html](../backend/core/templates/core/includes/right_sidebar_navigation.html)
 - [backend/core/templates/core/includes/select_priority.html](../backend/core/templates/core/includes/select_priority.html)
 - [backend/core/templates/core/includes/select_status.html](../backend/core/templates/core/includes/select_status.html)
 - [backend/core/templates/core/includes/settings_secondary_menu.html](../backend/core/templates/core/includes/settings_secondary_menu.html)
@@ -1246,14 +1156,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/documents/templates/documents/sidebar.html](../backend/documents/templates/documents/sidebar.html)
 - [backend/documents/templates/documents/toolbar.html](../backend/documents/templates/documents/toolbar.html)
 
-### resources
-
-- [backend/resources/templates/resources/detail.html](../backend/resources/templates/resources/detail.html)
-- [backend/resources/templates/resources/directory.html](../backend/resources/templates/resources/directory.html)
-- [backend/resources/templates/resources/form.html](../backend/resources/templates/resources/form.html)
-- [backend/resources/templates/resources/index.html](../backend/resources/templates/resources/index.html)
-- [backend/resources/templates/resources/react.html](../backend/resources/templates/resources/react.html)
-
 ### spaces
 
 - [backend/spaces/templates/spaces/avatar.html](../backend/spaces/templates/spaces/avatar.html)
@@ -1297,9 +1199,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/spaces/templates/spaces/task_detail.html](../backend/spaces/templates/spaces/task_detail.html)
 - [backend/spaces/templates/spaces/task_list.html](../backend/spaces/templates/spaces/task_list.html)
 - [backend/spaces/templates/spaces/task_sidebar.html](../backend/spaces/templates/spaces/task_sidebar.html)
-- [backend/spaces/templates/spaces/team.html](../backend/spaces/templates/spaces/team.html)
-- [backend/spaces/templates/spaces/team_avatar.html](../backend/spaces/templates/spaces/team_avatar.html)
-- [backend/spaces/templates/spaces/teams.html](../backend/spaces/templates/spaces/teams.html)
 - [backend/spaces/templates/spaces/template_picker.html](../backend/spaces/templates/spaces/template_picker.html)
 - [backend/spaces/templates/spaces/timeline.html](../backend/spaces/templates/spaces/timeline.html)
 - [backend/spaces/templates/spaces/type_option.html](../backend/spaces/templates/spaces/type_option.html)
@@ -1338,7 +1237,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/css/components/profile.css](../static/css/components/profile.css)
 - [static/css/components/pulpits.css](../static/css/components/pulpits.css)
 - [static/css/components/react.css](../static/css/components/react.css)
-- [static/css/components/resources.css](../static/css/components/resources.css)
 - [static/css/components/settings.css](../static/css/components/settings.css)
 - [static/css/components/shared-controls.css](../static/css/components/shared-controls.css)
 - [static/css/components/space-avatars.css](../static/css/components/space-avatars.css)
@@ -1385,7 +1283,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/project-team.js](../static/js/project-team.js)
 - [static/js/pulpit-navigation.js](../static/js/pulpit-navigation.js)
 - [static/js/pulpits.js](../static/js/pulpits.js)
-- [static/js/resources.js](../static/js/resources.js)
 - [static/js/row-actions.js](../static/js/row-actions.js)
 - [static/js/settings.js](../static/js/settings.js)
 - [static/js/space-navigation.js](../static/js/space-navigation.js)
@@ -1489,13 +1386,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/pulpits/SettingsPage.tsx](../frontend/app/src/pulpits/SettingsPage.tsx)
 - [frontend/app/src/pulpits/autoRefresh.ts](../frontend/app/src/pulpits/autoRefresh.ts)
 - [frontend/app/src/pulpits/types.ts](../frontend/app/src/pulpits/types.ts)
-- [frontend/app/src/resources/App.tsx](../frontend/app/src/resources/App.tsx)
-- [frontend/app/src/resources/Detail.tsx](../frontend/app/src/resources/Detail.tsx)
-- [frontend/app/src/resources/Editor.tsx](../frontend/app/src/resources/Editor.tsx)
-- [frontend/app/src/resources/Operation.tsx](../frontend/app/src/resources/Operation.tsx)
-- [frontend/app/src/resources/Table.tsx](../frontend/app/src/resources/Table.tsx)
-- [frontend/app/src/resources/columns.tsx](../frontend/app/src/resources/columns.tsx)
-- [frontend/app/src/resources/types.ts](../frontend/app/src/resources/types.ts)
 - [frontend/app/src/shared/AccessEditor.tsx](../frontend/app/src/shared/AccessEditor.tsx)
 - [frontend/app/src/shared/Avatar.tsx](../frontend/app/src/shared/Avatar.tsx)
 - [frontend/app/src/shared/AvatarControl.tsx](../frontend/app/src/shared/AvatarControl.tsx)
@@ -1572,7 +1462,6 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/spaces/Summary.tsx](../frontend/app/src/spaces/Summary.tsx)
 - [frontend/app/src/spaces/SummaryDashboard.tsx](../frontend/app/src/spaces/SummaryDashboard.tsx)
 - [frontend/app/src/spaces/SummaryDistribution.tsx](../frontend/app/src/spaces/SummaryDistribution.tsx)
-- [frontend/app/src/spaces/TeamsPage.tsx](../frontend/app/src/spaces/TeamsPage.tsx)
 - [frontend/app/src/spaces/TimelineView.tsx](../frontend/app/src/spaces/TimelineView.tsx)
 - [frontend/app/src/spaces/TypeFields.tsx](../frontend/app/src/spaces/TypeFields.tsx)
 - [frontend/app/src/spaces/ViewToolbar.tsx](../frontend/app/src/spaces/ViewToolbar.tsx)
@@ -1643,6 +1532,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/tests/pulpit-grid-editor.test.mjs](../frontend/app/tests/pulpit-grid-editor.test.mjs)
 - [frontend/app/tests/pulpit-refresh.test.mjs](../frontend/app/tests/pulpit-refresh.test.mjs)
 - [frontend/app/tests/reports-interactions.test.mjs](../frontend/app/tests/reports-interactions.test.mjs)
+- [frontend/app/tests/select-validation.test.mjs](../frontend/app/tests/select-validation.test.mjs)
 - [frontend/app/tests/sidebar-sizing.test.mjs](../frontend/app/tests/sidebar-sizing.test.mjs)
 - [frontend/app/tests/space-board-create.test.mjs](../frontend/app/tests/space-board-create.test.mjs)
 - [frontend/app/tests/space-list-loading.test.mjs](../frontend/app/tests/space-list-loading.test.mjs)
@@ -1685,6 +1575,14 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `CommentImageTests`: 16 metod testowych.
 
+### backend/core/test_dev_frontend.py
+
+Źródło: [backend/core/test_dev_frontend.py](../backend/core/test_dev_frontend.py).
+
+- `FrontendBuilderTests`: 20 metod testowych.
+- `FrontendBuildHandlerTests`: 5 metod testowych.
+- `FrontendRunserverTests`: 5 metod testowych.
+
 ### backend/core/test_document_frontend.py
 
 Źródło: [backend/core/test_document_frontend.py](../backend/core/test_document_frontend.py).
@@ -1721,7 +1619,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_frontend.py](../backend/core/test_frontend.py).
 
-- `ReactPageApiTests`: 20 metod testowych.
+- `ReactPageApiTests`: 19 metod testowych.
 
 ### backend/core/test_list_window.py
 
@@ -1992,7 +1890,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/dashboard/test_filters.py](../backend/dashboard/test_filters.py).
 
-- `TaskFilterTests`: 27 metod testowych.
+- `TaskFilterTests`: 28 metod testowych.
 
 ### backend/dashboard/test_for_you.py
 
@@ -2254,30 +2152,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 - `DocumentLibraryTests`: 38 metod testowych.
 
-### backend/resources/test_api.py
-
-Źródło: [backend/resources/test_api.py](../backend/resources/test_api.py).
-
-- `ResourceApiTests`: 16 metod testowych.
-
-### backend/resources/test_lifecycle.py
-
-Źródło: [backend/resources/test_lifecycle.py](../backend/resources/test_lifecycle.py).
-
-- `ResourceLifecycleTests`: 16 metod testowych.
-
-### backend/resources/test_migrations.py
-
-Źródło: [backend/resources/test_migrations.py](../backend/resources/test_migrations.py).
-
-- `ResourceLifecycleMigrationTests`: 1 metod testowych.
-
-### backend/resources/tests.py
-
-Źródło: [backend/resources/tests.py](../backend/resources/tests.py).
-
-- `ResourceTests`: 19 metod testowych.
-
 ### backend/spaces/test_avatars.py
 
 Źródło: [backend/spaces/test_avatars.py](../backend/spaces/test_avatars.py).
@@ -2294,7 +2168,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_backlog_ordering.py](../backend/spaces/test_backlog_ordering.py).
 
-- `BacklogOrderingTests`: 7 metod testowych.
+- `BacklogOrderingTests`: 6 metod testowych.
 
 ### backend/spaces/test_backlog_planning.py
 
@@ -2441,7 +2315,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/test_task_autosave.py](../backend/spaces/test_task_autosave.py).
 
-- `TaskAutosaveTests`: 23 metod testowych.
+- `TaskAutosaveTests`: 22 metod testowych.
 
 ### backend/spaces/test_task_classification.py
 
@@ -2460,13 +2334,6 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 Źródło: [backend/spaces/test_task_owner_membership.py](../backend/spaces/test_task_owner_membership.py).
 
 - `TaskOwnerMembershipTests`: 8 metod testowych.
-
-### backend/spaces/test_teams.py
-
-Źródło: [backend/spaces/test_teams.py](../backend/spaces/test_teams.py).
-
-- `TeamSystemTests`: 20 metod testowych.
-- `TeamAdminConcurrencyTests`: 1 metod testowych.
 
 ### backend/spaces/test_timeline.py
 
@@ -2498,7 +2365,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/spaces/tests.py](../backend/spaces/tests.py).
 
-- `SpaceTests`: 30 metod testowych.
+- `SpaceTests`: 28 metod testowych.
 
 ## 9. Migracje obecne lokalnie
 
@@ -2518,6 +2385,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/workplaces/migrations/0003_workplaceinvitelinkuse.py](../backend/workplaces/migrations/0003_workplaceinvitelinkuse.py)
 - [backend/workplaces/migrations/0004_workplaceinvitation_unique_pending_workspace_email.py](../backend/workplaces/migrations/0004_workplaceinvitation_unique_pending_workspace_email.py)
 - [backend/workplaces/migrations/0005_remove_email_invitations.py](../backend/workplaces/migrations/0005_remove_email_invitations.py)
+- [backend/workplaces/migrations/0006_remove_retired_modules.py](../backend/workplaces/migrations/0006_remove_retired_modules.py)
 
 ### tasks
 
@@ -2550,6 +2418,12 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/resources/migrations/0001_initial.py](../backend/resources/migrations/0001_initial.py)
 - [backend/resources/migrations/0002_resourceactivity_resource_return_due_on_and_more.py](../backend/resources/migrations/0002_resourceactivity_resource_return_due_on_and_more.py)
 - [backend/resources/migrations/0003_alter_resourceactivity_actor_name.py](../backend/resources/migrations/0003_alter_resourceactivity_actor_name.py)
+- [backend/resources/migrations/0004_resource_equipment_kinds.py](../backend/resources/migrations/0004_resource_equipment_kinds.py)
+- [backend/resources/migrations/0005_resource_custom_categories.py](../backend/resources/migrations/0005_resource_custom_categories.py)
+- [backend/resources/migrations/0006_resource_category_actions.py](../backend/resources/migrations/0006_resource_category_actions.py)
+- [backend/resources/migrations/0007_resource_category_icon.py](../backend/resources/migrations/0007_resource_category_icon.py)
+- [backend/resources/migrations/0008_resource_activity_operations.py](../backend/resources/migrations/0008_resource_activity_operations.py)
+- [backend/resources/migrations/0009_remove_resources.py](../backend/resources/migrations/0009_remove_resources.py)
 
 ### spaces
 
@@ -2559,6 +2433,7 @@ Obecność na tej liście nie oznacza śledzenia w Git lub zastosowania w bazie.
 - [backend/spaces/migrations/0004_workitem_start_at.py](../backend/spaces/migrations/0004_workitem_start_at.py)
 - [backend/spaces/migrations/0005_kanban_flow.py](../backend/spaces/migrations/0005_kanban_flow.py)
 - [backend/spaces/migrations/0006_task_classification.py](../backend/spaces/migrations/0006_task_classification.py)
+- [backend/spaces/migrations/0007_remove_work_teams.py](../backend/spaces/migrations/0007_remove_work_teams.py)
 
 ## 10. Narzędzia i wdrożenie
 

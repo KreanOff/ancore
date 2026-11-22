@@ -7,8 +7,8 @@
                 <a href="{{ modal.folder_url }}" class="tasks-modal__close" aria-label="Zamknij" data-document-modal-close></a>
             </header>
             <div class="tasks-modal__body documents-form app-form-layout">
-                <div class="documents-modal-error tasks-modal__errors app-form-wide" role="alert" data-document-modal-error hidden></div>
-                {% if modal.form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert">{{ modal.form.non_field_errors }}</div>{% endif %}
+                <div class="documents-modal-error tasks-modal__errors app-form-wide" role="alert" tabindex="-1" data-document-modal-error hidden></div>
+                {% if modal.form.non_field_errors %}<div class="tasks-modal__errors app-form-wide" role="alert" tabindex="-1" data-document-form-errors>{{ modal.form.non_field_errors }}</div>{% endif %}
                 {% if modal.template_create %}<p class="documents-muted app-form-wide">{% if modal.has_templates %}Powstanie niezależna kopia ostatnio zapisanej treści szablonu. Najpierw zapisz zmiany w jego edytorze.{% else %}Nie masz jeszcze zapisanych szablonów.{% endif %}</p>{% endif %}
                 {% if modal.current_library or modal.upload_form %}<p class="documents-muted documents-modal-location app-form-wide">{{ modal.current_library.name|default:'Dokumenty' }}{% if modal.current_folder %} / {{ modal.current_folder.name }}{% endif %}</p>{% endif %}
                 {% if modal.document %}

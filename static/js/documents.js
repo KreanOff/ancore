@@ -192,7 +192,14 @@
                 media.addEventListener('error', () => finish(false), { ...options, once: true });
                 if (media.complete) finish(media.naturalWidth > 0);
             }
-            const focusTarget = modal.querySelector('[aria-invalid="true"]')
+            for (const input of modal.querySelectorAll('[aria-invalid="true"]:not(:disabled)')) {
+                if (input.closest('[hidden], [inert]')) continue;
+                const control = input.closest('.ancore-custom-select')?.querySelector('button') || input;
+                if (!control.getClientRects().length) continue;
+                control.focus();
+                if (document.activeElement === control) return;
+            }
+            const focusTarget = modal.querySelector('[data-document-form-errors]')
                 || modal.querySelector('[data-office-create] [autofocus]')
                 || modal.querySelector('input:not([type="hidden"]):not([type="file"]), textarea, select');
             (focusTarget || modal.querySelector('[data-document-modal-close]'))?.focus();
@@ -374,7 +381,7 @@
                 if (!options.signal.aborted) {
                     errorMessage.textContent = 'Nie udało się zapisać zmian. Sprawdź połączenie i spróbuj ponownie.';
                     errorMessage.hidden = false;
-                    errorMessage.scrollIntoView({ block: 'nearest' });
+                    errorMessage.focus();
                 }
             } finally {
                 if (editorTab && !editorTab.closed) editorTab.close();

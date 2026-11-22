@@ -8,6 +8,7 @@ const bundle = await build({
   stdin: {
     contents: `export { default as CalendarPage } from './src/calendar/CalendarPage';
       export { EventEditor } from './src/calendar/EventEditor';
+      export { default as DocumentDialog } from './src/documents/DocumentDialog';
       export { SettingsFields } from './src/workspaces/WorkspaceForm';`,
     resolveDir: new URL('..', import.meta.url).pathname,
   },
@@ -35,6 +36,7 @@ function text(element) {
 }
 function harness() {
   const slots = [];
+  const document = { activeElement: null };
   let cursor = 0;
   let effects = [];
   const slot = (initialize) => {
@@ -74,6 +76,7 @@ function harness() {
     URLSearchParams,
     AbortController,
     AbortSignal,
+    document,
     FormData: TestFormData,
     location: { origin: 'https://ancore.test' },
     window: {},
@@ -85,6 +88,7 @@ function harness() {
     }),
   });
   return {
+    document,
     render(component, props) {
       cursor = 0;
       effects = [];
@@ -180,6 +184,72 @@ for (const field of ['title', 'description', 'start', 'end', 'all_day', 'color',
     }
     app.effects();
     assert.equal(focused, field ? 'field' : 'summary');
+  });
+}
+
+for (const field of ['files', 'color', null]) {
+  test(`document validation links the ${field || 'general'} error and focuses the right target`, async () => {
+    const app = harness();
+    const schema = (errors = []) => ({
+      errors: [],
+      fields: field
+        ? [
+            {
+              id: `id_${field}`,
+              name: field,
+              label: field === 'files' ? 'Pliki' : 'Kolor ikony',
+              type: field === 'files' ? 'file' : 'color',
+              attrs: {},
+              errors,
+            },
+          ]
+        : [],
+    });
+    const props = {
+      api: '/api/',
+      token: 'token',
+      data: {
+        form: schema(),
+        title: 'Dokumenty',
+        action: '/documents/upload/',
+        preview_color: '#ffb41f',
+        color_kind: 'folder',
+        upload: field === 'files',
+      },
+      onClose() {},
+      onSaved() {
+        assert.fail('Validation failure must not close the document form');
+      },
+    };
+    app.failWith({ error: 'Sprawdź formularz.', data: { form: schema(['Popraw wartość.']) } });
+    const tree = app.render('DocumentDialog', props);
+    const form = nodes(tree).find((node) => node.type === 'form');
+    const control = {
+      closest: () => null,
+      matches: () => false,
+      getClientRects: () => [{}],
+      focus: () => (app.document.activeElement = control),
+    };
+    form.ref.current = {
+      addEventListener() {},
+      querySelectorAll: () => (field ? [control] : []),
+    };
+    await form.props.onSubmit({ preventDefault() {} });
+    const failed = nodes(app.render('DocumentDialog', props));
+    const summary = failed.find((node) => node.props.tabIndex === -1);
+    const summaryTarget = { focus: () => (app.document.activeElement = summaryTarget) };
+    summary.ref.current = summaryTarget;
+    if (field) {
+      const invalid = failed.find((node) => node.type === 'input' && node.props.name === field);
+      assert.equal(invalid.props['aria-invalid'], true);
+      assert.ok(invalid.props['aria-describedby'].split(' ').includes(`id_${field}_error`));
+      assert.equal(
+        text(failed.find((node) => node.props.id === `id_${field}_error`)),
+        'Popraw wartość.',
+      );
+    }
+    app.effects();
+    assert.equal(app.document.activeElement, field ? control : summaryTarget);
   });
 }
 

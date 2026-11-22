@@ -124,6 +124,19 @@ export interface FormDialogData {
 // Django prefixes belong to submitted names; layout uses the original field name.
 const layoutFieldName = (field: Field) => field.field_name ?? field.name;
 
+export function focusFormError(form: HTMLFormElement | null, summary: HTMLElement | null) {
+  const inputs = form?.querySelectorAll<HTMLElement>('[aria-invalid="true"]') || [];
+  for (const input of inputs) {
+    if (input.closest('[hidden], [inert]') || input.matches(':disabled')) continue;
+    const target =
+      input.closest('.ancore-custom-select')?.querySelector<HTMLElement>('button') || input;
+    if (!target.getClientRects().length) continue;
+    target.focus();
+    if (document.activeElement === target) return;
+  }
+  summary?.focus();
+}
+
 export function FieldControl({
   field,
   bare = false,
@@ -638,18 +651,7 @@ export function EmbeddedForm({
         }
       }
       setError(errorMessage(exception));
-      requestAnimationFrame(() => {
-        const inputs = form.current?.querySelectorAll<HTMLElement>('[aria-invalid="true"]') || [];
-        for (const input of inputs) {
-          if (input.closest('[hidden], [inert]') || input.matches(':disabled')) continue;
-          const target =
-            input.closest('.ancore-custom-select')?.querySelector<HTMLElement>('button') || input;
-          if (!target.getClientRects().length) continue;
-          target.focus();
-          if (document.activeElement === target) return;
-        }
-        errorTarget.current?.focus();
-      });
+      requestAnimationFrame(() => focusFormError(form.current, errorTarget.current));
     } finally {
       sending.current = false;
       setPending(false);
