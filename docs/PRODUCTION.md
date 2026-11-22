@@ -97,7 +97,7 @@ Nie importuje lokalnej bazy developerskiej ani uploadów z repozytorium.
 | `./ancore-install.sh restart` | Ponowne uruchomienie usług |
 | `./ancore-install.sh status` | Stan kontenerów |
 | `./ancore-install.sh logs [USŁUGA]` | Logi wszystkich usług albo wskazanego kontenera |
-| `./ancore-install.sh update` | Pytanie o link GitHub, pobranie kodu, przebudowa i start |
+| `./ancore-install.sh update` | Wybór repozytorium GitHub, pobranie kodu, przebudowa i start |
 | `./ancore-install.sh update URL [GAŁĄŹ]` | Aktualizacja z podanego repozytorium bez pytania o link |
 | `./ancore-install.sh update --local` | Przebudowa i start z obecnych plików bez pobierania kodu |
 | `./ancore-install.sh admin` | Utworzenie dodatkowego administratora Django |
@@ -116,18 +116,20 @@ W katalogu istniejącej instalacji pobranej przez `git clone` uruchom:
 sh ancore-install.sh update
 ```
 
-Skrypt zapyta o link przed wywołaniem Dockera. Wpisz adres repozytorium
-i naciśnij Enter:
+Skrypt zapyta o link przed wywołaniem Dockera. Naciśnij Enter, aby wybrać
+oficjalne repozytorium Ancore, lub wpisz adres własnego repozytorium GitHub.
 
 ```text
-Podaj link do repozytorium GitHub: https://github.com/WLASCICIEL/ancore
+Naciśnij Enter, aby użyć oficjalnego repozytorium Ancore:
+  https://github.com/KreanOff/ancore.git
+Podaj link do repozytorium GitHub:
 ```
 
-Spacje na początku i końcu odpowiedzi są pomijane. Pusta odpowiedź lub błędny
-adres powodują ponowienie pytania; przerwanie wejścia kończy polecenie bez
-zmiany kodu, konfiguracji i usług.
+Spacje na początku i końcu odpowiedzi są pomijane. Błędny adres powoduje
+ponowienie pytania. Koniec wejścia (EOF) kończy polecenie bez zmiany kodu,
+konfiguracji i usług.
 
-Skrypt pobiera z podanego repozytorium gałąź o tej samej nazwie co bieżąca
+Skrypt pobiera z wybranego repozytorium gałąź o tej samej nazwie co bieżąca
 lokalna gałąź. Możesz też podać URL od razu jako argument i opcjonalnie wskazać
 gałąź — wtedy skrypt nie pyta o link:
 

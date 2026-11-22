@@ -117,6 +117,7 @@ frontendów odbywa się na tym samym serwerze; obrazy bazowe i zależności są
 pobierane z internetu przy instalacji.
 
 `update` pyta o link do repozytorium GitHub przed wywołaniem Dockera.
+Enter wybiera oficjalne repozytorium Ancore (`https://github.com/KreanOff/ancore.git`).
 Wariant `update URL [GAŁĄŹ]` przyjmuje adres bez pytania. Skrypt korzysta
 z `deploy/cli/update.sh` i Git na hoście, aby pobrać kod do istniejącego klonu.
 Bez jawnej gałęzi wybiera nazwę bieżącej lokalnej gałęzi.

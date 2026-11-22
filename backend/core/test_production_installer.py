@@ -622,22 +622,39 @@ class ProductionInstallerTests(SimpleTestCase):
                 self.assertEqual(path.stat().st_mode & 0o777, 0o600)
         self.assertEqual(self.git('status', '--porcelain'), '')
 
-    def test_git_update_prompt_retries_blank_and_invalid_links_until_valid_input(self):
+    def test_git_update_prompt_uses_official_repository_on_enter(self):
+        self.prepare_git_update()
+        official_url = 'https://github.com/KreanOff/ancore.git'
+        self.git('config', '--global', '--add', f'url.{self.source}.insteadOf', official_url)
+        (self.source / 'version.txt').write_text('Official release.\n')
+        revision = self.commit_source()
+
+        result = self.run_script('update', answers='\n')
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('oficjalnego repozytorium Ancore', result.stdout)
+        self.assertEqual(result.stdout.count('Podaj link do repozytorium GitHub:'), 1)
+        self.assertIn(f'Pobieranie kodu z {official_url} (gałąź: main)', result.stdout)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
+        self.assertEqual(len(self.commands('build')), 1)
+        self.assertEqual(len(self.commands('up')), 1)
+
+    def test_git_update_prompt_retries_invalid_links_until_valid_input(self):
         self.prepare_git_update()
         (self.source / 'version.txt').write_text('Corrected link release.\n')
         revision = self.commit_source()
-        answers = '\nnot a GitHub link\nhttps://github.com/installer-test/ancore\\repo\n'
+        answers = 'not a GitHub link\nhttps://github.com/installer-test/ancore\\repo\n'
 
         result = self.run_script('update', answers=answers + self.github_url + '\n')
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(result.stdout.count('Podaj link do repozytorium GitHub:'), 4)
+        self.assertEqual(result.stdout.count('Podaj link do repozytorium GitHub:'), 3)
         self.assertEqual(self.git('rev-parse', 'HEAD'), revision)
         self.assertEqual(len(self.commands('build')), 1)
         self.assertEqual(len(self.commands('up')), 1)
         self.assertFalse(self.commands('exec'))
 
-    def test_git_update_prompt_eof_after_blank_or_invalid_input_never_calls_git_or_docker(self):
+    def test_git_update_prompt_eof_without_valid_input_never_calls_git_or_docker(self):
         self.prepare_git_update()
         configuration = (self.root / 'deploy/.env').read_bytes()
         git_calls = self.root.parent / 'unexpected-git-call.txt'
@@ -648,8 +665,8 @@ class ProductionInstallerTests(SimpleTestCase):
             'raise SystemExit(1)\n'
         )
         git_stub.chmod(0o700)
-        for answers in ('', '\n', ' \t \n', 'not a GitHub link\n',
-                        '\nhttps://github.com/installer-test/$(touch should-not-exist)\n'):
+        for answers in ('', 'not a GitHub link\n',
+                        'https://github.com/installer-test/$(touch should-not-exist)\n'):
             with self.subTest(answers=answers):
                 self.calls.write_text('')
                 result = self.run_script('update', answers=answers)

@@ -122,11 +122,12 @@ pobiera gałąź o nazwie bieżącej lokalnej gałęzi. `deploy/cli/update.sh`
 sprawdza adres, czystość repozytorium, ciągłość historii, podstawowe pliki
 Ancore i chronione ścieżki konfiguracji oraz danych. Nie zmienia `origin`
 ani nazwy lokalnej gałęzi. `update --local` buduje obecne źródła bez pytań
-i pobierania kodu. Pusta lub błędna odpowiedź ponawia pytanie; EOF kończy
-polecenie bez zmian. Białe znaki wokół wpisanego linku są pomijane.
+i pobierania kodu. Enter przy pustej odpowiedzi wybiera oficjalne repozytorium
+Ancore (`https://github.com/KreanOff/ancore.git`). Błędny adres ponawia pytanie.
+EOF kończy polecenie bez zmian. Białe znaki wokół wpisanego linku są pomijane.
 [Wymagania, przykłady i zachowanie po błędzie](PRODUCTION.md#aktualizacja-z-github).
 
-Weryfikacja: **51/51 testów** — 40 w `core.test_production_installer`
+Pierwotna weryfikacja objęła **51/51 testów** — 40 w `core.test_production_installer`
 oraz 11 w `core.test_production` i `core.test_project_layout`. Testy Git
 używają rzeczywistych, tymczasowych repozytoriów i lokalnego przekierowania
 adresów GitHub; Docker CLI jest zastępczy. Sprawdzono pojedyncze pytanie o link,

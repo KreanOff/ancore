@@ -107,7 +107,7 @@ Wszystkie polecenia uruchamiaj w katalogu projektu:
 | `sh ancore-install.sh stop` | Zatrzymanie kontenerów z zachowaniem danych |
 | `sh ancore-install.sh start` | Uruchomienie wcześniej zbudowanej aplikacji |
 | `sh ancore-install.sh restart` | Ponowny start usług |
-| `sh ancore-install.sh update` | Pytanie o link GitHub, pobranie kodu, przebudowa i start |
+| `sh ancore-install.sh update` | Wybór repozytorium GitHub, pobranie kodu, przebudowa i start |
 | `sh ancore-install.sh update URL [GAŁĄŹ]` | Aktualizacja z podanego repozytorium bez pytania o link |
 | `sh ancore-install.sh update --local` | Przebudowa i start z obecnych plików bez pobierania kodu |
 | `sh ancore-install.sh admin` | Utworzenie kolejnego administratora Django |
@@ -124,11 +124,9 @@ W instalacji pobranej przez `git clone` uruchom aktualizację:
 sh ancore-install.sh update
 ```
 
-Skrypt poprosi o link. Wpisz adres swojego repozytorium GitHub i naciśnij Enter:
-
-```text
-Podaj link do repozytorium GitHub: https://github.com/WLASCICIEL/ancore
-```
+Gdy skrypt poprosi o link, naciśnij Enter, aby wybrać oficjalne repozytorium
+Ancore (`https://github.com/KreanOff/ancore.git`), lub wpisz adres własnego
+repozytorium GitHub i zatwierdź go klawiszem Enter.
 
 Polecenie pobierze bieżącą gałąź, zaktualizuje kod, przebuduje aplikację
 i uruchomi usługi z zapisanej konfiguracji. Inną gałąź można podać na końcu,

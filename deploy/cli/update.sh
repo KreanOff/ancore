@@ -2,11 +2,14 @@
 # Loaded for update with a prompted or supplied URL. POSIX sh; Git runs on the host.
 
 ancore_prompt_update_url() {
+    ANCORE_UPDATE_DEFAULT_URL='https://github.com/KreanOff/ancore.git'
     while :; do
+        printf 'Naciśnij Enter, aby użyć oficjalnego repozytorium Ancore:\n  %s\n' "$ANCORE_UPDATE_DEFAULT_URL"
         printf 'Podaj link do repozytorium GitHub: '
         IFS= read -r ANCORE_UPDATE_INPUT || \
-            ancore_fail 'Przerwano aktualizację: nie podano linku do repozytorium.'
+            ancore_fail 'Przerwano aktualizację: brak odpowiedzi.'
         ANCORE_UPDATE_INPUT=$(printf '%s' "$ANCORE_UPDATE_INPUT" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+        ANCORE_UPDATE_INPUT=${ANCORE_UPDATE_INPUT:-$ANCORE_UPDATE_DEFAULT_URL}
         # A failed validation exits only the subshell, so the prompt can retry.
         if (ancore_update_url "$ANCORE_UPDATE_INPUT"); then
             ancore_update_url "$ANCORE_UPDATE_INPUT"
