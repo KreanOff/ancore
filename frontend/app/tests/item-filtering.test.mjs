@@ -54,7 +54,8 @@ function harness(data, url = '/space/produkt/?view=overview') {
     render(next = {}) {
       cursor = 0;
       data = { ...data, ...next };
-      const dropdown = module.exports.ItemFiltering({ data, url });
+      const filter = module.exports.ItemFiltering({ data, url });
+      const dropdown = filter.type(filter.props);
       return { dropdown, menu: dropdown.props.children(() => closed++) };
     },
   };

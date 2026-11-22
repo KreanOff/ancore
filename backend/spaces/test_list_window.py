@@ -263,7 +263,7 @@ class ListWindowTests(TestCase):
         response = self.client.get(target)
         self.assertEqual(len(response.context['items']), 21)
         self.assertEqual(response.context['timeline']['more_url'], '')
-        self.assertContains(response, 'Wszystkie wyniki')
+        self.assertContains(response, 'aria-label="Wszystkie zadania: Oś czasu (21 / 21)"')
         self.assertContains(response, '(21 / 21)')
         for query, count in [('Praca resolved', 20), ('Brak takiego zadania', 0)]:
             with self.subTest(query=query):

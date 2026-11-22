@@ -8,6 +8,7 @@
 .task-filters-page .tasks-filter-button { text-decoration: none; }
 .task-filters-page .tasks-filterbar-left, .task-filters-page .tasks-filterbar-right { flex-wrap: wrap; }
 .task-filter-search { flex-shrink: 0; }
+.task-filter-search.app-toolbar--query > .app-toolbar__controls { flex-direction: column; align-items: stretch; gap: 0; }
 .work-content--items > .task-filter-search .task-filter-advanced { padding: 0; }
 .work-content--items > .task-filter-search .task-filter-help { padding: 8px 0; }
 .work-content--items > .task-filter-query-error { margin: 0; }
@@ -18,7 +19,7 @@
 .task-filter-search-field { display: grid; gap: 4px; min-width: 0; }
 .task-filter-search-field .ancore-custom-select { width: 100%; }
 .task-filter-search-footer { display: flex; justify-content: flex-end; padding: 8px; border-top: 1px solid var(--border-color); flex-shrink: 0; }
-.task-filter-advanced { display: flex; align-items: flex-start; gap: 8px; padding: 14px var(--work-space-inline-padding, 22px) 8px; }
+.task-filter-advanced { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--app-toolbar-gap); padding: 14px var(--work-space-inline-padding, 22px) 8px; }
 .task-filter-advanced textarea { flex: 1; min-width: 0; resize: vertical; font-family: monospace; }
 .task-filter-advanced .tasks-filter-button { flex-shrink: 0; }
 .task-filter-help { padding: 0 var(--work-space-inline-padding, 22px) 12px; font-size: var(--font-size-sm); }
@@ -55,6 +56,7 @@
 @media (max-width: 767px) {
     .task-filters-page .tasks-topbar { align-items: flex-start; gap: 10px; }
     .task-filters-page .tasks-titlebar-actions { justify-content: flex-start; width: 100%; max-width: 100%; }
-    .task-filter-advanced { flex-wrap: wrap; }
+}
+@container app-toolbar (width < 768px) {
     .task-filter-advanced textarea { flex-basis: 100%; }
 }

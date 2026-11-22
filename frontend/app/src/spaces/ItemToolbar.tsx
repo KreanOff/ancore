@@ -1,7 +1,7 @@
 import { issueTypeBadgeStyle } from '../shared/issue-type-color';
 import { type ReactNode, useState } from 'react';
 import { ViewToolbar } from './ViewToolbar';
-import { Dropdown } from '../shared/Dropdown';
+import { ToolbarFilter, ToolbarSort } from '../shared/DirectoryToolbar';
 import { Icon } from '../shared/Icon';
 import { navigate } from '../shared/page';
 import type { DetailData } from './types';
@@ -54,21 +54,13 @@ export function ItemToolbar({
       search={search}
     >
       <ItemFiltering data={data} url={url} />
-      <Dropdown
+      <ToolbarSort
         label={`Sortowanie: ${data.sort.label}, ${data.sort.direction === 'asc' ? 'rosnąco' : 'malejąco'}`}
+        current={data.sort.label}
         role="dialog"
         className="tasks-project-sort-builder"
         menuClass="tasks-project-query-panel tasks-project-sort-panel"
-        triggerClassName="tasks-filter-button tasks-project-query-trigger"
         onOpen={() => setSortQuery('')}
-        trigger={
-          <>
-            <Icon name="arrow-up-down" />
-            <span>Sortuj</span>
-            <span className="tasks-project-sort-current">{data.sort.label}</span>
-            <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-          </>
-        }
       >
         {(close) => (
           <>
@@ -154,7 +146,7 @@ export function ItemToolbar({
             </div>
           </>
         )}
-      </Dropdown>
+      </ToolbarSort>
       {children}
       <ItemSummaryFilter data={data} url={url} />
     </ViewToolbar>
@@ -208,28 +200,17 @@ export function ItemFiltering({
   const fields = availableFilters.filter(({ label }) => matches(label, filterQuery));
   const change = (values: Record<string, string>) => changeQuery(url, values);
   return (
-    <Dropdown
+    <ToolbarFilter
       label="Filtrowanie zadań"
-      role="dialog"
+      activeCount={active}
+      layer
+      searchable
       className="tasks-project-filter-builder"
       menuClass="tasks-project-query-panel tasks-project-filter-panel"
-      triggerClassName={`tasks-filter-button tasks-project-query-trigger${active ? ' is-active' : ''}`}
       onOpen={() => {
         setField(null);
         setFilterQuery('');
       }}
-      trigger={
-        <>
-          <Icon name="list-filter" />
-          <span>Filtruj</span>
-          {active ? (
-            <span className="tasks-project-query-count" aria-label={`Aktywne filtry: ${active}`}>
-              {active}
-            </span>
-          ) : null}
-          <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-        </>
-      }
     >
       {(close) => (
         <>
@@ -376,6 +357,6 @@ export function ItemFiltering({
           )}
         </>
       )}
-    </Dropdown>
+    </ToolbarFilter>
   );
 }

@@ -18,6 +18,7 @@ body .app-toolbar.tasks-filterbar {
     border-radius: 0;
     background: var(--card-bg);
     box-sizing: border-box;
+    container: app-toolbar / inline-size;
 }
 
 body .app-toolbar.tasks-filterbar.app-toolbar--embedded { padding-inline: 0; }
@@ -207,7 +208,7 @@ body .app-toolbar .app-toolbar__controls > [hidden],
 body .app-toolbar .app-toolbar__actions > [hidden],
 body .app-toolbar > [hidden] { display: none; }
 
-@media (max-width: 767px) {
+@container app-toolbar (width < 768px) {
     body .app-toolbar .app-toolbar__search { flex-basis: 100%; width: 100%; max-width: none; }
     body .app-toolbar .app-toolbar__search > form:not(.tasks-search-field),
     body .app-toolbar.tasks-filterbar .tasks-search-field { max-width: none; }
@@ -221,7 +222,7 @@ body .app-toolbar .app-toolbar__summary {
     overflow-wrap: anywhere;
 }
 body .app-toolbar .app-toolbar__summary > * { min-width: 0; max-width: 100%; }
-@media (min-width: 768px) {
+@container app-toolbar (min-width: 768px) {
     body .app-toolbar:has(.app-toolbar__summary) .app-toolbar__search { flex-basis: 160px; }
 }
 body .app-toolbar.tasks-filterbar .app-toolbar__summary .tasks-filter-button {

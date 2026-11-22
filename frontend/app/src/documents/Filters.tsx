@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ToolbarFilter, ToolbarSort } from '../shared/DirectoryToolbar';
 import { Dropdown } from '../shared/Dropdown';
 import { Icon } from '../shared/Icon';
 import type { DirectoryData, Filter } from './types';
@@ -23,7 +24,7 @@ export default function Filters({
   }
   return (
     <>
-      <Dropdown
+      <ToolbarFilter
         label={
           data.office
             ? 'Filtrowanie dokumentów'
@@ -31,31 +32,15 @@ export default function Filters({
               ? 'Filtrowanie dysków'
               : 'Filtrowanie plików'
         }
-        role="dialog"
+        activeCount={active.length}
+        layer
+        searchable
         className="tasks-project-filter-builder"
         menuClass="tasks-project-query-panel tasks-project-filter-panel"
-        triggerClassName={
-          'tasks-filter-button tasks-project-query-trigger' + (active.length ? ' is-active' : '')
-        }
         onOpen={() => {
           setField(null);
           setQuery('');
         }}
-        trigger={
-          <>
-            <Icon name="list-filter" />
-            <span>Filtruj</span>
-            {active.length ? (
-              <span
-                className="tasks-project-query-count"
-                aria-label={`Aktywne filtry: ${active.length}`}
-              >
-                {active.length}
-              </span>
-            ) : null}
-            <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-          </>
-        }
       >
         {(close) => (
           <>
@@ -244,21 +229,13 @@ export default function Filters({
             )}
           </>
         )}
-      </Dropdown>
-      <Dropdown
+      </ToolbarFilter>
+      <ToolbarSort
         label={`Sortowanie: ${data.sort_label}`}
+        current={data.sort_label}
         className="tasks-project-sort-builder"
         menuClass="tasks-project-query-panel tasks-project-sort-panel"
         role="dialog"
-        triggerClassName="tasks-filter-button tasks-project-query-trigger"
-        trigger={
-          <>
-            <Icon name="arrow-up-down" />
-            <span>Sortuj</span>
-            <span className="tasks-project-sort-current">{data.sort_label}</span>
-            <Icon name="chevron-down" />
-          </>
-        }
       >
         {(close) => (
           <>
@@ -344,7 +321,7 @@ export default function Filters({
             </div>
           </>
         )}
-      </Dropdown>
+      </ToolbarSort>
       {active.map((field) => (
         <button
           key={field.param}

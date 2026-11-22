@@ -99,6 +99,7 @@ def search_context(request, item=None):
     encoded = urlencode({'jql': source})
     return {'saved_filter': item, 'items': decorate_items(request, page.object_list), 'page': page,
             'search_form': form, 'jql': source, 'search_error': error, 'mode': mode,
+            'active_search_filters': sum(bool(field.value()) for field in form if field.name not in {'q', 'sort'}),
             'basic_available': basic_available, 'changed': bool(item and source != item.query),
             'search_url': base, 'filters_url': filter_url(request),
             'list_url': base + '?' + encoded + '&mode=' + mode + (f'&limit={page.limit}' if page.limit > 20 else ''),

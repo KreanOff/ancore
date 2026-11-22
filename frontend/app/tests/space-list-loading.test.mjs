@@ -18,7 +18,7 @@ async function callbacks(file, names) {
   const found = new Map();
   function visit(node) {
     if (ts.isFunctionDeclaration(node) && names.includes(node.name?.text))
-      found.set(node.name.text, node.getText());
+      found.set(node.name.text, node.getText().replace(/^export (?=function)/, ''));
     ts.forEachChild(node, visit);
   }
   visit(source);
@@ -34,6 +34,7 @@ async function callbacks(file, names) {
 
 const detailCallbacks = await callbacks('spaces/DetailPage.tsx', ['loadMore', 'act']);
 const detailRender = await callbacks('spaces/DetailPage.tsx', ['DetailPage']);
+const loadMoreRender = await callbacks('shared/LoadMore.tsx', ['LoadMore']);
 const queryCallbacks = await callbacks('spaces/ItemToolbar.tsx', ['changeQuery']);
 const require = createRequire(import.meta.url);
 const path = '/workplaces/w_0123456789abcdefghijklmnop/space/produkt/';
@@ -587,9 +588,12 @@ for (const view of ['list', 'backlog', 'timeline']) {
   }
 }
 
+const { LoadMore } = execute(loadMoreRender, {});
+
 function nodes(element) {
   if (!element || typeof element !== 'object') return [];
   if (Array.isArray(element)) return element.flatMap(nodes);
+  if (element.type === LoadMore) return [element, ...nodes(LoadMore(element.props))];
   return [element, ...nodes(element.props?.children)];
 }
 
@@ -608,6 +612,7 @@ function renderDetail(initialData, url = initialUrl) {
     StatusGroup: 'StatusGroup',
     ItemRow: 'ItemRow',
     EmptyState: 'EmptyState',
+    LoadMore,
     Pagination: 'Pagination',
     dateLabel: (value) => value || '',
   });

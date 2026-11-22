@@ -1,4 +1,5 @@
 import { LoadMore } from '../shared/LoadMore';
+import { EmptyState } from '../shared/EmptyState';
 import { useLoadMorePage } from '../shared/useLoadMorePage';
 import { PageTabs } from '../shared/PageTabs';
 import { PageHeader } from '../shared/PageHeader';
@@ -314,37 +315,26 @@ export default function DirectoryPage(props: PageProps) {
                 </div>
               </section>
             ) : (
-              <div
-                className="tasks-empty-state tasks-empty-state--illustrated work-space-empty-state"
-                role="status"
-              >
-                <img
-                  className="tasks-empty-state__illustration work-space-empty-state__illustration"
-                  src={data.illustration}
-                  alt=""
-                  width={720}
-                  height={540}
-                  draggable={false}
-                />
-                <div className="tasks-empty-state__copy">
-                  <h2>
-                    {filtered
-                      ? 'Brak pasujących przestrzeni'
-                      : data.tab === 'favorites'
-                        ? 'Brak ulubionych przestrzeni'
-                        : data.tab === 'private'
-                          ? 'Brak prywatnych przestrzeni'
-                          : 'Brak przestrzeni'}
-                  </h2>
-                  <p>
-                    {filtered
-                      ? 'Zmień wyszukiwanie lub filtry.'
-                      : data.tab === 'favorites'
-                        ? 'Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.'
-                        : 'Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.'}
-                  </p>
-                </div>
-              </div>
+              <EmptyState
+                className="work-space-empty-state"
+                src={data.illustration}
+                title={
+                  filtered
+                    ? 'Brak pasujących przestrzeni'
+                    : data.tab === 'favorites'
+                      ? 'Brak ulubionych przestrzeni'
+                      : data.tab === 'private'
+                        ? 'Brak prywatnych przestrzeni'
+                        : 'Brak przestrzeni'
+                }
+                description={
+                  filtered
+                    ? 'Zmień wyszukiwanie lub filtry.'
+                    : data.tab === 'favorites'
+                      ? 'Oznacz przestrzeń gwiazdką, aby pojawiła się na tej liście.'
+                      : 'Utwórz przestrzeń i wybierz sposób pracy swojego zespołu.'
+                }
+              />
             )}
             {data.pagination ? (
               <LoadMore

@@ -6,7 +6,7 @@
 @import 'layout/main.css?v=20261114-creation-loading';
 @import 'layout/responsive.css?v=20261114-panel-resizers';
 @import 'components/cards.css?v=20261017-border-visibility-3pct';
-@import 'components/buttons.css?v=20261017-collection-favorite-stars';
+@import 'components/buttons.css?v=20261121-shared-primary';
 @import 'components/toolbar.css?v=20260918-flaticon-v1';
 @import 'components/alerts.css?v=20260615-text-scale-13-14-15-no-bold-rail-13-no-uppercase';
 @import 'components/forms.css?v=20261017-border-visibility-3pct';
@@ -23,7 +23,7 @@
 @import 'calendar.css?v=20261112-event-color';
 @import 'components/sticky-note.css?v=20260903-gray-interactions-v1';
 @import 'components/checkboxes.css?v=20261007-directory-controls';
-@import 'theme/elestio.css?v=20261025-shared-status-backgrounds';
+@import 'theme/elestio.css?v=20261121-shared-primary';
 @import 'components/profile.css?v=20261104-banner-photo-editor';
 @import 'components/modal-system.css?v=20261111-form-labels-left';
 @import 'components/dropdown-layer.css?v=20261013-shared-dropdowns';
@@ -309,50 +309,6 @@ body .tasks-tag-topbar-button--row-highlight,
 body .tasks-tag-topbar-button--row-highlight :where(span) {
     --app-text-color: var(--text-main);
     color: var(--app-text-color) !important;
-}
-
-/* Primary actions share the palette of the project toolbar's add button.
-   Keep success/error save indicators and secondary actions in their own palettes. */
-body :is(
-    .btn-primary,
-    .auth-submit,
-    .auth-switch-link,
-    .dashboard-action--primary,
-    .tasks-new-button,
-    .contacts-new-button--secondary,
-    .tasks-tag-topbar-button:not(.tasks-tag-topbar-button--secondary),
-    .tasks-directory-column-save,
-    .tasks-project-modal__submit,
-    .tasks-modal__submit,
-    .tasks-inline-submit,
-    .tasks-issue-save:not([data-state="saved"]):not([data-state="error"]),
-    .tasks-modal .tasks-project-note__primary,
-    .contacts-photo-editor-primary,
-    .workplaces-primary-button,
-    .workplace-settings__save,
-    .profile-action-primary,
-    .confirm-modal--destructive .btn-danger
-) {
-    --primary-button-current-bg: var(--primary-button-bg);
-    --app-text-color: var(--text-primary);
-    background: var(--primary-button-current-bg);
-    border-color: var(--primary-button-current-bg);
-    color: var(--app-text-color) !important;
-    box-shadow: none;
-
-    :where(span, i, svg) {
-        --app-text-color: var(--text-primary);
-        color: var(--app-text-color) !important;
-    }
-
-    &:is(:hover, :focus-visible):not(:disabled):not([aria-disabled="true"]) {
-        --primary-button-current-bg: var(--primary-button-hover-bg);
-    }
-
-    &:disabled,
-    &[aria-disabled="true"] {
-        opacity: 0.55;
-    }
 }
 
 /* Pointer focus keeps the compact component appearance. Keyboard focus has

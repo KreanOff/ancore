@@ -1,4 +1,5 @@
 import { LoadMore } from '../shared/LoadMore';
+import { EmptyState } from '../shared/EmptyState';
 import { useLoadMorePage } from '../shared/useLoadMorePage';
 import { PageTabs } from '../shared/PageTabs';
 import { PageHeader } from '../shared/PageHeader';
@@ -200,31 +201,20 @@ export default function DirectoryPage(props: PageProps) {
                 </div>
               </section>
             ) : (
-              <div
-                className="tasks-empty-state tasks-empty-state--centered tasks-empty-state--illustrated"
-                role="status"
-              >
-                <img
-                  className="tasks-empty-state__illustration"
-                  src={data.illustration}
-                  alt=""
-                  width={720}
-                  height={540}
-                  draggable={false}
-                />
-                <div className="tasks-empty-state__copy">
-                  <h2>{filtered ? 'Brak pasujących filtrów' : 'Brak filtrów'}</h2>
-                  <p>
-                    {filtered
-                      ? 'Zmień wyszukiwanie lub wyczyść jego warunki.'
-                      : data.tab === 'favorites'
-                        ? 'Oznacz filtr gwiazdką, aby mieć go pod ręką.'
-                        : data.tab === 'shared'
-                          ? 'Filtry udostępnione przez inne osoby pojawią się tutaj.'
-                          : 'Zapisz wyszukiwanie, aby wracać do aktualnych wyników.'}
-                  </p>
-                </div>
-              </div>
+              <EmptyState
+                className="tasks-empty-state--centered"
+                src={data.illustration}
+                title={filtered ? 'Brak pasujących filtrów' : 'Brak filtrów'}
+                description={
+                  filtered
+                    ? 'Zmień wyszukiwanie lub wyczyść jego warunki.'
+                    : data.tab === 'favorites'
+                      ? 'Oznacz filtr gwiazdką, aby mieć go pod ręką.'
+                      : data.tab === 'shared'
+                        ? 'Filtry udostępnione przez inne osoby pojawią się tutaj.'
+                        : 'Zapisz wyszukiwanie, aby wracać do aktualnych wyników.'
+                }
+              />
             )}
             {data.pagination ? (
               <LoadMore

@@ -25,14 +25,52 @@
     color: #e2b203;
 }
 
-.btn-primary {
-    background-color: var(--accent-red);
-    color: #ffffff;
+/* Ellipsis actions stay borderless, including toolbar and disabled overrides. */
+:is(button, a):has(> [data-icon="ellipsis"]) {
+    border: 0 !important;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background-color: var(--accent-red-hover);
-    box-shadow: var(--shadow-md);
+/* Primary actions use the same palette across toolbars, forms and dialogs. */
+body :is(
+    .btn-primary,
+    .auth-submit,
+    .auth-switch-link,
+    .dashboard-action--primary,
+    .tasks-new-button,
+    .contacts-new-button--secondary,
+    .tasks-tag-topbar-button:not(.tasks-tag-topbar-button--secondary),
+    .tasks-directory-column-save,
+    .tasks-project-modal__submit,
+    .tasks-modal__submit,
+    .tasks-inline-submit,
+    .tasks-issue-save:not([data-state="saved"]):not([data-state="error"]),
+    .tasks-modal .tasks-project-note__primary,
+    .contacts-photo-editor-primary,
+    .workplaces-primary-button,
+    .workplace-settings__save,
+    .profile-action-primary,
+    .confirm-modal--destructive .btn-danger
+) {
+    --primary-button-current-bg: var(--primary-button-bg);
+    --app-text-color: var(--text-primary);
+    background: var(--primary-button-current-bg);
+    border-color: var(--primary-button-current-bg);
+    color: var(--app-text-color) !important;
+    box-shadow: none;
+
+    :where(span, i, svg) {
+        --app-text-color: var(--text-primary);
+        color: var(--app-text-color) !important;
+    }
+
+    &:is(:hover, :focus-visible):not(:disabled):not([aria-disabled="true"]) {
+        --primary-button-current-bg: var(--primary-button-hover-bg);
+    }
+
+    &:disabled,
+    &[aria-disabled="true"] {
+        opacity: 0.55;
+    }
 }
 
 .btn-danger {

@@ -43,6 +43,11 @@ function find(node, component, predicate = () => true) {
   if ((!component || node.type === component) && predicate(node)) return node;
   return find(node.props.children, component, predicate);
 }
+function renderToolbar(toolbar) {
+  const form = toolbar.type.render(toolbar.props, toolbar.ref);
+  const [hiddenFields, slots] = form.props.children;
+  return { ...form, props: { ...form.props, children: [hiddenFields, slots.type(slots.props)] } };
+}
 function harness() {
   let previous, cleanup;
   const root = {
@@ -97,7 +102,8 @@ function harness() {
       const page = SearchPage({ initial, csrfToken: 'token' });
       const toolbar = find(page, SearchToolbar);
       assert.ok(toolbar, 'the basic filter toolbar remains mounted');
-      const tree = SearchToolbar(toolbar.props);
+      const tree = renderToolbar(SearchToolbar(toolbar.props));
+      assert.equal(tree.ref.current, root, 'the toolbar forwards its native form ref');
       const field = find(
         tree,
         FieldControl,
@@ -212,7 +218,7 @@ test('the q search field retains its draft and identity after loading more, inde
   );
   assert.ok(
     find(
-      filterMenu.props.trigger,
+      filterMenu.type(filterMenu.props).props.trigger,
       'span',
       (node) => node.props['aria-label'] === 'Aktywne filtry: 1',
     ),

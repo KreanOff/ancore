@@ -1,4 +1,10 @@
-import type { ComponentProps, FormHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
+import {
+  forwardRef,
+  type ComponentProps,
+  type FormHTMLAttributes,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { Dropdown } from './Dropdown';
 import { Icon } from './Icon';
 
@@ -6,8 +12,9 @@ type ToolbarMenuProps = Omit<ComponentProps<typeof Dropdown>, 'trigger'>;
 
 export function ToolbarFilter({
   active = false,
+  activeCount = 0,
   ...props
-}: ToolbarMenuProps & { active?: boolean }) {
+}: ToolbarMenuProps & { active?: boolean; activeCount?: number }) {
   return (
     <Dropdown
       role="dialog"
@@ -15,12 +22,20 @@ export function ToolbarFilter({
       searchable={false}
       menuClass="tasks-project-query-panel"
       {...props}
-      triggerClassName={`tasks-filter-button${active ? ' is-active' : ''}`}
+      triggerClassName={`tasks-filter-button${active || activeCount > 0 ? ' is-active' : ''}`}
       trigger={
         <>
           <Icon name="list-filter" />
           <span>Filtruj</span>
-          <Icon name="chevron-down" />
+          {activeCount > 0 ? (
+            <span
+              className="tasks-project-query-count"
+              aria-label={`Aktywne filtry: ${activeCount}`}
+            >
+              {activeCount}
+            </span>
+          ) : null}
+          <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
         </>
       }
     />
@@ -36,7 +51,7 @@ export function ToolbarSort({ current, ...props }: ToolbarMenuProps & { current:
           <Icon name="arrow-up-down" />
           <span>Sortuj</span>
           <span className="tasks-project-sort-current">{current}</span>
-          <Icon name="chevron-down" />
+          <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
         </>
       }
     />
@@ -79,21 +94,18 @@ export function Toolbar({
   );
 }
 
-export function DirectoryToolbar({
-  filters,
-  actions,
-  search,
-  children,
-  className = '',
-  ...props
-}: FormHTMLAttributes<HTMLFormElement> & ToolbarSlots) {
+export const DirectoryToolbar = forwardRef<
+  HTMLFormElement,
+  FormHTMLAttributes<HTMLFormElement> & ToolbarSlots
+>(function DirectoryToolbar({ filters, actions, search, children, className = '', ...props }, ref) {
   return (
     <form
       {...props}
+      ref={ref}
       className={`tasks-filterbar tasks-filterbar--directory work-item-toolbar app-toolbar ${className}`}
     >
       {children}
       <ToolbarContents filters={filters} actions={actions} search={search} />
     </form>
   );
-}
+});

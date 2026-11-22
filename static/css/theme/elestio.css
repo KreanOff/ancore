@@ -137,7 +137,6 @@ body {
 .contacts-new-button--secondary,
 .tasks-tag-topbar-button,
 .tasks-modal__submit,
-.btn-primary,
 .calendar-nav-button.is-active,
 .calendar-event--blue,
 .contacts-avatar,
@@ -154,7 +153,6 @@ body {
 .contacts-new-button--secondary:hover,
 .tasks-tag-topbar-button:hover,
 .tasks-modal__submit:hover:not(:disabled),
-.btn-primary:hover:not(:disabled),
 .calendar-nav-button.is-active:hover {
     background: var(--accent-peach-hover);
     color: var(--accent-on-peach-hover);
@@ -827,8 +825,7 @@ body.auth-page,
 .contacts-photo-editor-primary,
 .workplaces-primary-button,
 .workplace-settings__save,
-.auth-submit,
-.btn-primary {
+.auth-submit {
     background: var(--system-accent);
     border-color: var(--system-accent);
     color: var(--accent-on-peach);
@@ -853,9 +850,7 @@ body.auth-page,
 .workplace-settings__save:hover,
 .workplace-settings__save:focus-visible,
 .auth-submit:hover,
-.auth-submit:focus-visible,
-.btn-primary:hover:not(:disabled),
-.btn-primary:focus-visible {
+.auth-submit:focus-visible {
     background: var(--system-interaction);
     border-color: var(--system-interaction);
     color: var(--accent-on-peach-hover);

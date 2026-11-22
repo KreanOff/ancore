@@ -5,6 +5,7 @@ import { PageTabs } from '../shared/PageTabs';
 import type { FormEvent } from 'react';
 import { FormDialog } from '../forms/FormDialog';
 import { ForYouTaskRow } from '../dashboard/ForYouPage';
+import { DirectoryToolbar } from '../shared/DirectoryToolbar';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
 import { type PageProps, navigate } from '../shared/page';
@@ -143,41 +144,45 @@ export default function SearchPage(props: PageProps) {
           {data.mode === 'basic' ? (
             <SearchToolbar data={toolbarData} />
           ) : (
-            <form
-              className="task-filter-search tasks-filterbar app-toolbar app-toolbar--embedded app-toolbar--query"
+            <DirectoryToolbar
+              className="task-filter-search app-toolbar--embedded app-toolbar--query"
               action={data.search_url}
               onSubmit={search}
+              filters={
+                <>
+                  <div className="task-filter-advanced">
+                    <label htmlFor="filter-jql" className="u-sr-only">
+                      Zapytanie zaawansowane
+                    </label>
+                    <textarea
+                      id="filter-jql"
+                      name="jql"
+                      className="form-input"
+                      rows={2}
+                      maxLength={4000}
+                      defaultValue={data.jql}
+                      placeholder="assignee = currentUser() AND category != closed ORDER BY created DESC"
+                      aria-invalid={!!data.search_error}
+                      aria-describedby={data.search_error ? 'filter-query-error' : undefined}
+                    />
+                    <button className="tasks-filter-button" type="submit">
+                      <Icon name="search" />
+                      Szukaj
+                    </button>
+                    <a className="tasks-filter-button" href={data.clear_url}>
+                      Wyczyść
+                    </a>
+                    <span role="status" className="work-caption app-toolbar__summary">
+                      Zadania: {data.pagination.count}
+                      {saved ? ` · ${saved.visibility_label}` : ''}
+                    </span>
+                  </div>
+                  <QueryHelp />
+                </>
+              }
             >
               <input type="hidden" name="mode" value="advanced" />
-              <div className="task-filter-advanced app-toolbar__controls">
-                <label htmlFor="filter-jql" className="u-sr-only">
-                  Zapytanie zaawansowane
-                </label>
-                <textarea
-                  id="filter-jql"
-                  name="jql"
-                  className="form-input"
-                  rows={2}
-                  maxLength={4000}
-                  defaultValue={data.jql}
-                  placeholder="assignee = currentUser() AND category != closed ORDER BY created DESC"
-                  aria-invalid={!!data.search_error}
-                  aria-describedby={data.search_error ? 'filter-query-error' : undefined}
-                />
-                <button className="tasks-filter-button" type="submit">
-                  <Icon name="search" />
-                  Szukaj
-                </button>
-                <a className="tasks-filter-button" href={data.clear_url}>
-                  Wyczyść
-                </a>
-                <span role="status" className="work-caption">
-                  Zadania: {data.pagination.count}
-                  {saved ? ` · ${saved.visibility_label}` : ''}
-                </span>
-              </div>
-              <QueryHelp />
-            </form>
+            </DirectoryToolbar>
           )}
           {data.search_error ? (
             <div

@@ -11,6 +11,7 @@ import { Dropdown } from '../shared/Dropdown';
 import { DirectoryColumnManager, useDirectoryColumns } from '../shared/DirectoryColumns';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
+import { LoadMore } from '../shared/LoadMore';
 import { Modal } from '../shared/Modal';
 import { type Page, type PageProps, navigate, pageRequest, setPageLocation } from '../shared/page';
 import { errorMessage } from '../shared/api';
@@ -523,30 +524,18 @@ export default function TagsPage(props: PageProps) {
                 ) : null}
               </div>
             </section>
-            {data.window.more_url || data.window.loaded_count > 20 ? (
-              <button
-                type="button"
-                className="tasks-filter-button work-list-more"
-                aria-label={`${loading ? 'Wczytywanie tagów' : data.window.more_url ? 'Pokaż więcej' : 'Wszystkie tagi'}: Tagi (${data.window.loaded_count} / ${data.window.total_tags})`}
-                aria-disabled={busy || !data.window.more_url}
-                aria-busy={loading}
-                onClick={() => void loadMore()}
-              >
-                {loading
-                  ? 'Wczytywanie…'
-                  : data.window.more_url
-                    ? 'Pokaż więcej'
-                    : 'Wszystkie tagi'}
-                <span className="work-list-more__count">
-                  ({data.window.loaded_count} / {data.window.total_tags})
-                </span>
-              </button>
-            ) : null}
-            {listError ? (
-              <div className="tasks-modal__errors work-list-more-error" role="alert">
-                {listError} Kliknij „Pokaż więcej”, aby ponowić.
-              </div>
-            ) : null}
+            <LoadMore
+              loaded={data.window.loaded_count}
+              total={data.window.total_tags}
+              hasMore={!!data.window.more_url}
+              loading={loading}
+              error={listError}
+              onLoad={() => void loadMore()}
+              label="Tagi"
+              loadingLabel="Wczytywanie tagów"
+              completeLabel="Wszystkie tagi"
+              announceCount={false}
+            />
           </div>
         </div>
       </section>

@@ -1,6 +1,6 @@
-import { Dropdown } from '../shared/Dropdown';
-import { DirectoryToolbar } from '../shared/DirectoryToolbar';
+import { DirectoryToolbar, ToolbarFilter } from '../shared/DirectoryToolbar';
 import { LoadMore } from '../shared/LoadMore';
+import { EmptyState } from '../shared/EmptyState';
 import { useLoadMorePage } from '../shared/useLoadMorePage';
 import { PageHeader } from '../shared/PageHeader';
 import { useLayoutEffect, useRef, useState, type FormEvent } from 'react';
@@ -79,20 +79,11 @@ export default function DirectoryPage(props: PageProps) {
           action={data.base_url}
           onSubmit={search}
           filters={
-            <Dropdown
+            <ToolbarFilter
               label="Filtrowanie pulpitów"
-              layer={false}
-              role="dialog"
+              active={!!data.visibility}
+              searchable
               className="tasks-project-filter-builder"
-              menuClass="tasks-project-query-panel"
-              triggerClassName={`tasks-filter-button tasks-project-query-trigger${data.visibility ? ' is-active' : ''}`}
-              trigger={
-                <>
-                  <Icon name="list-filter" />
-                  <span>Filtruj</span>
-                  <Icon name="chevron-down" className="tasks-project-query-trigger__chevron" />
-                </>
-              }
             >
               {(close) => (
                 <>
@@ -114,7 +105,7 @@ export default function DirectoryPage(props: PageProps) {
                   </div>
                 </>
               )}
-            </Dropdown>
+            </ToolbarFilter>
           }
           search={
             <label className="tasks-search-field tasks-project-search">
@@ -256,27 +247,16 @@ export default function DirectoryPage(props: PageProps) {
                 </div>
               </section>
             ) : (
-              <div
-                className="tasks-empty-state tasks-empty-state--illustrated pulpit-directory-empty-state"
-                role="status"
-              >
-                <img
-                  className="tasks-empty-state__illustration pulpit-directory-empty-state__illustration"
-                  src={data.illustration}
-                  alt=""
-                  width={1448}
-                  height={1086}
-                  draggable={false}
-                />
-                <div className="tasks-empty-state__copy">
-                  <h2>{filtered ? 'Brak pasujących pulpitów' : 'Brak pulpitów'}</h2>
-                  <p>
-                    {filtered
-                      ? 'Zmień wyszukiwanie lub filtry.'
-                      : 'Utwórz pulpit z własnymi gadżetami.'}
-                  </p>
-                </div>
-              </div>
+              <EmptyState
+                className="pulpit-directory-empty-state"
+                src={data.illustration}
+                title={filtered ? 'Brak pasujących pulpitów' : 'Brak pulpitów'}
+                description={
+                  filtered
+                    ? 'Zmień wyszukiwanie lub filtry.'
+                    : 'Utwórz pulpit z własnymi gadżetami.'
+                }
+              />
             )}
             <LoadMore
               loaded={data.results.length}

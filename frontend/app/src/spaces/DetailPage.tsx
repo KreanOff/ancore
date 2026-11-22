@@ -3,6 +3,7 @@ import { type DragEvent, useEffect, useLayoutEffect, useRef, useState } from 're
 import { Avatar } from '../shared/Avatar';
 import { Icon } from '../shared/Icon';
 import { EmptyState } from '../shared/EmptyState';
+import { LoadMore } from '../shared/LoadMore';
 import { Select } from '../shared/Select';
 import { StatusGroup } from '../shared/StatusGroup';
 import { FormDialog, type FormDialogData } from '../forms/FormDialog';
@@ -437,34 +438,19 @@ export default function DetailPage({ initial, csrfToken }: PageProps) {
     locked = false,
   ) {
     return (
-      <>
-        {column.more_url || (column.loaded_count ?? 0) > 20 ? (
-          <button
-            type="button"
-            className="tasks-filter-button work-list-more"
-            aria-label={`${loadingStatus === column.key ? 'Wczytywanie zadań' : column.more_url ? 'Pokaż więcej' : 'Wszystkie zadania'}: ${column.label} (${column.loaded_count} / ${column.count})`}
-            aria-disabled={busy || locked || !column.more_url}
-            aria-busy={loadingStatus === column.key}
-            onClick={() => {
-              if (!locked) void loadMore(column);
-            }}
-          >
-            {loadingStatus === column.key
-              ? 'Wczytywanie…'
-              : column.more_url
-                ? 'Pokaż więcej'
-                : 'Wszystkie zadania'}
-            <span className="work-list-more__count">
-              ({column.loaded_count} / {column.count})
-            </span>
-          </button>
-        ) : null}
-        {listError?.key === column.key ? (
-          <div className="tasks-modal__errors work-list-more-error" role="alert">
-            {listError.message} Kliknij „Pokaż więcej”, aby ponowić.
-          </div>
-        ) : null}
-      </>
+      <LoadMore
+        loaded={column.loaded_count ?? column.count}
+        total={column.count}
+        hasMore={!!column.more_url}
+        loading={loadingStatus === column.key}
+        disabled={busy || locked}
+        error={listError?.key === column.key ? listError.message : undefined}
+        onLoad={() => void loadMore(column)}
+        label={column.label}
+        loadingLabel="Wczytywanie zadań"
+        completeLabel="Wszystkie zadania"
+        announceCount={false}
+      />
     );
   }
   function backlogGroup(sprint: Sprint | null) {

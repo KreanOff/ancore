@@ -19,6 +19,12 @@ Historyczna nazwa klasy `tasks-directory-menu-sheet` nadal występuje
 w układach tabel; nie oznacza widocznego menu ani dodatkowej kolumny.
 Te same zasady obowiązują w React i pierwszym renderze Django.
 
+Przyciski menu z wielokropkiem „⋯” są pozbawione obramowania w całej aplikacji,
+także po najechaniu, otwarciu menu i w stanie nieaktywnym. Wspólna reguła
+w `components/buttons.css` rozpoznaje bezpośrednią ikonę `data-icon="ellipsis"`
+w przycisku lub linku, zarówno przed, jak i po renderowaniu ikon w React/Django.
+Nadpisuje obramowanie kontrolek paska narzędzi, zachowując rozmiary, tło i fokus.
+
 Schemat każdej strony (w obrębie wspólnej powłoki aplikacji):
 
 ```text
@@ -55,7 +61,7 @@ Schemat formularza:
 | --- | --- |
 | Nagłówek strony | [`shared/PageHeader.tsx`](../frontend/app/src/shared/PageHeader.tsx): `heading`, `actions`, `navigation`; te same klasy w pierwszym renderze Django |
 | Zakładki strony | [`shared/PageTabs.tsx`](../frontend/app/src/shared/PageTabs.tsx) w `PageHeader.navigation`; linki/przyciski z istniejącymi ikonami i aktywnym stanem ARIA |
-| Dolny pasek narzędzi | [`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx): `Toolbar` lub formularz `DirectoryToolbar`, z `filters` i `search` po lewej oraz `actions` po prawej; wzorzec [`resources/App.tsx`](../frontend/app/src/resources/App.tsx) |
+| Dolny pasek narzędzi | [`shared/DirectoryToolbar.tsx`](../frontend/app/src/shared/DirectoryToolbar.tsx): `Toolbar` lub formularz `DirectoryToolbar`, z `filters` i `search` po lewej oraz `actions` po prawej; wzorzec [`spaces/ItemToolbar.tsx`](../frontend/app/src/spaces/ItemToolbar.tsx) |
 | Filtruj i Sortuj | `ToolbarFilter` i `ToolbarSort` z `shared/DirectoryToolbar.tsx`; istniejące pola i opcje modułu we wspólnej powłoce |
 | Strona referencyjna | [`spaces/SpaceHeader.tsx`](../frontend/app/src/spaces/SpaceHeader.tsx), [`spaces/base.html`](../backend/spaces/templates/spaces/base.html) |
 | Tabela danych | [`components/data-table.css`](../static/css/components/data-table.css), wzorzec [`tags/TagsPage.tsx`](../frontend/app/src/tags/TagsPage.tsx); te same klasy w React i Django |
@@ -161,15 +167,15 @@ katalogów Dysku i Dokumentów zarówno w tabeli, jak i w kafelkach.
 Kalendarz tylko do odczytu wyłącza wszystkie wejścia do tworzenia wydarzeń;
 stan pusty nie zachęca wtedy do niedostępnego dodawania.
 
-## Wspólny dolny pasek narzędzi — wzorzec Zasobów
+## Wspólny dolny pasek narzędzi
 
 Pod nagłówkiem i zakładkami znajduje się jedna powłoka `app-toolbar`.
 Kontrolki tabeli i widoku, „Filtruj” i „Sortuj” trafiają do `filters`,
 wyszukiwarka do `search`, a istniejące działania do `actions`.
 Kontrolki, sortowanie i wyszukiwarka są po lewej; działania są wyrównane
 do prawej. Do działań należą m.in. „Zapisz”, „Edytuj”, „Usuń”, „Dodaj”,
-eksport, odświeżanie oraz operacje na zaznaczonych wierszach, np. przekazanie
-i zwrot Zasobów. Liczniki i informacje o wynikach pozostają przy kontrolkach.
+eksport, odświeżanie oraz operacje na zaznaczonych wierszach. Liczniki
+i informacje o wynikach pozostają przy kontrolkach.
 Widoczność, wyłączenie i zakres operacji nadal wynikają z uprawnień
 oraz stanu modułu.
 **Aktywne filtry, ich usuwanie, informacje o zakresie wyników i operacje
@@ -179,11 +185,11 @@ umieszcza etykiety i usuwanie filtrów w `filters`, bez własnej ramki,
 paddingu ani wymuszonej pełnej szerokości. `app-toolbar__selection` grupuje
 operacje zaznaczenia w `actions`. Długie etykiety mogą zawijać się wewnątrz
 paska bez obcinania tekstu i poziomego przewijania strony.
-Dotyczy to widoków Przestrzeni (w tym Raportów i Backlogu), Zasobów oraz
+Dotyczy to widoków Przestrzeni (w tym Raportów i Backlogu) oraz
 informacji o wynikach Dysku/Dokumentów, w React i pierwszym renderze Django.
-Pasek pozostaje poza przewijaną listą. Na wąskim ekranie grupy zawijają się,
-a wyszukiwarka przechodzi do pełnego wiersza; działania nadal są wyrównane
-do prawej.
+Pasek pozostaje poza przewijaną listą. Gdy wnętrze paska ma mniej niż 768 px
+szerokości, wyszukiwarka przechodzi do pełnego wiersza także po otwarciu
+paneli bocznych w szerokim oknie. Działania pozostają wyrównane do prawej.
 
 `Toolbar` renderuje `div`; `DirectoryToolbar` renderuje `form` i przekazuje
 atrybuty formularza. Oba eksportuje
@@ -201,8 +207,9 @@ adapterem tego komponentu: jego `children` trafia do `filters`.
 Pierwszy render Django używa tych samych klas, nazw pól i istniejących
 atrybutów obsługi JS.
 
-`ToolbarFilter` pokazuje `list-filter`, „Filtruj” i `chevron-down`;
-`active` oznacza zastosowane filtry. `ToolbarSort` pokazuje `arrow-up-down`,
+`ToolbarFilter` pokazuje `list-filter`, „Filtruj” i `chevron-down`.
+`active` sygnalizuje zastosowane filtry, a opcjonalne `activeCount` dodaje
+licznik. `ToolbarSort` pokazuje `arrow-up-down`,
 „Sortuj”, bieżącą etykietę `current` za separatorem oraz `chevron-down`.
 Oba przyjmują dotychczasowe opcje/pola jako `children` i `label` dla
 dostępności. Zachowaj istniejący sposób zastosowania filtrów: zatwierdzenie
@@ -224,16 +231,16 @@ wysokości ani pionowych marginesów dla modułu.
 jedna ramka o wysokości kontrolki, połączone przyciski z separatorami
 i szare podświetlenie aktywnego stanu. Kalendarz używa go w `actions`.
 Poziomy padding pochodzi z `--app-page-padding-x` (15px).
-Przy szerokości do 767px wyszukiwarka przechodzi do pełnego wiersza;
-wysokość kontrolek pozostaje 36px.
+Przy mniej niż 768 px wewnątrz paska wyszukiwarka przechodzi do pełnego
+wiersza, a wysokość kontrolek pozostaje 36px.
 Na wąskich ekranach i przy większej liczbie kontrolek pasek rośnie wraz
 z zawiniętymi wierszami, zachowując pionowy padding 4px. Formularz
 zaawansowanego zapytania również zachowuje naturalną wysokość treści.
 `app-toolbar--embedded` zeruje wyłącznie padding poziomy, gdy zapewnia go
 rodzic; nie tworzy odrębnego stylu przycisków.
 
-Na granicy paska i treści odstęp zapewnia sam pasek. Kontenery Przestrzeni,
-Zespołów, szczegółów Zasobu i Kalendarza oraz panel tworzenia Dokumentów
+Na granicy paska i treści odstęp zapewnia sam pasek. Kontenery Przestrzeni
+i Kalendarza oraz panel tworzenia Dokumentów
 nie dodają tam drugiego górnego paddingu. Dotyczy to także Podsumowania
 Przestrzeni, gdzie `.work-summary` opakowuje `.work-summary-dashboard`
 w React i pierwszym renderze Django. Mierz rzeczywistą przerwę od dolnej
@@ -243,9 +250,9 @@ nie dodają `gap` bezpośrednio po pasku; odstępy między dalszymi panelami
 pozostają właściwe dla danego widoku. Ta sama zasada dotyczy paska ustawień
 Przestrzeni, bez dodatkowych pionowych marginesów.
 
-Nie dodawaj brakujących funkcji tylko po to, by zapełnić pasek: Workspace
-może mieć samą wyszukiwarkę, a szczegóły Zasobu same działania. Zachowaj
-istniejące wejścia do edycji, usuwania i operacji zbiorczych oraz ich ACL.
+Zakres kontrolek wynika z funkcji ekranu. Workspace może mieć samą
+wyszukiwarkę. Zachowaj istniejące wejścia do edycji, usuwania i operacji
+zbiorczych oraz ich ACL.
 Ujednolicenie paska nie przywraca usuniętych przycisków trzech pasków,
 menu wierszy ani ich kolumn. Specjalistyczne narzędzia edytorów dokumentów
 pozostają przy edytorze.
@@ -265,7 +272,9 @@ Wzorzec `work-list-more` ma pełną szerokość, wyśrodkowany tekst i licznik
 `(wczytane / wszystkie)`, cienką górną linię oraz szare najechanie.
 Stany: „Pokaż więcej”, „Wczytywanie…” oraz nieaktywny „Wszystkie wyniki”
 (po doładowaniu całości); lista z maksymalnie 20 wynikami nie wymaga paska.
-Zadania i Tagi zachowują własne nazwy końcowego stanu i ten sam wspólny styl.
+Zadania i Tagi przekazują własną nazwę końcowego stanu zarówno do `LoadMore`,
+jak i szablonu Django. Etykieta uwzględnia nazwę listy i licznik. Po doładowaniu
+zadania i Tagi ogłaszają pełny komunikat z liczbą wczytanych pozycji.
 Błąd zachowuje dotychczasowe wyniki oraz pozwala ponowić ten sam odczyt.
 Powtórne kliknięcia nie mogą uruchamiać równoległych odczytów tej samej porcji;
 zmiana widoku lub filtra unieważnia spóźnioną odpowiedź.
@@ -892,9 +901,11 @@ a element jest pomijany przez czytnik ekranu; kontener ma `role="status"`.
 Adresy grafik w CSS pozostają względne wobec arkusza zasobów statycznych.
 Szablony Django zachowują ten sam kontrakt klas i grafik.
 
-Wzorzec obejmuje katalogi i zarządzanie Przestrzeniami, Pulpitami i Filtrami,
-pusty pulpit, Zasoby, Tagi przestrzeni, listy i wyszukiwanie zadań, oś czasu,
-Zespoły, Dysk (dyski, foldery, kosz, ulubione), Dokumenty (także szablony),
+Katalogi Przestrzeni, Pulpitów i Filtrów przekazują do `EmptyState` własną
+ilustrację oraz tekst odpowiedni do aktywnej zakładki i filtrów. Wzorzec obejmuje
+także zarządzanie katalogami, pusty pulpit, Tagi przestrzeni, listy
+i wyszukiwanie zadań, oś czasu,
+Dysk (dyski, foldery, kosz, ulubione), Dokumenty (także szablony),
 katalog Workspace i pustą tabelę członków. Puste rekomendowane
 przestrzenie oraz główny pusty wynik zakładki „Dla ciebie” korzystają z niego
 z własną ilustracją. Puste stany nie zawierają
@@ -2603,12 +2614,18 @@ base/fonts.css (lokalny Atlassian Sans)
   → theme/elestio.css
   → profile, modal-system, global-search, notifications-panel
   → reguły bezpośrednio w style.css
-  → opcjonalne arkusze extra_head konkretnej strony
+  → arkusze ekranu z rejestru page_styles
+  → wspólne uzupełnienia React w components/react.css
 ```
 
 Kolejność importów, specyficzność selektora i `!important` współtworzą wynik.
 `style.css` zawiera dużo aktywnych reguł, nie jest tylko listą importów.
 Później dołączony arkusz nie zawsze wygrywa z wcześniejszym `!important`.
+Paleta głównych przycisków i jej stany są w `components/buttons.css`
+i korzystają z tokenów `--primary-button-*`.
+Pierwszy render Django i nawigacja JSON używają tych samych wersjonowanych
+adresów i kolejności arkuszy ekranu. Częściowa nawigacja włącza arkusze celu
+dopiero przy zmianie ekranu. Przeglądarka zachowuje pobrane arkusze.
 
 `elestio.css` to nazwa historyczna motywu w tym repozytorium. Nie oznacza
 zależności od zewnętrznego systemu UI. Podobnie `bootstrap.html` zawiera
