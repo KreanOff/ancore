@@ -30,7 +30,6 @@ ancore/
 │   ├── update_code_index.py generator indeksu dokumentacji
 │   └── start_office.sh      zgodność starszego polecenia ONLYOFFICE
 ├── docs/                    dokumentacja i generowany CODE_INDEX.md
-├── .env.example             przykład konfiguracji lokalnej
 ├── .editorconfig            format plików
 ├── .gitignore               wykluczenia z repozytorium
 ├── .dockerignore            wykluczenia z kontekstu budowania
@@ -51,7 +50,7 @@ Szablony, testy i migracje pozostają przy swoich aplikacjach.
 | Rodzaj | Lokalizacja | Przechowywanie |
 | --- | --- | --- |
 | Kod, migracje, szablony, CSS/JS, obrazy, biblioteki i licencje | `backend/`, `frontend/`, `static/` | W Git, poza wynikami budowania i zależnościami |
-| Przykłady konfiguracji | `.env.example`, `deploy/production.env.example` | W Git, bez sekretów |
+| Przykład konfiguracji produkcji | `deploy/production.env.example` | W Git, bez sekretów |
 | Indeks kodu | `docs/CODE_INDEX.md` | W Git; aktualizowany generatorem |
 | Bundle Reacta i manifest | `static/frontend/` | Generowane; poza Git i kontekstem Dockera |
 | Bundle tablicy | `static/vendor/board/` | Generowany; poza Git i kontekstem Dockera |

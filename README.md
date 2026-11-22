@@ -159,10 +159,10 @@ PostgreSQL **15+**, Node.js **22+** i pnpm **11**. Wersje kontenerów są okreś
 osobno w [Dockerfile](deploy/Dockerfile). Zgodność i ograniczenia lokalnego
 Pythona opisuje [instrukcja developerska](docs/DEVELOPMENT.md#aktualizacja-do-pythona-315-17102026).
 
-Przygotuj własną bazę PostgreSQL. Jeśli nie masz `.env`, skopiuj
-[.env.example](.env.example) i uzupełnij parametry połączenia. Pierwsze
-uruchomienie nowego schematu wymaga pustej bazy; starsze schematy sprzed resetu
-nie są automatycznie migrowane. [Zasady bazy danych](docs/DATABASE.md).
+Przygotuj własną bazę PostgreSQL. Jeśli nie masz `.env`, utwórz go w katalogu
+głównym według [instrukcji konfiguracji](docs/DEVELOPMENT.md#2-konfiguracja-środowiska).
+Pierwsze uruchomienie nowego schematu wymaga pustej bazy; starsze schematy
+sprzed resetu nie są automatycznie migrowane. [Zasady bazy danych](docs/DATABASE.md).
 
 ```sh
 python3.15 -m venv .venv

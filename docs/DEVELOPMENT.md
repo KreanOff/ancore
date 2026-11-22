@@ -4850,8 +4850,10 @@ ustawień i ich znaczenie; nie wartości prywatnego środowiska.
 środowiskowymi o tych samych nazwach.
 
 Nie nadpisuj istniejącego `.env` podczas wykonywania zwykłego zadania.
-Nowe środowisko skonfiguruj na podstawie [.env.example](../.env.example).
-`.gitignore` pomija `.env` i jego lokalne warianty, zachowując ten przykład.
+W nowym środowisku utwórz plik `.env` w katalogu głównym. Ustaw `DEBUG=true`
+i wpisz wartości `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` i `DB_PORT`
+dla swojej bazy PostgreSQL, każdą zmienną w osobnym wierszu jako `NAZWA=wartość`.
+`.gitignore` pomija `.env` i jego lokalne warianty.
 Pomija również zależności i cache pnpm, cache kompilacji TypeScript,
 generowane bundle Reacta i tablicy, raporty coverage/Playwright, lokalne
 dane aplikacji, pliki pomocnicze SQLite i ustawienia VS Code (`.vscode/`).

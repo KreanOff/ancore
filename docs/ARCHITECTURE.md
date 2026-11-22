@@ -66,7 +66,6 @@ ancore-install.sh       wspólne polecenia instalacji i utrzymania produkcji
 manage.py               wejście do poleceń Django
 requirements.txt        zależności Pythona
 AGENTS.md               instrukcje pracy agenta
-.env.example            przykład lokalnej konfiguracji bez sekretów
 .editorconfig           wspólne reguły zapisu i wcięć plików
 ```
 

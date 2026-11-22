@@ -19,10 +19,9 @@ dist/
 .pdm-python
 .pdm-build/
 
-# Lokalne konfiguracje i sekrety; przykłady pozostają w repozytorium
+# Lokalne konfiguracje i sekrety
 .env
 .env.*
-!.env.example
 local_settings.py
 
 # Dane lokalne i wynik collectstatic (nigdy źródła aplikacji)
