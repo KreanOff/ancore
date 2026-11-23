@@ -1,0 +1,8 @@
+{% with back=global_panels.shell.settings_back %}
+    {% if back %}
+        <a href="{{ back.url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-back aria-label="{{ back.label }}" title="{{ back.label }}">
+            <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i>
+            <span class="nav-label">{{ back.label }}</span>
+        </a>
+    {% endif %}
+{% endwith %}

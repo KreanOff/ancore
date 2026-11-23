@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import type { Field } from '../forms/FormDialog';
 import { Icon } from '../shared/Icon';
 import { LoadingOverlay } from '../shared/LoadingOverlay';
+import { WorkspaceNameButton } from '../shared/WorkspaceNameButton';
 import { errorMessage } from '../shared/api';
 import { PageError, pageRequest, type Page, type PageProps } from '../shared/page';
 import type { AuthData } from './types';
@@ -11,15 +12,18 @@ function Input({
   label,
   focus,
   disabled,
+  onInput,
 }: {
   field: Field;
   label: string;
   focus?: boolean;
   disabled: boolean;
+  onInput?: (event: FormEvent<HTMLInputElement>) => void;
 }) {
   const [visible, setVisible] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const password = field.type === 'password';
+  const workspaceName = field.name === 'name';
   const id =
     field.name === 'username' ? 'email' : field.name === 'password' ? 'password' : field.id;
   return (
@@ -27,7 +31,7 @@ function Input({
       <label className="auth-label" htmlFor={id}>
         {label}
       </label>
-      <div className={password ? 'auth-password-control' : undefined}>
+      <div className={password || workspaceName ? 'auth-input-control' : undefined}>
         <input
           ref={input}
           id={id}
@@ -48,6 +52,7 @@ function Input({
           autoFocus={focus}
           required={field.required}
           disabled={disabled}
+          onInput={onInput}
           maxLength={field.attrs.maxlength ? Number(field.attrs.maxlength) : undefined}
           autoComplete={
             field.attrs.autocomplete ||
@@ -66,7 +71,7 @@ function Input({
         {password ? (
           <button
             type="button"
-            className="auth-password-toggle"
+            className="auth-input-action auth-password-toggle"
             aria-controls={id}
             disabled={disabled}
             aria-label={visible ? 'Ukryj hasło' : 'Pokaż hasło'}
@@ -79,6 +84,8 @@ function Input({
             <Icon name="eye" className="auth-eye auth-eye--show" />
             <Icon name="eye-off" className="auth-eye auth-eye--hide" />
           </button>
+        ) : workspaceName ? (
+          <WorkspaceNameButton className="auth-input-action" inputId={id} disabled={disabled} />
         ) : null}
       </div>
       {field.errors.length ? (
@@ -151,7 +158,30 @@ export default function AuthPage({ initial, csrfToken }: PageProps) {
   }
   const renderField = (name: string, label: string, focus = false) => {
     const field = schema.fields.find((item) => item.name === name)!;
-    return <Input key={name} field={field} label={label} focus={focus} disabled={pending} />;
+    const onInput =
+      workspace && name === 'name' && field.errors.length
+        ? (event: FormEvent<HTMLInputElement>) => {
+            const input = event.currentTarget;
+            const value = input.value.trim();
+            if (!value || value.length > input.maxLength) return;
+            setSchema({
+              ...schema,
+              fields: schema.fields.map((item) =>
+                item === field ? { ...item, errors: [] } : item,
+              ),
+            });
+          }
+        : undefined;
+    return (
+      <Input
+        key={name}
+        field={field}
+        label={label}
+        focus={focus}
+        disabled={pending}
+        onInput={onInput}
+      />
+    );
   };
   const title = workspace ? 'Utwórz Workspace' : register ? 'Utwórz konto' : 'Zaloguj się';
   const loadingLabel = workspace

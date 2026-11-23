@@ -83,11 +83,22 @@ def shell_payload(request, context=None):
             for row in item['starred'] + item['recent']:
                 row['settings_url'] = ''
                 row['actions'] = []
+    workplaces_url = reverse('workplaces:workplaces')
+    settings_back_url = None
+    if mode == 'settings':
+        settings_back_url = (links.get('spaces') or links['for-you'])['url']
+    elif mode == 'space-settings':
+        settings_back_url = data['space_url']
+    elif mode == 'workspace-settings':
+        settings_back_url = workplaces_url
+    elif mode == 'pulpit-settings':
+        settings_back_url = data['return_url']
     return {
         'account_id': str(request.user.pk), 'workplace_id': str(workplace.pk) if workplace else '',
         'read_only': read_only(request), 'disabled_modules': workplace.disabled_modules if workplace else [],
         'mode': mode, 'settings_category': settings_category, 'url': request.get_full_path(),
         'sidebar_url': '' if data.get('disable_react_shell') else sidebar_url(request, data.get('sidebar_mode', 'workspace')),
+        'settings_back': {'url': settings_back_url, 'label': 'Wróć'} if settings_back_url else None,
         'space_settings': data.get('space_settings_sidebar'),
         'workspace_settings': data.get('workspace_settings_sidebar'),
         'pulpit_settings': data.get('pulpit_settings_sidebar'),
@@ -98,7 +109,7 @@ def shell_payload(request, context=None):
         'profile': {'name': request.user.get_full_name() or request.user.username, 'avatar': account_avatar(request.user),
                     'url': reverse('profile'), 'active': resolver.view_name == 'profile'},
         'settings_url': reverse('settings'), 'settings_active': mode in {'space-settings', 'pulpit-settings', 'workspace-settings'} or resolver.view_name == 'settings' or app == 'workplaces' or data.get('pulpits_management_mode', False),
-        'workplaces_url': reverse('workplaces:workplaces'), 'links': links,
+        'workplaces_url': workplaces_url, 'links': links,
         'favorites': favorite_items(request, workplace) if workplace else [],
         'favorite_toggle_url': reverse('workplaces:toggle-sidebar-favorite', args=[workplace.pk]) if workplace else '',
         'favorite_reorder_url': reverse('workplaces:reorder-sidebar-favorites', args=[workplace.pk]) if workplace else '',

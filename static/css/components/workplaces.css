@@ -2996,6 +2996,36 @@
     box-shadow: none;
 }
 
+.workplace-name-control {
+    position: relative;
+}
+
+.workplace-name-control:has(.tasks-icon-button:not([hidden])) {
+    --app-modal-input-padding: 0 calc(var(--app-modal-control-height) + 6px) 0 12px;
+}
+
+.workplace-name-control > .tasks-icon-button {
+    --app-text-color: var(--system-interaction);
+    position: absolute;
+    inset: 1px 1px 1px auto;
+    width: calc(var(--app-modal-control-height) - 2px);
+    height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--dropdown-control-radius);
+    background: transparent;
+}
+
+.workplace-name-control > .tasks-icon-button:enabled:hover {
+    --app-text-color: var(--text-primary);
+    background: var(--system-interaction-soft);
+}
+
+.workplace-name-control > .tasks-icon-button:focus-visible {
+    outline: 2px solid var(--system-interaction);
+    outline-offset: -2px;
+}
+
 .workplace-create-modal__body .workplace-create-modal__textarea {
     height: auto;
     min-height: 82px;

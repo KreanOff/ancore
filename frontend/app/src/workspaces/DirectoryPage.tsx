@@ -147,7 +147,6 @@ export default function DirectoryPage(props: PageProps) {
         key={data.team.id}
         team={data.team}
         initialTab={data.tab}
-        backUrl={data.base_url}
         addOpen={data.add_open}
         api={props.initial.api_url}
         token={props.csrfToken}

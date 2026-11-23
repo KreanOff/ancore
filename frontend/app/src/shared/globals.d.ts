@@ -7,6 +7,7 @@ declare global {
       renderPage(data: import('../shell/navigation-types').NavigationEnvelope): void;
     };
     AncorePhotoEditors?: { init(root: Element): void };
+    AncoreWorkspaceNames?: { suggest(currentName: string): string };
     AncoreWorkplaceAvatars?: { init(root: Element): void; dispose(form: HTMLFormElement): void };
     AncoreApp?: {
       setLocation?(url: string, push?: boolean): void;

@@ -143,9 +143,16 @@
                         <div class="workplace-modal__details app-form-layout">
                             <div class="app-form-heading"><div class="tasks-form-field app-form-field">
                                 <div class="app-field-label"><label for="{{ form.name.id_for_label }}">Nazwa miejsca pracy</label>{% include 'core/includes/field_help.html' with text='Będzie widoczna dla wszystkich członków miejsca pracy.' label='Nazwa miejsca pracy' id='workplace-create-name-hint' only %}</div>
-                                {{ form.name }}
+                                <div class="workplace-name-control">
+                                    {{ form.name }}
+                                    {% include 'workplaces/includes/workspace_name_button.html' with input_id=form.name.id_for_label button_class='tasks-icon-button' only %}
+                                </div>
                                 <span id="workplace-create-name-counter" class="u-sr-only" aria-live="polite"><span data-workplace-name-count>{{ form.name.value|default:''|length }}</span>/140</span>
-                                {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                                {% if form.name.errors %}
+                                <div id="{{ form.name.auto_id }}_error" data-workplace-name-errors>
+                                    {% for error in form.name.errors %}<p class="workplace-create-modal__field-error" role="alert">{{ error }}</p>{% endfor %}
+                                </div>
+                                {% endif %}
                             </div></div>
 
                             <div class="tasks-form-field app-form-field app-form-description">
@@ -312,15 +319,21 @@
             const modal = document.querySelector('[data-workplace-create-modal]');
             const form = document.getElementById('workplace-create-form');
             const nameInput = form?.querySelector('[name="name"]');
+            const nameGenerator = form?.querySelector('[data-workspace-name-generator]');
+            const nameErrors = form?.querySelector('[data-workplace-name-errors]');
+            const nameDescription = nameInput?.getAttribute('aria-describedby') || '';
             const submitButton = document.getElementById('workplace-create-submit');
             const nameCount = modal?.querySelector('[data-workplace-name-count]');
             let lastFocusedElement = null;
 
             if (!openButton || !modal) return;
+            if (nameErrors) {
+                nameInput?.setAttribute('aria-describedby', `${nameDescription} ${nameErrors.id}`.trim());
+            }
 
             function updateSubmitState() {
                 if (!submitButton || !nameInput) return;
-                submitButton.disabled = nameInput.value.trim().length === 0;
+                submitButton.disabled = submitButton.hasAttribute('aria-busy') || nameInput.value.trim().length === 0;
                 if (nameCount) {
                     nameCount.textContent = nameInput.value.length;
                 }
@@ -351,7 +364,15 @@
             }
 
             openButton.addEventListener('click', openModal);
-            nameInput?.addEventListener('input', updateSubmitState);
+            nameInput?.addEventListener('input', () => {
+                updateSubmitState();
+                const value = nameInput.value.trim();
+                if (nameErrors && !nameErrors.hidden && value && value.length <= nameInput.maxLength) {
+                    nameErrors.hidden = true;
+                    nameInput.removeAttribute('aria-invalid');
+                    nameInput.setAttribute('aria-describedby', nameDescription);
+                }
+            });
 
             modal.querySelectorAll('[data-close-workplace-create-modal]').forEach(button => {
                 button.addEventListener('click', closeModal);
@@ -364,6 +385,10 @@
             });
 
             form?.addEventListener('submit', event => {
+                if (submitButton?.hasAttribute('aria-busy')) {
+                    event.preventDefault();
+                    return;
+                }
                 if (!form.checkValidity()) {
                     event.preventDefault();
                     form.reportValidity();
@@ -374,6 +399,15 @@
                     submitButton.textContent = 'Tworzenie…';
                     submitButton.setAttribute('aria-busy', 'true');
                 }
+                if (nameGenerator) nameGenerator.disabled = true;
+            });
+
+            window.addEventListener('pageshow', event => {
+                if (!event.persisted || !submitButton?.hasAttribute('aria-busy')) return;
+                submitButton.removeAttribute('aria-busy');
+                submitButton.textContent = submitButton.dataset.defaultLabel;
+                if (nameGenerator) nameGenerator.disabled = false;
+                updateSubmitState();
             });
 
             document.addEventListener('keydown', event => {

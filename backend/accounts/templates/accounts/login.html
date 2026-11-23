@@ -41,7 +41,7 @@
 
     <div class="auth-field{% if form.password.errors %} auth-field--invalid{% endif %}">
         <label class="auth-label" for="password">Hasło</label>
-        <div class="auth-password-control">
+        <div class="auth-input-control">
             <input
                 type="password"
                 name="password"
@@ -51,7 +51,7 @@
                 {% if form.password.errors %}aria-invalid="true"{% endif %}
                 required
             >
-            <button type="button" class="auth-password-toggle" data-password-toggle aria-controls="password" aria-label="Pokaż hasło" aria-pressed="false">
+            <button type="button" class="auth-input-action auth-password-toggle" data-password-toggle aria-controls="password" aria-label="Pokaż hasło" aria-pressed="false">
                 <i class="auth-eye auth-eye--show" data-icon="eye" aria-hidden="true"></i>
                 <i class="auth-eye auth-eye--hide" data-icon="eye-off" aria-hidden="true"></i>
             </button>

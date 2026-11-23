@@ -109,6 +109,10 @@ class SpaceSettingsFrontendTests(TestCase):
                     self.assertEqual(response.status_code, 200)
                     shell = response.json()['shell']
                     self.assertEqual(shell['mode'], 'space-settings')
+                    self.assertEqual(shell['settings_back'], {
+                        'url': scoped_workplace_app_path(self.workspace, 'space', self.space.slug + '/'),
+                        'label': 'Wróć',
+                    })
                     self.assertTrue(shell['settings_active'])
                     self.assertEqual(shell['space_settings']['tab'], tab)
                     self.assertEqual([link['key'] for link in shell['space_settings']['links']], ['main', 'members', 'types', 'categories', 'groups', 'statuses'])
@@ -214,6 +218,13 @@ class SpaceSettingsFrontendTests(TestCase):
                     self.assertEqual(response.status_code, 200)
                     self.assertContains(response, 'data-sidebar-navigation="space-settings"')
                     self.assertContains(response, 'Ustawienia przestrzeni · Prywatna')
+                    menu = response.content.decode().split('data-sidebar-navigation="space-settings"', 1)[1].split('</nav>', 1)[0]
+                    self.assertIn(
+                        f'<a href="{response.context["space_url"]}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-back',
+                        menu,
+                    )
+                    self.assertLess(menu.index('data-settings-back'), menu.index('data-space-settings-tab'))
+                    self.assertIn('data-settings-back aria-label="Wróć"', menu)
                     self.assertNotContains(response, 'aria-labelledby="work-modal-title"')
                     self.assertNotContains(response, 'aria-label="Widoki przestrzeni"')
                     for field in fields:

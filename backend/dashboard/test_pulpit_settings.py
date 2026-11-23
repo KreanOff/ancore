@@ -41,6 +41,13 @@ class PulpitSettingsPageTests(PulpitSharingFixture, TestCase):
                     self.assertEqual(sidebar_html.active_settings, [section])
                     self.assertContains(response, 'space-settings-page pulpit-settings-page')
                     self.assertContains(response, f'data-pulpit-settings-tab="{section}"')
+                    menu = response.content.decode().split('data-sidebar-navigation="pulpit-settings"', 1)[1].split('</nav>', 1)[0]
+                    self.assertIn(
+                        f'<a href="{response.context["return_url"]}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-back',
+                        menu,
+                    )
+                    self.assertLess(menu.index('data-settings-back'), menu.index('data-pulpit-settings-tab'))
+                    self.assertIn('data-settings-back aria-label="Wróć"', menu)
                     self.assertNotContains(response, 'aria-labelledby="pulpit-modal-title"')
                     self.assertNotContains(response, 'data-pulpit-modal>')
                     sidebar = response.context['pulpit_settings_sidebar']
@@ -67,8 +74,9 @@ class PulpitSettingsPageTests(PulpitSharingFixture, TestCase):
                     expected_prefix = scoped_workplace_app_path(self.workspace, 'dashboards', f'manage/{self.dashboard.slug}/')
                     self.assertEqual([row['url'] for row in sidebar['links']],
                                      [expected_prefix + part + '?q=Plan&page=2' for part in ('edit/', 'access/')])
-                    self.assertEqual(result['page']['data']['return_url'],
-                                     scoped_workplace_app_path(self.workspace, 'dashboards') + '?q=Plan&page=2')
+                    return_url = scoped_workplace_app_path(self.workspace, 'dashboards') + '?q=Plan&page=2'
+                    self.assertEqual(result['page']['data']['return_url'], return_url)
+                    self.assertEqual(result['shell']['settings_back'], {'url': return_url, 'label': 'Wróć'})
 
     def test_invalid_page_save_retains_values_and_native_form_can_be_resubmitted(self):
         for scoped in (False, True):

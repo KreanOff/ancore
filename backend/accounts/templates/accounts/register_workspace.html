@@ -13,7 +13,7 @@
     {% csrf_token %}
     {% if workspaces %}<input type="hidden" name="create_another" value="1">{% endif %}
     {% if form.errors %}
-    <div class="auth-alert" role="alert">
+    <div class="auth-alert" role="alert"{% if not form.non_field_errors %} data-workspace-name-alert{% endif %}>
         <span>Sprawdź oznaczone pola.</span>
         {% for error in form.non_field_errors %}<span>{{ error }}</span>{% endfor %}
     </div>
@@ -21,9 +21,12 @@
 
     <div class="auth-field{% if form.name.errors %} auth-field--invalid{% endif %}">
         <label class="auth-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
-        {{ form.name }}
+        <div class="auth-input-control">
+            {{ form.name }}
+            {% include 'workplaces/includes/workspace_name_button.html' with input_id=form.name.id_for_label button_class='auth-input-action' only %}
+        </div>
         {% if form.name.errors %}
-        <div id="workspace-name-errors">
+        <div id="{{ form.name.auto_id }}_error" data-workspace-name-errors>
             {% for error in form.name.errors %}<span class="auth-field-error">{{ error }}</span>{% endfor %}
         </div>
         {% endif %}

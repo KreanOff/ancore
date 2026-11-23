@@ -1,10 +1,7 @@
 <nav class="sidebar-navigation" aria-label="Kategorie ustawień" data-sidebar-navigation="settings"{% if sidebar_mode != 'settings' %} hidden{% endif %}>
     <section class="sidebar-menu-section sidebar-menu-section--workspace" aria-labelledby="sidebar-settings-title">
         <h2 class="sidebar-menu-section-title" id="sidebar-settings-title">Ustawienia Ancore</h2>
-        <a href="{{ sidebar_spaces_url }}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni">
-            <i class="nav-icon" data-icon="arrow-left" aria-hidden="true"></i>
-            <span class="nav-label">Wróć do przestrzeni</span>
-        </a>
+        {% if sidebar_mode == 'settings' %}{% include 'core/includes/settings_back.html' %}{% endif %}
         <a href="{% url 'settings' %}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone{% if sidebar_mode == 'settings' and settings_category != 'workspace' and settings_category != 'spaces' %} active{% endif %}" data-settings-category="all"{% if sidebar_mode == 'settings' and settings_category != 'workspace' and settings_category != 'spaces' %} aria-current="page"{% endif %} aria-label="Ogólne" title="Ogólne">
             <i class="nav-icon" data-icon="settings" aria-hidden="true"></i>
             <span class="nav-label">Ogólne</span>

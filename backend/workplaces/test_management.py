@@ -220,7 +220,15 @@ class WorkspaceManagementTests(TestCase):
         self.assertEqual(set(sidebar['links']), {'main', 'members', 'links'})
         self.assertNotContains(response, 'data-workplace-edit-modal')
         self.assertContains(response, 'Ustawienia Workspace · ' + self.selected.name)
-        self.assertContains(response, 'aria-label="Wróć do Workspace"')
+        menu = response.content.decode().split('data-sidebar-navigation="workspace-settings"', 1)[1].split('</nav>', 1)[0]
+        self.assertIn(
+            f'<a href="{reverse("workplaces:workplaces")}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-back',
+            menu,
+        )
+        self.assertLess(menu.index('data-settings-back'), menu.index('aria-current="page"'))
+        self.assertIn('data-settings-back aria-label="Wróć"', menu)
+        self.assertContains(response, 'data-settings-back', count=1)
+        self.assertNotContains(response, 'class="tasks-issue-close" aria-label="Wróć do Workspace"')
         self.client.force_login(self.member)
         response = self.client.get(workplace_management_url(self.selected, 'links'))
         self.assertEqual(response.context['sidebar_mode'], 'workspace-settings')

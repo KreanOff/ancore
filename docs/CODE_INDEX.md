@@ -18,9 +18,9 @@ oraz [Mechanizmy](MECHANISMS.md).
 | Katalog | Python poza migracjami | Migracje bez init | Szablony HTML | Metody test_* |
 | --- | ---: | ---: | ---: | ---: |
 | [backend/ancore](../backend/ancore) | 6 | 0 | 0 | 0 |
-| [backend/core](../backend/core) | 46 | 0 | 31 | 306 |
+| [backend/core](../backend/core) | 46 | 0 | 32 | 307 |
 | [backend/accounts](../backend/accounts) | 30 | 4 | 10 | 115 |
-| [backend/workplaces](../backend/workplaces) | 33 | 6 | 16 | 170 |
+| [backend/workplaces](../backend/workplaces) | 33 | 6 | 17 | 170 |
 | [backend/tasks](../backend/tasks) | 8 | 1 | 24 | 12 |
 | [backend/dashboard](../backend/dashboard) | 55 | 8 | 44 | 324 |
 | [backend/planner](../backend/planner) | 12 | 2 | 1 | 43 |
@@ -1005,6 +1005,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/core/templates/core/includes/right_sidebar_navigation.html](../backend/core/templates/core/includes/right_sidebar_navigation.html)
 - [backend/core/templates/core/includes/select_priority.html](../backend/core/templates/core/includes/select_priority.html)
 - [backend/core/templates/core/includes/select_status.html](../backend/core/templates/core/includes/select_status.html)
+- [backend/core/templates/core/includes/settings_back.html](../backend/core/templates/core/includes/settings_back.html)
 - [backend/core/templates/core/includes/settings_secondary_menu.html](../backend/core/templates/core/includes/settings_secondary_menu.html)
 - [backend/core/templates/core/includes/settings_sidebar.html](../backend/core/templates/core/includes/settings_sidebar.html)
 - [backend/core/templates/core/includes/sidebar_picker.html](../backend/core/templates/core/includes/sidebar_picker.html)
@@ -1043,6 +1044,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [backend/workplaces/templates/workplaces/includes/team_modals.html](../backend/workplaces/templates/workplaces/includes/team_modals.html)
 - [backend/workplaces/templates/workplaces/includes/team_panel.html](../backend/workplaces/templates/workplaces/includes/team_panel.html)
 - [backend/workplaces/templates/workplaces/includes/workplace_photo_editor.html](../backend/workplaces/templates/workplaces/includes/workplace_photo_editor.html)
+- [backend/workplaces/templates/workplaces/includes/workspace_name_button.html](../backend/workplaces/templates/workplaces/includes/workspace_name_button.html)
 - [backend/workplaces/templates/workplaces/join.html](../backend/workplaces/templates/workplaces/join.html)
 - [backend/workplaces/templates/workplaces/widgets/module_option.html](../backend/workplaces/templates/workplaces/widgets/module_option.html)
 - [backend/workplaces/templates/workplaces/widgets/module_select.html](../backend/workplaces/templates/workplaces/widgets/module_select.html)
@@ -1299,6 +1301,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [static/js/tasks.js](../static/js/tasks.js)
 - [static/js/workplace-avatars.js](../static/js/workplace-avatars.js)
 - [static/js/workplace-team.js](../static/js/workplace-team.js)
+- [static/js/workspace-name-generator.js](../static/js/workspace-name-generator.js)
 
 ### img
 
@@ -1418,6 +1421,7 @@ Lista funkcji jest statyczna; obejmuje też historyczne, nieużywane helpery.
 - [frontend/app/src/shared/StatusGroup.tsx](../frontend/app/src/shared/StatusGroup.tsx)
 - [frontend/app/src/shared/TaskPriority.tsx](../frontend/app/src/shared/TaskPriority.tsx)
 - [frontend/app/src/shared/WidgetCatalog.tsx](../frontend/app/src/shared/WidgetCatalog.tsx)
+- [frontend/app/src/shared/WorkspaceNameButton.tsx](../frontend/app/src/shared/WorkspaceNameButton.tsx)
 - [frontend/app/src/shared/api.ts](../frontend/app/src/shared/api.ts)
 - [frontend/app/src/shared/clipboard.ts](../frontend/app/src/shared/clipboard.ts)
 - [frontend/app/src/shared/globals.d.ts](../frontend/app/src/shared/globals.d.ts)
@@ -1637,7 +1641,7 @@ Liczby dotyczą definicji metod, nie uruchomionych przypadków.
 
 Źródło: [backend/core/test_frontend.py](../backend/core/test_frontend.py).
 
-- `ReactPageApiTests`: 19 metod testowych.
+- `ReactPageApiTests`: 20 metod testowych.
 
 ### backend/core/test_list_window.py
 

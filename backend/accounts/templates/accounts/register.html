@@ -51,9 +51,9 @@
     <div class="auth-field-row auth-field-row--passwords">
         <div class="auth-field{% if form.password1.errors %} auth-field--invalid{% endif %}">
             <label class="auth-label" for="{{ form.password1.id_for_label }}">Hasło</label>
-            <div class="auth-password-control">
+            <div class="auth-input-control">
                 {{ form.password1 }}
-                <button type="button" class="auth-password-toggle" data-password-toggle aria-controls="{{ form.password1.id_for_label }}" aria-label="Pokaż hasło" aria-pressed="false">
+                <button type="button" class="auth-input-action auth-password-toggle" data-password-toggle aria-controls="{{ form.password1.id_for_label }}" aria-label="Pokaż hasło" aria-pressed="false">
                     <i class="auth-eye auth-eye--show" data-icon="eye" aria-hidden="true"></i>
                     <i class="auth-eye auth-eye--hide" data-icon="eye-off" aria-hidden="true"></i>
                 </button>
@@ -62,9 +62,9 @@
         </div>
         <div class="auth-field{% if form.password2.errors %} auth-field--invalid{% endif %}">
             <label class="auth-label" for="{{ form.password2.id_for_label }}">Potwierdź hasło</label>
-            <div class="auth-password-control">
+            <div class="auth-input-control">
                 {{ form.password2 }}
-                <button type="button" class="auth-password-toggle" data-password-toggle aria-controls="{{ form.password2.id_for_label }}" aria-label="Pokaż hasło" aria-pressed="false">
+                <button type="button" class="auth-input-action auth-password-toggle" data-password-toggle aria-controls="{{ form.password2.id_for_label }}" aria-label="Pokaż hasło" aria-pressed="false">
                     <i class="auth-eye auth-eye--show" data-icon="eye" aria-hidden="true"></i>
                     <i class="auth-eye auth-eye--hide" data-icon="eye-off" aria-hidden="true"></i>
                 </button>

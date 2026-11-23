@@ -229,8 +229,9 @@ Pozostałe przestrzenie, pulpity i konfiguracje pozostają.
 Istniejące sygnały sprzątają awatar i pliki zadań po zatwierdzeniu transakcji.
 Wejścia z zakładki
 Przestrzeni oraz zachowanego menu bocznego również prowadzą na tę stronę.
-Górny nagłówek zachowuje strzałkę powrotu oraz tytuł „Ustawienia przestrzeni
-· nazwa”. Typografia i odstępy odpowiadają nagłówkowi otwartej Przestrzeni.
+Nagłówek pokazuje tytuł „Ustawienia przestrzeni · nazwa”, a lewe menu
+link „Wróć”. Typografia i odstępy odpowiadają nagłówkowi
+otwartej Przestrzeni.
 Zakładki procesu „Stany” i „Mapa” zajmują drugi wiersz tego samego nagłówka,
 bez separatora między wierszami, z jedną dolną ramką nad treścią.
 
@@ -238,7 +239,7 @@ Główne lewe menu zastępuje menu Workspace sześcioma sekcjami: „Ustawienia�
 „Udostępnienia”, „Typy zgłoszeń”, „Kategorie”, „Grupy” i „Proces pracy”. Proces pracy udostępnia
 listę stanów i mapę przejść wraz z limitami WIP oraz zasadami kolumn. Pola dodatkowe
 pozostają ukryte w ustawieniach, ale działają w zadaniach i konfiguracji.
-Menu zawiera wyłącznie dostępne sekcje, bez dodatkowych nagłówków i linku powrotu.
+Dostępne sekcje znajdują się pod linkiem powrotu.
 Sekcje obejmują główny formularz, tabelę członków i listę typów zgłoszeń.
 Tabele członków, typów i stanów procesu używają arkusza jak Tagi:
 sortowania, filtrów, wyszukiwania oraz zapamiętywanej kolejności, widoczności

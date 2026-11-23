@@ -703,6 +703,33 @@ body.right-sidebar-resizing .sidebar {
     }
 }
 
+@media (scripting: none) and (max-width: 767px) {
+    body:has([data-app-topbar]):has(#app-sidebar [data-settings-back]) {
+        display: grid;
+        grid-template: var(--app-topbar-height) auto minmax(0, 1fr) / minmax(0, 1fr);
+        gap: var(--app-shell-gap);
+    }
+
+    body:has([data-app-topbar]) #app-sidebar:has([data-settings-back]) {
+        position: static;
+        grid-area: 2 / 1;
+        margin-left: var(--app-shell-gap);
+        max-height: 30vh;
+        transform: none;
+    }
+
+    body:has([data-app-topbar]):has(#app-sidebar [data-settings-back]) > .main-content {
+        grid-area: 3 / 1;
+        margin: 0 var(--app-shell-gap) var(--app-shell-gap);
+        width: auto;
+        height: auto;
+    }
+
+    body:has(#app-sidebar [data-settings-back]) .left-sidebar-edge-toggle {
+        display: none;
+    }
+}
+
 @media (max-width: 600px) {
     body:has(> .app-topbar, > [data-react-global-panels] > .app-topbar) {
         --app-topbar-height: calc(2 * var(--dropdown-control-height) + 4px + 2 * var(--app-topbar-padding-y));

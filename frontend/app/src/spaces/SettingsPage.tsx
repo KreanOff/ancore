@@ -275,19 +275,9 @@ export default function SettingsPage({
       <div className="tasks-page work-page space-settings-page" data-react-screen="space-settings">
         <SpaceHeader
           heading={
-            <>
-              <a
-                href={spaceUrl}
-                className="tasks-issue-close"
-                aria-label="Wróć do przestrzeni"
-                title="Wróć do przestrzeni"
-              >
-                <Icon name="arrow-left" />
-              </a>
-              <h1 className="tasks-topbar-title work-space-title">
-                Ustawienia przestrzeni{data ? ` · ${data.space.name}` : ''}
-              </h1>
-            </>
+            <h1 className="tasks-topbar-title work-space-title">
+              Ustawienia przestrzeni{data ? ` · ${data.space.name}` : ''}
+            </h1>
           }
           actions={null}
           navigationContent={

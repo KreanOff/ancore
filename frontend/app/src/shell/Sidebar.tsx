@@ -177,6 +177,18 @@ export default function Sidebar({
       <span className="nav-label">{context?.label || label}</span>
     </a>
   );
+  const settingsBack = data.settings_back ? (
+    <a
+      href={data.settings_back.url}
+      className="nav-link sidebar-primary-link sidebar-primary-link--standalone"
+      data-settings-back
+      aria-label={data.settings_back.label}
+      title={data.settings_back.label}
+    >
+      <Icon name="arrow-left" className="nav-icon" />
+      <span className="nav-label">{data.settings_back.label}</span>
+    </a>
+  ) : null;
   let management: ReactNode = null;
   const entitySettings =
     data.mode === 'space-settings'
@@ -187,6 +199,7 @@ export default function Sidebar({
   if (entitySettings)
     management = (
       <>
+        {settingsBack}
         {entitySettings.links.map((item) => {
           const current =
             (entitySettings.links.some((link) => link.key === spaceSection)
@@ -213,6 +226,7 @@ export default function Sidebar({
     const workspaceSettings = data.workspace_settings;
     management = (
       <>
+        {settingsBack}
         {(
           [
             ['main', 'Ustawienia', 'settings'],
@@ -242,13 +256,7 @@ export default function Sidebar({
     management = (
       <>
         <h2 className="sidebar-menu-section-title">Ustawienia Ancore</h2>
-        <a
-          href={data.links.spaces?.url || data.links['for-you'].url}
-          className="nav-link sidebar-primary-link sidebar-primary-link--standalone"
-        >
-          <Icon name="arrow-left" className="nav-icon" />
-          <span className="nav-label">Wróć do przestrzeni</span>
-        </a>
+        {settingsBack}
         {[
           ['all', 'Ogólne', 'settings'],
           ['account', 'Konto i dostęp', 'user-round'],

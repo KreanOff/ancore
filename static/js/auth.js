@@ -67,9 +67,34 @@
         });
     }
 
+    function initializeWorkspaceNameValidation() {
+        document.querySelectorAll('[data-workspace-name-errors]').forEach((errors) => {
+            if (errors.dataset.validationReady === 'true') return;
+            const field = errors.closest('.auth-field');
+            const input = field.querySelector('input');
+            if (!input) return;
+
+            errors.dataset.validationReady = 'true';
+            const clearError = () => {
+                const value = input.value.trim();
+                if (!value || value.length > input.maxLength) return;
+                errors.remove();
+                input.removeAttribute('aria-invalid');
+                if (input.getAttribute('aria-describedby') === errors.id) {
+                    input.removeAttribute('aria-describedby');
+                }
+                field.classList.remove('auth-field--invalid');
+                input.form.querySelector('[data-workspace-name-alert]')?.remove();
+                input.removeEventListener('input', clearError);
+            };
+            input.addEventListener('input', clearError);
+        });
+    }
+
     function initialize() {
         initializePasswordToggles();
         initializeLoadingForms();
+        initializeWorkspaceNameValidation();
     }
 
     window.addEventListener('pageshow', (event) => {

@@ -1,7 +1,6 @@
 import { PageHeader } from '../shared/PageHeader';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EmbeddedForm } from '../forms/FormDialog';
-import { Icon } from '../shared/Icon';
 import AccessEditor from './AccessEditor';
 import { errorMessage } from '../shared/api';
 import { type Page, type PageProps, navigate, pageRequest, setPageLocation } from '../shared/page';
@@ -41,8 +40,6 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
   const dirty = Object.values(states).some((state) => state?.dirty);
   const pending = acting || Object.values(states).some((state) => state?.pending);
   const settingsUrl = tabs.find((item) => item.key === 'settings')!.url;
-  const returnLabel =
-    initialData.return_url === initialData.dashboard.url ? 'Wróć do pulpitu' : 'Wróć do pulpitów';
   useDirtyGuard(dirty, pending);
   useEffect(() => () => life.abort(), [life]);
   useEffect(() => {
@@ -170,19 +167,7 @@ export default function SettingsPage({ initial, csrfToken }: PageProps) {
         data-react-screen="pulpit-settings"
       >
         <PageHeader
-          heading={
-            <>
-              <a
-                href={initialData.return_url}
-                className="tasks-issue-close"
-                aria-label={returnLabel}
-                title={returnLabel}
-              >
-                <Icon name="arrow-left" />
-              </a>
-              <h1 className="tasks-topbar-title">Ustawienia pulpitu · {team.name}</h1>
-            </>
-          }
+          heading={<h1 className="tasks-topbar-title">Ustawienia pulpitu · {team.name}</h1>}
         />
         {error ? (
           <div className="tasks-modal__errors space-settings-message" role="alert">

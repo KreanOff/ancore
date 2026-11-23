@@ -3,11 +3,14 @@ import { flushSync } from 'react-dom';
 import { Modal } from '../shared/Modal';
 import { Icon } from '../shared/Icon';
 import { FieldLabel } from '../shared/FieldLabel';
+import { WorkspaceNameButton } from '../shared/WorkspaceNameButton';
 import { errorMessage } from '../shared/api';
 import { PageError, pageRequest, type Page } from '../shared/page';
 import AvatarControl from './AvatarControl';
 import type { Field } from '../forms/FormDialog';
 import type { DirectoryData, WorkspaceForm as Schema } from './types';
+
+const WORKSPACE_NAME_MAX_LENGTH = 140;
 
 function FieldErrors({ id, errors }: { id: string; errors?: string[] }) {
   return errors?.length ? (
@@ -153,33 +156,55 @@ export function SettingsFields({
   const modules = schema?.fields.find((field) => field.name === 'enabled_modules');
   const nameErrors = schema?.fields.find((field) => field.name === 'name')?.errors;
   const descriptionErrors = schema?.fields.find((field) => field.name === 'description')?.errors;
+  const nameInput = useRef<HTMLInputElement>(null);
+  const nameId = id + '-name';
+  const nameControl = (
+    <input
+      ref={nameInput}
+      id={nameId}
+      aria-invalid={!!nameErrors?.length}
+      aria-describedby={nameErrors?.length ? nameId + '-error' : undefined}
+      name="name"
+      className="tasks-inline-input workplace-create-modal__name-input workplace-create-modal__text-input"
+      placeholder="Nazwa miejsca pracy"
+      autoComplete="off"
+      maxLength={WORKSPACE_NAME_MAX_LENGTH}
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      readOnly={readonly}
+      required
+    />
+  );
   return (
     <div className="workplace-modal__content app-form-avatar-layout" data-profile-photo-layout>
       {schema && !readonly ? <AvatarControl schema={schema} formId={id} create={create} /> : null}
       <div className="workplace-modal__details app-form-layout">
         <div className="app-form-heading">
           <div className="tasks-form-field app-form-field">
-            <label htmlFor={id + '-name'}>Nazwa miejsca pracy</label>
-            <input
-              id={id + '-name'}
-              aria-invalid={!!nameErrors?.length}
-              aria-describedby={nameErrors?.length ? id + '-name-error' : undefined}
-              name="name"
-              className="tasks-inline-input workplace-create-modal__name-input workplace-create-modal__text-input"
-              placeholder="Nazwa miejsca pracy"
-              autoComplete="off"
-              maxLength={140}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              readOnly={readonly}
-              required
-            />
-            <FieldErrors id={id + '-name-error'} errors={nameErrors} />
+            <label htmlFor={nameId}>Nazwa miejsca pracy</label>
+            {create && !readonly ? (
+              <div className="workplace-name-control">
+                {nameControl}
+                <WorkspaceNameButton
+                  className="tasks-icon-button"
+                  inputId={nameId}
+                  onClick={() => {
+                    const suggestion = window.AncoreWorkspaceNames?.suggest(name);
+                    if (!suggestion) return;
+                    setName(suggestion);
+                    nameInput.current?.focus({ preventScroll: true });
+                  }}
+                />
+              </div>
+            ) : (
+              nameControl
+            )}
+            <FieldErrors id={nameId + '-error'} errors={nameErrors} />
           </div>
         </div>
         {create ? (
           <span className="u-sr-only" aria-live="polite">
-            {name.length}/140
+            {name.length}/{WORKSPACE_NAME_MAX_LENGTH}
           </span>
         ) : null}
         <div className="tasks-form-field app-form-field app-form-description">
@@ -248,6 +273,17 @@ export default function CreateDialog({
   const [life] = useState(() => new AbortController());
   const sending = useRef(false);
   useEffect(() => () => life.abort(), [life]);
+  function changeName(value: string) {
+    setName(value);
+    setDirty(true);
+    if (!value.trim() || value.length > WORKSPACE_NAME_MAX_LENGTH) return;
+    const field = schema.fields.find((item) => item.name === 'name');
+    if (!field?.errors.length) return;
+    setSchema({
+      ...schema,
+      fields: schema.fields.map((item) => (item === field ? { ...item, errors: [] } : item)),
+    });
+  }
   return (
     <Modal
       title="Nowe miejsce pracy"
@@ -292,7 +328,10 @@ export default function CreateDialog({
             if (error instanceof PageError) {
               const corrected = ((error.data as unknown as Page).data as DirectoryData)
                 ?.create_form;
-              if (corrected) setSchema(corrected);
+              if (corrected) {
+                setSchema(corrected);
+                return;
+              }
             }
             setError(errorMessage(error));
           } finally {
@@ -309,7 +348,7 @@ export default function CreateDialog({
               id="workspace-create-form"
               name={name}
               description={description}
-              setName={setName}
+              setName={changeName}
               setDescription={setDescription}
               create
             />

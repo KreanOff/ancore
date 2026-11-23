@@ -356,7 +356,7 @@ zadań. To wyłącznie dane prezentacji; nie ma nowych pól ani migracji.
 
 [`spaces/SettingsPage.tsx`](../frontend/app/src/spaces/SettingsPage.tsx) łączy
 pola główne, członków, awatar oraz konfigurację zadań na osobnej stronie.
-Nagłówek używa wspólnego `SpaceHeader`, zachowując strzałkę powrotu i tytuł
+Nagłówek używa wspólnego `SpaceHeader` z tytułem
 „Ustawienia przestrzeni · nazwa”. `navigationContent` pozwala umieścić podzakładki
 „Stany”/„Mapa” w tej samej powłoce co zwykła nawigacja Przestrzeni,
 z jedną dolną ramką. Przyciski podzakładek należą do `SettingsPage`,
@@ -423,7 +423,10 @@ bezpośrednim adresem. Kategoria „Workspace” prowadzi bezpośrednio do istni
 Kontrakt powłoki `settings_category=workspace` albo `spaces` ustawia aktywną
 pozycję odpowiedniego katalogu także po odświeżeniu. Pozostałe kategorie
 zachowują obsługę fragmentów konta. Dawne `/settings/#workspace` przechodzi do katalogu bez
-dodawania pośredniego wpisu historii.
+dodawania pośredniego wpisu historii. W trybach Ustawień powłoka przekazuje
+`settings_back` z etykietą i adresem powrotu. `shell/Sidebar` oraz szablony
+lewego menu renderują link nad sekcjami ustawień.
+Kliknięcie przechodzi przez wspólną nawigację i ochronę niezapisanego formularza.
 
 Wybrany Workspace otwiera pełną stronę ustawień przez dotychczasowe parametry
 `?workspace=<pk>&tab=main`, `?workspace=<pk>&view=members` lub
@@ -436,7 +439,7 @@ z nazwą, aktywnym `tab` oraz autoryzowanymi adresami w `links` (`main`,
 zachowują bezpośrednie wejście i historię przeglądarki; formularz chroni
 niezapisane zmiany przy opuszczaniu sekcji. Menu zaczyna wizytę rozwinięte,
 tak jak w ustawieniach Przestrzeni, bez nadpisywania preferencji zwykłego menu.
-`PageHeader` zawiera „Ustawienia Workspace · <nazwa>” i powrót do katalogu;
+`PageHeader` zawiera „Ustawienia Workspace · <nazwa>”, a lewe menu powrót do katalogu.
 `Toolbar` umieszcza „Zapisz” i „Anuluj” nad głównym formularzem.
 Pierwszy render Django zachowuje tę samą stronę i nawigację.
 Formularze, endpointy oraz zakresy dostępu pozostają wspólne z dotychczasowym

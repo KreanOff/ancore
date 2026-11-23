@@ -15,7 +15,6 @@ import type { DirectoryData, Team, Tab } from './types';
 export default function SettingsPage({
   team,
   initialTab,
-  backUrl,
   addOpen,
   api,
   token,
@@ -25,7 +24,6 @@ export default function SettingsPage({
 }: {
   team: Team;
   initialTab: Tab;
-  backUrl: string;
   addOpen: boolean;
   api: string;
   token: string;
@@ -101,19 +99,7 @@ export default function SettingsPage({
         aria-busy={pending}
       >
         <PageHeader
-          heading={
-            <>
-              <a
-                href={backUrl}
-                className="tasks-issue-close"
-                aria-label="Wróć do Workspace"
-                title="Wróć do Workspace"
-              >
-                <Icon name="arrow-left" />
-              </a>
-              <h1 className="tasks-topbar-title">Ustawienia Workspace · {team.name}</h1>
-            </>
-          }
+          heading={<h1 className="tasks-topbar-title">Ustawienia Workspace · {team.name}</h1>}
         />
         {error || schema?.errors.length || schema?.fields.some((field) => field.errors.length) ? (
           <div className="space-settings-message" ref={errorBox} tabIndex={-1}>

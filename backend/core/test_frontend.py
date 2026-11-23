@@ -69,6 +69,29 @@ class ReactPageApiTests(TestCase):
         self.assertNotIn('Panel administracyjny', titles)
         self.assertNotIn('Zarządzaj filtrami', titles)
 
+    def test_settings_back_starts_the_left_menu_even_without_calendar(self):
+        target = reverse('settings')
+        navigation = self.path('api', 'v1/navigation/')
+        for disabled, destination in [([], 'spaces'), (['spaces', 'calendar'], 'for-you')]:
+            with self.subTest(disabled=disabled):
+                self.workspace.disabled_modules = disabled
+                self.workspace.save(update_fields=['disabled_modules'])
+                shell = self.client.get(navigation, {'url': target}).json()['shell']
+                self.assertEqual(shell['settings_back'], {
+                    'url': self.path(destination), 'label': 'Wróć',
+                })
+                if disabled:
+                    self.assertEqual(shell['sidebar_url'], '')
+                response = self.client.get(target)
+                self.assertContains(response, 'data-settings-back', count=1)
+                menu = response.content.decode().split('data-sidebar-navigation="settings"', 1)[1].split('</nav>', 1)[0]
+                self.assertIn(
+                    f'<a href="{self.path(destination)}" class="nav-link sidebar-primary-link sidebar-primary-link--standalone" data-settings-back',
+                    menu,
+                )
+                self.assertLess(menu.index('Ustawienia Ancore'), menu.index('data-settings-back'))
+                self.assertLess(menu.index('data-settings-back'), menu.index('data-settings-category'))
+
     def test_proxy_is_allowlisted_and_cannot_cross_workspace_context(self):
         for target in ['/admin/', '/resources/', '/accounts/logout/', self.api()]:
             self.assertEqual(self.client.get(self.api(), {'url': target}).status_code, 404)

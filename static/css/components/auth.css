@@ -183,22 +183,22 @@ body.auth-page .auth-form .form-input::placeholder {
 
 body.auth-page .auth-input:hover,
 body.auth-page .auth-form .form-input:hover,
-body.auth-page .auth-password-control:hover {
+body.auth-page .auth-input-control:hover {
     border-color: var(--system-interaction);
 }
 
 body.auth-page .auth-input:focus,
 body.auth-page .auth-form .form-input:focus,
-body.auth-page .auth-password-control:focus-within {
+body.auth-page .auth-input-control:focus-within {
     border-color: var(--system-interaction);
     background: var(--auth-input-bg);
     box-shadow: 0 0 0 1px var(--system-interaction);
 }
 
-body.auth-page .auth-password-control {
+body.auth-page .auth-input-control {
     min-width: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) auto;
     overflow: hidden;
     border: 1px solid var(--auth-input-border);
     border-radius: var(--auth-radius);
@@ -206,8 +206,7 @@ body.auth-page .auth-password-control {
     transition: border-color 150ms ease, background 150ms ease;
 }
 
-body.auth-page .auth-password-control > .auth-input,
-body.auth-page .auth-password-control > .form-input {
+body.auth-page .auth-input-control > :is(.auth-input, .form-input) {
     height: calc(var(--auth-control-height) - 2px);
     border: 0;
     border-radius: 0;
@@ -215,7 +214,7 @@ body.auth-page .auth-password-control > .form-input {
     box-shadow: none;
 }
 
-/* Cover the browser's autofill paint without tinting the password toggle. */
+/* Cover the browser's autofill paint without tinting the field action. */
 body.auth-page .auth-form input:is(:autofill, :-webkit-autofill) {
     -webkit-text-fill-color: var(--auth-ink);
     caret-color: var(--auth-ink);
@@ -226,11 +225,11 @@ body.auth-page .auth-form input:is(:autofill, :-webkit-autofill):focus {
     box-shadow: inset 0 0 0 100px var(--auth-input-bg), 0 0 0 1px var(--system-interaction) !important;
 }
 
-body.auth-page .auth-password-control > input:is(:autofill, :-webkit-autofill):focus {
+body.auth-page .auth-input-control > input:is(:autofill, :-webkit-autofill):focus {
     box-shadow: inset 0 0 0 100px var(--auth-input-bg) !important;
 }
 
-body.auth-page .auth-password-toggle {
+body.auth-page .auth-input-action:not([hidden]) {
     --app-text-color: var(--auth-muted);
     display: grid;
     place-items: center;
@@ -243,12 +242,12 @@ body.auth-page .auth-password-toggle {
     cursor: pointer;
 }
 
-body.auth-page .auth-password-toggle:hover {
+body.auth-page .auth-input-action:hover {
     --app-text-color: var(--auth-ink);
     background: var(--system-interaction-soft);
 }
 
-body.auth-page .auth-eye {
+body.auth-page .auth-input-action > :is(i, svg) {
     width: 18px;
     height: 18px;
 }
@@ -264,7 +263,7 @@ body.auth-page .auth-password-toggle[aria-pressed='true'] .auth-eye--hide {
 
 body.auth-page .auth-field--invalid .auth-input,
 body.auth-page .auth-field--invalid .form-input,
-body.auth-page .auth-field--invalid .auth-password-control {
+body.auth-page .auth-field--invalid .auth-input-control {
     border-color: #b83d52;
 }
 
@@ -328,7 +327,7 @@ body.auth-page .auth-submit > svg {
 }
 
 body.auth-page .auth-submit:disabled,
-body.auth-page .auth-password-toggle:disabled {
+body.auth-page .auth-input-action:disabled {
     cursor: wait;
 }
 
@@ -340,7 +339,7 @@ body.auth-page .auth-footer .auth-link-button:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--system-interaction) 50%, transparent) !important;
 }
 
-body.auth-page .auth-password-toggle:focus-visible {
+body.auth-page .auth-input-action:focus-visible {
     box-shadow: inset 0 0 0 2px var(--system-interaction);
 }
 

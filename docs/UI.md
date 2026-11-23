@@ -82,6 +82,12 @@ jeśli występuje, zawiera dotychczasowe widoki strony. Nie dodawaj fikcyjnych
 zakładek do ekranu, który ich nie potrzebuje. Nawigacja wewnętrznego panelu
 (np. „Twoja praca”) pozostaje przy tym panelu.
 
+W centrum Ustawień oraz w ustawieniach Przestrzeni, Workspace i Pulpitu
+link „Wróć” ze strzałką jest pierwszą pozycją w lewym menu, nad listą sekcji.
+W centrum Ustawień znajduje się tuż pod nagłówkiem „Ustawienia Ancore”.
+Na wąskim ekranie menu otwiera wspólny uchwyt po lewej. Pierwszy render bez
+JavaScriptu na wąskim ekranie pokazuje menu nad główną treścią.
+
 Oba wiersze tworzą jedną białą powierzchnię `app-page-header-group`,
 z linią wyłącznie pod całym nagłówkiem. Tytuł używa tokenów 17px/700,
 interlinii 1.45, wiersz ma minimum 45px i padding 0.5rem / 15px.
@@ -580,13 +586,19 @@ stany błędu/zapisu oraz fokus klawiatury. Do 760px zajmuje szerokość
 ekranu pod logo; do 380px również imię i nazwisko układają się pionowo.
 Na niskim ekranie formularz i błędy przewijają się razem z panelem.
 Pierwszy render Django zachowuje ten sam układ i formularze POST.
-`auth.js` pomija korzeń Reacta, więc przycisk hasła ma jedną obsługę.
+`auth.js` obsługuje przycisk podglądu hasła w formularzach Django, a React
+obsługuje go we własnych formularzach.
 Błędy formularza są ogłaszane i otrzymują fokus; pola zachowują wpisany szkic.
 
 Po utworzeniu konta ekran „Utwórz Workspace” używa tej samej tapety i białej karty
 co logowanie. Nagłówek nie ma dodatkowego opisu. Jedno wymagane pole nazwy
-ma limit 140 znaków; przycisk
-„Utwórz Workspace” pokazuje rzeczywisty stan zapisu „Przygotowywanie Workspace…”.
+ma limit 140 znaków. Przycisk z ikoną iskier „Wylosuj nazwę Workspace”
+wstawia do pola jedną ze 100 zabawnych polskich nazw. Każde losowanie zmienia
+aktualną nazwę, a propozycję można edytować przed zapisaniem.
+Generator korzysta ze wspólnego `workspace-name-generator.js` w React
+i w pierwszym renderze Django, z tym samym układem pola co podgląd hasła.
+Przycisk „Utwórz Workspace” pokazuje rzeczywisty stan zapisu
+„Przygotowywanie Workspace…”.
 Sukces otwiera nowe środowisko. Pod przyciskiem wiersz „Masz już Workspace?” z linkiem „Wybierz Workspace”
 otwiera osobną stronę `/accounts/workspaces/` w tej samej powłoce kont.
 Ta strona pojawia się również po logowaniu, niezależnie od liczby dostępnych
@@ -1166,8 +1178,8 @@ Ustawienia Przestrzeni są osobną stroną `space-settings-page`. Główne lewe 
 zastępuje menu Workspace sześcioma sekcjami: „Ustawienia”, „Udostępnienia”,
 „Typy zgłoszeń”, „Kategorie”, „Grupy” oraz „Proces pracy”, według uprawnień. Proces pracy używa
 wspólnego edytora konfiguracji; pola dodatkowe pozostają ukryte w ustawieniach.
-Zawiera same pozycje sekcji, bez dodatkowych nagłówków i powrotu. Wykorzystuje
-istniejące wiersze `nav-link`, ikony oraz aktywny stan menu. Sekcja procesu
+Menu zaczyna się od „Wróć”, a kolejne wiersze wskazują sekcje.
+Wykorzystuje istniejące wiersze `nav-link`, ikony oraz aktywny stan menu. Sekcja procesu
 ma dodatkowy pasek „Stany”/„Mapa”; pozostałe sekcje nie powielają menu
 w treści. Centrum Ustawień w kategorii Workspace pokazuje
 listę dostępnych przestrzeni z wejściem na tę stronę.
@@ -1352,8 +1364,8 @@ w `spaces/detail.html`. Nazwa i działania pozostają w górnym wierszu, zakład
 poniżej. Jedna dolna ramka oddziela cały nagłówek od treści; między wierszami
 nie ma separatora. Podkreślenie aktywnej zakładki, polskie etykiety, wspólne
 kontrolki i poziome przewijanie zakładek na telefonie pozostają zachowane.
-Ustawienia korzystają z tej samej powłoki, typografii i odstępów, zachowując
-strzałkę powrotu oraz tytuł „Ustawienia przestrzeni · nazwa”. Podzakładki
+Ustawienia korzystają z tej samej powłoki, typografii i odstępów, z tytułem
+„Ustawienia przestrzeni · nazwa” i linkiem powrotu w lewym menu. Podzakładki
 „Stany” i „Mapa” są częścią nagłówka, bez dodatkowej ramki między tytułem
 a zakładkami. Tytuł dokumentu również określa kontekst „Ustawienia przestrzeni”.
 Długie tytuły zawijają się jak w zwykłej Przestrzeni.
@@ -1663,6 +1675,9 @@ Ustawienia konta prowadzą do profilu i wylogowania; nie zawierają
 „Kont w sesji” ani „Dodaj konto”.
 Kategoria Workspace otwiera bezpośrednio katalog `/workplaces/`: nagłówek
 „Workspace”, „Dodaj Workspace”, wyszukiwarkę i dotychczasową tabelę.
+W oknie „Nowe miejsce pracy” przycisk z ikoną iskier przy nazwie losuje
+propozycję z tej samej puli co ekran „Utwórz Workspace”. Losowanie aktualizuje
+edytowalną nazwę i jej licznik. Przycisk zapisu zatwierdza formularz.
 W menu pozostają wszystkie kategorie z aktywną pozycją Workspace.
 Widok Ogólne zachowuje skrót „Zarządzaj Workspace”, dla personelu także „Panel
 administracyjny”, oraz krótki skrót do kategorii „Przestrzenie”.
@@ -1700,8 +1715,7 @@ Katalog nie jest powielany w widoku Ogólne; pozostaje tam tylko skrót.
 Wyłączenie modułu Przestrzeni ukrywa tę pozycję menu i skrót w Ogólnych;
 bezpośredni adres nie ujawnia wtedy katalogu.
 Prawo zarządzania i konfigurowania jest sprawdzane na stronie wybranej przestrzeni.
-Na stronie centrum jest „Wróć do przestrzeni”. Strona ustawień przestrzeni
-zastępuje główne menu sześcioma sekcjami bez dodatkowych nagłówków i powrotu.
+Lewe menu centrum pokazuje „Wróć” nad kategoriami.
 Treść nie ma dodatkowej wewnętrznej nawigacji;
 wiersze, podsumowanie konta i kontrolki zachowują dotychczasowy wygląd.
 `dashboard/SettingsPage.tsx` i `shell/Sidebar.tsx` obsługują kategorie w stałej
@@ -3893,9 +3907,9 @@ checkboxy i pozostałe linki zachowują własne akcje. Hover i fokus ikon
 wypełniają komórkę istniejącym akcentem bez zmiany siatki tabeli.
 
 Strona ustawień Workspace korzysta z układu ustawień Przestrzeni.
-`PageHeader` zawiera strzałkę powrotu do katalogu i tytuł
-„Ustawienia Workspace · <nazwa>”, bez ikony przy tytule. Menu po lewej
-pokazuje „Ustawienia” (`main`), „Członkowie” (`members`) i — tylko dla
+`PageHeader` zawiera tytuł „Ustawienia Workspace · <nazwa>”. Menu po lewej
+zaczyna się od powrotu do katalogu, a następnie pokazuje „Ustawienia” (`main`),
+„Członkowie” (`members`) i — tylko dla
 zarządzających — „Linki do dołączenia” (`links`). Aktywna sekcja ma
 `aria-current="page"` i ten sam styl co menu ustawień Przestrzeni.
 Menu zaczyna wizytę rozwinięte; na telefonie korzysta ze wspólnej szuflady.
@@ -4239,15 +4253,15 @@ Nie ma osobnej pozycji „Dostępy”; udostępnieniami zarządza się w zakład
 Ustawienia konkretnego pulpitu renderuje `src/pulpits/SettingsPage.tsx`
 na osobnej stronie zgodnej z ustawieniami Przestrzeni. Wspólne klasy
 `space-settings-page` i `space-settings-panel` zapewniają nagłówek, przewijaną
-treść i stopkę formularza. Główne menu zastępują dwie pozycje „Ustawienia”
-i „Udostępnienia”, bez dodatkowych nagłówków. Menu otwiera się rozwinięte,
+treść i stopkę formularza. Lewe menu zawiera powrót oraz sekcje „Ustawienia”
+i „Udostępnienia”. Menu otwiera się rozwinięte,
 zachowując zapisaną preferencję zwinięcia zwykłego menu Workspace.
 Ukryty formularz pozostaje zamontowany i zachowuje szkic przy zmianie sekcji,
 także przez Wstecz/Dalej. Wyjście chroni dotychczasowe potwierdzenie niezapisanych zmian.
 Menu przeglądu i nawigacji przechodzą na tę stronę. Bezpośrednie
 zwykłe/scoped URL oraz wariant zarządzania używają tej samej powłoki.
 Zapis nie zamyka strony; aktualizuje nazwę w nagłówku i dane menu.
-Powrót oraz „Anuluj”/„Zamknij” respektują kontekst wejścia.
+Link powrotu i „Anuluj”/„Zamknij” respektują kontekst wejścia.
 Szablony Django również pokazują pełną stronę i zachowują formularze POST.
 
 „Ustawienia” zawierają nazwę, opis, ikonę, zakres danych, automatyczne

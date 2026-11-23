@@ -1,7 +1,7 @@
 {% extends 'spaces/base.html' %}
 {% block work_title %}Ustawienia przestrzeni · {{ space.name }}{% endblock %}
 {% block work_page_class %} space-settings-page{% endblock %}
-{% block work_heading %}<a href="{{ space_url }}" class="tasks-issue-close" aria-label="Wróć do przestrzeni" title="Wróć do przestrzeni"><i data-icon="arrow-left" aria-hidden="true"></i></a><h1 class="tasks-topbar-title work-space-title">Ustawienia przestrzeni · {{ space.name }}</h1>{% endblock %}
+{% block work_heading %}<h1 class="tasks-topbar-title work-space-title">Ustawienia przestrzeni · {{ space.name }}</h1>{% endblock %}
 {% block work_navigation %}
 {% if configuration_section == 'statuses' %}
 <nav class="notifications-tabs work-tabs app-page-tabs work-tabs--views" aria-label="Widoki procesu pracy">
